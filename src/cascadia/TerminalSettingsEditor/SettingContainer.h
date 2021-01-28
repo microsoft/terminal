@@ -50,7 +50,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void OnApplyTemplate();
 
-        DEPENDENCY_PROPERTY(hstring, HeaderText);
+        DEPENDENCY_PROPERTY(Windows::Foundation::IInspectable, Header);
         DEPENDENCY_PROPERTY(hstring, HelpText);
         DEPENDENCY_PROPERTY(bool, HasSettingValue);
         TYPED_EVENT(ClearSettingValue, Editor::SettingContainer, Windows::Foundation::IInspectable);

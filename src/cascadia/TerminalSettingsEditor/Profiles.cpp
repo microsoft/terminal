@@ -248,51 +248,54 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Subscribe to some changes in the view model
         // These changes should force us to update our own set of "Current<Setting>" members,
         // and propagate those changes to the UI
-        _State.Profile().PropertyChanged([&](auto&&, const PropertyChangedEventArgs& args) {
-            if (args.PropertyName() == L"CursorShape")
+        _ViewModelChangedRevoker = _State.Profile().PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto&&, const PropertyChangedEventArgs& args) {
+            if (auto page{ weakThis.get() })
             {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
-            }
-            else if (args.PropertyName() == L"BackgroundImageStretchMode")
-            {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentBackgroundImageStretchMode" });
-            }
-            else if (args.PropertyName() == L"AntialiasingMode")
-            {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentAntiAliasingMode" });
-            }
-            else if (args.PropertyName() == L"CloseOnExit")
-            {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCloseOnExitMode" });
-            }
-            else if (args.PropertyName() == L"BellStyle")
-            {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentBellStyle" });
-            }
-            else if (args.PropertyName() == L"ScrollState")
-            {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentScrollState" });
-            }
-            else if (args.PropertyName() == L"FontWeight")
-            {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentFontWeight" });
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsCustomFontWeight" });
-            }
-            else if (args.PropertyName() == L"ColorSchemeName")
-            {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
-            }
-            else if (args.PropertyName() == L"BackgroundImageAlignment")
-            {
-                // reset all of the buttons to unchecked.
-                // set the one for the value we actually have.
-                const auto alignment{ static_cast<int32_t>(_State.Profile().BackgroundImageAlignment()) };
-                for (const auto& biButton : _BIAlignmentButtons)
+                if (args.PropertyName() == L"CursorShape")
                 {
-                    if (const auto& biButtonAlignment{ biButton.Tag().try_as<int32_t>() })
+                    page->_PropertyChangedHandlers(*page, PropertyChangedEventArgs{ L"CurrentCursorShape" });
+                    page->_PropertyChangedHandlers(*page, PropertyChangedEventArgs{ L"IsVintageCursor" });
+                }
+                else if (args.PropertyName() == L"BackgroundImageStretchMode")
+                {
+                    page->_PropertyChangedHandlers(*page, PropertyChangedEventArgs{ L"CurrentBackgroundImageStretchMode" });
+                }
+                else if (args.PropertyName() == L"AntialiasingMode")
+                {
+                    page->_PropertyChangedHandlers(*page, PropertyChangedEventArgs{ L"CurrentAntiAliasingMode" });
+                }
+                else if (args.PropertyName() == L"CloseOnExit")
+                {
+                    page->_PropertyChangedHandlers(*page, PropertyChangedEventArgs{ L"CurrentCloseOnExitMode" });
+                }
+                else if (args.PropertyName() == L"BellStyle")
+                {
+                    page->_PropertyChangedHandlers(*page, PropertyChangedEventArgs{ L"CurrentBellStyle" });
+                }
+                else if (args.PropertyName() == L"ScrollState")
+                {
+                    page->_PropertyChangedHandlers(*page, PropertyChangedEventArgs{ L"CurrentScrollState" });
+                }
+                else if (args.PropertyName() == L"FontWeight")
+                {
+                    page->_PropertyChangedHandlers(*page, PropertyChangedEventArgs{ L"CurrentFontWeight" });
+                    page->_PropertyChangedHandlers(*page, PropertyChangedEventArgs{ L"IsCustomFontWeight" });
+                }
+                else if (args.PropertyName() == L"ColorSchemeName")
+                {
+                    page->_PropertyChangedHandlers(*page, PropertyChangedEventArgs{ L"CurrentColorScheme" });
+                }
+                else if (args.PropertyName() == L"BackgroundImageAlignment")
+                {
+                    // reset all of the buttons to unchecked.
+                    // set the one for the value we actually have.
+                    const auto alignment{ static_cast<int32_t>(page->_State.Profile().BackgroundImageAlignment()) };
+                    for (const auto& biButton : page->_BIAlignmentButtons)
                     {
-                        biButton.IsChecked(biButtonAlignment == alignment);
+                        if (const auto& biButtonAlignment{ biButton.Tag().try_as<int32_t>() })
+                        {
+                            biButton.IsChecked(biButtonAlignment == alignment);
+                        }
                     }
                 }
             }
@@ -300,6 +303,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // Navigate to the pivot in the provided navigation state
         ProfilesPivot().SelectedIndex(static_cast<int>(_State.LastActivePivot()));
+    }
+
+    void Profiles::OnNavigatedFrom(const NavigationEventArgs& /*e*/)
+    {
+        _ViewModelChangedRevoker.revoke();
     }
 
     ColorScheme Profiles::CurrentColorScheme()

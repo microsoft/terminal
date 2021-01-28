@@ -10,10 +10,10 @@ using namespace winrt::Windows::UI::Xaml;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    DependencyProperty SettingContainer::_HeaderTextProperty =
+    DependencyProperty SettingContainer::_HeaderProperty =
         DependencyProperty::Register(
-            L"HeaderText",
-            xaml_typename<hstring>(),
+            L"Header",
+            xaml_typename<IInspectable>(),
             xaml_typename<Editor::SettingContainer>(),
             PropertyMetadata{ nullptr });
 
@@ -64,11 +64,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // Apply click handler for the reset button.
                 // When clicked, we dispatch the bound ClearSettingValue event,
                 // resulting in inheriting the setting value from the parent.
-                button.Click([weakThis{ get_weak() }](auto&&, auto&&) {
-                    if (auto container{ weakThis.get() })
-                    {
-                        container->_ClearSettingValueHandlers(*container, nullptr);
-                    }
+                button.Click([=](auto&&, auto&&) {
+                    _ClearSettingValueHandlers(*this, nullptr);
                 });
 
                 // apply tooltip and help text (automation property)
@@ -93,10 +90,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (auto child{ GetTemplateChild(L"SettingControl") })
         {
             // apply header text as name (automation property)
-            const auto& headerText{ HeaderText() };
-            if (!headerText.empty())
+            if (const auto& header{ Header() })
             {
-                Automation::AutomationProperties::SetName(child, headerText);
+                const auto headerText{ header.try_as<hstring>() };
+                if (headerText && !headerText->empty())
+                {
+                    Automation::AutomationProperties::SetName(child, *headerText);
+                }
             }
 
             // apply help text as tooltip and help text (automation property)

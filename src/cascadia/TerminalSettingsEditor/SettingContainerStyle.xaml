@@ -18,6 +18,7 @@ the MIT License. See LICENSE in the project root for license information. -->
         <Setter Property="Height" Value="19"/>
         <Setter Property="Width" Value="19"/>
         <Setter Property="Padding" Value="0"/>
+        <Setter Property="Background" Value="Transparent"/>
     </Style>
 
     <Style x:Key="SettingContainerFontIconStyle" TargetType="FontIcon">
@@ -39,18 +40,11 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                         <!--Header space-->
                         <StackPanel Style="{StaticResource SettingContainerHeaderStyle}">
-                            <TextBlock Text="{TemplateBinding HeaderText}"/>
+                            <TextBlock Text="{TemplateBinding Header}"/>
                             <Button x:Name="ResetButton"
                                     Style="{StaticResource SettingContainerResetButtonStyle}">
-
-                                <Button.Content>
-                                    <FontIcon Glyph="&#xE845;"
-                                              Style="{StaticResource SettingContainerFontIconStyle}"/>
-                                </Button.Content>
-
-                                <Button.Background>
-                                    <SolidColorBrush Opacity="0"/>
-                                </Button.Background>
+                                <FontIcon Glyph="&#xE845;"
+                                          Style="{StaticResource SettingContainerFontIconStyle}"/>
                             </Button>
                         </StackPanel>
 

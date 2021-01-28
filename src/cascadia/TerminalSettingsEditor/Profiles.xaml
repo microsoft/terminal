@@ -81,7 +81,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <StackPanel Orientation="Horizontal">
                                 <TextBox x:Name="Commandline"
                                          Text="{x:Bind State.Profile.Commandline, Mode=TwoWay}"
-                                         AutomationProperties.Name="{Binding CommandlineContainer.HeaderText}"
+                                         AutomationProperties.Name="{Binding CommandlineContainer.Header}"
                                          AutomationProperties.HelpText="{Binding CommandlineContainer.HelpText}"
                                          Style="{StaticResource TextBoxSettingStyle}"/>
                                 <Button x:Uid="Profile_CommandlineBrowse"
@@ -101,7 +101,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     <TextBox x:Name="StartingDirectory"
                                              Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}"
                                              IsEnabled="{x:Bind State.Profile.UseCustomStartingDirectory, Mode=OneWay}"
-                                             AutomationProperties.Name="{Binding StartingDirectoryContainer.HeaderText}"
+                                             AutomationProperties.Name="{Binding StartingDirectoryContainer.Header}"
                                              AutomationProperties.HelpText="{Binding StartingDirectoryContainer.HelpText}"
                                              Style="{StaticResource TextBoxSettingStyle}"/>
                                     <Button x:Uid="Profile_StartingDirectoryBrowse"
@@ -125,7 +125,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                 <TextBox x:Name="Icon"
                                          Text="{x:Bind State.Profile.Icon, Mode=TwoWay}"
                                          FontFamily="Segoe UI, Segoe MDL2 Assets"
-                                         AutomationProperties.Name="{Binding IconContainer.HeaderText}"
+                                         AutomationProperties.Name="{Binding IconContainer.Header}"
                                          AutomationProperties.HelpText="{Binding IconContainer.HelpText}"
                                          Style="{StaticResource TextBoxSettingStyle}"/>
                                 <Button x:Uid="Profile_IconBrowse"
@@ -267,7 +267,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                               ItemsSource="{x:Bind FontWeightList, Mode=OneWay}"
                                               SelectedItem="{x:Bind CurrentFontWeight, Mode=TwoWay}"
                                               ItemTemplate="{StaticResource EnumComboBoxItemTemplate}"
-                                              AutomationProperties.Name="{Binding FontWeightContainer.HeaderText}"
+                                              AutomationProperties.Name="{Binding FontWeightContainer.Header}"
                                               AutomationProperties.HelpText="{Binding FontWeightContainer.HelpText}"
                                               Style="{StaticResource ComboBoxSettingStyle}"/>
 
@@ -319,8 +319,8 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                             <!--Cursor Height-->
                             <local:SettingContainer x:Uid="Profile_CursorHeight"
-                                                    HasSettingValue="{x:Bind State.Profile.HasCursorShape, Mode=OneWay}"
-                                                    ClearSettingValue="{x:Bind State.Profile.ClearCursorShape}"
+                                                    HasSettingValue="{x:Bind State.Profile.HasCursorHeight, Mode=OneWay}"
+                                                    ClearSettingValue="{x:Bind State.Profile.ClearCursorHeight}"
                                                     Visibility="{x:Bind IsVintageCursor, Mode=OneWay}">
                                 <muxc:NumberBox Value="{x:Bind State.Profile.CursorHeight, Mode=TwoWay}"
                                                 Style="{StaticResource NumberBoxSettingStyle}"
@@ -344,7 +344,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                         <TextBox x:Name="BackgroundImage"
                                                  Text="{x:Bind State.Profile.BackgroundImagePath, Mode=TwoWay, Converter={StaticResource DesktopWallpaperToEmptyStringConverter}}"
                                                  IsEnabled="{x:Bind State.Profile.BackgroundImagePath, Mode=OneWay, Converter={StaticResource StringIsNotDesktopConverter}}"
-                                                 AutomationProperties.Name="{Binding BackgroundImageContainer.HeaderText}"
+                                                 AutomationProperties.Name="{Binding BackgroundImageContainer.Header}"
                                                  AutomationProperties.HelpText="{Binding BackgroundImageContainer.HelpText}"
                                                  Style="{StaticResource TextBoxSettingStyle}"/>
                                         <Button x:Uid="Profile_BackgroundImageBrowse"
@@ -536,7 +536,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     <Slider x:Name="BIOpacitySlider"
                                             Grid.Column="0"
                                             Value="{x:Bind State.Profile.BackgroundImageOpacity, Converter={StaticResource PercentageConverter}, Mode=TwoWay}"
-                                            AutomationProperties.Name="{Binding BackgroundImageOpacityContainer.HeaderText}"
+                                            AutomationProperties.Name="{Binding BackgroundImageOpacityContainer.Header}"
                                             AutomationProperties.HelpText="{Binding BackgroundImageOpacityContainer.HelpText}"/>
                                     <TextBlock Grid.Column="1"
                                                Text="{Binding ElementName=BIOpacitySlider, Path=Value, Mode=OneWay}"
@@ -573,7 +573,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                         <Slider x:Name="AcrylicOpacitySlider"
                                                 Grid.Column="0"
                                                 Value="{x:Bind State.Profile.AcrylicOpacity, Converter={StaticResource PercentageConverter}, Mode=TwoWay}"
-                                                AutomationProperties.Name="{Binding AcrylicOpacityContainer.HeaderText}"
+                                                AutomationProperties.Name="{Binding AcrylicOpacityContainer.Header}"
                                                 AutomationProperties.HelpText="{Binding AcrylicOpacityContainer.HelpText}"/>
                                         <TextBlock Grid.Column="1"
                                                    Text="{Binding ElementName=AcrylicOpacitySlider, Path=Value, Mode=OneWay}"
