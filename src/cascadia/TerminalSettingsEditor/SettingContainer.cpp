@@ -37,9 +37,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto& newVal{ unbox_value<bool>(args.NewValue()) };
 
         // update visibility for reset button
-        if (auto resetBtnChild{ obj.GetTemplateChild(L"ResetButton") })
+        if (auto resetButton{ obj.GetTemplateChild(L"ResetButton") })
         {
-            if (auto elem{ resetBtnChild.try_as<UIElement>() })
+            if (auto elem{ resetButton.try_as<UIElement>() })
             {
                 elem.Visibility(newVal ? Visibility::Visible : Visibility::Collapsed);
             }
