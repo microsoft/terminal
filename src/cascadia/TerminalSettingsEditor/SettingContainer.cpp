@@ -59,12 +59,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (auto child{ GetTemplateChild(L"ResetButton") })
         {
-            if (auto btn{ child.try_as<Controls::Button>() })
+            if (auto button{ child.try_as<Controls::Button>() })
             {
                 // Apply click handler for the reset button.
                 // When clicked, we dispatch the bound ClearSettingValue event,
                 // resulting in inheriting the setting value from the parent.
-                btn.Click([weakThis{ get_weak() }](auto&&, auto&&) {
+                button.Click([weakThis{ get_weak() }](auto&&, auto&&) {
                     if (auto container{ weakThis.get() })
                     {
                         container->_ClearSettingValueHandlers(*container, nullptr);
@@ -77,7 +77,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 Automation::AutomationProperties::SetName(child, helpText);
 
                 // initialize visibility for reset button
-                btn.Visibility(HasSettingValue() ? Visibility::Visible : Visibility::Collapsed);
+                button.Visibility(HasSettingValue() ? Visibility::Visible : Visibility::Collapsed);
             }
         }
 
