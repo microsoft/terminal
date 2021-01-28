@@ -890,14 +890,19 @@ winrt::fire_and_forget IslandWindow::SummonWindow()
     // SetActiveWindow(_window.get());
     // SetFocus(_window.get());
 
+    // This (even with a co_await didn't work, and it doesn't restore a minimized window)
+    // SetWindowPos(_window.get(),
+    //              HWND_TOP,
+    //              0,
+    //              0,
+    //              0,
+    //              0,
+    //              SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+
     co_await winrt::resume_foreground(_rootGrid.Dispatcher());
-    SetWindowPos(_window.get(),
-                 HWND_TOP,
-                 0,
-                 0,
-                 0,
-                 0,
-                 SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+    ShowWindow(_window.get(), SW_RESTORE);
+    SetActiveWindow(_window.get());
+    SetFocus(_window.get());
     SetForegroundWindow(_window.get());
 }
 
