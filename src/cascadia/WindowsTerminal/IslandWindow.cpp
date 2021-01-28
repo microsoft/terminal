@@ -874,10 +874,5 @@ void IslandWindow::SummonWindow()
     SendMessage(_window.get(), WM_SYSCOMMAND, SC_HOTKEY, (LPARAM)(_window.get()));
 }
 
-winrt::Windows::UI::Core::CoreDispatcher IslandWindow::Dispatcher()
-{
-    return _rootGrid.Dispatcher();
-}
-
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
 DEFINE_EVENT(IslandWindow, WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);

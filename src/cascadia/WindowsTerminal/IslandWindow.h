@@ -41,7 +41,6 @@ public:
     void SetGlobalHotkey(const winrt::Microsoft::Terminal::TerminalControl::KeyChord& hotkey);
 
     void SummonWindow();
-    winrt::Windows::UI::Core::CoreDispatcher Dispatcher();
 
 #pragma endregion
 

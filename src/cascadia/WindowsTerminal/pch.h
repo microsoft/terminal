@@ -56,6 +56,7 @@ Abstract:
 #include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
 
 // Additional headers for various xaml features. We need:
+//  * Core for CoreDispatcher
 //  * Controls for grid
 //  * Media for ScaleTransform
 #include <winrt/Windows.UI.Core.h>

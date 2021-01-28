@@ -577,8 +577,9 @@ winrt::fire_and_forget AppHost::_WindowActivated()
 winrt::fire_and_forget AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
-    // co_await winrt::resume_foreground(_window->Dispatcher());
-    co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher(), winrt::Windows::UI::Core::CoreDispatcherPriority::Normal);
+    // The hotkey MUST be registered on the main thread. It will fail otherwise!
+    co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher(),
+                                      winrt::Windows::UI::Core::CoreDispatcherPriority::Normal);
     auto hotkey{ _logic.GlobalHotkey() };
     _window->SetGlobalHotkey(hotkey);
 }
