@@ -550,8 +550,10 @@ void AppHost::_FindTargetWindow(const winrt::Windows::Foundation::IInspectable& 
     args.ResultTargetWindow(targetWindow);
 }
 
-void AppHost::_WindowActivated()
+winrt::fire_and_forget AppHost::_WindowActivated()
 {
+    co_await winrt::resume_background();
+
     if (auto peasant{ _windowManager.CurrentWindow() })
     {
         // TODO: projects/5 - in the future, we'll want to actually get the
