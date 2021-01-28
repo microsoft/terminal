@@ -2056,7 +2056,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::wstring::size_type pos = 0;
         std::wstring::size_type begin = 0;
 
-         auto bracket = [](const std::wstring& origin, const bool enabled) {
+        auto bracket = [](const std::wstring& origin, const bool enabled) {
             std::wstring bracketed{ origin };
             if (enabled)
             {
