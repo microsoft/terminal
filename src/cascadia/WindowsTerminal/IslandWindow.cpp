@@ -373,7 +373,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     case WM_ACTIVATE:
     {
         // wparam = 0 indicates the window was deactivated
-        if (wparam != 0)
+        if (LOWORD(wparam) != 0)
         {
             _WindowActivatedHandlers();
         }
