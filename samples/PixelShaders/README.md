@@ -49,7 +49,7 @@ float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
 Save this file as `C:\temp\invert.hlsl`, then update a profile with the setting:
 
 ```
-"experimental.pixelShaderEffect": "C:\\temp\\invert.hlsl"
+"experimental.pixelShaderPath": "C:\\temp\\invert.hlsl"
 ```
 
 Once the settings file is saved, open a terminal with the changed profile. It should now invert the colors of the screen!
