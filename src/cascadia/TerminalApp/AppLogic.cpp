@@ -1276,6 +1276,11 @@ namespace winrt::TerminalApp::implementation
         return _root ? _root->AlwaysOnTop() : false;
     }
 
+    TerminalControl::KeyChord AppLogic::GlobalHotkey()
+    {
+        return _settings.GlobalSettings().GlobalHotkey();
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.

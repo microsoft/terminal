@@ -51,4 +51,6 @@ private:
 
     void _FindTargetWindow(const winrt::Windows::Foundation::IInspectable& sender,
                            const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
+    void _BecomeMonarch(const winrt::Windows::Foundation::IInspectable& sender,
+                        const winrt::Windows::Foundation::IInspectable& args);
 };

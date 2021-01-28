@@ -199,6 +199,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // window, and when the current monarch dies.
 
         _monarch.FindTargetWindowRequested({ this, &WindowManager::_raiseFindTargetWindowRequested });
+
+        _BecameMonarchHandlers(*this, nullptr);
     }
 
     bool WindowManager::_areWeTheKing()
@@ -422,5 +424,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                                         const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args)
     {
         _FindTargetWindowRequestedHandlers(sender, args);
+    }
+
+    bool WindowManager::IsMonarch()
+    {
+        return _isKing;
     }
 }

@@ -15,6 +15,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace ::Microsoft::Console::Types;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
@@ -841,6 +842,22 @@ void IslandWindow::_ApplyWindowSize()
                                          newSize.right - newSize.left,
                                          newSize.bottom - newSize.top,
                                          SWP_FRAMECHANGED | SWP_NOACTIVATE));
+}
+
+void IslandWindow::SetGlobalHotkey(const winrt::Microsoft::Terminal::TerminalControl::KeyChord& hotkey)
+{
+    if (hotkey)
+    {
+        auto modifiers = hotkey.Modifiers();
+        WPARAM wParam = hotkey.Vkey() |
+                      (WI_IsFlagSet(modifiers, KeyModifiers::Alt) ? HOTKEYF_ALT << 8 : 0) |
+                      (WI_IsFlagSet(modifiers, KeyModifiers::Ctrl) ? HOTKEYF_CONTROL << 8 : 0) |
+                      (WI_IsFlagSet(modifiers, KeyModifiers::Shift) ? HOTKEYF_SHIFT << 8 : 0);
+        auto result = SendMessage(_window.get(), WM_SETHOTKEY, wParam, 0);
+        result;
+        auto a = result + 1;
+        a;
+    }
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

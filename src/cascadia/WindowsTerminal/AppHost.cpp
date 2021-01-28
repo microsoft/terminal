@@ -73,6 +73,12 @@ AppHost::AppHost() noexcept :
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
+
+    _windowManager.BecameMonarch({ this, &AppHost::_BecomeMonarch });
+    if (_windowManager.IsMonarch())
+    {
+        _BecomeMonarch(nullptr, nullptr);
+    }
 }
 
 AppHost::~AppHost()
@@ -562,4 +568,11 @@ void AppHost::_WindowActivated()
                                             winrt::clock().now() };
         peasant.ActivateWindow(args);
     }
+}
+
+void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                             const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    auto hotkey{ _logic.GlobalHotkey() };
+    _window->SetGlobalHotkey(hotkey);
 }

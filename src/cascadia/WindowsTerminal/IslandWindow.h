@@ -38,6 +38,8 @@ public:
     void FlashTaskbar();
     void SetTaskbarProgress(const size_t state, const size_t progress);
 
+    void SetGlobalHotkey(const winrt::Microsoft::Terminal::TerminalControl::KeyChord& hotkey);
+
 #pragma endregion
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

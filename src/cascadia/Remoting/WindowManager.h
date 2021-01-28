@@ -19,8 +19,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         bool ShouldCreateWindow();
 
         winrt::Microsoft::Terminal::Remoting::Peasant CurrentWindow();
+        bool IsMonarch();
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
+        TYPED_EVENT(BecameMonarch, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 
     private:
         bool _shouldCreateWindow{ false };
