@@ -40,7 +40,7 @@ public:
 
     void SetGlobalHotkey(const winrt::Microsoft::Terminal::TerminalControl::KeyChord& hotkey);
 
-    void SummonWindow();
+    winrt::fire_and_forget SummonWindow();
 
 #pragma endregion
 

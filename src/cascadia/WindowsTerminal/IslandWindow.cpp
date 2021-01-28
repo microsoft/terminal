@@ -373,8 +373,9 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         {
             // send focus to the child window
             SetFocus(_interopWindowHandle);
-            return 0; // eat the message
+            // return 0; // eat the message
         }
+        break;
     }
     case WM_ACTIVATE:
     {
@@ -867,11 +868,37 @@ void IslandWindow::SetGlobalHotkey(const winrt::Microsoft::Terminal::TerminalCon
     }
 }
 
-void IslandWindow::SummonWindow()
+winrt::fire_and_forget IslandWindow::SummonWindow()
 {
     // A SC_HOTKEY WM_SYSCOMMAND that's _not_ processed my a wndproc will summon
     // the window exactly the way we want. So send that yo ourselves.
-    SendMessage(_window.get(), WM_SYSCOMMAND, SC_HOTKEY, (LPARAM)(_window.get()));
+
+    // Does the mysterious "cursor starts blinking but doesn't accept keyboard focus"
+    // SendMessage(_window.get(), WM_SYSCOMMAND, SC_HOTKEY, (LPARAM)(_window.get()));
+
+    // Does the mysterious "cursor starts blinking but doesn't accept keyboard focus"
+    // ShowWindow(_window.get(), SW_RESTORE);
+    // SetActiveWindow(_window.get());
+    // SetFocus(_window.get());
+
+    // Does nothing at all
+    // ShowWindow(_window.get(), SW_SHOWNORMAL);
+
+    // The co_await didn't help here
+    // co_await winrt::resume_foreground(_rootGrid.Dispatcher());
+    // ShowWindow(_window.get(), SW_RESTORE);
+    // SetActiveWindow(_window.get());
+    // SetFocus(_window.get());
+
+    co_await winrt::resume_foreground(_rootGrid.Dispatcher());
+    SetWindowPos(_window.get(),
+                 HWND_TOP,
+                 0,
+                 0,
+                 0,
+                 0,
+                 SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+    SetForegroundWindow(_window.get());
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
