@@ -910,12 +910,18 @@ winrt::fire_and_forget IslandWindow::SummonWindow()
     // > window (hwnd) are related by attaching the threads (using
     // > AttachThreadInput API) and using an alternative API: BringWindowToTop.
     co_await winrt::resume_foreground(_rootGrid.Dispatcher());
-    DWORD windowThreadProcessId = GetWindowThreadProcessId(GetForegroundWindow(), LPDWORD(0));
-    DWORD currentThreadId = GetCurrentThreadId();
-    DWORD CONST_SW_SHOW = 5;
+    // If the window is minimized, then restore it. We don't want to do this
+    // always though, because SW_RESTORE'ing a maximized window will
+    // restore-down it.
+    if (IsIconic(_window.get()))
+    {
+        ShowWindow(_window.get(), SW_RESTORE);
+    }
+    const DWORD windowThreadProcessId = GetWindowThreadProcessId(GetForegroundWindow(), LPDWORD(0));
+    const DWORD currentThreadId = GetCurrentThreadId();
     AttachThreadInput(windowThreadProcessId, currentThreadId, true);
     BringWindowToTop(_window.get());
-    ShowWindow(_window.get(), CONST_SW_SHOW);
+    ShowWindow(_window.get(), SW_SHOW);
     AttachThreadInput(windowThreadProcessId, currentThreadId, false);
 }
 
