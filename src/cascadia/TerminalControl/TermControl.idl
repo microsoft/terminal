@@ -9,7 +9,6 @@ namespace Microsoft.Terminal.TerminalControl
     delegate void TitleChangedEventArgs(String newTitle);
     delegate void FontSizeChangedEventArgs(Int32 width, Int32 height, Boolean isInitialChange);
     delegate void ScrollPositionChangedEventArgs(Int32 viewTop, Int32 viewHeight, Int32 bufferLength);
-    delegate void ReadOnlyChangedEventArgs(Boolean isReadOnly);
 
     // C++/winrt makes it difficult to share this idl between two projects,
     // Instead, we just pin the uuid and include it in both TermControl and App
@@ -120,6 +119,6 @@ namespace Microsoft.Terminal.TerminalControl
 
         Boolean ReadOnly { get; };
         void ToggleReadOnly();
-        event ReadOnlyChangedEventArgs ReadOnlyChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
     }
 }

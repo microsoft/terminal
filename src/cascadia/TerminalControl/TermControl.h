@@ -172,7 +172,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
         DECLARE_EVENT(FontSizeChanged,          _fontSizeChangedHandlers,           TerminalControl::FontSizeChangedEventArgs);
         DECLARE_EVENT(ScrollPositionChanged,    _scrollPositionChangedHandlers,     TerminalControl::ScrollPositionChangedEventArgs);
-        DECLARE_EVENT(ReadOnlyChanged,          _readOnlyChangedHandlers,           TerminalControl::ReadOnlyChangedEventArgs);
 
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard,  _clipboardPasteHandlers,    TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CopyToClipboard,     _clipboardCopyHandlers,     TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
@@ -186,6 +185,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TYPED_EVENT(TabColorChanged, IInspectable, IInspectable);
         TYPED_EVENT(HidePointerCursor, IInspectable, IInspectable);
         TYPED_EVENT(RestorePointerCursor, IInspectable, IInspectable);
+        TYPED_EVENT(ReadOnlyChanged, IInspectable, IInspectable);
         // clang-format on
 
     private:

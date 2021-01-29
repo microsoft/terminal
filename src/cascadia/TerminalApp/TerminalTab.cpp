@@ -589,7 +589,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        control.ReadOnlyChanged([weakThis](auto&&) {
+        control.ReadOnlyChanged([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
                 tab->_RecalculateAndApplyReadOnly();

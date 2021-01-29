@@ -889,9 +889,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Whether the key was handled.
     bool TermControl::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
     {
+        if (_isReadOnly)
+        {
+            return false;
+        }
+
         const auto modifiers{ _GetPressedModifierKeys() };
         auto handled = false;
-        if (vkey == VK_MENU && !down && !_isReadOnly)
+
+        if (vkey == VK_MENU && !down)
         {
             // Manually generate an Alt KeyUp event into the key bindings or terminal.
             //   This is required as part of GH#6421.
@@ -3320,7 +3326,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::ToggleReadOnly()
     {
         _isReadOnly = !_isReadOnly;
-        _readOnlyChangedHandlers(_isReadOnly);
+        _ReadOnlyChangedHandlers(*this, winrt::box_value(_isReadOnly));
     }
 
     winrt::fire_and_forget TermControl::_RaiseReadOnlyWarning()
@@ -3341,7 +3347,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     DEFINE_EVENT(TermControl, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
     DEFINE_EVENT(TermControl, FontSizeChanged, _fontSizeChangedHandlers, TerminalControl::FontSizeChangedEventArgs);
     DEFINE_EVENT(TermControl, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
-    DEFINE_EVENT(TermControl, ReadOnlyChanged, _readOnlyChangedHandlers, TerminalControl::ReadOnlyChangedEventArgs);
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, CopyToClipboard, _clipboardCopyHandlers, TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
