@@ -115,7 +115,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         try
         {
-            auto peasantSearch = _peasants.find(peasantID);
+            const auto peasantSearch = _peasants.find(peasantID);
             auto maybeThePeasant = peasantSearch == _peasants.end() ? nullptr : peasantSearch->second;
             // Ask the peasant for their PID. This will validate that they're
             // actually still alive.

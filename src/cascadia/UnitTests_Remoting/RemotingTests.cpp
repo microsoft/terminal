@@ -36,7 +36,7 @@ using namespace winrt::Microsoft::Terminal;
 namespace RemotingUnitTests
 {
     // This is a silly helper struct.
-    // It will always throw an hresult_error on any of it's methods.
+    // It will always throw an hresult_error on any of its methods.
     //
     // In the tests, it's hard to emulate a peasant process being totally dead
     // once the Monarch has captured a reference to it. Since everything's
@@ -112,10 +112,10 @@ namespace RemotingUnitTests
     void RemotingTests::_findTargetWindowHelper(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                 const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args)
     {
-        auto arguments = args.Args().Args();
+        const auto arguments = args.Args().Args();
         if (arguments.size() > 0)
         {
-            auto index = std::stoi(arguments.at(0).c_str());
+            const auto index = std::stoi(arguments.at(0).c_str());
             args.ResultTargetWindow(index);
         }
     }
@@ -424,6 +424,7 @@ namespace RemotingUnitTests
             VERIFY_ARE_EQUAL(false, (bool)result.Id());
         }
     }
+
     void RemotingTests::ProposeCommandlineCurrentWindow()
     {
         Log::Comment(L"Test proposing a commandline for the current window (ID=0)");
@@ -504,6 +505,7 @@ namespace RemotingUnitTests
             VERIFY_ARE_EQUAL(false, (bool)result.Id());
         }
     }
+
     void RemotingTests::ProposeCommandlineNonExistentWindow()
     {
         Log::Comment(L"Test proposing a commandline for an ID that doesn't have a current peasant");
@@ -540,6 +542,7 @@ namespace RemotingUnitTests
             VERIFY_ARE_EQUAL(10u, result.Id().Value());
         }
     }
+
     void RemotingTests::ProposeCommandlineDeadWindow()
     {
         Log::Comment(L"Test proposing a commandline for a peasant that previously died");

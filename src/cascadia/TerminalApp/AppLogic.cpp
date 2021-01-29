@@ -1184,7 +1184,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Parse the given commandline args in an attempt to find the specified
     //   window. The rest of the args are ignored for now (they'll be handled
-    //   whenever the commandline fets to the window it was intended for).
+    //   whenever the commandline gets to the window it was intended for).
     // - Note that this function will only ever be called by the monarch. A
     //   return value of `0` in this case does not mean "run the commandline in
     //   _this_ process", rather it means "run the commandline in the current
@@ -1198,7 +1198,7 @@ namespace winrt::TerminalApp::implementation
     int32_t AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
     {
         ::TerminalApp::AppCommandlineArgs appArgs;
-        auto result = appArgs.ParseArgs(args);
+        const auto result = appArgs.ParseArgs(args);
         if (result == 0)
         {
             return appArgs.GetTargetWindow();
