@@ -1195,12 +1195,11 @@ namespace winrt::TerminalApp::implementation
     // - tab: the tab to remove
     winrt::Windows::Foundation::IAsyncAction TerminalPage::_RemoveTab(winrt::TerminalApp::TabBase tab)
     {
-        // Removing the tab from the collection should destroy its control and disconnect its connection,
-        // but it doesn't always do so. The UI tree may still be holding the control and preventing its destruction.
         if (tab.ReadOnly())
         {
             ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
 
+            // The primary action is canceling the removal
             if (warningResult == ContentDialogResult::Primary)
             {
                 co_return;
@@ -1221,6 +1220,8 @@ namespace winrt::TerminalApp::implementation
 
         const auto focusedTabIndex{ _GetFocusedTabIndex() };
 
+        // Removing the tab from the collection should destroy its control and disconnect its connection,
+        // but it doesn't always do so. The UI tree may still be holding the control and preventing its destruction.
         tab.Shutdown();
 
         uint32_t mruIndex{};
@@ -1585,22 +1586,31 @@ namespace winrt::TerminalApp::implementation
         {
             _UnZoomIfNeeded();
 
-            if (const auto control{ terminalTab->GetActiveTerminalControl() })
+            auto pane = terminalTab->GetActivePane();
+            if (const auto pane{ terminalTab->GetActivePane() })
             {
-                if (control.ReadOnly())
+                if (const auto control{ pane->GetTerminalControl() })
                 {
-                    ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
-
-                    if (warningResult == ContentDialogResult::Primary)
+                    if (control.ReadOnly())
                     {
-                        co_return;
+                        ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
+
+                        // The primary action is canceling the action
+                        if (warningResult == ContentDialogResult::Primary)
+                        {
+                            co_return;
+                        }
+
+                        // Clean read-only mode to prevent additional prompt if closing the pane triggers closing of a hosting tab
+                        if (control.ReadOnly())
+                        {
+                            control.ToggleReadOnly();
+                        }
                     }
+
+                    pane->Close();
                 }
             }
-
-            // There is a theoretical race here: if somehow the active pane changes when
-            // the dialog box is open we might close it instead of the original one
-            terminalTab->ClosePane();
         }
         else if (auto index{ _GetFocusedTabIndex() })
         {

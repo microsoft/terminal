@@ -120,6 +120,8 @@ private:
 
     Borders _borders{ Borders::None };
 
+    std::atomic<bool> _isClosing{ false };
+
     bool _zoomed{ false };
 
     bool _IsLeaf() const noexcept;

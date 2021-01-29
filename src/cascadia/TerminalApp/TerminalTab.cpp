@@ -1135,6 +1135,11 @@ namespace winrt::TerminalApp::implementation
         TabViewItem().IsClosable(!ReadOnly());
     }
 
+    std::shared_ptr<Pane> TerminalTab::GetActivePane() const
+    {
+        return _activePane;
+    }
+
     // Method Description:
     // - Creates a text for the title run in the tool tip by returning tab title
     // or <profile name>: <tab title> in the case the profile name differs from the title
