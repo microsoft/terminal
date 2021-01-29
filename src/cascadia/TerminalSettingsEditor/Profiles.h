@@ -144,7 +144,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void Pivot_SelectionChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
 
         // CursorShape visibility logic
-        void CursorShape_Changed(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         bool IsVintageCursor() const;
 
         // manually bind FontWeight
@@ -165,6 +164,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::TerminalControl::ScrollbarState, State().Profile, ScrollState);
 
     private:
+        void _UpdateBIAlignmentControl(const int32_t val);
+
         Windows::Foundation::Collections::IMap<uint16_t, Microsoft::Terminal::Settings::Editor::EnumEntry> _FontWeightMap;
         Editor::EnumEntry _CustomFontWeight{ nullptr };
         std::array<Windows::UI::Xaml::Controls::Primitives::ToggleButton, 9> _BIAlignmentButtons;

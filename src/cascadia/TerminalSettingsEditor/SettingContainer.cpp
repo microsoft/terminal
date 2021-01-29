@@ -87,24 +87,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        if (auto child{ GetTemplateChild(L"SettingControl") })
+        if (auto content{ Content() })
         {
-            // apply header text as name (automation property)
-            if (const auto& header{ Header() })
+            if (auto obj{ content.try_as<DependencyObject>() })
             {
-                const auto headerText{ header.try_as<hstring>() };
-                if (headerText && !headerText->empty())
+                // apply header text as name (automation property)
+                if (const auto& header{ Header() })
                 {
-                    Automation::AutomationProperties::SetName(child, *headerText);
+                    const auto headerText{ header.try_as<hstring>() };
+                    if (headerText && !headerText->empty())
+                    {
+                        Automation::AutomationProperties::SetName(obj, *headerText);
+                    }
                 }
-            }
 
-            // apply help text as tooltip and help text (automation property)
-            const auto& helpText{ HelpText() };
-            if (!helpText.empty())
-            {
-                Controls::ToolTipService::SetToolTip(child, box_value(helpText));
-                Automation::AutomationProperties::SetHelpText(child, helpText);
+                // apply help text as tooltip and help text (automation property)
+                const auto& helpText{ HelpText() };
+                if (!helpText.empty())
+                {
+                    Controls::ToolTipService::SetToolTip(obj, box_value(helpText));
+                    Automation::AutomationProperties::SetHelpText(obj, helpText);
+                }
             }
         }
     }

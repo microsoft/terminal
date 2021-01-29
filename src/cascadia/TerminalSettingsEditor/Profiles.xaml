@@ -313,8 +313,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                     Margin="0">
                                 <muxc:RadioButtons ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
                                                    SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
-                                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                                   SelectionChanged="CursorShape_Changed"/>
+                                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
                             </local:SettingContainer>
 
                             <!--Cursor Height-->

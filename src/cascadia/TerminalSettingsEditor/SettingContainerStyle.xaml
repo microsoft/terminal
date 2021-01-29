@@ -49,8 +49,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </StackPanel>
 
                         <!--This is where the actual setting control will go-->
-                        <ContentPresenter x:Name="SettingControl"
-                                          Content="{TemplateBinding Content}"/>
+                        <ContentPresenter Content="{TemplateBinding Content}"/>
 
                         <!--The text displayed when a setting is being overridden-->
                         <TextBlock x:Name="OverrideMessage"
