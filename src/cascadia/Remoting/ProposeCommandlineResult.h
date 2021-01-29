@@ -1,5 +1,20 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
+
+Class Name:
+- ProposeCommandlineResult.h
+
+Abstract:
+- This is a helper class for encapsulating the result of a
+  Monarch::ProposeCommandline call. The monarch will be telling the new process
+  whether it should create a new window or not. If the value of
+  ShouldCreateWindow is false, that implies that some other window process was
+  given the commandline for handling, and the caller should just exit.
+- If ShouldCreateWindow is true, the Id property may or may not contain an ID
+  that the new window should use as it's ID.
+
+--*/
 
 #pragma once
 

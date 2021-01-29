@@ -1,6 +1,16 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
 
+Class Name:
+- WindowActivatedArgs.h
+
+Abstract:
+- This is a helper class for encapsulating all the information about when and
+  where a window was activated. This will be used by the Monarch to determine
+  who the most recent peasant is.
+
+--*/
 #pragma once
 
 #include "WindowActivatedArgs.g.h"
