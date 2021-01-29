@@ -185,14 +185,9 @@ void AppCommandlineArgs::_buildParser()
     maximized->excludes(fullscreen);
     focus->excludes(fullscreen);
 
-    auto* windowOpt = _app.add_option("-w,--window",
-                                      _windowTarget,
-                                      RS_A(L"CmdWindowTargetArgDesc"));
-    windowOpt;
-
-    // maximized->excludes(windowOpt);
-    // focus->excludes(windowOpt);
-    // fullscreen->excludes(windowOpt);
+    _app.add_option("-w,--window",
+                    _windowTarget,
+                    RS_A(L"CmdWindowTargetArgDesc"));
 
     // Subcommands
     _buildNewTabParser();

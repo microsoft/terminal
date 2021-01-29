@@ -1,5 +1,23 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
+
+Class Name:
+- ProposeCommandlineResult.h
+
+Abstract:
+- The Window Manager takes care of coordinating the monarch and peasant for this
+  process.
+- It's responsible for registering as a potential future monarch. It's also
+  responsible for creating the Peasant for this process when it's determined
+  this process should become a window process.
+- If we aren't the monarch, it's responsible for watching the current monarch
+  process, and finding the new one if the current monarch dies.
+- When the monarch needs to ask the TerminalApp about how to parse a
+  commandline, it'll ask by raising an event that we'll bubble up to the
+  AppHost.
+
+--*/
 
 #pragma once
 

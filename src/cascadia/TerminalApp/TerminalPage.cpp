@@ -352,6 +352,9 @@ namespace winrt::TerminalApp::implementation
     //   other side of the co_await.
     // - initial: if true, we're parsing these args during startup, and we
     //   should fire an Initialized event.
+    // - cwd: If not empty, we should try switching to this provided directory
+    //   while processing these actions. This will allow something like `wt -w 0
+    //   nt -d .` from inside another directory to work as expected.
     // Return Value:
     // - <none>
     winrt::fire_and_forget TerminalPage::ProcessStartupActions(Windows::Foundation::Collections::IVector<ActionAndArgs> actions,

@@ -28,5 +28,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     public:
         GETSET_PROPERTY(Windows::Foundation::IReference<uint64_t>, Id);
         GETSET_PROPERTY(bool, ShouldCreateWindow, true);
+
+    public:
+        ProposeCommandlineResult(bool shouldCreateWindow) :
+            _ShouldCreateWindow{ shouldCreateWindow } {};
     };
 }
+BASIC_FACTORY(ProposeCommandlineResult);

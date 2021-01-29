@@ -87,7 +87,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         {
             // Try/catch this, because the other side of this event is handled
             // by the monarch. The monarch might have died. If they have, this
-            // will throw and exception. Just eat it, the election thread will
+            // will throw an exception. Just eat it, the election thread will
             // handle hooking up the new one.
             _WindowActivatedHandlers(*this, args);
             successfullyNotified = true;
