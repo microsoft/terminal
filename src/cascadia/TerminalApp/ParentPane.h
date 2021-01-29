@@ -16,6 +16,7 @@ namespace winrt::TerminalApp::implementation
         ParentPane(winrt::TerminalApp::LeafPane firstChild, winrt::TerminalApp::LeafPane secondChild, winrt::Microsoft::Terminal::Settings::Model::SplitState splitState, float splitPosition, winrt::Windows::Foundation::Size currentSize);
         winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
         void FocusPane(uint32_t id);
+        void FocusFirstChild();
         bool HasFocusedChild();
 
         void Shutdown();
@@ -40,7 +41,6 @@ namespace winrt::TerminalApp::implementation
 
         IPane FindFirstLeaf();
 
-        void PropagateToLeaves(std::function<void(LeafPane)> action);
         void PropagateToLeavesOnEdge(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& edge, std::function<void(LeafPane)> action);
 
         DECLARE_EVENT(ChildClosed, _ChildClosedHandlers, winrt::delegate<LeafPane>);

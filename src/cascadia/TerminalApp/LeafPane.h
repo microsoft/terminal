@@ -35,6 +35,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::TerminalControl::TermControl GetTerminalControl();
         GUID GetProfile();
         void FocusPane(uint32_t id);
+        void FocusFirstChild();
         bool HasFocusedChild();
 
         bool WasLastFocused() const noexcept;

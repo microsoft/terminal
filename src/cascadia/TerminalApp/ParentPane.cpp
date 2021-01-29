@@ -68,6 +68,11 @@ namespace winrt::TerminalApp::implementation
         _secondChild.FocusPane(id);
     }
 
+    void ParentPane::FocusFirstChild()
+    {
+        _firstChild.FocusFirstChild();
+    }
+
     bool ParentPane::HasFocusedChild()
     {
         return _firstChild.HasFocusedChild() || _secondChild.HasFocusedChild();
@@ -264,26 +269,44 @@ namespace winrt::TerminalApp::implementation
         return _firstChild.FindFirstLeaf();
     }
 
-    void ParentPane::PropagateToLeaves(std::function<void(LeafPane)> action)
-    {
-        //_firstChild.PropagateToLeaves(action);
-        //_secondChild.PropagateToLeaves(action);
-    }
-
     void ParentPane::PropagateToLeavesOnEdge(const ResizeDirection& edge, std::function<void(LeafPane)> action)
     {
         if (DirectionMatchesSplit(edge, _splitState))
         {
-            const auto adjacentChild = (_splitState == SplitState::Vertical && edge == ResizeDirection::Left ||
-                                        _splitState == SplitState::Horizontal && edge == ResizeDirection::Up) ?
+            const auto& adjacentChild = (_splitState == SplitState::Vertical && edge == ResizeDirection::Left ||
+                                         _splitState == SplitState::Horizontal && edge == ResizeDirection::Up) ?
                                            _firstChild :
                                            _secondChild;
-            //adjacentChild.PropagateToLeavesOnEdge(edge, action);
+            if (auto adjChildAsLeaf = adjacentChild.try_as<LeafPane>())
+            {
+                action(adjChildAsLeaf);
+            }
+            else
+            {
+                auto adjChildAsParentImpl = winrt::get_self<implementation::ParentPane>(adjacentChild);
+                adjChildAsParentImpl->PropagateToLeavesOnEdge(edge, action);
+            }
         }
         else
         {
-            //_firstChild.PropagateToLeavesOnEdge(edge, action);
-            //_secondChild.PropagateToLeavesOnEdge(edge, action);
+            if (auto firstChildAsLeaf = _firstChild.try_as<LeafPane>())
+            {
+                action(firstChildAsLeaf);
+            }
+            else
+            {
+                auto firstChildAsParentImpl = winrt::get_self<implementation::ParentPane>(_firstChild);
+                firstChildAsParentImpl->PropagateToLeavesOnEdge(edge, action);
+            }
+            if (auto secondChildAsLeaf = _secondChild.try_as<LeafPane>())
+            {
+                action(secondChildAsLeaf);
+            }
+            else
+            {
+                auto secondChildAsParentImpl = winrt::get_self<implementation::ParentPane>(_secondChild);
+                secondChildAsParentImpl->PropagateToLeavesOnEdge(edge, action);
+            }
         }
     }
 
@@ -363,19 +386,21 @@ namespace winrt::TerminalApp::implementation
         const bool focusSecond = (direction == FocusDirection::Right) || (direction == FocusDirection::Down);
 
         const auto newlyFocusedChild = focusSecond ? _secondChild : _firstChild;
-        return false;
-        // TODO: Implement find first leaf
+
         // If the child we want to move focus to is _already_ focused, return false,
         // to try and let our parent figure it out.
-        //if (newlyFocusedChild.GetActivePane())
-        //{
-        //    return false;
-        //}
+        if (newlyFocusedChild.HasFocusedChild())
+        {
+            return false;
+        }
 
-        // Transfer focus to our child, and update the focus of our tree.
-        //newlyFocusedChild->_FocusFirstChild();
+        // Transfer focus to our child.
+        newlyFocusedChild.FocusFirstChild();
 
-        //return true;
+        //UpdateVisuals();
+        // TODO: replacement for update visuals here?
+
+        return true;
     }
 
     void ParentPane::_CloseChild(const bool closeFirst)

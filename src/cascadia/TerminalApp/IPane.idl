@@ -9,6 +9,7 @@ namespace TerminalApp
     interface IPane
     {
         void FocusPane(UInt32 idNum);
+        void FocusFirstChild();
         Int32 GetLeafPaneCount();
         IPane GetActivePane();
         IPane FindFirstLeaf();
