@@ -17,6 +17,7 @@ Author(s):
 #include "TerminalSettings.g.h"
 #include "../TerminalSettingsModel/IInheritable.h"
 #include "../inc/cppwinrt_utils.h"
+#include "../../types/colorTable.cpp"
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
 
@@ -46,8 +47,9 @@ namespace winrt::TerminalApp::implementation
 
         // GetColorTableEntry needs to be implemented manually, to get a
         // particular value from the array.
-        uint32_t GetColorTableEntry(int32_t index) const noexcept;
-        GETSET_ARRAY_SETTING(uint32_t, COLOR_TABLE_SIZE, ColorTable);
+        uint32_t GetColorTableEntry(int32_t index) noexcept;
+        void ColorTable(std::array<uint32_t, 16> colors);
+        std::array<uint32_t, 16> ColorTable();
 
         GETSET_SETTING(uint32_t, DefaultForeground, DEFAULT_FOREGROUND_WITH_ALPHA);
         GETSET_SETTING(uint32_t, DefaultBackground, DEFAULT_BACKGROUND_WITH_ALPHA);
@@ -120,6 +122,8 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(hstring, PixelShaderPath);
 
     private:
+        std::optional<std::array<uint32_t, 16>> _ColorTable;
+        gsl::span<uint32_t> _getColorTableImpl();
         void _ApplyProfileSettings(const Microsoft::Terminal::Settings::Model::Profile& profile, const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes);
         void _ApplyGlobalSettings(const Microsoft::Terminal::Settings::Model::GlobalAppSettings& globalSettings) noexcept;
 
