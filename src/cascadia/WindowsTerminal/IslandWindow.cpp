@@ -882,23 +882,41 @@ winrt::fire_and_forget IslandWindow::SummonWindow()
     // TODO: This isn't right either. This just causes the window to blink. Hmm.
     // I wonder if this is because we're doing it from an RPC thread (likely).
 
-    co_await winrt::resume_foreground(_rootGrid.Dispatcher());
-    ShowWindow(_window.get(), SW_RESTORE); // TODO: Frick this will restore down too. We don't want that.
-    // This doesn't _really_ help, but it might help put the window on top of the Z order.
+    // co_await winrt::resume_foreground(_rootGrid.Dispatcher());
+    // ShowWindow(_window.get(), SW_RESTORE); // TODO: Frick this will restore down too. We don't want that.
+    // // This doesn't _really_ help, but it might help put the window on top of the Z order.
 
-    // SetWindowPos(_window.get(),
-    //              HWND_TOP,
-    //              0,
-    //              0,
-    //              0,
-    //              0,
-    //              SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
-    SetActiveWindow(_window.get());
-    SetFocus(_window.get());
-    SetForegroundWindow(_window.get());
+    // // SetWindowPos(_window.get(),
+    // //              HWND_TOP,
+    // //              0,
+    // //              0,
+    // //              0,
+    // //              0,
+    // //              SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+    // SetActiveWindow(_window.get());
+    // SetFocus(_window.get());
+    // SetForegroundWindow(_window.get());
 
     // TODO: Why doesn't this work if the window is _not_ minimized? If the
     // window is minimized, this works like a charm. W E I R D
+
+    // This works for the monarch, but not for the peasant
+    // co_await winrt::resume_foreground(_rootGrid.Dispatcher());
+    // SendMessage(_window.get(), WM_SYSCOMMAND, SC_HOTKEY, (LPARAM)(_window.get()));
+    // SetForegroundWindow(_window.get());
+
+    // From: https://stackoverflow.com/a/59659421
+    // > The trick is to make windows ‘think’ that our process and the target
+    // > window (hwnd) are related by attaching the threads (using
+    // > AttachThreadInput API) and using an alternative API: BringWindowToTop.
+    co_await winrt::resume_foreground(_rootGrid.Dispatcher());
+    DWORD windowThreadProcessId = GetWindowThreadProcessId(GetForegroundWindow(), LPDWORD(0));
+    DWORD currentThreadId = GetCurrentThreadId();
+    DWORD CONST_SW_SHOW = 5;
+    AttachThreadInput(windowThreadProcessId, currentThreadId, true);
+    BringWindowToTop(_window.get());
+    ShowWindow(_window.get(), CONST_SW_SHOW);
+    AttachThreadInput(windowThreadProcessId, currentThreadId, false);
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
