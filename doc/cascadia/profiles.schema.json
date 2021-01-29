@@ -93,6 +93,8 @@
         "scrollDownPage",
         "scrollUp",
         "scrollUpPage",
+        "scrollToBottom",
+        "scrollToTop",
         "sendInput",
         "setColorScheme",
         "setTabColor",
