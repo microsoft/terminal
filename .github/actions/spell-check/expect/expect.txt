@@ -990,6 +990,7 @@ HMONITOR
 HORZ
 hostable
 hostlib
+hostname
 HPA
 HPAINTBUFFER
 HPCON
