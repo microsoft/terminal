@@ -855,74 +855,48 @@ void IslandWindow::SetGlobalHotkey(const winrt::Microsoft::Terminal::TerminalCon
 {
     if (hotkey)
     {
-        auto modifiers = hotkey.Modifiers();
+        const auto modifiers = hotkey.Modifiers();
+        const auto hotkeyFlags = MOD_NOREPEAT |
+                                 (WI_IsFlagSet(modifiers, KeyModifiers::Windows) ? MOD_WIN : 0) |
+                                 (WI_IsFlagSet(modifiers, KeyModifiers::Alt) ? MOD_ALT : 0) |
+                                 (WI_IsFlagSet(modifiers, KeyModifiers::Ctrl) ? MOD_CONTROL : 0) |
+                                 (WI_IsFlagSet(modifiers, KeyModifiers::Shift) ? MOD_SHIFT : 0);
 
-        auto MODs = MOD_NOREPEAT |
-                    (WI_IsFlagSet(modifiers, KeyModifiers::Windows) ? MOD_WIN : 0) |
-                    (WI_IsFlagSet(modifiers, KeyModifiers::Alt) ? MOD_ALT : 0) |
-                    (WI_IsFlagSet(modifiers, KeyModifiers::Ctrl) ? MOD_CONTROL : 0) |
-                    (WI_IsFlagSet(modifiers, KeyModifiers::Shift) ? MOD_SHIFT : 0);
-
-        auto res = RegisterHotKey(_window.get(), 1, MODs, hotkey.Vkey());
-        LOG_LAST_ERROR_IF(!res);
+        // `1` is an arbitrary ID. We only have one hotkey in the entire app, so
+        // we don't need to worry about setting a unique ID for each.
+        //
+        // TODO: (discussion) should we display a warning of some kind if this
+        // fails? This can fail if something else already bound this hotkey.
+        LOG_IF_WIN32_BOOL_FALSE(RegisterHotKey(_window.get(),
+                                               1,
+                                               hotkeyFlags,
+                                               hotkey.Vkey()));
     }
 }
 
 winrt::fire_and_forget IslandWindow::SummonWindow()
 {
     // On the foreground thread:
-    // * Restore the window from minimized
-    // * Activate the window
-    // * focus the window
-    // * IMPORTANT: MAKE THE WINDOW THE FOREGROUND WINDOW
-    //   - If you forget this last one, you'll start blinking the cursor for the
-    //     Terminal, but it WON'T ACTUALLY BE THE FOREGROUND WINDOW. It won't
-    //     recieve keyboard input. Crazy.
-
-    // TODO: This isn't right either. This just causes the window to blink. Hmm.
-    // I wonder if this is because we're doing it from an RPC thread (likely).
-
-    // co_await winrt::resume_foreground(_rootGrid.Dispatcher());
-    // ShowWindow(_window.get(), SW_RESTORE); // TODO: Frick this will restore down too. We don't want that.
-    // // This doesn't _really_ help, but it might help put the window on top of the Z order.
-
-    // // SetWindowPos(_window.get(),
-    // //              HWND_TOP,
-    // //              0,
-    // //              0,
-    // //              0,
-    // //              0,
-    // //              SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
-    // SetActiveWindow(_window.get());
-    // SetFocus(_window.get());
-    // SetForegroundWindow(_window.get());
-
-    // TODO: Why doesn't this work if the window is _not_ minimized? If the
-    // window is minimized, this works like a charm. W E I R D
-
-    // This works for the monarch, but not for the peasant
-    // co_await winrt::resume_foreground(_rootGrid.Dispatcher());
-    // SendMessage(_window.get(), WM_SYSCOMMAND, SC_HOTKEY, (LPARAM)(_window.get()));
-    // SetForegroundWindow(_window.get());
+    co_await winrt::resume_foreground(_rootGrid.Dispatcher());
 
     // From: https://stackoverflow.com/a/59659421
     // > The trick is to make windows ‘think’ that our process and the target
     // > window (hwnd) are related by attaching the threads (using
     // > AttachThreadInput API) and using an alternative API: BringWindowToTop.
-    co_await winrt::resume_foreground(_rootGrid.Dispatcher());
     // If the window is minimized, then restore it. We don't want to do this
     // always though, because SW_RESTORE'ing a maximized window will
     // restore-down it.
     if (IsIconic(_window.get()))
     {
-        ShowWindow(_window.get(), SW_RESTORE);
+        LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
     }
     const DWORD windowThreadProcessId = GetWindowThreadProcessId(GetForegroundWindow(), LPDWORD(0));
     const DWORD currentThreadId = GetCurrentThreadId();
-    AttachThreadInput(windowThreadProcessId, currentThreadId, true);
-    BringWindowToTop(_window.get());
-    ShowWindow(_window.get(), SW_SHOW);
-    AttachThreadInput(windowThreadProcessId, currentThreadId, false);
+
+    LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, true));
+    LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
+    LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_SHOW));
+    LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, false));
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
