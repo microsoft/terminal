@@ -3,8 +3,7 @@
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" 
          xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" 
          xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" 
- 	 xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
-         IgnorableNamespaces="uap mp uap3">
+         IgnorableNamespaces="uap mp">
          
   <Identity
     Name="WindowsTerminalUniversalDev"
@@ -39,13 +38,6 @@
         <uap:SplashScreen Image="Images\SplashScreen.png" />
         <uap:DefaultTile/>
       </uap:VisualElements>
-      <Extensions>
-        <uap3:Extension Category="windows.appExtensionHost">
-              <uap3:AppExtensionHost>
-                <uap3:Name>com.microsoft.windows.terminal.settings</uap3:Name>
-              </uap3:AppExtensionHost>
-        </uap3:Extension>
-      </Extensions>
     </Application>
   </Applications>
   

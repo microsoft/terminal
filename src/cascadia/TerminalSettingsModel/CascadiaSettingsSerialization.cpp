@@ -410,18 +410,19 @@ void CascadiaSettings::_LoadFragmentExtensions()
     }
 
     // Search through the local app data folder
-    PWSTR localAppDataFolder;
-    SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &localAppDataFolder);
-    auto localAppDataFragments = std::wstring(localAppDataFolder) + FragmentsPath.data();
+    wil::unique_cotaskmem_string localAppDataFolder;
+    THROW_IF_FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &localAppDataFolder));
+    auto localAppDataFragments = std::wstring(localAppDataFolder.get()) + FragmentsPath.data();
+
     if (std::filesystem::exists(localAppDataFragments))
     {
         _ApplyJsonStubsHelper(localAppDataFragments, ignoredNamespaces);
     }
 
     // Search through the program data folder
-    PWSTR programDataFolder;
-    SHGetKnownFolderPath(FOLDERID_ProgramData, 0, nullptr, &programDataFolder);
-    auto programDataFragments = std::wstring(programDataFolder) + FragmentsPath.data();
+    wil::unique_cotaskmem_string programDataFolder;
+    THROW_IF_FAILED(SHGetKnownFolderPath(FOLDERID_ProgramData, 0, nullptr, &programDataFolder));
+    auto programDataFragments = std::wstring(programDataFolder.get()) + FragmentsPath.data();
     if (std::filesystem::exists(programDataFragments))
     {
         _ApplyJsonStubsHelper(programDataFragments, ignoredNamespaces);
@@ -534,10 +535,15 @@ std::unordered_set<std::string> CascadiaSettings::_AccumulateJsonFilesInDirector
                                                  FILE_ATTRIBUTE_NORMAL,
                                                  nullptr) };
 
-            THROW_LAST_ERROR_IF(!hFile);
-
-            const auto fileData = _ReadFile(hFile.get()).value();
-            jsonFiles.emplace(fileData);
+            if (!hFile)
+            {
+                LOG_LAST_ERROR();
+            }
+            else
+            {
+                const auto fileData = _ReadFile(hFile.get()).value();
+                jsonFiles.emplace(fileData);
+            }
         }
     }
     return jsonFiles;
