@@ -62,15 +62,14 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Windows::Foundation::Size GetMinSize() const;
 
-        void PropagateToLeaves(std::function<void(LeafPane)> action);
-        void PropagateToLeavesOnEdge(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& edge, std::function<void(LeafPane)> action);
+        winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Settings::Model::SplitState> PreCalculateAutoSplit(const IPane target,
+                                                                                                                              const winrt::Windows::Foundation::Size parentSize) const;
+        winrt::Windows::Foundation::IReference<bool> PreCalculateCanSplit(const IPane target,
+                                                                          winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                                                                          const float splitSize,
+                                                                          const winrt::Windows::Foundation::Size availableSpace) const;
 
-        std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitState> PreCalculateAutoSplit(const LeafPane target,
-                                                                                                     const winrt::Windows::Foundation::Size parentSize) const;
-        std::optional<bool> PreCalculateCanSplit(const LeafPane target,
-                                                 winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
-                                                 const float splitSize,
-                                                 const winrt::Windows::Foundation::Size availableSpace) const;
+        SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
         void BorderTappedHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                  winrt::Windows::UI::Xaml::Input::TappedRoutedEventArgs const& e);
@@ -78,7 +77,6 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<LeafPane>);
 
     private:
-        struct SnapSizeResult;
         winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
         GUID _profile;
         bool _lastActive{ false };
@@ -103,15 +101,7 @@ namespace winrt::TerminalApp::implementation
 
         static void _SetupResources();
 
-        SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
-
         winrt::Microsoft::Terminal::Settings::Model::SplitState _convertAutomaticSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitState& splitType);
-
-        struct SnapSizeResult
-        {
-            float lower;
-            float higher;
-        };
     };
 }
 

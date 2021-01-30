@@ -6,6 +6,12 @@ import "LeafPane.idl";
 
 namespace TerminalApp
 {
+    struct SnapSizeResult
+    {
+        Single lower;
+        Single higher;
+    };
+
     interface IPane
     {
         void FocusPane(UInt32 idNum);
@@ -23,5 +29,10 @@ namespace TerminalApp
         void ResizeContent(Windows.Foundation.Size newSize);
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         Windows.Foundation.Size GetMinSize();
+
+        Windows.Foundation.IReference<Microsoft.Terminal.Settings.Model.SplitState> PreCalculateAutoSplit(IPane target, Windows.Foundation.Size parentSize);
+        Windows.Foundation.IReference<Boolean> PreCalculateCanSplit(IPane target, Microsoft.Terminal.Settings.Model.SplitState splitType, Single splitSize, Windows.Foundation.Size availableSpace);
+
+        SnapSizeResult _CalcSnappedDimension(Boolean widthOrHeight, Single fullSize);
     }
 }

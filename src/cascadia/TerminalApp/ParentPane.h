@@ -32,21 +32,21 @@ namespace winrt::TerminalApp::implementation
         int GetLeafPaneCount() const noexcept;
         winrt::Windows::Foundation::Size GetMinSize() const;
 
-        std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitState> PreCalculateAutoSplit(const LeafPane target,
-                                                                                                     const winrt::Windows::Foundation::Size parentSize) const;
-        std::optional<bool> PreCalculateCanSplit(const LeafPane target,
-                                                 winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
-                                                 const float splitSize,
-                                                 const winrt::Windows::Foundation::Size availableSpace) const;
+        winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Settings::Model::SplitState> PreCalculateAutoSplit(const IPane target,
+                                                                                                                              const winrt::Windows::Foundation::Size parentSize) const;
+        winrt::Windows::Foundation::IReference<bool> PreCalculateCanSplit(const IPane target,
+                                                                          winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                                                                          const float splitSize,
+                                                                          const winrt::Windows::Foundation::Size availableSpace) const;
 
         IPane FindFirstLeaf();
 
         void PropagateToLeavesOnEdge(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& edge, std::function<void(LeafPane)> action);
+        SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
         DECLARE_EVENT(ChildClosed, _ChildClosedHandlers, winrt::delegate<LeafPane>);
 
     private:
-        struct SnapSizeResult;
         struct SnapChildrenSizeResult;
         struct LayoutSizeNode;
 
@@ -64,16 +64,9 @@ namespace winrt::TerminalApp::implementation
 
         std::pair<float, float> _CalcChildrenSizes(const float fullSize) const;
         SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;
-        SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
         void _AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const;
-        //LayoutSizeNode _CreateMinSizeTree(const bool widthOrHeight) const;
+        LayoutSizeNode _CreateMinSizeTree(const bool widthOrHeight) const;
         float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
-
-        struct SnapSizeResult
-        {
-            float lower;
-            float higher;
-        };
 
         struct SnapChildrenSizeResult
         {

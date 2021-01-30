@@ -244,77 +244,64 @@ namespace winrt::TerminalApp::implementation
         return { newWidth, newHeight };
     }
 
-    void LeafPane::PropagateToLeaves(std::function<void(LeafPane)> action)
+    IReference<SplitState> LeafPane::PreCalculateAutoSplit(const IPane target,
+                                                           const winrt::Windows::Foundation::Size availableSpace) const
     {
-        //action(*this);
+        if (winrt::get_self<implementation::LeafPane>(target) == this)
+        {
+            // Use the available space to calculate which direction to split in.
+            return availableSpace.Width > availableSpace.Height ? SplitState::Vertical : SplitState::Horizontal;
+        }
+        else
+        {
+            // If this pane is _any other leaf_, then just return nullptr, to
+            // indicate that the `target` Pane is not down this branch.
+            return nullptr;
+        }
     }
 
-    void LeafPane::PropagateToLeavesOnEdge(const ResizeDirection& /* edge */, std::function<void(LeafPane)> action)
+    IReference<bool> LeafPane::PreCalculateCanSplit(const IPane target,
+                                                       SplitState splitType,
+                                                       const float splitSize,
+                                                       const winrt::Windows::Foundation::Size availableSpace) const
     {
-        //action(*this);
-    }
+        if (winrt::get_self<implementation::LeafPane>(target) == this)
+        {
+            const auto firstPrecent = 1.0f - splitSize;
+            const auto secondPercent = splitSize;
+            // If this pane is a leaf, and it's the pane we're looking for, use
+            // the available space to calculate which direction to split in.
+            const Size minSize = GetMinSize();
 
-    std::optional<SplitState> LeafPane::PreCalculateAutoSplit(const LeafPane /*target*/,
-                                                              const winrt::Windows::Foundation::Size /*availableSpace*/) const
-    {
-        //if (target == *this)
-        //{
-        //    //If this pane is a leaf, and it's the pane we're looking for, use
-        //    //the available space to calculate which direction to split in.
-        //    return availableSpace.Width > availableSpace.Height ? SplitState::Vertical : SplitState::Horizontal;
-        //}
-        //else
-        //{
-        //    // If this pane is _any other leaf_, then just return nullopt, to
-        //    // indicate that the `target` Pane is not down this branch.
-        //    return std::nullopt;
-        //}
-        return std::nullopt;
-    }
+            if (splitType == SplitState::None)
+            {
+                return { false };
+            }
+            else if (splitType == SplitState::Vertical)
+            {
+                const auto widthMinusSeparator = availableSpace.Width - CombinedPaneBorderSize;
+                const auto newFirstWidth = widthMinusSeparator * firstPrecent;
+                const auto newSecondWidth = widthMinusSeparator * secondPercent;
 
-    std::optional<bool> LeafPane::PreCalculateCanSplit(const LeafPane /*target*/,
-                                                       SplitState /*splitType*/,
-                                                       const float /*splitSize*/,
-                                                       const winrt::Windows::Foundation::Size /*availableSpace*/) const
-    {
-        //if (target == *this)
-        //{
-        //    const auto firstPrecent = 1.0f - splitSize;
-        //    const auto secondPercent = splitSize;
-        //    // If this pane is a leaf, and it's the pane we're looking for, use
-        //    // the available space to calculate which direction to split in.
-        //    const Size minSize = GetMinSize();
+                return { newFirstWidth > minSize.Width && newSecondWidth > minSize.Width };
+            }
+            else if (splitType == SplitState::Horizontal)
+            {
+                const auto heightMinusSeparator = availableSpace.Height - CombinedPaneBorderSize;
+                const auto newFirstHeight = heightMinusSeparator * firstPrecent;
+                const auto newSecondHeight = heightMinusSeparator * secondPercent;
 
-        //    if (splitType == SplitState::None)
-        //    {
-        //        return { false };
-        //    }
+                return { newFirstHeight > minSize.Height && newSecondHeight > minSize.Height };
+            }
 
-        //    else if (splitType == SplitState::Vertical)
-        //    {
-        //        const auto widthMinusSeparator = availableSpace.Width - CombinedPaneBorderSize;
-        //        const auto newFirstWidth = widthMinusSeparator * firstPrecent;
-        //        const auto newSecondWidth = widthMinusSeparator * secondPercent;
-
-        //        return { newFirstWidth > minSize.Width && newSecondWidth > minSize.Width };
-        //    }
-
-        //    else if (splitType == SplitState::Horizontal)
-        //    {
-        //        const auto heightMinusSeparator = availableSpace.Height - CombinedPaneBorderSize;
-        //        const auto newFirstHeight = heightMinusSeparator * firstPrecent;
-        //        const auto newSecondHeight = heightMinusSeparator * secondPercent;
-
-        //        return { newFirstHeight > minSize.Height && newSecondHeight > minSize.Height };
-        //    }
-        //}
-        //else
-        //{
-        //    // If this pane is _any other leaf_, then just return nullopt, to
-        //    // indicate that the `target` Pane is not down this branch.
-        //    return std::nullopt;
-        //}
-        return std::nullopt;
+            return nullptr;
+        }
+        else
+        {
+            // If this pane is _any other leaf_, then just return nullptr, to
+            // indicate that the `target` Pane is not down this branch.
+            return nullptr;
+        }
     }
 
     void LeafPane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/,
@@ -435,7 +422,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    LeafPane::SnapSizeResult LeafPane::_CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
+    SnapSizeResult LeafPane::_CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
         const auto minSize = GetMinSize();
         const auto minDimension = widthOrHeight ? minSize.Width : minSize.Height;

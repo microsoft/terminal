@@ -12,5 +12,6 @@ namespace TerminalApp
         Guid GetProfile();
         Boolean WasLastFocused();
         UInt16 Id;
+        void SetActive();
     }
 }
