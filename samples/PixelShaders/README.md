@@ -54,6 +54,12 @@ Save this file as `C:\temp\invert.hlsl`, then update a profile with the setting:
 
 Once the settings file is saved, open a terminal with the changed profile. It should now invert the colors of the screen!
 
+
+ Default Terminal | Inverted Terminal 
+---------|---------
+ ![Default Terminal](Screenshots/TerminalDefault.PNG) | ![Inverted Terminal](Screenshots/TerminalInvert.PNG) 
+
+
 If your shader fails to compile, the Terminal will display a warning dialog and ignore it temporarily. After fixing your shader, touch the `settings.json` file again, or open a new tab, and the Terminal will try loading the shader again.
 
 ## HLSL
@@ -130,7 +136,13 @@ float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
 
 Once reloaded, it should show some retro raster bars in the background, with a drop shadow to make the text more readable.
 
+ ![Rasterbars](Screenshots/TerminalRasterbars.PNG)
+
 ## Retro Terminal Effect
 
-As a more complicated example, the Terminal's built-in `experimental.retroTerminalEffect` is included as the `Retro.hlsl` file in this directory. Feel free to modify and experiment!
+As a more complicated example, the Terminal's built-in `experimental.retroTerminalEffect` is included as the `Retro.hlsl` file in this directory. 
+
+![Retro](Screenshots/TerminalRetro.PNG)
+
+Feel free to modify and experiment!
 
