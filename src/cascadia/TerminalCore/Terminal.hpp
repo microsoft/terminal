@@ -124,6 +124,7 @@ public:
     void CopyToClipboard(std::wstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(std::wstring_view uri) override;
+    void PlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration) override;
     void ShowWindow(bool showOrHide) override;
     void UseAlternateScreenBuffer() override;
     void UseMainScreenBuffer() override;
