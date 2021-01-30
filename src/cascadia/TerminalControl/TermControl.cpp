@@ -1353,10 +1353,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto cursorPosition = point.Position();
         const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
-        if (!_focused && (_terminal->GetHyperlinkAtPosition(terminalPosition).empty()))
+        if (!_focused)
         {
-            args.Handled(true);
-            return;
+            Focus(FocusState::Pointer);
         }
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
