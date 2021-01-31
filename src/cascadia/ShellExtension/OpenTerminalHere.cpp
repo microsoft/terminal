@@ -285,7 +285,7 @@ std::wstring OpenTerminalHere::_GetPathFromExplorer() const
         com_ptr<IWebBrowserApp> tmp;
         if (FAILED(disp->QueryInterface(tmp.put())))
         {
-            disp = nullptr;
+            disp = nullptr; // get rid of DEBUG non-nullptr warning
             continue;
         }
 
@@ -294,11 +294,11 @@ std::wstring OpenTerminalHere::_GetPathFromExplorer() const
         if (hwnd == tmpHWND)
         {
             browser = tmp;
-            disp = nullptr;
+            disp = nullptr; // get rid of DEBUG non-nullptr warning
             break; //found
         }
 
-        disp = nullptr;
+        disp = nullptr; // get rid of DEBUG non-nullptr warning
     }
 
     if (browser != nullptr)
