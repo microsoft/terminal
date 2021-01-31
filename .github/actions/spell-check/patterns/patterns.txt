@@ -5,6 +5,7 @@ https://www\.vt100\.net/docs/[-a-zA-Z0-9#_\/.]*
 https://www.w3.org/[-a-zA-Z0-9?&=\/_#]*
 https://(?:(?:www\.|)youtube\.com|youtu.be)/[-a-zA-Z0-9?&=]*
 https://[a-z-]+\.githubusercontent\.com/[-a-zA-Z0-9?&=_\/.]*
+https://www.xfree86.org/[-a-zA-Z0-9?&=\/_#]*
 [Pp]ublicKeyToken="?[0-9a-fA-F]{16}"?
 (?:[{"]|UniqueIdentifier>)[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?:[}"]|</UniqueIdentifier)
 (?:0[Xx]|\\x|U\+|#)[a-f0-9A-FGgRr]{2,}[Uu]?[Ll]{0,2}\b

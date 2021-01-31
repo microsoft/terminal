@@ -36,19 +36,31 @@
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="ColorToBrushConverter.h">
-      <DependentUpon>ColorToBrushConverter.idl</DependentUpon>
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ColorLightenConverter.h">
+      <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="ColorToHexConverter.h">
-      <DependentUpon>ColorToHexConverter.idl</DependentUpon>
+      <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="FontWeightConverter.h">
-      <DependentUpon>FontWeightConverter.idl</DependentUpon>
+      <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="InvertedBooleanToVisibilityConverter.h">
-      <DependentUpon>InvertedBooleanToVisibilityConverter.idl</DependentUpon>
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="StringIsEmptyConverter.h">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="PaddingConverter.h">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="StringIsNotDesktopConverter.h">
+      <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="PercentageConverter.h">
-      <DependentUpon>PercentageConverter.idl</DependentUpon>
+      <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="EnumEntry.h">
       <DependentUpon>EnumEntry.idl</DependentUpon>
@@ -109,19 +121,31 @@
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="ColorToBrushConverter.cpp">
-      <DependentUpon>ColorToBrushConverter.idl</DependentUpon>
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ColorLightenConverter.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="ColorToHexConverter.cpp">
-      <DependentUpon>ColorToHexConverter.idl</DependentUpon>
+      <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="FontWeightConverter.cpp">
-      <DependentUpon>FontWeightConverter.idl</DependentUpon>
+      <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="InvertedBooleanToVisibilityConverter.cpp">
-      <DependentUpon>InvertedBooleanToVisibilityConverter.idl</DependentUpon>
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="StringIsEmptyConverter.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="PaddingConverter.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="StringIsNotDesktopConverter.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="PercentageConverter.cpp">
-      <DependentUpon>PercentageConverter.idl</DependentUpon>
+      <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="GlobalAppearance.cpp">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
@@ -154,11 +178,7 @@
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
-    <Midl Include="ColorToBrushConverter.idl" />
-    <Midl Include="ColorToHexConverter.idl" />
-    <Midl Include="FontWeightConverter.idl" />
-    <Midl Include="InvertedBooleanToVisibilityConverter.idl" />
-    <Midl Include="PercentageConverter.idl" />
+    <Midl Include="Converters.idl" />
     <Midl Include="EnumEntry.idl" />
     <Midl Include="GlobalAppearance.idl">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
@@ -215,13 +235,34 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
       <Private>false</Private>
     </ProjectReference>
+
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
-      <Private>false</Private>
+      <!-- Private:false and ReferenceOutputAssembly:false, in combination with
+      the manual reference to TerminalControl.winmd below make sure that this
+      project will compile correct, and that we won't roll up the TermControl
+      xbf's into the packaging project twice. -->
+      <Private>true</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj">
       <Private>false</Private>
     </ProjectReference>
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- Manually add a reference to TerminalControl here. We need this so
+    MDMERGE will know where the TermControl types are defined. However, we need
+    to do it exactly like this so the packaging project won't roll up
+    TermControl's .xbf's from both the TermControl project and this one. -->
+    <Reference Include="Microsoft.Terminal.TerminalControl">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+  </ItemGroup>
+
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

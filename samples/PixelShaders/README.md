@@ -49,7 +49,7 @@ float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
 Save this file as `C:\temp\invert.hlsl`, then update a profile with the setting:
 
 ```
-"experimental.pixelShaderEffect": "C:\\temp\\invert.hlsl"
+"experimental.pixelShaderPath": "C:\\temp\\invert.hlsl"
 ```
 
 Once the settings file is saved, open a terminal with the changed profile. It should now invert the colors of the screen!
@@ -58,7 +58,7 @@ If your shader fails to compile, the Terminal will display a warning dialog and 
 
 ## HLSL
 
-The language we use to write pixel shaders is called `HLSL`. It a `C`-like language, with some restrictions.You can't allocate memory, use pointers or recursion.
+The language we use to write pixel shaders is called `HLSL`. It's a `C`-like language, with some restrictions. You can't allocate memory, use pointers or recursion.
 What you get access to is computing power in the teraflop range on decently recent GPUs. This means writing real-time raytracers or other cool effects are in the realm of possibility.
 
 [shadertoy](https://shadertoy.com/) is a great site that show case what's possible with pixel shaders (albeit in `GLSL`). For example this [menger sponge](https://www.shadertoy.com/view/4scXzn). Converting from `GLSL` to `HLSL` isn't overly hard once you gotten the hang of it.

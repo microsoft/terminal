@@ -132,7 +132,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <Style x:Key="KeyChordTextBlockStyle" TargetType="TextBlock"/>
 
                     <!--  ParsedCommandLineText styles (use XAML defaults for High Contrast theme) -->
-                    <Style x:Key="ParsedCommandLineBoderStyle" TargetType="Border"/>
+                    <Style x:Key="ParsedCommandLineBorderStyle" TargetType="Border"/>
                     <Style x:Key="ParsedCommandLineTextBlockStyle" TargetType="TextBlock"/>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>

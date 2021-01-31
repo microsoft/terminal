@@ -19,21 +19,18 @@ the MIT License. See LICENSE in the project root for license information. -->
     <ScrollViewer>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <TextBlock x:Uid="Globals_RenderingDisclaimer"
-                       Style="{StaticResource DisclaimerStyle}"
-                       Margin="{StaticResource StandardControlSpacing}"/>
+                       Style="{StaticResource DisclaimerStyle}"/>
 
             <!--Force Full Repaint-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_ForceFullRepaint"
-                          IsChecked="{x:Bind State.Globals.ForceFullRepaintRendering, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
+                <ToggleSwitch x:Uid="Globals_ForceFullRepaint"
+                              IsOn="{x:Bind State.Globals.ForceFullRepaintRendering, Mode=TwoWay}"/>
             </ContentPresenter>
 
             <!--Software Rendering-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_SoftwareRendering"
-                          IsChecked="{x:Bind State.Globals.SoftwareRendering, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
+                <ToggleSwitch x:Uid="Globals_SoftwareRendering"
+                              IsOn="{x:Bind State.Globals.SoftwareRendering, Mode=TwoWay}"/>
             </ContentPresenter>
         </StackPanel>
     </ScrollViewer>

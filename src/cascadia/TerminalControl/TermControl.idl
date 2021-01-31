@@ -77,6 +77,8 @@ namespace Microsoft.Terminal.TerminalControl
         event Windows.Foundation.TypedEventHandler<TermControl, Object> SetTaskbarProgress;
         event Windows.Foundation.TypedEventHandler<TermControl, NoticeEventArgs> RaiseNotice;
         event Windows.Foundation.TypedEventHandler<Object, Object> WarningBell;
+        event Windows.Foundation.TypedEventHandler<Object, Object> HidePointerCursor;
+        event Windows.Foundation.TypedEventHandler<Object, Object> RestorePointerCursor;
 
         event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         // This is an event handler forwarder for the underlying connection.
@@ -109,6 +111,8 @@ namespace Microsoft.Terminal.TerminalControl
         void TaskbarProgressChanged();
         UInt64 TaskbarState { get; };
         UInt64 TaskbarProgress { get; };
+
+        String WorkingDirectory { get; };
 
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;

@@ -441,6 +441,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct OpenSettingsArgs : public OpenSettingsArgsT<OpenSettingsArgs>
     {
         OpenSettingsArgs() = default;
+        OpenSettingsArgs(const SettingsTarget& target) :
+            _Target{ target } {}
         GETSET_PROPERTY(SettingsTarget, Target, SettingsTarget::SettingsFile);
 
         static constexpr std::string_view TargetKey{ "target" };
@@ -850,4 +852,5 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(CloseOtherTabsArgs);
     BASIC_FACTORY(CloseTabsAfterArgs);
     BASIC_FACTORY(MoveTabArgs);
+    BASIC_FACTORY(OpenSettingsArgs);
 }

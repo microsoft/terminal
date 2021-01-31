@@ -3,14 +3,9 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "../../inc/consoletaeftemplates.hpp"
+#include "../../../inc/consoletaeftemplates.hpp"
 
-#include "CommonState.hpp"
-
-#include "globals.h"
-#include "../buffer/out/textBuffer.hpp"
-
-#include "input.h"
+#include "../textBuffer.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -170,64 +165,54 @@ class AttrRowTests
                       _Inout_ std::unique_ptr<TextAttributeRun[]>& outAttrRun,
                       _Out_ size_t* const cOutAttrRun)
     {
-        NTSTATUS status = STATUS_SUCCESS;
+        RETURN_HR_IF(E_NOT_SUFFICIENT_BUFFER, cRowLength == 0);
 
-        if (cRowLength == 0)
+        // first count up the deltas in the array
+        size_t cDeltas = 1;
+
+        const TextAttribute* pPrevAttr = &rgAttrs[0];
+
+        for (size_t i = 1; i < cRowLength; i++)
         {
-            status = STATUS_BUFFER_TOO_SMALL;
-        }
+            const TextAttribute* pCurAttr = &rgAttrs[i];
 
-        if (NT_SUCCESS(status))
-        {
-            // first count up the deltas in the array
-            size_t cDeltas = 1;
-
-            const TextAttribute* pPrevAttr = &rgAttrs[0];
-
-            for (size_t i = 1; i < cRowLength; i++)
+            if (*pCurAttr != *pPrevAttr)
             {
-                const TextAttribute* pCurAttr = &rgAttrs[i];
-
-                if (*pCurAttr != *pPrevAttr)
-                {
-                    cDeltas++;
-                }
-
-                pPrevAttr = pCurAttr;
+                cDeltas++;
             }
 
-            // This whole situation was too complicated with a one off holder for one row run
-            // new method:
-            // delete the old buffer
-            // make a new buffer, one run + one run for each change
-            // set the values for each run one run index at a time
+            pPrevAttr = pCurAttr;
+        }
 
-            std::unique_ptr<TextAttributeRun[]> attrRun = std::make_unique<TextAttributeRun[]>(cDeltas);
-            status = NT_TESTNULL(attrRun.get());
-            if (NT_SUCCESS(status))
+        // This whole situation was too complicated with a one off holder for one row run
+        // new method:
+        // delete the old buffer
+        // make a new buffer, one run + one run for each change
+        // set the values for each run one run index at a time
+
+        std::unique_ptr<TextAttributeRun[]> attrRun = std::make_unique<TextAttributeRun[]>(cDeltas);
+        RETURN_HR_IF_NULL(E_OUTOFMEMORY, attrRun);
+
+        TextAttributeRun* pCurrentRun = attrRun.get();
+        pCurrentRun->SetAttributes(rgAttrs[0]);
+        pCurrentRun->SetLength(1);
+        for (size_t i = 1; i < cRowLength; i++)
+        {
+            if (pCurrentRun->GetAttributes() == rgAttrs[i])
             {
-                TextAttributeRun* pCurrentRun = attrRun.get();
-                pCurrentRun->SetAttributes(rgAttrs[0]);
+                pCurrentRun->SetLength(pCurrentRun->GetLength() + 1);
+            }
+            else
+            {
+                pCurrentRun++;
+                pCurrentRun->SetAttributes(rgAttrs[i]);
                 pCurrentRun->SetLength(1);
-                for (size_t i = 1; i < cRowLength; i++)
-                {
-                    if (pCurrentRun->GetAttributes() == rgAttrs[i])
-                    {
-                        pCurrentRun->SetLength(pCurrentRun->GetLength() + 1);
-                    }
-                    else
-                    {
-                        pCurrentRun++;
-                        pCurrentRun->SetAttributes(rgAttrs[i]);
-                        pCurrentRun->SetLength(1);
-                    }
-                }
-                attrRun.swap(outAttrRun);
-                *cOutAttrRun = cDeltas;
             }
         }
+        attrRun.swap(outAttrRun);
+        *cOutAttrRun = cDeltas;
 
-        return HRESULT_FROM_NT(status);
+        return S_OK;
     }
 
     NoThrowString LogRunElement(_In_ TextAttributeRun& run)
@@ -725,10 +710,6 @@ class AttrRowTests
 
     TEST_METHOD(TestResize)
     {
-        CommonState state;
-        state.PrepareGlobalFont();
-        state.PrepareGlobalScreenBuffer();
-
         pSingle->Resize(240);
         pChain->Resize(240);
 
@@ -746,8 +727,5 @@ class AttrRowTests
 
         VERIFY_THROWS_SPECIFIC(pSingle->Resize(0), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
         VERIFY_THROWS_SPECIFIC(pChain->Resize(0), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
-
-        state.CleanupGlobalScreenBuffer();
-        state.CleanupGlobalFont();
     }
 };
