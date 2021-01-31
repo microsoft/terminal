@@ -266,7 +266,16 @@ std::wstring OpenTerminalHere::_GetPathFromExplorer() const
         return path;
     }
 
-    auto shell = try_create_instance<IShellWindows>(CLSID_ShellWindows, CLSCTX_ALL);
+    com_ptr<IShellWindows> shell;
+    try
+    {
+        shell = create_instance<IShellWindows>(CLSID_ShellWindows, CLSCTX_ALL);
+    }
+    catch (...)
+    {
+        //look like try_create_intance is not available no more
+    }
+
     if (shell == nullptr)
     {
         return path;
