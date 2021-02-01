@@ -48,7 +48,7 @@ public:                                                   \
         if (name() != value)                              \
         {                                                 \
             target.name(value);                           \
-            _NotifyChanges(L"Has" #name, L#name);         \
+            _NotifyChanges(L"Has" L#name, L#name);        \
         }                                                 \
     }                                                     \
     bool Has##name() { return target.Has##name(); }
@@ -59,11 +59,11 @@ public:                                                   \
     _BASE_OBSERVABLE_PROJECTED_SETTING(target, name) \
     void Clear##name()                               \
     {                                                \
-        const auto hadValue{ target.Has##Name() };   \
+        const auto hadValue{ target.Has##name() };   \
         target.Clear##name();                        \
         if (hadValue)                                \
         {                                            \
-            _NotifyChanges(L"Has" #name, L#name);    \
+            _NotifyChanges(L"Has" L#name, L#name);   \
         }                                            \
     }
 
