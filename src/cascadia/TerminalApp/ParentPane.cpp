@@ -126,8 +126,8 @@ namespace winrt::TerminalApp::implementation
         // If it is, and the requested resize direction matches our separator, then
         // we're the pane that needs to adjust its separator.
         // If our separator is the wrong direction, then we can't handle it.
-        const auto firstIsLeaf = _firstChild.try_as<LeafPane>();
-        const auto secondIsLeaf = _secondChild.try_as<LeafPane>();
+        const auto firstIsLeaf = _firstChild.try_as<TerminalApp::LeafPane>();
+        const auto secondIsLeaf = _secondChild.try_as<TerminalApp::LeafPane>();
         const bool firstIsFocused = firstIsLeaf && firstIsLeaf.WasLastFocused();
         const bool secondIsFocused = secondIsLeaf && secondIsLeaf.WasLastFocused();
         if (firstIsFocused || secondIsFocused)
@@ -170,8 +170,8 @@ namespace winrt::TerminalApp::implementation
         // Check if either our first or second child is the currently focused leaf.
         // If it is, and the requested move direction matches our separator, then
         // we're the pane that needs to handle this focus move.
-        const auto firstIsLeaf = _firstChild.try_as<LeafPane>();
-        const auto secondIsLeaf = _secondChild.try_as<LeafPane>();
+        const auto firstIsLeaf = _firstChild.try_as<TerminalApp::LeafPane>();
+        const auto secondIsLeaf = _secondChild.try_as<TerminalApp::LeafPane>();
         const bool firstIsFocused = firstIsLeaf && firstIsLeaf.WasLastFocused();
         const bool secondIsFocused = secondIsLeaf && secondIsLeaf.WasLastFocused();
         if (firstIsFocused || secondIsFocused)
@@ -276,7 +276,7 @@ namespace winrt::TerminalApp::implementation
         return _firstChild.FindFirstLeaf();
     }
 
-    void ParentPane::PropagateToLeavesOnEdge(const ResizeDirection& edge, std::function<void(LeafPane)> action)
+    void ParentPane::PropagateToLeavesOnEdge(const ResizeDirection& edge, std::function<void(TerminalApp::LeafPane)> action)
     {
         if (DirectionMatchesSplit(edge, _splitState))
         {
@@ -284,7 +284,7 @@ namespace winrt::TerminalApp::implementation
                                          _splitState == SplitState::Horizontal && edge == ResizeDirection::Up) ?
                                            _firstChild :
                                            _secondChild;
-            if (auto adjChildAsLeaf = adjacentChild.try_as<LeafPane>())
+            if (auto adjChildAsLeaf = adjacentChild.try_as<TerminalApp::LeafPane>())
             {
                 action(adjChildAsLeaf);
             }
@@ -296,7 +296,7 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            if (auto firstChildAsLeaf = _firstChild.try_as<LeafPane>())
+            if (auto firstChildAsLeaf = _firstChild.try_as<TerminalApp::LeafPane>())
             {
                 action(firstChildAsLeaf);
             }
@@ -305,7 +305,7 @@ namespace winrt::TerminalApp::implementation
                 auto firstChildAsParentImpl = winrt::get_self<implementation::ParentPane>(_firstChild);
                 firstChildAsParentImpl->PropagateToLeavesOnEdge(edge, action);
             }
-            if (auto secondChildAsLeaf = _secondChild.try_as<LeafPane>())
+            if (auto secondChildAsLeaf = _secondChild.try_as<TerminalApp::LeafPane>())
             {
                 action(secondChildAsLeaf);
             }
@@ -413,10 +413,10 @@ namespace winrt::TerminalApp::implementation
     void ParentPane::_CloseChild(const bool closeFirst)
     {
         // The closed child must always be a leaf.
-        const auto closedChild = (closeFirst ? _firstChild.try_as<LeafPane>() : _secondChild.try_as<LeafPane>());
+        const auto closedChild = (closeFirst ? _firstChild.try_as<TerminalApp::LeafPane>() : _secondChild.try_as<TerminalApp::LeafPane>());
         THROW_HR_IF_NULL(E_FAIL, closedChild);
 
-        const auto remainingChild = closeFirst ? _secondChild.try_as<LeafPane>() : _firstChild.try_as<LeafPane>();
+        const auto remainingChild = closeFirst ? _secondChild.try_as<TerminalApp::LeafPane>() : _firstChild.try_as<TerminalApp::LeafPane>();
 
         // Detach all the controls from our grid, so they can be attached later.
         Root().Children().Clear();
@@ -428,7 +428,7 @@ namespace winrt::TerminalApp::implementation
         // On all the leaf descendants that were adjacent to the closed child, update its
         // border, so that it matches the border of the closed child.
         // todo: update border with close neighbour
-        PropagateToLeavesOnEdge(closedChildDir, [&](LeafPane paneOnEdge) {
+        PropagateToLeavesOnEdge(closedChildDir, [&](TerminalApp::LeafPane paneOnEdge) {
             paneOnEdge.UpdateBorderWithClosedNeighbor(closedChild, closedChildDir);
         });
 
@@ -439,51 +439,44 @@ namespace winrt::TerminalApp::implementation
         // control to xaml tree and only then can it properly gain focus.
         if (closedChild.GetActivePane())
         {
-            remainingChild.FindFirstLeaf().try_as<LeafPane>().SetActive();
+            remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>().SetActive();
         }
     }
 
-    void ParentPane::_SetupChildEventHandlers(const bool /*isFirstChild*/)
+    void ParentPane::_SetupChildEventHandlers(const bool isFirstChild)
     {
-        //auto& child = isFirstChild ? _firstChild : _secondChild;
-        //auto& closedToken = isFirstChild ? _firstClosedToken : _secondClosedToken;
-        //auto& typeChangedToken = isFirstChild ? _firstTypeChangedToken : _secondTypeChangedToken;
+        auto& child = isFirstChild ? _firstChild : _secondChild;
+        auto& closedToken = isFirstChild ? _firstClosedToken : _secondClosedToken;
+        auto& typeChangedToken = isFirstChild ? _firstTypeChangedToken : _secondTypeChangedToken;
 
-        //if (const auto childAsLeaf = child.try_as<LeafPane>())
-        //{
-        //    // When our child is a leaf and got closed, we close it
-        //    closedToken = childImpl.Closed([=, weakThis = get_weak()](auto&& /*s*/, auto&& /*e*/) {
-        //        if (auto pane{ weakThis.lock() })
-        //        {
-        //            // Unsubscribe from events of both our children, as we ourself will also
-        //            // get closed when our child does.
-        //            pane->_RemoveAllChildEventHandlers(true);
-        //            pane->_RemoveAllChildEventHandlers(false);
+        if (const auto childAsLeaf = child.try_as<LeafPane>())
+        {
+            // When our child is a leaf and got closed, we close it
+            const auto childImpl = winrt::get_self<implementation::LeafPane>(child);
 
-        //            pane->_CloseChild(isFirstChild);
-        //        }
-        //    });
+            // todo: check if we need to do a 'get_weak()' here or something?
+            closedToken = childImpl->Closed([&](auto&& /*s*/, auto&& /*e*/) {
+                // Unsubscribe from events of both our children, as we ourself will also
+                // get closed when our child does.
+                _RemoveAllChildEventHandlers(false);
+                _RemoveAllChildEventHandlers(true);
+                _CloseChild(isFirstChild);
+            });
 
-        //    // When our child is a leaf and got splitted, it produces the new parent pane that contains
-        //    // both him and the new leaf near him. We then replace that child with the new parent pane.
-        //    typeChangedToken = childAsLeaf->Splitted([=, weakThis = weak_from_this(), &child](std::shared_ptr<ParentPane> splittedChild) {
-        //        if (auto pane{ weakThis.lock() })
-        //        {
-        //            pane->_OnChildSplittedOrCollapsed(isFirstChild, splittedChild);
-        //        }
-        //    });
-        //}
-        //else if (const auto childAsParent = std::dynamic_pointer_cast<ParentPane>(child))
-        //{
-        //    // When our child is a parent and one of its children got closed (and so the parent collapses),
-        //    // we take in its remaining, orphaned child as our own.
-        //    typeChangedToken = childAsParent->ChildClosed([=, weakThis = weak_from_this(), &child](std::shared_ptr<Pane> collapsedChild) {
-        //        if (auto pane{ weakThis.lock() })
-        //        {
-        //            pane->_OnChildSplittedOrCollapsed(isFirstChild, collapsedChild);
-        //        }
-        //    });
-        //}
+            // When our child is a leaf and gets split, it produces a new parent pane that contains
+            // both itself and its new leaf neighbor. We then replace that child with the new parent pane.
+            typeChangedToken = childImpl->GotSplit([&](TerminalApp::ParentPane newParent) {
+                _OnChildSplitOrCollapse(isFirstChild, newParent);
+            });
+        }
+        else if (const auto childAsParent = child.try_as<ParentPane>())
+        {
+            // When our child is a parent and one of its children got closed (and so the parent collapses),
+            // we take in its remaining, orphaned child as our own.
+            typeChangedToken = childAsParent->ChildClosed([&](TerminalApp::LeafPane remainingChild) {
+                _OnChildSplitOrCollapse(isFirstChild, remainingChild);
+            });
+        }
     }
 
     void ParentPane::_RemoveAllChildEventHandlers(const bool isFirstChild)
@@ -492,10 +485,11 @@ namespace winrt::TerminalApp::implementation
         const auto closedToken = isFirstChild ? _firstClosedToken : _secondClosedToken;
         const auto typeChangedToken = isFirstChild ? _firstTypeChangedToken : _secondTypeChangedToken;
 
-        if (const auto childAsLeaf = child.try_as<LeafPane>())
+        if (const auto childAsLeaf = child.try_as<TerminalApp::LeafPane>())
         {
-            //childAsLeaf.Closed(closedToken);
-            //childAsLeaf.OnSplit(typeChangedToken);
+            const auto childImpl = winrt::get_self<implementation::LeafPane>(child);
+            childImpl->Closed(closedToken);
+            childImpl->GotSplit(typeChangedToken);
         }
         else if (const auto childAsParent = child.try_as<ParentPane>())
         {
@@ -510,7 +504,7 @@ namespace winrt::TerminalApp::implementation
 
         (isFirstChild ? _firstChild : _secondChild) = newChild;
 
-        if (const auto newChildAsLeaf = newChild.try_as<LeafPane>())
+        if (const auto newChildAsLeaf = newChild.try_as<TerminalApp::LeafPane>())
         {
             Root().Children().SetAt(newChildAsLeaf ? 0 : 1, newChildAsLeaf);
             _GetGridSetColOrRowFunc()(newChildAsLeaf, isFirstChild ? 0 : 1);
@@ -619,7 +613,7 @@ namespace winrt::TerminalApp::implementation
         {
             sizeNode.nextFirstChild = std::make_unique<LayoutSizeNode>(*sizeNode.firstChild);
 
-            if (auto firstChildAsLeaf = _firstChild.try_as<LeafPane>())
+            if (auto firstChildAsLeaf = _firstChild.try_as<TerminalApp::LeafPane>())
             {
                 if (sizeNode.nextFirstChild->isMinimumSize)
                 {
@@ -641,7 +635,7 @@ namespace winrt::TerminalApp::implementation
         {
             sizeNode.nextSecondChild = std::make_unique<LayoutSizeNode>(*sizeNode.secondChild);
 
-            if (auto secondChildAsLeaf = _secondChild.try_as<LeafPane>())
+            if (auto secondChildAsLeaf = _secondChild.try_as<TerminalApp::LeafPane>())
             {
                 if (sizeNode.nextSecondChild->isMinimumSize)
                 {
@@ -733,7 +727,7 @@ namespace winrt::TerminalApp::implementation
     {
         const auto size = GetMinSize();
         LayoutSizeNode node(widthOrHeight ? size.Width : size.Height);
-        if (auto firstChildAsLeaf = _firstChild.try_as<LeafPane>())
+        if (auto firstChildAsLeaf = _firstChild.try_as<TerminalApp::LeafPane>())
         {
             const auto firstSize = firstChildAsLeaf.GetMinSize();
             node.firstChild = std::make_unique<LayoutSizeNode>(widthOrHeight ? firstSize.Width : firstSize.Height);
@@ -743,7 +737,7 @@ namespace winrt::TerminalApp::implementation
             auto firstChildAsParentImpl = winrt::get_self<implementation::ParentPane>(_firstChild);
             node.firstChild = std::make_unique<LayoutSizeNode>(firstChildAsParentImpl->_CreateMinSizeTree(widthOrHeight));
         }
-        if (auto secondChildAsLeaf = _secondChild.try_as<LeafPane>())
+        if (auto secondChildAsLeaf = _secondChild.try_as<TerminalApp::LeafPane>())
         {
             const auto secondSize = secondChildAsLeaf.GetMinSize();
             node.secondChild = std::make_unique<LayoutSizeNode>(widthOrHeight ? secondSize.Width : secondSize.Height);
@@ -771,7 +765,7 @@ namespace winrt::TerminalApp::implementation
         return std::clamp(requestedValue, minSplitPosition, maxSplitPosition);
     }
 
-    DEFINE_EVENT(ParentPane, ChildClosed, _ChildClosedHandlers, winrt::delegate<LeafPane>);
+    DEFINE_EVENT(ParentPane, ChildClosed, _ChildClosedHandlers, winrt::delegate<TerminalApp::LeafPane>);
 
     // TODO: Move all this layout size node stuff elsewhere or put it in LayoutSizeNode.cpp
     ParentPane::LayoutSizeNode::LayoutSizeNode(const float minSize) :

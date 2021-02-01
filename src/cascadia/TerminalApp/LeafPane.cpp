@@ -157,7 +157,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     std::pair<IPane, IPane> LeafPane::Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
-                                            const float /*splitSize*/,
+                                            const float splitSize,
                                             const GUID& profile,
                                             const winrt::Microsoft::Terminal::TerminalControl::TermControl& control)
     {
@@ -189,7 +189,7 @@ namespace winrt::TerminalApp::implementation
         Size actualSize{ gsl::narrow_cast<float>(Root().ActualWidth()),
                          gsl::narrow_cast<float>(Root().ActualHeight()) };
 
-        const auto newParent = ParentPane(*this, newNeighbour, splitType, Half, actualSize);
+        const auto newParent = ParentPane(*this, newNeighbour, splitType, 1.0f - splitSize, actualSize);
 
         _GotSplitHandlers(newParent);
 

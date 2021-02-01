@@ -5,6 +5,7 @@
 
 #include "winrt/Microsoft.UI.Xaml.Controls.h"
 #include "inc/cppwinrt_utils.h"
+#include "LeafPane.h"
 
 #include "ParentPane.g.h"
 
@@ -43,10 +44,10 @@ namespace winrt::TerminalApp::implementation
 
         IPane FindFirstLeaf();
 
-        void PropagateToLeavesOnEdge(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& edge, std::function<void(LeafPane)> action);
+        void PropagateToLeavesOnEdge(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& edge, std::function<void(TerminalApp::LeafPane)> action);
         SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
-        DECLARE_EVENT(ChildClosed, _ChildClosedHandlers, winrt::delegate<LeafPane>);
+        DECLARE_EVENT(ChildClosed, _ChildClosedHandlers, winrt::delegate<TerminalApp::LeafPane>);
 
     private:
         struct SnapChildrenSizeResult;
