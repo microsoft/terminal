@@ -2599,6 +2599,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _AsyncCloseConnection();
 
             {
+                // GH#8734:
                 // We lock the terminal here to make sure it isn't still being
                 // used in the connection thread before we destroy the renderer.
                 // However, we must unlock it again prior to triggering the
