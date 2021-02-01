@@ -188,13 +188,14 @@ namespace winrt::TerminalApp::implementation
         // Parent pane has to know it's size when creating, which will just be the size of ours.
         Size actualSize{ gsl::narrow_cast<float>(Root().ActualWidth()),
                          gsl::narrow_cast<float>(Root().ActualHeight()) };
-        //const auto newParent = std::make_shared<ParentPane>(this, newNeighbour, splitType, Half, actualSize);
 
-        //_SplittedHandlers(newParent);
+        const auto newParent = ParentPane(*this, newNeighbour, splitType, Half, actualSize);
+
+        _GotSplitHandlers(newParent);
 
         // Call InitializeChildren after invoking Splitted handlers, because that is were the we are detached and
         // the new parent is attached to xaml view. Only when we are detached can the new parent actually attach us.
-        //newParent->InitializeChildren();
+        newParent.InitializeChildren();
 
         return { *this, newNeighbour };
     }
@@ -343,7 +344,9 @@ namespace winrt::TerminalApp::implementation
             if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual))
             {
                 // Bubble this event up to app host, starting with bubbling to the hosting tab
-                //_PaneRaiseVisualBellHandlers(nullptr);
+                // todo: figure out how to raise this event with nullptr
+                // have tried - nullptr, IPane{ nullptr }, LeafPane{ nullptr }
+                _PaneRaiseVisualBellHandlers(*this);
             }
         }
     }
@@ -475,4 +478,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     DEFINE_EVENT(LeafPane, GotFocus, _GotFocusHandlers, winrt::delegate<LeafPane>);
+    DEFINE_EVENT(LeafPane, GotSplit, _GotSplitHandlers, winrt::delegate<ParentPane>);
+    DEFINE_EVENT(LeafPane, PaneRaiseVisualBell, _PaneRaiseVisualBellHandlers, winrt::delegate<LeafPane>);
 }

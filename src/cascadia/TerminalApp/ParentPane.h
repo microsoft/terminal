@@ -19,6 +19,8 @@ namespace winrt::TerminalApp::implementation
         void FocusFirstChild();
         bool HasFocusedChild();
 
+        void InitializeChildren();
+
         void Shutdown();
 
         void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings,
@@ -56,11 +58,15 @@ namespace winrt::TerminalApp::implementation
         float _desiredSplitPosition;
         winrt::event_token _firstClosedToken{ 0 };
         winrt::event_token _secondClosedToken{ 0 };
+        winrt::event_token _firstTypeChangedToken{ 0 };
+        winrt::event_token _secondTypeChangedToken{ 0 };
 
         void _CreateRowColDefinitions();
         bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         bool _NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         void _CloseChild(const bool closeFirst);
+        void _SetupChildEventHandlers(const bool isFirstChild);
+        std::function<void(winrt::Windows::UI::Xaml::FrameworkElement const&, int32_t)> _GetGridSetColOrRowFunc() const noexcept;
 
         std::pair<float, float> _CalcChildrenSizes(const float fullSize) const;
         SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;

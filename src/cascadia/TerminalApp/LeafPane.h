@@ -73,8 +73,11 @@ namespace winrt::TerminalApp::implementation
 
         void BorderTappedHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                  winrt::Windows::UI::Xaml::Input::TappedRoutedEventArgs const& e);
+
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<LeafPane>);
+        DECLARE_EVENT(GotSplit, _GotSplitHandlers, winrt::delegate<ParentPane>);
+        DECLARE_EVENT(PaneRaiseVisualBell, _PaneRaiseVisualBellHandlers, winrt::delegate<LeafPane>);
 
     private:
         winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };

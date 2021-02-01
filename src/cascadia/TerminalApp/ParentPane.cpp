@@ -81,6 +81,12 @@ namespace winrt::TerminalApp::implementation
         return _firstChild.HasFocusedChild() || _secondChild.HasFocusedChild();
     }
 
+    void ParentPane::InitializeChildren()
+    {
+        FirstChild_Root().Content(_firstChild);
+        SecondChild_Root().Content(_secondChild);
+    }
+
     void ParentPane::Shutdown()
     {
         _firstChild.Shutdown();
@@ -435,6 +441,61 @@ namespace winrt::TerminalApp::implementation
             remainingChild.FindFirstLeaf().try_as<LeafPane>().SetActive();
         }
         // todo: do all the setup/deletion of child event handlers
+    }
+
+    void ParentPane::_SetupChildEventHandlers(const bool /*isFirstChild*/)
+    {
+        //auto& child = isFirstChild ? _firstChild : _secondChild;
+        //auto& closedToken = isFirstChild ? _firstClosedToken : _secondClosedToken;
+        //auto& typeChangedToken = isFirstChild ? _firstTypeChangedToken : _secondTypeChangedToken;
+
+        //if (const auto childAsLeaf = child.try_as<LeafPane>())
+        //{
+        //    // When our child is a leaf and got closed, we close it
+        //    closedToken = childImpl.Closed([=, weakThis = get_weak()](auto&& /*s*/, auto&& /*e*/) {
+        //        if (auto pane{ weakThis.lock() })
+        //        {
+        //            // Unsubscribe from events of both our children, as we ourself will also
+        //            // get closed when our child does.
+        //            pane->_RemoveAllChildEventHandlers(true);
+        //            pane->_RemoveAllChildEventHandlers(false);
+
+        //            pane->_CloseChild(isFirstChild);
+        //        }
+        //    });
+
+        //    // When our child is a leaf and got splitted, it produces the new parent pane that contains
+        //    // both him and the new leaf near him. We then replace that child with the new parent pane.
+        //    typeChangedToken = childAsLeaf->Splitted([=, weakThis = weak_from_this(), &child](std::shared_ptr<ParentPane> splittedChild) {
+        //        if (auto pane{ weakThis.lock() })
+        //        {
+        //            pane->_OnChildSplittedOrCollapsed(isFirstChild, splittedChild);
+        //        }
+        //    });
+        //}
+        //else if (const auto childAsParent = std::dynamic_pointer_cast<ParentPane>(child))
+        //{
+        //    // When our child is a parent and one of its children got closed (and so the parent collapses),
+        //    // we take in its remaining, orphaned child as our own.
+        //    typeChangedToken = childAsParent->ChildClosed([=, weakThis = weak_from_this(), &child](std::shared_ptr<Pane> collapsedChild) {
+        //        if (auto pane{ weakThis.lock() })
+        //        {
+        //            pane->_OnChildSplittedOrCollapsed(isFirstChild, collapsedChild);
+        //        }
+        //    });
+        //}
+    }
+
+    std::function<void(winrt::Windows::UI::Xaml::FrameworkElement const&, int32_t)> ParentPane::_GetGridSetColOrRowFunc() const noexcept
+    {
+        if (_splitState == SplitState::Vertical)
+        {
+            return Controls::Grid::SetColumn;
+        }
+        else
+        {
+            return Controls::Grid::SetRow;
+        }
     }
 
     std::pair<float, float> ParentPane::_CalcChildrenSizes(const float fullSize) const
