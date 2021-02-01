@@ -1125,7 +1125,7 @@ namespace winrt::TerminalApp::implementation
     // If after the calculation the tab is read-only we hide the close button on the tab view item
     void TerminalTab::_RecalculateAndApplyReadOnly()
     {
-        auto control = GetActiveTerminalControl();
+        const auto control = GetActiveTerminalControl();
         if (control)
         {
             _headerControl.IsReadOnlyActive(control.ReadOnly());

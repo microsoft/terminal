@@ -1587,6 +1587,7 @@ namespace winrt::TerminalApp::implementation
             _UnZoomIfNeeded();
 
             auto pane = terminalTab->GetActivePane();
+
             if (const auto pane{ terminalTab->GetActivePane() })
             {
                 if (const auto control{ pane->GetTerminalControl() })
