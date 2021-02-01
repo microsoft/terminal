@@ -117,64 +117,64 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="ColorScheme_Background.Text" xml:space="preserve">
+  <data name="ColorScheme_Background.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Background</value>
   </data>
-  <data name="ColorScheme_Black.Header" xml:space="preserve">
+  <data name="ColorScheme_Black.ToolTip" xml:space="preserve">
     <value>Black</value>
   </data>
-  <data name="ColorScheme_Blue.Header" xml:space="preserve">
+  <data name="ColorScheme_Blue.ToolTip" xml:space="preserve">
     <value>Blue</value>
   </data>
-  <data name="ColorScheme_BrightBlack.Header" xml:space="preserve">
+  <data name="ColorScheme_BrightBlack.ToolTip" xml:space="preserve">
     <value>Bright black</value>
   </data>
-  <data name="ColorScheme_BrightBlue.Header" xml:space="preserve">
+  <data name="ColorScheme_BrightBlue.ToolTip" xml:space="preserve">
     <value>Bright blue</value>
   </data>
-  <data name="ColorScheme_BrightCyan.Header" xml:space="preserve">
+  <data name="ColorScheme_BrightCyan.ToolTip" xml:space="preserve">
     <value>Bright cyan</value>
   </data>
-  <data name="ColorScheme_BrightGreen.Header" xml:space="preserve">
+  <data name="ColorScheme_BrightGreen.ToolTip" xml:space="preserve">
     <value>Bright green</value>
   </data>
-  <data name="ColorScheme_BrightPurple.Header" xml:space="preserve">
+  <data name="ColorScheme_BrightPurple.ToolTip" xml:space="preserve">
     <value>Bright purple</value>
   </data>
-  <data name="ColorScheme_BrightRed.Header" xml:space="preserve">
+  <data name="ColorScheme_BrightRed.ToolTip" xml:space="preserve">
     <value>Bright red</value>
   </data>
-  <data name="ColorScheme_BrightWhite.Header" xml:space="preserve">
+  <data name="ColorScheme_BrightWhite.ToolTip" xml:space="preserve">
     <value>Bright white</value>
   </data>
-  <data name="ColorScheme_BrightYellow.Header" xml:space="preserve">
+  <data name="ColorScheme_BrightYellow.ToolTip" xml:space="preserve">
     <value>Bright yellow</value>
   </data>
-  <data name="ColorScheme_CursorColor.Text" xml:space="preserve">
+  <data name="ColorScheme_CursorColor.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Cursor color</value>
   </data>
-  <data name="ColorScheme_Cyan.Header" xml:space="preserve">
+  <data name="ColorScheme_Cyan.ToolTip" xml:space="preserve">
     <value>Cyan</value>
   </data>
-  <data name="ColorScheme_Foreground.Text" xml:space="preserve">
+  <data name="ColorScheme_Foreground.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Foreground</value>
   </data>
-  <data name="ColorScheme_Green.Header" xml:space="preserve">
+  <data name="ColorScheme_Green.ToolTip" xml:space="preserve">
     <value>Green</value>
   </data>
-  <data name="ColorScheme_Purple.Header" xml:space="preserve">
+  <data name="ColorScheme_Purple.ToolTip" xml:space="preserve">
     <value>Purple</value>
   </data>
-  <data name="ColorScheme_SelectionBackground.Text" xml:space="preserve">
+  <data name="ColorScheme_SelectionBackground.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Selection background</value>
   </data>
-  <data name="ColorScheme_Red.Header" xml:space="preserve">
+  <data name="ColorScheme_Red.ToolTip" xml:space="preserve">
     <value>Red</value>
   </data>
-  <data name="ColorScheme_White.Header" xml:space="preserve">
+  <data name="ColorScheme_White.ToolTip" xml:space="preserve">
     <value>White</value>
   </data>
-  <data name="ColorScheme_Yellow.Header" xml:space="preserve">
+  <data name="ColorScheme_Yellow.ToolTip" xml:space="preserve">
     <value>Yellow</value>
   </data>
   <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">

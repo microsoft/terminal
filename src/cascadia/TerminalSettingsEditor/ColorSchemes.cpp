@@ -21,22 +21,22 @@ using namespace winrt::Windows::Foundation::Collections;
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     static const std::array<hstring, 16> TableColorNames = {
-        RS_(L"ColorScheme_Black/Header"),
-        RS_(L"ColorScheme_Red/Header"),
-        RS_(L"ColorScheme_Green/Header"),
-        RS_(L"ColorScheme_Yellow/Header"),
-        RS_(L"ColorScheme_Blue/Header"),
-        RS_(L"ColorScheme_Purple/Header"),
-        RS_(L"ColorScheme_Cyan/Header"),
-        RS_(L"ColorScheme_White/Header"),
-        RS_(L"ColorScheme_BrightBlack/Header"),
-        RS_(L"ColorScheme_BrightRed/Header"),
-        RS_(L"ColorScheme_BrightGreen/Header"),
-        RS_(L"ColorScheme_BrightYellow/Header"),
-        RS_(L"ColorScheme_BrightBlue/Header"),
-        RS_(L"ColorScheme_BrightPurple/Header"),
-        RS_(L"ColorScheme_BrightCyan/Header"),
-        RS_(L"ColorScheme_BrightWhite/Header")
+        RS_(L"ColorScheme_Black/ToolTip"),
+        RS_(L"ColorScheme_Red/ToolTip"),
+        RS_(L"ColorScheme_Green/ToolTip"),
+        RS_(L"ColorScheme_Yellow/ToolTip"),
+        RS_(L"ColorScheme_Blue/ToolTip"),
+        RS_(L"ColorScheme_Purple/ToolTip"),
+        RS_(L"ColorScheme_Cyan/ToolTip"),
+        RS_(L"ColorScheme_White/ToolTip"),
+        RS_(L"ColorScheme_BrightBlack/ToolTip"),
+        RS_(L"ColorScheme_BrightRed/ToolTip"),
+        RS_(L"ColorScheme_BrightGreen/ToolTip"),
+        RS_(L"ColorScheme_BrightYellow/ToolTip"),
+        RS_(L"ColorScheme_BrightBlue/ToolTip"),
+        RS_(L"ColorScheme_BrightPurple/ToolTip"),
+        RS_(L"ColorScheme_BrightCyan/ToolTip"),
+        RS_(L"ColorScheme_BrightWhite/ToolTip")
     };
 
     static const std::array<std::wstring, 9> InBoxSchemes = {

@@ -17,11 +17,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <ResourceDictionary Source="CommonResources.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            <Thickness x:Key="ColorSchemesStandardControlMargin">0,0,10,20</Thickness>
+            <Thickness x:Key="ColorSchemesStandardControlMargin">0,0,10,10</Thickness>
 
             <Style x:Key="ColorStackPanelStyle" TargetType="StackPanel">
                 <Setter Property="Margin" Value="{StaticResource ColorSchemesStandardControlMargin}"/>
-                <Setter Property="Height" Value="59"/>
+                <Setter Property="Height" Value="30"/>
             </Style>
 
             <Style x:Key="ColorHeaderStyle" TargetType="TextBlock">
@@ -156,9 +156,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="local:ColorTableEntry">
                         <StackPanel Style="{StaticResource ColorStackPanelStyle}">
-                            <TextBlock Text="{x:Bind Name, Mode=OneWay}"
-                                       Style="{StaticResource ColorHeaderStyle}"/>
-                            <Button Background="{x:Bind Color, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
+                            <Button Background="{x:Bind Color, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}"
+                                    ToolTipService.ToolTip="{x:Bind Name, Mode=OneWay}">
 
 
                                 <Button.Resources>
@@ -194,9 +193,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                           Grid.Column="1"
                           Style="{StaticResource ItemsControlStyle}">
                 <StackPanel Style="{StaticResource ColorStackPanelStyle}">
-                    <TextBlock x:Uid="ColorScheme_Foreground"
-                               Style="{StaticResource ColorHeaderStyle}"/>
-                    <Button Background="{Binding Color, ElementName=ForegroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
+                    <Button x:Uid="ColorScheme_Foreground"
+                            Background="{Binding Color, ElementName=ForegroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
 
 
                         <Button.Resources>
@@ -222,9 +220,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </Button>
                 </StackPanel>
                 <StackPanel Style="{StaticResource ColorStackPanelStyle}">
-                    <TextBlock x:Uid="ColorScheme_Background"
-                               Style="{StaticResource ColorHeaderStyle}"/>
-                    <Button Background="{Binding Color, ElementName=BackgroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
+                    <Button x:Uid="ColorScheme_Background"
+                            Background="{Binding Color, ElementName=BackgroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
 
 
                         <Button.Resources>
@@ -251,9 +248,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </Button>
                 </StackPanel>
                 <StackPanel Style="{StaticResource ColorStackPanelStyle}">
-                    <TextBlock x:Uid="ColorScheme_CursorColor"
-                               Style="{StaticResource ColorHeaderStyle}"/>
-                    <Button Background="{Binding Color, ElementName=CursorColorPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
+                    <Button x:Uid="ColorScheme_CursorColor"
+                            Background="{Binding Color, ElementName=CursorColorPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
 
 
                         <Button.Resources>
@@ -280,9 +276,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </Button>
                 </StackPanel>
                 <StackPanel Style="{StaticResource ColorStackPanelStyle}">
-                    <TextBlock x:Uid="ColorScheme_SelectionBackground"
-                               Style="{StaticResource ColorHeaderStyle}"/>
-                    <Button Background="{Binding Color, ElementName=SelectionBackgroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
+                    <Button x:Uid="ColorScheme_SelectionBackground"
+                            Background="{Binding Color, ElementName=SelectionBackgroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
 
 
                         <Button.Resources>
