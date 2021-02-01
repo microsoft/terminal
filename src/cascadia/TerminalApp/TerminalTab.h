@@ -5,6 +5,8 @@
 #include "Pane.h"
 #include "ColorPickupFlyout.h"
 #include "TabBase.h"
+#include "LeafPane.h"
+#include "ParentPane.h"
 #include "TerminalTab.g.h"
 
 static constexpr double HeaderRenameBoxWidthDefault{ 165 };
@@ -92,6 +94,9 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
         winrt::TerminalApp::TabHeaderControl _headerControl{};
 
+        winrt::event_token _rootPaneClosedToken{ 0 };
+        winrt::event_token _rootPaneTypeChangedToken{ 0 };
+
         std::vector<uint16_t> _mruPanes;
         uint16_t _nextPaneId{ 0 };
 
@@ -116,6 +121,8 @@ namespace winrt::TerminalApp::implementation
 
         void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
         void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
+        void _AttachEventHandlersToLeafPane(TerminalApp::LeafPane pane);
+        void _SetupRootPaneEventHandlers();
 
         void _UpdateActivePane(std::shared_ptr<Pane> pane);
 

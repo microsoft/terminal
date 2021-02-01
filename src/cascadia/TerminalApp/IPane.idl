@@ -24,6 +24,7 @@ namespace TerminalApp
         Windows.UI.Xaml.Controls.Grid GetRootElement();
 
         void Shutdown();
+        void ClearActive();
         void UpdateSettings(TerminalSettings settings, Guid profile);
 
         void ResizeContent(Windows.Foundation.Size newSize);

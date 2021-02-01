@@ -189,7 +189,7 @@ namespace winrt::TerminalApp::implementation
         Size actualSize{ gsl::narrow_cast<float>(Root().ActualWidth()),
                          gsl::narrow_cast<float>(Root().ActualHeight()) };
 
-        const auto newParent = ParentPane(*this, newNeighbour, splitType, 1.0f - splitSize, actualSize);
+        const auto newParent = TerminalApp::ParentPane(*this, newNeighbour, splitType, 1.0f - splitSize, actualSize);
 
         _GotSplitHandlers(newParent);
 
@@ -511,6 +511,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     DEFINE_EVENT(LeafPane, GotFocus, _GotFocusHandlers, winrt::delegate<LeafPane>);
-    DEFINE_EVENT(LeafPane, GotSplit, _GotSplitHandlers, winrt::delegate<ParentPane>);
+    DEFINE_EVENT(LeafPane, GotSplit, _GotSplitHandlers, winrt::delegate<TerminalApp::ParentPane>);
     DEFINE_EVENT(LeafPane, PaneRaiseVisualBell, _PaneRaiseVisualBellHandlers, winrt::delegate<LeafPane>);
 }

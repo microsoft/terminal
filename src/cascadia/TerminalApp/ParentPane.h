@@ -23,6 +23,7 @@ namespace winrt::TerminalApp::implementation
         void InitializeChildren();
 
         void Shutdown();
+        void ClearActive();
 
         void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings,
                             const GUID& profile);

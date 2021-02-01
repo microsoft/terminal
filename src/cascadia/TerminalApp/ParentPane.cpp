@@ -93,6 +93,12 @@ namespace winrt::TerminalApp::implementation
         _secondChild.Shutdown();
     }
 
+    void ParentPane::ClearActive()
+    {
+        _firstChild.ClearActive();
+        _secondChild.ClearActive();
+    }
+
     void ParentPane::ResizeContent(const Size& newSize)
     {
         const auto width = newSize.Width;
