@@ -34,8 +34,8 @@ namespace winrt::TerminalApp::implementation
 
         FirstChild_Root().Content(firstChild);
         SecondChild_Root().Content(secondChild);
-        //_GetGridSetColOrRowFunc()(firstChild->GetRootElement(), 0);
-        //_GetGridSetColOrRowFunc()(secondChild->GetRootElement(), 1);
+        _GetGridSetColOrRowFunc()(firstChild, 0);
+        _GetGridSetColOrRowFunc()(secondChild, 1);
     }
 
     Controls::Grid ParentPane::GetRootElement()
@@ -405,7 +405,7 @@ namespace winrt::TerminalApp::implementation
         newlyFocusedChild.FocusFirstChild();
 
         //UpdateVisuals();
-        // TODO: replacement for update visuals here?
+        // TODO: do we need a replacement for update visuals here?
 
         return true;
     }
@@ -427,9 +427,10 @@ namespace winrt::TerminalApp::implementation
 
         // On all the leaf descendants that were adjacent to the closed child, update its
         // border, so that it matches the border of the closed child.
-        //PropagateToLeavesOnEdge(closedChildDir, [=](LeafPane& paneOnEdge) {
-        //    paneOnEdge.UpdateBorderWithClosedNeighbour(closedChild, closedChildDir);
-        //});
+        // todo: update border with close neighbour
+        PropagateToLeavesOnEdge(closedChildDir, [&](LeafPane paneOnEdge) {
+            paneOnEdge.UpdateBorderWithClosedNeighbor(closedChild, closedChildDir);
+        });
 
         _ChildClosedHandlers(remainingChild);
 
@@ -440,7 +441,6 @@ namespace winrt::TerminalApp::implementation
         {
             remainingChild.FindFirstLeaf().try_as<LeafPane>().SetActive();
         }
-        // todo: do all the setup/deletion of child event handlers
     }
 
     void ParentPane::_SetupChildEventHandlers(const bool /*isFirstChild*/)
@@ -484,6 +484,46 @@ namespace winrt::TerminalApp::implementation
         //        }
         //    });
         //}
+    }
+
+    void ParentPane::_RemoveAllChildEventHandlers(const bool isFirstChild)
+    {
+        const auto child = isFirstChild ? _firstChild : _secondChild;
+        const auto closedToken = isFirstChild ? _firstClosedToken : _secondClosedToken;
+        const auto typeChangedToken = isFirstChild ? _firstTypeChangedToken : _secondTypeChangedToken;
+
+        if (const auto childAsLeaf = child.try_as<LeafPane>())
+        {
+            //childAsLeaf.Closed(closedToken);
+            //childAsLeaf.OnSplit(typeChangedToken);
+        }
+        else if (const auto childAsParent = child.try_as<ParentPane>())
+        {
+            childAsParent->ChildClosed(typeChangedToken);
+        }
+    }
+
+    void ParentPane::_OnChildSplitOrCollapse(const bool isFirstChild, IPane newChild)
+    {
+        // Unsub from all the events of the parent child.
+        _RemoveAllChildEventHandlers(isFirstChild);
+
+        (isFirstChild ? _firstChild : _secondChild) = newChild;
+
+        if (const auto newChildAsLeaf = newChild.try_as<LeafPane>())
+        {
+            Root().Children().SetAt(newChildAsLeaf ? 0 : 1, newChildAsLeaf);
+            _GetGridSetColOrRowFunc()(newChildAsLeaf, isFirstChild ? 0 : 1);
+        }
+        else
+        {
+            const auto newChildAsParent = newChild.try_as<TerminalApp::ParentPane>();
+            Root().Children().SetAt(newChildAsParent ? 0 : 1, newChildAsParent);
+            _GetGridSetColOrRowFunc()(newChildAsParent, isFirstChild ? 0 : 1);
+        }
+
+        // Setup events appropriate for the new child
+        _SetupChildEventHandlers(isFirstChild);
     }
 
     std::function<void(winrt::Windows::UI::Xaml::FrameworkElement const&, int32_t)> ParentPane::_GetGridSetColOrRowFunc() const noexcept

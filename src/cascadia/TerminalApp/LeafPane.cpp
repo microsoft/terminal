@@ -167,13 +167,13 @@ namespace winrt::TerminalApp::implementation
         // Update the border of this pane and set appropriate border for the new leaf pane.
         if (splitType == SplitState::Vertical)
         {
-            //newNeighbour->_borders = _borders | Borders::Left;
-            _borders = _borders | Borders::Right;
+            newNeighbour.Borders(_borders | Borders2::Left);
+            _borders = _borders | Borders2::Right;
         }
         else
         {
-            //newNeighbour->_borders = _borders | Borders::Top;
-            _borders = _borders | Borders::Bottom;
+            newNeighbour.Borders(_borders | Borders2::Top);
+            _borders = _borders | Borders2::Bottom;
         }
 
         _UpdateBorders();
@@ -182,7 +182,7 @@ namespace winrt::TerminalApp::implementation
         if (WasLastFocused())
         {
             ClearActive();
-            newNeighbour.ClearActive();
+            newNeighbour.SetActive();
         }
 
         // Parent pane has to know it's size when creating, which will just be the size of ours.
@@ -193,7 +193,7 @@ namespace winrt::TerminalApp::implementation
 
         _GotSplitHandlers(newParent);
 
-        // Call InitializeChildren after invoking Splitted handlers, because that is were the we are detached and
+        // Call InitializeChildren after invoking GotSplit handlers, because that is where we are detached and
         // the new parent is attached to xaml view. Only when we are detached can the new parent actually attach us.
         newParent.InitializeChildren();
 
@@ -231,16 +231,26 @@ namespace winrt::TerminalApp::implementation
         _id = id;
     }
 
+    Borders2 LeafPane::Borders() noexcept
+    {
+        return _borders;
+    }
+
+    void LeafPane::Borders(Borders2 borders) noexcept
+    {
+        _borders = borders;
+    }
+
     Size LeafPane::GetMinSize() const
     {
         auto controlSize = _control.MinimumSize();
         auto newWidth = controlSize.Width;
         auto newHeight = controlSize.Height;
 
-        newWidth += WI_IsFlagSet(_borders, Borders::Left) ? PaneBorderSize : 0;
-        newWidth += WI_IsFlagSet(_borders, Borders::Right) ? PaneBorderSize : 0;
-        newHeight += WI_IsFlagSet(_borders, Borders::Top) ? PaneBorderSize : 0;
-        newHeight += WI_IsFlagSet(_borders, Borders::Bottom) ? PaneBorderSize : 0;
+        newWidth += WI_IsFlagSet(_borders, Borders2::Left) ? PaneBorderSize : 0;
+        newWidth += WI_IsFlagSet(_borders, Borders2::Right) ? PaneBorderSize : 0;
+        newHeight += WI_IsFlagSet(_borders, Borders2::Top) ? PaneBorderSize : 0;
+        newHeight += WI_IsFlagSet(_borders, Borders2::Bottom) ? PaneBorderSize : 0;
 
         return { newWidth, newHeight };
     }
@@ -303,6 +313,29 @@ namespace winrt::TerminalApp::implementation
             // indicate that the `target` Pane is not down this branch.
             return nullptr;
         }
+    }
+
+    void LeafPane::UpdateBorderWithClosedNeighbor(TerminalApp::LeafPane closedNeighbor, const ResizeDirection& neighborDirection)
+    {
+        // Prepare a mask that includes the only the border which was touching our neighbour.
+        Borders2 borderMask;
+        switch (neighborDirection)
+        {
+        case ResizeDirection::Up:
+            borderMask = Borders2::Top;
+        case ResizeDirection::Down:
+            borderMask = Borders2::Bottom;
+        case ResizeDirection::Left:
+            borderMask = Borders2::Left;
+        case ResizeDirection::Right:
+            borderMask = Borders2::Right;
+        }
+
+        // Set the border on this side to the same state that the neighbour had.
+        // todo: why doesn't this call work?
+        //WI_UpdateFlagsInMask(_borders, borderMask, closedNeighbor.Borders());
+
+        _UpdateBorders();
     }
 
     void LeafPane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/,
@@ -369,19 +402,19 @@ namespace winrt::TerminalApp::implementation
         //}
         //else
         //{
-            if (WI_IsFlagSet(_borders, Borders::Top))
+            if (WI_IsFlagSet(_borders, Borders2::Top))
             {
                 top = PaneBorderSize;
             }
-            if (WI_IsFlagSet(_borders, Borders::Bottom))
+            if (WI_IsFlagSet(_borders, Borders2::Bottom))
             {
                 bottom = PaneBorderSize;
             }
-            if (WI_IsFlagSet(_borders, Borders::Left))
+            if (WI_IsFlagSet(_borders, Borders2::Left))
             {
                 left = PaneBorderSize;
             }
-            if (WI_IsFlagSet(_borders, Borders::Right))
+            if (WI_IsFlagSet(_borders, Borders2::Right))
             {
                 right = PaneBorderSize;
             }
@@ -438,13 +471,13 @@ namespace winrt::TerminalApp::implementation
         float lower = _control.SnapDimensionToGrid(widthOrHeight, dimension);
         if (widthOrHeight)
         {
-            lower += WI_IsFlagSet(_borders, Borders::Left) ? PaneBorderSize : 0;
-            lower += WI_IsFlagSet(_borders, Borders::Right) ? PaneBorderSize : 0;
+            lower += WI_IsFlagSet(_borders, Borders2::Left) ? PaneBorderSize : 0;
+            lower += WI_IsFlagSet(_borders, Borders2::Right) ? PaneBorderSize : 0;
         }
         else
         {
-            lower += WI_IsFlagSet(_borders, Borders::Top) ? PaneBorderSize : 0;
-            lower += WI_IsFlagSet(_borders, Borders::Bottom) ? PaneBorderSize : 0;
+            lower += WI_IsFlagSet(_borders, Borders2::Top) ? PaneBorderSize : 0;
+            lower += WI_IsFlagSet(_borders, Borders2::Bottom) ? PaneBorderSize : 0;
         }
 
         if (lower == dimension)

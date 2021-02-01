@@ -10,15 +10,7 @@
 
 namespace winrt::TerminalApp::implementation
 {
-    enum class Borders : int
-    {
-        None = 0x0,
-        Top = 0x1,
-        Bottom = 0x2,
-        Left = 0x4,
-        Right = 0x8
-    };
-    DEFINE_ENUM_FLAG_OPERATORS(Borders);
+    DEFINE_ENUM_FLAG_OPERATORS(Borders2);
 
     struct LeafPane : LeafPaneT<LeafPane>
     {
@@ -58,7 +50,10 @@ namespace winrt::TerminalApp::implementation
         int GetLeafPaneCount() const noexcept;
 
         uint16_t Id() noexcept;
-        void Id(uint16_t) noexcept;
+        void Id(uint16_t id) noexcept;
+
+        Borders2 Borders() noexcept;
+        void Borders(Borders2 borders) noexcept;
 
         winrt::Windows::Foundation::Size GetMinSize() const;
 
@@ -68,6 +63,8 @@ namespace winrt::TerminalApp::implementation
                                                                           winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
                                                                           const float splitSize,
                                                                           const winrt::Windows::Foundation::Size availableSpace) const;
+
+        void UpdateBorderWithClosedNeighbor(TerminalApp::LeafPane closedNeighbor, const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& neighborDirection);
 
         SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
@@ -84,7 +81,7 @@ namespace winrt::TerminalApp::implementation
         GUID _profile;
         bool _lastActive{ false };
         uint16_t _id;
-        Borders _borders{ Borders::None };
+        Borders2 _borders{ Borders2::None };
 
         static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
         static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;

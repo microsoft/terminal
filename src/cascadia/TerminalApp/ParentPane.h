@@ -66,6 +66,8 @@ namespace winrt::TerminalApp::implementation
         bool _NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         void _CloseChild(const bool closeFirst);
         void _SetupChildEventHandlers(const bool isFirstChild);
+        void _RemoveAllChildEventHandlers(const bool isFirstChild);
+        void _OnChildSplitOrCollapse(const bool isFirstChild, IPane newChild);
         std::function<void(winrt::Windows::UI::Xaml::FrameworkElement const&, int32_t)> _GetGridSetColOrRowFunc() const noexcept;
 
         std::pair<float, float> _CalcChildrenSizes(const float fullSize) const;

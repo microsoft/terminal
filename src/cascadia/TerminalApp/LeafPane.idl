@@ -5,6 +5,15 @@ import "IPane.idl";
 
 namespace TerminalApp
 {
+    enum Borders2
+    {
+        None = 0,
+        Top = 1,
+        Bottom = 2,
+        Left = 4,
+        Right = 8
+    };
+
     [default_interface] runtimeclass LeafPane : Windows.UI.Xaml.Controls.UserControl, IPane
     {
         LeafPane(Guid profile, Microsoft.Terminal.TerminalControl.TermControl con, Boolean active);
@@ -12,6 +21,8 @@ namespace TerminalApp
         Guid GetProfile();
         Boolean WasLastFocused();
         UInt16 Id;
+        Borders2 Borders;
         void SetActive();
+        void UpdateBorderWithClosedNeighbor(LeafPane closedNeighbor, Microsoft.Terminal.Settings.Model.ResizeDirection neighborDirection);
     }
 }
