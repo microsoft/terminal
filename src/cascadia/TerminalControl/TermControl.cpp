@@ -2598,6 +2598,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // closed. We can just do it whenever.
             _AsyncCloseConnection();
 
+            {
+                // GH#8734:
+                // We lock the terminal here to make sure it isn't still being
+                // used in the connection thread before we destroy the renderer.
+                // However, we must unlock it again prior to triggering the
+                // teardown, to avoid the render thread being deadlocked. The
+                // renderer may be waiting to acquire the terminal lock, while
+                // we're waiting for the renderer to finish.
+                auto lock = _terminal->LockForWriting();
+            }
+
             if (auto localRenderEngine{ std::exchange(_renderEngine, nullptr) })
             {
                 if (auto localRenderer{ std::exchange(_renderer, nullptr) })
