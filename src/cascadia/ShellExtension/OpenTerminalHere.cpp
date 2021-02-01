@@ -273,7 +273,7 @@ std::wstring OpenTerminalHere::_GetPathFromExplorer() const
     }
     catch (...)
     {
-        //look like try_create_intance is not available no more
+        //look like try_create_instance is not available no more
     }
 
     if (shell == nullptr)
