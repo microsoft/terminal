@@ -18,6 +18,13 @@ Abstract:
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {
+    struct CompareWindowActivatedArgs
+    {
+        bool operator()(const Remoting::WindowActivatedArgs& lhs, const Remoting::WindowActivatedArgs& rhs) const
+        {
+            return lhs.ActivatedTime() < rhs.ActivatedTime();
+        }
+    };
     struct WindowActivatedArgs : public WindowActivatedArgsT<WindowActivatedArgs>
     {
         GETSET_PROPERTY(uint64_t, PeasantID, 0);
@@ -29,6 +36,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             _PeasantID{ peasantID },
             _DesktopID{ desktopID },
             _ActivatedTime{ timestamp } {};
+        static bool compare(const WindowActivatedArgs& lhs, const WindowActivatedArgs& rhs) { return lhs._ActivatedTime < rhs._ActivatedTime; }
+        static bool compare(const Remoting::WindowActivatedArgs& lhs, const Remoting::WindowActivatedArgs& rhs) { return lhs.ActivatedTime() < rhs.ActivatedTime(); }
     };
 }
 

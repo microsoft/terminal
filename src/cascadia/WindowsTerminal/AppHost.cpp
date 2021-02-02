@@ -556,11 +556,22 @@ winrt::fire_and_forget AppHost::_WindowActivated()
 
     if (auto peasant{ _windowManager.CurrentWindow() })
     {
+        GUID currentDesktopGuid{ 0 };
+        try
+        {
+            auto manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
+            if (manager)
+            {
+                LOG_IF_FAILED(manager->GetWindowDesktopId(_window->GetHandle(), &currentDesktopGuid));
+            }
+        }
+        CATCH_LOG();
+
         // TODO: projects/5 - in the future, we'll want to actually get the
         // desktop GUID in IslandWindow, and bubble that up here, then down to
         // the Peasant. For now, we're just leaving space for it.
         Remoting::WindowActivatedArgs args{ peasant.GetID(),
-                                            winrt::guid{},
+                                            currentDesktopGuid,
                                             winrt::clock().now() };
         peasant.ActivateWindow(args);
     }

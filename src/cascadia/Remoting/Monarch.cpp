@@ -5,6 +5,7 @@
 #include "Monarch.h"
 #include "CommandlineArgs.h"
 #include "FindTargetWindowArgs.h"
+#include "WindowActivatedArgs.h"
 #include "ProposeCommandlineResult.h"
 
 #include "Monarch.g.cpp"
@@ -140,33 +141,73 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // peasant was the most recent per-desktop. When we want to get the most
         // recent of all desktops (WindowingBehavior::UseExisting), then use the
         // most recent of all desktops.
-        const auto oldLastActiveTime = _lastActivatedTime.time_since_epoch().count();
+        // const auto oldLastActiveTime = _lastActivatedTime.time_since_epoch().count();
         const auto newLastActiveTime = args.ActivatedTime().time_since_epoch().count();
 
-        // For now, we'll just pay attention to whoever the most recent peasant
-        // was. We're not too worried about the mru peasant dying. Worst case -
-        // when the user executes a `wt -w 0`, we won't be able to find that
-        // peasant, and it'll open in a new window instead of the current one.
-        if (args.ActivatedTime() > _lastActivatedTime)
+        // * Check all the current lists to look for this peasant.
+        //   remove it from any where it exists.
+        for (auto& [g, vec] : _mruPeasants)
         {
-            _mostRecentPeasant = args.PeasantID();
-            _lastActivatedTime = args.ActivatedTime();
+            auto result = std::find_if(vec.begin(),
+                                       vec.end(),
+                                       [args](auto other) { return args.PeasantID() == other.PeasantID(); });
+            if (result != std::end(vec))
+            {
+                vec.erase(result);
+            }
+            std::make_heap(vec.begin(), vec.end(), Remoting::implementation::CompareWindowActivatedArgs());
         }
+        // * If the current desktop doesn't have a vector, add one.
+        if (_mruPeasants.find(args.DesktopID()) == _mruPeasants.end())
+        {
+            _mruPeasants[args.DesktopID()] = std::vector<Remoting::WindowActivatedArgs>();
+        }
+        // * Add this args to the queue for the given desktop.
+        _mruPeasants[args.DesktopID()].push_back(args);
+        std::push_heap(_mruPeasants[args.DesktopID()].begin(),
+                       _mruPeasants[args.DesktopID()].end(),
+                       Remoting::implementation::CompareWindowActivatedArgs());
+
+        // // For now, we'll just pay attention to whoever the most recent peasant
+        // // was. We're not too worried about the mru peasant dying. Worst case -
+        // // when the user executes a `wt -w 0`, we won't be able to find that
+        // // peasant, and it'll open in a new window instead of the current one.
+        // if (args.ActivatedTime() > _lastActivatedTime)
+        // {
+        //     _mostRecentPeasant = args.PeasantID();
+        //     _lastActivatedTime = args.ActivatedTime();
+        // }
 
         TraceLoggingWrite(g_hRemotingProvider,
                           "Monarch_SetMostRecentPeasant",
                           TraceLoggingUInt64(args.PeasantID(), "peasantID", "the ID of the activated peasant"),
-                          TraceLoggingInt64(oldLastActiveTime, "oldLastActiveTime", "The previous lastActiveTime"),
+                          // TraceLoggingInt64(oldLastActiveTime, "oldLastActiveTime", "The previous lastActiveTime"),
                           TraceLoggingInt64(newLastActiveTime, "newLastActiveTime", "The provided args.ActivatedTime()"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 
     uint64_t Monarch::_getMostRecentPeasantID()
     {
-        if (_mostRecentPeasant != 0)
+        std::vector<Remoting::WindowActivatedArgs> _mrus;
+        for (auto& [g, vec] : _mruPeasants)
         {
-            return _mostRecentPeasant;
+            if (vec.size() > 0)
+            {
+                // _mrus.push_heap(*vec.begin(), implementation::WindowActivatedArgs::compare);
+                _mrus.push_back(*vec.begin());
+                std::push_heap(_mrus.begin(),
+                               _mrus.end(),
+                               Remoting::implementation::CompareWindowActivatedArgs());
+            }
         }
+        if (!_mrus.empty())
+        {
+            return _mrus.begin()->PeasantID();
+        }
+        // if (_mostRecentPeasant != 0)
+        // {
+        //     return _mostRecentPeasant;
+        // }
 
         // We haven't yet been told the MRU peasant. Just use the first one.
         // This is just gonna be a random one, but really shouldn't happen

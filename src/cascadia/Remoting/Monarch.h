@@ -30,12 +30,6 @@ constexpr GUID Monarch_clsid
     }
 };
 
-enum class WindowingBehavior : uint64_t
-{
-    UseNew = 0,
-    UseExisting = 1,
-};
-
 namespace RemotingUnitTests
 {
     class RemotingTests;
@@ -63,11 +57,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         uint64_t _nextPeasantID{ 1 };
         uint64_t _thisPeasantID{ 0 };
-        uint64_t _mostRecentPeasant{ 0 };
-        winrt::Windows::Foundation::DateTime _lastActivatedTime{};
+        // uint64_t _mostRecentPeasant{ 0 };
+        // winrt::Windows::Foundation::DateTime _lastActivatedTime{};
 
-        WindowingBehavior _windowingBehavior{ WindowingBehavior::UseNew };
         std::unordered_map<uint64_t, winrt::Microsoft::Terminal::Remoting::IPeasant> _peasants;
+
+        std::unordered_map<winrt::guid, std::vector<Remoting::WindowActivatedArgs>> _mruPeasants;
 
         winrt::Microsoft::Terminal::Remoting::IPeasant _getPeasant(uint64_t peasantID);
         uint64_t _getMostRecentPeasantID();
