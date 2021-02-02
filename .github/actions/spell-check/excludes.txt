@@ -35,7 +35,7 @@ SUMS$
 \.pbxproj$
 \.pdf$
 \.pem$
-\.png$
+(?:(?i)\.png$)
 \.psd$
 \.runsettings$
 \.sig$

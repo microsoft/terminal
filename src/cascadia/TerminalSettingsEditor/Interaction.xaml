@@ -55,7 +55,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <!--Tab Switcher Mode-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                 <muxc:RadioButtons x:Uid="Globals_TabSwitcherMode"
-                                   SelectedItem="{x:Bind CurrentTabSwitcherMode}"
+                                   SelectedItem="{x:Bind CurrentTabSwitcherMode, Mode=TwoWay}"
                                    ItemsSource="{x:Bind TabSwitcherModeList}"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
             </ContentPresenter>
