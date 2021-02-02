@@ -13,6 +13,7 @@
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
 
+// the console uses 0xffffffff as an "invalid color" value
 constexpr COLORREF INVALID_COLOR = 0xffffffff;
 
 // takes ownership of pDispatch
