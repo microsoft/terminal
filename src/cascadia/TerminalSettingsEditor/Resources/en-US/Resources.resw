@@ -506,7 +506,7 @@
     <comment>{Locked="▃"}</comment>
   </data>
   <data name="Profile_CursorShapeDoubleUnderscore.Content" xml:space="preserve">
-    <value>Double Underscore ( ‗ )</value>
+    <value>Double underscore ( ‗ )</value>
     <comment>{Locked="‗"}</comment>
   </data>
   <data name="Profile_FontFace.Header" xml:space="preserve">
