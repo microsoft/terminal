@@ -92,6 +92,7 @@ public:
 
     [[nodiscard]] std::unique_lock<til::ticket_lock> LockForReading();
     [[nodiscard]] std::unique_lock<til::ticket_lock> LockForWriting();
+    til::ticket_lock& GetReadWriteLock() noexcept;
 
     short GetBufferHeight() const noexcept;
 
@@ -202,6 +203,7 @@ public:
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
     void TaskbarProgressChangedCallback(std::function<void()> pfn) noexcept;
     void SetShowWindowCallback(std::function<void(bool)> pfn) noexcept;
+    void SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept;
 
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
@@ -271,6 +273,7 @@ private:
     std::function<void()> _pfnCursorPositionChanged;
     std::function<void()> _pfnTaskbarProgressChanged;
     std::function<void(bool)> _pfnShowWindowChanged;
+    std::function<void(const int, const int, const std::chrono::microseconds)> _pfnPlayMidiNote;
 
     RenderSettings _renderSettings;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;

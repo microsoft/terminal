@@ -188,8 +188,9 @@ void Terminal::SetWorkingDirectory(std::wstring_view uri)
     _workingDirectory = uri;
 }
 
-void Terminal::PlayMidiNote(const int /*noteNumber*/, const int /*velocity*/, const std::chrono::microseconds /*duration*/)
+void Terminal::PlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration)
 {
+    _pfnPlayMidiNote(noteNumber, velocity, duration);
 }
 
 void Terminal::UseAlternateScreenBuffer()
