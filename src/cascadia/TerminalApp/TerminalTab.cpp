@@ -29,6 +29,7 @@ namespace winrt::TerminalApp::implementation
     {
         _rootPane = std::make_shared<Pane>(profile, control, true);
         _rootPane2 = TerminalApp::LeafPane(profile, control, true);
+        const auto rootPaneAsLeaf = _rootPane2.try_as<TerminalApp::LeafPane>();
 
         _rootPane->Id(_nextPaneId);
         _mruPanes.insert(_mruPanes.begin(), _nextPaneId);
@@ -39,7 +40,8 @@ namespace winrt::TerminalApp::implementation
         });
 
         _activePane = _rootPane;
-        Content(_rootPane->GetRootElement());
+        //Content(_rootPane->GetRootElement());
+        Content(rootPaneAsLeaf);
 
         _MakeTabViewItem();
         _CreateContextMenu();
@@ -112,8 +114,8 @@ namespace winrt::TerminalApp::implementation
     //   that was last focused.
     TermControl TerminalTab::GetActiveTerminalControl() const
     {
-        return _activePane->GetTerminalControl();
-        //return _rootPane2.GetActivePane().try_as<TerminalApp::LeafPane>().GetTerminalControl();
+        //return _activePane->GetTerminalControl();
+        return _rootPane2.GetActivePane().try_as<TerminalApp::LeafPane>().GetTerminalControl();
     }
 
     // Method Description:
@@ -161,7 +163,8 @@ namespace winrt::TerminalApp::implementation
     //   focused, else the GUID of the profile of the last control to be focused
     std::optional<GUID> TerminalTab::GetFocusedProfile() const noexcept
     {
-        return _activePane->GetFocusedProfile();
+        //return _activePane->GetFocusedProfile();
+        return _rootPane2.GetActivePane().try_as<TerminalApp::LeafPane>().GetProfile();
     }
 
     // Method Description:
@@ -188,6 +191,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile)
     {
         _rootPane->UpdateSettings(settings, profile);
+        _rootPane2.UpdateSettings(settings, profile);
 
         // The tabWidthMode may have changed, update the header control accordingly
         _UpdateHeaderControlMaxWidth();
@@ -332,31 +336,34 @@ namespace winrt::TerminalApp::implementation
                                 TermControl& control)
     {
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
-        const auto activePaneId = _activePane->Id();
-        auto [first, second] = _activePane->Split(splitType, splitSize, profile, control);
-        first->Id(activePaneId);
-        second->Id(_nextPaneId);
-        ++_nextPaneId;
-        _activePane = first;
+        //const auto activePaneId = _activePane->Id();
+        //auto [first, second] = _activePane->Split(splitType, splitSize, profile, control);
+        //first->Id(activePaneId);
+        //second->Id(_nextPaneId);
+        //++_nextPaneId;
+        //_activePane = first;
+        const auto newLeafPane = _rootPane2.GetActivePane().try_as<TerminalApp::LeafPane>().Split(splitType, splitSize, profile, control);
         _AttachEventHandlersToControl(control);
+        _AttachEventHandlersToLeafPane(newLeafPane);
 
         // Add a event handlers to the new panes' GotFocus event. When the pane
         // gains focus, we'll mark it as the new active pane.
-        _AttachEventHandlersToPane(first);
-        _AttachEventHandlersToPane(second);
+        //_AttachEventHandlersToPane(first);
+        //_AttachEventHandlersToPane(second);
 
         // Immediately update our tracker of the focused pane now. If we're
         // splitting panes during startup (from a commandline), then it's
         // possible that the focus events won't propagate immediately. Updating
         // the focus here will give the same effect though.
-        _UpdateActivePane(second);
+        //_UpdateActivePane(second);
     }
 
     // Method Description:
     // - See Pane::CalcSnappedDimension
     float TerminalTab::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
-        return _rootPane->CalcSnappedDimension(widthOrHeight, dimension);
+        //return _rootPane->CalcSnappedDimension(widthOrHeight, dimension);
+        return _rootPane2.CalcSnappedDimension(widthOrHeight, dimension);
     }
 
     // Method Description:
@@ -370,7 +377,8 @@ namespace winrt::TerminalApp::implementation
     {
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
-        _rootPane->ResizeContent(newSize);
+        //_rootPane->ResizeContent(newSize);
+        _rootPane2.ResizeContent(newSize);
     }
 
     // Method Description:
@@ -384,7 +392,11 @@ namespace winrt::TerminalApp::implementation
     {
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
-        _rootPane->ResizePane(direction);
+        //_rootPane->ResizePane(direction);
+        if (const auto rootPaneAsParent = _rootPane2.try_as<TerminalApp::ParentPane>())
+        {
+            rootPaneAsParent.ResizePane(direction);
+        }
     }
 
     // Method Description:
@@ -399,13 +411,15 @@ namespace winrt::TerminalApp::implementation
         if (direction == FocusDirection::Previous)
         {
             // To get to the previous pane, get the id of the previous pane and focus to that
-            _rootPane->FocusPane(_mruPanes.at(1));
+            //_rootPane->FocusPane(_mruPanes.at(1));
+            _rootPane2.FocusPane(_mruPanes.at(1));
         }
-        else
+        else if (const auto rootPaneAsParent = _rootPane2.try_as<TerminalApp::ParentPane>())
         {
             // NOTE: This _must_ be called on the root pane, so that it can propagate
             // throughout the entire tree.
-            _rootPane->NavigateFocus(direction);
+            //_rootPane->NavigateFocus(direction);
+            rootPaneAsParent.NavigateFocus(direction);
         }
     }
 
@@ -413,7 +427,8 @@ namespace winrt::TerminalApp::implementation
     // - Prepares this tab for being removed from the UI hierarchy by shutting down all active connections.
     void TerminalTab::Shutdown()
     {
-        _rootPane->Shutdown();
+        //_rootPane->Shutdown();
+        _rootPane2.Shutdown();
     }
 
     // Method Description:
@@ -426,7 +441,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::ClosePane()
     {
-        _activePane->Close();
+        //_activePane->Close();
+        _rootPane2.GetActivePane().try_as<TerminalApp::LeafPane>().Close();
     }
 
     void TerminalTab::SetTabText(winrt::hstring title)
@@ -487,7 +503,12 @@ namespace winrt::TerminalApp::implementation
                                        const bool isInitialChange) {
             if (isInitialChange)
             {
-                _rootPane->Relayout();
+                if (const auto rootPaneAsParent = _rootPane2.try_as<TerminalApp::ParentPane>())
+                {
+                    rootPaneAsParent.Relayout();
+                }
+                //_rootPane->Relayout();
+                
             }
         });
 
@@ -603,7 +624,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     co_await winrt::resume_foreground(tab->Content().Dispatcher());
 
-                    tab->Content(tab->_rootPane->GetRootElement());
+                    //tab->Content(tab->_rootPane->GetRootElement());
                     tab->ExitZoom();
                 }
                 if (auto pane = weakPane.lock())
@@ -690,6 +711,7 @@ namespace winrt::TerminalApp::implementation
 
                     tab->_rootPane2 = newParentPane;
                     tab->_SetupRootPaneEventHandlers();
+                    tab->Content(newParentPane);
                 }
             });
         }
@@ -743,7 +765,9 @@ namespace winrt::TerminalApp::implementation
         closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_rootPane->Close();
+                //tab->_rootPane->Close();
+                // todo: confirm that shutdown is the correct replacement
+                tab->_rootPane2.Shutdown();
             }
         });
         closeTabMenuItem.Text(RS_(L"TabClose"));
@@ -1032,7 +1056,8 @@ namespace winrt::TerminalApp::implementation
     // - The total number of leaf panes hosted by this tab.
     int TerminalTab::GetLeafPaneCount() const noexcept
     {
-        return _rootPane->GetLeafPaneCount();
+        //return _rootPane->GetLeafPaneCount();
+        return _rootPane2.GetLeafPaneCount();
     }
 
     // Method Description:
@@ -1047,14 +1072,32 @@ namespace winrt::TerminalApp::implementation
     //   `availableSpace`
     SplitState TerminalTab::PreCalculateAutoSplit(winrt::Windows::Foundation::Size availableSpace) const
     {
-        return _rootPane->PreCalculateAutoSplit(_activePane, availableSpace).value_or(SplitState::Vertical);
+        //return _rootPane->PreCalculateAutoSplit(_activePane, availableSpace).value_or(SplitState::Vertical);
+        const auto res = _rootPane2.PreCalculateAutoSplit(_rootPane2.GetActivePane(), availableSpace);
+        if (res)
+        {
+            return res.Value();
+        }
+        else
+        {
+            return SplitState::Vertical;
+        }
     }
 
     bool TerminalTab::PreCalculateCanSplit(SplitState splitType,
                                            const float splitSize,
                                            winrt::Windows::Foundation::Size availableSpace) const
     {
-        return _rootPane->PreCalculateCanSplit(_activePane, splitType, splitSize, availableSpace).value_or(false);
+        //return _rootPane->PreCalculateCanSplit(_activePane, splitType, splitSize, availableSpace).value_or(false);
+        const auto res = _rootPane2.PreCalculateCanSplit(_rootPane2.GetActivePane(), splitType, splitSize, availableSpace);
+        if (res)
+        {
+            return res.Value();
+        }
+        else
+        {
+            return false;
+        }
     }
 
     // Method Description:
@@ -1084,7 +1127,7 @@ namespace winrt::TerminalApp::implementation
         _rootPane->Maximize(_zoomedPane);
         // Update the tab header to show the magnifying glass
         _headerControl.IsPaneZoomed(true);
-        Content(_zoomedPane->GetRootElement());
+        //Content(_zoomedPane->GetRootElement());
     }
     void TerminalTab::ExitZoom()
     {
@@ -1092,7 +1135,7 @@ namespace winrt::TerminalApp::implementation
         _zoomedPane = nullptr;
         // Update the tab header to hide the magnifying glass
         _headerControl.IsPaneZoomed(false);
-        Content(_rootPane->GetRootElement());
+        //Content(_rootPane->GetRootElement());
     }
 
     bool TerminalTab::IsZoomed()

@@ -14,7 +14,7 @@ namespace winrt::TerminalApp::implementation
     struct ParentPane : ParentPaneT<ParentPane>
     {
     public:
-        ParentPane(winrt::TerminalApp::LeafPane firstChild, winrt::TerminalApp::LeafPane secondChild, winrt::Microsoft::Terminal::Settings::Model::SplitState splitState, float splitPosition, winrt::Windows::Foundation::Size currentSize);
+        ParentPane(TerminalApp::LeafPane firstChild, TerminalApp::LeafPane secondChild, winrt::Microsoft::Terminal::Settings::Model::SplitState splitState, float splitPosition, winrt::Windows::Foundation::Size currentSize);
         winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
         void FocusPane(uint32_t id);
         void FocusFirstChild();

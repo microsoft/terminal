@@ -10,5 +10,8 @@ namespace TerminalApp
     {
         ParentPane(LeafPane firstChild, LeafPane secondChild, Microsoft.Terminal.Settings.Model.SplitState splitState, Single splitPosition, Windows.Foundation.Size currentSize);
         void InitializeChildren();
+        Boolean ResizePane(Microsoft.Terminal.Settings.Model.ResizeDirection direction);
+        Boolean NavigateFocus(Microsoft.Terminal.Settings.Model.FocusDirection direction);
+        void Relayout();
     }
 }

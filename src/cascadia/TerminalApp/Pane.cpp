@@ -40,7 +40,7 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
     _profile{ profile }
 {
     _root.Children().Append(_border);
-    _border.Child(_control);
+    //_border.Child(_control);
 
     _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
     _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });

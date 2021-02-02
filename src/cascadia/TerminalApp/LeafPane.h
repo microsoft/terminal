@@ -39,10 +39,10 @@ namespace winrt::TerminalApp::implementation
                             const GUID& profile);
         void ResizeContent(const winrt::Windows::Foundation::Size& /*newSize*/) {};
 
-        std::pair<IPane, IPane> Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
-                                      const float splitSize,
-                                      const GUID& profile,
-                                      const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+        TerminalApp::LeafPane Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                                    const float splitSize,
+                                    const GUID& profile,
+                                    const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
         void Shutdown();

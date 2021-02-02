@@ -32,8 +32,6 @@ namespace winrt::TerminalApp::implementation
         InitializeComponent();
         _CreateRowColDefinitions();
 
-        FirstChild_Root().Content(firstChild);
-        SecondChild_Root().Content(secondChild);
         _GetGridSetColOrRowFunc()(firstChild, 0);
         _GetGridSetColOrRowFunc()(secondChild, 1);
     }
@@ -83,8 +81,10 @@ namespace winrt::TerminalApp::implementation
 
     void ParentPane::InitializeChildren()
     {
-        FirstChild_Root().Content(_firstChild);
-        SecondChild_Root().Content(_secondChild);
+        //FirstChild_Root().Content(_firstChild);
+        //SecondChild_Root().Content(_secondChild);
+        Root().Children().Append(_firstChild.try_as<TerminalApp::LeafPane>());
+        Root().Children().Append(_secondChild.try_as<TerminalApp::LeafPane>());
     }
 
     void ParentPane::Shutdown()

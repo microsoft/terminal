@@ -42,7 +42,7 @@ namespace winrt::TerminalApp::implementation
         _profile{ profile }
     {
         InitializeComponent();
-        //GridBorder().Child(_control);
+        GridBorder().Child(_control);
 
         _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &LeafPane::_ControlConnectionStateChangedHandler });
         _warningBellToken = _control.WarningBell({ this, &LeafPane::_ControlWarningBellHandler });
@@ -156,13 +156,13 @@ namespace winrt::TerminalApp::implementation
         return _control && _lastActive;
     }
 
-    std::pair<IPane, IPane> LeafPane::Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
-                                            const float splitSize,
-                                            const GUID& profile,
-                                            const winrt::Microsoft::Terminal::TerminalControl::TermControl& control)
+    TerminalApp::LeafPane LeafPane::Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                                          const float splitSize,
+                                          const GUID& profile,
+                                          const winrt::Microsoft::Terminal::TerminalControl::TermControl& control)
     {
         splitType = _convertAutomaticSplitState(splitType);
-        auto newNeighbour = LeafPane(profile, control, false);
+        auto newNeighbour = TerminalApp::LeafPane(profile, control, false);
 
         // Update the border of this pane and set appropriate border for the new leaf pane.
         if (splitType == SplitState::Vertical)
@@ -177,7 +177,8 @@ namespace winrt::TerminalApp::implementation
         }
 
         _UpdateBorders();
-        newNeighbour._UpdateBorders();
+        // todo: add update borders to idl
+        //newNeighbour._UpdateBorders();
 
         if (WasLastFocused())
         {
@@ -197,7 +198,7 @@ namespace winrt::TerminalApp::implementation
         // the new parent is attached to xaml view. Only when we are detached can the new parent actually attach us.
         newParent.InitializeChildren();
 
-        return { *this, newNeighbour };
+        return newNeighbour;
     }
 
     float LeafPane::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const

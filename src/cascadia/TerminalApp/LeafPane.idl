@@ -23,6 +23,8 @@ namespace TerminalApp
         UInt16 Id;
         Borders2 Borders;
         void SetActive();
+        void Close();
         void UpdateBorderWithClosedNeighbor(LeafPane closedNeighbor, Microsoft.Terminal.Settings.Model.ResizeDirection neighborDirection);
+        LeafPane Split(Microsoft.Terminal.Settings.Model.SplitState splitType, Single splitSize, Guid profile, Microsoft.Terminal.TerminalControl.TermControl con);
     }
 }
