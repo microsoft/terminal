@@ -112,7 +112,6 @@
         { "command": "openSettings", "keys": "ctrl+," },
         { "command": { "action": "openSettings", "target": "defaultsFile" }, "keys": "ctrl+alt+," },
         { "command": "find", "keys": "ctrl+shift+f" },
-        { "command": "toggleRetroEffect" },
         { "command": "openTabColorPicker" },
         { "command": "commandPalette", "keys":"ctrl+shift+p" },
 

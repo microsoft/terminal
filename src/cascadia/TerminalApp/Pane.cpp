@@ -21,7 +21,6 @@ using namespace TerminalApp;
 
 static const int PaneBorderSize = 2;
 static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
-static const float Half = 0.50f;
 
 // WARNING: Don't do this! This won't work
 //   Duration duration{ std::chrono::milliseconds{ 200 } };
@@ -60,6 +59,7 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
 
     // Register an event with the control to have it inform us when it gains focus.
     _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
+    _lostFocusRevoker = control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
 
     // When our border is tapped, make sure to transfer focus to our control.
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
@@ -368,15 +368,18 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
     auto paneProfile = settings.FindProfile(_profile.value());
     if (paneProfile)
     {
-        if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
+        // We don't want to do anything if nothing is set, so check for that first
+        if (static_cast<int>(paneProfile.BellStyle()) != 0)
         {
-            const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-            PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
-        }
-        if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual))
-        {
-            // Bubble this event up to app host, starting with bubbling to the hosting tab
-            _PaneRaiseVisualBellHandlers(nullptr);
+            if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
+            {
+                // Audible is set, play the sound
+                const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
+                PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+            }
+
+            // raise the event with the bool value corresponding to the visual flag
+            _PaneRaiseBellHandlers(nullptr, WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual));
         }
     }
 }
@@ -393,6 +396,16 @@ void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable cons
                                    RoutedEventArgs const& /* args */)
 {
     _GotFocusHandlers(shared_from_this());
+}
+
+// Event Description:
+// - Called when our control loses focus. We'll use this to trigger our LostFocus
+//   callback. The tab that's hosting us should have registered a callback which
+//   can be used to update its own internal focus state
+void Pane::_ControlLostFocusHandler(winrt::Windows::Foundation::IInspectable const& /* sender */,
+                                    RoutedEventArgs const& /* args */)
+{
+    _LostFocusHandlers(shared_from_this());
 }
 
 // Method Description:
@@ -584,6 +597,19 @@ void Pane::_FocusFirstChild()
 {
     if (_IsLeaf())
     {
+        if (_root.ActualWidth() == 0 && _root.ActualHeight() == 0)
+        {
+            // When these sizes are 0, then the pane might still be in startup,
+            // and doesn't yet have a real size. In that case, the control.Focus
+            // event won't be handled until _after_ the startup events are all
+            // processed. This will lead to the Tab not being notified that the
+            // focus moved to a different Pane.
+            //
+            // In that scenario, trigger the event manually here, to correctly
+            // inform the Tab that we're now focused.
+            _GotFocusHandlers(shared_from_this());
+        }
+
         _control.Focus(FocusState::Programmatic);
     }
     else
@@ -704,6 +730,7 @@ void Pane::_CloseChild(const bool closeFirst)
 
         // re-attach our handler for the control's GotFocus event.
         _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
+        _lostFocusRevoker = _control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
 
         // If we're inheriting the "last active" state from one of our children,
         // focus our control now. This should trigger our own GotFocus event.
@@ -1217,32 +1244,6 @@ void Pane::_SetupEntranceAnimation()
 }
 
 // Method Description:
-// - Determines whether the pane can be split
-// Arguments:
-// - splitType: what type of split we want to create.
-// Return Value:
-// - True if the pane can be split. False otherwise.
-bool Pane::CanSplit(SplitState splitType)
-{
-    if (_IsLeaf())
-    {
-        return _CanSplit(splitType);
-    }
-
-    if (_firstChild->_HasFocusedChild())
-    {
-        return _firstChild->CanSplit(splitType);
-    }
-
-    if (_secondChild->_HasFocusedChild())
-    {
-        return _secondChild->CanSplit(splitType);
-    }
-
-    return false;
-}
-
-// Method Description:
 // - This is a helper to determine if a given Pane can be split, but without
 //   using the ActualWidth() and ActualHeight() methods. This is used during
 //   processing of many "split-pane" commands, which could happen _before_ we've
@@ -1272,12 +1273,15 @@ bool Pane::CanSplit(SplitState splitType)
 // - This method is highly similar to Pane::PreCalculateAutoSplit
 std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> target,
                                                SplitState splitType,
+                                               const float splitSize,
                                                const winrt::Windows::Foundation::Size availableSpace) const
 {
     if (_IsLeaf())
     {
         if (target.get() == this)
         {
+            const auto firstPrecent = 1.0f - splitSize;
+            const auto secondPercent = splitSize;
             // If this pane is a leaf, and it's the pane we're looking for, use
             // the available space to calculate which direction to split in.
             const Size minSize = _GetMinSize();
@@ -1290,17 +1294,19 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
             else if (splitType == SplitState::Vertical)
             {
                 const auto widthMinusSeparator = availableSpace.Width - CombinedPaneBorderSize;
-                const auto newWidth = widthMinusSeparator * Half;
+                const auto newFirstWidth = widthMinusSeparator * firstPrecent;
+                const auto newSecondWidth = widthMinusSeparator * secondPercent;
 
-                return { newWidth > minSize.Width };
+                return { newFirstWidth > minSize.Width && newSecondWidth > minSize.Width };
             }
 
             else if (splitType == SplitState::Horizontal)
             {
                 const auto heightMinusSeparator = availableSpace.Height - CombinedPaneBorderSize;
-                const auto newHeight = heightMinusSeparator * Half;
+                const auto newFirstHeight = heightMinusSeparator * firstPrecent;
+                const auto newSecondHeight = heightMinusSeparator * secondPercent;
 
-                return { newHeight > minSize.Height };
+                return { newFirstHeight > minSize.Height && newSecondHeight > minSize.Height };
             }
         }
         else
@@ -1329,8 +1335,8 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
                                        (availableSpace.Height - firstHeight) - PaneBorderSize :
                                        availableSpace.Height;
 
-        const auto firstResult = _firstChild->PreCalculateCanSplit(target, splitType, { firstWidth, firstHeight });
-        return firstResult.has_value() ? firstResult : _secondChild->PreCalculateCanSplit(target, splitType, { secondWidth, secondHeight });
+        const auto firstResult = _firstChild->PreCalculateCanSplit(target, splitType, splitSize, { firstWidth, firstHeight });
+        return firstResult.has_value() ? firstResult : _secondChild->PreCalculateCanSplit(target, splitType, splitSize, { secondWidth, secondHeight });
     }
 
     // We should not possibly be getting here - both the above branches should
@@ -1348,23 +1354,26 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - The two newly created Panes
-std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState splitType, const GUID& profile, const TermControl& control)
+std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState splitType,
+                                                                    const float splitSize,
+                                                                    const GUID& profile,
+                                                                    const TermControl& control)
 {
     if (!_IsLeaf())
     {
         if (_firstChild->_HasFocusedChild())
         {
-            return _firstChild->Split(splitType, profile, control);
+            return _firstChild->Split(splitType, splitSize, profile, control);
         }
         else if (_secondChild->_HasFocusedChild())
         {
-            return _secondChild->Split(splitType, profile, control);
+            return _secondChild->Split(splitType, splitSize, profile, control);
         }
 
         return { nullptr, nullptr };
     }
 
-    return _Split(splitType, profile, control);
+    return _Split(splitType, splitSize, profile, control);
 }
 
 // Method Description:
@@ -1393,45 +1402,6 @@ SplitState Pane::_convertAutomaticSplitState(const SplitState& splitType) const
 }
 
 // Method Description:
-// - Determines whether the pane can be split.
-// Arguments:
-// - splitType: what type of split we want to create.
-// Return Value:
-// - True if the pane can be split. False otherwise.
-bool Pane::_CanSplit(SplitState splitType)
-{
-    const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
-                           gsl::narrow_cast<float>(_root.ActualHeight()) };
-
-    const Size minSize = _GetMinSize();
-
-    auto actualSplitType = _convertAutomaticSplitState(splitType);
-
-    if (actualSplitType == SplitState::None)
-    {
-        return false;
-    }
-
-    if (actualSplitType == SplitState::Vertical)
-    {
-        const auto widthMinusSeparator = actualSize.Width - CombinedPaneBorderSize;
-        const auto newWidth = widthMinusSeparator * Half;
-
-        return newWidth > minSize.Width;
-    }
-
-    if (actualSplitType == SplitState::Horizontal)
-    {
-        const auto heightMinusSeparator = actualSize.Height - CombinedPaneBorderSize;
-        const auto newHeight = heightMinusSeparator * Half;
-
-        return newHeight > minSize.Height;
-    }
-
-    return false;
-}
-
-// Method Description:
 // - Does the bulk of the work of creating a new split. Initializes our UI,
 //   creates a new Pane to host the control, registers event handlers.
 // Arguments:
@@ -1440,7 +1410,10 @@ bool Pane::_CanSplit(SplitState splitType)
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - The two newly created Panes
-std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& control)
+std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState splitType,
+                                                                     const float splitSize,
+                                                                     const GUID& profile,
+                                                                     const TermControl& control)
 {
     if (splitType == SplitState::None)
     {
@@ -1463,9 +1436,10 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     // control telling us that it's now focused, we want it telling its new
     // parent.
     _gotFocusRevoker.revoke();
+    _lostFocusRevoker.revoke();
 
     _splitState = actualSplitType;
-    _desiredSplitPosition = Half;
+    _desiredSplitPosition = 1.0f - splitSize;
 
     // Remove any children we currently have. We can't add the existing
     // TermControl to a new grid until we do this.
@@ -2112,4 +2086,5 @@ std::optional<SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane
 }
 
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
-DEFINE_EVENT(Pane, PaneRaiseVisualBell, _PaneRaiseVisualBellHandlers, winrt::delegate<std::shared_ptr<Pane>>);
+DEFINE_EVENT(Pane, LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
+DEFINE_EVENT(Pane, PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);

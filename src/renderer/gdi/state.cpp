@@ -29,8 +29,13 @@ GdiEngine::GdiEngine() :
     _fInvalidRectUsed(false),
     _lastFg(INVALID_COLOR),
     _lastBg(INVALID_COLOR),
+    _lastFontItalic(false),
     _fPaintStarted(false),
-    _hfont((HFONT)INVALID_HANDLE_VALUE)
+    _hfont(nullptr),
+    _hfontItalic(nullptr),
+    _pool{}, // It's important the pool is first so it can be given to the others on construction.
+    _polyStrings{ &_pool },
+    _polyWidths{ &_pool }
 {
     ZeroMemory(_pPolyText, sizeof(POLYTEXTW) * s_cPolyTextCache);
     _rcInvalid = { 0 };
@@ -88,6 +93,12 @@ GdiEngine::~GdiEngine()
         _hfont = nullptr;
     }
 
+    if (_hfontItalic != nullptr)
+    {
+        LOG_HR_IF(E_FAIL, !(DeleteObject(_hfontItalic)));
+        _hfontItalic = nullptr;
+    }
+
     if (_hdcMemoryContext != nullptr)
     {
         LOG_HR_IF(E_FAIL, !(DeleteObject(_hdcMemoryContext)));
@@ -127,6 +138,9 @@ GdiEngine::~GdiEngine()
     {
         LOG_HR_IF_NULL(E_FAIL, SelectFont(_hdcMemoryContext, _hfont));
     }
+
+    // Record the fact that the selected font is not italic.
+    _lastFontItalic = false;
 
     if (nullptr != hdcRealWindow)
     {
@@ -210,6 +224,14 @@ GdiEngine::~GdiEngine()
         RETURN_IF_FAILED(s_SetWindowLongWHelper(_hwndTargetWindow, GWL_CONSOLE_BKCOLOR, colorBackground));
     }
 
+    // If the italic attribute has changed, select an appropriate font variant.
+    const auto fontItalic = textAttributes.IsItalic();
+    if (fontItalic != _lastFontItalic)
+    {
+        SelectFont(_hdcMemoryContext, fontItalic ? _hfontItalic : _hfont);
+        _lastFontItalic = fontItalic;
+    }
+
     return S_OK;
 }
 
@@ -223,11 +245,14 @@ GdiEngine::~GdiEngine()
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]] HRESULT GdiEngine::UpdateFont(const FontInfoDesired& FontDesired, _Out_ FontInfo& Font) noexcept
 {
-    wil::unique_hfont hFont;
-    RETURN_IF_FAILED(_GetProposedFont(FontDesired, Font, _iCurrentDpi, hFont));
+    wil::unique_hfont hFont, hFontItalic;
+    RETURN_IF_FAILED(_GetProposedFont(FontDesired, Font, _iCurrentDpi, hFont, hFontItalic));
 
     // Select into DC
     RETURN_HR_IF_NULL(E_FAIL, SelectFont(_hdcMemoryContext, hFont.get()));
+
+    // Record the fact that the selected font is not italic.
+    _lastFontItalic = false;
 
     // Save off the font metrics for various other calculations
     RETURN_HR_IF(E_FAIL, !(GetTextMetricsW(_hdcMemoryContext, &_tmFontMetrics)));
@@ -300,6 +325,16 @@ GdiEngine::~GdiEngine()
     // Save the font.
     _hfont = hFont.release();
 
+    // Persist italic font for cleanup (and free existing if necessary)
+    if (_hfontItalic != nullptr)
+    {
+        LOG_HR_IF(E_FAIL, !(DeleteObject(_hfontItalic)));
+        _hfontItalic = nullptr;
+    }
+
+    // Save the italic font.
+    _hfontItalic = hFontItalic.release();
+
     // Save raster vs. TrueType and codepage data in case we need to convert.
     _isTrueTypeFont = Font.IsTrueTypeFont();
     _fontCodepage = Font.GetCodePage();
@@ -346,8 +381,8 @@ GdiEngine::~GdiEngine()
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]] HRESULT GdiEngine::GetProposedFont(const FontInfoDesired& FontDesired, _Out_ FontInfo& Font, const int iDpi) noexcept
 {
-    wil::unique_hfont hFont;
-    return _GetProposedFont(FontDesired, Font, iDpi, hFont);
+    wil::unique_hfont hFont, hFontItalic;
+    return _GetProposedFont(FontDesired, Font, iDpi, hFont, hFontItalic);
 }
 
 // Method Description:
@@ -373,12 +408,14 @@ GdiEngine::~GdiEngine()
 // - Font - the actual font
 // - iDpi - The DPI we will have when rendering
 // - hFont - A smart pointer to receive a handle to a ready-to-use GDI font.
+// - hFontItalic - A smart pointer to receive a handle to an italic variant of the font.
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]] HRESULT GdiEngine::_GetProposedFont(const FontInfoDesired& FontDesired,
                                                   _Out_ FontInfo& Font,
                                                   const int iDpi,
-                                                  _Inout_ wil::unique_hfont& hFont) noexcept
+                                                  _Inout_ wil::unique_hfont& hFont,
+                                                  _Inout_ wil::unique_hfont& hFontItalic) noexcept
 {
     wil::unique_hdc hdcTemp(CreateCompatibleDC(_hdcMemoryContext));
     RETURN_HR_IF_NULL(E_FAIL, hdcTemp.get());
@@ -395,6 +432,7 @@ GdiEngine::~GdiEngine()
         // it may very well decide to choose Courier New instead of the Terminal raster.
 #pragma prefast(suppress : 38037, "raster fonts get special handling, we need to get it this way")
         hFont.reset((HFONT)GetStockObject(OEM_FIXED_FONT));
+        hFontItalic.reset((HFONT)GetStockObject(OEM_FIXED_FONT));
     }
     else
     {
@@ -454,6 +492,11 @@ GdiEngine::~GdiEngine()
         // Create font.
         hFont.reset(CreateFontIndirectW(&lf));
         RETURN_HR_IF_NULL(E_FAIL, hFont.get());
+
+        // Create italic variant of the font.
+        lf.lfItalic = TRUE;
+        hFontItalic.reset(CreateFontIndirectW(&lf));
+        RETURN_HR_IF_NULL(E_FAIL, hFontItalic.get());
     }
 
     // Select into DC

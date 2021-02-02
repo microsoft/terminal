@@ -16,48 +16,15 @@
 // - pParent - the text buffer that this row belongs to
 // Return Value:
 // - constructed object
-ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent) :
+ROW::ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent) noexcept :
     _id{ rowId },
-    _rowWidth{ gsl::narrow<size_t>(rowWidth) },
-    _charRow{ gsl::narrow<size_t>(rowWidth), this },
-    _attrRow{ gsl::narrow<UINT>(rowWidth), fillAttribute },
+    _rowWidth{ rowWidth },
+    _charRow{ rowWidth, this },
+    _attrRow{ rowWidth, fillAttribute },
+    _wrapForced{ false },
+    _doubleBytePadded{ false },
     _pParent{ pParent }
 {
-}
-
-size_t ROW::size() const noexcept
-{
-    return _rowWidth;
-}
-
-const CharRow& ROW::GetCharRow() const noexcept
-{
-    return _charRow;
-}
-
-CharRow& ROW::GetCharRow() noexcept
-{
-    return _charRow;
-}
-
-const ATTR_ROW& ROW::GetAttrRow() const noexcept
-{
-    return _attrRow;
-}
-
-ATTR_ROW& ROW::GetAttrRow() noexcept
-{
-    return _attrRow;
-}
-
-SHORT ROW::GetId() const noexcept
-{
-    return _id;
-}
-
-void ROW::SetId(const SHORT id) noexcept
-{
-    _id = id;
 }
 
 // Routine Description:
@@ -68,6 +35,8 @@ void ROW::SetId(const SHORT id) noexcept
 // - <none>
 bool ROW::Reset(const TextAttribute Attr)
 {
+    _wrapForced = false;
+    _doubleBytePadded = false;
     _charRow.Reset();
     try
     {
@@ -87,7 +56,7 @@ bool ROW::Reset(const TextAttribute Attr)
 // - width - the new width, in cells
 // Return Value:
 // - S_OK if successful, otherwise relevant error
-[[nodiscard]] HRESULT ROW::Resize(const size_t width)
+[[nodiscard]] HRESULT ROW::Resize(const unsigned short width)
 {
     RETURN_IF_FAILED(_charRow.Resize(width));
     try
@@ -111,25 +80,6 @@ void ROW::ClearColumn(const size_t column)
 {
     THROW_HR_IF(E_INVALIDARG, column >= _charRow.size());
     _charRow.ClearCell(column);
-}
-
-// Routine Description:
-// - gets the text of the row as it would be shown on the screen
-// Return Value:
-// - wstring containing text for the row
-std::wstring ROW::GetText() const
-{
-    return _charRow.GetText();
-}
-
-RowCellIterator ROW::AsCellIter(const size_t startIndex) const
-{
-    return AsCellIter(startIndex, size() - startIndex);
-}
-
-RowCellIterator ROW::AsCellIter(const size_t startIndex, const size_t count) const
-{
-    return RowCellIterator(*this, startIndex, count);
 }
 
 UnicodeStorage& ROW::GetUnicodeStorage() noexcept
@@ -213,7 +163,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
                 else if (fillingLastColumn && it->DbcsAttr().IsLeading())
                 {
                     _charRow.ClearCell(currentIndex);
-                    _charRow.SetDoubleBytePadded(true);
+                    SetDoubleBytePadded(true);
                 }
                 // Otherwise, copy the data given and increment the iterator.
                 else
@@ -231,7 +181,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
                 if (wrap.has_value() && fillingLastColumn)
                 {
                     // set wrap status on the row to parameter's value.
-                    _charRow.SetWrapForced(wrap.value());
+                    SetWrapForced(*wrap);
                 }
             }
             else

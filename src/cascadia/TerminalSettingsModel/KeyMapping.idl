@@ -36,7 +36,7 @@ namespace Microsoft.Terminal.Settings.Model
         ResizePane,
         MoveFocus,
         Find,
-        ToggleRetroEffect,
+        ToggleShaderEffects,
         ToggleFocusMode,
         ToggleFullscreen,
         ToggleAlwaysOnTop,

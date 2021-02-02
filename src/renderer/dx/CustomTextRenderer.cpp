@@ -294,6 +294,14 @@ try
     }
 
     CursorPaintType paintType = CursorPaintType::Fill;
+    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush{ drawingContext.foregroundBrush };
+
+    if (options.fUseColor)
+    {
+        // Make sure to make the cursor opaque
+        RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(til::color{ OPACITY_OPAQUE | options.cursorColor },
+                                                           &brush));
+    }
 
     switch (options.cursorType)
     {
@@ -318,6 +326,18 @@ try
         rect.top = rect.bottom - 1;
         break;
     }
+    case CursorType::DoubleUnderscore:
+    {
+        // Use rect for lower line.
+        rect.top = rect.bottom - 1;
+
+        // Draw upper line directly.
+        D2D1_RECT_F upperLine = rect;
+        upperLine.top -= 2;
+        upperLine.bottom -= 2;
+        d2dContext->FillRectangle(upperLine, brush.Get());
+        break;
+    }
     case CursorType::EmptyBox:
     {
         paintType = CursorPaintType::Outline;
@@ -329,15 +349,6 @@ try
     }
     default:
         return E_NOTIMPL;
-    }
-
-    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush{ drawingContext.foregroundBrush };
-
-    if (options.fUseColor)
-    {
-        // Make sure to make the cursor opaque
-        RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(til::color{ OPACITY_OPAQUE | options.cursorColor },
-                                                           &brush));
     }
 
     switch (paintType)
