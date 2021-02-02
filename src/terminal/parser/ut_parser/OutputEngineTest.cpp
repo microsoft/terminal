@@ -1052,6 +1052,8 @@ public:
         _defaultForegroundColor{ RGB(0, 0, 0) },
         _setDefaultBackground(false),
         _defaultBackgroundColor{ RGB(0, 0, 0) },
+        _setCursorColor(false),
+        _defaultCursorColor{ RGB(0, 0, 0) },
         _hyperlinkMode{ false },
         _options{ s_cMaxOptions, static_cast<DispatchTypes::GraphicsOptions>(s_uiGraphicsCleared) }, // fill with cleared option
         _colorTable{},
@@ -1441,6 +1443,13 @@ public:
         return true;
     }
 
+    bool SetCursorColor(const DWORD color) noexcept override
+    {
+        _setCursorColor = true;
+        _defaultCursorColor = color;
+        return true;
+    }
+
     bool SetClipboard(std::wstring_view content) noexcept override
     {
         _copyContent = { content.begin(), content.end() };
@@ -1527,6 +1536,8 @@ public:
     DWORD _defaultForegroundColor;
     bool _setDefaultBackground;
     DWORD _defaultBackgroundColor;
+    bool _setCursorColor;
+    DWORD _defaultCursorColor;
     bool _setColorTableEntry;
     bool _hyperlinkMode;
     std::wstring _copyContent;
@@ -2846,6 +2857,7 @@ class StateMachineExternalTest final
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
 
+        // Single param
         mach.ProcessString(L"\033]10;rgb:1/1/1\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultForegroundColor);
@@ -2876,16 +2888,26 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
-        // Multiple params.
+        // Multiple params
         mach.ProcessString(L"\033]10;#111;rgb:2/2/2\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+        VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_defaultBackgroundColor);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;#111;DarkOrange\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultBackgroundColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]10;#111;DarkOrange;rgb:2/2/2\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_defaultCursorColor);
 
         pDispatch->ClearState();
 
@@ -2944,6 +2966,7 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
+        // Single param
         mach.ProcessString(L"\033]11;rgb:12/34/56\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
         VERIFY_ARE_EQUAL(RGB(0x12, 0x34, 0x56), pDispatch->_defaultBackgroundColor);
@@ -2965,6 +2988,29 @@ class StateMachineExternalTest final
         mach.ProcessString(L"\033]11;DarkOrange\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
         VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultBackgroundColor);
+
+        pDispatch->ClearState();
+
+        // Multiple params
+        mach.ProcessString(L"\033]11;#111;rgb:2/2/2\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_defaultCursorColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]11;#111;DarkOrange\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultCursorColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]11;#111;DarkOrange;rgb:2/2/2\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultCursorColor);
+        // The third param is out of range.
 
         pDispatch->ClearState();
 

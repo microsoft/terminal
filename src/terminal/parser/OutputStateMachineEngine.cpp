@@ -672,36 +672,40 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         break;
     }
     case OscActionCodes::SetForegroundColor:
-    {
-        std::vector<DWORD> colors;
-        success = _GetOscSetColor(string, colors);
-        if (success && colors.size() > 0)
-        {
-            success = _dispatch->SetDefaultForeground(til::at(colors, 0));
-        }
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCFG);
-        break;
-    }
     case OscActionCodes::SetBackgroundColor:
-    {
-        std::vector<DWORD> colors;
-        success = _GetOscSetColor(string, colors);
-        if (success && colors.size() > 0)
-        {
-            success = _dispatch->SetDefaultBackground(til::at(colors, 0));
-        }
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCBG);
-        break;
-    }
     case OscActionCodes::SetCursorColor:
     {
         std::vector<DWORD> colors;
         success = _GetOscSetColor(string, colors);
-        if (success && colors.size() > 0)
+        if (success)
         {
-            success = _dispatch->SetCursorColor(til::at(colors, 0));
+            size_t opIndex = parameter;
+            size_t colorIndex = 0;
+
+            if (opIndex == OscActionCodes::SetForegroundColor && colors.size() > colorIndex)
+            {
+                success = success && _dispatch->SetDefaultForeground(til::at(colors, colorIndex));
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCFG);
+                opIndex++;
+                colorIndex++;
+            }
+
+            if (opIndex == OscActionCodes::SetBackgroundColor && colors.size() > colorIndex)
+            {
+                success = success && _dispatch->SetDefaultBackground(til::at(colors, colorIndex));
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCBG);
+                opIndex++;
+                colorIndex++;
+            }
+
+            if (opIndex == OscActionCodes::SetCursorColor && colors.size() > colorIndex)
+            {
+                success = success && _dispatch->SetCursorColor(til::at(colors, colorIndex));
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
+                opIndex++;
+                colorIndex++;
+            }
         }
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
         break;
     }
     case OscActionCodes::SetClipboard:
