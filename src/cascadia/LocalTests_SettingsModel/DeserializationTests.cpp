@@ -566,13 +566,13 @@ namespace SettingsModelLocalTests
                 L"default profiles in the opposite order of the default ordering."));
 
             auto settings = winrt::make_self<implementation::CascadiaSettings>();
-            settings->_defaultSettings = settings->_ParseJsonString(defaultProfilesString);
+            settings->_ParseJsonString(defaultProfilesString, true);
             settings->LayerJson(settings->_defaultSettings);
             VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
             VERIFY_ARE_EQUAL(L"profile2", settings->_allProfiles.GetAt(0).Name());
             VERIFY_ARE_EQUAL(L"profile3", settings->_allProfiles.GetAt(1).Name());
 
-            settings->_userSettings = settings->_ParseJsonString(userProfiles0String);
+            settings->_ParseJsonString(userProfiles0String, false);
             settings->LayerJson(settings->_userSettings);
             VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
             VERIFY_ARE_EQUAL(L"profile1", settings->_allProfiles.GetAt(0).Name());
@@ -589,13 +589,13 @@ namespace SettingsModelLocalTests
                 L"Case 2: Make sure all the user's profiles appear before the defaults."));
 
             auto settings = winrt::make_self<implementation::CascadiaSettings>();
-            settings->_defaultSettings = settings->_ParseJsonString(defaultProfilesString);
+            settings->_ParseJsonString(defaultProfilesString, true);
             settings->LayerJson(settings->_defaultSettings);
             VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
             VERIFY_ARE_EQUAL(L"profile2", settings->_allProfiles.GetAt(0).Name());
             VERIFY_ARE_EQUAL(L"profile3", settings->_allProfiles.GetAt(1).Name());
 
-            settings->_userSettings = settings->_ParseJsonString(userProfiles1String);
+            settings->_ParseJsonString(userProfiles1String, false);
             settings->LayerJson(settings->_userSettings);
             VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
             VERIFY_ARE_EQUAL(L"profile2", settings->_allProfiles.GetAt(0).Name());
@@ -667,7 +667,7 @@ namespace SettingsModelLocalTests
 
         {
             auto settings = winrt::make_self<implementation::CascadiaSettings>();
-            settings->_defaultSettings = settings->_ParseJsonString(defaultProfilesString);
+            settings->_ParseJsonString(defaultProfilesString, true);
             settings->LayerJson(settings->_defaultSettings);
             VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
             VERIFY_ARE_EQUAL(L"profile2", settings->_allProfiles.GetAt(0).Name());
@@ -675,7 +675,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(false, settings->_allProfiles.GetAt(0).Hidden());
             VERIFY_ARE_EQUAL(false, settings->_allProfiles.GetAt(1).Hidden());
 
-            settings->_userSettings = settings->_ParseJsonString(userProfiles0String);
+            settings->_ParseJsonString(userProfiles0String, false);
             settings->LayerJson(settings->_userSettings);
             VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
             VERIFY_ARE_EQUAL(L"profile1", settings->_allProfiles.GetAt(0).Name());
@@ -693,7 +693,7 @@ namespace SettingsModelLocalTests
 
         {
             auto settings = winrt::make_self<implementation::CascadiaSettings>();
-            settings->_defaultSettings = settings->_ParseJsonString(defaultProfilesString);
+            settings->_ParseJsonString(defaultProfilesString, true);
             settings->LayerJson(settings->_defaultSettings);
             VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
             VERIFY_ARE_EQUAL(L"profile2", settings->_allProfiles.GetAt(0).Name());
@@ -701,7 +701,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(false, settings->_allProfiles.GetAt(0).Hidden());
             VERIFY_ARE_EQUAL(false, settings->_allProfiles.GetAt(1).Hidden());
 
-            settings->_userSettings = settings->_ParseJsonString(userProfiles1String);
+            settings->_ParseJsonString(userProfiles1String, false);
             settings->LayerJson(settings->_userSettings);
             VERIFY_ARE_EQUAL(4u, settings->_allProfiles.Size());
             VERIFY_ARE_EQUAL(L"profile2", settings->_allProfiles.GetAt(0).Name());
@@ -875,7 +875,7 @@ namespace SettingsModelLocalTests
         const auto settings0Json = VerifyParseSucceeded(settings0String);
 
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
-        settings->_userSettings = settings->_ParseJsonString(settings0String);
+        settings->_ParseJsonString(settings0String, false);
         settings->LayerJson(settings->_userSettings);
 
         VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
@@ -912,7 +912,7 @@ namespace SettingsModelLocalTests
         const auto settings0Json = VerifyParseSucceeded(settings0String);
 
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
-        settings->_defaultSettings = settings->_ParseJsonString(DefaultJson);
+        settings->_ParseJsonString(DefaultJson, true);
         settings->LayerJson(settings->_defaultSettings);
         VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
@@ -920,7 +920,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_allProfiles.GetAt(0).Name());
         VERIFY_ARE_EQUAL(L"Command Prompt", settings->_allProfiles.GetAt(1).Name());
 
-        settings->_userSettings = settings->_ParseJsonString(settings0String);
+        settings->_ParseJsonString(settings0String, false);
         settings->LayerJson(settings->_userSettings);
 
         VERIFY_ARE_EQUAL(4u, settings->_allProfiles.Size());
@@ -1013,7 +1013,7 @@ namespace SettingsModelLocalTests
         const auto settings0Json = VerifyParseSucceeded(settings0String);
 
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
-        settings->_defaultSettings = settings->_ParseJsonString(DefaultJson);
+        settings->_ParseJsonString(DefaultJson, true);
         settings->LayerJson(settings->_defaultSettings);
         VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
@@ -1021,7 +1021,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_allProfiles.GetAt(0).Name());
         VERIFY_ARE_EQUAL(L"Command Prompt", settings->_allProfiles.GetAt(1).Name());
 
-        settings->_userSettings = settings->_ParseJsonString(settings0String);
+        settings->_ParseJsonString(settings0String, false);
         settings->LayerJson(settings->_userSettings);
 
         VERIFY_ARE_EQUAL(4u, settings->_allProfiles.Size());
@@ -1074,7 +1074,7 @@ namespace SettingsModelLocalTests
         const auto settings0Json = VerifyParseSucceeded(settings0String);
 
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
-        settings->_defaultSettings = settings->_ParseJsonString(DefaultJson);
+        settings->_ParseJsonString(DefaultJson, true);
         settings->LayerJson(settings->_defaultSettings);
         VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
@@ -1084,7 +1084,7 @@ namespace SettingsModelLocalTests
 
         Log::Comment(NoThrowString().Format(
             L"Parse the user settings"));
-        settings->_userSettings = settings->_ParseJsonString(settings0String);
+        settings->_ParseJsonString(settings0String, false);
         settings->LayerJson(settings->_userSettings);
 
         VERIFY_ARE_EQUAL(5u, settings->_allProfiles.Size());
@@ -1127,7 +1127,7 @@ namespace SettingsModelLocalTests
         const auto settings0Json = VerifyParseSucceeded(settings0String);
 
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
-        settings->_defaultSettings = settings->_ParseJsonString(DefaultJson);
+        settings->_ParseJsonString(DefaultJson, true);
         settings->LayerJson(settings->_defaultSettings);
         VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
@@ -1137,7 +1137,7 @@ namespace SettingsModelLocalTests
 
         Log::Comment(NoThrowString().Format(
             L"Parse the user settings"));
-        settings->_userSettings = settings->_ParseJsonString(settings0String);
+        settings->_ParseJsonString(settings0String, false);
         settings->LayerJson(settings->_userSettings);
 
         VERIFY_ARE_EQUAL(5u, settings->_allProfiles.Size());
@@ -1165,13 +1165,13 @@ namespace SettingsModelLocalTests
             L"Do this to a _new_ settings object, to make sure it turns out the same."));
         {
             auto settings2 = winrt::make_self<implementation::CascadiaSettings>();
-            settings2->_defaultSettings = settings2->_ParseJsonString(DefaultJson);
+            settings2->_ParseJsonString(DefaultJson, true);
             settings2->LayerJson(settings2->_defaultSettings);
             VERIFY_ARE_EQUAL(2u, settings2->_allProfiles.Size());
             // Initialize the second settings object from the first settings
             // object's settings string, the one that we synthesized.
             const auto firstSettingsString = settings->_userSettingsString;
-            settings2->_userSettings = settings2->_ParseJsonString(firstSettingsString);
+            settings2->_ParseJsonString(firstSettingsString, false);
             settings2->LayerJson(settings2->_userSettings);
             VERIFY_ARE_EQUAL(5u, settings2->_allProfiles.Size());
             VERIFY_IS_TRUE(settings2->_allProfiles.GetAt(0).HasGuid());
@@ -1239,7 +1239,7 @@ namespace SettingsModelLocalTests
         {
             // Case 1: Good settings
             auto settings = winrt::make_self<implementation::CascadiaSettings>();
-            settings->_userSettings = settings->_ParseJsonString(settingsWithProfiles);
+            settings->_ParseJsonString(settingsWithProfiles, false);
             settings->LayerJson(settings->_userSettings);
 
             settings->_UpdateActiveProfiles();
@@ -1251,7 +1251,7 @@ namespace SettingsModelLocalTests
         {
             // Case 2: Bad settings
             auto settings = winrt::make_self<implementation::CascadiaSettings>();
-            settings->_userSettings = settings->_ParseJsonString(settingsWithoutProfiles);
+            settings->_ParseJsonString(settingsWithoutProfiles, false);
             settings->LayerJson(settings->_userSettings);
 
             bool caughtExpectedException = false;
@@ -1304,7 +1304,7 @@ namespace SettingsModelLocalTests
         VerifyParseSucceeded(settings0String);
 
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
-        settings->_userSettings = settings->_ParseJsonString(settings0String);
+        settings->_ParseJsonString(settings0String, false);
         settings->LayerJson(settings->_userSettings);
 
         VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
@@ -1424,7 +1424,7 @@ namespace SettingsModelLocalTests
             VerifyParseSucceeded(settings0String);
 
             auto settings = winrt::make_self<implementation::CascadiaSettings>();
-            settings->_userSettings = settings->_ParseJsonString(settings0String);
+            settings->_ParseJsonString(settings0String, false);
             settings->LayerJson(settings->_userSettings);
             settings->_ValidateColorSchemesInCommands();
 
@@ -1438,7 +1438,7 @@ namespace SettingsModelLocalTests
             VerifyParseSucceeded(settings1String);
 
             auto settings = winrt::make_self<implementation::CascadiaSettings>();
-            settings->_userSettings = settings->_ParseJsonString(settings1String);
+            settings->_ParseJsonString(settings1String, false);
             settings->LayerJson(settings->_userSettings);
             settings->_ValidateColorSchemesInCommands();
 
@@ -1452,7 +1452,7 @@ namespace SettingsModelLocalTests
             VerifyParseSucceeded(settings2String);
 
             auto settings = winrt::make_self<implementation::CascadiaSettings>();
-            settings->_userSettings = settings->_ParseJsonString(settings2String);
+            settings->_ParseJsonString(settings2String, false);
             settings->LayerJson(settings->_userSettings);
             settings->_ValidateColorSchemesInCommands();
 
@@ -1501,7 +1501,7 @@ namespace SettingsModelLocalTests
         VerifyParseSucceeded(settings0String);
 
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
-        settings->_userSettings = settings->_ParseJsonString(settings0String);
+        settings->_ParseJsonString(settings0String, false);
         settings->LayerJson(settings->_userSettings);
 
         VERIFY_ARE_EQUAL(guid0, settings->_GetProfileGuidByName(name0));
@@ -1539,7 +1539,7 @@ namespace SettingsModelLocalTests
         VerifyParseSucceeded(settingsJson);
 
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
-        settings->_userSettings = settings->_ParseJsonString(settingsJson);
+        settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);
         VERIFY_ARE_NOT_EQUAL(0u, settings->_allProfiles.Size());
         VERIFY_ARE_EQUAL(expectedPath, settings->_allProfiles.GetAt(0).ExpandedBackgroundImagePath());
@@ -1561,7 +1561,7 @@ namespace SettingsModelLocalTests
         VerifyParseSucceeded(settingsJson);
 
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
-        settings->_userSettings = settings->_ParseJsonString(settingsJson);
+        settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);
         VERIFY_ARE_EQUAL(expectedBackgroundImagePath, settings->_allProfiles.GetAt(0).BackgroundImagePath());
         VERIFY_ARE_NOT_EQUAL(expectedBackgroundImagePath, settings->_allProfiles.GetAt(0).ExpandedBackgroundImagePath());
@@ -1593,7 +1593,7 @@ namespace SettingsModelLocalTests
         VerifyParseSucceeded(settingsJson);
 
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
-        settings->_userSettings = settings->_ParseJsonString(settingsJson);
+        settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);
         VERIFY_ARE_EQUAL(CloseOnExitMode::Graceful, settings->_allProfiles.GetAt(0).CloseOnExit());
         VERIFY_ARE_EQUAL(CloseOnExitMode::Always, settings->_allProfiles.GetAt(1).CloseOnExit());
@@ -1621,7 +1621,7 @@ namespace SettingsModelLocalTests
         VerifyParseSucceeded(settingsJson);
 
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
-        settings->_userSettings = settings->_ParseJsonString(settingsJson);
+        settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);
         VERIFY_ARE_EQUAL(CloseOnExitMode::Graceful, settings->_allProfiles.GetAt(0).CloseOnExit());
         VERIFY_ARE_EQUAL(CloseOnExitMode::Never, settings->_allProfiles.GetAt(1).CloseOnExit());
@@ -1661,7 +1661,7 @@ namespace SettingsModelLocalTests
 
         {
             auto settings = winrt::make_self<implementation::CascadiaSettings>(false);
-            settings->_userSettings = settings->_ParseJsonString(settings0String);
+            settings->_ParseJsonString(settings0String, false);
             VERIFY_IS_NULL(settings->_userDefaultProfileSettings);
             settings->_ApplyDefaultsFromUserSettings();
             VERIFY_IS_NOT_NULL(settings->_userDefaultProfileSettings);
@@ -1709,11 +1709,11 @@ namespace SettingsModelLocalTests
 
         {
             auto settings = winrt::make_self<implementation::CascadiaSettings>(false);
-            settings->_defaultSettings = settings->_ParseJsonString(DefaultJson);
+            settings->_ParseJsonString(DefaultJson, true);
             settings->LayerJson(settings->_defaultSettings);
             VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
 
-            settings->_userSettings = settings->_ParseJsonString(settings0String);
+            settings->_ParseJsonString(settings0String, false);
             VERIFY_IS_NULL(settings->_userDefaultProfileSettings);
             settings->_ApplyDefaultsFromUserSettings();
             VERIFY_IS_NOT_NULL(settings->_userDefaultProfileSettings);
@@ -1806,7 +1806,7 @@ namespace SettingsModelLocalTests
             L" will not be layered, because they have different source's"));
 
         // parse userProfiles as the user settings
-        settings->_userSettings = settings->_ParseJsonString(userProfiles);
+        settings->_ParseJsonString(userProfiles, false);
         VERIFY_ARE_EQUAL(0u, settings->_allProfiles.Size(), L"Just parsing the user settings doesn't actually layer them");
         settings->_LoadDynamicProfiles();
         VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
@@ -2000,14 +2000,14 @@ namespace SettingsModelLocalTests
 
         // Create the default settings
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
-        settings->_defaultSettings = settings->_ParseJsonString(DefaultJson);
+        settings->_ParseJsonString(DefaultJson, true);
         settings->LayerJson(settings->_defaultSettings);
 
         settings->_ValidateNoGlobalsKey();
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
 
         // Now layer on the user's settings
-        settings->_userSettings = settings->_ParseJsonString(badSettings);
+        settings->_ParseJsonString(badSettings, false);
         settings->LayerJson(settings->_userSettings);
 
         settings->_ValidateNoGlobalsKey();
@@ -2035,13 +2035,13 @@ namespace SettingsModelLocalTests
 
         // Create the default settings
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
-        settings->_defaultSettings = settings->_ParseJsonString(DefaultJson);
+        settings->_ParseJsonString(DefaultJson, true);
         settings->LayerJson(settings->_defaultSettings);
 
         // Now layer on the user's settings
         try
         {
-            settings->_userSettings = settings->_ParseJsonString(badSettings);
+            settings->_ParseJsonString(badSettings, false);
             settings->LayerJson(settings->_userSettings);
         }
         catch (...)
@@ -2090,7 +2090,7 @@ namespace SettingsModelLocalTests
         VerifyParseSucceeded(settingsJson);
 
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
-        settings->_userSettings = settings->_ParseJsonString(settingsJson);
+        settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);
         settings->_ValidateSettings();
 
@@ -2298,7 +2298,7 @@ namespace SettingsModelLocalTests
         VerifyParseSucceeded(settingsJson);
 
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
-        settings->_userSettings = settings->_ParseJsonString(settingsJson);
+        settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
@@ -2375,7 +2375,7 @@ namespace SettingsModelLocalTests
         VerifyParseSucceeded(settings1Json);
 
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
-        settings->_userSettings = settings->_ParseJsonString(settingsJson);
+        settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
@@ -2390,7 +2390,7 @@ namespace SettingsModelLocalTests
 
         Log::Comment(L"Layer second bit of json, to unbind the original command.");
 
-        settings->_userSettings = settings->_ParseJsonString(settings1Json);
+        settings->_ParseJsonString(settings1Json, false);
         settings->LayerJson(settings->_userSettings);
         settings->_ValidateSettings();
         commands = settings->_globals->Commands();
@@ -2459,7 +2459,7 @@ namespace SettingsModelLocalTests
         VerifyParseSucceeded(settings1Json);
 
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
-        settings->_userSettings = settings->_ParseJsonString(settingsJson);
+        settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
@@ -2485,7 +2485,7 @@ namespace SettingsModelLocalTests
         }
 
         Log::Comment(L"Layer second bit of json, to unbind the original command.");
-        settings->_userSettings = settings->_ParseJsonString(settings1Json);
+        settings->_ParseJsonString(settings1Json, false);
         settings->LayerJson(settings->_userSettings);
         settings->_ValidateSettings();
         commands = settings->_globals->Commands();
@@ -2571,7 +2571,7 @@ namespace SettingsModelLocalTests
         VerifyParseSucceeded(settingsJson);
 
         auto settings{ winrt::make_self<implementation::CascadiaSettings>() };
-        settings->_userSettings = settings->_ParseJsonString(settingsJson);
+        settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);
         settings->_ValidateSettings();
 
@@ -2629,7 +2629,7 @@ namespace SettingsModelLocalTests
         VerifyParseSucceeded(settingsJson);
 
         auto settings{ winrt::make_self<implementation::CascadiaSettings>() };
-        settings->_userSettings = settings->_ParseJsonString(settingsJson);
+        settings->_ParseJsonString(settingsJson, false);
         settings->_ApplyDefaultsFromUserSettings();
         settings->LayerJson(settings->_userSettings);
         settings->_ValidateSettings();
@@ -2696,7 +2696,7 @@ namespace SettingsModelLocalTests
             VerifyParseSucceeded(json);
 
             auto settings{ winrt::make_self<implementation::CascadiaSettings>() };
-            settings->_userSettings = settings->_ParseJsonString(json);
+            settings->_ParseJsonString(json, false);
             settings->_ApplyDefaultsFromUserSettings();
             settings->LayerJson(settings->_userSettings);
             settings->_ValidateSettings();
