@@ -653,6 +653,13 @@ namespace winrt::TerminalApp::implementation
                 tab->_ActivePaneChangedHandlers();
             }
         });
+
+        paneImpl->PaneRaiseVisualBell([weakThis](auto&& /*s*/) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_TabRaiseVisualBellHandlers();
+            }
+        });
     }
 
     void TerminalTab::_SetupRootPaneEventHandlers()
@@ -669,39 +676,50 @@ namespace winrt::TerminalApp::implementation
             _rootPaneClosedToken = rootPaneAsLeafImpl->Closed([weakThis = get_weak()](auto&& /*s*/, auto&& /*e*/) {
                 if (auto tab{ weakThis.get() })
                 {
-                    //tab->_RemoveAllRootPaneEventHandlers();
-                    //tab->_ClosedHandlers(nullptr, nullptr);
+                    tab->_RemoveRootPaneEventHandlers();
+                    tab->_ClosedHandlers(nullptr, nullptr);
                 }
             });
 
-            // When root pane is a leaf and got splitted, it produces the new parent pane that contains
-            // both him and the new leaf near him. We then replace that child with the new parent pane.
-            _rootPaneTypeChangedToken = rootPaneAsLeafImpl->GotSplit([weakThis = get_weak()](TerminalApp::ParentPane splittedPane) {
+            // When the root pane is a leaf and gets split, it produces a new parent pane that contains
+            // both itself and its new leaf neighbor. We then replace the root pane with the new parent pane.
+            _rootPaneTypeChangedToken = rootPaneAsLeafImpl->GotSplit([weakThis = get_weak()](TerminalApp::ParentPane newParentPane) {
                 if (auto tab{ weakThis.get() })
                 {
-                    //tab->_RemoveAllRootPaneEventHandlers();
+                    tab->_RemoveRootPaneEventHandlers();
 
-                    //tab->_rootPane = splittedPane;
-                    //tab->_SetupRootPaneEventHandlers();
-                    //tab->_RootPaneChangedHandlers();
+                    tab->_rootPane2 = newParentPane;
+                    tab->_SetupRootPaneEventHandlers();
                 }
             });
         }
-        //else if (const auto rootPaneAsParent = std::dynamic_pointer_cast<ParentPane>(_rootPane))
-        //{
-        //    // When root pane is a parent and one of its children got closed (and so the parent collapses),
-        //    // we take in its remaining, orphaned child as our own.
-        //    _rootPaneTypeChangedToken = rootPaneAsParent->ChildClosed([weakThis = get_weak()](std::shared_ptr<Pane> collapsedPane) {
-        //        if (auto tab{ weakThis.get() })
-        //        {
-        //            tab->_RemoveAllRootPaneEventHandlers();
+        else if (const auto rootPaneAsParent = _rootPane2.try_as<ParentPane>())
+        {
+            // When root pane is a parent and one of its children got closed (and so the parent collapses),
+            // we take in its remaining, orphaned child as our own.
+            _rootPaneTypeChangedToken = rootPaneAsParent->ChildClosed([weakThis = get_weak()](TerminalApp::LeafPane newChildPane) {
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->_RemoveRootPaneEventHandlers();
 
-        //            tab->_rootPane = collapsedPane;
-        //            tab->_SetupRootPaneEventHandlers();
-        //            tab->_RootPaneChangedHandlers();
-        //        }
-        //    });
-        //}
+                    tab->_rootPane2 = newChildPane;
+                    tab->_SetupRootPaneEventHandlers();
+                }
+            });
+        }
+    }
+
+    void TerminalTab::_RemoveRootPaneEventHandlers()
+    {
+        if (const auto rootAsLeaf = _rootPane2.try_as<LeafPane>())
+        {
+            rootAsLeaf->Closed(_rootPaneClosedToken);
+            rootAsLeaf->GotSplit(_rootPaneTypeChangedToken);
+        }
+        else if (const auto rootAsParent = _rootPane2.try_as<ParentPane>())
+        {
+            rootAsParent->ChildClosed(_rootPaneTypeChangedToken);
+        }
     }
 
     // Method Description:

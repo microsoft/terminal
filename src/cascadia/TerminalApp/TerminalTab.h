@@ -123,6 +123,7 @@ namespace winrt::TerminalApp::implementation
         void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
         void _AttachEventHandlersToLeafPane(TerminalApp::LeafPane pane);
         void _SetupRootPaneEventHandlers();
+        void _RemoveRootPaneEventHandlers();
 
         void _UpdateActivePane(std::shared_ptr<Pane> pane);
 
