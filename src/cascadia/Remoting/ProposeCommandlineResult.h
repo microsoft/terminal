@@ -34,4 +34,3 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             _ShouldCreateWindow{ shouldCreateWindow } {};
     };
 }
-BASIC_FACTORY(ProposeCommandlineResult);

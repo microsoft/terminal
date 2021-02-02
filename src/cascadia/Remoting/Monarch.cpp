@@ -281,7 +281,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 
         // In this case, no usable ID was provided. Return { true, nullopt }
-        return winrt::make<Remoting::ProposeCommandlineResult>(true);
+        return winrt::make<Remoting::implementation::ProposeCommandlineResult>(true);
     }
 
 }

@@ -7,15 +7,11 @@ namespace Microsoft.Terminal.Remoting
 {
 
     [default_interface] runtimeclass FindTargetWindowArgs {
-        FindTargetWindowArgs(CommandlineArgs args);
-
         CommandlineArgs Args { get; };
         Int32 ResultTargetWindow;
     }
 
     [default_interface] runtimeclass ProposeCommandlineResult {
-        ProposeCommandlineResult(Boolean shouldCreateWindow);
-
         Windows.Foundation.IReference<UInt64> Id { get; };
         // TODO:projects/5 - also return the name here, if the name was set on the commandline
         Boolean ShouldCreateWindow { get; }; // If you name this `CreateWindow`, the compiler will explode

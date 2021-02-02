@@ -80,7 +80,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             //   - This is the case where the user provides `wt -w 1`, and
             //     there's no existing window 1
 
-            auto result = _monarch.ProposeCommandline(args);
+            const auto result = _monarch.ProposeCommandline(args);
             _shouldCreateWindow = result.ShouldCreateWindow();
             if (result.Id())
             {
@@ -163,7 +163,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     // NOTE: This can throw! Callers include:
     // - the constructor, who performs this in a loop until it successfully
-    //   finda a monarch
+    //   find a a monarch
     // - the performElection method, which is called in the waitOnMonarch
     //   thread. All the calls in that thread are wrapped in try/catch's
     //   already.
@@ -230,7 +230,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             {
                 try
                 {
-                    // Wrap this in it's own try/catch, beause this can throw.
+                    // Wrap this in it's own try/catch, because this can throw.
                     _createMonarchAndCallbacks();
                 }
                 catch (...)
@@ -262,15 +262,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // Tell the new monarch who we are. We might be that monarch!
         _monarch.AddPeasant(_peasant);
 
-        if (_isKing)
-        {
-            // This method is only called when a _new_ monarch is elected. So
-            // don't do anything here that needs to be done for all monarch
-            // windows. This should only be for work that's done when a window
-            // _becomes_ a monarch, after the death of the previous monarch.
-            return true;
-        }
-        return false;
+        // This method is only called when a _new_ monarch is elected. So
+        // don't do anything here that needs to be done for all monarch
+        // windows. This should only be for work that's done when a window
+        // _becomes_ a monarch, after the death of the previous monarch.
+        return _isKing;
     }
 
     void WindowManager::_createPeasantThread()
@@ -287,9 +283,16 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     void WindowManager::_waitOnMonarchThread()
     {
+        // This is the array of HANDLEs that we're going to wait on in
+        // WaitForMultipleObjects below.
+        // * waits[0] will be the handle to the monarch process. It gets
+        //   signalled when the process exits / dies.
+        // * waits[1] is the handle to our _monarchWaitInterrupt event. Another
+        //   thread can use that to manually break this loop. We'll do that when
+        //   we're getting torn down.
         HANDLE waits[2];
         waits[1] = _monarchWaitInterrupt.get();
-        const auto peasantID = _peasant.GetID();
+        const auto peasantID = _peasant.GetID(); // safe: _peasant is in-proc.
 
         bool exitThreadRequested = false;
         while (!exitThreadRequested)

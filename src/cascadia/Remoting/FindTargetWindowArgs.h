@@ -33,4 +33,3 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             _Args{ args } {};
     };
 }
-BASIC_FACTORY(FindTargetWindowArgs);

@@ -3,7 +3,7 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Class Name:
-- ProposeCommandlineResult.h
+- WindowManager.h
 
 Abstract:
 - The Window Manager takes care of coordinating the monarch and peasant for this
