@@ -114,7 +114,7 @@ namespace RemotingUnitTests
     void RemotingTests::_findTargetWindowHelper(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                 const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args)
     {
-        const auto arguments = args.Args().Args();
+        const auto arguments = args.Args().Commandline();
         if (arguments.size() > 0)
         {
             const auto index = std::stoi(arguments.at(0).c_str());
@@ -381,8 +381,8 @@ namespace RemotingUnitTests
 
         p1->ExecuteCommandlineRequested([&](auto&&, const Remoting::CommandlineArgs& cmdlineArgs) {
             Log::Comment(L"Commandline dispatched to p1");
-            VERIFY_IS_GREATER_THAN(cmdlineArgs.Args().size(), 1u);
-            VERIFY_ARE_EQUAL(L"arg[1]", cmdlineArgs.Args().at(1));
+            VERIFY_IS_GREATER_THAN(cmdlineArgs.Commandline().size(), 1u);
+            VERIFY_ARE_EQUAL(L"arg[1]", cmdlineArgs.Commandline().at(1));
         });
 
         std::vector<winrt::hstring> args{ L"1", L"arg[1]" };
@@ -445,8 +445,8 @@ namespace RemotingUnitTests
         m0->AddPeasant(*p1);
         p1->ExecuteCommandlineRequested([&](auto&&, const Remoting::CommandlineArgs& cmdlineArgs) {
             Log::Comment(L"Commandline dispatched to p1");
-            VERIFY_IS_GREATER_THAN(cmdlineArgs.Args().size(), 1u);
-            VERIFY_ARE_EQUAL(L"arg[1]", cmdlineArgs.Args().at(1));
+            VERIFY_IS_GREATER_THAN(cmdlineArgs.Commandline().size(), 1u);
+            VERIFY_ARE_EQUAL(L"arg[1]", cmdlineArgs.Commandline().at(1));
         });
 
         std::vector<winrt::hstring> p1Args{ L"0", L"arg[1]" };
@@ -476,8 +476,8 @@ namespace RemotingUnitTests
         m0->AddPeasant(*p2);
         p2->ExecuteCommandlineRequested([&](auto&&, const Remoting::CommandlineArgs& cmdlineArgs) {
             Log::Comment(L"Commandline dispatched to p2");
-            VERIFY_IS_GREATER_THAN(cmdlineArgs.Args().size(), 1u);
-            VERIFY_ARE_EQUAL(L"this is for p2", cmdlineArgs.Args().at(1));
+            VERIFY_IS_GREATER_THAN(cmdlineArgs.Commandline().size(), 1u);
+            VERIFY_ARE_EQUAL(L"this is for p2", cmdlineArgs.Commandline().at(1));
         });
 
         {
@@ -574,8 +574,8 @@ namespace RemotingUnitTests
         m0->AddPeasant(*p2);
         p2->ExecuteCommandlineRequested([&](auto&&, const Remoting::CommandlineArgs& cmdlineArgs) {
             Log::Comment(L"Commandline dispatched to p2");
-            VERIFY_IS_GREATER_THAN(cmdlineArgs.Args().size(), 1u);
-            VERIFY_ARE_EQUAL(L"this is for p2", cmdlineArgs.Args().at(1));
+            VERIFY_IS_GREATER_THAN(cmdlineArgs.Commandline().size(), 1u);
+            VERIFY_ARE_EQUAL(L"this is for p2", cmdlineArgs.Commandline().at(1));
         });
 
         std::vector<winrt::hstring> p1Args{ L"1", L"arg[1]" };
