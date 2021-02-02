@@ -1052,7 +1052,7 @@ public:
         _defaultForegroundColor{ RGB(0, 0, 0) },
         _setDefaultBackground(false),
         _defaultBackgroundColor{ RGB(0, 0, 0) },
-        _setCursorColor(false),
+        _setDefaultCursorColor(false),
         _defaultCursorColor{ RGB(0, 0, 0) },
         _hyperlinkMode{ false },
         _options{ s_cMaxOptions, static_cast<DispatchTypes::GraphicsOptions>(s_uiGraphicsCleared) }, // fill with cleared option
@@ -1445,7 +1445,7 @@ public:
 
     bool SetCursorColor(const DWORD color) noexcept override
     {
-        _setCursorColor = true;
+        _setDefaultCursorColor = true;
         _defaultCursorColor = color;
         return true;
     }
@@ -1536,7 +1536,7 @@ public:
     DWORD _defaultForegroundColor;
     bool _setDefaultBackground;
     DWORD _defaultBackgroundColor;
-    bool _setCursorColor;
+    bool _setDefaultCursorColor;
     DWORD _defaultCursorColor;
     bool _setColorTableEntry;
     bool _hyperlinkMode;
@@ -2892,6 +2892,7 @@ class StateMachineExternalTest final
         mach.ProcessString(L"\033]10;#111;rgb:2/2/2\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
         VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_defaultBackgroundColor);
 
         pDispatch->ClearState();
@@ -2899,6 +2900,7 @@ class StateMachineExternalTest final
         mach.ProcessString(L"\033]10;#111;DarkOrange\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
         VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultBackgroundColor);
 
         pDispatch->ClearState();
@@ -2906,12 +2908,14 @@ class StateMachineExternalTest final
         mach.ProcessString(L"\033]10;#111;DarkOrange;rgb:2/2/2\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
         VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultBackgroundColor);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultCursorColor);
         VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_defaultCursorColor);
 
         pDispatch->ClearState();
 
-        // Partially valid sequences. Only the first color works.
+        // Partially valid multi-param sequences.
         mach.ProcessString(L"\033]10;#111;\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
@@ -2921,12 +2925,28 @@ class StateMachineExternalTest final
         mach.ProcessString(L"\033]10;#111;rgb:\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;#111;#2\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]10;;rgb:1/1/1\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultBackgroundColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]10;#1;rgb:1/1/1\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultBackgroundColor);
 
         pDispatch->ClearState();
 
@@ -2937,17 +2957,6 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;#1\033\\");
-        VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
-
-        pDispatch->ClearState();
-
-        // Invalid multi-param sequences.
-        mach.ProcessString(L"\033]10;;rgb:1/1/1\033\\");
-        VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
-
-        pDispatch->ClearState();
-
-        mach.ProcessString(L"\033]10;#1;rgb:1/1/1\033\\");
         VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
 
         pDispatch->ClearState();
@@ -3014,7 +3023,7 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
-        // Partially valid sequences. Only the first color works.
+        // Partially valid multi-param sequences.
         mach.ProcessString(L"\033]11;#111;\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
@@ -3033,6 +3042,20 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
+        mach.ProcessString(L"\033]11;;rgb:1/1/1\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultCursorColor);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultCursorColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]11;#1;rgb:1/1/1\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultCursorColor);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultCursorColor);
+
+        pDispatch->ClearState();
+
         // Invalid sequences.
         mach.ProcessString(L"\033]11;rgb:1/1/\033\\");
         VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
@@ -3040,17 +3063,6 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]11;#1\033\\");
-        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
-
-        pDispatch->ClearState();
-
-        // Invalid multi-param sequences.
-        mach.ProcessString(L"\033]11;;rgb:1/1/1\033\\");
-        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
-
-        pDispatch->ClearState();
-
-        mach.ProcessString(L"\033]11;#1;rgb:1/1/1\033\\");
         VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
 
         pDispatch->ClearState();
