@@ -30,14 +30,22 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         GETSET_PROPERTY(uint64_t, PeasantID, 0);
         GETSET_PROPERTY(winrt::guid, DesktopID, {});
         GETSET_PROPERTY(winrt::Windows::Foundation::DateTime, ActivatedTime, {});
+        GETSET_PROPERTY(uint64_t, Hwnd, 0);
 
     public:
-        WindowActivatedArgs(uint64_t peasantID, winrt::guid desktopID, winrt::Windows::Foundation::DateTime timestamp) :
+        WindowActivatedArgs(uint64_t peasantID,
+                            uint64_t hwnd,
+                            winrt::guid desktopID,
+                            winrt::Windows::Foundation::DateTime timestamp) :
             _PeasantID{ peasantID },
+            _Hwnd{ hwnd },
             _DesktopID{ desktopID },
             _ActivatedTime{ timestamp } {};
-        static bool compare(const WindowActivatedArgs& lhs, const WindowActivatedArgs& rhs) { return lhs._ActivatedTime < rhs._ActivatedTime; }
-        static bool compare(const Remoting::WindowActivatedArgs& lhs, const Remoting::WindowActivatedArgs& rhs) { return lhs.ActivatedTime() < rhs.ActivatedTime(); }
+
+        WindowActivatedArgs(uint64_t peasantID,
+                            winrt::guid desktopID,
+                            winrt::Windows::Foundation::DateTime timestamp) :
+            WindowActivatedArgs(peasantID, 0, desktopID, timestamp){};
     };
 }
 

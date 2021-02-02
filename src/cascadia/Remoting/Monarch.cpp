@@ -186,23 +186,57 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 
-    uint64_t Monarch::_getMostRecentPeasantID()
+    uint64_t Monarch::_getMostRecentPeasantID(bool limitToCurrentDesktop)
     {
+        winrt::com_ptr<IVirtualDesktopManager> manager{ nullptr };
+        if (limitToCurrentDesktop)
+        {
+            try
+            {
+                manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
+            }
+            CATCH_LOG();
+        }
+
         std::vector<Remoting::WindowActivatedArgs> _mrus;
         for (auto& [g, vec] : _mruPeasants)
         {
             if (vec.size() > 0)
             {
-                // _mrus.push_heap(*vec.begin(), implementation::WindowActivatedArgs::compare);
-                _mrus.push_back(*vec.begin());
-                std::push_heap(_mrus.begin(),
-                               _mrus.end(),
-                               Remoting::implementation::CompareWindowActivatedArgs());
+                if (limitToCurrentDesktop && manager)
+                {
+                    for (const auto& args : vec)
+                    {
+                        BOOL onCurrentDesktop{ false };
+                        // SUCCEEDED_LOG will log if it failed, and
+                        // return true if it SUCCEEDED
+                        if (SUCCEEDED_LOG(manager->IsWindowOnCurrentVirtualDesktop((HWND)args.Hwnd(), &onCurrentDesktop)) &&
+                            onCurrentDesktop)
+                        {
+                            _mrus.push_back(args);
+                            std::push_heap(_mrus.begin(),
+                                           _mrus.end(),
+                                           Remoting::implementation::CompareWindowActivatedArgs());
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    _mrus.push_back(*vec.begin());
+                    std::push_heap(_mrus.begin(),
+                                   _mrus.end(),
+                                   Remoting::implementation::CompareWindowActivatedArgs());
+                }
             }
         }
         if (!_mrus.empty())
         {
             return _mrus.begin()->PeasantID();
+        }
+        else if (limitToCurrentDesktop)
+        {
+            return 0;
         }
         // if (_mostRecentPeasant != 0)
         // {
@@ -214,7 +248,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // in practice. The WindowManager should set the MRU peasant
         // immediately as soon as it creates the monarch/peasant for the
         // first window.
-        if (_peasants.size() > 0)
+        else if (_peasants.size() > 0)
         {
             try
             {
@@ -257,29 +291,42 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // the parsed result.
         const auto targetWindow = findWindowArgs->ResultTargetWindow();
 
-        auto tmp = targetWindow;
-        switch (targetWindow)
-        {
-        case -1:
-            tmp = -1;
-            break;
-        case -2: // UseExistingSameDesktop
-            tmp = 0; // TODO:MG for now, just use the MRU window.
-            break;
-        case -3: // UseExisting
-            tmp = 0; // TODO:MG for now, just use the MRU window.
-            break;
-        }
+        // auto tmp = targetWindow;
+        // switch (targetWindow)
+        // {
+        // case -1:
+        //     tmp = -1;
+        //     break;
+        // case -2: // UseExistingSameDesktop
+        //     tmp = _getMostRecentPeasantID(true); // TODO:MG for now, just use the MRU window.
+        //     break;
+        // case -3: // UseExisting
+        //     tmp = _getMostRecentPeasantID(false); // TODO:MG for now, just use the MRU window.
+        //     break;
+        // }
 
         // If there's a valid ID returned, then let's try and find the peasant that goes with it.
-        if (tmp >= 0)
+        if (targetWindow >= 0 || targetWindow == -2 || targetWindow == -3)
         {
-            uint64_t windowID = ::base::saturated_cast<uint64_t>(tmp);
-
-            if (windowID == 0)
+            uint64_t windowID = 0;
+            switch (targetWindow)
             {
-                windowID = _getMostRecentPeasantID();
+            case -2: // UseExistingSameDesktop
+                windowID = _getMostRecentPeasantID(true); // TODO:MG for now, just use the MRU window.
+                break;
+            case 0: // UseExisting
+            case -3: // UseExisting
+                windowID = _getMostRecentPeasantID(false); // TODO:MG for now, just use the MRU window.
+                break;
+            default:
+                windowID = ::base::saturated_cast<uint64_t>(targetWindow);
+                break;
             }
+
+            // if (windowID == 0)
+            // {
+            //     windowID = _getMostRecentPeasantID(false);
+            // }
 
             if (auto targetPeasant{ _getPeasant(windowID) })
             {
