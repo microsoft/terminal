@@ -246,6 +246,8 @@ namespace Microsoft::Console::Render
         std::wstring _pixelShaderPath;
         bool _pixelShaderLoaded{ false };
 
+        std::chrono::steady_clock::time_point _shaderStartTime;
+
         // DX resources needed for terminal effects
         ::Microsoft::WRL::ComPtr<ID3D11RenderTargetView> _renderTargetView;
         ::Microsoft::WRL::ComPtr<ID3D11VertexShader> _vertexShader;
