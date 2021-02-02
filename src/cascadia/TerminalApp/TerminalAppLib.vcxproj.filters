@@ -31,7 +31,22 @@
     <ClCompile Include="Tab.cpp">
       <Filter>tab</Filter>
     </ClCompile>
+    <ClCompile Include="SettingsTab.cpp">
+      <Filter>tab</Filter>
+    </ClCompile>
     <ClCompile Include="FilteredCommand.cpp">
+      <Filter>commandPalette</Filter>
+    </ClCompile>
+    <ClCompile Include="ActionPaletteItem.cpp">
+      <Filter>commandPalette</Filter>
+    </ClCompile>
+    <ClCompile Include="PaletteItem.cpp">
+      <Filter>commandPalette</Filter>
+    </ClCompile>
+    <ClCompile Include="TabPaletteItem.cpp">
+      <Filter>commandPalette</Filter>
+    </ClCompile>
+    <ClCompile Include="CommandLinePaletteItem.cpp">
       <Filter>commandPalette</Filter>
     </ClCompile>
     <ClCompile Include="HighlightedText.cpp">
@@ -62,7 +77,22 @@
     <ClInclude Include="Tab.h">
       <Filter>tab</Filter>
     </ClInclude>
+    <ClInclude Include="SettingsTab.h">
+      <Filter>tab</Filter>
+    </ClInclude>
     <ClInclude Include="FilteredCommand.h">
+      <Filter>commandPalette</Filter>
+    </ClInclude>
+    <ClInclude Include="ActionPaletteItem.h">
+      <Filter>commandPalette</Filter>
+    </ClInclude>
+    <ClInclude Include="PaletteItem.h">
+      <Filter>commandPalette</Filter>
+    </ClInclude>
+    <ClInclude Include="TabPaletteItem.h">
+      <Filter>commandPalette</Filter>
+    </ClInclude>
+    <ClInclude Include="CommandLinePaletteItem.h">
       <Filter>commandPalette</Filter>
     </ClInclude>
     <ClInclude Include="HighlightedText.h">
@@ -86,6 +116,12 @@
     <Midl Include="TerminalSettings.idl">
       <Filter>settings</Filter>
     </Midl>
+    <Midl Include="ITab.idl">
+      <Filter>tab</Filter>
+    </Midl>
+    <Midl Include="SettingsTab.idl">
+      <Filter>tab</Filter>
+    </Midl>
     <Midl Include="TerminalTab.idl">
       <Filter>tab</Filter>
     </Midl>
@@ -106,6 +142,9 @@
     <Page Include="TabRowControl.xaml">
       <Filter>controls</Filter>
     </Page>
+    <Page Include="TabHeaderControl.xaml">
+      <Filter>controls</Filter>
+    </Page>
     <Page Include="TerminalPage.xaml">
       <Filter>controls</Filter>
     </Page>
@@ -118,6 +157,21 @@
     <Page Include="CommandPalette.xaml">
       <Filter>commandPalette</Filter>
     </Page>
+    <Midl Include="PaletteItem.idl">
+      <Filter>commandPalette</Filter>
+    </Midl>
+    <Midl Include="TabPaletteItem.idl">
+      <Filter>commandPalette</Filter>
+    </Midl>
+    <Midl Include="ActionPaletteItem.idl">
+      <Filter>commandPalette</Filter>
+    </Midl>
+    <Midl Include="FilterableListItem.idl">
+      <Filter>commandPalette</Filter>
+    </Midl>
+    <Midl Include="CommandLinePaletteItem.idl">
+      <Filter>commandPalette</Filter>
+    </Midl>
     <Page Include="HighlightedTextControl.xaml">
       <Filter>highlightedText</Filter>
     </Page>

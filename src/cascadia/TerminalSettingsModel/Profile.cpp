@@ -58,6 +58,7 @@ static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTer
 static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 static constexpr std::string_view BellStyleKey{ "bellStyle" };
+static constexpr std::string_view PixelShaderPathKey{ "experimental.pixelShaderPath" };
 
 static constexpr std::wstring_view DesktopWallpaperEnum{ L"desktopWallpaper" };
 
@@ -109,6 +110,7 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
     profile->_CursorShape = source->_CursorShape;
     profile->_CursorHeight = source->_CursorHeight;
     profile->_BellStyle = source->_BellStyle;
+    profile->_PixelShaderPath = source->_PixelShaderPath;
     profile->_BackgroundImageAlignment = source->_BackgroundImageAlignment;
     profile->_ConnectionType = source->_ConnectionType;
 
@@ -334,10 +336,9 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
     JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::GetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
-
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
-
     JsonUtils::GetValueForKey(json, BellStyleKey, _BellStyle);
+    JsonUtils::GetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
 }
 
 // Method Description:
@@ -473,54 +474,6 @@ winrt::guid Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
     return Profile::_GenerateGuidForProfile(name, source);
 }
 
-#pragma region BackgroundImageAlignment
-bool Profile::HasBackgroundImageAlignment() const noexcept
-{
-    return _BackgroundImageAlignment.has_value();
-}
-
-void Profile::ClearBackgroundImageAlignment() noexcept
-{
-    _BackgroundImageAlignment = std::nullopt;
-}
-
-const HorizontalAlignment Profile::BackgroundImageHorizontalAlignment() const noexcept
-{
-    const auto val{ _getBackgroundImageAlignmentImpl() };
-    return val ? std::get<HorizontalAlignment>(*val) : HorizontalAlignment::Center;
-}
-
-void Profile::BackgroundImageHorizontalAlignment(const HorizontalAlignment& value) noexcept
-{
-    if (HasBackgroundImageAlignment())
-    {
-        std::get<HorizontalAlignment>(*_BackgroundImageAlignment) = value;
-    }
-    else
-    {
-        _BackgroundImageAlignment = { value, VerticalAlignment::Center };
-    }
-}
-
-const VerticalAlignment Profile::BackgroundImageVerticalAlignment() const noexcept
-{
-    const auto val{ _getBackgroundImageAlignmentImpl() };
-    return val ? std::get<VerticalAlignment>(*val) : VerticalAlignment::Center;
-}
-
-void Profile::BackgroundImageVerticalAlignment(const VerticalAlignment& value) noexcept
-{
-    if (HasBackgroundImageAlignment())
-    {
-        std::get<VerticalAlignment>(*_BackgroundImageAlignment) = value;
-    }
-    else
-    {
-        _BackgroundImageAlignment = { HorizontalAlignment::Center, value };
-    }
-}
-#pragma endregion
-
 // Method Description:
 // - Create a new serialized JsonObject from an instance of this class
 // Arguments:
@@ -577,6 +530,7 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
     JsonUtils::SetValueForKey(json, TabColorKey, _TabColor);
     JsonUtils::SetValueForKey(json, BellStyleKey, _BellStyle);
+    JsonUtils::SetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
 
     return json;
 }

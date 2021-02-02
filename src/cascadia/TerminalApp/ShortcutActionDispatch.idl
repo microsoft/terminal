@@ -29,11 +29,13 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> ScrollDown;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> ScrollUpPage;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> ScrollDownPage;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> ScrollToTop;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> ScrollToBottom;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> OpenSettings;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> ResizePane;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> Find;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> MoveFocus;
-        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> ToggleRetroEffect;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> ToggleShaderEffects;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> ToggleFocusMode;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> ToggleFullscreen;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> ToggleAlwaysOnTop;
@@ -47,5 +49,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> CloseOtherTabs;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> CloseTabsAfter;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> TabSearch;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> MoveTab;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> BreakIntoDebugger;
     }
 }

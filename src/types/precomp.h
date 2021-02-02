@@ -48,7 +48,7 @@ Abstract:
 // private dependencies
 #pragma warning(push)
 #pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
-#include "..\host\conddkrefs.h"
+#include "../host/conddkrefs.h"
 #pragma warning(pop)
 
 #include <conmsgl1.h>

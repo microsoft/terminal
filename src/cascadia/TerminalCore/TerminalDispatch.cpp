@@ -371,14 +371,27 @@ bool TerminalDispatch::EnableAlternateScroll(const bool enabled) noexcept
     return true;
 }
 
-bool TerminalDispatch::SetPrivateMode(const DispatchTypes::PrivateModeParams param) noexcept
+//Routine Description:
+// Enable Bracketed Paste Mode -  this changes the behavior of pasting.
+//      See: https://www.xfree86.org/current/ctlseqs.html#Bracketed%20Paste%20Mode
+//Arguments:
+// - enabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False otherwise.
+bool TerminalDispatch::EnableXtermBracketedPasteMode(const bool enabled) noexcept
 {
-    return _PrivateModeParamsHelper(param, true);
+    _terminalApi.EnableXtermBracketedPasteMode(enabled);
+    return true;
 }
 
-bool TerminalDispatch::ResetPrivateMode(const DispatchTypes::PrivateModeParams param) noexcept
+bool TerminalDispatch::SetMode(const DispatchTypes::ModeParams param) noexcept
 {
-    return _PrivateModeParamsHelper(param, false);
+    return _ModeParamsHelper(param, true);
+}
+
+bool TerminalDispatch::ResetMode(const DispatchTypes::ModeParams param) noexcept
+{
+    return _ModeParamsHelper(param, false);
 }
 
 // Method Description:
@@ -417,43 +430,55 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
     const auto parts = Utils::SplitString(string, L';');
     unsigned int subParam = 0;
 
-    // For now, the only ConEmu action we support is setting the taskbar state/progress,
-    // which has a sub param value of 4
-    if (parts.size() < 1 || !Utils::StringToUint(til::at(parts, 0), subParam) || subParam != 4)
+    if (parts.size() < 1 || !Utils::StringToUint(til::at(parts, 0), subParam))
     {
         return false;
     }
 
-    if (parts.size() >= 2)
+    // 4 is SetProgressBar, which sets the taskbar state/progress.
+    if (subParam == 4)
     {
-        // A state parameter is defined, parse it out
-        const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), state);
-        if (!stateSuccess)
+        if (parts.size() >= 2)
         {
-            return false;
-        }
-        if (parts.size() >= 3)
-        {
-            // A progress parameter is also defined, parse it out
-            const auto progressSuccess = Utils::StringToUint(til::at(parts, 2), progress);
-            if (!progressSuccess)
+            // A state parameter is defined, parse it out
+            const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), state);
+            if (!stateSuccess)
             {
                 return false;
             }
+            if (parts.size() >= 3)
+            {
+                // A progress parameter is also defined, parse it out
+                const auto progressSuccess = Utils::StringToUint(til::at(parts, 2), progress);
+                if (!progressSuccess)
+                {
+                    return false;
+                }
+            }
+        }
+
+        if (state > TaskbarMaxState)
+        {
+            // state is out of bounds, return false
+            return false;
+        }
+        if (progress > TaskbarMaxProgress)
+        {
+            // progress is greater than the maximum allowed value, clamp it to the max
+            progress = TaskbarMaxProgress;
+        }
+        return _terminalApi.SetTaskbarProgress(state, progress);
+    }
+    // 9 is SetWorkingDirectory, which informs the terminal about the current working directory.
+    else if (subParam == 9)
+    {
+        if (parts.size() >= 2)
+        {
+            return _terminalApi.SetWorkingDirectory(til::at(parts, 1));
         }
     }
 
-    if (state > TaskbarMaxState)
-    {
-        // state is out of bounds, return false
-        return false;
-    }
-    if (progress > TaskbarMaxProgress)
-    {
-        // progress is greater than the maximum allowed value, clamp it to the max
-        progress = TaskbarMaxProgress;
-    }
-    return _terminalApi.SetTaskbarProgress(state, progress);
+    return false;
 }
 
 // Routine Description:
@@ -463,43 +488,46 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
 // - enable - True for set, false for unset.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool TerminalDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModeParams param, const bool enable) noexcept
+bool TerminalDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable) noexcept
 {
     bool success = false;
     switch (param)
     {
-    case DispatchTypes::PrivateModeParams::DECCKM_CursorKeysMode:
+    case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
         // set - Enable Application Mode, reset - Normal mode
         success = SetCursorKeysMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::DECSCNM_ScreenMode:
+    case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
         success = SetScreenMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::VT200_MOUSE_MODE:
+    case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
         success = EnableVT200MouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::BUTTON_EVENT_MOUSE_MODE:
+    case DispatchTypes::ModeParams::BUTTON_EVENT_MOUSE_MODE:
         success = EnableButtonEventMouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::ANY_EVENT_MOUSE_MODE:
+    case DispatchTypes::ModeParams::ANY_EVENT_MOUSE_MODE:
         success = EnableAnyEventMouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::UTF8_EXTENDED_MODE:
+    case DispatchTypes::ModeParams::UTF8_EXTENDED_MODE:
         success = EnableUTF8ExtendedMouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::SGR_EXTENDED_MODE:
+    case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
         success = EnableSGRExtendedMouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::ALTERNATE_SCROLL:
+    case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
         success = EnableAlternateScroll(enable);
         break;
-    case DispatchTypes::PrivateModeParams::DECTCEM_TextCursorEnableMode:
+    case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
         success = CursorVisibility(enable);
         break;
-    case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
+    case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
         success = EnableCursorBlinking(enable);
         break;
-    case DispatchTypes::PrivateModeParams::W32IM_Win32InputMode:
+    case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
+        success = EnableXtermBracketedPasteMode(enable);
+        break;
+    case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         success = EnableWin32InputMode(enable);
         break;
     default:

@@ -42,6 +42,7 @@ TextBuffer::TextBuffer(const COORD screenBufferSize,
     _currentPatternId{ 0 }
 {
     // initialize ROWs
+    _storage.reserve(static_cast<size_t>(screenBufferSize.Y));
     for (size_t i = 0; i < static_cast<size_t>(screenBufferSize.Y); ++i)
     {
         _storage.emplace_back(static_cast<SHORT>(i), screenBufferSize.X, _currentAttributes, this);
@@ -253,7 +254,7 @@ bool TextBuffer::_AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribut
         // Erase previous character into an N type.
         try
         {
-            prevRow.GetCharRow().ClearCell(coordPrevPosition.X);
+            prevRow.ClearColumn(coordPrevPosition.X);
         }
         catch (...)
         {
@@ -295,8 +296,8 @@ bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
         if (GetCursor().GetPosition().X == sBufferWidth - 1)
         {
             // set that we're wrapping for double byte reasons
-            CharRow& charRow = GetRowByOffset(GetCursor().GetPosition().Y).GetCharRow();
-            charRow.SetDoubleBytePadded(true);
+            auto& row = GetRowByOffset(GetCursor().GetPosition().Y);
+            row.SetDoubleBytePadded(true);
 
             // then move the cursor forward and onto the next row
             fSuccess = IncrementCursor();
@@ -479,7 +480,7 @@ void TextBuffer::_AdjustWrapOnCurrentRow(const bool fSet)
     const UINT uiCurrentRowOffset = GetCursor().GetPosition().Y;
 
     // Set the wrap status as appropriate
-    GetRowByOffset(uiCurrentRowOffset).GetCharRow().SetWrapForced(fSet);
+    GetRowByOffset(uiCurrentRowOffset).SetWrapForced(fSet);
 }
 
 //Routine Description:
@@ -809,8 +810,7 @@ void TextBuffer::Reset()
 
     for (auto& row : _storage)
     {
-        row.GetCharRow().Reset();
-        row.GetAttrRow().Reset(attr);
+        row.Reset(attr);
     }
 }
 
@@ -837,11 +837,10 @@ void TextBuffer::Reset()
         const SHORT TopRowIndex = (GetFirstRowIndex() + TopRow) % currentSize.Y;
 
         // rotate rows until the top row is at index 0
-        const ROW& newTopRow = _storage.at(TopRowIndex);
-        while (&newTopRow != &_storage.front())
+        for (int i = 0; i < TopRowIndex; i++)
         {
-            _storage.push_back(std::move(_storage.front()));
-            _storage.pop_front();
+            _storage.emplace_back(std::move(_storage.front()));
+            _storage.erase(_storage.begin());
         }
 
         _SetFirstRowIndex(0);
@@ -1230,9 +1229,15 @@ void TextBuffer::_PruneHyperlinks()
     // If the buffer does not contain the same reference, we can remove that hyperlink from our map
     // This way, obsolete hyperlink references are cleared from our hyperlink map instead of hanging around
     // Get all the hyperlink references in the row we're erasing
-    auto firstRowRefs = _storage.at(_firstRow).GetAttrRow().GetHyperlinks();
-    if (!firstRowRefs.empty())
+    const auto hyperlinks = _storage.at(_firstRow).GetAttrRow().GetHyperlinks();
+
+    if (!hyperlinks.empty())
     {
+        // Move to unordered set so we can use hashed lookup of IDs instead of linear search.
+        // Only make it an unordered set now because set always heap allocates but vector
+        // doesn't when the set is empty (saving an allocation in the common case of no links.)
+        std::unordered_set<uint16_t> firstRowRefs{ hyperlinks.cbegin(), hyperlinks.cend() };
+
         const auto total = TotalRowCount();
         // Loop through all the rows in the buffer except the first row -
         // we have found all hyperlink references in the first row and put them in refs,
@@ -1254,12 +1259,12 @@ void TextBuffer::_PruneHyperlinks()
                 break;
             }
         }
-    }
 
-    // Now delete obsolete references from our map
-    for (auto hyperlinkReference : firstRowRefs)
-    {
-        RemoveHyperlinkFromMap(hyperlinkReference);
+        // Now delete obsolete references from our map
+        for (auto hyperlinkReference : firstRowRefs)
+        {
+            RemoveHyperlinkFromMap(hyperlinkReference);
+        }
     }
 }
 
@@ -1512,12 +1517,14 @@ void TextBuffer::_ExpandTextRow(SMALL_RECT& textRow) const
 // - trimTrailingWhitespace - remove the trailing whitespace at the end of each line
 // - textRects - the rectangular regions from which the data will be extracted from the buffer (i.e.: selection rects)
 // - GetAttributeColors - function used to map TextAttribute to RGB COLORREFs. If null, only extract the text.
+// - formatWrappedRows - if set we will apply formatting (CRLF inclusion and whitespace trimming) on wrapped rows
 // Return Value:
 // - The text, background color, and foreground color data of the selected region of the text buffer.
 const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
                                                    const bool trimTrailingWhitespace,
                                                    const std::vector<SMALL_RECT>& selectionRects,
-                                                   std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const
+                                                   std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors,
+                                                   const bool formatWrappedRows) const
 {
     TextAndColor data;
     const bool copyTextColor = GetAttributeColors != nullptr;
@@ -1579,12 +1586,12 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
             it++;
         }
 
-        const bool forcedWrap = GetRowByOffset(iRow).GetCharRow().WasWrapForced();
+        // We apply formatting to rows if the row was NOT wrapped or formatting of wrapped rows is allowed
+        const bool shouldFormatRow = formatWrappedRows || !GetRowByOffset(iRow).WasWrapForced();
 
         if (trimTrailingWhitespace)
         {
-            // if the row was NOT wrapped...
-            if (!forcedWrap)
+            if (shouldFormatRow)
             {
                 // remove the spaces at the end (aka trim the trailing whitespace)
                 while (!selectionText.empty() && selectionText.back() == UNICODE_SPACE)
@@ -1603,8 +1610,7 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
         // a.k.a if we're earlier than the bottom, then apply CR/LF.
         if (includeCRLF && i < selectionRects.size() - 1)
         {
-            // if the row was NOT wrapped...
-            if (!forcedWrap)
+            if (shouldFormatRow)
             {
                 // then we can assume a CR/LF is proper
                 selectionText.push_back(UNICODE_CARRIAGERETURN);
@@ -2062,7 +2068,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // included.)
         // As such, adjust the "right" to be the width of the row
         // to capture all these spaces
-        if (charRow.WasWrapForced())
+        if (row.WasWrapForced())
         {
             iRight = cOldColsTotal;
 
@@ -2071,7 +2077,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             // piece of padding because of a double byte LEADING
             // character, then remove one from the "right" to
             // leave this padding out of the copy process.
-            if (charRow.WasDoubleBytePadded())
+            if (row.WasDoubleBytePadded())
             {
                 iRight--;
             }
@@ -2135,7 +2141,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             // Only do so if we were not forced to wrap. If we did
             // force a word wrap, then the existing line break was
             // only because we ran out of space.
-            if (iRight < cOldColsTotal && !charRow.WasWrapForced())
+            if (iRight < cOldColsTotal && !row.WasWrapForced())
             {
                 if (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
                 {
@@ -2179,7 +2185,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                     const COORD coordNewCursor = newCursor.GetPosition();
                     if (coordNewCursor.X == 0 && coordNewCursor.Y > 0)
                     {
-                        if (newBuffer.GetRowByOffset(gsl::narrow_cast<size_t>(coordNewCursor.Y) - 1).GetCharRow().WasWrapForced())
+                        if (newBuffer.GetRowByOffset(gsl::narrow_cast<size_t>(coordNewCursor.Y) - 1).WasWrapForced())
                         {
                             hr = newBuffer.NewlineCursor() ? hr : E_OUTOFMEMORY;
                         }
@@ -2212,7 +2218,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
 
             // If the last row of the new buffer wrapped, there's going to be one less newline needed,
             //   because the cursor is already on the next line
-            if (newBuffer.GetRowByOffset(cNewLastChar.Y).GetCharRow().WasWrapForced())
+            if (newBuffer.GetRowByOffset(cNewLastChar.Y).WasWrapForced())
             {
                 iNewlines = std::max(iNewlines - 1, 0);
             }
@@ -2220,7 +2226,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             {
                 // if this buffer didn't wrap, but the old one DID, then the d(columns) of the
                 //   old buffer will be one more than in this buffer, so new need one LESS.
-                if (oldBuffer.GetRowByOffset(cOldLastChar.Y).GetCharRow().WasWrapForced())
+                if (oldBuffer.GetRowByOffset(cOldLastChar.Y).WasWrapForced())
                 {
                     iNewlines = std::max(iNewlines - 1, 0);
                 }
@@ -2322,7 +2328,7 @@ uint16_t TextBuffer::GetHyperlinkId(std::wstring_view uri, std::wstring_view id)
 //   user defined id from the custom id map (if there is one)
 // Arguments:
 // - The ID of the hyperlink to be removed
-void TextBuffer::RemoveHyperlinkFromMap(uint16_t id)
+void TextBuffer::RemoveHyperlinkFromMap(uint16_t id) noexcept
 {
     _hyperlinkMap.erase(id);
     for (const auto& customIdPair : _hyperlinkCustomIdMap)
@@ -2409,8 +2415,8 @@ PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) c
     // all the text into one string and find the patterns in that string
     for (auto i = firstRow; i <= lastRow; ++i)
     {
-        auto row = GetRowByOffset(i);
-        concatAll += row.GetCharRow().GetText();
+        auto& row = GetRowByOffset(i);
+        concatAll += row.GetText();
     }
 
     // for each pattern we know of, iterate through the string

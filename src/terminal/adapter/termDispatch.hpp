@@ -72,6 +72,7 @@ public:
     bool EnableButtonEventMouseMode(const bool /*enabled*/) noexcept override { return false; } // ?1002
     bool EnableAnyEventMouseMode(const bool /*enabled*/) noexcept override { return false; } // ?1003
     bool EnableAlternateScroll(const bool /*enabled*/) noexcept override { return false; } // ?1007
+    bool EnableXtermBracketedPasteMode(const bool /*enabled*/) noexcept override { return false; } // ?2004
     bool SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*color*/) noexcept override { return false; } // OSCColorTable
     bool SetDefaultForeground(const DWORD /*color*/) noexcept override { return false; } // OSCDefaultForeground
     bool SetDefaultBackground(const DWORD /*color*/) noexcept override { return false; } // OSCDefaultBackground
@@ -82,9 +83,9 @@ public:
 
     bool SetGraphicsRendition(const VTParameters /*options*/) noexcept override { return false; } // SGR
 
-    bool SetPrivateMode(const DispatchTypes::PrivateModeParams /*param*/) noexcept override { return false; } // DECSET
+    bool SetMode(const DispatchTypes::ModeParams /*param*/) noexcept override { return false; } // DECSET
 
-    bool ResetPrivateMode(const DispatchTypes::PrivateModeParams /*param*/) noexcept override { return false; } // DECRST
+    bool ResetMode(const DispatchTypes::ModeParams /*param*/) noexcept override { return false; } // DECRST
 
     bool DeviceStatusReport(const DispatchTypes::AnsiStatusType /*statusType*/) noexcept override { return false; } // DSR, DSR-OS, DSR-CPR
     bool DeviceAttributes() noexcept override { return false; } // DA1

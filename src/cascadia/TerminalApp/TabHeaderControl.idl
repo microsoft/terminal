@@ -1,0 +1,23 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    delegate void TitleChangeRequestedArgs(String title);
+
+    [default_interface] runtimeclass TabHeaderControl : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Title { get; set; };
+        Boolean IsPaneZoomed { get; set; };
+        Double RenamerMaxWidth { get; set; };
+        Boolean IsProgressRingActive { get; set; };
+        Boolean IsProgressRingIndeterminate { get; set; };
+        Boolean BellIndicator { get; set; };
+        UInt32 ProgressValue { get; set; };
+
+        TabHeaderControl();
+        void BeginRename();
+
+        event TitleChangeRequestedArgs TitleChangeRequested;
+    }
+}

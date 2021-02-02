@@ -19,6 +19,9 @@ Abstract:
 #define NOMINMAX
 
 #define WIN32_LEAN_AND_MEAN
+#define NOMCX
+#define NOHELP
+#define NOCOMM
 #include <unknwn.h>
 
 #define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)

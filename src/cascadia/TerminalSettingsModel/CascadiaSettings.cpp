@@ -203,6 +203,35 @@ winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings CascadiaSettings:
 }
 
 // Method Description:
+// - Get a reference to our profiles.defaults object
+// Arguments:
+// - <none>
+// Return Value:
+// - a reference to our profile.defaults object
+winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::ProfileDefaults() const
+{
+    return *_userDefaultProfileSettings;
+}
+
+// Method Description:
+// - Create a new profile based off the default profile settings.
+// Arguments:
+// - <none>
+// Return Value:
+// - a reference to the new profile
+winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::CreateNewProfile()
+{
+    auto newProfile{ _userDefaultProfileSettings->CreateChild() };
+    _allProfiles.Append(*newProfile);
+
+    // Give the new profile a distinct name so a guid is properly generated
+    const winrt::hstring newName{ fmt::format(L"Profile {}", _allProfiles.Size()) };
+    newProfile->Name(newName);
+
+    return *newProfile;
+}
+
+// Method Description:
 // - Gets our list of warnings we found during loading. These are things that we
 //   knew were bad when we called `_ValidateSettings` last.
 // Return Value:
@@ -281,6 +310,8 @@ void CascadiaSettings::_ValidateSettings()
     // warning if an action didn't have a required arg.
     // This will also catch other keybinding warnings, like from GH#4239
     _ValidateKeybindings();
+
+    _ValidateColorSchemesInCommands();
 
     _ValidateNoGlobalsKey();
 }
@@ -698,6 +729,64 @@ void CascadiaSettings::_ValidateKeybindings()
 }
 
 // Method Description:
+// - Ensures that every "setColorScheme" command has a valid "color scheme" set.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+// - Appends a SettingsLoadWarnings::InvalidColorSchemeInCmd to our list of warnings if
+//   we find any command with an invalid color scheme.
+void CascadiaSettings::_ValidateColorSchemesInCommands()
+{
+    bool foundInvalidScheme{ false };
+    for (const auto& nameAndCmd : _globals->Commands())
+    {
+        if (_HasInvalidColorScheme(nameAndCmd.Value()))
+        {
+            foundInvalidScheme = true;
+            break;
+        }
+    }
+
+    if (foundInvalidScheme)
+    {
+        _warnings.Append(SettingsLoadWarnings::InvalidColorSchemeInCmd);
+    }
+}
+
+bool CascadiaSettings::_HasInvalidColorScheme(const Model::Command& command)
+{
+    bool invalid{ false };
+    if (command.HasNestedCommands())
+    {
+        for (const auto& nested : command.NestedCommands())
+        {
+            if (_HasInvalidColorScheme(nested.Value()))
+            {
+                invalid = true;
+                break;
+            }
+        }
+    }
+    else if (const auto& actionAndArgs = command.Action())
+    {
+        if (const auto& realArgs = actionAndArgs.Args().try_as<Model::SetColorSchemeArgs>())
+        {
+            auto cmdImpl{ winrt::get_self<Command>(command) };
+            // no need to validate iterable commands on color schemes
+            // they will be expanded to commands with a valid scheme name
+            if (cmdImpl->IterateOn() != ExpandCommandType::ColorSchemes &&
+                !_globals->ColorSchemes().HasKey(realArgs.SchemeName()))
+            {
+                invalid = true;
+            }
+        }
+    }
+
+    return invalid;
+}
+
+// Method Description:
 // - Checks for the presence of the legacy "globals" key in the user's
 //   settings.json. If this key is present, then they've probably got a pre-0.11
 //   settings file that won't work as expected anymore. We should warn them
@@ -774,6 +863,25 @@ winrt::Microsoft::Terminal::Settings::Model::ColorScheme CascadiaSettings::GetCo
     }
     const auto schemeName = profile.ColorSchemeName();
     return _globals->ColorSchemes().TryLookup(schemeName);
+}
+
+// Method Description:
+// - updates all references to that color scheme with the new name
+// Arguments:
+// - oldName: the original name for the color scheme
+// - newName: the new name for the color scheme
+// Return Value:
+// - <none>
+void CascadiaSettings::UpdateColorSchemeReferences(const hstring oldName, const hstring newName)
+{
+    // update all profiles referencing this color scheme
+    for (const auto& profile : _allProfiles)
+    {
+        if (profile.ColorSchemeName() == oldName)
+        {
+            profile.ColorSchemeName(newName);
+        }
+    }
 }
 
 winrt::hstring CascadiaSettings::ApplicationDisplayName()

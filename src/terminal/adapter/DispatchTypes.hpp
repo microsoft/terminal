@@ -188,6 +188,55 @@ namespace Microsoft::Console::VirtualTerminal
     private:
         gsl::span<const VTParameter> _values;
     };
+
+    // FlaggedEnumValue is a convenience class that produces enum values (of a specified size)
+    // with a flag embedded for differentiating different value categories in the same enum.
+    //
+    // It is intended to be used via type alias:
+    // using FirstFlagType  = FlaggedEnumValue<uint8_t, 0x10>;
+    // using SecondFlagType = FlaggedEnumValue<uint8_t, 0x20>;
+    // enum EnumeratorOfThings : uint8_t {
+    //   ThingOfFirstType = FirstFlagType(1),
+    //   ThingOfSecondType = SecondFlagType(1)
+    // };
+    //
+    // It will produce an error if the provided flag value sets multiple bits.
+    template<typename T, T Flag>
+    class FlaggedEnumValue
+    {
+        template<T Value>
+        struct ZeroOrOneBitChecker
+        {
+            static_assert(Value == 0 || (((Value - 1) & Value) == 0), "zero or one flags expected");
+            static constexpr T value = Value;
+        };
+
+    public:
+        static constexpr T mask{ ZeroOrOneBitChecker<Flag>::value };
+        constexpr FlaggedEnumValue(const T value) :
+            _value{ value }
+        {
+        }
+
+        constexpr FlaggedEnumValue(const VTParameter& value) :
+            _value{ value }
+        {
+        }
+
+        template<typename U, std::enable_if_t<sizeof(U) == sizeof(size_t), int> = 0>
+        constexpr operator U() const noexcept
+        {
+            return static_cast<U>(_value | mask);
+        }
+
+        constexpr operator T() const noexcept
+        {
+            return _value | mask;
+        }
+
+    private:
+        T _value;
+    };
 }
 
 namespace Microsoft::Console::VirtualTerminal::DispatchTypes
@@ -268,25 +317,29 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         CPR_CursorPositionReport = 6,
     };
 
-    enum PrivateModeParams : size_t
+    using ANSIStandardMode = FlaggedEnumValue<size_t, 0x00000000>;
+    using DECPrivateMode = FlaggedEnumValue<size_t, 0x01000000>;
+
+    enum ModeParams : size_t
     {
-        DECCKM_CursorKeysMode = 1,
-        DECANM_AnsiMode = 2,
-        DECCOLM_SetNumberOfColumns = 3,
-        DECSCNM_ScreenMode = 5,
-        DECOM_OriginMode = 6,
-        DECAWM_AutoWrapMode = 7,
-        ATT610_StartCursorBlink = 12,
-        DECTCEM_TextCursorEnableMode = 25,
-        XTERM_EnableDECCOLMSupport = 40,
-        VT200_MOUSE_MODE = 1000,
-        BUTTON_EVENT_MOUSE_MODE = 1002,
-        ANY_EVENT_MOUSE_MODE = 1003,
-        UTF8_EXTENDED_MODE = 1005,
-        SGR_EXTENDED_MODE = 1006,
-        ALTERNATE_SCROLL = 1007,
-        ASB_AlternateScreenBuffer = 1049,
-        W32IM_Win32InputMode = 9001
+        DECCKM_CursorKeysMode = DECPrivateMode(1),
+        DECANM_AnsiMode = DECPrivateMode(2),
+        DECCOLM_SetNumberOfColumns = DECPrivateMode(3),
+        DECSCNM_ScreenMode = DECPrivateMode(5),
+        DECOM_OriginMode = DECPrivateMode(6),
+        DECAWM_AutoWrapMode = DECPrivateMode(7),
+        ATT610_StartCursorBlink = DECPrivateMode(12),
+        DECTCEM_TextCursorEnableMode = DECPrivateMode(25),
+        XTERM_EnableDECCOLMSupport = DECPrivateMode(40),
+        VT200_MOUSE_MODE = DECPrivateMode(1000),
+        BUTTON_EVENT_MOUSE_MODE = DECPrivateMode(1002),
+        ANY_EVENT_MOUSE_MODE = DECPrivateMode(1003),
+        UTF8_EXTENDED_MODE = DECPrivateMode(1005),
+        SGR_EXTENDED_MODE = DECPrivateMode(1006),
+        ALTERNATE_SCROLL = DECPrivateMode(1007),
+        ASB_AlternateScreenBuffer = DECPrivateMode(1049),
+        XTERM_BracketedPasteMode = DECPrivateMode(2004),
+        W32IM_Win32InputMode = DECPrivateMode(9001),
     };
 
     enum CharacterSets : uint64_t

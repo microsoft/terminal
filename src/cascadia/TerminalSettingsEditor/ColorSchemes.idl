@@ -1,0 +1,32 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+
+    runtimeclass ColorSchemesPageNavigationState
+    {
+        Microsoft.Terminal.Settings.Model.CascadiaSettings Settings;
+        String LastSelectedScheme;
+    };
+
+    [default_interface] runtimeclass ColorSchemes : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        ColorSchemes();
+        ColorSchemesPageNavigationState State { get; };
+
+        Boolean CanDeleteCurrentScheme { get; };
+        Boolean IsRenaming { get; };
+
+        Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme { get; };
+        Windows.Foundation.Collections.IObservableVector<ColorTableEntry> CurrentColorTable;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };
+    }
+
+    [default_interface] runtimeclass ColorTableEntry : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Name { get; };
+        IInspectable Index;
+        Windows.UI.Color Color;
+    }
+}

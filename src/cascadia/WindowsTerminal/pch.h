@@ -19,6 +19,10 @@ Abstract:
 #define NOMINMAX
 
 #define WIN32_LEAN_AND_MEAN
+#define NOMCX
+#define NOHELP
+#define NOCOMM
+
 #include <unknwn.h>
 
 #define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
@@ -57,6 +61,11 @@ Abstract:
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.ui.xaml.media.h>
 
+#include <winrt/TerminalApp.h>
+#include <winrt/Microsoft.Terminal.Settings.Model.h>
+#include <winrt/Microsoft.Terminal.Remoting.h>
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
+
 #include <wil/resource.h>
 #include <wil/win32_helpers.h>
 
@@ -64,7 +73,7 @@ Abstract:
 #include <TraceLoggingProvider.h>
 #include <winmeta.h>
 TRACELOGGING_DECLARE_PROVIDER(g_hWindowsTerminalProvider);
-#include <telemetry\ProjectTelemetry.h>
+#include <telemetry/ProjectTelemetry.h>
 #include <TraceLoggingActivity.h>
 
 // For commandline argument processing

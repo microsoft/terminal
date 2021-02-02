@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 
-#include "..\inc\FontInfoDesired.hpp"
+#include "../inc/FontInfoDesired.hpp"
 
 bool operator==(const FontInfoDesired& a, const FontInfoDesired& b)
 {

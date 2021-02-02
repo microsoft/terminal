@@ -13,14 +13,16 @@ class BitmapTests
 {
     TEST_CLASS(BitmapTests);
 
+    template<typename T>
     void _checkBits(const til::rectangle& bitsOn,
-                    const til::bitmap& map)
+                    const til::details::bitmap<T>& map)
     {
         _checkBits(std::vector<til::rectangle>{ bitsOn }, map);
     }
 
+    template<typename T>
     void _checkBits(const std::vector<til::rectangle>& bitsOn,
-                    const til::bitmap& map)
+                    const til::details::bitmap<T>& map)
     {
         Log::Comment(L"Check all bits in map.");
         // For every point in the map...
@@ -838,7 +840,145 @@ class BitmapTests
         // 0 1 1 0      _ F F _
         Log::Comment(L"Set up a bitmap with some runs.");
 
-        til::bitmap map{ til::size{ 4, 4 } };
+        til::bitmap map{ til::size{ 4, 4 }, false };
+
+        // 0 0 0 0     |1 1|0 0
+        // 0 0 0 0      0 0 0 0
+        // 0 0 0 0 -->  0 0 0 0
+        // 0 0 0 0      0 0 0 0
+        map.set(til::rectangle{ til::point{ 0, 0 }, til::size{ 2, 1 } });
+
+        // 1 1 0 0     1 1 0 0
+        // 0 0 0 0     0 0|1|0
+        // 0 0 0 0 --> 0 0|1|0
+        // 0 0 0 0     0 0|1|0
+        map.set(til::rectangle{ til::point{ 2, 1 }, til::size{ 1, 3 } });
+
+        // 1 1 0 0     1 1 0|1|
+        // 0 0 1 0     0 0 1|1|
+        // 0 0 1 0 --> 0 0 1 0
+        // 0 0 1 0     0 0 1 0
+        map.set(til::rectangle{ til::point{ 3, 0 }, til::size{ 1, 2 } });
+
+        // 1 1 0 1     1 1 0 1
+        // 0 0 1 1    |1|0 1 1
+        // 0 0 1 0 --> 0 0 1 0
+        // 0 0 1 0     0 0 1 0
+        map.set(til::point{ 0, 1 });
+
+        // 1 1 0 1     1 1 0 1
+        // 1 0 1 1     1 0 1 1
+        // 0 0 1 0 --> 0 0 1 0
+        // 0 0 1 0     0|1|1 0
+        map.set(til::point{ 1, 3 });
+
+        Log::Comment(L"Building the expected run rectangles.");
+
+        // Reminder, we're making 6 rectangle runs A-F like this:
+        // A A _ B
+        // C _ D D
+        // _ _ E _
+        // _ F F _
+        til::some<til::rectangle, 6> expected;
+        expected.push_back(til::rectangle{ til::point{ 0, 0 }, til::size{ 2, 1 } });
+        expected.push_back(til::rectangle{ til::point{ 3, 0 }, til::size{ 1, 1 } });
+        expected.push_back(til::rectangle{ til::point{ 0, 1 }, til::size{ 1, 1 } });
+        expected.push_back(til::rectangle{ til::point{ 2, 1 }, til::size{ 2, 1 } });
+        expected.push_back(til::rectangle{ til::point{ 2, 2 }, til::size{ 1, 1 } });
+        expected.push_back(til::rectangle{ til::point{ 1, 3 }, til::size{ 2, 1 } });
+
+        Log::Comment(L"Run the iterator and collect the runs.");
+        til::some<til::rectangle, 6> actual;
+        for (auto run : map.runs())
+        {
+            actual.push_back(run);
+        }
+
+        Log::Comment(L"Verify they match what we expected.");
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        Log::Comment(L"Clear the map and iterate and make sure we get no results.");
+        map.reset_all();
+
+        expected.clear();
+        actual.clear();
+        for (auto run : map.runs())
+        {
+            actual.push_back(run);
+        }
+
+        Log::Comment(L"Verify they're empty.");
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        Log::Comment(L"Set point and validate runs updated.");
+        const til::point setPoint{ 2, 2 };
+        expected.push_back(til::rectangle{ setPoint });
+        map.set(setPoint);
+
+        for (auto run : map.runs())
+        {
+            actual.push_back(run);
+        }
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        Log::Comment(L"Set rectangle and validate runs updated.");
+        const til::rectangle setRect{ setPoint, til::size{ 2, 2 } };
+        expected.clear();
+        expected.push_back(til::rectangle{ til::point{ 2, 2 }, til::size{ 2, 1 } });
+        expected.push_back(til::rectangle{ til::point{ 2, 3 }, til::size{ 2, 1 } });
+        map.set(setRect);
+
+        actual.clear();
+        for (auto run : map.runs())
+        {
+            actual.push_back(run);
+        }
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        Log::Comment(L"Set all and validate runs updated.");
+        expected.clear();
+        expected.push_back(til::rectangle{ til::point{ 0, 0 }, til::size{ 4, 1 } });
+        expected.push_back(til::rectangle{ til::point{ 0, 1 }, til::size{ 4, 1 } });
+        expected.push_back(til::rectangle{ til::point{ 0, 2 }, til::size{ 4, 1 } });
+        expected.push_back(til::rectangle{ til::point{ 0, 3 }, til::size{ 4, 1 } });
+        map.set_all();
+
+        actual.clear();
+        for (auto run : map.runs())
+        {
+            actual.push_back(run);
+        }
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        Log::Comment(L"Resize and validate runs updated.");
+        const til::size newSize{ 3, 3 };
+        expected.clear();
+        expected.push_back(til::rectangle{ til::point{ 0, 0 }, til::size{ 3, 1 } });
+        expected.push_back(til::rectangle{ til::point{ 0, 1 }, til::size{ 3, 1 } });
+        expected.push_back(til::rectangle{ til::point{ 0, 2 }, til::size{ 3, 1 } });
+        map.resize(newSize);
+
+        actual.clear();
+        for (auto run : map.runs())
+        {
+            actual.push_back(run);
+        }
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(RunsWithPmr)
+    {
+        // This is a copy of the above test, but with a pmr::bitmap.
+        std::pmr::unsynchronized_pool_resource pool;
+
+        // This map --> Those runs
+        // 1 1 0 1      A A _ B
+        // 1 0 1 1      C _ D D
+        // 0 0 1 0      _ _ E _
+        // 0 1 1 0      _ F F _
+        Log::Comment(L"Set up a PMR bitmap with some runs.");
+
+        til::pmr::bitmap map{ til::size{ 4, 4 }, false, &pool };
 
         // 0 0 0 0     |1 1|0 0
         // 0 0 0 0      0 0 0 0

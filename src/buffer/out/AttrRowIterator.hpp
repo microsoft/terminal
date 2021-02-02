@@ -33,30 +33,48 @@ public:
 
     AttrRowIterator(const ATTR_ROW* const attrRow) noexcept;
 
-    operator bool() const;
+    operator bool() const noexcept;
 
-    bool operator==(const AttrRowIterator& it) const;
-    bool operator!=(const AttrRowIterator& it) const;
+    bool operator==(const AttrRowIterator& it) const noexcept;
+    bool operator!=(const AttrRowIterator& it) const noexcept;
 
-    AttrRowIterator& operator++();
-    AttrRowIterator operator++(int);
+    AttrRowIterator& operator++() noexcept
+    {
+        _increment(1);
+        return *this;
+    }
+    AttrRowIterator operator++(int) noexcept
+    {
+        auto copy = *this;
+        _increment(1);
+        return copy;
+    }
 
     AttrRowIterator& operator+=(const ptrdiff_t& movement);
     AttrRowIterator& operator-=(const ptrdiff_t& movement);
 
-    AttrRowIterator& operator--();
-    AttrRowIterator operator--(int);
+    AttrRowIterator& operator--() noexcept
+    {
+        _decrement(1);
+        return *this;
+    }
+    AttrRowIterator operator--(int) noexcept
+    {
+        auto copy = *this;
+        _decrement(1);
+        return copy;
+    }
 
     const TextAttribute* operator->() const;
     const TextAttribute& operator*() const;
 
 private:
-    std::vector<TextAttributeRun>::const_iterator _run;
+    boost::container::small_vector_base<TextAttributeRun>::const_iterator _run;
     const ATTR_ROW* _pAttrRow;
     size_t _currentAttributeIndex; // index of TextAttribute within the current TextAttributeRun
     bool _exceeded;
 
-    void _increment(size_t count);
-    void _decrement(size_t count);
+    void _increment(size_t count) noexcept;
+    void _decrement(size_t count) noexcept;
     void _setToEnd() noexcept;
 };
