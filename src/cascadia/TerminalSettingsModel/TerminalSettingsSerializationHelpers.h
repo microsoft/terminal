@@ -431,3 +431,12 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CommandPaletteLa
         pair_type{ "commandLine", ValueType::CommandLine },
     };
 };
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::WindowingMode)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "useNew", ValueType::UseNew },
+        pair_type{ "useExisting", ValueType::UseExisting },
+        pair_type{ "useExistingSameDesktop", ValueType::UseExistingSameDesktop },
+    };
+};

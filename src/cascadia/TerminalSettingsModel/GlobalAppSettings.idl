@@ -33,6 +33,13 @@ namespace Microsoft.Terminal.Settings.Model
         Disabled,
     };
 
+    enum WindowingMode
+    {
+        UseNew,
+        UseExisting,
+        UseExistingSameDesktop,
+    };
+
     [default_interface] runtimeclass GlobalAppSettings {
         Guid DefaultProfile;
         Boolean HasUnparsedDefaultProfile();
@@ -146,5 +153,9 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean HasStartupActions();
         void ClearStartupActions();
         String StartupActions();
+
+        Boolean HasWindowingBehavior();
+        void ClearWindowingBehavior();
+        WindowingMode WindowingBehavior();
     }
 }

@@ -1194,6 +1194,8 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - 0: We should handle the args "in the current window".
     // - -1: We should handle the args in a new window
+    // - -2: We should handle the args "in the current window ON THIS DESKTOP"
+    // - -3: We should handle the args "in the current window ON ANY DESKTOP"
     // - anything else: We should handle the commandline in the window with the given ID.
     int32_t AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
     {
@@ -1201,7 +1203,34 @@ namespace winrt::TerminalApp::implementation
         const auto result = appArgs.ParseArgs(args);
         if (result == 0)
         {
-            return appArgs.GetTargetWindow();
+            const auto parsedTarget = appArgs.GetTargetWindow();
+            if (parsedTarget.has_value())
+            {
+                // parsedTarget might be -1, if the user explicitly requested -1
+                // (or any other negative number) on the commandline. So the set
+                // of possible values here is {-1, 0, ℤ+}
+                return *parsedTarget;
+            }
+            else
+            {
+                // If the user did not provide any value on the commandline,
+                // then lookup our windowing behavior to determine what to do
+                // now.
+                const auto windowingBehavior = _settings.GlobalSettings().WindowingBehavior();
+                switch (windowingBehavior)
+                {
+                case WindowingMode::UseNew:
+                    return -1;
+                case WindowingMode::UseExistingSameDesktop:
+                    return -2;
+                case WindowingMode::UseExisting:
+                    return -3;
+                default:
+                    return -1;
+                }
+            }
+
+            // return;
 
             // TODO:projects/5
             //

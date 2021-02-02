@@ -216,10 +216,24 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // the parsed result.
         const auto targetWindow = findWindowArgs->ResultTargetWindow();
 
-        // If there's a valid ID returned, then let's try and find the peasant that goes with it.
-        if (targetWindow >= 0)
+        auto tmp = targetWindow;
+        switch (targetWindow)
         {
-            uint64_t windowID = ::base::saturated_cast<uint64_t>(targetWindow);
+        case -1:
+            tmp = -1;
+            break;
+        case -2: // UseExistingSameDesktop
+            tmp = 0; // TODO:MG for now, just use the MRU window.
+            break;
+        case -3: // UseExisting
+            tmp = 0; // TODO:MG for now, just use the MRU window.
+            break;
+        }
+
+        // If there's a valid ID returned, then let's try and find the peasant that goes with it.
+        if (tmp >= 0)
+        {
+            uint64_t windowID = ::base::saturated_cast<uint64_t>(tmp);
 
             if (windowID == 0)
             {
