@@ -2159,21 +2159,12 @@ namespace winrt::TerminalApp::implementation
                 openFile(CascadiaSettings::DefaultSettingsPath());
                 break;
             case SettingsTarget::SettingsFile:
-            {
-                const auto settingsPath{ CascadiaSettings::SettingsPath() };
-                _settings.GenerateSettingsIfNecessary(settingsPath);
-                openFile(settingsPath);
+                openFile(CascadiaSettings::SettingsPath());
                 break;
-            }
             case SettingsTarget::AllFiles:
-            {
                 openFile(CascadiaSettings::DefaultSettingsPath());
-
-                const auto settingsPath{ CascadiaSettings::SettingsPath() };
-                _settings.GenerateSettingsIfNecessary(settingsPath);
-                openFile(settingsPath);
+                openFile(CascadiaSettings::SettingsPath());
                 break;
-            }
             }
         }
     }

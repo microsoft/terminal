@@ -61,8 +61,8 @@ CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles) :
 CascadiaSettings::CascadiaSettings(winrt::hstring json) :
     CascadiaSettings(false)
 {
-    _userSettingsString = til::u16u8(json);
-    _userSettings = _ParseJsonString(_userSettingsString);
+    const auto jsonString{ til::u16u8(json) };
+    _ParseJsonString(jsonString, false);
     LayerJson(_userSettings);
     _ValidateSettings();
 }

@@ -77,7 +77,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void WriteSettingsToDisk() const;
         Json::Value ToJson() const;
-        void GenerateSettingsIfNecessary(const hstring filePath);
 
         static hstring SettingsPath();
         static hstring DefaultSettingsPath();
@@ -119,7 +118,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::optional<uint32_t> _FindMatchingProfileIndex(const Json::Value& profileJson);
         void _LayerOrCreateColorScheme(const Json::Value& schemeJson);
         winrt::com_ptr<implementation::ColorScheme> _FindMatchingColorScheme(const Json::Value& schemeJson);
-        Json::Value _ParseJsonString(std::string_view fileData);
+        void _ParseJsonString(std::string_view fileData, const bool isDefaultSettings);
         static const Json::Value& _GetProfilesJsonObject(const Json::Value& json);
         static const Json::Value& _GetDisabledProfileSourcesJsonObject(const Json::Value& json);
         bool _PrependSchemaDirective();
