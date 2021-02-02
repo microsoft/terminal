@@ -284,7 +284,7 @@ namespace SettingsModelLocalTests
                                             })" };
 
         auto settings{ winrt::make_self<implementation::CascadiaSettings>(false) };
-        settings->_ParseJsonString(settingsString, false);
+        settings->_userSettings = settings->_ParseJsonString(settingsString);
         settings->_ApplyDefaultsFromUserSettings();
         settings->LayerJson(settings->_userSettings);
         settings->_ValidateSettings();

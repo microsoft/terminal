@@ -228,7 +228,7 @@ namespace TerminalAppUnitTests
             L" will not be layered, because they have different sources"));
 
         // parse userProfiles as the user settings
-        settings->_ParseJsonString(userProfiles, false);
+        settings->_userSettings = settings->_ParseJsonString(userProfiles);
         VERIFY_ARE_EQUAL(0u, settings->_allProfiles.Size(), L"Just parsing the user settings doesn't actually layer them");
         settings->_LoadDynamicProfiles();
         VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
@@ -308,7 +308,7 @@ namespace TerminalAppUnitTests
             L" will not be layered, because they have different source's"));
 
         // parse userProfiles as the user settings
-        settings->_ParseJsonString(userProfiles, false);
+        settings->_userSettings = settings->_ParseJsonString(userProfiles);
         VERIFY_ARE_EQUAL(0u, settings->_allProfiles.Size(), L"Just parsing the user settings doesn't actually layer them");
         settings->_LoadDynamicProfiles();
         VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
@@ -393,7 +393,7 @@ namespace TerminalAppUnitTests
             settings->_profileGenerators.emplace_back(std::move(gen2));
 
             // Parse as the user settings:
-            settings->_ParseJsonString(settings0String, false);
+            settings->_userSettings = settings->_ParseJsonString(settings0String);
             settings->_LoadDynamicProfiles();
 
             VERIFY_ARE_EQUAL(4u, settings->_allProfiles.Size());
@@ -426,7 +426,7 @@ namespace TerminalAppUnitTests
             settings->_profileGenerators.emplace_back(std::move(gen2));
 
             // Parse as the user settings:
-            settings->_ParseJsonString(settings1String, false);
+            settings->_userSettings = settings->_ParseJsonString(settings1String);
             settings->_LoadDynamicProfiles();
 
             VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
@@ -512,7 +512,7 @@ namespace TerminalAppUnitTests
         settings->_profileGenerators.emplace_back(std::move(gen1));
         settings->_profileGenerators.emplace_back(std::move(gen2));
 
-        settings->_ParseJsonString(settings0String, false);
+        settings->_userSettings = settings->_ParseJsonString(settings0String);
         VERIFY_ARE_EQUAL(0u, settings->_allProfiles.Size());
 
         settings->_LoadDynamicProfiles();
@@ -600,7 +600,7 @@ namespace TerminalAppUnitTests
         settings->_profileGenerators.emplace_back(std::move(gen0));
         settings->_profileGenerators.emplace_back(std::move(gen1));
 
-        settings->_ParseJsonString(settings0String, false);
+        settings->_userSettings = settings->_ParseJsonString(settings0String);
         VERIFY_ARE_EQUAL(0u, settings->_allProfiles.Size());
 
         settings->_LoadDynamicProfiles();
@@ -660,7 +660,7 @@ namespace TerminalAppUnitTests
         settings->_profileGenerators.emplace_back(std::move(gen0));
         settings->_profileGenerators.emplace_back(std::move(gen1));
 
-        settings->_ParseJsonString(settings0String, false);
+        settings->_userSettings = settings->_ParseJsonString(settings0String);
         VERIFY_ARE_EQUAL(0u, settings->_allProfiles.Size());
 
         settings->_LoadDynamicProfiles();
