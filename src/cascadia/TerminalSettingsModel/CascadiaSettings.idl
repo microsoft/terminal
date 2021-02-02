@@ -12,6 +12,7 @@ namespace Microsoft.Terminal.Settings.Model
         CascadiaSettings Copy();
 
         void WriteSettingsToDisk();
+        void GenerateSettingsIfNecessary(String filePath);
 
         static CascadiaSettings LoadDefaults();
         static CascadiaSettings LoadAll();

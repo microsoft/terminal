@@ -41,7 +41,7 @@ static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSou
 
 static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 static constexpr std::string_view SettingsSchemaFragment{ "\n"
-                                                          R"(    "$schema": "https://aka.ms/terminal-profiles-schema")" };
+                                                          R"(    "$schema": "https://aka.ms/terminal-profiles-schema",)" };
 
 static std::tuple<size_t, size_t> _LineAndColumnFromPosition(const std::string_view string, ptrdiff_t position)
 {
@@ -129,7 +129,8 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
         bool needToWriteFile = false;
         if (fileHasData)
         {
-            resultPtr->_ParseJsonString(fileData.value(), false);
+            resultPtr->_userSettingsString = fileData.value();
+            resultPtr->_userSettings = resultPtr->_ParseJsonString(fileData.value());
         }
 
         // Load profiles from dynamic profile generators. _userSettings should be
@@ -143,7 +144,8 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
             // to use as the user defaults.
             // For now, just parse our user settings template as their user settings.
             auto userSettings{ resultPtr->_ApplyFirstRunChangesToSettingsTemplate(UserSettingsJson) };
-            resultPtr->_ParseJsonString(userSettings, false);
+            resultPtr->_userSettingsString = userSettings;
+            resultPtr->_userSettings = resultPtr->_ParseJsonString(userSettings);
             needToWriteFile = true;
         }
 
@@ -173,7 +175,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
         {
             // For safety's sake, we need to re-parse the JSON document to ensure that
             // all future patches are applied with updated object offsets.
-            resultPtr->_ParseJsonString(resultPtr->_userSettingsString, false);
+            resultPtr->_userSettings = resultPtr->_ParseJsonString(resultPtr->_userSettingsString);
         }
 
         // Make sure there's a $schema at the top of the file.
@@ -191,7 +193,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
             // If AppendDynamicProfilesToUserSettings (or the pwsh check above)
             // changed the file, then our local settings JSON is no longer accurate.
             // We should re-parse, but not re-layer
-            resultPtr->_ParseJsonString(resultPtr->_userSettingsString, false);
+            resultPtr->_userSettings = resultPtr->_ParseJsonString(resultPtr->_userSettingsString);
 
             try
             {
@@ -289,7 +291,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     {
         // Create settings and get the universal defaults loaded up.
         auto resultPtr = winrt::make_self<CascadiaSettings>();
-        resultPtr->_ParseJsonString(DefaultUniversalJson, true);
+        resultPtr->_defaultSettings = resultPtr->_ParseJsonString(DefaultUniversalJson);
         resultPtr->LayerJson(resultPtr->_defaultSettings);
 
         // Now validate.
@@ -327,7 +329,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     // We already have the defaults in memory, because we stamp them into a
     // header as part of the build process. We don't need to bother with reading
     // them from a file (and the potential that could fail)
-    resultPtr->_ParseJsonString(DefaultJson, true);
+    resultPtr->_defaultSettings = resultPtr->_ParseJsonString(DefaultJson);
     resultPtr->LayerJson(resultPtr->_defaultSettings);
     resultPtr->_ResolveDefaultProfile();
     resultPtr->_UpdateActiveProfiles();
@@ -398,7 +400,7 @@ void CascadiaSettings::_LoadDynamicProfiles()
 //   settings.
 // Return Value:
 // - <none>
-void CascadiaSettings::_ParseJsonString(std::string_view fileData, const bool isDefaultSettings)
+Json::Value CascadiaSettings::_ParseJsonString(std::string_view fileData)
 {
     // Ignore UTF-8 BOM
     auto actualDataStart = fileData.data();
@@ -411,25 +413,15 @@ void CascadiaSettings::_ParseJsonString(std::string_view fileData, const bool is
     std::string errs; // This string will receive any error text from failing to parse.
     std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
 
-    // Parse the json data into either our defaults or user settings. We'll keep
-    // these original json values around for later, in case we need to parse
-    // their raw contents again.
-    Json::Value& root = isDefaultSettings ? _defaultSettings : _userSettings;
     // `parse` will return false if it fails.
-    if (!reader->parse(actualDataStart, actualDataEnd, &root, &errs))
+    Json::Value settingsJson;
+    if (!reader->parse(actualDataStart, actualDataEnd, &settingsJson, &errs))
     {
         // This will be caught by App::_TryLoadSettings, who will display
         // the text to the user.
         throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
     }
-
-    // If this is the user settings, also store away the original settings
-    // string. We'll need to keep it around so we can modify it without
-    // re-serializing their settings.
-    if (!isDefaultSettings)
-    {
-        _userSettingsString = fileData;
-    }
+    return settingsJson;
 }
 
 // Method Description:
@@ -453,11 +445,6 @@ bool CascadiaSettings::_PrependSchemaDirective()
     // start points at the opening { for the root object.
     auto offset = _userSettings.getOffsetStart() + 1;
     _userSettingsString.insert(offset, SettingsSchemaFragment);
-    offset += SettingsSchemaFragment.size();
-    if (_userSettings.size() > 0)
-    {
-        _userSettingsString.insert(offset, ",");
-    }
     return true;
 }
 
@@ -852,6 +839,82 @@ void CascadiaSettings::_WriteSettings(const std::string_view content, const hstr
         THROW_LAST_ERROR();
     }
     THROW_LAST_ERROR_IF(!WriteFile(hOut.get(), content.data(), gsl::narrow<DWORD>(content.size()), nullptr, nullptr));
+}
+
+void CascadiaSettings::GenerateSettingsIfNecessary(const winrt::hstring filepath)
+{
+    // get the file; create it if it doesn't exist
+    wil::unique_hfile hFile{ CreateFileW(filepath.c_str(),
+                                         GENERIC_READ,
+                                         FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                         nullptr,
+                                         CREATE_ALWAYS,
+                                         FILE_ATTRIBUTE_NORMAL,
+                                         nullptr) };
+
+    // if the file is empty, populate it
+    if (GetFileSize(hFile.get(), nullptr) == 0)
+    {
+        auto contentToWrite{ _ApplyFirstRunChangesToSettingsTemplate(UserSettingsJson) };
+
+        // configure json writer
+        Json::StreamWriterBuilder wbuilder;
+        wbuilder.settings_["indentation"] = "    "; // Use 4 spaces to indent instead of \t
+        wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
+
+        // Get the index in the user settings string of the _last_ profile.
+        // We want to start inserting profiles immediately following the last profile.
+        auto settingsJson{ _ParseJsonString(contentToWrite) };
+        const auto userProfilesObj = _GetProfilesJsonObject(settingsJson);
+        const auto numProfiles = userProfilesObj.size();
+        const auto lastProfile = userProfilesObj[numProfiles - 1];
+        size_t currentInsertIndex = lastProfile.getOffsetLimit();
+        // Find the position of the first non-tab/space character before the last profile...
+        const auto lastProfileIndentStartsAt{ contentToWrite.find_last_not_of(" \t", lastProfile.getOffsetStart() - 1) };
+        // ... and impute the user's preferred indentation.
+        // (we're taking a copy because a string_view into a string we mutate is a no-no.)
+        const std::string indentation{ contentToWrite, lastProfileIndentStartsAt + 1, lastProfile.getOffsetStart() - lastProfileIndentStartsAt - 1 };
+
+        // generate dynamic profiles
+        for (auto& generator : _profileGenerators)
+        {
+            const std::wstring generatorNamespace{ generator->GetNamespace() };
+            try
+            {
+                const auto profiles{ generator->GenerateProfiles() };
+                for (auto& profile : profiles)
+                {
+                    // add the source to the generated profile
+                    profile.Source(generatorNamespace);
+
+                    // add the stub to our outgoing content
+                    auto profileImpl{ winrt::get_self<implementation::Profile>(profile) };
+                    const auto stub{ profileImpl->GenerateStub() };
+                    auto stubString{ Json::writeString(wbuilder, stub) };
+                    stubString.insert(0, indentation);
+                    size_t pos{ stubString.find("\n") };
+                    while (pos != std::string::npos)
+                    {
+                        stubString.insert(pos + 1, indentation);
+                        pos = stubString.find("\n", pos + indentation.size() + 1);
+                    }
+
+                    // Write a comma, newline to the file
+                    contentToWrite.insert(currentInsertIndex, ",");
+                    currentInsertIndex++;
+                    contentToWrite.insert(currentInsertIndex, "\n");
+                    currentInsertIndex++;
+
+                    // Write the profile's serialization to the file
+                    contentToWrite.insert(currentInsertIndex, stubString);
+                    currentInsertIndex += stubString.size();
+                }
+            }
+            CATCH_LOG_MSG("Dynamic Profile Namespace: \"%ls\"", generatorNamespace.data());
+        }
+
+        _WriteSettings(contentToWrite, filepath);
+    }
 }
 
 // Method Description:
