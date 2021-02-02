@@ -1028,7 +1028,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::TerminalControl::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
         const auto actionAndArgs = _settings.KeyMap().TryLookup(kc);
-        if (actionAndArgs && (actionAndArgs.Action() == ShortcutAction::CloseTab || actionAndArgs.Action() == ShortcutAction::NextTab || actionAndArgs.Action() == ShortcutAction::PrevTab))
+        if (actionAndArgs && (actionAndArgs.Action() == ShortcutAction::CloseTab || actionAndArgs.Action() == ShortcutAction::NextTab || actionAndArgs.Action() == ShortcutAction::PrevTab || actionAndArgs.Action() == ShortcutAction::ClosePane))
         {
             _actionDispatch->DoAction(actionAndArgs);
             e.Handled(true);
@@ -1600,6 +1600,13 @@ namespace winrt::TerminalApp::implementation
         {
             _UnZoomIfNeeded();
             terminalTab->ClosePane();
+        }
+        else if (auto index{ _GetFocusedTabIndex() })
+        {
+            if (_tabs.GetAt(*index).try_as<TerminalApp::SettingsTab>())
+            {
+                _RemoveTabViewItemByIndex(*index);
+            }
         }
     }
 
@@ -2450,7 +2457,7 @@ namespace winrt::TerminalApp::implementation
                                                                 IVectorView<Profile> profiles,
                                                                 IMapView<winrt::hstring, ColorScheme> schemes)
     {
-        IVector<SettingsLoadWarnings> warnings;
+        IVector<SettingsLoadWarnings> warnings{ winrt::single_threaded_vector<SettingsLoadWarnings>() };
 
         std::vector<ColorScheme> sortedSchemes;
         sortedSchemes.reserve(schemes.Size());
