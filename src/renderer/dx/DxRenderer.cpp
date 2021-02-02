@@ -411,6 +411,8 @@ HRESULT DxEngine::_SetupTerminalEffects()
     pixelShaderSettingsBufferDesc.ByteWidth = sizeof(_pixelShaderSettings);
     pixelShaderSettingsBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
+    _shaderStartTime = std::chrono::steady_clock::now();
+
     _ComputePixelShaderSettings();
 
     D3D11_SUBRESOURCE_DATA pixelShaderSettingsInitData{};
@@ -454,9 +456,8 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
     {
         try
         {
-            // Set the time
-            //  TODO:GH#7013 Grab timestamp
-            _pixelShaderSettings.Time = 0.0f;
+            // Set the time (seconds since the shader was loaded)
+            _pixelShaderSettings.Time = std::chrono::duration_cast<std::chrono::duration<float>>(std::chrono::steady_clock::now() - _shaderStartTime).count();
 
             // Set the UI Scale
             _pixelShaderSettings.Scale = _scale;
