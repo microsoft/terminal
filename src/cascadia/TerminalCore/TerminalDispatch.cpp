@@ -483,7 +483,7 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
             }
             else
             {
-                // If we fail to find the surrouding quotation marks, we'll give the path a try anyway.
+                // If we fail to find the surrounding quotation marks, we'll give the path a try anyway.
                 // ConEmu also does this.
                 return _terminalApi.SetWorkingDirectory(path);
             }
