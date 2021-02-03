@@ -18,4 +18,10 @@ See the `README.md` in each directory for more information.
 
 :microscope: You can test your commits **without** *appending* to a PR by creating a new branch with that extra change and pushing it to your fork. The [check-spelling](https://github.com/marketplace/actions/check-spelling) action will run in response to your **push** -- it doesn't require an open pull request. By using such a branch, you can limit the number of typos your peers see you make. :wink:
 
+:clamp: If you see a bunch of garbage and it relates to a binary-ish string, please add a file path to the `.github/actions/spelling/excludes.txt` file instead of just accepting the garbage.
+
+File paths are Perl 5 Regular Expressions - you can [test](
+https://www.regexplanet.com/advanced/perl/) yours before committing to verify it will match your files.
+
+`^` refers to the file's path from the root of the repository, so `^README\.md$` would exclude [README.md](https://github.com/microsoft/terminal/blob/main/README.md) (on whichever branch you're using).
 </details>
