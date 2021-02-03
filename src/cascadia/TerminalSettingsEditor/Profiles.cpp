@@ -41,15 +41,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         //
         // We do the same for the starting directory path
         PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
-            if (args.PropertyName() == L"BackgroundImagePath")
+            const auto viewModelProperty{ args.PropertyName() };
+            if (viewModelProperty == L"BackgroundImagePath")
             {
                 _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsVisible");
             }
-            else if (args.PropertyName() == L"IsBaseLayer")
+            else if (viewModelProperty == L"IsBaseLayer")
             {
                 _NotifyChanges(L"BackgroundImageSettingsVisible");
             }
-            else if (args.PropertyName() == L"StartingDirectory")
+            else if (viewModelProperty == L"StartingDirectory")
             {
                 _NotifyChanges(L"UseParentProcessDirectory", L"UseCustomStartingDirectory");
             }
@@ -249,41 +250,42 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // These changes should force us to update our own set of "Current<Setting>" members,
         // and propagate those changes to the UI
         _ViewModelChangedRevoker = _State.Profile().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
-            if (args.PropertyName() == L"CursorShape")
+            const auto settingName{ args.PropertyName() };
+            if (settingName == L"CursorShape")
             {
                 _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
                 _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
             }
-            else if (args.PropertyName() == L"BackgroundImageStretchMode")
+            else if (settingName == L"BackgroundImageStretchMode")
             {
                 _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentBackgroundImageStretchMode" });
             }
-            else if (args.PropertyName() == L"AntialiasingMode")
+            else if (settingName == L"AntialiasingMode")
             {
                 _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentAntiAliasingMode" });
             }
-            else if (args.PropertyName() == L"CloseOnExit")
+            else if (settingName == L"CloseOnExit")
             {
                 _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCloseOnExitMode" });
             }
-            else if (args.PropertyName() == L"BellStyle")
+            else if (settingName == L"BellStyle")
             {
                 _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentBellStyle" });
             }
-            else if (args.PropertyName() == L"ScrollState")
+            else if (settingName == L"ScrollState")
             {
                 _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentScrollState" });
             }
-            else if (args.PropertyName() == L"FontWeight")
+            else if (settingName == L"FontWeight")
             {
                 _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentFontWeight" });
                 _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsCustomFontWeight" });
             }
-            else if (args.PropertyName() == L"ColorSchemeName")
+            else if (settingName == L"ColorSchemeName")
             {
                 _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
             }
-            else if (args.PropertyName() == L"BackgroundImageAlignment")
+            else if (settingName == L"BackgroundImageAlignment")
             {
                 _UpdateBIAlignmentControl(static_cast<int32_t>(_State.Profile().BackgroundImageAlignment()));
             }

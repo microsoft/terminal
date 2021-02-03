@@ -65,9 +65,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                           Style="{StaticResource SettingContainerStyle}"
                                           Margin="0,0,0,24">
                             <TextBox x:Uid="Profile_Name"
-                                     x:Name="ProfileName"
                                      Text="{x:Bind State.Profile.Name, Mode=TwoWay}"
-                                     AutomationProperties.HelpText="{Binding ProfileName.ToolTip, Mode=OneWay}"
                                      Style="{StaticResource TextBoxSettingStyle}"/>
                         </ContentPresenter>
 
@@ -79,8 +77,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                 Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}"
                                                 Margin="0,0,0,24">
                             <StackPanel Orientation="Horizontal">
-                                <TextBox x:Name="Commandline"
-                                         Text="{x:Bind State.Profile.Commandline, Mode=TwoWay}"
+                                <TextBox Text="{x:Bind State.Profile.Commandline, Mode=TwoWay}"
                                          Style="{StaticResource TextBoxSettingStyle}"/>
                                 <Button x:Uid="Profile_CommandlineBrowse"
                                         Click="Commandline_Click"
@@ -96,8 +93,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                 Margin="0">
                             <StackPanel Orientation="Vertical">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBox x:Name="StartingDirectory"
-                                             Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}"
+                                    <TextBox Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}"
                                              IsEnabled="{x:Bind State.Profile.UseCustomStartingDirectory, Mode=OneWay}"
                                              Style="{StaticResource TextBoxSettingStyle}"/>
                                     <Button x:Uid="Profile_StartingDirectoryBrowse"
@@ -114,12 +110,10 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                         <!--Icon-->
                         <local:SettingContainer x:Uid="Profile_Icon"
-                                                x:Name="IconContainer"
                                                 HasSettingValue="{x:Bind State.Profile.HasIcon, Mode=OneWay}"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearIcon}">
                             <StackPanel Orientation="Horizontal">
-                                <TextBox x:Name="Icon"
-                                         Text="{x:Bind State.Profile.Icon, Mode=TwoWay}"
+                                <TextBox Text="{x:Bind State.Profile.Icon, Mode=TwoWay}"
                                          FontFamily="Segoe UI, Segoe MDL2 Assets"
                                          Style="{StaticResource TextBoxSettingStyle}"/>
                                 <Button x:Uid="Profile_IconBrowse"
@@ -332,8 +326,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                     Margin="0">
                                 <StackPanel Orientation="Vertical">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBox x:Name="BackgroundImage"
-                                                 Text="{x:Bind State.Profile.BackgroundImagePath, Mode=TwoWay, Converter={StaticResource DesktopWallpaperToEmptyStringConverter}}"
+                                        <TextBox Text="{x:Bind State.Profile.BackgroundImagePath, Mode=TwoWay, Converter={StaticResource DesktopWallpaperToEmptyStringConverter}}"
                                                  IsEnabled="{x:Bind State.Profile.BackgroundImagePath, Mode=OneWay, Converter={StaticResource StringIsNotDesktopConverter}}"
                                                  Style="{StaticResource TextBoxSettingStyle}"/>
                                         <Button x:Uid="Profile_BackgroundImageBrowse"

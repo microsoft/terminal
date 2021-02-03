@@ -48,7 +48,7 @@ public:                                                   \
         if (name() != value)                              \
         {                                                 \
             target.name(value);                           \
-            _NotifyChanges(L"Has" L#name, L#name);        \
+            _NotifyChanges(L"Has" #name, L#name);         \
         }                                                 \
     }                                                     \
     bool Has##name() { return target.Has##name(); }
@@ -63,7 +63,7 @@ public:                                                   \
         target.Clear##name();                        \
         if (hadValue)                                \
         {                                            \
-            _NotifyChanges(L"Has" L#name, L#name);   \
+            _NotifyChanges(L"Has" #name, L#name);    \
         }                                            \
     }
 
