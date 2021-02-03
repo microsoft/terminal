@@ -80,6 +80,9 @@ namespace RemotingUnitTests
         TEST_METHOD(ProposeCommandlineDeadWindow);
 
         TEST_METHOD(MostRecentWindowSameDesktops);
+        TEST_METHOD(MostRecentWindowDifferentDesktops);
+        TEST_METHOD(MostRecentWindowMoveDesktops);
+        TEST_METHOD(GetMostRecentAnyDesktop);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -605,27 +608,18 @@ namespace RemotingUnitTests
         }
     }
 
-    // OH GOD We have to create our own IVirtualDesktopManager impl that can be
-    // subbed in for testing. I hate it. We can at least start by just calling
-    // HandleActivatePeasant and ensuring that the map of vectors is sensible
-
-    // Tests:
-    // * Make windows on different desktops. Ensure that _mruPeasants has the
-    //   right number of entries, each with the right number of peasants, in the
-    //   right order
-    // * Make windows on different desktops. Move one of the peasants to a
-    //   different desktop. Ensure that _mruPeasants has the right number of
-    //   entries, each with the right number of peasants, in the right order
-    // * Test that ProposeCommandline combined with FindTargetWindowArgs that
-    //   returns WindowingBehaviorUseExisting proposes the commandline to the
-    //   most recent of all windows.
-    //   - change the most recent window, and it arrives in the new one
+    // TODO:projects/5
+    //
+    // In order to test WindowingBehaviorUseExistingSameDesktop, we'll have to
+    // create our own IVirtualDesktopManager implementation that can be subbed
+    // in for testing. We can't _actually_ create HWNDs as a part of the test
+    // and move them to different desktops. Instead, we'll have to create a stub
+    // impl that can fake a result for IsWindowOnCurrentVirtualDesktop.
 
     void RemotingTests::MostRecentWindowSameDesktops()
     {
-        Log::Comment(L"Test proposing a commandline for a peasant that previously died");
+        Log::Comment(L"Make windows on the same desktop. Validate the contents of _mruPeasants are as expected.");
 
-        // const winrt::guid guid0{ ::Microsoft::Console::Utils::GuidFromString(L"{00000000-0000-0000-0000-000000000000}") };
         const winrt::guid guid1{ ::Microsoft::Console::Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
         const winrt::guid guid2{ ::Microsoft::Console::Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
 
@@ -641,10 +635,6 @@ namespace RemotingUnitTests
         p1.attach(new Remoting::implementation::Peasant(peasant1PID));
         VERIFY_IS_NOT_NULL(p1);
         m0->AddPeasant(*p1);
-        // p1->ExecuteCommandlineRequested([&](auto&&, const Remoting::CommandlineArgs& /*cmdlineArgs*/) {
-        //     Log::Comment(L"Commandline dispatched to p1");
-        //     VERIFY_IS_TRUE(false, L"This should not happen, this peasant should be dead.");
-        // });
 
         Log::Comment(L"Add a second peasant");
         const auto peasant2PID = 34567u;
@@ -652,11 +642,6 @@ namespace RemotingUnitTests
         p2.attach(new Remoting::implementation::Peasant(peasant2PID));
         VERIFY_IS_NOT_NULL(p2);
         m0->AddPeasant(*p2);
-        // p2->ExecuteCommandlineRequested([&](auto&&, const Remoting::CommandlineArgs& cmdlineArgs) {
-        //     Log::Comment(L"Commandline dispatched to p2");
-        //     VERIFY_IS_GREATER_THAN(cmdlineArgs.Args().size(), 1u);
-        //     VERIFY_ARE_EQUAL(L"this is for p2", cmdlineArgs.Args().at(1));
-        // });
 
         {
             Log::Comment(L"Activate the first peasant, first desktop");
@@ -676,5 +661,283 @@ namespace RemotingUnitTests
         VERIFY_ARE_EQUAL(2u, m0->_mruPeasants[guid1].size());
         VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[guid1][0].PeasantID());
         VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[guid1][1].PeasantID());
+
+        {
+            Log::Comment(L"Activate the first peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p1->GetID(),
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p1->ActivateWindow(activatedArgs);
+        }
+        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants[guid1].size());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[guid1][0].PeasantID());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[guid1][1].PeasantID());
+    }
+
+    void RemotingTests::MostRecentWindowDifferentDesktops()
+    {
+        Log::Comment(L"Make windows on different desktops. Validate the contents of _mruPeasants are as expected.");
+
+        const winrt::guid guid1{ ::Microsoft::Console::Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
+        const winrt::guid guid2{ ::Microsoft::Console::Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
+
+        const auto monarch0PID = 12345u;
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        VERIFY_IS_NOT_NULL(m0);
+        m0->FindTargetWindowRequested(&RemotingTests::_findTargetWindowHelper);
+
+        Log::Comment(L"Add a peasant");
+        const auto peasant1PID = 23456u;
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+        VERIFY_IS_NOT_NULL(p1);
+        m0->AddPeasant(*p1);
+
+        Log::Comment(L"Add a second peasant");
+        const auto peasant2PID = 34567u;
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+        VERIFY_IS_NOT_NULL(p2);
+        m0->AddPeasant(*p2);
+
+        {
+            Log::Comment(L"Activate the first peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p1->GetID(),
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p1->ActivateWindow(activatedArgs);
+        }
+        {
+            Log::Comment(L"Activate the second peasant, second desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p2->GetID(),
+                                                         guid2,
+                                                         winrt::clock().now() };
+            p2->ActivateWindow(activatedArgs);
+        }
+        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants[guid1].size());
+        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants[guid2].size());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[guid1][0].PeasantID());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[guid2][0].PeasantID());
+
+        Log::Comment(L"Add a third peasant");
+        const auto peasant3PID = 45678u;
+        com_ptr<Remoting::implementation::Peasant> p3;
+        p3.attach(new Remoting::implementation::Peasant(peasant3PID));
+        VERIFY_IS_NOT_NULL(p3);
+        m0->AddPeasant(*p3);
+        {
+            Log::Comment(L"Activate the third peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p3->GetID(),
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p3->ActivateWindow(activatedArgs);
+        }
+        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants[guid1].size());
+        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants[guid2].size());
+        VERIFY_ARE_EQUAL(p3->GetID(), m0->_mruPeasants[guid1][0].PeasantID());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[guid1][1].PeasantID());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[guid2][0].PeasantID());
+
+        {
+            Log::Comment(L"Activate the first peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p1->GetID(),
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p1->ActivateWindow(activatedArgs);
+        }
+        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants[guid1].size());
+        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants[guid2].size());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[guid1][0].PeasantID());
+        VERIFY_ARE_EQUAL(p3->GetID(), m0->_mruPeasants[guid1][1].PeasantID());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[guid2][0].PeasantID());
+    }
+
+    void RemotingTests::MostRecentWindowMoveDesktops()
+    {
+        Log::Comment(L"Make windows on different desktops. Move one to another desktop. Validate the contents of _mruPeasants are as expected.");
+
+        const winrt::guid guid1{ ::Microsoft::Console::Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
+        const winrt::guid guid2{ ::Microsoft::Console::Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
+
+        const auto monarch0PID = 12345u;
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        VERIFY_IS_NOT_NULL(m0);
+        m0->FindTargetWindowRequested(&RemotingTests::_findTargetWindowHelper);
+
+        Log::Comment(L"Add a peasant");
+        const auto peasant1PID = 23456u;
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+        VERIFY_IS_NOT_NULL(p1);
+        m0->AddPeasant(*p1);
+
+        Log::Comment(L"Add a second peasant");
+        const auto peasant2PID = 34567u;
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+        VERIFY_IS_NOT_NULL(p2);
+        m0->AddPeasant(*p2);
+
+        {
+            Log::Comment(L"Activate the first peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p1->GetID(),
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p1->ActivateWindow(activatedArgs);
+        }
+        {
+            Log::Comment(L"Activate the second peasant, second desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p2->GetID(),
+                                                         guid2,
+                                                         winrt::clock().now() };
+            p2->ActivateWindow(activatedArgs);
+        }
+        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants[guid1].size());
+        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants[guid2].size());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[guid1][0].PeasantID());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[guid2][0].PeasantID());
+
+        Log::Comment(L"Add a third peasant");
+        const auto peasant3PID = 45678u;
+        com_ptr<Remoting::implementation::Peasant> p3;
+        p3.attach(new Remoting::implementation::Peasant(peasant3PID));
+        VERIFY_IS_NOT_NULL(p3);
+        m0->AddPeasant(*p3);
+        {
+            Log::Comment(L"Activate the third peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p3->GetID(),
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p3->ActivateWindow(activatedArgs);
+        }
+        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants[guid1].size());
+        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants[guid2].size());
+        VERIFY_ARE_EQUAL(p3->GetID(), m0->_mruPeasants[guid1][0].PeasantID());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[guid1][1].PeasantID());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[guid2][0].PeasantID());
+
+        {
+            Log::Comment(L"Activate the first peasant, second desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p1->GetID(),
+                                                         guid2,
+                                                         winrt::clock().now() };
+            p1->ActivateWindow(activatedArgs);
+        }
+        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants[guid1].size());
+        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants[guid2].size());
+        VERIFY_ARE_EQUAL(p3->GetID(), m0->_mruPeasants[guid1][0].PeasantID());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[guid2][0].PeasantID());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[guid2][1].PeasantID());
+
+        {
+            Log::Comment(L"Activate the third peasant, second desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p3->GetID(),
+                                                         guid2,
+                                                         winrt::clock().now() };
+            p3->ActivateWindow(activatedArgs);
+        }
+        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(0u, m0->_mruPeasants[guid1].size());
+        VERIFY_ARE_EQUAL(3u, m0->_mruPeasants[guid2].size());
+        VERIFY_ARE_EQUAL(p3->GetID(), m0->_mruPeasants[guid2][0].PeasantID());
+
+        // Because the vector is internally a heap, we actually can't be sure
+        // what the ordering of the subsequent elements will be. We can check
+        // the order consistently for 2 elements. For three+, all but the first
+        // element will be in an indeterminate order.
+        //
+        // VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[guid2][1].PeasantID());
+        // VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[guid2][2].PeasantID());
+
+        {
+            Log::Comment(L"Activate the second peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p2->GetID(),
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p2->ActivateWindow(activatedArgs);
+        }
+        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants[guid1].size());
+        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants[guid2].size());
+        VERIFY_ARE_EQUAL(p3->GetID(), m0->_mruPeasants[guid2][0].PeasantID());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[guid2][1].PeasantID());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[guid1][0].PeasantID());
+    }
+
+    void RemotingTests::GetMostRecentAnyDesktop()
+    {
+        Log::Comment(L"Make windows on different desktops. Confirm that getting the most recent of all windows works as expected.");
+
+        const winrt::guid guid1{ ::Microsoft::Console::Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
+        const winrt::guid guid2{ ::Microsoft::Console::Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
+
+        const auto monarch0PID = 12345u;
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        VERIFY_IS_NOT_NULL(m0);
+        m0->FindTargetWindowRequested(&RemotingTests::_findTargetWindowHelper);
+
+        Log::Comment(L"Add a peasant");
+        const auto peasant1PID = 23456u;
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+        VERIFY_IS_NOT_NULL(p1);
+        m0->AddPeasant(*p1);
+
+        Log::Comment(L"Add a second peasant");
+        const auto peasant2PID = 34567u;
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+        VERIFY_IS_NOT_NULL(p2);
+        m0->AddPeasant(*p2);
+
+        {
+            Log::Comment(L"Activate the first peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p1->GetID(),
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p1->ActivateWindow(activatedArgs);
+        }
+        {
+            Log::Comment(L"Activate the second peasant, second desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p2->GetID(),
+                                                         guid2,
+                                                         winrt::clock().now() };
+            p2->ActivateWindow(activatedArgs);
+        }
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_getMostRecentPeasantID(false));
+
+        Log::Comment(L"Add a third peasant");
+        const auto peasant3PID = 45678u;
+        com_ptr<Remoting::implementation::Peasant> p3;
+        p3.attach(new Remoting::implementation::Peasant(peasant3PID));
+        VERIFY_IS_NOT_NULL(p3);
+        m0->AddPeasant(*p3);
+        {
+            Log::Comment(L"Activate the third peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p3->GetID(),
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p3->ActivateWindow(activatedArgs);
+        }
+        VERIFY_ARE_EQUAL(p3->GetID(), m0->_getMostRecentPeasantID(false));
+
+        {
+            Log::Comment(L"Activate the first peasant, second desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p1->GetID(),
+                                                         guid2,
+                                                         winrt::clock().now() };
+            p1->ActivateWindow(activatedArgs);
+        }
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_getMostRecentPeasantID(false));
     }
 }

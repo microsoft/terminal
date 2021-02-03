@@ -160,8 +160,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             if (result != std::end(vec))
             {
                 vec.erase(result);
+                std::make_heap(vec.begin(), vec.end(), Remoting::implementation::CompareWindowActivatedArgs());
+                continue;
             }
-            std::make_heap(vec.begin(), vec.end(), Remoting::implementation::CompareWindowActivatedArgs());
         }
         // * If the current desktop doesn't have a vector, add one.
         if (_mruPeasants.find(args.DesktopID()) == _mruPeasants.end())
@@ -174,20 +175,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                        _mruPeasants[args.DesktopID()].end(),
                        Remoting::implementation::CompareWindowActivatedArgs());
 
-        // // For now, we'll just pay attention to whoever the most recent peasant
-        // // was. We're not too worried about the mru peasant dying. Worst case -
-        // // when the user executes a `wt -w 0`, we won't be able to find that
-        // // peasant, and it'll open in a new window instead of the current one.
-        // if (args.ActivatedTime() > _lastActivatedTime)
-        // {
-        //     _mostRecentPeasant = args.PeasantID();
-        //     _lastActivatedTime = args.ActivatedTime();
-        // }
-
         TraceLoggingWrite(g_hRemotingProvider,
                           "Monarch_SetMostRecentPeasant",
                           TraceLoggingUInt64(args.PeasantID(), "peasantID", "the ID of the activated peasant"),
                           // TraceLoggingInt64(oldLastActiveTime, "oldLastActiveTime", "The previous lastActiveTime"),
+                          // TODO:MG add the GUID here, better logging
                           TraceLoggingInt64(newLastActiveTime, "newLastActiveTime", "The provided args.ActivatedTime()"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
