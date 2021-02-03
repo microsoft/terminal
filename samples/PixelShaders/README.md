@@ -20,7 +20,7 @@ SamplerState samplerState;
 
 // Terminal settings such as the resolution of the texture
 cbuffer PixelShaderSettings {
-  // Time since pixel shader was enabled
+  // The number of seconds since the pixel shader was enabled
   float  Time;
   // UI Scale
   float  Scale;
@@ -30,8 +30,9 @@ cbuffer PixelShaderSettings {
   float4 Background;
 };
 
-// A pixel shader is a program that given a texture coordinate (tex) produces a color
-//  Just ignore the pos parameter
+// A pixel shader is a program that given a texture coordinate (tex) produces a color.
+// tex is an x,y tuple that ranges from 0,0 (top left) to 1,1 (bottom right).
+// Just ignore the pos parameter.
 float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
 {
     // Read the color value at the current texture coordinate (tex)
@@ -82,7 +83,7 @@ SamplerState samplerState;
 
 // Terminal settings such as the resolution of the texture
 cbuffer PixelShaderSettings {
-  // Time since pixel shader was enabled
+  // The number of seconds since the pixel shader was enabled
   float  Time;
   // UI Scale
   float  Scale;
@@ -92,8 +93,9 @@ cbuffer PixelShaderSettings {
   float4 Background;
 };
 
-// A pixel shader is a program that given a texture coordinate (tex) produces a color
-//  Just ignore the pos parameter
+// A pixel shader is a program that given a texture coordinate (tex) produces a color.
+// tex is an x,y tuple that ranges from 0,0 (top left) to 1,1 (bottom right).
+// Just ignore the pos parameter.
 float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
 {
     // Read the color value at the current texture coordinate (tex)
