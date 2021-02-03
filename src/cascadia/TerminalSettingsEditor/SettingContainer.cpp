@@ -29,7 +29,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             L"HasSettingValue",
             xaml_typename<bool>(),
             xaml_typename<Editor::SettingContainer>(),
-            PropertyMetadata{ box_value(true), PropertyChangedCallback{ &SettingContainer::_OnHasSettingValueChanged } });
+            PropertyMetadata{ box_value(false), PropertyChangedCallback{ &SettingContainer::_OnHasSettingValueChanged } });
 
     void SettingContainer::_OnHasSettingValueChanged(DependencyObject const& d, DependencyPropertyChangedEventArgs const& args)
     {
@@ -82,6 +82,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (auto tb{ child.try_as<Controls::TextBlock>() })
             {
+                // TODO GH#6800: 'OverrideTarget' will be replaced with hyperlink/text directing the user to another profile.
+                // Create the override message
+                const auto overrideMsg{ fmt::format(std::wstring{ RS_(L"SettingContainer_OverrideIntro") }, RS_(L"SettingContainer_OverrideTarget")) };
+                tb.Text(overrideMsg);
+
                 // initialize visibility for reset button
                 tb.Visibility(HasSettingValue() ? Visibility::Visible : Visibility::Collapsed);
             }

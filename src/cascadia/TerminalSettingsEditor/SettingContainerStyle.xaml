@@ -53,9 +53,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                         <!--The text displayed when a setting is being overridden-->
                         <TextBlock x:Name="OverrideMessage"
-                                   Style="{StaticResource SettingContainerOverrideTextStyle}">
-                            <Run x:Uid="SettingContainer_OverrideIntro"/>
-                        </TextBlock>
+                                   Style="{StaticResource SettingContainerOverrideTextStyle}"/>
                     </StackPanel>
                 </ControlTemplate>
             </Setter.Value>

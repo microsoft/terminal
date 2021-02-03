@@ -13,14 +13,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     <x:Double x:Key="StandardIconSize">14.0</x:Double>
     <Thickness x:Key="StandardIndentMargin">13,0,0,0</Thickness>
     <Thickness x:Key="StandardControlMargin">0,24,0,0</Thickness>
-    <Thickness x:Key="StandardHeaderSpacing">0,0,0,4</Thickness>
     <x:Double x:Key="StandardBoxMinWidth">250</x:Double>
-
-    <!-- This is for easier transition to the SettingsContainer control.
-         The SettingsContainer will wrap a setting with inheritance UI.-->
-    <Style x:Key="SettingContainerStyle" TargetType="ContentPresenter">
-        <Setter Property="Margin" Value="{StaticResource StandardControlMargin}"/>
-    </Style>
 
     <!-- This is for styling the entire items control used on the
          color schemes page-->
@@ -50,11 +43,6 @@ the MIT License. See LICENSE in the project root for license information. -->
         <Setter Property="Width" Value="{StaticResource StandardBoxMinWidth}"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
-    </Style>
-
-    <!--Used to create a header for a control-->
-    <Style x:Key="CustomSettingHeaderStyle" TargetType="TextBlock">
-        <Setter Property="Margin" Value="{StaticResource StandardHeaderSpacing}"/>
     </Style>
 
     <!--Used for disclaimers-->
@@ -116,10 +104,6 @@ the MIT License. See LICENSE in the project root for license information. -->
         <Setter Property="HorizontalAlignment" Value="Left"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Margin" Value="5,0,0,0"/>
-    </Style>
-
-    <Style x:Key="SliderHeaderStyle" TargetType="TextBlock" BasedOn="{StaticResource CustomSettingHeaderStyle}">
-        <Setter Property="HorizontalAlignment" Value="Left"/>
     </Style>
 
     <Style x:Key="CustomSliderControlGridStyle" TargetType="Grid">

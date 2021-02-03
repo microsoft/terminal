@@ -180,7 +180,7 @@
   <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
     <value>Always show tabs</value>
   </data>
-  <data name="Globals_AlwaysShowTabs.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_AlwaysShowTabs.HelpText" xml:space="preserve">
     <value>When unchecked, the tab bar will appear when a new tab is created.</value>
   </data>
   <data name="Globals_CopyFormatting.Content" xml:space="preserve">
@@ -195,31 +195,31 @@
   <data name="Globals_DefaultProfile.Header" xml:space="preserve">
     <value>Default profile</value>
   </data>
-  <data name="Globals_DefaultProfile.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_DefaultProfile.HelpText" xml:space="preserve">
     <value>Profile that opens when clicking the '+' icon or by typing the new tab key binding.</value>
   </data>
   <data name="Globals_ForceFullRepaint.Header" xml:space="preserve">
     <value>Redraw entire screen when display updates</value>
   </data>
-  <data name="Globals_ForceFullRepaint.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_ForceFullRepaint.HelpText" xml:space="preserve">
     <value>When unchecked, the terminal will render only the updates to the screen between frames.</value>
   </data>
   <data name="Globals_InitialCols.Header" xml:space="preserve">
     <value>Columns</value>
   </data>
-  <data name="Globals_InitialCols.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_InitialCols.HelpText" xml:space="preserve">
     <value>The number of columns displayed in the window upon first load. Measured in characters.</value>
   </data>
   <data name="Globals_InitialRows.Header" xml:space="preserve">
     <value>Rows</value>
   </data>
-  <data name="Globals_InitialRows.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_InitialRows.HelpText" xml:space="preserve">
     <value>The number of rows displayed in the window upon first load. Measured in characters.</value>
   </data>
   <data name="Globals_LaunchMode.Header" xml:space="preserve">
     <value>Launch mode</value>
   </data>
-  <data name="Globals_LaunchMode.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_LaunchMode.HelpText" xml:space="preserve">
     <value>How the terminal will appear on launch. Focus will hide the tabs and title bar.</value>
     <comment>'Focus' must match &lt;Globals_LaunchModeFocus.Content&gt;.</comment>
   </data>
@@ -238,43 +238,43 @@
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>Hide the title bar (requires relaunch)</value>
   </data>
-  <data name="Globals_ShowTitlebar.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_ShowTitlebar.HelpText" xml:space="preserve">
     <value>When unchecked, the title bar will appear above the tabs.</value>
   </data>
   <data name="Globals_ShowTitleInTitlebar.Header" xml:space="preserve">
     <value>Use active terminal title as application title</value>
   </data>
-  <data name="Globals_ShowTitleInTitlebar.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_ShowTitleInTitlebar.HelpText" xml:space="preserve">
     <value>When unchecked, the title bar will be 'Windows Terminal'.</value>
   </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
     <value>Snap window resizing to character grid</value>
   </data>
-  <data name="Globals_SnapToGridOnResize.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_SnapToGridOnResize.HelpText" xml:space="preserve">
     <value>When unchecked, the window will resize smoothly.</value>
   </data>
   <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
     <value>Use software rendering</value>
   </data>
-  <data name="Globals_SoftwareRendering.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
     <value>When checked, the terminal will use the software renderer (a.k.a. WARP) instead of the hardware one.</value>
   </data>
   <data name="Globals_StartOnUserLogin.Header" xml:space="preserve">
     <value>Launch on machine startup</value>
   </data>
-  <data name="Globals_StartOnUserLogin.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_StartOnUserLogin.HelpText" xml:space="preserve">
     <value>When checked, this enables the launch of Windows Terminal at machine startup.</value>
   </data>
   <data name="Globals_AlwaysOnTop.Header" xml:space="preserve">
     <value>Always on top</value>
   </data>
-  <data name="Globals_AlwaysOnTop.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_AlwaysOnTop.HelpText" xml:space="preserve">
     <value>Windows Terminal will always be the topmost window on the desktop.</value>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Tab width mode</value>
   </data>
-  <data name="Globals_TabWidthMode.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_TabWidthMode.HelpText" xml:space="preserve">
     <value>Compact will shrink unfocused tabs to the size of the icon.</value>
     <comment>'Compact' must match the value for &lt;Globals_TabWidthModeCompact.Content&gt;.</comment>
   </data>
@@ -290,7 +290,7 @@
   <data name="Globals_Theme.Header" xml:space="preserve">
     <value>Theme</value>
   </data>
-  <data name="Globals_Theme.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_Theme.HelpText" xml:space="preserve">
     <value>Sets the theme of the application.</value>
   </data>
   <data name="Globals_ThemeDark.Content" xml:space="preserve">
@@ -305,7 +305,7 @@
   <data name="Globals_WordDelimiters.Header" xml:space="preserve">
     <value>Word delimiters</value>
   </data>
-  <data name="Globals_WordDelimiters.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_WordDelimiters.HelpText" xml:space="preserve">
     <value>Symbols used to define boundaries between words.</value>
   </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
@@ -521,7 +521,7 @@
   <data name="Profile_Hidden.Header" xml:space="preserve">
     <value>Hide profile from dropdown</value>
   </data>
-  <data name="Profile_Hidden.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_Hidden.HelpText" xml:space="preserve">
     <value>If checked, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file.</value>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
@@ -714,7 +714,7 @@
   <data name="Profile_DeleteButton.Text" xml:space="preserve">
     <value>Delete profile</value>
   </data>
-  <data name="Profile_Name.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_Name.HelpText" xml:space="preserve">
     <value>The name of the profile that appears in the dropdown.</value>
   </data>
   <data name="Profile_Name.Header" xml:space="preserve">
@@ -778,7 +778,7 @@
   <data name="Globals_TabSwitcherMode.Header" xml:space="preserve">
     <value>Tab switcher interface style</value>
   </data>
-  <data name="Globals_TabSwitcherMode.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_TabSwitcherMode.HelpText" xml:space="preserve">
     <value>Defines the terminal behavior when switching tabs with the keyboard.</value>
   </data>
   <data name="Globals_TabSwitcherModeMru.Content" xml:space="preserve">
@@ -793,7 +793,7 @@
   <data name="Globals_CopyFormat.Header" xml:space="preserve">
     <value>Text format when copying</value>
   </data>
-  <data name="Globals_CopyFormat.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_CopyFormat.HelpText" xml:space="preserve">
     <value>Defines the type of formatting in which selected text is copied to your clipboard.</value>
   </data>
   <data name="Globals_CopyFormatNone.Content" xml:space="preserve">
@@ -814,10 +814,15 @@
   <data name="ColorScheme_RenameErrorTip.Title" xml:space="preserve">
     <value>This color scheme name is already in use.</value>
   </data>
-  <data name="SettingContainer_OverrideIntro.Text" xml:space="preserve">
-    <value>Overrides a setting</value>
+  <data name="SettingContainer_OverrideIntro" xml:space="preserve">
+    <value>This overrides the value in {}.</value>
+    <comment>"{}" is the object being overridden. Generally, it will be the name of another profile.</comment>
   </data>
   <data name="SettingContainer_ResetButtonHelpText" xml:space="preserve">
     <value>Reset</value>
+  </data>
+  <data name="SettingContainer_OverrideTarget" xml:space="preserve">
+    <value>a lower layer</value>
+    <comment>This is the object of "SettingContainer_OverrideIntro".</comment>
   </data>
 </root>
