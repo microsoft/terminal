@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "TabPaletteItem.h"
+#include "TerminalTab.h"
 #include <LibraryResources.h>
 
 #include "TabPaletteItem.g.cpp"
@@ -26,7 +27,7 @@ namespace winrt::TerminalApp::implementation
 
         _tabChangedRevoker = tab.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& sender, auto& e) {
             auto item{ weakThis.get() };
-            auto senderTab{ sender.try_as<TabBase>() };
+            auto senderTab{ sender.try_as<winrt::TerminalApp::TabBase>() };
 
             if (item && senderTab)
             {
@@ -41,5 +42,38 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         });
+
+        if (const auto terminalTab{ tab.try_as<winrt::TerminalApp::TerminalTab>() })
+        {
+            if (const auto tabImpl{ winrt::get_self<winrt::TerminalApp::implementation::TerminalTab>(terminalTab) })
+            {
+                const auto headerControl{ tabImpl->HeaderControl() };
+                IsProgressRingActive(headerControl.IsProgressRingActive());
+                IsProgressRingIndeterminate(headerControl.IsProgressRingIndeterminate());
+                ProgressValue(headerControl.ProgressValue());
+
+                _tabHeaderChangedRevoker = headerControl.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& sender, auto& e) {
+                    auto item{ weakThis.get() };
+                    auto senderHeaderControl{ sender.try_as<winrt::TerminalApp::TabHeaderControl>() };
+
+                    if (item && senderHeaderControl)
+                    {
+                        auto changedProperty = e.PropertyName();
+                        if (changedProperty == L"IsProgressRingActive")
+                        {
+                            item->IsProgressRingActive(senderHeaderControl.IsProgressRingActive());
+                        }
+                        else if (changedProperty == L"IsProgressRingIndeterminate")
+                        {
+                            item->IsProgressRingIndeterminate(senderHeaderControl.IsProgressRingIndeterminate());
+                        }
+                        else if (changedProperty == L"ProgressValue")
+                        {
+                            item->ProgressValue(senderHeaderControl.ProgressValue());
+                        }
+                    }
+                });
+            }
+        }
     }
 }

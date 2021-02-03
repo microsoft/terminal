@@ -1119,6 +1119,11 @@ namespace winrt::TerminalApp::implementation
         return Title();
     }
 
+    winrt::TerminalApp::TabHeaderControl TerminalTab::HeaderControl() const
+    {
+        return _headerControl;
+    }
+
     DEFINE_EVENT(TerminalTab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
     DEFINE_EVENT(TerminalTab, ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
     DEFINE_EVENT(TerminalTab, ColorCleared, _colorCleared, winrt::delegate<>);
