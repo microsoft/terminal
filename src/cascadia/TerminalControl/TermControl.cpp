@@ -224,22 +224,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
-    void TermControl::SearchNextMatch()
+    void TermControl::SearchMatch(const bool goForward)
     {
         if (!_searchBox)
         {
-            return;
+            CreateSearchBoxControl();
         }
-        _Search(_searchBox->TextBox().Text(), true, false);
-    }
-
-    void TermControl::SearchPrevMatch()
-    {
-        if (!_searchBox)
+        else
         {
-            return;
+            _Search(_searchBox->TextBox().Text(), goForward, false);
         }
-        _Search(_searchBox->TextBox().Text(), false, false);
     }
 
     // Method Description:
@@ -247,6 +241,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   search button or press enter.
     // Arguments:
     // - text: the text to search
+    // - goForward: boolean that represents if the current search direction is forward
     // - caseSensitive: boolean that represents if the current search is case sensitive
     // Return Value:
     // - <none>
@@ -301,7 +296,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_SearchKeyHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                         Input::KeyRoutedEventArgs const& e)
     {
-        auto modifiers = _GetPressedModifierKeys();
+        const auto modifiers = _GetPressedModifierKeys();
         const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
 

@@ -1053,8 +1053,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->TabSearch({ this, &TerminalPage::_HandleOpenTabSearch });
         _actionDispatch->MoveTab({ this, &TerminalPage::_HandleMoveTab });
         _actionDispatch->BreakIntoDebugger({ this, &TerminalPage::_HandleBreakIntoDebugger });
-        _actionDispatch->FindNext({ this, &TerminalPage::_HandleFindNext });
-        _actionDispatch->FindPrev({ this, &TerminalPage::_HandleFindPrev });
+        _actionDispatch->FindMatch({ this, &TerminalPage::_HandleFindMatch });
     }
 
     // Method Description:

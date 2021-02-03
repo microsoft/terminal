@@ -133,8 +133,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void CreateSearchBoxControl();
 
-        void SearchNextMatch();
-        void SearchPrevMatch();
+        void SearchMatch(const bool goForward);
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 

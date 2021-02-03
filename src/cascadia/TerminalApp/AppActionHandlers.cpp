@@ -182,26 +182,18 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
-    void TerminalPage::_HandleFindNext(const IInspectable& /*sender*/,
-                                       const ActionEventArgs& args)
+    void TerminalPage::_HandleFindMatch(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
     {
-        if (const auto& control{ _GetActiveControl() })
+        if (const auto& realArgs = args.ActionArgs().try_as<FindMatchArgs>())
         {
-            control.SearchNextMatch();
-            args.Handled(true);
+            if (const auto& control{ _GetActiveControl() })
+            {
+                control.SearchMatch(realArgs.Direction() == FindMatchDirection::Next);
+                args.Handled(true);
+            }
         }
     }
-
-    void TerminalPage::_HandleFindPrev(const IInspectable& /*sender*/,
-                                       const ActionEventArgs& args)
-    {
-        if (const auto& control{ _GetActiveControl() })
-        {
-            control.SearchPrevMatch();
-            args.Handled(true);
-        }
-    }
-
     void TerminalPage::_HandleOpenSettings(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {

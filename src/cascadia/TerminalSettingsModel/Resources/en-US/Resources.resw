@@ -216,10 +216,10 @@
     <value>Find</value>
   </data>
   <data name="FindNextCommandKey" xml:space="preserve">
-    <value>Next search match</value>
+    <value>Find next search match</value>
   </data>
   <data name="FindPrevCommandKey" xml:space="preserve">
-    <value>Previous search match</value>
+    <value>Find previous search match</value>
   </data>
   <data name="IncreaseFontSizeCommandKey" xml:space="preserve">
     <value>Increase font size</value>
