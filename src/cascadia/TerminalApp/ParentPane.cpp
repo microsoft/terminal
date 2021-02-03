@@ -30,10 +30,11 @@ namespace winrt::TerminalApp::implementation
 
     {
         InitializeComponent();
+
         _CreateRowColDefinitions();
 
-        _GetGridSetColOrRowFunc()(firstChild, 0);
-        _GetGridSetColOrRowFunc()(secondChild, 1);
+        _GetGridSetColOrRowFunc()(FirstChild_Root(), 0);
+        _GetGridSetColOrRowFunc()(SecondChild_Root(), 1);
     }
 
     Controls::Grid ParentPane::GetRootElement()
@@ -81,10 +82,11 @@ namespace winrt::TerminalApp::implementation
 
     void ParentPane::InitializeChildren()
     {
-        //FirstChild_Root().Content(_firstChild);
-        //SecondChild_Root().Content(_secondChild);
-        Root().Children().Append(_firstChild.try_as<TerminalApp::LeafPane>());
-        Root().Children().Append(_secondChild.try_as<TerminalApp::LeafPane>());
+        FirstChild_Root().Content(_firstChild);
+        SecondChild_Root().Content(_secondChild);
+
+        _SetupChildEventHandlers(true);
+        _SetupChildEventHandlers(false);
     }
 
     void ParentPane::Shutdown()
@@ -422,10 +424,13 @@ namespace winrt::TerminalApp::implementation
         const auto closedChild = (closeFirst ? _firstChild.try_as<TerminalApp::LeafPane>() : _secondChild.try_as<TerminalApp::LeafPane>());
         THROW_HR_IF_NULL(E_FAIL, closedChild);
 
-        const auto remainingChild = closeFirst ? _secondChild.try_as<TerminalApp::LeafPane>() : _firstChild.try_as<TerminalApp::LeafPane>();
+        const auto remainingChild = closeFirst ? _secondChild : _firstChild;
 
         // Detach all the controls from our grid, so they can be attached later.
-        Root().Children().Clear();
+        // todo: ContentPresenter doesn't seem to have a 'Clear' method, so just as placeholder for now
+        //       we 'detach' the control by replacing it with the empty string
+        FirstChild_Root().Content(winrt::box_value(L""));
+        SecondChild_Root().Content(winrt::box_value(L""));
 
         const auto closedChildDir = (_splitState == SplitState::Vertical) ?
                                         (closeFirst ? ResizeDirection::Left : ResizeDirection::Right) :
@@ -438,15 +443,16 @@ namespace winrt::TerminalApp::implementation
             paneOnEdge.UpdateBorderWithClosedNeighbor(closedChild, closedChildDir);
         });
 
-        _ChildClosedHandlers(remainingChild);
-
-        // If any children of closed pane was previously active, we move the focus to the remaining
-        // child. We do that after we invoke the ChildClosed event, because it attaches that child's
-        // control to xaml tree and only then can it properly gain focus.
+        // If any children of closed pane was previously active, we move the focus to the remaining child
         if (closedChild.GetActivePane())
         {
             remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>().SetActive();
         }
+
+        // Make sure to only fire off this event _after_ we have set the new active pane, because this event
+        // might cause the tab content to change which will fire off a property changed event which eventually
+        // results in the tab trying to access the active terminal control, which requires a valid active pane
+        _ChildClosedHandlers(remainingChild);
     }
 
     void ParentPane::_SetupChildEventHandlers(const bool isFirstChild)
@@ -461,7 +467,7 @@ namespace winrt::TerminalApp::implementation
             const auto childImpl = winrt::get_self<implementation::LeafPane>(child);
 
             // todo: check if we need to do a 'get_weak()' here or something?
-            closedToken = childImpl->Closed([&](auto&& /*s*/, auto&& /*e*/) {
+            closedToken = childImpl->Closed([=](auto&& /*s*/, auto&& /*e*/) {
                 // Unsubscribe from events of both our children, as we ourself will also
                 // get closed when our child does.
                 _RemoveAllChildEventHandlers(false);
@@ -471,7 +477,7 @@ namespace winrt::TerminalApp::implementation
 
             // When our child is a leaf and gets split, it produces a new parent pane that contains
             // both itself and its new leaf neighbor. We then replace that child with the new parent pane.
-            typeChangedToken = childImpl->GotSplit([&](TerminalApp::ParentPane newParent) {
+            typeChangedToken = childImpl->GotSplit([=](TerminalApp::ParentPane newParent) {
                 _OnChildSplitOrCollapse(isFirstChild, newParent);
             });
         }
@@ -479,7 +485,7 @@ namespace winrt::TerminalApp::implementation
         {
             // When our child is a parent and one of its children got closed (and so the parent collapses),
             // we take in its remaining, orphaned child as our own.
-            typeChangedToken = childAsParent->ChildClosed([&](TerminalApp::LeafPane remainingChild) {
+            typeChangedToken = childAsParent->ChildClosed([=](TerminalApp::IPane remainingChild) {
                 _OnChildSplitOrCollapse(isFirstChild, remainingChild);
             });
         }
@@ -512,14 +518,15 @@ namespace winrt::TerminalApp::implementation
 
         if (const auto newChildAsLeaf = newChild.try_as<TerminalApp::LeafPane>())
         {
-            Root().Children().SetAt(newChildAsLeaf ? 0 : 1, newChildAsLeaf);
-            _GetGridSetColOrRowFunc()(newChildAsLeaf, isFirstChild ? 0 : 1);
+            isFirstChild ? FirstChild_Root().Content(newChildAsLeaf) : SecondChild_Root().Content(newChildAsLeaf);
+            // todo: do we need this getgridsetcolorrow call?
+            //_GetGridSetColOrRowFunc()(isFirstChild ? FirstChild_Root() : SecondChild_Root(), isFirstChild ? 0 : 1);
         }
         else
         {
             const auto newChildAsParent = newChild.try_as<TerminalApp::ParentPane>();
-            Root().Children().SetAt(newChildAsParent ? 0 : 1, newChildAsParent);
-            _GetGridSetColOrRowFunc()(newChildAsParent, isFirstChild ? 0 : 1);
+            isFirstChild ? FirstChild_Root().Content(newChildAsParent) : SecondChild_Root().Content(newChildAsParent);
+            //_GetGridSetColOrRowFunc()(isFirstChild ? FirstChild_Root() : SecondChild_Root(), isFirstChild ? 0 : 1);
         }
 
         // Setup events appropriate for the new child
@@ -558,7 +565,7 @@ namespace winrt::TerminalApp::implementation
         while (sizeTree.size < fullSize)
         {
             lastSizeTree = sizeTree;
-            _AdvanceSnappedDimension(widthOrHeight, sizeTree);
+            AdvanceSnappedDimension(widthOrHeight, sizeTree);
 
             if (sizeTree.size == fullSize)
             {
@@ -606,7 +613,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void ParentPane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const
+    void ParentPane::AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const
     {
         // We're a parent pane, so we have to advance dimension of our children panes. In
         // fact, we advance only one child (chosen later) to keep the growth fine-grained.
@@ -634,7 +641,7 @@ namespace winrt::TerminalApp::implementation
             else
             {
                 auto firstChildAsParentImpl = winrt::get_self<implementation::ParentPane>(_firstChild);
-                firstChildAsParentImpl->_AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextFirstChild);
+                firstChildAsParentImpl->AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextFirstChild);
             }
         }
         if (sizeNode.nextSecondChild == nullptr)
@@ -656,7 +663,7 @@ namespace winrt::TerminalApp::implementation
             else
             {
                 auto secondChildAsParentImpl = winrt::get_self<implementation::ParentPane>(_secondChild);
-                secondChildAsParentImpl->_AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextSecondChild);
+                secondChildAsParentImpl->AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextSecondChild);
             }
         }
 
@@ -705,13 +712,47 @@ namespace winrt::TerminalApp::implementation
         if (advanceFirstOrSecond)
         {
             *sizeNode.firstChild = *sizeNode.nextFirstChild;
-            // todo: figure out advance snapped dimension
-            //_firstChild._AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextFirstChild);
+            // todo: there has to be a better way to do these recursive calls
+            //_firstChild.AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextFirstChild);
+            if (auto firstChildAsLeaf = _firstChild.try_as<TerminalApp::LeafPane>())
+            {
+                if (sizeNode.nextFirstChild->isMinimumSize)
+                {
+                    sizeNode.nextFirstChild->size = _firstChild._CalcSnappedDimension(widthOrHeight, sizeNode.nextFirstChild->size + 1).higher;
+                }
+                else
+                {
+                    const auto cellSize = firstChildAsLeaf.GetTerminalControl().CharacterDimensions();
+                    sizeNode.nextFirstChild->size += widthOrHeight ? cellSize.Width : cellSize.Height;
+                }
+            }
+            else
+            {
+                auto firstChildAsParentImpl = winrt::get_self<implementation::ParentPane>(_firstChild);
+                firstChildAsParentImpl->AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextFirstChild);
+            }
         }
         else
         {
             *sizeNode.secondChild = *sizeNode.nextSecondChild;
-            //_secondChild._AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextSecondChild);
+            //_secondChild.AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextSecondChild);
+            if (auto secondChildAsLeaf = _secondChild.try_as<TerminalApp::LeafPane>())
+            {
+                if (sizeNode.nextSecondChild->isMinimumSize)
+                {
+                    sizeNode.nextSecondChild->size = _secondChild._CalcSnappedDimension(widthOrHeight, sizeNode.nextSecondChild->size + 1).higher;
+                }
+                else
+                {
+                    const auto cellSize = secondChildAsLeaf.GetTerminalControl().CharacterDimensions();
+                    sizeNode.nextSecondChild->size += widthOrHeight ? cellSize.Width : cellSize.Height;
+                }
+            }
+            else
+            {
+                auto secondChildAsParentImpl = winrt::get_self<implementation::ParentPane>(_secondChild);
+                secondChildAsParentImpl->AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextSecondChild);
+            }
         }
 
         // Since the size of one of our children has changed we need to update our size as well.
@@ -771,7 +812,7 @@ namespace winrt::TerminalApp::implementation
         return std::clamp(requestedValue, minSplitPosition, maxSplitPosition);
     }
 
-    DEFINE_EVENT(ParentPane, ChildClosed, _ChildClosedHandlers, winrt::delegate<TerminalApp::LeafPane>);
+    DEFINE_EVENT(ParentPane, ChildClosed, _ChildClosedHandlers, winrt::delegate<IPane>);
 
     // TODO: Move all this layout size node stuff elsewhere or put it in LayoutSizeNode.cpp
     ParentPane::LayoutSizeNode::LayoutSizeNode(const float minSize) :

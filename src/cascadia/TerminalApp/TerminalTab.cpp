@@ -178,6 +178,10 @@ namespace winrt::TerminalApp::implementation
     {
         //_AttachEventHandlersToPane(_rootPane);
         //_AttachEventHandlersToControl(control);
+        // This function gets called even when SplitPane is invoked (so potentially much after the initial construction
+        // of the tab), so just in case remove the root pane event handlers before attaching them again so we don't have the
+        // tab reacting to the same event twice
+        _RemoveRootPaneEventHandlers();
         _SetupRootPaneEventHandlers();
     }
 
@@ -507,8 +511,6 @@ namespace winrt::TerminalApp::implementation
                 {
                     rootPaneAsParent.Relayout();
                 }
-                //_rootPane->Relayout();
-                
             }
         });
 
@@ -719,13 +721,22 @@ namespace winrt::TerminalApp::implementation
         {
             // When root pane is a parent and one of its children got closed (and so the parent collapses),
             // we take in its remaining, orphaned child as our own.
-            _rootPaneTypeChangedToken = rootPaneAsParent->ChildClosed([weakThis = get_weak()](TerminalApp::LeafPane newChildPane) {
+            _rootPaneTypeChangedToken = rootPaneAsParent->ChildClosed([weakThis = get_weak()](TerminalApp::IPane newChildPane) {
                 if (auto tab{ weakThis.get() })
                 {
                     tab->_RemoveRootPaneEventHandlers();
 
                     tab->_rootPane2 = newChildPane;
                     tab->_SetupRootPaneEventHandlers();
+                    if (const auto newContentAsLeaf = newChildPane.try_as<TerminalApp::LeafPane>())
+                    {
+                        tab->Content(newContentAsLeaf);
+                    }
+                    else
+                    {
+                        tab->Content(newChildPane.try_as<TerminalApp::ParentPane>());
+                    }
+
                 }
             });
         }
