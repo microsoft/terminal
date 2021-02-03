@@ -14,7 +14,7 @@ namespace winrt::TerminalApp::implementation
     struct ParentPane : ParentPaneT<ParentPane>
     {
     public:
-        ParentPane(TerminalApp::LeafPane firstChild, TerminalApp::LeafPane secondChild, winrt::Microsoft::Terminal::Settings::Model::SplitState splitState, float splitPosition, winrt::Windows::Foundation::Size currentSize);
+        ParentPane(TerminalApp::LeafPane firstChild, TerminalApp::LeafPane secondChild, winrt::Microsoft::Terminal::Settings::Model::SplitState splitState, float splitPosition);
         winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
         void FocusPane(uint32_t id);
         void FocusFirstChild();
@@ -66,10 +66,16 @@ namespace winrt::TerminalApp::implementation
         void _CreateRowColDefinitions();
         bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         bool _NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+
+        void _SetupEntranceAnimation();
         void _CloseChild(const bool closeFirst);
+        winrt::fire_and_forget _CloseChildRoutine(const bool closeFirst);
+
         void _SetupChildEventHandlers(const bool isFirstChild);
         void _RemoveAllChildEventHandlers(const bool isFirstChild);
+
         void _OnChildSplitOrCollapse(const bool isFirstChild, IPane newChild);
+
         std::function<void(winrt::Windows::UI::Xaml::FrameworkElement const&, int32_t)> _GetGridSetColOrRowFunc() const noexcept;
 
         std::pair<float, float> _CalcChildrenSizes(const float fullSize) const;

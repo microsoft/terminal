@@ -8,7 +8,7 @@ namespace TerminalApp
 {
     [default_interface] runtimeclass ParentPane : Windows.UI.Xaml.Controls.UserControl, IPane
     {
-        ParentPane(LeafPane firstChild, LeafPane secondChild, Microsoft.Terminal.Settings.Model.SplitState splitState, Single splitPosition, Windows.Foundation.Size currentSize);
+        ParentPane(LeafPane firstChild, LeafPane secondChild, Microsoft.Terminal.Settings.Model.SplitState splitState, Single splitPosition);
         void InitializeChildren();
         Boolean ResizePane(Microsoft.Terminal.Settings.Model.ResizeDirection direction);
         Boolean NavigateFocus(Microsoft.Terminal.Settings.Model.FocusDirection direction);

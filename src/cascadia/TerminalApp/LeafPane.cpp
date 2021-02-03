@@ -186,11 +186,7 @@ namespace winrt::TerminalApp::implementation
             newNeighbour.SetActive();
         }
 
-        // Parent pane has to know it's size when creating, which will just be the size of ours.
-        Size actualSize{ gsl::narrow_cast<float>(Root().ActualWidth()),
-                         gsl::narrow_cast<float>(Root().ActualHeight()) };
-
-        const auto newParent = TerminalApp::ParentPane(*this, newNeighbour, splitType, 1.0f - splitSize, actualSize);
+        const auto newParent = TerminalApp::ParentPane(*this, newNeighbour, splitType, 1.0f - splitSize);
 
         _GotSplitHandlers(newParent);
 
