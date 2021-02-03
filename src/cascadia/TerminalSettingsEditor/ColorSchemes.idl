@@ -19,7 +19,8 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean IsRenaming { get; };
 
         Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme { get; };
-        Windows.Foundation.Collections.IObservableVector<ColorTableEntry> CurrentColorTable;
+        Windows.Foundation.Collections.IVector<ColorTableEntry> CurrentNonBrightColorTable { get; };
+        Windows.Foundation.Collections.IVector<ColorTableEntry> CurrentBrightColorTable { get; };
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };
     }
 

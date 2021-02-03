@@ -20,6 +20,9 @@ using namespace winrt::Windows::Foundation::Collections;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    // The first 8 entries of the color table are non-bright colors, whereas the rest are bright.
+    static constexpr uint8_t ColorTableDivider{ 8 };
+
     static const std::array<hstring, 16> TableColorNames = {
         RS_(L"ColorScheme_Black/Header"),
         RS_(L"ColorScheme_Red/Header"),
@@ -53,7 +56,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     ColorSchemes::ColorSchemes() :
         _ColorSchemeList{ single_threaded_observable_vector<Model::ColorScheme>() },
-        _CurrentColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
+        _CurrentNonBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() },
+        _CurrentBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
     {
         InitializeComponent();
     }
@@ -70,8 +74,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // very accurately.
         for (uint8_t i = 0; i < TableColorNames.size(); ++i)
         {
-            auto entry = winrt::make<ColorTableEntry>(i, Windows::UI::Color{ 0, 0, 0, 0 });
-            _CurrentColorTable.Append(entry);
+            const auto entry{ winrt::make<ColorTableEntry>(i, Windows::UI::Color{ 0, 0, 0, 0 }) };
+            if (i < ColorTableDivider)
+            {
+                _CurrentNonBrightColorTable.Append(entry);
+            }
+            else
+            {
+                _CurrentBrightColorTable.Append(entry);
+            }
         }
 
         // Try to look up the scheme that was navigated to. If we find it, immediately select it.
@@ -149,13 +160,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::ColorPickerChanged(IInspectable const& sender,
                                           ColorChangedEventArgs const& args)
     {
-        if (auto picker = sender.try_as<ColorPicker>())
+        if (const auto picker{ sender.try_as<ColorPicker>() })
         {
-            if (auto tag = picker.Tag())
+            if (const auto tag{ picker.Tag() })
             {
-                auto index = winrt::unbox_value<uint8_t>(tag);
+                const auto index{ winrt::unbox_value<uint8_t>(tag) };
                 CurrentColorScheme().SetColorTableEntry(index, args.NewColor());
-                _CurrentColorTable.GetAt(index).Color(args.NewColor());
+                if (index < ColorTableDivider)
+                {
+                    _CurrentNonBrightColorTable.GetAt(index).Color(args.NewColor());
+                }
+                else
+                {
+                    _CurrentBrightColorTable.GetAt(index).Color(args.NewColor());
+                }
             }
         }
     }
@@ -295,7 +313,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         for (uint8_t i = 0; i < TableColorNames.size(); ++i)
         {
-            _CurrentColorTable.GetAt(i).Color(colorScheme.Table()[i]);
+            if (i < ColorTableDivider)
+            {
+                _CurrentNonBrightColorTable.GetAt(i).Color(colorScheme.Table()[i]);
+            }
+            else
+            {
+                _CurrentBrightColorTable.GetAt(i - 8).Color(colorScheme.Table()[i]);
+            }
         }
     }
 
