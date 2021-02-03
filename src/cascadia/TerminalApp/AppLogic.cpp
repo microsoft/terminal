@@ -841,7 +841,8 @@ namespace winrt::TerminalApp::implementation
                            // editors, who will write a temp file, then rename it to be the
                            // actual file you wrote. So listen for that too.
                            if (!(event == wil::FolderChangeEvent::Modified ||
-                                 event == wil::FolderChangeEvent::RenameNewName))
+                                 event == wil::FolderChangeEvent::RenameNewName ||
+                                 event == wil::FolderChangeEvent::Removed))
                            {
                                return;
                            }
