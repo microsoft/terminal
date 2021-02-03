@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "WindowingBehavior.h"
 #include "Monarch.h"
 #include "CommandlineArgs.h"
 #include "FindTargetWindowArgs.h"
@@ -21,6 +22,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     Monarch::Monarch() :
         _ourPID{ GetCurrentProcessId() }
     {
+        try
+        {
+            _desktopManager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
+        }
+        CATCH_LOG();
     }
 
     // This is a private constructor to be used in unit tests, where we don't
@@ -188,37 +194,24 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     uint64_t Monarch::_getMostRecentPeasantID(bool limitToCurrentDesktop)
     {
-        winrt::com_ptr<IVirtualDesktopManager> manager{ nullptr };
-        if (limitToCurrentDesktop)
-        {
-            try
-            {
-                manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
-            }
-            CATCH_LOG();
-        }
-
         std::vector<Remoting::WindowActivatedArgs> _mrus;
         for (auto& [g, vec] : _mruPeasants)
         {
             if (vec.size() > 0)
             {
-                if (limitToCurrentDesktop && manager)
+                if (limitToCurrentDesktop && _desktopManager)
                 {
-                    for (const auto& args : vec)
+                    auto args{ *vec.begin() };
+                    BOOL onCurrentDesktop{ false };
+                    // SUCCEEDED_LOG will log if it failed, and
+                    // return true if it SUCCEEDED
+                    if (SUCCEEDED_LOG(_desktopManager->IsWindowOnCurrentVirtualDesktop((HWND)args.Hwnd(), &onCurrentDesktop)) &&
+                        onCurrentDesktop)
                     {
-                        BOOL onCurrentDesktop{ false };
-                        // SUCCEEDED_LOG will log if it failed, and
-                        // return true if it SUCCEEDED
-                        if (SUCCEEDED_LOG(manager->IsWindowOnCurrentVirtualDesktop((HWND)args.Hwnd(), &onCurrentDesktop)) &&
-                            onCurrentDesktop)
-                        {
-                            _mrus.push_back(args);
-                            std::push_heap(_mrus.begin(),
-                                           _mrus.end(),
-                                           Remoting::implementation::CompareWindowActivatedArgs());
-                            break;
-                        }
+                        _mrus.push_back(args);
+                        std::push_heap(_mrus.begin(),
+                                       _mrus.end(),
+                                       Remoting::implementation::CompareWindowActivatedArgs());
                     }
                 }
                 else
@@ -238,10 +231,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         {
             return 0;
         }
-        // if (_mostRecentPeasant != 0)
-        // {
-        //     return _mostRecentPeasant;
-        // }
 
         // We haven't yet been told the MRU peasant. Just use the first one.
         // This is just gonna be a random one, but really shouldn't happen
@@ -291,42 +280,38 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // the parsed result.
         const auto targetWindow = findWindowArgs->ResultTargetWindow();
 
-        // auto tmp = targetWindow;
-        // switch (targetWindow)
-        // {
-        // case -1:
-        //     tmp = -1;
-        //     break;
-        // case -2: // UseExistingSameDesktop
-        //     tmp = _getMostRecentPeasantID(true); // TODO:MG for now, just use the MRU window.
-        //     break;
-        // case -3: // UseExisting
-        //     tmp = _getMostRecentPeasantID(false); // TODO:MG for now, just use the MRU window.
-        //     break;
-        // }
-
-        // If there's a valid ID returned, then let's try and find the peasant that goes with it.
-        if (targetWindow >= 0 || targetWindow == -2 || targetWindow == -3)
+        // If there's a valid ID returned, then let's try and find the peasant
+        // that goes with it. Alternatively, if we were given a magic windowing
+        // constant, we can use that to look up an appropriate peasant.
+        if (targetWindow >= 0 ||
+            targetWindow == WindowingBehaviorUseExistingSameDesktop ||
+            targetWindow == WindowingBehaviorUseExisting)
         {
             uint64_t windowID = 0;
             switch (targetWindow)
             {
-            case -2: // UseExistingSameDesktop
-                windowID = _getMostRecentPeasantID(true); // TODO:MG for now, just use the MRU window.
+            case WindowingBehaviorUseCurrent:
+            case WindowingBehaviorUseExistingSameDesktop:
+                // TODO:projects/5 for now, just use the MRU window. Technically,
+                // UseExistingSameDesktop and UseCurrent are different.
+                // UseCurrent implies that we should try to do the WT_SESSION
+                // lookup to find the window that spawned this process (then
+                // fall back to sameDesktop if we can't find a match). For now,
+                // it's good enough to just try to find a match on this desktop.
+                windowID = _getMostRecentPeasantID(true);
                 break;
-            case 0: // UseExisting
-            case -3: // UseExisting
-                windowID = _getMostRecentPeasantID(false); // TODO:MG for now, just use the MRU window.
+            case WindowingBehaviorUseExisting:
+                windowID = _getMostRecentPeasantID(false);
                 break;
             default:
                 windowID = ::base::saturated_cast<uint64_t>(targetWindow);
                 break;
             }
 
-            // if (windowID == 0)
-            // {
-            //     windowID = _getMostRecentPeasantID(false);
-            // }
+            // If_getMostRecentPeasantID returns 0 above, then we couldn't find
+            // a matching window for that style of windowing. _getPeasant will
+            // return nullptr, and we'll fall through to the "create a new
+            // window" branch below.
 
             if (auto targetPeasant{ _getPeasant(windowID) })
             {
@@ -376,6 +361,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 return *result;
             }
         }
+
+        // If we get here, we couldn't find an existing window. Make a new one.
 
         TraceLoggingWrite(g_hRemotingProvider,
                           "Monarch_ProposeCommandline_NewWindow",

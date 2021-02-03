@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "AppLogic.h"
+#include "WindowingBehavior.h"
 #include "AppLogic.g.cpp"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
@@ -1194,9 +1195,11 @@ namespace winrt::TerminalApp::implementation
     // - args: an array of strings to process as a commandline. These args can contain spaces
     // Return Value:
     // - 0: We should handle the args "in the current window".
-    // - -1: We should handle the args in a new window
-    // - -2: We should handle the args "in the current window ON THIS DESKTOP"
-    // - -3: We should handle the args "in the current window ON ANY DESKTOP"
+    // - WindowingBehaviorUseNew: We should handle the args in a new window
+    // - WindowingBehaviorUseExistingSameDesktop: We should handle the args "in
+    //   the current window ON THIS DESKTOP"
+    // - WindowingBehaviorUseExisting: We should handle the args "in the current
+    //   window ON ANY DESKTOP"
     // - anything else: We should handle the commandline in the window with the given ID.
     int32_t AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
     {
@@ -1221,29 +1224,15 @@ namespace winrt::TerminalApp::implementation
                 switch (windowingBehavior)
                 {
                 case WindowingMode::UseNew:
-                    return -1;
+                    return WindowingBehaviorUseNew;
                 case WindowingMode::UseExistingSameDesktop:
-                    return -2;
+                    return WindowingBehaviorUseExistingSameDesktop;
                 case WindowingMode::UseExisting:
-                    return -3;
+                    return WindowingBehaviorUseExisting;
                 default:
-                    return -1;
+                    return WindowingBehaviorUseNew;
                 }
             }
-
-            // return;
-
-            // TODO:projects/5
-            //
-            // In the future, we'll want to use the windowingBehavior setting to
-            // determine what happens when a window ID wasn't manually provided.
-            //
-            // Maybe that'd be a special return value out of here, to tell the
-            // monarch to do something special:
-            //
-            // -1 -> create a new window
-            // -2 -> find the mru, this desktop
-            // -3 -> MRU, any desktop (is this not just 0?)
         }
 
         // Any unsuccessful parse will be a new window. That new window will try
@@ -1257,7 +1246,7 @@ namespace winrt::TerminalApp::implementation
         // create a new window. Then, in that new window, we'll try to  set the
         // StartupActions, which will again fail, returning the correct error
         // message.
-        return -1;
+        return WindowingBehaviorUseNew;
     }
 
     // Method Description:

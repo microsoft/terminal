@@ -57,8 +57,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         uint64_t _nextPeasantID{ 1 };
         uint64_t _thisPeasantID{ 0 };
-        // uint64_t _mostRecentPeasant{ 0 };
-        // winrt::Windows::Foundation::DateTime _lastActivatedTime{};
+
+        winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
 
         std::unordered_map<uint64_t, winrt::Microsoft::Terminal::Remoting::IPeasant> _peasants;
 
