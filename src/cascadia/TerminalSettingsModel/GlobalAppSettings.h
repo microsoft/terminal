@@ -72,6 +72,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(bool, ShowTabsInTitlebar, true);
         GETSET_SETTING(hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
         GETSET_SETTING(bool, CopyOnSelect, false);
+        GETSET_SETTING(bool, InputServiceWarning, true);
         GETSET_SETTING(winrt::Microsoft::Terminal::TerminalControl::CopyFormat, CopyFormatting, 0);
         GETSET_SETTING(bool, WarnAboutLargePaste, true);
         GETSET_SETTING(bool, WarnAboutMultiLinePaste, true);

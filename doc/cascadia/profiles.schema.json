@@ -629,6 +629,11 @@
           "description": "When set to true, tabs are always displayed. When set to false and \"showTabsInTitlebar\" is set to false, tabs only appear after opening a new tab.",
           "type": "boolean"
         },
+        "inputServiceWarning": {
+          "default": true,
+          "description": "Warning if 'Touch Keyboard and Handwriting Panel Service' is disabled.",
+          "type": "boolean"
+        },
         "copyOnSelect": {
           "default": false,
           "description": "When set to true, a selection is immediately copied to your clipboard upon creation. When set to false, the selection persists and awaits further action.",

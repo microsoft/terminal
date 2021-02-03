@@ -84,7 +84,7 @@ namespace SettingsModelLocalTests
                 "initialPosition": ",",
                 "launchMode": "default",
                 "alwaysOnTop": false,
-
+                "inputServiceWarning": true,
                 "copyOnSelect": false,
                 "copyFormatting": "all",
                 "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",

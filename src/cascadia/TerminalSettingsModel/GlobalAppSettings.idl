@@ -79,6 +79,10 @@ namespace Microsoft.Terminal.Settings.Model
         void ClearCopyOnSelect();
         Boolean CopyOnSelect;
 
+        Boolean HasInputServiceWarning();
+        void ClearInputServiceWarning();
+        Boolean InputServiceWarning;
+
         Boolean HasCopyFormatting();
         void ClearCopyFormatting();
         Microsoft.Terminal.TerminalControl.CopyFormat CopyFormatting;
