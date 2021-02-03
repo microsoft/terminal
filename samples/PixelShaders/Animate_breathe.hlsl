@@ -1,4 +1,4 @@
-// A simple animated shader that fades the terminal background back and forth between to colours
+// A simple animated shader that fades the terminal background back and forth between two colours
 
 // The terminal graphics as a texture
 Texture2D shaderTexture;
