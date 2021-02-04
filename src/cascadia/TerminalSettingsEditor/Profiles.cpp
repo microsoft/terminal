@@ -207,6 +207,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _BIAlignmentButtons.at(6) = BIAlign_BottomLeft();
         _BIAlignmentButtons.at(7) = BIAlign_Bottom();
         _BIAlignmentButtons.at(8) = BIAlign_BottomRight();
+
+        // apply automation properties to more complex setting controls
+        for (const auto& biButton : _BIAlignmentButtons)
+        {
+            const auto tooltip{ ToolTipService::GetToolTip(biButton) };
+            Automation::AutomationProperties::SetName(biButton, unbox_value<hstring>(tooltip));
+        }
+
+        const auto startingDirCheckboxTooltip{ ToolTipService::GetToolTip(StartingDirectoryUseParentCheckbox()) };
+        Automation::AutomationProperties::SetFullDescription(StartingDirectoryUseParentCheckbox(), unbox_value<hstring>(startingDirCheckboxTooltip));
+
+        const auto backgroundImgCheckboxTooltip{ ToolTipService::GetToolTip(UseDesktopImageCheckBox()) };
+        Automation::AutomationProperties::SetFullDescription(UseDesktopImageCheckBox(), unbox_value<hstring>(backgroundImgCheckboxTooltip));
     }
 
     void Profiles::OnNavigatedTo(const NavigationEventArgs& e)

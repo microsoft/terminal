@@ -186,7 +186,7 @@
   <data name="Globals_CopyFormatting.Content" xml:space="preserve">
     <value>Copy formatting</value>
   </data>
-  <data name="Globals_CopyFormatting.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_CopyFormatting.HelpText" xml:space="preserve">
     <value>When checked, the color and font formatting of selected text is also copied to your clipboard. When unchecked, only plain text is copied to your clipboard.</value>
   </data>
   <data name="Globals_CopyOnSelect.Header" xml:space="preserve">

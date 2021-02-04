@@ -99,14 +99,14 @@ the MIT License. See LICENSE in the project root for license information. -->
                                              IsEnabled="{x:Bind State.Profile.UseCustomStartingDirectory, Mode=OneWay}"
                                              Style="{StaticResource TextBoxSettingStyle}"/>
                                     <Button x:Uid="Profile_StartingDirectoryBrowse"
-                                        x:Name="StartingDirectoryBrowse"
-                                        Click="StartingDirectory_Click"
-                                        IsEnabled="{x:Bind State.Profile.UseCustomStartingDirectory, Mode=OneWay}"
-                                        Style="{StaticResource BrowseButtonStyle}"/>
+                                            x:Name="StartingDirectoryBrowse"
+                                            Click="StartingDirectory_Click"
+                                            IsEnabled="{x:Bind State.Profile.UseCustomStartingDirectory, Mode=OneWay}"
+                                            Style="{StaticResource BrowseButtonStyle}"/>
                                 </StackPanel>
                                 <CheckBox x:Uid="Profile_StartingDirectoryUseParentCheckbox"
-                                      x:Name="StartingDirectoryUseParentCheckbox"
-                                      IsChecked="{x:Bind State.Profile.UseParentProcessDirectory, Mode=TwoWay}"/>
+                                          x:Name="StartingDirectoryUseParentCheckbox"
+                                          IsChecked="{x:Bind State.Profile.UseParentProcessDirectory, Mode=TwoWay}"/>
                             </StackPanel>
                         </local:SettingContainer>
 
@@ -377,9 +377,9 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                                     <!--Top Row-->
                                     <ToggleButton x:Uid="Profile_BackgroundImageAlignmentTopLeft"
-                                              x:Name="BIAlign_TopLeft"
-                                              Grid.Row="0" Grid.Column="0"
-                                              Click="BIAlignment_Click">
+                                                  x:Name="BIAlign_TopLeft"
+                                                  Grid.Row="0" Grid.Column="0"
+                                                  Click="BIAlignment_Click">
                                         <ToggleButton.Tag>
                                             <!--ConvergedAlignment: Vertical_Top (0x10) | Horizontal_Left (0x01)-->
                                             <x:Int32>17</x:Int32>
@@ -393,9 +393,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                                         </ToggleButton.Content>
                                     </ToggleButton>
                                     <ToggleButton x:Uid="Profile_BackgroundImageAlignmentTop"
-                                              x:Name="BIAlign_Top"
-                                              Grid.Row="0" Grid.Column="1"
-                                              Click="BIAlignment_Click">
+                                                  x:Name="BIAlign_Top"
+                                                  Grid.Row="0" Grid.Column="1"
+                                                  Click="BIAlignment_Click">
                                         <ToggleButton.Tag>
                                             <!--ConvergedAlignment: Vertical_Top (0x10) | Horizontal_Center (0x00)-->
                                             <x:Int32>16</x:Int32>
@@ -409,9 +409,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                                         </ToggleButton.Content>
                                     </ToggleButton>
                                     <ToggleButton x:Uid="Profile_BackgroundImageAlignmentTopRight"
-                                              x:Name="BIAlign_TopRight"
-                                              Grid.Row="0" Grid.Column="2"
-                                              Click="BIAlignment_Click">
+                                                  x:Name="BIAlign_TopRight"
+                                                  Grid.Row="0" Grid.Column="2"
+                                                  Click="BIAlignment_Click">
                                         <ToggleButton.Tag>
                                             <!--ConvergedAlignment: Vertical_Top (0x10) | Horizontal_Right (0x02)-->
                                             <x:Int32>18</x:Int32>
@@ -427,9 +427,9 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                                     <!--Middle Row-->
                                     <ToggleButton x:Uid="Profile_BackgroundImageAlignmentLeft"
-                                              x:Name="BIAlign_Left"
-                                              Grid.Row="1" Grid.Column="0"
-                                              Click="BIAlignment_Click">
+                                                  x:Name="BIAlign_Left"
+                                                  Grid.Row="1" Grid.Column="0"
+                                                  Click="BIAlignment_Click">
                                         <ToggleButton.Tag>
                                             <!--ConvergedAlignment: Vertical_Center (0x00) | Horizontal_Left (0x01)-->
                                             <x:Int32>1</x:Int32>
@@ -439,9 +439,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                                         </ToggleButton.Content>
                                     </ToggleButton>
                                     <ToggleButton x:Uid="Profile_BackgroundImageAlignmentCenter"
-                                              x:Name="BIAlign_Center"
-                                              Grid.Row="1" Grid.Column="1"
-                                              Click="BIAlignment_Click">
+                                                  x:Name="BIAlign_Center"
+                                                  Grid.Row="1" Grid.Column="1"
+                                                  Click="BIAlignment_Click">
                                         <ToggleButton.Tag>
                                             <!--ConvergedAlignment: Vertical_Center (0x00) | Horizontal_Center (0x00)-->
                                             <x:Int32>0</x:Int32>
@@ -451,9 +451,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                                         </ToggleButton.Content>
                                     </ToggleButton>
                                     <ToggleButton x:Uid="Profile_BackgroundImageAlignmentRight"
-                                              x:Name="BIAlign_Right"
-                                              Grid.Row="1" Grid.Column="2"
-                                              Click="BIAlignment_Click">
+                                                  x:Name="BIAlign_Right"
+                                                  Grid.Row="1" Grid.Column="2"
+                                                  Click="BIAlignment_Click">
                                         <ToggleButton.Tag>
                                             <!--ConvergedAlignment: Vertical_Center (0x00) | Horizontal_Right (0x02)-->
                                             <x:Int32>2</x:Int32>
@@ -465,9 +465,9 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                                     <!--Bottom Row-->
                                     <ToggleButton x:Uid="Profile_BackgroundImageAlignmentBottomLeft"
-                                              x:Name="BIAlign_BottomLeft"
-                                              Grid.Row="2" Grid.Column="0"
-                                              Click="BIAlignment_Click">
+                                                  x:Name="BIAlign_BottomLeft"
+                                                  Grid.Row="2" Grid.Column="0"
+                                                  Click="BIAlignment_Click">
                                         <ToggleButton.Tag>
                                             <!--ConvergedAlignment: Vertical_Bottom (0x20) | Horizontal_Left (0x01)-->
                                             <x:Int32>33</x:Int32>
@@ -477,9 +477,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                                         </ToggleButton.Content>
                                     </ToggleButton>
                                     <ToggleButton x:Uid="Profile_BackgroundImageAlignmentBottom"
-                                              x:Name="BIAlign_Bottom"
-                                              Grid.Row="2" Grid.Column="1"
-                                              Click="BIAlignment_Click">
+                                                  x:Name="BIAlign_Bottom"
+                                                  Grid.Row="2" Grid.Column="1"
+                                                  Click="BIAlignment_Click">
                                         <ToggleButton.Tag>
                                             <!--ConvergedAlignment: Vertical_Bottom (0x20) | Horizontal_Center (0x00)-->
                                             <x:Int32>32</x:Int32>
@@ -489,9 +489,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                                         </ToggleButton.Content>
                                     </ToggleButton>
                                     <ToggleButton x:Uid="Profile_BackgroundImageAlignmentBottomRight"
-                                              x:Name="BIAlign_BottomRight"
-                                              Grid.Row="2" Grid.Column="2"
-                                              Click="BIAlignment_Click">
+                                                  x:Name="BIAlign_BottomRight"
+                                                  Grid.Row="2" Grid.Column="2"
+                                                  Click="BIAlignment_Click">
                                         <ToggleButton.Tag>
                                             <!--ConvergedAlignment: Vertical_Top (0x20) | Horizontal_Right (0x02)-->
                                             <x:Int32>34</x:Int32>
