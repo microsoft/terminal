@@ -2,7 +2,7 @@
 <tests>
   <test name="host" type="unit" binary="Conhost.Unit.Tests.dll" />
   <test name="textBuffer" type="unit" binary="TextBuffer.Unit.Tests.dll" />
-  <test name="terminalCore" type="unit" binary="Terminal.Core.Unit.Tests.dll" />
+  <test name="terminalCore" type="unit" binary="UnitTests_TerminalCore\Terminal.Core.Unit.Tests.dll" />
   <test name="terminalApp" type="unit" binary="UnitTests_TerminalApp\Terminal.App.Unit.Tests.dll" />
   <test name="localTerminalApp" type="unit" runInHostApp="true" binary="TerminalApp.LocalTests.dll" />
   <test name="localSettingsModel" type="unit" runInHostApp="true" binary="SettingsModel.LocalTests.dll" />

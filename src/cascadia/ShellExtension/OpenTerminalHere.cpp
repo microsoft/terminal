@@ -266,7 +266,16 @@ std::wstring OpenTerminalHere::_GetPathFromExplorer() const
         return path;
     }
 
-    auto shell = create_instance<IShellWindows>(CLSID_ShellWindows);
+    com_ptr<IShellWindows> shell;
+    try
+    {
+        shell = create_instance<IShellWindows>(CLSID_ShellWindows, CLSCTX_ALL);
+    }
+    catch (...)
+    {
+        //look like try_create_instance is not available no more
+    }
+
     if (shell == nullptr)
     {
         return path;
@@ -285,6 +294,7 @@ std::wstring OpenTerminalHere::_GetPathFromExplorer() const
         com_ptr<IWebBrowserApp> tmp;
         if (FAILED(disp->QueryInterface(tmp.put())))
         {
+            disp = nullptr; // get rid of DEBUG non-nullptr warning
             continue;
         }
 
@@ -293,8 +303,11 @@ std::wstring OpenTerminalHere::_GetPathFromExplorer() const
         if (hwnd == tmpHWND)
         {
             browser = tmp;
+            disp = nullptr; // get rid of DEBUG non-nullptr warning
             break; //found
         }
+
+        disp = nullptr; // get rid of DEBUG non-nullptr warning
     }
 
     if (browser != nullptr)
