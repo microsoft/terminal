@@ -149,6 +149,7 @@ bgidx
 Bgk
 BGR
 BGRA
+bh
 BHID
 biblioscape
 bigobj
@@ -162,6 +163,7 @@ BITOPERATION
 bitsavers
 bitset
 BKCOLOR
+bke
 BKGND
 Bksp
 blog
@@ -1281,6 +1283,7 @@ Loewen
 LOGFONT
 LOGFONTW
 logissue
+lol
 lowercased
 loword
 lparam
