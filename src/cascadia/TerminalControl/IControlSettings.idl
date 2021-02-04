@@ -39,6 +39,7 @@ namespace Microsoft.Terminal.TerminalControl
         Microsoft.Terminal.TerminalControl.IKeyBindings KeyBindings;
 
         Boolean CopyOnSelect;
+        Boolean FocusFollowMouse;
 
         String Commandline;
         String StartingDirectory;

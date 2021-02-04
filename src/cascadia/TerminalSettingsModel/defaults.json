@@ -27,6 +27,7 @@
     "snapToGridOnResize": true,
     "disableAnimations": false,
     "startupActions": "",
+    "focusFollowMouse": false,
 
     "profiles":
     [

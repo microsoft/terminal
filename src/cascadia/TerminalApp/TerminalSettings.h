@@ -67,6 +67,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
         GETSET_PROPERTY(hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
         GETSET_PROPERTY(bool, CopyOnSelect, false);
+        GETSET_PROPERTY(bool, FocusFollowMouse, false);
 
         GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
 
