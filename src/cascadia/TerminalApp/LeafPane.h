@@ -37,7 +37,7 @@ namespace winrt::TerminalApp::implementation
 
         void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings,
                             const GUID& profile);
-        void ResizeContent(const winrt::Windows::Foundation::Size& /*newSize*/) {};
+        void ResizeContent(const winrt::Windows::Foundation::Size& /*newSize*/){};
 
         TerminalApp::LeafPane Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
                                     const float splitSize,
@@ -55,6 +55,9 @@ namespace winrt::TerminalApp::implementation
         Borders2 Borders() noexcept;
         void Borders(Borders2 borders) noexcept;
 
+        void Maximize(IPane paneToZoom);
+        void Restore(IPane paneToUnZoom);
+
         winrt::Windows::Foundation::Size GetMinSize() const;
 
         winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Settings::Model::SplitState> PreCalculateAutoSplit(const IPane target,
@@ -71,6 +74,8 @@ namespace winrt::TerminalApp::implementation
         void BorderTappedHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                  winrt::Windows::UI::Xaml::Input::TappedRoutedEventArgs const& e);
 
+        void _UpdateBorders();
+
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<LeafPane>);
         DECLARE_EVENT(GotSplit, _GotSplitHandlers, winrt::delegate<ParentPane>);
@@ -82,6 +87,7 @@ namespace winrt::TerminalApp::implementation
         bool _lastActive{ false };
         uint16_t _id;
         Borders2 _borders{ Borders2::None };
+        bool _zoomed{ false };
 
         static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
         static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
@@ -96,8 +102,6 @@ namespace winrt::TerminalApp::implementation
                                         winrt::Windows::Foundation::IInspectable const& e);
         void _ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                      winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
-
-        void _UpdateBorders();
 
         static void _SetupResources();
 

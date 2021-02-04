@@ -31,6 +31,9 @@ namespace TerminalApp
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         Windows.Foundation.Size GetMinSize();
 
+        void Maximize(IPane paneToZoom);
+        void Restore(IPane paneToUnzoom);
+
         Windows.Foundation.IReference<Microsoft.Terminal.Settings.Model.SplitState> PreCalculateAutoSplit(IPane target, Windows.Foundation.Size parentSize);
         Windows.Foundation.IReference<Boolean> PreCalculateCanSplit(IPane target, Microsoft.Terminal.Settings.Model.SplitState splitType, Single splitSize, Windows.Foundation.Size availableSpace);
 

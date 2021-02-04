@@ -736,7 +736,6 @@ namespace winrt::TerminalApp::implementation
                     {
                         tab->Content(newChildPane.try_as<TerminalApp::ParentPane>());
                     }
-
                 }
             });
         }
@@ -1123,7 +1122,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::ToggleZoom()
     {
-        if (_zoomedPane)
+        if (_zoomedPane2)
         {
             ExitZoom();
         }
@@ -1134,24 +1133,37 @@ namespace winrt::TerminalApp::implementation
     }
     void TerminalTab::EnterZoom()
     {
-        _zoomedPane = _activePane;
-        _rootPane->Maximize(_zoomedPane);
+        //_zoomedPane = _activePane;
+        //_rootPane->Maximize(_zoomedPane);
+        _zoomedPane2 = _rootPane2.GetActivePane().try_as<TerminalApp::LeafPane>();
+        _rootPane2.Maximize(_zoomedPane2.value());
+
         // Update the tab header to show the magnifying glass
         _headerControl.IsPaneZoomed(true);
-        //Content(_zoomedPane->GetRootElement());
+        Content(_zoomedPane2.value());
     }
     void TerminalTab::ExitZoom()
     {
-        _rootPane->Restore(_zoomedPane);
-        _zoomedPane = nullptr;
+        //_rootPane->Restore(_zoomedPane);
+        //_zoomedPane = nullptr;
+        _rootPane2.Restore(_zoomedPane2.value());
+        _zoomedPane2 = std::nullopt;
         // Update the tab header to hide the magnifying glass
         _headerControl.IsPaneZoomed(false);
-        //Content(_rootPane->GetRootElement());
+        if (const auto rootAsLeaf = _rootPane2.try_as<TerminalApp::LeafPane>())
+        {
+            Content(rootAsLeaf);
+        }
+        else
+        {
+            Content(_rootPane2.try_as<TerminalApp::ParentPane>());
+        }
     }
 
     bool TerminalTab::IsZoomed()
     {
-        return _zoomedPane != nullptr;
+        //return _zoomedPane != nullptr;
+        return _zoomedPane2 != std::nullopt;
     }
 
     DEFINE_EVENT(TerminalTab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);

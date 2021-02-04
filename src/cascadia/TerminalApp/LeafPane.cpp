@@ -177,8 +177,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         _UpdateBorders();
-        // todo: add update borders to idl
-        //newNeighbour._UpdateBorders();
+        newNeighbour._UpdateBorders();
 
         if (WasLastFocused())
         {
@@ -236,6 +235,18 @@ namespace winrt::TerminalApp::implementation
     void LeafPane::Borders(Borders2 borders) noexcept
     {
         _borders = borders;
+    }
+
+    void LeafPane::Maximize(IPane paneToZoom)
+    {
+        _zoomed = (paneToZoom == *this);
+        _UpdateBorders();
+    }
+
+    void LeafPane::Restore(IPane /*paneToUnzoom*/)
+    {
+        _zoomed = false;
+        _UpdateBorders();
     }
 
     Size LeafPane::GetMinSize() const
@@ -392,13 +403,13 @@ namespace winrt::TerminalApp::implementation
         double top = 0, bottom = 0, left = 0, right = 0;
 
         Thickness newBorders{ 0 };
-        //if (_zoomed)
-        //{
-        //    // When the pane is zoomed, manually show all the borders around the window.
-        //    top = bottom = right = left = PaneBorderSize;
-        //}
-        //else
-        //{
+        if (_zoomed)
+        {
+            // When the pane is zoomed, manually show all the borders around the window.
+            top = bottom = right = left = PaneBorderSize;
+        }
+        else
+        {
             if (WI_IsFlagSet(_borders, Borders2::Top))
             {
                 top = PaneBorderSize;
@@ -415,7 +426,7 @@ namespace winrt::TerminalApp::implementation
             {
                 right = PaneBorderSize;
             }
-        //}
+        }
         GridBorder().BorderThickness(ThicknessHelper::FromLengths(left, top, right, bottom));
     }
 

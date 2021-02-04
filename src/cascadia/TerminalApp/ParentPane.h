@@ -36,6 +36,9 @@ namespace winrt::TerminalApp::implementation
         int GetLeafPaneCount() const noexcept;
         winrt::Windows::Foundation::Size GetMinSize() const;
 
+        void Maximize(IPane paneToZoom);
+        void Restore(IPane paneToUnzoom);
+
         winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Settings::Model::SplitState> PreCalculateAutoSplit(const IPane target,
                                                                                                                               const winrt::Windows::Foundation::Size parentSize) const;
         winrt::Windows::Foundation::IReference<bool> PreCalculateCanSplit(const IPane target,

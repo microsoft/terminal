@@ -22,6 +22,7 @@ namespace TerminalApp
         Boolean WasLastFocused();
         UInt16 Id;
         Borders2 Borders;
+        void _UpdateBorders();
         void SetActive();
         void Close();
         void UpdateBorderWithClosedNeighbor(LeafPane closedNeighbor, Microsoft.Terminal.Settings.Model.ResizeDirection neighborDirection);

@@ -248,6 +248,39 @@ namespace winrt::TerminalApp::implementation
         return { minWidth, minHeight };
     }
 
+    void ParentPane::Maximize(IPane paneToZoom)
+    {
+        if (paneToZoom == _firstChild || paneToZoom == _secondChild)
+        {
+            // When we're zooming the pane, we'll need to remove it from our UI
+            // tree. Easy way: just remove both children. We'll re-attach both
+            // when we un-zoom.
+            FirstChild_Root().Content(winrt::box_value(L""));
+            SecondChild_Root().Content(winrt::box_value(L""));
+        }
+
+        // Always recurse into both children. If the (un)zoomed pane was one of
+        // our direct children, we'll still want to update it's borders.
+        _firstChild.Maximize(paneToZoom);
+        _secondChild.Maximize(paneToZoom);
+    }
+
+    void ParentPane::Restore(IPane paneToUnzoom)
+    {
+        if (paneToUnzoom == _firstChild || paneToUnzoom == _secondChild)
+        {
+            // When we're un-zooming the pane, we'll need to re-add it to our UI
+            // tree where it originally belonged. easy way: just re-add both.
+            FirstChild_Root().Content(_firstChild);
+            SecondChild_Root().Content(_secondChild);
+        }
+
+        // Always recurse into both children. If the (un)zoomed pane was one of
+        // our direct children, we'll still want to update it's borders.
+        _firstChild.Restore(paneToUnzoom);
+        _secondChild.Restore(paneToUnzoom);
+    }
+
     IReference<SplitState> ParentPane::PreCalculateAutoSplit(const IPane target,
                                                              const winrt::Windows::Foundation::Size availableSpace) const
     {
@@ -566,7 +599,6 @@ namespace winrt::TerminalApp::implementation
 
         // On all the leaf descendants that were adjacent to the closed child, update its
         // border, so that it matches the border of the closed child.
-        // todo: update border with close neighbour
         PropagateToLeavesOnEdge(closedChildDir, [&](TerminalApp::LeafPane paneOnEdge) {
             paneOnEdge.UpdateBorderWithClosedNeighbor(closedChild, closedChildDir);
         });
@@ -816,7 +848,7 @@ namespace winrt::TerminalApp::implementation
         if (const auto newChildAsLeaf = newChild.try_as<TerminalApp::LeafPane>())
         {
             isFirstChild ? FirstChild_Root().Content(newChildAsLeaf) : SecondChild_Root().Content(newChildAsLeaf);
-            // todo: do we need this getgridsetcolorrow call?
+            // todo: do we need this getgridsetcolorrow call? we already did it once on initialization
             //_GetGridSetColOrRowFunc()(isFirstChild ? FirstChild_Root() : SecondChild_Root(), isFirstChild ? 0 : 1);
         }
         else
