@@ -325,23 +325,22 @@ namespace winrt::TerminalApp::implementation
 
     void LeafPane::UpdateBorderWithClosedNeighbor(TerminalApp::LeafPane closedNeighbor, const ResizeDirection& neighborDirection)
     {
-        // Prepare a mask that includes the only the border which was touching our neighbour.
-        Borders2 borderMask;
+        // Set the border on the side we shared to the same state that the neighbour had.
         switch (neighborDirection)
         {
         case ResizeDirection::Up:
-            borderMask = Borders2::Top;
+            WI_UpdateFlag(_borders, Borders2::Top, WI_IsFlagSet(closedNeighbor.Borders(), Borders2::Top));
+            break;
         case ResizeDirection::Down:
-            borderMask = Borders2::Bottom;
+            WI_UpdateFlag(_borders, Borders2::Bottom, WI_IsFlagSet(closedNeighbor.Borders(), Borders2::Bottom));
+            break;
         case ResizeDirection::Left:
-            borderMask = Borders2::Left;
+            WI_UpdateFlag(_borders, Borders2::Left, WI_IsFlagSet(closedNeighbor.Borders(), Borders2::Left));
+            break;
         case ResizeDirection::Right:
-            borderMask = Borders2::Right;
+            WI_UpdateFlag(_borders, Borders2::Right, WI_IsFlagSet(closedNeighbor.Borders(), Borders2::Right));
+            break;
         }
-
-        // Set the border on this side to the same state that the neighbour had.
-        // todo: why doesn't this call work?
-        //WI_UpdateFlagsInMask(_borders, borderMask, closedNeighbor.Borders());
 
         _UpdateBorders();
     }

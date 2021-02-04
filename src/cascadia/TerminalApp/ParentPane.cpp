@@ -328,8 +328,8 @@ namespace winrt::TerminalApp::implementation
         {
             const auto& adjacentChild = (_splitState == SplitState::Vertical && edge == ResizeDirection::Left ||
                                          _splitState == SplitState::Horizontal && edge == ResizeDirection::Up) ?
-                                           _firstChild :
-                                           _secondChild;
+                                           _secondChild :
+                                           _firstChild;
             if (auto adjChildAsLeaf = adjacentChild.try_as<TerminalApp::LeafPane>())
             {
                 action(adjChildAsLeaf);
@@ -456,7 +456,6 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
-    // todo: can the dummy grids needed for the animations (both entrance and close) be put in the xaml file?
     void ParentPane::_SetupEntranceAnimation()
     {
         // This will query if animations are enabled via the "Show animations in
@@ -606,7 +605,10 @@ namespace winrt::TerminalApp::implementation
         // If any children of closed pane was previously active, we move the focus to the remaining child
         if (closedChild.GetActivePane())
         {
-            remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>().SetActive();
+            const auto remainingFirstLeaf = remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>();
+            remainingFirstLeaf.SetActive();
+            // todo: this focus call doesn't seem to work?
+            remainingFirstLeaf.GetTerminalControl().Focus(FocusState::Programmatic);
         }
 
         // Make sure to only fire off this event _after_ we have set the new active pane, because this event
@@ -615,6 +617,7 @@ namespace winrt::TerminalApp::implementation
         _ChildClosedHandlers(remainingChild);
     }
 
+    // todo: can the dummy grid needed for the exit animation be put in the xaml file?
     winrt::fire_and_forget ParentPane::_CloseChildRoutine(const bool closeFirst)
     {
         co_await winrt::resume_foreground(Root().Dispatcher());
