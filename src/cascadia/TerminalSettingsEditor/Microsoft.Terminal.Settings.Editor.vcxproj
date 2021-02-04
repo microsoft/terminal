@@ -1,0 +1,275 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+    We're explicitly telling our references to be non-private so that they won't
+    be copied into our folder. In the case of Microsoft.Ui.Xaml, it seems to copy
+    literally everything EXCEPT its .winmd file, which allows us to keep building.
+    -->
+  <ItemDefinitionGroup>
+    <Reference>
+      <Private>false</Private>
+    </Reference>
+  </ItemDefinitionGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CA5CAD1A-0b5e-45c3-96a8-bb496bfe4e32}</ProjectGuid>
+    <ProjectName>Microsoft.Terminal.Settings.Editor</ProjectName>
+    <RootNamespace>Microsoft.Terminal.Settings.Editor</RootNamespace>
+    <!-- cppwinrt.build.pre.props depends on these settings: -->
+    <!-- build a dll, not exe (Application) -->
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <SubSystem>Console</SubSystem>
+    <!-- sets a bunch of Windows Universal properties -->
+    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <!-- C++/WinRT sets the depth to 1 if there is a XAML file in the project
+      Unfortunately for us, we need it to be 3. When the namespace merging
+      depth is 1, Microsoft.Terminal.TerminalControl becomes "Microsoft",
+      and our WinMD file becomes "Microsoft". Because WinRT is very
+      namespace-driven, this winmd is considered to contain the entire
+      Microsoft namespace. This is, obviously, not great. None of our other
+      projects compile properly when they depend on this "Microsoft.winmd."
+    -->
+    <CppWinRTNamespaceMergeDepth>4</CppWinRTNamespaceMergeDepth>
+    <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
+  </PropertyGroup>
+  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+  <!-- ========================= Headers ======================== -->
+  <ItemGroup>
+    <ClInclude Include="ColorToBrushConverter.h">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ColorLightenConverter.h">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ColorToHexConverter.h">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="FontWeightConverter.h">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="InvertedBooleanToVisibilityConverter.h">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="StringIsEmptyConverter.h">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="PaddingConverter.h">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="StringIsNotDesktopConverter.h">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="PercentageConverter.h">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="EnumEntry.h">
+      <DependentUpon>EnumEntry.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="GlobalAppearance.h">
+      <DependentUpon>GlobalAppearance.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ColorSchemes.h">
+      <DependentUpon>ColorSchemes.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="Interaction.h">
+      <DependentUpon>Interaction.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="Launch.h">
+      <DependentUpon>Launch.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="MainPage.h">
+      <DependentUpon>MainPage.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="Profiles.h">
+      <DependentUpon>Profiles.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="Rendering.h">
+      <DependentUpon>Rendering.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="Utils.h" />
+  </ItemGroup>
+  <!-- ========================= XAML files ======================== -->
+  <ItemGroup>
+    <Page Include="CommonResources.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="GlobalAppearance.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ColorSchemes.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Interaction.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Launch.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="MainPage.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Profiles.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Rendering.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+  <!-- ========================= Cpp Files ======================== -->
+  <ItemGroup>
+    <ClCompile Include="ColorToBrushConverter.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ColorLightenConverter.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ColorToHexConverter.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="FontWeightConverter.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="InvertedBooleanToVisibilityConverter.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="StringIsEmptyConverter.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="PaddingConverter.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="StringIsNotDesktopConverter.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="PercentageConverter.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="GlobalAppearance.cpp">
+      <DependentUpon>GlobalAppearance.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ColorSchemes.cpp">
+      <DependentUpon>ColorSchemes.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="Interaction.cpp">
+      <DependentUpon>Interaction.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="Launch.cpp">
+      <DependentUpon>Launch.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="MainPage.cpp">
+      <DependentUpon>MainPage.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="Profiles.cpp">
+      <DependentUpon>Profiles.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="Rendering.cpp">
+      <DependentUpon>Rendering.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="Utils.cpp" />
+  </ItemGroup>
+  <!-- ========================= idl Files ======================== -->
+  <ItemGroup>
+    <Midl Include="Converters.idl" />
+    <Midl Include="EnumEntry.idl" />
+    <Midl Include="GlobalAppearance.idl">
+      <DependentUpon>GlobalAppearance.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="ColorSchemes.idl">
+      <DependentUpon>ColorSchemes.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="Launch.idl">
+      <DependentUpon>Launch.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="Interaction.idl">
+      <DependentUpon>Interaction.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="Rendering.idl">
+      <DependentUpon>Rendering.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="MainPage.idl">
+      <DependentUpon>MainPage.xaml</DependentUpon>
+    </Midl>
+    <Midl Include="Profiles.idl">
+      <DependentUpon>Profiles.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+  </ItemGroup>
+  <!-- ========================= Misc Files ======================== -->
+  <ItemGroup>
+    <PRIResource Include="Resources\en-US\Resources.resw">
+      <SubType>Designer</SubType>
+    </PRIResource>
+    <OCResourceDirectory Include="Resources" />
+    <None Include="TerminalSettingsEditor.def" />
+    <None Include="packages.config" />
+    <None Include="PropertySheet.props" />
+  </ItemGroup>
+  <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+    <!--
+      the packaging project won't recurse through our dependencies, you have to
+      make sure that if you add a cppwinrt dependency to any of these projects,
+      you also update all the consumers
+    -->
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
+      <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
+      <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
+      <Private>false</Private>
+    </ProjectReference>
+
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
+      <!-- Private:false and ReferenceOutputAssembly:false, in combination with
+      the manual reference to TerminalControl.winmd below make sure that this
+      project will compile correct, and that we won't roll up the TermControl
+      xbf's into the packaging project twice. -->
+      <Private>true</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj">
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Manually add a reference to TerminalControl here. We need this so
+    MDMERGE will know where the TermControl types are defined. However, we need
+    to do it exactly like this so the packaging project won't roll up
+    TermControl's .xbf's from both the TermControl project and this one. -->
+    <Reference Include="Microsoft.Terminal.TerminalControl">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+  </ItemGroup>
+
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets'))" />
+  </Target>
+  <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
+</Project>

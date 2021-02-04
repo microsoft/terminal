@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 
-#include "..\buffer\out\search.h"
+#include "../buffer/out/search.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/convert.hpp"
@@ -692,12 +692,13 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
                     std::wstring str;
                     for (const auto& selectRect : selectionRects)
                     {
-                        auto it = screenInfo.GetTextDataAt(COORD{ selectRect.Left, selectRect.Top });
+                        auto it = screenInfo.GetCellDataAt(COORD{ selectRect.Left, selectRect.Top });
 
-                        for (SHORT i = 0; i < (selectRect.Right - selectRect.Left + 1); ++i)
+                        for (SHORT i = 0; i < (selectRect.Right - selectRect.Left + 1);)
                         {
-                            str.append((*it).begin(), (*it).end());
-                            it++;
+                            str.append(it->Chars());
+                            i += gsl::narrow_cast<SHORT>(it->Columns());
+                            it += it->Columns();
                         }
                     }
 
@@ -717,7 +718,11 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
         }
         else
         {
-            ColorSelection(_srSelectionRect, selectionAttr);
+            const auto selectionRects = GetSelectionRects();
+            for (const auto& selectionRect : selectionRects)
+            {
+                ColorSelection(selectionRect, selectionAttr);
+            }
             ClearSelection();
         }
 

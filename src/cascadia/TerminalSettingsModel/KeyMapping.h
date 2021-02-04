@@ -17,7 +17,7 @@ Author(s):
 
 #include "KeyMapping.g.h"
 #include "ActionArgs.h"
-#include "..\inc\cppwinrt_utils.h"
+#include "../inc/cppwinrt_utils.h"
 
 // fwdecl unittest classes
 namespace SettingsModelLocalTests
@@ -71,6 +71,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         std::unordered_map<TerminalControl::KeyChord, Model::ActionAndArgs, KeyChordHash, KeyChordEquality> _keyShortcuts;
+        std::vector<std::pair<TerminalControl::KeyChord, Model::ActionAndArgs>> _keyShortcutsByInsertionOrder;
 
         friend class SettingsModelLocalTests::DeserializationTests;
         friend class SettingsModelLocalTests::KeyBindingsTests;

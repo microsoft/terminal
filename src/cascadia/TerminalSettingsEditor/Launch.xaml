@@ -1,0 +1,108 @@
+﻿<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+the MIT License. See LICENSE in the project root for license information. -->
+<Page
+    x:Class="Microsoft.Terminal.Settings.Editor.Launch"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    xmlns:SettingsModel="using:Microsoft.Terminal.Settings.Model"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
+                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
+            </DataTemplate>
+            <SettingsModel:IconPathConverter x:Key="IconSourceConverter"/>
+            <Style x:Key="LaunchSizeNumberBoxStyle" TargetType="muxc:NumberBox" BasedOn="{StaticResource NumberBoxSettingStyle}">
+                <Setter Property="SmallChange" Value="1"/>
+                <Setter Property="LargeChange" Value="10"/>
+                <Setter Property="Minimum" Value="1"/>
+            </Style>
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <ScrollViewer>
+        <StackPanel>
+            <StackPanel Style="{StaticResource SettingsStackStyle}">
+                <!--Default Profile-->
+                <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                  Margin="0">
+                    <ComboBox x:Uid="Globals_DefaultProfile"
+                          x:Name="DefaultProfile"
+                          ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}"
+                          SelectedItem="{x:Bind CurrentDefaultProfile, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="SettingsModel:Profile">
+                                <Grid HorizontalAlignment="Stretch" ColumnSpacing="8">
+
+                                    <Grid.ColumnDefinitions>
+                                        <!-- icon -->
+                                        <ColumnDefinition Width="16"/>
+                                        <!-- profile name -->
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <IconSourceElement
+                                    Grid.Column="0"
+                                    Width="16"
+                                    Height="16"
+                                    IconSource="{x:Bind Icon,
+                                                        Mode=OneWay,
+                                                        Converter={StaticResource IconSourceConverter}}"/>
+
+                                    <TextBlock Grid.Column="1"
+                                           Text="{x:Bind Name}"/>
+
+                                </Grid>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </ContentPresenter>
+
+                <!--Start on User Login-->
+                <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                    <ToggleSwitch x:Uid="Globals_StartOnUserLogin"
+                                  IsOn="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}"/>
+                </ContentPresenter>
+
+                <!--Launch Mode-->
+                <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                    <muxc:RadioButtons x:Uid="Globals_LaunchMode"
+                                   SelectedItem="{x:Bind CurrentLaunchMode, Mode=TwoWay}"
+                                   ItemsSource="{x:Bind LaunchModeList}"
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                </ContentPresenter>
+            </StackPanel>
+
+            <!--Launch Size-->
+            <StackPanel Style="{StaticResource SettingsStackStyle}">
+                <!--Header-->
+                <TextBlock x:Uid="Globals_LaunchSize"
+                            Style="{StaticResource SubtitleTextBlockStyle}"/>
+
+                <!--Columns-->
+                <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                  Margin="0">
+                    <muxc:NumberBox x:Uid="Globals_InitialCols"
+                                Value="{x:Bind State.Settings.GlobalSettings.InitialCols, Mode=TwoWay}"
+                                Style="{StaticResource LaunchSizeNumberBoxStyle}"/>
+                </ContentPresenter>
+                <!--Rows-->
+                <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                    <muxc:NumberBox x:Uid="Globals_InitialRows"
+                                Value="{x:Bind State.Settings.GlobalSettings.InitialRows, Mode=TwoWay}"
+                                Style="{StaticResource LaunchSizeNumberBoxStyle}"/>
+                </ContentPresenter>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

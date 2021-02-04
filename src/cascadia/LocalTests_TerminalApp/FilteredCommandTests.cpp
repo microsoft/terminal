@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "../TerminalApp/TerminalSettings.h"
+#include "../TerminalApp/CommandLinePaletteItem.h"
 #include "../TerminalApp/CommandPalette.h"
 
 using namespace Microsoft::Console;
@@ -24,36 +24,15 @@ namespace TerminalAppLocalTests
         TEST_METHOD(VerifyHighlighting);
         TEST_METHOD(VerifyWeight);
         TEST_METHOD(VerifyCompare);
+        TEST_METHOD(VerifyCompareIgnoreCase);
     };
 
     void FilteredCommandTests::VerifyHighlighting()
     {
-        const std::string settingsJson{ R"(
-        {
-            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-            "profiles": [
-                {
-                    "name": "profile0",
-                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-                    "historySize": 1,
-                    "commandline": "cmd.exe"
-                }                
-            ],
-            "keybindings": [
-                { "keys": ["ctrl+a"], "command": { "action": "splitPane", "split": "vertical" }, "name": "AAAAAABBBBBBCCC" }
-            ]
-        })" };
-
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
-        const auto commands = settings.GlobalSettings().Commands();
-        VERIFY_ARE_EQUAL(1u, commands.Size());
-
-        const auto command = commands.Lookup(L"AAAAAABBBBBBCCC");
-        VERIFY_IS_NOT_NULL(command);
-        VERIFY_ARE_EQUAL(command.Name(), L"AAAAAABBBBBBCCC");
+        const auto paletteItem{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"AAAAAABBBBBBCCC") };
         {
             Log::Comment(L"Testing command name segmentation with no filter");
-            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
             auto segments = filteredCommand->_computeHighlightedName().Segments();
             VERIFY_ARE_EQUAL(segments.Size(), 1u);
             VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"AAAAAABBBBBBCCC");
@@ -61,7 +40,7 @@ namespace TerminalAppLocalTests
         }
         {
             Log::Comment(L"Testing command name segmentation with empty filter");
-            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
             filteredCommand->_Filter = L"";
             auto segments = filteredCommand->_computeHighlightedName().Segments();
             VERIFY_ARE_EQUAL(segments.Size(), 1u);
@@ -70,7 +49,7 @@ namespace TerminalAppLocalTests
         }
         {
             Log::Comment(L"Testing command name segmentation with filter equals to the string");
-            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
             filteredCommand->_Filter = L"AAAAAABBBBBBCCC";
             auto segments = filteredCommand->_computeHighlightedName().Segments();
             VERIFY_ARE_EQUAL(segments.Size(), 1u);
@@ -79,7 +58,7 @@ namespace TerminalAppLocalTests
         }
         {
             Log::Comment(L"Testing command name segmentation with filter with first character matching");
-            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
             filteredCommand->_Filter = L"A";
             auto segments = filteredCommand->_computeHighlightedName().Segments();
             VERIFY_ARE_EQUAL(segments.Size(), 2u);
@@ -90,7 +69,7 @@ namespace TerminalAppLocalTests
         }
         {
             Log::Comment(L"Testing command name segmentation with filter with other case");
-            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
             filteredCommand->_Filter = L"a";
             auto segments = filteredCommand->_computeHighlightedName().Segments();
             VERIFY_ARE_EQUAL(segments.Size(), 2u);
@@ -101,7 +80,7 @@ namespace TerminalAppLocalTests
         }
         {
             Log::Comment(L"Testing command name segmentation with filter matching several characters");
-            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
             filteredCommand->_Filter = L"ab";
             auto segments = filteredCommand->_computeHighlightedName().Segments();
             VERIFY_ARE_EQUAL(segments.Size(), 4u);
@@ -116,7 +95,7 @@ namespace TerminalAppLocalTests
         }
         {
             Log::Comment(L"Testing command name segmentation with non matching filter");
-            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
             filteredCommand->_Filter = L"abcd";
             auto segments = filteredCommand->_computeHighlightedName().Segments();
             VERIFY_ARE_EQUAL(segments.Size(), 1u);
@@ -127,39 +106,17 @@ namespace TerminalAppLocalTests
 
     void FilteredCommandTests::VerifyWeight()
     {
-        const std::string settingsJson{ R"(
-        {
-            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-            "profiles": [
-                {
-                    "name": "profile0",
-                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-                    "historySize": 1,
-                    "commandline": "cmd.exe"
-                }
-            ],
-            "keybindings": [
-                { "keys": ["ctrl+a"], "command": { "action": "splitPane", "split": "vertical" }, "name": "AAAAAABBBBBBCCC" }
-            ]
-        })" };
-
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
-        const auto commands = settings.GlobalSettings().Commands();
-        VERIFY_ARE_EQUAL(1u, commands.Size());
-
-        const auto command = commands.Lookup(L"AAAAAABBBBBBCCC");
-        VERIFY_IS_NOT_NULL(command);
-        VERIFY_ARE_EQUAL(command.Name(), L"AAAAAABBBBBBCCC");
+        const auto paletteItem{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"AAAAAABBBBBBCCC") };
         {
             Log::Comment(L"Testing weight of command with no filter");
-            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
             filteredCommand->_HighlightedName = filteredCommand->_computeHighlightedName();
             auto weight = filteredCommand->_computeWeight();
             VERIFY_ARE_EQUAL(weight, 0);
         }
         {
             Log::Comment(L"Testing weight of command with empty filter");
-            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
             filteredCommand->_Filter = L"";
             filteredCommand->_HighlightedName = filteredCommand->_computeHighlightedName();
             auto weight = filteredCommand->_computeWeight();
@@ -167,7 +124,7 @@ namespace TerminalAppLocalTests
         }
         {
             Log::Comment(L"Testing weight of command with filter equals to the string");
-            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
             filteredCommand->_Filter = L"AAAAAABBBBBBCCC";
             filteredCommand->_HighlightedName = filteredCommand->_computeHighlightedName();
             auto weight = filteredCommand->_computeWeight();
@@ -175,7 +132,7 @@ namespace TerminalAppLocalTests
         }
         {
             Log::Comment(L"Testing weight of command with filter with first character matching");
-            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
             filteredCommand->_Filter = L"A";
             filteredCommand->_HighlightedName = filteredCommand->_computeHighlightedName();
             auto weight = filteredCommand->_computeWeight();
@@ -183,7 +140,7 @@ namespace TerminalAppLocalTests
         }
         {
             Log::Comment(L"Testing weight of command with filter with other case");
-            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
             filteredCommand->_Filter = L"a";
             filteredCommand->_HighlightedName = filteredCommand->_computeHighlightedName();
             auto weight = filteredCommand->_computeWeight();
@@ -191,7 +148,7 @@ namespace TerminalAppLocalTests
         }
         {
             Log::Comment(L"Testing weight of command with filter matching several characters");
-            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
             filteredCommand->_Filter = L"ab";
             filteredCommand->_HighlightedName = filteredCommand->_computeHighlightedName();
             auto weight = filteredCommand->_computeWeight();
@@ -201,50 +158,24 @@ namespace TerminalAppLocalTests
 
     void FilteredCommandTests::VerifyCompare()
     {
-        const std::string settingsJson{ R"(
-        {
-            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-            "profiles": [
-                {
-                    "name": "profile0",
-                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-                    "historySize": 1,
-                    "commandline": "cmd.exe"
-                }
-            ],
-            "keybindings": [
-                { "keys": ["ctrl+a"], "command": { "action": "splitPane", "split": "vertical" }, "name": "AAAAAABBBBBBCCC" },
-                { "keys": ["ctrl+b"], "command": { "action": "splitPane", "split": "horizontal" }, "name": "BBBBBCCC" }
-            ]
-        })" };
-
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
-        const auto commands = settings.GlobalSettings().Commands();
-        VERIFY_ARE_EQUAL(2u, commands.Size());
-
-        const auto command = commands.Lookup(L"AAAAAABBBBBBCCC");
-        VERIFY_IS_NOT_NULL(command);
-        VERIFY_ARE_EQUAL(command.Name(), L"AAAAAABBBBBBCCC");
-
-        const auto command2 = commands.Lookup(L"BBBBBCCC");
-        VERIFY_IS_NOT_NULL(command2);
-        VERIFY_ARE_EQUAL(command2.Name(), L"BBBBBCCC");
+        const auto paletteItem{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"AAAAAABBBBBBCCC") };
+        const auto paletteItem2{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"BBBBBCCC") };
         {
             Log::Comment(L"Testing comparison of commands with no filter");
-            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
-            const auto filteredCommand2 = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command2);
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
+            const auto filteredCommand2 = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem2);
 
             VERIFY_ARE_EQUAL(filteredCommand->Weight(), filteredCommand2->Weight());
             VERIFY_IS_TRUE(winrt::TerminalApp::implementation::FilteredCommand::Compare(*filteredCommand, *filteredCommand2));
         }
         {
             Log::Comment(L"Testing comparison of commands with empty filter");
-            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
             filteredCommand->_Filter = L"";
             filteredCommand->_HighlightedName = filteredCommand->_computeHighlightedName();
             filteredCommand->_Weight = filteredCommand->_computeWeight();
 
-            const auto filteredCommand2 = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command2);
+            const auto filteredCommand2 = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem2);
             filteredCommand2->_Filter = L"";
             filteredCommand2->_HighlightedName = filteredCommand2->_computeHighlightedName();
             filteredCommand2->_Weight = filteredCommand2->_computeWeight();
@@ -254,18 +185,31 @@ namespace TerminalAppLocalTests
         }
         {
             Log::Comment(L"Testing comparison of commands with different weights");
-            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
             filteredCommand->_Filter = L"B";
             filteredCommand->_HighlightedName = filteredCommand->_computeHighlightedName();
             filteredCommand->_Weight = filteredCommand->_computeWeight();
 
-            const auto filteredCommand2 = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command2);
+            const auto filteredCommand2 = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem2);
             filteredCommand2->_Filter = L"B";
             filteredCommand2->_HighlightedName = filteredCommand2->_computeHighlightedName();
             filteredCommand2->_Weight = filteredCommand2->_computeWeight();
 
             VERIFY_IS_TRUE(filteredCommand->Weight() < filteredCommand2->Weight()); // Second command gets more points due to the beginning of the word
             VERIFY_IS_FALSE(winrt::TerminalApp::implementation::FilteredCommand::Compare(*filteredCommand, *filteredCommand2));
+        }
+    }
+
+    void FilteredCommandTests::VerifyCompareIgnoreCase()
+    {
+        const auto paletteItem{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"a") };
+        const auto paletteItem2{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"B") };
+        {
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
+            const auto filteredCommand2 = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem2);
+
+            VERIFY_ARE_EQUAL(filteredCommand->Weight(), filteredCommand2->Weight());
+            VERIFY_IS_TRUE(winrt::TerminalApp::implementation::FilteredCommand::Compare(*filteredCommand, *filteredCommand2));
         }
     }
 }

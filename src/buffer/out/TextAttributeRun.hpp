@@ -25,20 +25,24 @@ Revision History:
 class TextAttributeRun final
 {
 public:
-    TextAttributeRun() noexcept;
-    TextAttributeRun(const size_t cchLength, const TextAttribute attr) noexcept;
+    TextAttributeRun() = default;
+    TextAttributeRun(const size_t cchLength, const TextAttribute attr) noexcept :
+        _cchLength(gsl::narrow<unsigned int>(cchLength))
+    {
+        SetAttributes(attr);
+    }
 
-    size_t GetLength() const noexcept;
-    void SetLength(const size_t cchLength) noexcept;
-    void IncrementLength() noexcept;
-    void DecrementLength() noexcept;
+    size_t GetLength() const noexcept { return _cchLength; }
+    void SetLength(const size_t cchLength) noexcept { _cchLength = gsl::narrow<unsigned int>(cchLength); }
+    void IncrementLength() noexcept { _cchLength++; }
+    void DecrementLength() noexcept { _cchLength--; }
 
-    const TextAttribute& GetAttributes() const noexcept;
-    void SetAttributes(const TextAttribute textAttribute) noexcept;
+    const TextAttribute& GetAttributes() const noexcept { return _attributes; }
+    void SetAttributes(const TextAttribute textAttribute) noexcept { _attributes = textAttribute; }
 
 private:
-    size_t _cchLength;
-    TextAttribute _attributes;
+    unsigned int _cchLength{ 0 };
+    TextAttribute _attributes{ 0 };
 
 #ifdef UNIT_TESTING
     friend class AttrRowTests;

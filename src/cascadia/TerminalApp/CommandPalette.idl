@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "TabBase.idl";
 import "IDirectKeyListener.idl";
-import "ShortcutActionDispatch.idl";
 import "HighlightedTextControl.idl";
 import "FilteredCommand.idl";
 
@@ -17,18 +17,24 @@ namespace TerminalApp
         String PrefixCharacter { get; };
         String ControlName { get; };
         String ParentCommandName { get; };
+        String ParsedCommandLineText { get; };
 
         Windows.Foundation.Collections.IObservableVector<FilteredCommand> FilteredActions { get; };
 
         void SetCommands(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.Command> actions);
-        void SetTabActions(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.Command> tabs, Boolean clearList);
-        void SetKeyBindings(Microsoft.Terminal.TerminalControl.IKeyBindings bindings);
-        void EnableCommandPaletteMode();
+
+        void SetTabs(Windows.Foundation.Collections.IObservableVector<TabBase> tabs, Windows.Foundation.Collections.IObservableVector<TabBase> mruTabs);
+
+        void SetKeyMap(Microsoft.Terminal.Settings.Model.KeyMapping keymap);
 
         void SelectNextItem(Boolean moveDown);
 
-        void SetDispatch(ShortcutActionDispatch dispatch);
+        void EnableCommandPaletteMode(Microsoft.Terminal.Settings.Model.CommandPaletteLaunchMode launchMode);
+        void EnableTabSwitcherMode(UInt32 startIdx, Microsoft.Terminal.Settings.Model.TabSwitcherMode tabSwitcherMode);
+        void EnableTabSearchMode();
 
-        void EnableTabSwitcherMode(Boolean searchMode, UInt32 startIdx);
+        event Windows.Foundation.TypedEventHandler<CommandPalette, TabBase> SwitchToTabRequested;
+        event Windows.Foundation.TypedEventHandler<CommandPalette, Microsoft.Terminal.Settings.Model.Command> DispatchCommandRequested;
+        event Windows.Foundation.TypedEventHandler<CommandPalette, String> CommandLineExecutionRequested;
     }
 }

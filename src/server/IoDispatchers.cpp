@@ -7,14 +7,14 @@
 
 #include "ApiSorter.h"
 
-#include "..\host\conserv.h"
-#include "..\host\conwinuserrefs.h"
-#include "..\host\directio.h"
-#include "..\host\handle.h"
-#include "..\host\srvinit.h"
-#include "..\host\telemetry.hpp"
+#include "../host/conserv.h"
+#include "../host/conwinuserrefs.h"
+#include "../host/directio.h"
+#include "../host/handle.h"
+#include "../host/srvinit.h"
+#include "../host/telemetry.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Interactivity;
 
@@ -89,11 +89,13 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
         goto Error;
     }
 
+    auto deviceComm{ ServiceLocator::LocateGlobals().pDeviceComm };
+
     // Complete the request.
     pMessage->SetReplyStatus(STATUS_SUCCESS);
-    pMessage->SetReplyInformation(reinterpret_cast<ULONG_PTR>(handle.get()));
+    pMessage->SetReplyInformation(deviceComm->PutHandle(handle.get()));
 
-    if (SUCCEEDED(ServiceLocator::LocateGlobals().pDeviceComm->CompleteIo(&pMessage->Complete)))
+    if (SUCCEEDED(deviceComm->CompleteIo(&pMessage->Complete)))
     {
         // We've successfully transferred ownership of the handle to the driver. We can release and not free it.
         handle.release();
@@ -228,11 +230,12 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     pReceiveMsg->SetReplyStatus(STATUS_SUCCESS);
     pReceiveMsg->SetReplyInformation(sizeof(CD_CONNECTION_INFORMATION));
 
-    CD_CONNECTION_INFORMATION ConnectionInformation = ProcessData->GetConnectionInformation();
+    auto deviceComm{ ServiceLocator::LocateGlobals().pDeviceComm };
+    CD_CONNECTION_INFORMATION ConnectionInformation = ProcessData->GetConnectionInformation(deviceComm);
     pReceiveMsg->Complete.Write.Data = &ConnectionInformation;
     pReceiveMsg->Complete.Write.Size = sizeof(CD_CONNECTION_INFORMATION);
 
-    if (FAILED(ServiceLocator::LocateGlobals().pDeviceComm->CompleteIo(&pReceiveMsg->Complete)))
+    if (FAILED(deviceComm->CompleteIo(&pReceiveMsg->Complete)))
     {
         CommandHistory::s_Free((HANDLE)ProcessData);
         gci.ProcessHandleList.FreeProcessData(ProcessData);

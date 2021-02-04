@@ -23,7 +23,8 @@ namespace winrt::TerminalApp::implementation
                                                                            Foundation::IInspectable const& /* parameter */,
                                                                            hstring const& /* language */)
     {
-        const auto& hasNestedCommands = winrt::unbox_value_or<bool>(value, false);
+        const auto paletteItem{ value.try_as<winrt::TerminalApp::ActionPaletteItem>() };
+        const auto& hasNestedCommands = paletteItem && paletteItem.Command().HasNestedCommands();
         return winrt::box_value(hasNestedCommands ? Visibility::Visible : Visibility::Collapsed);
     }
 

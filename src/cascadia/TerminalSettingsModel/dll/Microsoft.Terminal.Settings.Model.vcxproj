@@ -30,6 +30,7 @@
     <ClInclude Include="../KeyMapping.h" />
     <ClInclude Include="../Profile.h" />
     <ClInclude Include="../TerminalWarnings.h" />
+    <ClInclude Include="../IconPathConverter.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <!-- Don't put source files in here - put them in the lib's vcxproj instead! -->
@@ -58,24 +59,43 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
       <Private>false</Private>
     </ProjectReference>
+
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
-      <Private>false</Private>
+      <!-- Private:false and ReferenceOutputAssembly:false, in combination with
+      the manual reference to TerminalControl.winmd below make sure that this
+      project will compile correct, and that we won't roll up the TermControl
+      xbf's into the packaging project twice. -->
+      <Private>true</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+
     <!-- Reference Microsoft.Terminal.Settings.ModelLib here, so we can use it's winmd as
     our winmd. This didn't work correctly in VS2017, you'd need to
     manually reference the lib -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\Microsoft.Terminal.Settings.ModelLib.vcxproj">
       <Private>true</Private>
-      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </ProjectReference>
   </ItemGroup>
 
-  <Import Project="$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" />
+  <ItemGroup>
+    <!-- Manually add a reference to TerminalControl here. We need this so
+    MDMERGE will know where the TermControl types are defined. However, we need
+    to do it exactly like this so the packaging project won't roll up
+    TermControl's .xbf's from both the TermControl project and this one. -->
+    <Reference Include="Microsoft.Terminal.TerminalControl">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+  </ItemGroup>
+
+  <Import Project="$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets'))" />
   </Target>
 
   <ItemDefinitionGroup>

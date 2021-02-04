@@ -41,6 +41,7 @@ static constexpr std::string_view AlwaysOnTopKey{ "alwaysOnTop" };
 static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
 static constexpr std::string_view TabSwitcherModeKey{ "tabSwitcherMode" };
 static constexpr std::string_view DisableAnimationsKey{ "disableAnimations" };
+static constexpr std::string_view StartupActionsKey{ "startupActions" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
@@ -116,6 +117,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_AlwaysOnTop = _AlwaysOnTop;
     globals->_TabSwitcherMode = _TabSwitcherMode;
     globals->_DisableAnimations = _DisableAnimations;
+    globals->_StartupActions = _StartupActions;
 
     globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
     globals->_validDefaultProfile = _validDefaultProfile;
@@ -163,6 +165,7 @@ void GlobalAppSettings::DefaultProfile(const winrt::guid& defaultProfile) noexce
 {
     _validDefaultProfile = true;
     _defaultProfile = defaultProfile;
+    _UnparsedDefaultProfile = Utils::GuidToString(defaultProfile);
 }
 
 winrt::guid GlobalAppSettings::DefaultProfile() const
@@ -303,6 +306,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, DisableAnimationsKey, _DisableAnimations);
 
+    JsonUtils::GetValueForKey(json, StartupActionsKey, _StartupActions);
+
     // This is a helper lambda to get the keybindings and commands out of both
     // and array of objects. We'll use this twice, once on the legacy
     // `keybindings` key, and again on the newer `bindings` key.
@@ -335,6 +340,11 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 void GlobalAppSettings::AddColorScheme(const Model::ColorScheme& scheme)
 {
     _colorSchemes.Insert(scheme.Name(), scheme);
+}
+
+void GlobalAppSettings::RemoveColorScheme(hstring schemeName)
+{
+    _colorSchemes.TryRemove(schemeName);
 }
 
 // Method Description:
@@ -393,6 +403,7 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, AlwaysOnTopKey,                 _AlwaysOnTop);
     JsonUtils::SetValueForKey(json, TabSwitcherModeKey,             _TabSwitcherMode);
     JsonUtils::SetValueForKey(json, DisableAnimationsKey,           _DisableAnimations);
+    JsonUtils::SetValueForKey(json, StartupActionsKey,              _StartupActions);
     // clang-format on
 
     // TODO GH#8100: keymap needs to be serialized here

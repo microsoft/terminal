@@ -8,6 +8,9 @@
 #pragma once
 
 #define WIN32_LEAN_AND_MEAN
+#define NOMCX
+#define NOHELP
+#define NOCOMM
 
 #include <LibraryIncludes.h>
 // This is inexplicable, but for whatever reason, cppwinrt conflicts with the
@@ -27,4 +30,4 @@
 #include <shlwapi.h>
 
 #include <wrl.h>
-#include <wrl\module.h>
+#include <wrl/module.h>

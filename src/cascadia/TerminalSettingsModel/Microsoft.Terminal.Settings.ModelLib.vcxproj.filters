@@ -28,11 +28,11 @@
     <ClCompile Include="DefaultProfileUtils.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
-    <ClCompile Include="Utils.cpp" />
     <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
       <Filter>json</Filter>
     </ClCompile>
     <ClCompile Include="init.cpp" />
+    <ClCompile Include="IconPathConverter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -56,13 +56,14 @@
     <ClInclude Include="SettingsTypes.h" />
     <ClInclude Include="TerminalWarnings.h" />
     <ClInclude Include="ColorScheme.h" />
-    <ClInclude Include="Utils.h" />
     <ClInclude Include="DefaultProfileUtils.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
     <ClInclude Include="JsonUtils.h">
       <Filter>json</Filter>
     </ClInclude>
+    <ClInclude Include="IInheritable.h" />
+    <ClInclude Include="IconPathConverter.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ActionArgs.idl" />
@@ -73,10 +74,12 @@
     <Midl Include="Profile.idl" />
     <Midl Include="TerminalWarnings.idl" />
     <Midl Include="CascadiaSettings.idl" />
+    <Midl Include="KeyChordSerialization.idl" />
+    <Midl Include="EnumMappings.idl" />
+    <Midl Include="IconPathConverter.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="TerminalSettingsModel.def" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="profileGeneration">
