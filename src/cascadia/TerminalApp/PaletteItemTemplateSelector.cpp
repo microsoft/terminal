@@ -1,4 +1,7 @@
-﻿#include "pch.h"
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#include "pch.h"
 #include "TabPaletteItem.h"
 #include "PaletteItemTemplateSelector.h"
 #include "PaletteItemTemplateSelector.g.cpp"
