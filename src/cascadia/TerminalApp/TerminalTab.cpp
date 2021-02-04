@@ -289,6 +289,7 @@ namespace winrt::TerminalApp::implementation
         if (auto tab{ weakThis.get() })
         {
             tab->_headerControl.BellIndicator(show);
+            BellIndicator(show);
         }
     }
 
@@ -579,12 +580,14 @@ namespace winrt::TerminalApp::implementation
                     // Hide the tab icon (the progress ring is placed over it)
                     tab->HideIcon(true);
                     tab->_headerControl.IsProgressRingActive(true);
+                    tab->IsProgressRingActive(true);
                 }
                 else
                 {
                     // Show the tab icon
                     tab->HideIcon(false);
                     tab->_headerControl.IsProgressRingActive(false);
+                    tab->IsProgressRingActive(false);
                 }
             }
         });
@@ -1082,6 +1085,7 @@ namespace winrt::TerminalApp::implementation
         _rootPane->Maximize(_zoomedPane);
         // Update the tab header to show the magnifying glass
         _headerControl.IsPaneZoomed(true);
+        IsPaneZoomed(true);
         Content(_zoomedPane->GetRootElement());
     }
     void TerminalTab::ExitZoom()
@@ -1090,6 +1094,7 @@ namespace winrt::TerminalApp::implementation
         _zoomedPane = nullptr;
         // Update the tab header to hide the magnifying glass
         _headerControl.IsPaneZoomed(false);
+        IsPaneZoomed(false);
         Content(_rootPane->GetRootElement());
     }
 
@@ -1117,11 +1122,6 @@ namespace winrt::TerminalApp::implementation
         }
 
         return Title();
-    }
-
-    winrt::TerminalApp::TabHeaderControl TerminalTab::HeaderControl() const
-    {
-        return _headerControl;
     }
 
     DEFINE_EVENT(TerminalTab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
