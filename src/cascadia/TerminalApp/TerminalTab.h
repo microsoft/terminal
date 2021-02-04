@@ -127,6 +127,7 @@ namespace winrt::TerminalApp::implementation
         void _RemoveRootPaneEventHandlers();
 
         void _UpdateActivePane(std::shared_ptr<Pane> pane);
+        void _UpdateActivePane2(TerminalApp::LeafPane pane);
 
         winrt::hstring _GetActiveTitle() const;
 

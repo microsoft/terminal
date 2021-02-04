@@ -32,6 +32,7 @@ namespace winrt::TerminalApp::implementation
         const auto rootPaneAsLeaf = _rootPane2.try_as<TerminalApp::LeafPane>();
 
         _rootPane->Id(_nextPaneId);
+        _rootPane2.try_as<TerminalApp::LeafPane>().Id(_nextPaneId);
         _mruPanes.insert(_mruPanes.begin(), _nextPaneId);
         ++_nextPaneId;
 
@@ -347,6 +348,8 @@ namespace winrt::TerminalApp::implementation
         //++_nextPaneId;
         //_activePane = first;
         const auto newLeafPane = _rootPane2.GetActivePane().try_as<TerminalApp::LeafPane>().Split(splitType, splitSize, profile, control);
+        newLeafPane.Id(_nextPaneId);
+        ++_nextPaneId;
         _AttachEventHandlersToControl(control);
         _AttachEventHandlersToLeafPane(newLeafPane);
 
@@ -591,6 +594,31 @@ namespace winrt::TerminalApp::implementation
         _ActivePaneChangedHandlers();
     }
 
+    void TerminalTab::_UpdateActivePane2(TerminalApp::LeafPane pane)
+    {
+        // Clear the active state of the entire tree, and mark only the pane as active.
+        _rootPane2.ClearActive();
+        pane.SetActive();
+
+        // Update our own title text to match the newly-active pane.
+        UpdateTitle();
+
+        // We need to move the pane to the top of our mru list
+        // If its already somewhere in the list, remove it first
+        const auto paneId = pane.Id();
+        for (auto i = _mruPanes.begin(); i != _mruPanes.end(); ++i)
+        {
+            if (*i == paneId)
+            {
+                _mruPanes.erase(i);
+                break;
+            }
+        }
+        _mruPanes.insert(_mruPanes.begin(), paneId);
+        // Raise our own ActivePaneChanged event.
+        _ActivePaneChangedHandlers();
+    }
+
     // Method Description:
     // - Add an event handler to this pane's GotFocus event. When that pane gains
     //   focus, we'll mark it as the new active pane. We'll also query the title of
@@ -663,17 +691,11 @@ namespace winrt::TerminalApp::implementation
             // Do nothing if the Tab's lifetime is expired or pane isn't new.
             auto tab{ weakThis.get() };
 
-            if (tab && sender != tab->_rootPane2.GetActivePane())
+            //if (tab && sender != tab->_rootPane2.GetActivePane())
+            if (tab)
             {
-                // Clear the active state of the entire tree, and mark only the sender as active.
-                tab->_rootPane2.ClearActive();
-
-                sender.SetActive();
-
-                // Update our own title text to match the newly-active pane.
-                tab->SetTabText(tab->_GetActiveTitle());
-                // Raise our own ActivePaneChanged event.
-                tab->_ActivePaneChangedHandlers();
+                tab->_UpdateActivePane2(sender);
+                tab->_RecalculateAndApplyTabColor();
             }
         });
 
