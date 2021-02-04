@@ -20,7 +20,7 @@ SamplerState samplerState;
 
 // Terminal settings such as the resolution of the texture
 cbuffer PixelShaderSettings {
-  // Time since pixel shader was enabled
+  // The number of seconds since the pixel shader was enabled
   float  Time;
   // UI Scale
   float  Scale;
@@ -30,8 +30,9 @@ cbuffer PixelShaderSettings {
   float4 Background;
 };
 
-// A pixel shader is a program that given a texture coordinate (tex) produces a color
-//  Just ignore the pos parameter
+// A pixel shader is a program that given a texture coordinate (tex) produces a color.
+// tex is an x,y tuple that ranges from 0,0 (top left) to 1,1 (bottom right).
+// Just ignore the pos parameter.
 float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
 {
     // Read the color value at the current texture coordinate (tex)
@@ -82,7 +83,7 @@ SamplerState samplerState;
 
 // Terminal settings such as the resolution of the texture
 cbuffer PixelShaderSettings {
-  // Time since pixel shader was enabled
+  // The number of seconds since the pixel shader was enabled
   float  Time;
   // UI Scale
   float  Scale;
@@ -92,8 +93,9 @@ cbuffer PixelShaderSettings {
   float4 Background;
 };
 
-// A pixel shader is a program that given a texture coordinate (tex) produces a color
-//  Just ignore the pos parameter
+// A pixel shader is a program that given a texture coordinate (tex) produces a color.
+// tex is an x,y tuple that ranges from 0,0 (top left) to 1,1 (bottom right).
+// Just ignore the pos parameter.
 float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
 {
     // Read the color value at the current texture coordinate (tex)
@@ -143,6 +145,76 @@ Once reloaded, it should show some retro raster bars in the background, with a d
 As a more complicated example, the Terminal's built-in `experimental.retroTerminalEffect` is included as the `Retro.hlsl` file in this directory. 
 
 ![Retro](Screenshots/TerminalRetro.PNG)
+
+## Animated Effects
+
+You can use the `Time` value in the shader input settings to drive animated effects. `Time` is the number of seconds since the shader first loaded. Here’s a simple example with a line of inverted pixels that scrolls down the terminal (`Animate_scan.hlsl`):
+
+```hlsl
+float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
+{
+    // Read the color value at the current texture coordinate (tex)
+    float4 color = shaderTexture.Sample(samplerState, tex);
+    
+    // Here we spread the animation over 5 seconds. We use time modulo 5 because we want
+    // the timer to count to five repeatedly. We then divide the result by five again
+    // to get a value between 0.0 and 1.0, which maps to our texture coordinate.
+    float linePosition = Time % 5 / 5;
+    
+    // Since TEXCOORD ranges from 0.0 to 1.0, we need to divide 1.0 by the height of the
+    // texture to find out the size of a single pixel
+    float lineWidth = 1.0 / Resolution.y;
+	
+    // If the current texture coordinate is in the range of our line on the Y axis: 
+    if (tex.y > linePosition - lineWidth && tex.y < linePosition)
+    {
+        // Invert the sampled color
+        color.rgb = 1.0 - color.rgb;
+    }
+    
+    return color;
+}
+```
+What if we want an animation that goes backwards and forwards? In this example (`Animate_breathe.hlsl`), we'll make the background fade between two colours. Our `Time` value only ever goes up, so we need a way to generate a value that sweeps back and forth from `0.0` to `1.0`. Trigonometric functions like cosine are perfect for this and are very frequently used in shaders. 
+
+`cos()` outputs a value between `-1.0` and `1.0`. We can adjust the wave with the following formula:
+
+```
+a * cos(b * (x - c)) + d
+```
+
+Where `a` adjusts the amplitude, `b` adjusts the wavelength/frequency, `c` adjusts the offset along the x axis, and `d` adjusts the offset along the y axis. You can use a graphing calculator (such as the Windows Calculator) to help visualize the output and experiment:
+
+![Cosine](Screenshots/GraphCosine.png)
+
+As shown above, by halving the output and then adding `0.5`, we can shift the range of the function to `0.0` - `1.0`. Because `cos()` takes input in radians, if we multiply `x` (`Time`) by tau (`2*pi`), we are effectively setting the wavelength to `1.0`. 
+
+In other words, our full animation will be one second long. We can modify this duration by dividing tau by the number of seconds we want the animation to run for. In this case, we’ll go for five seconds.
+
+Finally we use linear interpolation to achieve our breathing effect by selecting a color between our two chosen colors based on the output from our cosine.
+
+```hlsl
+// pi and tau (2 * pi) are useful constants when using trigonometric functions
+#define TAU 6.28318530718
+
+float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
+{
+    // Read the color value at the current texture coordinate (tex)
+    float4 sample = shaderTexture.Sample(samplerState, tex);
+    
+    // The number of seconds the breathing effect should span
+    float duration = 5.0;
+    
+    float3 color1 = float3(0.3, 0.0, 0.5);  // indigo
+    float3 color2 = float3(0.1, 0.1, 0.44); // midnight blue
+    
+    // Set background colour based on the time
+    float4 backgroundColor = float4(lerp(color1, color2, 0.5 * cos(TAU / duration * Time) + 0.5), 1.0);
+    
+    // Draw the terminal graphics over the background
+    return lerp(backgroundColor, sample, sample.w);
+}
+```
 
 Feel free to modify and experiment!
 
