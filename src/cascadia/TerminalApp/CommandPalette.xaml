@@ -123,12 +123,15 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <!-- icon / progress -->
                             <ColumnDefinition Width="Auto"/>
                             <!-- command label -->
+                            <ColumnDefinition Width="*"/>
+                            <!-- Spanner -->
+                            <ColumnDefinition Width="Auto"/>
+                            <!-- Indicators -->
                             <ColumnDefinition Width="16"/>
                             <!-- gutter for scrollbar -->
                         </Grid.ColumnDefinitions>
 
                         <mux:ProgressRing
-                            DataContext="Item"
                             Grid.Column="0"
                             IsActive="{x:Bind Item.(local:TabPaletteItem.IsProgressRingActive), Mode=OneWay}"
                             Visibility="{x:Bind Item.(local:TabPaletteItem.IsProgressRingActive), Mode=OneWay}"
@@ -151,6 +154,27 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     Grid.Column="1"
                                     HorizontalAlignment="Left"
                                     Text="{x:Bind HighlightedName, Mode=OneWay}"/>
+
+                        <StackPanel
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Right"
+                            Orientation="Horizontal">
+
+                            <FontIcon
+                                FontFamily="Segoe MDL2 Assets"
+                                Visibility="{x:Bind Item.(local:TabPaletteItem.BellIndicator), Mode=OneWay}"
+                                Glyph="&#xEA8F;"
+                                FontSize="12"
+                                Margin="0,0,8,0"/>
+
+                            <FontIcon
+                                FontFamily="Segoe MDL2 Assets"
+                                Visibility="{x:Bind Item.(local:TabPaletteItem.IsPaneZoomed), Mode=OneWay}"
+                                Glyph="&#xE8A3;"
+                                FontSize="12"
+                                Margin="0,0,8,0"/>
+                        </StackPanel>
                     </Grid>
                 </ListViewItem>
             </DataTemplate>

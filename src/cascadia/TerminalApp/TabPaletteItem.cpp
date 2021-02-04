@@ -51,6 +51,8 @@ namespace winrt::TerminalApp::implementation
                 IsProgressRingActive(headerControl.IsProgressRingActive());
                 IsProgressRingIndeterminate(headerControl.IsProgressRingIndeterminate());
                 ProgressValue(headerControl.ProgressValue());
+                BellIndicator(headerControl.BellIndicator());
+                IsPaneZoomed(headerControl.IsPaneZoomed());
 
                 _tabHeaderChangedRevoker = headerControl.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& sender, auto& e) {
                     auto item{ weakThis.get() };
@@ -70,6 +72,14 @@ namespace winrt::TerminalApp::implementation
                         else if (changedProperty == L"ProgressValue")
                         {
                             item->ProgressValue(senderHeaderControl.ProgressValue());
+                        }
+                        else if (changedProperty == L"IsPaneZoomed")
+                        {
+                            item->IsPaneZoomed(senderHeaderControl.IsPaneZoomed());
+                        }
+                        else if (changedProperty == L"BellIndicator")
+                        {
+                            item->BellIndicator(senderHeaderControl.BellIndicator());
                         }
                     }
                 });
