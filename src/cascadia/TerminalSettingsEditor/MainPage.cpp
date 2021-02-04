@@ -50,7 +50,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _InitializeProfilesList();
 
-        _colorSchemesNavState = winrt::make<ColorSchemesPageNavigationState>(_settingsClone.GlobalSettings());
+        _colorSchemesNavState = winrt::make<ColorSchemesPageNavigationState>(_settingsClone);
     }
 
     // Method Description:
@@ -110,7 +110,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Repopulate profile-related menu items
         _InitializeProfilesList();
         // Update the Nav State with the new version of the settings
-        _colorSchemesNavState.Globals(_settingsClone.GlobalSettings());
+        _colorSchemesNavState.Settings(_settingsClone);
+        // We'll update the profile in the _profilesNavState whenever we actually navigate to one
 
         // now that the menuItems are repopulated,
         // refresh the current page using the SelectedItem data we collected before the refresh
@@ -255,7 +256,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults()) };
             profileVM.IsBaseLayer(true);
-            contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(profileVM, _settingsClone.GlobalSettings().ColorSchemes(), *this));
+            _lastProfilesNavState = winrt::make<ProfilePageNavigationState>(profileVM,
+                                                                            _settingsClone.GlobalSettings().ColorSchemes(),
+                                                                            _lastProfilesNavState,
+                                                                            *this);
+
+            contentFrame().Navigate(xaml_typename<Editor::Profiles>(), _lastProfilesNavState);
         }
         else if (clickedItemTag == colorSchemesTag)
         {
@@ -269,12 +275,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::_Navigate(const Editor::ProfileViewModel& profile)
     {
-        auto state{ winrt::make<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes(), *this) };
+        _lastProfilesNavState = winrt::make<ProfilePageNavigationState>(profile,
+                                                                        _settingsClone.GlobalSettings().ColorSchemes(),
+                                                                        _lastProfilesNavState,
+                                                                        *this);
 
         // Add an event handler for when the user wants to delete a profile.
-        state.DeleteProfile({ this, &MainPage::_DeleteProfile });
+        _lastProfilesNavState.DeleteProfile({ this, &MainPage::_DeleteProfile });
 
-        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), state);
+        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), _lastProfilesNavState);
     }
 
     void MainPage::OpenJsonTapped(IInspectable const& /*sender*/, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& /*args*/)
@@ -357,6 +366,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         icon.IconSource(iconSource);
         profileNavItem.Icon(icon);
 
+        // Update the menu item when the icon/name changes
+        auto weakMenuItem{ make_weak(profileNavItem) };
+        profile.PropertyChanged([weakMenuItem](const auto&, const WUX::Data::PropertyChangedEventArgs& args) {
+            if (auto menuItem{ weakMenuItem.get() })
+            {
+                const auto& tag{ menuItem.Tag().as<Editor::ProfileViewModel>() };
+                if (args.PropertyName() == L"Icon")
+                {
+                    const auto iconSource{ IconPathConverter::IconSourceWUX(tag.Icon()) };
+                    WUX::Controls::IconSourceElement icon;
+                    icon.IconSource(iconSource);
+                    menuItem.Icon(icon);
+                }
+                else if (args.PropertyName() == L"Name")
+                {
+                    menuItem.Content(box_value(tag.Name()));
+                }
+            }
+        });
         return profileNavItem;
     }
 

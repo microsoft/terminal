@@ -39,6 +39,11 @@ namespace Microsoft.Terminal.Settings.Editor
         StringIsEmptyConverter();
     };
 
+    runtimeclass PaddingConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        PaddingConverter();
+    };
+
     runtimeclass StringIsNotDesktopConverter : [default] Windows.UI.Xaml.Data.IValueConverter
     {
         StringIsNotDesktopConverter();

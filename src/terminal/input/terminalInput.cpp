@@ -627,9 +627,28 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
             _SendNullInputSequence(keyEvent.GetActiveModifierKeys());
             return true;
         }
+
+        // Not all keyboard layouts contain mappings for Ctrl-key combinations.
+        // For instance the US one contains a mapping of Ctrl+\ to ^\,
+        // but the UK extended layout doesn't, in which case ch is null.
+        if (ch == UNICODE_NULL)
+        {
+            // -> Try to infer the character from the vkey.
+            auto mappedChar = LOWORD(MapVirtualKeyW(keyEvent.GetVirtualKeyCode(), MAPVK_VK_TO_CHAR));
+            if (mappedChar)
+            {
+                // Pressing the control key causes all bits but the 5 least
+                // significant ones to be zeroed out (when using ASCII).
+                mappedChar &= 0b11111;
+                _SendChar(mappedChar);
+                return true;
+            }
+        }
     }
 
     // Check any other key mappings (like those for the F1-F12 keys).
+    // These mappings will kick in no matter which modifiers are pressed and as such
+    // must be checked last, or otherwise we'd override more complex key combinations.
     const auto mapping = _getKeyMapping(keyEvent, _ansiMode, _cursorApplicationMode, _keypadApplicationMode);
     if (_translateDefaultMapping(keyEvent, mapping, senderFunc))
     {

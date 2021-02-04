@@ -48,6 +48,8 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring _keyChord{};
 
         virtual void _CreateContextMenu();
+        virtual winrt::hstring _CreateToolTipTitle();
+
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutSubItem _CreateCloseSubMenu();
         void _EnableCloseMenuItems();
         void _CloseTabsAfter();

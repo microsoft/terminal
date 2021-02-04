@@ -42,6 +42,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _Navigate(const Editor::ProfileViewModel& profile);
 
         ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
+        ProfilePageNavigationState _lastProfilesNavState{ nullptr };
     };
 }
 
