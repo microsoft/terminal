@@ -52,6 +52,20 @@ namespace Microsoft::Console::Utils
     bool StringToUint(const std::wstring_view wstr, unsigned int& value);
     std::vector<std::wstring_view> SplitString(const std::wstring_view wstr, const wchar_t delimiter) noexcept;
 
+    enum PasteOption
+    {
+        // Convert Windows-space \r\n and \n line-endings to \r line-endings.
+        CarriageReturnNewline = 1u << 0,
+        // For security reasons, remove most control characters
+        FilterControlCodes = 1u << 1,
+        // Bracketed paste. See: https://www.xfree86.org/current/ctlseqs.html#Bracketed%20Paste%20Mode.
+        Bracketed = 1u << 2
+    };
+
+    DEFINE_ENUM_FLAG_OPERATORS(PasteOption)
+
+    std::wstring ConvertPasteString(const std::wstring& wstr, const PasteOption option);
+
     constexpr uint16_t EndianSwap(uint16_t value)
     {
         return (value & 0xFF00) >> 8 |

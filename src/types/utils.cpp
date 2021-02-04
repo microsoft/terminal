@@ -429,6 +429,108 @@ catch (...)
 }
 
 // Routine Description:
+// - Pre-process text pasted (presumably from the clipboard) with provided option.
+// Arguments:
+// - wstr - String to process.
+// - option - option to use.
+// Return Value:
+// - The result string.
+std::wstring Utils::ConvertPasteString(const std::wstring& wstr, const PasteOption option)
+{
+    std::wstring converted;
+    converted.reserve(wstr.length());
+
+    const auto isControlCode = [](wchar_t c) {
+        if (c >= L'\x20' && c <= L'\x7f')
+        {
+            // Printable ASCII characters + DEL.
+            return false;
+        }
+
+        if (c > L'\x7f')
+        {
+            // Not a control character.
+            return false;
+        }
+
+        // All ASCII control characters will be removed except HT(0x09), LF(0x0a),
+        // CR(0x0d) and DEL(0x7F).
+        return c >= L'\x00' && c <= L'\x08' ||
+               c >= L'\x0b' && c <= L'\x0c' ||
+               c >= L'\x0e' && c <= L'\x1f';
+    };
+
+    std::wstring::size_type pos = 0;
+    std::wstring::size_type begin = 0;
+
+    if (WI_IsFlagSet(option, PasteOption::Bracketed))
+    {
+        converted.append(L"\x1b[200~");
+    }
+
+    while (pos < wstr.size())
+    {
+        const wchar_t c = wstr.at(pos);
+
+        if (WI_IsFlagSet(option, PasteOption::CarriageReturnNewline) && c == L'\n')
+        {
+            // copy up to but not including the \n
+            converted.append(wstr.cbegin() + begin, wstr.cbegin() + pos);
+            if (!(pos > 0 && (wstr.at(pos - 1) == L'\r')))
+            {
+                // there was no \r before the \n we did not copy,
+                // so append our own \r (this effectively replaces the \n
+                // with a \r)
+                converted.push_back(L'\r');
+            }
+            ++pos;
+            begin = pos;
+        }
+        else if (WI_IsFlagSet(option, PasteOption::FilterControlCodes) && isControlCode(c))
+        {
+            // copy up to but not including the control character
+            converted.append(wstr.cbegin() + begin, wstr.cbegin() + pos);
+            ++pos;
+            begin = pos;
+        }
+        else
+        {
+            ++pos;
+        }
+    }
+
+    // If we entered the while loop even once, begin would be non-zero
+    // (because we set begin = pos right after incrementing pos)
+    // So, if begin is still zero at this point it means we never found a newline
+    // and we can just write the original string
+    if (begin == 0)
+    {
+        if (WI_IsFlagSet(option, PasteOption::Bracketed))
+        {
+            converted.append(wstr);
+            converted.append(L"\x1b[201~");
+            return converted;
+        }
+        else
+        {
+            return wstr;
+        }
+    }
+    else
+    {
+        converted.append(wstr.cbegin() + begin, wstr.cend());
+        if (WI_IsFlagSet(option, PasteOption::Bracketed))
+        {
+            converted.append(L"\x1b[201~");
+        }
+        // we may have removed some characters, so we may not need as much space
+        // as we reserved earlier
+        converted.shrink_to_fit();
+        return converted;
+    }
+}
+
+// Routine Description:
 // - Shorthand check if a handle value is null or invalid.
 // Arguments:
 // - Handle
