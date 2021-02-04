@@ -607,7 +607,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     for (auto i = tab->_mruPanes.begin(); i != tab->_mruPanes.end(); ++i)
                     {
-                        if (pane->Id().has_value() && *i == pane->Id().value())
+                        if (*i == pane->Id())
                         {
                             tab->_mruPanes.erase(i);
                             break;
