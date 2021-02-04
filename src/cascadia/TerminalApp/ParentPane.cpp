@@ -328,8 +328,8 @@ namespace winrt::TerminalApp::implementation
         {
             const auto& adjacentChild = (_splitState == SplitState::Vertical && edge == ResizeDirection::Left ||
                                          _splitState == SplitState::Horizontal && edge == ResizeDirection::Up) ?
-                                           _secondChild :
-                                           _firstChild;
+                                           _firstChild :
+                                           _secondChild;
             if (auto adjChildAsLeaf = adjacentChild.try_as<TerminalApp::LeafPane>())
             {
                 action(adjChildAsLeaf);
@@ -596,11 +596,19 @@ namespace winrt::TerminalApp::implementation
                                         (closeFirst ? ResizeDirection::Left : ResizeDirection::Right) :
                                         (closeFirst ? ResizeDirection::Up : ResizeDirection::Down);
 
-        // On all the leaf descendants that were adjacent to the closed child, update its
-        // border, so that it matches the border of the closed child.
-        PropagateToLeavesOnEdge(closedChildDir, [&](TerminalApp::LeafPane paneOnEdge) {
-            paneOnEdge.UpdateBorderWithClosedNeighbor(closedChild, closedChildDir);
-        });
+        if (const auto remainingAsLeaf = remainingChild.try_as<TerminalApp::LeafPane>())
+        {
+            // If our remaining child is a leaf, tell it to update its border now that its neighbour has closed
+            remainingAsLeaf.UpdateBorderWithClosedNeighbor(closedChild, closedChildDir);
+        }
+        else
+        {
+            // If our remaining child is a parent, we need to propagate the update border call to all leaves that shared
+            // an edge with the closed child
+            PropagateToLeavesOnEdge(closedChildDir, [&](TerminalApp::LeafPane paneOnEdge) {
+                paneOnEdge.UpdateBorderWithClosedNeighbor(closedChild, closedChildDir);
+            });
+        }
 
         // If any children of closed pane was previously active, we move the focus to the remaining child
         if (closedChild.GetActivePane())
