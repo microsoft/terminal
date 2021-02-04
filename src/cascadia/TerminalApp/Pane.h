@@ -77,7 +77,7 @@ public:
     void Maximize(std::shared_ptr<Pane> zoomedPane);
     void Restore(std::shared_ptr<Pane> zoomedPane);
 
-    uint16_t Id() noexcept;
+    std::optional<uint16_t> Id() noexcept;
     void Id(uint16_t id) noexcept;
     void FocusPane(const uint16_t id);
 

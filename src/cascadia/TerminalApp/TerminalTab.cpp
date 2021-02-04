@@ -329,7 +329,7 @@ namespace winrt::TerminalApp::implementation
                                 TermControl& control)
     {
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
-        const auto activePaneId = _activePane->Id();
+        const auto activePaneId = _activePane->Id().value();
         auto [first, second] = _activePane->Split(splitType, splitSize, profile, control);
         first->Id(activePaneId);
         second->Id(_nextPaneId);
@@ -551,7 +551,7 @@ namespace winrt::TerminalApp::implementation
 
         // We need to move the pane to the top of our mru list
         // If its already somewhere in the list, remove it first
-        const auto paneId = pane->Id();
+        const auto paneId = pane->Id().value();
         for (auto i = _mruPanes.begin(); i != _mruPanes.end(); ++i)
         {
             if (*i == paneId)
@@ -607,7 +607,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     for (auto i = tab->_mruPanes.begin(); i != tab->_mruPanes.end(); ++i)
                     {
-                        if (*i == pane->Id())
+                        if (pane->Id().has_value() && *i == pane->Id().value())
                         {
                             tab->_mruPanes.erase(i);
                             break;
