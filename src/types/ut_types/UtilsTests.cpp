@@ -195,15 +195,15 @@ void UtilsTests::TestConvertPasteString()
     VERIFY_ARE_EQUAL(L"Hello\rWorld\r 123", ConvertPasteString(multiLFWithControlCodes, PasteOption::CarriageReturnNewline | PasteOption::FilterControlCodes));
     VERIFY_ARE_EQUAL(L"Hello\rWorld\r 123", ConvertPasteString(multiCRLFWithControlCodes, PasteOption::CarriageReturnNewline | PasteOption::FilterControlCodes));
 
-    const std::wstring multiLineWithALotOfControlCodes = L"e\bc\bh\bo\b \b'.\b!\b:\b\b \bke\bS\b \bi3\bl \bld\bK\bo\b -1\b+\b9 +\b2\b-1'\b >\b \b/\bt\bm\bp\b/\bl\bo\bl\b\r\nsleep 1\r\nmd5sum /tmp/lol";
+    const std::wstring multiLineWithLotsOfControlCodes = L"e\bc\bh\bo\b \b'.\b!\b:\b\b \bke\bS\b \bi3\bl \bld\bK\bo\b -1\b+\b9 +\b2\b-1'\b >\b \b/\bt\bm\bp\b/\bl\bo\bl\b\r\nsleep 1\r\nmd5sum /tmp/lol";
 
     VERIFY_ARE_EQUAL(L"echo '.!: keS i3l ldKo -1+9 +2-1' > /tmp/lol\rsleep 1\rmd5sum /tmp/lol",
-                     ConvertPasteString(multiLineWithALotOfControlCodes, PasteOption::CarriageReturnNewline | PasteOption::FilterControlCodes));
+                     ConvertPasteString(multiLineWithLotsOfControlCodes, PasteOption::CarriageReturnNewline | PasteOption::FilterControlCodes));
 
     // Test bracketed paste
     VERIFY_ARE_EQUAL(L"\x1b[200~Hello World\x1b[201~", ConvertPasteString(noNewLine, PasteOption::Bracketed));
     VERIFY_ARE_EQUAL(L"\x1b[200~echo '.!: keS i3l ldKo -1+9 +2-1' > /tmp/lol\rsleep 1\rmd5sum /tmp/lol\x1b[201~",
-                     ConvertPasteString(multiLineWithALotOfControlCodes, PasteOption::CarriageReturnNewline | PasteOption::FilterControlCodes | PasteOption::Bracketed));
+                     ConvertPasteString(multiLineWithLotsOfControlCodes, PasteOption::CarriageReturnNewline | PasteOption::FilterControlCodes | PasteOption::Bracketed));
     // Malicious string that tries to prematurely terminate bracketed
     const std::wstring malicious = L"echo\x1b[201~";
     VERIFY_ARE_EQUAL(L"\x1b[200~echo[201~\x1b[201~", ConvertPasteString(malicious, PasteOption::FilterControlCodes | PasteOption::Bracketed));
