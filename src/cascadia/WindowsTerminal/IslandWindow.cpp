@@ -817,7 +817,7 @@ void IslandWindow::_BackupWindowSizes(const bool fCurrentIsInFullscreen)
 }
 
 // Method Description:
-// - Applys the appropriate window size for transitioning to/from fullscreen mode.
+// - Applies the appropriate window size for transitioning to/from fullscreen mode.
 // - Taken from conhost's Window::_ApplyWindowSize
 // Arguments:
 // - <none>

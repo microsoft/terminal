@@ -15,13 +15,13 @@ the MIT License. See LICENSE in the project root for license information. -->
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="CommonResources.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-            
+
             <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
                 <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
             </DataTemplate>
         </ResourceDictionary>
     </Page.Resources>
-    
+
     <ScrollViewer>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--Copy On Select-->
@@ -47,10 +47,10 @@ the MIT License. See LICENSE in the project root for license information. -->
             <local:SettingContainer x:Uid="Globals_SnapToGridOnResize">
                 <ToggleSwitch IsOn="{x:Bind State.Globals.SnapToGridOnResize, Mode=TwoWay}"/>
             </local:SettingContainer>
-            
+
             <!--Tab Switcher Mode-->
             <local:SettingContainer x:Uid="Globals_TabSwitcherMode">
-                <muxc:RadioButtons SelectedItem="{x:Bind CurrentTabSwitcherMode}"
+                <muxc:RadioButtons SelectedItem="{x:Bind CurrentTabSwitcherMode, Mode=TwoWay}"
                                    ItemsSource="{x:Bind TabSwitcherModeList}"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
             </local:SettingContainer>
