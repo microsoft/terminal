@@ -10,26 +10,48 @@ using namespace winrt::Windows::UI::Xaml;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    DependencyProperty SettingContainer::_HeaderProperty =
-        DependencyProperty::Register(
-            L"Header",
-            xaml_typename<IInspectable>(),
-            xaml_typename<Editor::SettingContainer>(),
-            PropertyMetadata{ nullptr });
+    DependencyProperty SettingContainer::_HeaderProperty{ nullptr };
+    DependencyProperty SettingContainer::_HelpTextProperty{ nullptr };
+    DependencyProperty SettingContainer::_HasSettingValueProperty{ nullptr };
 
-    DependencyProperty SettingContainer::_HelpTextProperty =
-        DependencyProperty::Register(
-            L"HelpText",
-            xaml_typename<hstring>(),
-            xaml_typename<Editor::SettingContainer>(),
-            PropertyMetadata{ box_value(L"") });
+    SettingContainer::SettingContainer()
+    {
+        _InitializeProperties();
+    }
 
-    DependencyProperty SettingContainer::_HasSettingValueProperty =
-        DependencyProperty::Register(
-            L"HasSettingValue",
-            xaml_typename<bool>(),
-            xaml_typename<Editor::SettingContainer>(),
-            PropertyMetadata{ box_value(false), PropertyChangedCallback{ &SettingContainer::_OnHasSettingValueChanged } });
+    void SettingContainer::_InitializeProperties()
+    {
+        // Initialize any SettingContainer dependency properties here.
+        // This performs a lazy load on these properties, instead of
+        // initializing them when the DLL loads.
+        if (!_HeaderProperty)
+        {
+            _HeaderProperty =
+                DependencyProperty::Register(
+                    L"Header",
+                    xaml_typename<IInspectable>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ nullptr });
+        }
+        if (!_HelpTextProperty)
+        {
+            _HelpTextProperty =
+                DependencyProperty::Register(
+                    L"HelpText",
+                    xaml_typename<hstring>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ box_value(L"") });
+        }
+        if (!_HasSettingValueProperty)
+        {
+            _HasSettingValueProperty =
+                DependencyProperty::Register(
+                    L"HasSettingValue",
+                    xaml_typename<bool>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ box_value(false), PropertyChangedCallback{ &SettingContainer::_OnHasSettingValueChanged } });
+        }
+    }
 
     void SettingContainer::_OnHasSettingValueChanged(DependencyObject const& d, DependencyPropertyChangedEventArgs const& args)
     {

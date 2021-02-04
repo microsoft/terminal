@@ -46,7 +46,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct SettingContainer : SettingContainerT<SettingContainer>
     {
     public:
-        SettingContainer() = default;
+        SettingContainer();
 
         void OnApplyTemplate();
 
@@ -56,6 +56,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         TYPED_EVENT(ClearSettingValue, Editor::SettingContainer, Windows::Foundation::IInspectable);
 
     private:
+        static void _InitializeProperties();
         static void _OnHasSettingValueChanged(Windows::UI::Xaml::DependencyObject const& d, Windows::UI::Xaml::DependencyPropertyChangedEventArgs const& e);
     };
 }
