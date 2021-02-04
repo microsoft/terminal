@@ -205,8 +205,8 @@ void UtilsTests::TestConvertPasteString()
     VERIFY_ARE_EQUAL(L"\x1b[200~echo '.!: keS i3l ldKo -1+9 +2-1' > /tmp/lol\rsleep 1\rmd5sum /tmp/lol\x1b[201~",
                      ConvertPasteString(multiLineWithALotOfControlCodes, PasteOption::CarriageReturnNewline | PasteOption::FilterControlCodes | PasteOption::Bracketed));
     // Malicious string that tries to prematurely terminate bracketed
-    const std::wstring malicous = L"echo\x1b[201~";
-    VERIFY_ARE_EQUAL(L"\x1b[200~echo[201~\x1b[201~", ConvertPasteString(malicous, PasteOption::FilterControlCodes | PasteOption::Bracketed));
+    const std::wstring malicious = L"echo\x1b[201~";
+    VERIFY_ARE_EQUAL(L"\x1b[200~echo[201~\x1b[201~", ConvertPasteString(malicious, PasteOption::FilterControlCodes | PasteOption::Bracketed));
 
     // Test Unicode content
     const std::wstring unicodeString = L"你好\r\n\x01世界\x02\r\n123";
