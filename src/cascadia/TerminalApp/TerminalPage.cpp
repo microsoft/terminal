@@ -2257,7 +2257,10 @@ namespace winrt::TerminalApp::implementation
                 tab.TabViewItem().StartBringIntoView();
 
                 // Raise an event that our title changed
-                _titleChangeHandlers(*this, tab.Title());
+                if (_settings.GlobalSettings().ShowTitleInTitlebar())
+                {
+                    _titleChangeHandlers(*this, tab.Title());
+                }
             }
             CATCH_LOG();
         }
