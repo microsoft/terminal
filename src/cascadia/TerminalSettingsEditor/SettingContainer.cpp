@@ -75,6 +75,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 elem.Visibility(newVal ? Visibility::Visible : Visibility::Collapsed);
             }
         }
+
+        // update the automation property
+        if (auto content{ obj.Content() })
+        {
+            // apply override message as help text (automation property)
+            if (const auto overrideMsg{ winrt::get_self<implementation::SettingContainer>(obj)->_GenerateOverrideMessageText() })
+            {
+                Automation::AutomationProperties::SetHelpText(obj, *overrideMsg);
+            }
+        }
     }
 
     void SettingContainer::OnApplyTemplate()
@@ -104,13 +114,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (auto tb{ child.try_as<Controls::TextBlock>() })
             {
-                // TODO GH#6800: 'OverrideTarget' will be replaced with hyperlink/text directing the user to another profile.
-                // Create the override message
-                const auto overrideMsg{ fmt::format(std::wstring{ RS_(L"SettingContainer_OverrideIntro") }, RS_(L"SettingContainer_OverrideTarget")) };
-                tb.Text(overrideMsg);
+                if (const auto overrideMsg{ _GenerateOverrideMessageText() })
+                {
+                    // Create the override message
+                    // TODO GH#6800: the override target will be replaced with hyperlink/text directing the user to another profile.
+                    tb.Text(*_GenerateOverrideMessageText());
 
-                // initialize visibility for reset button
-                tb.Visibility(HasSettingValue() ? Visibility::Visible : Visibility::Collapsed);
+                    // initialize visibility for reset button
+                    tb.Visibility(Visibility::Visible);
+                }
+                else
+                {
+                    // we have no message to render
+                    tb.Visibility(Visibility::Collapsed);
+                }
             }
         }
 
@@ -128,14 +145,29 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     }
                 }
 
-                // apply help text as tooltip and help text (automation property)
+                // apply override message as help text (automation property)
+                if (auto overrideMsg{ _GenerateOverrideMessageText() })
+                {
+                    Automation::AutomationProperties::SetHelpText(obj, *overrideMsg);
+                }
+
+                // apply help text as tooltip and full description (automation property)
                 const auto& helpText{ HelpText() };
                 if (!helpText.empty())
                 {
                     Controls::ToolTipService::SetToolTip(obj, box_value(helpText));
-                    Automation::AutomationProperties::SetHelpText(obj, helpText);
+                    Automation::AutomationProperties::SetFullDescription(obj, helpText);
                 }
             }
         }
+    }
+
+    std::optional<std::wstring> SettingContainer::_GenerateOverrideMessageText()
+    {
+        if (HasSettingValue())
+        {
+            return fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideIntro") }, RS_(L"SettingContainer_OverrideTarget"));
+        }
+        return std::nullopt;
     }
 }
