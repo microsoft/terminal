@@ -655,39 +655,36 @@ namespace winrt::TerminalApp::implementation
         }
 
         UINT dpi = USER_DEFAULT_SCREEN_DPI;
-        int _width = 0;
-        int _height = 0;
-        GetDesktopResolution(_width, _height);
         const auto initialPosition{ _settings.GlobalSettings().InitialPosition() };
-        const auto CentreOnLaunch{ _settings.GlobalSettings().CentreOnLaunch() };
         const auto dimensions = GetLaunchDimensions(dpi);
         const auto appWidth = dimensions.Width;
         const auto appHeight = dimensions.Height;
 
-        if (CentreOnLaunch)
-        {
-            return {
-                (_width / 2) - (static_cast<int>(appWidth) / 2),
-                (_height / 2) - (static_cast<int>(appHeight) / 2)
-            };
-        }
-        else
-        {
-            return {
-                initialPosition.X ? initialPosition.X.Value() : defaultInitialX,
-                initialPosition.Y ? initialPosition.Y.Value() : defaultInitialY
-            };
-        }
+        return {
+            initialPosition.X ? initialPosition.X.Value() : defaultInitialX,
+            initialPosition.Y ? initialPosition.Y.Value() : defaultInitialY
+        };
     }
 
-    void AppLogic::GetDesktopResolution(int& width, int& height)
+    bool AppLogic::CenterOnLaunch()
     {
-        RECT desktop;
-        const HWND hDesktop = GetDesktopWindow();
-        GetWindowRect(hDesktop, &desktop);
-        width = desktop.right;
-        height = desktop.bottom;
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+        return _settings.GlobalSettings().CenterOnLaunch();
     }
+
+    // Windows::Foundation::Size AppLogic::_GetDesktopSize()
+    // {
+    //     RECT desktop;
+    //     const HWND hDesktop = GetDesktopWindow();
+    //     GetWindowRect(hDesktop, &desktop);
+    //     width = desktop.right;
+    //     height = desktop.bottom;
+    //     return { desktop.right - desktop.left, desktop.bottom - desktop.top };
+    // }
 
     winrt::Windows::UI::Xaml::ElementTheme AppLogic::GetRequestedTheme()
     {

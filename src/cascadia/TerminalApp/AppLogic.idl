@@ -43,6 +43,7 @@ namespace TerminalApp
         Boolean AlwaysOnTop { get; };
 
         Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
+        Boolean CenterOnLaunch { get; };
 
         InitialPosition GetInitialPosition(Int64 defaultInitialX, Int64 defaultInitialY);
         Windows.UI.Xaml.ElementTheme GetRequestedTheme();
