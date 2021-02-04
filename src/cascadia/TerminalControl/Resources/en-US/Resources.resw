@@ -198,6 +198,6 @@ Please either install the missing font or choose another one.</value>
     <comment>{0} is an error code.</comment>
   </data>
   <data name="TermControlReadOnly" xml:space="preserve">
-    <value>Read-only mode is enabled</value>
+    <value>Read-only mode is enabled.</value>
   </data>
 </root>
