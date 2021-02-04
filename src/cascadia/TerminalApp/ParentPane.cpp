@@ -630,7 +630,7 @@ namespace winrt::TerminalApp::implementation
     {
         co_await winrt::resume_foreground(Root().Dispatcher());
 
-        // todo: do we need this weakthis??
+        // todo: do we need this weakThis??
         //if (auto pane{ weakThis.get() })
         //{
             // This will query if animations are enabled via the "Show animations in
@@ -851,7 +851,7 @@ namespace winrt::TerminalApp::implementation
 
     void ParentPane::_OnChildSplitOrCollapse(const bool isFirstChild, IPane newChild)
     {
-        // Unsub from all the events of the parent child.
+        // Unsubscribe from all the events of the parent child.
         _RemoveAllChildEventHandlers(isFirstChild);
 
         (isFirstChild ? _firstChild : _secondChild) = newChild;
@@ -859,7 +859,7 @@ namespace winrt::TerminalApp::implementation
         if (const auto newChildAsLeaf = newChild.try_as<TerminalApp::LeafPane>())
         {
             isFirstChild ? FirstChild_Root().Content(newChildAsLeaf) : SecondChild_Root().Content(newChildAsLeaf);
-            // todo: do we need this getgridsetcolorrow call? we already did it once on initialization
+            // todo: do we need this GetGridSetColOrRow call? we already did it once on initialization
             //_GetGridSetColOrRowFunc()(isFirstChild ? FirstChild_Root() : SecondChild_Root(), isFirstChild ? 0 : 1);
         }
         else
