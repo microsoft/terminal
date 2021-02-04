@@ -1065,8 +1065,13 @@ namespace winrt::TerminalApp::implementation
     {
         auto newTabTitle = tab.Title();
 
+        // When Application window is unfocused, selected tab's FocusState also
+        // becomes Unfocused. So we have to check using FocusedTabIndex too.
+        auto focusedTabIndex = _GetFocusedTabIndex();
+
         if (_settings.GlobalSettings().ShowTitleInTitlebar() &&
-            tab.FocusState() != FocusState::Unfocused)
+            (tab.FocusState() != FocusState::Unfocused ||
+             (focusedTabIndex.has_value() && focusedTabIndex.value() == tab.TabViewIndex())))
         {
             _titleChangeHandlers(*this, newTabTitle);
         }
