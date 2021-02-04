@@ -390,9 +390,19 @@ namespace winrt::TerminalApp::implementation
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
         const auto activePaneId = _activePane->Id();
         auto [first, second] = _activePane->Split(splitType, splitSize, profile, control);
-        first->Id(activePaneId);
-        second->Id(_nextPaneId);
-        ++_nextPaneId;
+        if (activePaneId)
+        {
+            first->Id(activePaneId.value());
+            second->Id(_nextPaneId);
+            ++_nextPaneId;
+        }
+        else
+        {
+            first->Id(_nextPaneId);
+            ++_nextPaneId;
+            second->Id(_nextPaneId);
+            ++_nextPaneId;
+        }
         _activePane = first;
         _AttachEventHandlersToControl(control);
 
@@ -610,16 +620,18 @@ namespace winrt::TerminalApp::implementation
 
         // We need to move the pane to the top of our mru list
         // If its already somewhere in the list, remove it first
-        const auto paneId = pane->Id();
-        for (auto i = _mruPanes.begin(); i != _mruPanes.end(); ++i)
+        if (const auto paneId = pane->Id())
         {
-            if (*i == paneId)
+            for (auto i = _mruPanes.begin(); i != _mruPanes.end(); ++i)
             {
-                _mruPanes.erase(i);
-                break;
+                if (*i == paneId.value())
+                {
+                    _mruPanes.erase(i);
+                    break;
+                }
             }
+            _mruPanes.insert(_mruPanes.begin(), paneId.value());
         }
-        _mruPanes.insert(_mruPanes.begin(), paneId);
         // Raise our own ActivePaneChanged event.
         _ActivePaneChangedHandlers();
     }
