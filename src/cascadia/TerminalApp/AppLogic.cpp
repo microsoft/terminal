@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "AppLogic.h"
 #include "AppLogic.g.cpp"
-#include "wtypes.h"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include <LibraryResources.h>
@@ -654,12 +653,7 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        UINT dpi = USER_DEFAULT_SCREEN_DPI;
         const auto initialPosition{ _settings.GlobalSettings().InitialPosition() };
-        const auto dimensions = GetLaunchDimensions(dpi);
-        const auto appWidth = dimensions.Width;
-        const auto appHeight = dimensions.Height;
-
         return {
             initialPosition.X ? initialPosition.X.Value() : defaultInitialX,
             initialPosition.Y ? initialPosition.Y.Value() : defaultInitialY
@@ -675,16 +669,6 @@ namespace winrt::TerminalApp::implementation
         }
         return _settings.GlobalSettings().CenterOnLaunch();
     }
-
-    // Windows::Foundation::Size AppLogic::_GetDesktopSize()
-    // {
-    //     RECT desktop;
-    //     const HWND hDesktop = GetDesktopWindow();
-    //     GetWindowRect(hDesktop, &desktop);
-    //     width = desktop.right;
-    //     height = desktop.bottom;
-    //     return { desktop.right - desktop.left, desktop.bottom - desktop.top };
-    // }
 
     winrt::Windows::UI::Xaml::ElementTheme AppLogic::GetRequestedTheme()
     {
