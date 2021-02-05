@@ -71,7 +71,7 @@ tab just opened in the most recent window.
 Users should certainly be able to specify if they want new instances to glom
 onto the MRU window or not. You could imagine that currently, we default to the
 hypothetical value `"windowingBehavior": "useNew"`, meaning that each new wt gets
-it's own new window.
+its own new window.
 
 If glomming is disabled, then the Monarch will call back to the peasant and tell
 it to run the provided commandline. The monarch will use the return value of
@@ -114,10 +114,10 @@ In this scenario, we want the new tab to be spawned in the current working
 directory of WT[2], not WT[1]. So when WT[1] is about to run the commands that
 were passed to WT[2], WT[1] will need to:
 
-* First, stash it's own CWD
+* First, stash its own CWD
 * Change to the CWD of WT[2]
 * Run the commands from WT[2]
-* Then return to it's original CWD.
+* Then return to its original CWD.
 
 So, as a part of the interface that a peasant uses to communicate the startup
 commandline to the monarch, we should also include the current working
@@ -130,7 +130,7 @@ current window, as opposed to always creating a new window. Presume we have the
 ability to communicate between different window processes. The logical extension
 of this scenario would be "run a `wt` commandline in _any_ given WT window".
 
-Each window process will have it's own unique ID assigned to it by the monarch.
+Each window process will have its own unique ID assigned to it by the monarch.
 This ID will be a positive number. Windows can also have names assigned to them.
 These names are strings that the user specifies. A window will always have an
 ID, but not necessarily a name. Running a command in a given window with ID N
@@ -145,7 +145,7 @@ wt.exe --window N new-tab ; split-pane
 More formally, we will add the following parameter to the top-level `wt`
 command:
 
-#### `--window,-w window-id`
+#### `--window,-w <window-id>`
 Run these commands in the given Windows Terminal session. This enables opening
 new tabs, splits, etc. in already running Windows Terminal windows.
 * If `window-id` is `0`, run the given commands in _the current window_.
@@ -183,7 +183,7 @@ as the window executing the command.
 
 To solve this issue, we'll  other than
 attempting to use the `WT_SESSION` environment variable. If a `wt.exe` process
-is spawned and that's in it's environment variables, it could try and ask the
+is spawned and that's in its environment variables, it could try and ask the
 monarch for the peasant who's hosting the session corresponding to that GUID.
 This is more of a theoretical solution than anything else.
 
@@ -477,7 +477,7 @@ This is a list of actionable tasks generated as described by this spec:
   ```sh
   man ping > wt -w 0 split-pane cat
   ```
-  Is there some way for WT to pass it's stdin/out handles to the child process
+  Is there some way for WT to pass its stdin/out handles to the child process
   it's creating? This is _not_ related to the current spec at hand, just
   something the author considered while writing the spec. This likely belongs
   over in [#492], or in its own spec.
