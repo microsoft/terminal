@@ -91,6 +91,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // resulting in inheriting the setting value from the parent.
                 button.Click([=](auto&&, auto&&) {
                     _ClearSettingValueHandlers(*this, nullptr);
+
+                    // move the focus to the child control
+                    if (auto content{ Content() })
+                    {
+                        if (auto control{ content.try_as<Controls::Control>() })
+                        {
+                            control.Focus(FocusState::Programmatic);
+                            return;
+                        }
+                        else if (auto panel{ content.try_as<Controls::Panel>() })
+                        {
+                            for (auto panelChild : panel.Children())
+                            {
+                                if (auto panelControl{ panelChild.try_as<Controls::Control>() })
+                                {
+                                    panelControl.Focus(FocusState::Programmatic);
+                                    return;
+                                }
+                            }
+                        }
+                        // if we get here, we didn't find something to reasonably focus to.
+                    }
                 });
 
                 // apply tooltip and name (automation property)
