@@ -58,7 +58,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1*" MaxWidth="480"/>
+                <ColumnDefinition Width="1*" MaxWidth="240"/>
+                <ColumnDefinition Width="1*" MinWidth="240"/>
                 <ColumnDefinition Width="1*"/>
             </Grid.ColumnDefinitions>
 
@@ -142,7 +143,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             <!-- Color Table (Left Column)-->
             <ItemsControl x:Name="ColorTableControl"
-                          ItemsSource="{x:Bind CurrentColorTable, Mode=OneWay}"
+                          ItemsSource="{x:Bind CurrentNonBrightColorTable, Mode=OneWay}"
                           Grid.Row="1"
                           Grid.Column="0"
                           Style="{StaticResource ItemsControlStyle}">
@@ -188,9 +189,30 @@ the MIT License. See LICENSE in the project root for license information. -->
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <!-- Additional Colors (Right Column) -->
             <ItemsControl Grid.Row="1"
                           Grid.Column="1"
+                          Style="{StaticResource ItemsControlStyle}"
+                          ItemsSource="{x:Bind CurrentBrightColorTable}">
+
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <ItemsWrapGrid Orientation="Horizontal"
+                                       MaximumRowsOrColumns="4"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="local:ColorTableEntry">
+                        <StackPanel Style="{StaticResource ColorStackPanelStyle}">
+                            <Button Background="{x:Bind Color, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}"
+                                    ToolTipService.ToolTip="{x:Bind Name, Mode=OneWay}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            
+            <!-- Additional Colors (Right Column) -->
+            <ItemsControl Grid.Row="1"
+                          Grid.Column="2"
                           Style="{StaticResource ItemsControlStyle}">
                 <StackPanel Style="{StaticResource ColorStackPanelStyle}">
                     <Button x:Uid="ColorScheme_Foreground"

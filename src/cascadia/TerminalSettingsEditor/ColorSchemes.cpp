@@ -53,7 +53,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     ColorSchemes::ColorSchemes() :
         _ColorSchemeList{ single_threaded_observable_vector<Model::ColorScheme>() },
-        _CurrentColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
+        _CurrentNonBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() },
+        _CurrentBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
     {
         InitializeComponent();
     }
@@ -71,7 +72,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         for (uint8_t i = 0; i < TableColorNames.size(); ++i)
         {
             auto entry = winrt::make<ColorTableEntry>(i, Windows::UI::Color{ 0, 0, 0, 0 });
-            _CurrentColorTable.Append(entry);
+            _CurrentNonBrightColorTable.Append(entry);
+            _CurrentBrightColorTable.Append(entry);
         }
 
         // Try to look up the scheme that was navigated to. If we find it, immediately select it.
@@ -155,7 +157,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 auto index = winrt::unbox_value<uint8_t>(tag);
                 CurrentColorScheme().SetColorTableEntry(index, args.NewColor());
-                _CurrentColorTable.GetAt(index).Color(args.NewColor());
+                _CurrentNonBrightColorTable.GetAt(index).Color(args.NewColor());
+                _CurrentBrightColorTable.GetAt(index).Color(args.NewColor());
             }
         }
     }
@@ -292,7 +295,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         for (uint8_t i = 0; i < TableColorNames.size(); ++i)
         {
-            _CurrentColorTable.GetAt(i).Color(colorScheme.Table()[i]);
+            _CurrentNonBrightColorTable.GetAt(i).Color(colorScheme.Table()[i]);
+            _CurrentBrightColorTable.GetAt(i).Color(colorScheme.Table()[i]);
         }
     }
 
