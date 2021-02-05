@@ -917,8 +917,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto newTabTitle = tab.Title();
 
-        if (_settings.GlobalSettings().ShowTitleInTitlebar() &&
-            tab.FocusState() != FocusState::Unfocused)
+        if (_settings.GlobalSettings().ShowTitleInTitlebar() && tab == _GetFocusedTab())
         {
             _titleChangeHandlers(*this, newTabTitle);
         }
@@ -2065,7 +2064,10 @@ namespace winrt::TerminalApp::implementation
                 tab.TabViewItem().StartBringIntoView();
 
                 // Raise an event that our title changed
-                _titleChangeHandlers(*this, tab.Title());
+                if (_settings.GlobalSettings().ShowTitleInTitlebar())
+                {
+                    _titleChangeHandlers(*this, tab.Title());
+                }
             }
             CATCH_LOG();
         }
