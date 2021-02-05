@@ -130,7 +130,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (const auto& tb{ child.try_as<Controls::TextBlock>() })
             {
-                const auto overrideMsg{ _GenerateOverrideMessageText() };
                 if (!overrideMsg.empty())
                 {
                     // Create the override message
