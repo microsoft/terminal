@@ -124,7 +124,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <ColumnDefinition Width="Auto"/>
                             <!-- command label -->
                             <ColumnDefinition Width="*"/>
-                            <!-- Spanner -->
+                            <!-- Gutter for indicators -->
                             <ColumnDefinition Width="Auto"/>
                             <!-- Indicators -->
                             <ColumnDefinition Width="16"/>
