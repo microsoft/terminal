@@ -33,6 +33,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
     <Style TargetType="local:SettingContainer">
         <Setter Property="Margin" Value="0,24,0,0"/>
+        <Setter Property="IsTabStop" Value="False"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingContainer">

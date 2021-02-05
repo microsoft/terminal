@@ -140,7 +140,8 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                         <!--Delete Button-->
                         <StackPanel Margin="{StaticResource StandardControlMargin}">
-                            <Button IsEnabled="{x:Bind State.Profile.CanDeleteProfile}"
+                            <Button x:Name="DeleteButton"
+                                    IsEnabled="{x:Bind State.Profile.CanDeleteProfile}"
                                     Style="{StaticResource DeleteButtonStyle}">
                                 <Button.Resources>
                                     <ResourceDictionary>

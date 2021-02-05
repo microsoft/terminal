@@ -220,6 +220,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         const auto backgroundImgCheckboxTooltip{ ToolTipService::GetToolTip(UseDesktopImageCheckBox()) };
         Automation::AutomationProperties::SetFullDescription(UseDesktopImageCheckBox(), unbox_value<hstring>(backgroundImgCheckboxTooltip));
+
+        Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"Profile_DeleteButton/Text"));
     }
 
     void Profiles::OnNavigatedTo(const NavigationEventArgs& e)
