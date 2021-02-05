@@ -1550,9 +1550,9 @@ void Pane::Restore(std::shared_ptr<Pane> zoomedPane)
 //   otherwise the ID value will not make sense (leaves have IDs, parents do not)
 // Return Value:
 // - The ID of this pane
-uint16_t Pane::Id() noexcept
+std::optional<uint16_t> Pane::Id() noexcept
 {
-    return _id.value();
+    return _id;
 }
 
 // Method Description:
