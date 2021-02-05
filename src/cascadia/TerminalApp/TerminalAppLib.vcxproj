@@ -203,7 +203,6 @@
     <ClCompile Include="HasNestedCommandsVisibilityConverter.cpp">
       <DependentUpon>HasNestedCommandsVisibilityConverter.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="Pane.cpp" />
     <ClCompile Include="LeafPane.cpp">
       <DependentUpon>LeafPane.xaml</DependentUpon>
     </ClCompile>

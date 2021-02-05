@@ -10,9 +10,6 @@
     <ClCompile Include="init.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
-    <ClCompile Include="Pane.cpp">
-      <Filter>pane</Filter>
-    </ClCompile>
     <ClCompile Include="LeafPane.cpp">
       <Filter>pane</Filter>
     </ClCompile>

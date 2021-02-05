@@ -2,9 +2,11 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "Pane.h"
+#include "ParentPane.h"
 
-Pane::LayoutSizeNode::LayoutSizeNode(const float minSize) :
+using namespace winrt::TerminalApp::implementation;
+
+ParentPane::LayoutSizeNode::LayoutSizeNode(const float minSize) :
     size{ minSize },
     isMinimumSize{ true },
     firstChild{ nullptr },
@@ -14,7 +16,7 @@ Pane::LayoutSizeNode::LayoutSizeNode(const float minSize) :
 {
 }
 
-Pane::LayoutSizeNode::LayoutSizeNode(const LayoutSizeNode& other) :
+ParentPane::LayoutSizeNode::LayoutSizeNode(const LayoutSizeNode& other) :
     size{ other.size },
     isMinimumSize{ other.isMinimumSize },
     firstChild{ other.firstChild ? std::make_unique<LayoutSizeNode>(*other.firstChild) : nullptr },
@@ -32,7 +34,7 @@ Pane::LayoutSizeNode::LayoutSizeNode(const LayoutSizeNode& other) :
 // - other: Node to take the values from.
 // Return Value:
 // - itself
-Pane::LayoutSizeNode& Pane::LayoutSizeNode::operator=(const LayoutSizeNode& other)
+ParentPane::LayoutSizeNode& ParentPane::LayoutSizeNode::operator=(const LayoutSizeNode& other)
 {
     size = other.size;
     isMinimumSize = other.isMinimumSize;
@@ -53,7 +55,7 @@ Pane::LayoutSizeNode& Pane::LayoutSizeNode::operator=(const LayoutSizeNode& othe
 // - other: Node to take the values from.
 // Return Value:
 // - <none>
-void Pane::LayoutSizeNode::_AssignChildNode(std::unique_ptr<LayoutSizeNode>& nodeField, const LayoutSizeNode* const newNode)
+void ParentPane::LayoutSizeNode::_AssignChildNode(std::unique_ptr<LayoutSizeNode>& nodeField, const LayoutSizeNode* const newNode)
 {
     if (newNode)
     {
