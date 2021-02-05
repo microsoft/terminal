@@ -1358,22 +1358,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             Focus(FocusState::Pointer);
         }
 
-        if (!_focused && (_terminal->GetHyperlinkAtPosition(terminalPosition).empty()))
-        {
-            args.Handled(true);
-            return;
-        }
-
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            if (_CanSendVTMouseInput())
+            if (_focused && _CanSendVTMouseInput())
             {
                 _TrySendMouseEvent(point);
                 args.Handled(true);
                 return;
             }
 
-            if (point.Properties().IsLeftButtonPressed())
+            if (_focused && point.Properties().IsLeftButtonPressed())
             {
                 auto lock = _terminal->LockForWriting();
 
@@ -1462,7 +1456,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
             }
         }
-        else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
+        else if (_focused && ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
         {
             const auto contactRect = point.Properties().ContactRect();
             winrt::Windows::Foundation::Point newTouchPoint{ contactRect.X, contactRect.Y };
