@@ -47,7 +47,7 @@ namespace winrt::TerminalApp::implementation
         _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &LeafPane::_ControlConnectionStateChangedHandler });
         _warningBellToken = _control.WarningBell({ this, &LeafPane::_ControlWarningBellHandler });
 
-        // On the first Pane's creation, lookup resources we'll use to theme the
+        // On the Pane's creation, lookup resources we'll use to theme the
         // Pane, including the brushed to use for the focused/unfocused border
         // color.
         if (s_focusedBorderBrush == nullptr || s_unfocusedBorderBrush == nullptr)
@@ -66,10 +66,16 @@ namespace winrt::TerminalApp::implementation
     void LeafPane::BorderTappedHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                        winrt::Windows::UI::Xaml::Input::TappedRoutedEventArgs const& e)
     {
-        SetActive();
+        FocusFirstChild();
         e.Handled(true);
     }
 
+    // Method Description:
+    // - If this is the last focused pane, returns itself
+    // - This Pane's control might not currently be focused, if the tab itself is
+    //   not currently focused
+    // Return Value:
+    // - nullptr if we're unfocused, else returns this
     IPane LeafPane::GetActivePane()
     {
         return _lastActive ? IPane{ *this } : nullptr;
@@ -80,6 +86,10 @@ namespace winrt::TerminalApp::implementation
         return IPane{ *this };
     }
 
+    // Method Description:
+    // - Gets the TermControl of this pane
+    // Return Value:
+    // - The TermControl of this LeafPane
     TermControl LeafPane::GetTerminalControl()
     {
         return _control;
@@ -90,33 +100,57 @@ namespace winrt::TerminalApp::implementation
         return _profile;
     }
 
+    // Method Description:
+    // - Get the root UIElement of this pane, which in our case just contains a border
+    //   with a Terminal Control in it
+    // Return Value:
+    // - the Grid acting as the root of this pane.
     Controls::Grid LeafPane::GetRootElement()
     {
         return Root();
     }
 
+    // Method Description:
+    // - Returns true if this pane was the last pane to be focused in a tree of panes.
+    // Return Value:
+    // - true iff we were the last pane focused in this tree of panes.
     bool LeafPane::WasLastFocused() const noexcept
     {
         return _lastActive;
     }
 
+    // Method Description:
+    // - Update the focus state of this pane. We'll make sure to colorize our
+    //   borders depending on if we are the active pane or not.
     void LeafPane::UpdateVisuals()
     {
         GridBorder().BorderBrush(_lastActive ? s_focusedBorderBrush : s_unfocusedBorderBrush);
     }
 
+    // Method Description:
+    // - Remove the "Active" state from this Pane
+    // - Updates our visuals to match our new state, including highlighting our borders
     void LeafPane::ClearActive()
     {
         _lastActive = false;
         UpdateVisuals();
     }
 
+    // Method Description:
+    // - Sets the "Active" state on this Pane. Only one Pane in a tree of Panes
+    //   should be "active"
+    // - Updates our visuals to match our new state, including highlighting our borders.
     void LeafPane::SetActive()
     {
         _lastActive = true;
         UpdateVisuals();
     }
 
+    // Method Description:
+    // - Updates the settings of this pane if our profile guid matches the parameter
+    // Arguments:
+    // - settings: The new TerminalSettings to apply to any matching controls
+    // - profile: The GUID of the profile these settings should apply to.
     void LeafPane::UpdateSettings(const TerminalApp::TerminalSettings& settings, const GUID& profile)
     {
         if (profile == _profile)
@@ -125,6 +159,10 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Focuses this pane if the given id matches ours
+    // Arguments:
+    // - The ID of the pane we want to focus
     void LeafPane::FocusPane(uint32_t id)
     {
         if (_id == id)
@@ -133,6 +171,8 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Focuses this control
     void LeafPane::FocusFirstChild()
     {
         if (Root().ActualWidth() == 0 && Root().ActualHeight() == 0)
@@ -151,11 +191,26 @@ namespace winrt::TerminalApp::implementation
         _control.Focus(FocusState::Programmatic);
     }
 
+    // Method Description:
+    // - Returns true if this pane is currently focused
+    // Return Value:
+    // - true if the currently focused pane is this pane
     bool LeafPane::HasFocusedChild()
     {
         return _control && _lastActive;
     }
 
+    // Method Description:
+    // - Splits this pane, creating a new leaf pane and a parent pane
+    // - The parent pane holds this pane and the newly created neighbour
+    // - Emits an event with the new parent, so that whoever is listening
+    //   will replace us with our parent
+    // Arguments:
+    // - splitType: what type of split we want to create.
+    // - profile: The profile GUID to associate with the newly created pane.
+    // - control: A TermControl to use in the new pane.
+    // Return Value:
+    // - The newly created pane
     TerminalApp::LeafPane LeafPane::Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
                                           const float splitSize,
                                           const GUID& profile,
@@ -196,17 +251,31 @@ namespace winrt::TerminalApp::implementation
         return newNeighbour;
     }
 
+    // Method Description:
+    // - Adjusts given dimension (width or height) so that we align with our character grid
+    //   as close as possible. Snaps to closes match (either upward or downward). Also makes
+    //   sure to fit in minimal sizes of the panes.
+    // Arguments:
+    // - widthOrHeight: if true operates on width, otherwise on height
+    // - dimension: a dimension (width or height) to snap
+    // Return Value:
+    // - A value corresponding to the next closest snap size for this Pane, either upward or downward
     float LeafPane::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
         const auto [lower, higher] = _CalcSnappedDimension(widthOrHeight, dimension);
         return dimension - lower < higher - dimension ? lower : higher;
     }
 
+    // Method Description:
+    // - Closes our attached control, preparing us to be removed from the UI tree
     void LeafPane::Shutdown()
     {
         _control.Close();
     }
 
+    // Method Description:
+    // - Fire our Closed event to tell our parent that we should be removed.
+    // - todo: not sure if we ever call this anymore
     void LeafPane::Close()
     {
         _ClosedHandlers(nullptr, nullptr);
@@ -217,11 +286,20 @@ namespace winrt::TerminalApp::implementation
         return 1;
     }
 
+    // Method Description:
+    // - Retrieves the ID of this pane
+    // Return Value:
+    // - The ID of this pane
     uint16_t LeafPane::Id() noexcept
     {
         return _id;
     }
 
+    // Method Description:
+    // - Sets this pane's ID
+    // - Panes are given IDs upon creation by TerminalTab
+    // Arguments:
+    // - The number to set this pane's ID to
     void LeafPane::Id(uint16_t id) noexcept
     {
         _id = id;
@@ -237,6 +315,11 @@ namespace winrt::TerminalApp::implementation
         _borders = borders;
     }
 
+    // Method Description:
+    // - If this is the pane the caller wishes to zoom, we set our zoomed flag
+    //   and update our borders
+    // Arguments:
+    // - zoomedPane: This is the pane which we're attempting to zoom on.
     void LeafPane::Maximize(IPane paneToZoom)
     {
         _zoomed = (paneToZoom == *this);
@@ -249,6 +332,13 @@ namespace winrt::TerminalApp::implementation
         _UpdateBorders();
     }
 
+    // Method Description:
+    // - Get the absolute minimum size that this pane can be resized to and still
+    //   have 1x1 character visible. Since we're a leaf, we'll
+    //   include the space needed for borders _within_ us.
+    // Return Value:
+    // - The minimum size that this pane can be resized to and still have a visible
+    //   character.
     Size LeafPane::GetMinSize() const
     {
         auto controlSize = _control.MinimumSize();
@@ -263,6 +353,31 @@ namespace winrt::TerminalApp::implementation
         return { newWidth, newHeight };
     }
 
+    // Method Description:
+    // - This is a helper to determine which direction an "Automatic" split should
+    //   happen in for a given pane, but without using the ActualWidth() and
+    //   ActualHeight() methods. This is used during the initialization of the
+    //   Terminal, when we could be processing many "split-pane" commands _before_
+    //   we've ever laid out the Terminal for the first time. When this happens, the
+    //   Pane's don't have an actual size yet. However, we'd still like to figure
+    //   out how to do an "auto" split when these Panes are all laid out.
+    // - This method assumes that the Pane we're attempting to split is `target`,
+    //   and this method should be called on the root of a tree of Panes.
+    // - We'll walk down the tree attempting to find `target`. As we traverse the
+    //   tree, we'll reduce the size passed to each subsequent recursive call. The
+    //   size passed to this method represents how much space this Pane _will_ have
+    //   to use.
+    //   * If this pane is the pane we're looking for, use the
+    //     available space to calculate which direction to split in.
+    //   * If this pane is _any other leaf_, then just return nullopt, to indicate
+    //     that the `target` Pane is not down this branch.
+    // Arguments:
+    // - target: The Pane we're attempting to split.
+    // - availableSpace: The theoretical space that's available for this pane to be able to split.
+    // Return Value:
+    // - nullopt if `target` is not this pane, otherwise the
+    //   SplitState that `target` would use for an `Automatic` split given
+    //   `availableSpace`
     IReference<SplitState> LeafPane::PreCalculateAutoSplit(const IPane target,
                                                            const winrt::Windows::Foundation::Size availableSpace) const
     {
@@ -279,6 +394,32 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - This is a helper to determine if a given Pane can be split, but without
+    //   using the ActualWidth() and ActualHeight() methods. This is used during
+    //   processing of many "split-pane" commands, which could happen _before_ we've
+    //   laid out a Pane for the first time. When this happens, the Pane's don't
+    //   have an actual size yet. However, we'd still like to figure out if the pane
+    //   could be split, once they're all laid out.
+    // - This method assumes that the Pane we're attempting to split is `target`,
+    //   and this method should be called on the root of a tree of Panes.
+    // - We'll walk down the tree attempting to find `target`. As we traverse the
+    //   tree, we'll reduce the size passed to each subsequent recursive call. The
+    //   size passed to this method represents how much space this Pane _will_ have
+    //   to use.
+    // - If this pane is the pane we're looking for, use the
+    //   available space to calculate which direction to split in.
+    // - If this pane is _any other leaf_, then just return nullopt, to indicate
+    //   that the `target` Pane is not down this branch.
+    // Arguments:
+    // - target: The Pane we're attempting to split.
+    // - splitType: The direction we're attempting to split in.
+    // - availableSpace: The theoretical space that's available for this pane to be able to split.
+    // Return Value:
+    // - nullopt if `target` is not this pane, otherwise
+    //   true iff we could split this pane, given `availableSpace`
+    // Note:
+    // - This method is highly similar to Pane::PreCalculateAutoSplit
     IReference<bool> LeafPane::PreCalculateCanSplit(const IPane target,
                                                        SplitState splitType,
                                                        const float splitSize,
@@ -345,6 +486,8 @@ namespace winrt::TerminalApp::implementation
         _UpdateBorders();
     }
 
+    // Method Description:
+    // - todo: what does this even do in the new implementation
     void LeafPane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/,
                                                          const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
@@ -369,6 +512,12 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Plays a warning note when triggered by the BEL control character,
+    //   using the sound configured for the "Critical Stop" system event.`
+    //   This matches the behavior of the Windows Console host.
+    // - Will also flash the taskbar if the bellStyle setting for this profile
+    //   has the 'visual' flag set
     void LeafPane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                               const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
     {
@@ -391,12 +540,16 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Event Description:
+    // - todo: do we need this anymore? the hosting tab doesn't listen to all leaves anymore (only the root)
     void LeafPane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& /* sender */,
                                            RoutedEventArgs const& /* args */)
     {
         _GotFocusHandlers(*this);
     }
 
+    // Method Description:
+    // - Sets the thickness of each side of our borders to match our _borders state.
     void LeafPane::_UpdateBorders()
     {
         double top = 0, bottom = 0, left = 0, right = 0;
@@ -429,6 +582,11 @@ namespace winrt::TerminalApp::implementation
         GridBorder().BorderThickness(ThicknessHelper::FromLengths(left, top, right, bottom));
     }
 
+    // Function Description:
+    // - Attempts to load some XAML resources that the Pane will need. This includes:
+    //   * The Color we'll use for active Panes's borders - SystemAccentColor
+    //   * The Brush we'll use for inactive Panes - TabViewBackground (to match the
+    //     color of the titlebar)
     void LeafPane::_SetupResources()
     {
         const auto res = Application::Current().Resources();
@@ -465,6 +623,16 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Adjusts given dimension (width or height) so that we align with our character grid
+    //   as close as possible. Also makes sure to fit in minimal sizes of the pane
+    // Arguments:
+    // - widthOrHeight: if true operates on width, otherwise on height
+    // - dimension: a dimension (width or height) to be snapped
+    // Return Value:
+    // - pair of floats, where first value is the size snapped downward (not greater then
+    //   requested size) and second is the size snapped upward (not lower than requested size).
+    //   If requested size is already snapped, then both returned values equal this value.
     SnapSizeResult LeafPane::_CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
         const auto minSize = GetMinSize();
@@ -501,6 +669,15 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Converts an "automatic" split type into either Vertical or Horizontal,
+    //   based upon the current dimensions of the Pane.
+    // - If any of the other SplitState values are passed in, they're returned
+    //   unmodified.
+    // Arguments:
+    // - splitType: The SplitState to attempt to convert
+    // Return Value:
+    // - None if splitType was None, otherwise one of Horizontal or Vertical
     SplitState LeafPane::_convertAutomaticSplitState(const SplitState& splitType)
     {
         // Careful here! If the pane doesn't yet have a size, these dimensions will

@@ -40,17 +40,32 @@ namespace winrt::TerminalApp::implementation
         _GetGridSetColOrRowFunc()(SecondChild_Root(), 1);
     }
 
+    // Method Description:
+    // - Get the root UIElement of this pane. In our case is a grid
+    //   with 2 content presenters, one for each child
+    // Return Value:
+    // - the Grid acting as the root of this pane.
     Controls::Grid ParentPane::GetRootElement()
     {
         return Root();
     }
 
+    // Method Description:
+    // - Updates the settings of the children of this pane recursively
+    // Arguments:
+    // - settings: The new TerminalSettings to apply to any matching controls
+    // - profile: The GUID of the profile these settings should apply to
     void ParentPane::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
     {
         _firstChild.UpdateSettings(settings, profile);
         _secondChild.UpdateSettings(settings, profile);
     }
 
+    // Method Description:
+    // - Returns nullptr if no children of this pane were the last pane to be focused, or the Pane that
+    //   _was_ the last pane to be focused
+    // Return Value:
+    // - nullptr if no children were marked `_lastActive`, else returns the last active child
     IPane ParentPane::GetActivePane()
     {
         auto first = _firstChild.GetActivePane();
@@ -62,22 +77,34 @@ namespace winrt::TerminalApp::implementation
         return second;
     }
 
+    // Method Description:
+    // - Recalculates and reapplies sizes of all descendant panes.
     void ParentPane::Relayout()
     {
         ResizeContent(Root().ActualSize());
     }
 
+    // Method Description:
+    // - Recursive function that focuses a pane with the given ID
+    // Arguments:
+    // - The ID of the pane we want to focus
     void ParentPane::FocusPane(uint32_t id)
     {
         _firstChild.FocusPane(id);
         _secondChild.FocusPane(id);
     }
 
+    // Method Description:
+    // - Focuses the first leaf of our first child, recursively.
     void ParentPane::FocusFirstChild()
     {
         _firstChild.FocusFirstChild();
     }
 
+    // Method Description:
+    // - Returns true is a pane which is a child of this pane that is actively focused
+    // Return Value:
+    // - true if the currently focused pane is one of this pane's descendants
     bool ParentPane::HasFocusedChild()
     {
         return _firstChild.HasFocusedChild() || _secondChild.HasFocusedChild();
@@ -94,18 +121,31 @@ namespace winrt::TerminalApp::implementation
         _SetupEntranceAnimation();
     }
 
+    // Method Description:
+    // - Prepare this pane to be removed from the UI hierarchy by closing all controls
+    //   and connections beneath it.
     void ParentPane::Shutdown()
     {
         _firstChild.Shutdown();
         _secondChild.Shutdown();
     }
 
+    // Method Description:
+    // - Recursively remove the "Active" state from any leaf descendants of this parent pane
     void ParentPane::ClearActive()
     {
         _firstChild.ClearActive();
         _secondChild.ClearActive();
     }
 
+    // Method Description:
+    // - Update the size of this pane. Resizes each of our columns so they have the
+    //   same relative sizes, given the newSize.
+    // - Because we're just manually setting the row/column sizes in pixels, we have
+    //   to be told our new size, we can't just use our own OnSized event, because
+    //   that _won't fire when we get smaller_.
+    // Arguments:
+    // - newSize: the amount of space that this pane has to fill now.
     void ParentPane::ResizeContent(const Size& newSize)
     {
         const auto width = newSize.Width;
@@ -133,6 +173,17 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Moves the separator between panes, as to resize each child on either size
+    //   of the separator. Tries to move a separator in the given direction. The
+    //   separator moved is the separator that's closest depth-wise to the
+    //   currently focused pane, that's also in the correct direction to be moved.
+    //   If there isn't such a separator, then this method returns false, as we
+    //   couldn't handle the resize.
+    // Arguments:
+    // - direction: The direction to move the separator in.
+    // Return Value:
+    // - true if we or a child handled this resize request.
     bool ParentPane::ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction)
     {
         // Check if either our first or second child is the currently focused leaf.
@@ -178,6 +229,19 @@ namespace winrt::TerminalApp::implementation
         return false;
     }
 
+    // Method Description:
+    // - Attempts to move focus to one of our children. If we have a focused child,
+    //   we'll try to move the focus in the direction requested.
+    //   - If there isn't a pane that exists as a child of this pane in the correct
+    //     direction, we'll return false. This will indicate to our parent that they
+    //     should try and move the focus themselves. In this way, the focus can move
+    //     up and down the tree to the correct pane.
+    // - This method is _very_ similar to ResizePane. Both are trying to find the
+    //   right separator to move (focus) in a direction.
+    // Arguments:
+    // - direction: The direction to move the focus in.
+    // Return Value:
+    // - true if we or a child handled this focus move request.
     bool ParentPane::NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction)
     {
         // Check if either our first or second child is the currently focused leaf.
@@ -222,6 +286,15 @@ namespace winrt::TerminalApp::implementation
         return false;
     }
 
+    // Method Description:
+    // - Adjusts given dimension (width or height) so that all descendant terminals
+    //   align with their character grids as close as possible. Snaps to closes match
+    //   (either upward or downward). Also makes sure to fit in minimal sizes of the panes.
+    // Arguments:
+    // - widthOrHeight: if true operates on width, otherwise on height
+    // - dimension: a dimension (width or height) to snap
+    // Return Value:
+    // - A value corresponding to the next closest snap size for this Pane, either upward or downward
     float ParentPane::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
         const auto [lower, higher] = _CalcSnappedDimension(widthOrHeight, dimension);
@@ -233,6 +306,12 @@ namespace winrt::TerminalApp::implementation
         return _firstChild.GetLeafPaneCount() + _secondChild.GetLeafPaneCount();
     }
 
+    // Method Description:
+    // - Get the absolute minimum size that this pane can be resized to and still
+    //   have 1x1 character visible in each of its children
+    // Return Value:
+    // - The minimum size that this pane can be resized to and still have a visible
+    //   character.
     Size ParentPane::GetMinSize() const
     {
         const auto firstSize = _firstChild.GetMinSize();
@@ -248,6 +327,14 @@ namespace winrt::TerminalApp::implementation
         return { minWidth, minHeight };
     }
 
+    // Method Description:
+    // - Recursively attempt to "zoom" the given pane. When the pane is zoomed, it
+    //   won't be displayed as part of the tab tree, instead it'll take up the full
+    //   content of the tab. When we find the given pane, we'll need to remove it
+    //   from the UI tree, so that the caller can re-add it. We'll also set some
+    //   internal state, so the pane can display all of its borders.
+    // Arguments:
+    // - zoomedPane: This is the pane which we're attempting to zoom on.
     void ParentPane::Maximize(IPane paneToZoom)
     {
         if (paneToZoom == _firstChild || paneToZoom == _secondChild)
@@ -265,6 +352,15 @@ namespace winrt::TerminalApp::implementation
         _secondChild.Maximize(paneToZoom);
     }
 
+    // Method Description:
+    // - Recursively attempt to "un-zoom" the given pane. This does the opposite of
+    //   ParentPane::Maximize. When we find the given pane, we should return the pane to our
+    //   UI tree. We'll also clear the internal state, so the pane can display its
+    //   borders correctly.
+    // - The caller should make sure to have removed the zoomed pane from the UI
+    //   tree _before_ calling this. (todo: we don't do this but it still works?)
+    // Arguments:
+    // - zoomedPane: This is the pane which we're attempting to un-zoom.
     void ParentPane::Restore(IPane paneToUnzoom)
     {
         if (paneToUnzoom == _firstChild || paneToUnzoom == _secondChild)
@@ -281,6 +377,29 @@ namespace winrt::TerminalApp::implementation
         _secondChild.Restore(paneToUnzoom);
     }
 
+    // Method Description:
+    // - This is a helper to determine which direction an "Automatic" split should
+    //   happen in for a given pane, but without using the ActualWidth() and
+    //   ActualHeight() methods. This is used during the initialization of the
+    //   Terminal, when we could be processing many "split-pane" commands _before_
+    //   we've ever laid out the Terminal for the first time. When this happens, the
+    //   Pane's don't have an actual size yet. However, we'd still like to figure
+    //   out how to do an "auto" split when these Panes are all laid out.
+    // - This method assumes that the Pane we're attempting to split is `target`,
+    //   and this method should be called on the root of a tree of Panes.
+    // - We'll walk down the tree attempting to find `target`. As we traverse the
+    //   tree, we'll reduce the size passed to each subsequent recursive call. The
+    //   size passed to this method represents how much space this Pane _will_ have
+    //   to use.
+    // - Since this pane is a parent, calculate how much space our children will be
+    //   able to use, and recurse into them.
+    // Arguments:
+    // - target: The Pane we're attempting to split.
+    // - availableSpace: The theoretical space that's available for this pane to be able to split.
+    // Return Value:
+    // - nullopt if `target` is not this pane or a child of this pane, otherwise the
+    //   SplitState that `target` would use for an `Automatic` split given
+    //   `availableSpace`
     IReference<SplitState> ParentPane::PreCalculateAutoSplit(const IPane target,
                                                              const winrt::Windows::Foundation::Size availableSpace) const
     {
@@ -294,6 +413,30 @@ namespace winrt::TerminalApp::implementation
         return firstResult ? firstResult : _secondChild.PreCalculateAutoSplit(target, { secondWidth, secondHeight });
     }
 
+    // Method Description:
+    // - This is a helper to determine if a given Pane can be split, but without
+    //   using the ActualWidth() and ActualHeight() methods. This is used during
+    //   processing of many "split-pane" commands, which could happen _before_ we've
+    //   laid out a Pane for the first time. When this happens, the Pane's don't
+    //   have an actual size yet. However, we'd still like to figure out if the pane
+    //   could be split, once they're all laid out.
+    // - This method assumes that the Pane we're attempting to split is `target`,
+    //   and this method should be called on the root of a tree of Panes.
+    // - We'll walk down the tree attempting to find `target`. As we traverse the
+    //   tree, we'll reduce the size passed to each subsequent recursive call. The
+    //   size passed to this method represents how much space this Pane _will_ have
+    //   to use.
+    // - Since this pane is a parent, calculate how much space our children will be
+    //   able to use, and recurse into them.
+    // Arguments:
+    // - target: The Pane we're attempting to split.
+    // - splitType: The direction we're attempting to split in.
+    // - availableSpace: The theoretical space that's available for this pane to be able to split.
+    // Return Value:
+    // - nullopt if `target` is not a child of this pane, otherwise
+    //   true iff we could split this pane, given `availableSpace`
+    // Note:
+    // - This method is highly similar to PreCalculateAutoSplit
     IReference<bool> ParentPane::PreCalculateCanSplit(const IPane target,
                                                       SplitState splitType,
                                                       const float splitSize,
@@ -363,6 +506,13 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Sets up row/column definitions for this pane. There are three total
+    //   row/cols. The middle one is for the separator. The first and third are for
+    //   each of the child panes, and are given a size in pixels, based off the
+    //   available space, and the percent of the space they respectively consume,
+    //   which is stored in _desiredSplitPosition
+    // todo: is this comment old? I don't see how there's 3 rows/cols
     void ParentPane::_CreateRowColDefinitions()
     {
         const auto first = _desiredSplitPosition * 100.0f;
@@ -399,6 +549,17 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Adjust our child percentages to increase the size of one of our children
+    //   and decrease the size of the other.
+    // - Adjusts the separation amount by 5%
+    // - Does nothing if the direction doesn't match our current split direction
+    // Arguments:
+    // - direction: the direction to move our separator. If it's down or right,
+    //   we'll be increasing the size of the first of our children. Else, we'll be
+    //   decreasing the size of our first child.
+    // Return Value:
+    // - false if we couldn't resize this pane in the given direction, else true.
     bool ParentPane::_Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction)
     {
         if (!DirectionMatchesSplit(direction, _splitState))
@@ -429,6 +590,16 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    // Method Description:
+    // - Attempts to handle moving focus to one of our children. If our split
+    //   direction isn't appropriate for the move direction, then we'll return
+    //   false, to try and let our parent handle the move. If our child we'd move
+    //   focus to is already focused, we'll also return false, to again let our
+    //   parent try and handle the focus movement.
+    // Arguments:
+    // - direction: The direction to move the focus in.
+    // Return Value:
+    // - true if we handled this focus move request.
     bool ParentPane::_NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction)
     {
         if (!DirectionMatchesSplit(direction, _splitState))
@@ -456,6 +627,10 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    // Method Description:
+    // - Create a pair of animations when a new control enters this pane. This
+    //   should _ONLY_ be called in InitializeChildren, AFTER the first and second child panes
+    //   have been set up
     void ParentPane::_SetupEntranceAnimation()
     {
         // This will query if animations are enabled via the "Show animations in
@@ -578,6 +753,13 @@ namespace winrt::TerminalApp::implementation
         setupAnimation(secondSize, false);
     }
 
+    // Method Description:
+    // - Closes one of our children. In doing so, emit an event containing the
+    //   remaining child, so that whoever is listening (either our parent or
+    //   the hosting tab if we were the root) will replace us with the remaining child
+    // Arguments:
+    // - closeFirst: if true, the first child should be closed, and the second
+    //   should be preserved, and vice-versa for false.
     void ParentPane::_CloseChild(const bool closeFirst)
     {
         // The closed child must always be a leaf.
@@ -613,10 +795,11 @@ namespace winrt::TerminalApp::implementation
         // If any children of closed pane was previously active, we move the focus to the remaining child
         if (closedChild.GetActivePane())
         {
+            closedChild.ClearActive();
             const auto remainingFirstLeaf = remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>();
             remainingFirstLeaf.SetActive();
             // todo: this focus call doesn't seem to work?
-            remainingFirstLeaf.GetTerminalControl().Focus(FocusState::Programmatic);
+            //remainingFirstLeaf.GetTerminalControl().Focus(FocusState::Programmatic);
         }
 
         // Make sure to only fire off this event _after_ we have set the new active pane, because this event
@@ -795,6 +978,10 @@ namespace winrt::TerminalApp::implementation
         //}
     }
 
+    // Method Description:
+    // - Adds event handlers to our children
+    // - For child leaves, we handle their Closed and GotSplit events
+    // - For child parents, we handle their ChildClosed event
     void ParentPane::_SetupChildEventHandlers(const bool isFirstChild)
     {
         auto& child = isFirstChild ? _firstChild : _secondChild;
@@ -851,7 +1038,7 @@ namespace winrt::TerminalApp::implementation
 
     void ParentPane::_OnChildSplitOrCollapse(const bool isFirstChild, IPane newChild)
     {
-        // Unsubscribe from all the events of the parent child.
+        // Unsubscribe from all the events of the child.
         _RemoveAllChildEventHandlers(isFirstChild);
 
         (isFirstChild ? _firstChild : _secondChild) = newChild;
@@ -885,6 +1072,18 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Gets the size in pixels of each of our children, given the full size they
+    //   should fill. Since these children own their own separators (borders), this
+    //   size is their portion of our _entire_ size. If specified size is lower than
+    //   required then children will be of minimum size. Snaps first child to grid
+    //   but not the second.
+    // Arguments:
+    // - fullSize: the amount of space in pixels that should be filled by our
+    //   children and their separators. Can be arbitrarily low.
+    // Return Value:
+    // - a pair with the size of our first child and the size of our second child,
+    //   respectively.
     std::pair<float, float> ParentPane::_CalcChildrenSizes(const float fullSize) const
     {
         const auto widthOrHeight = _splitState == SplitState::Vertical;
@@ -897,6 +1096,23 @@ namespace winrt::TerminalApp::implementation
         };
     }
 
+    // Method Description:
+    // - Gets the size in pixels of each of our children, given the full size they should
+    //   fill. Each child is snapped to char grid as close as possible. If called multiple
+    //   times with fullSize argument growing, then both returned sizes are guaranteed to be
+    //   non-decreasing (it's a monotonically increasing function). This is important so that
+    //   user doesn't get any pane shrank when they actually expand the window or parent pane.
+    //   That is also required by the layout algorithm.
+    // Arguments:
+    // - widthOrHeight: if true, operates on width, otherwise on height.
+    // - fullSize: the amount of space in pixels that should be filled by our children and
+    //   their separator. Can be arbitrarily low.
+    // Return Value:
+    // - a structure holding the result of this calculation. The 'lower' field represents the
+    //   children sizes that would fit in the fullSize, but might (and usually do) not fill it
+    //   completely. The 'higher' field represents the size of the children if they slightly exceed
+    //   the fullSize, but are snapped. If the children can be snapped and also exactly match
+    //   the fullSize, then both this fields have the same value that represent this situation.
     ParentPane::SnapChildrenSizeResult ParentPane::_CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const
     {
         auto sizeTree = _CreateMinSizeTree(widthOrHeight);
@@ -923,6 +1139,17 @@ namespace winrt::TerminalApp::implementation
                  { sizeTree.firstChild->size, sizeTree.secondChild->size } };
     }
 
+    // Method Description:
+    // - Adjusts given dimension (width or height) so that all descendant terminals
+    //   align with their character grids as close as possible. Also makes sure to
+    //   fit in minimal sizes of the panes.
+    // Arguments:
+    // - widthOrHeight: if true operates on width, otherwise on height
+    // - dimension: a dimension (width or height) to be snapped
+    // Return Value:
+    // - pair of floats, where first value is the size snapped downward (not greater then
+    //   requested size) and second is the size snapped upward (not lower than requested size).
+    //   If requested size is already snapped, then both returned values equal this value.
     SnapSizeResult ParentPane::_CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
         if (_splitState == (widthOrHeight ? SplitState::Horizontal : SplitState::Vertical))
@@ -953,6 +1180,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Increases size of given LayoutSizeNode to match next possible 'snap'. In case of leaf
+    //   pane this means the next cell of the terminal. Otherwise it means that one of its children
+    //   advances (recursively). It expects the given node and its descendants to have either
+    //   already snapped or minimum size.
+    // Arguments:
+    // - widthOrHeight: if true operates on width, otherwise on height.
+    // - sizeNode: a layout size node that corresponds to this pane.
     void ParentPane::AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const
     {
         // We're a parent pane, so we have to advance dimension of our children panes. In
@@ -1110,6 +1345,13 @@ namespace winrt::TerminalApp::implementation
         sizeNode.isMinimumSize = false;
     }
 
+    // Method Description:
+    // - Builds a tree of LayoutSizeNode that matches the tree of panes. Each node
+    //   has minimum size that the corresponding pane can have.
+    // Arguments:
+    // - widthOrHeight: if true operates on width, otherwise on height
+    // Return Value:
+    // - Root node of built tree that matches this pane.
     ParentPane::LayoutSizeNode ParentPane::_CreateMinSizeTree(const bool widthOrHeight) const
     {
         const auto size = GetMinSize();
@@ -1138,6 +1380,15 @@ namespace winrt::TerminalApp::implementation
         return node;
     }
 
+    // Method Description:
+    // - Adjusts split position so that no child pane is smaller then its
+    //   minimum size
+    // Arguments:
+    // - widthOrHeight: if true, operates on width, otherwise on height.
+    // - requestedValue: split position value to be clamped
+    // - totalSize: size (width or height) of the parent pane
+    // Return Value:
+    // - split position (value in range <0.0, 1.0>)
     float ParentPane::_ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const
     {
         const auto firstMinSize = _firstChild.GetMinSize();
