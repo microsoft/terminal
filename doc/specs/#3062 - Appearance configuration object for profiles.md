@@ -1,8 +1,8 @@
 ---
-author: <Pankaj> <Bhojwani> <pabhojwa@microsoft.com>
-created on: <2020-11-20>
-last updated: <2020-12-21>
-issue id: <#8345>
+author: Pankaj Bhojwani, pabhojwa@microsoft.com
+created on: 2020-11-20
+last updated: 2021-2-5
+issue id: #8345
 ---
 
 # Appearance configuration objects for profiles
@@ -47,9 +47,9 @@ of further parameters can be discussed in the future and is out of scope for thi
 
 ### Inheritance
 
-The inheritance model can be thought of as an 'all-or-nothing' approach in the sense that the `unfocusedConfig` object
+The inheritance model can be thought of as an 'all-or-nothing' approach in the sense that the `unfocusedAppearance` object
 is considered as a *single* setting instead of an object with many settings. We have chosen this model because it is cleaner
-and easier to understand than the alternative, where each setting within an `unfocusedConfig` object has a parent from which
+and easier to understand than the alternative, where each setting within an `unfocusedAppearance` object has a parent from which
 it obtains its value.
 
 Note that when `TerminalApp` initializes a control, it creates a `TerminalSettings` object for that profile and passes the
@@ -59,7 +59,7 @@ put the relevant overrides in it, and pass that into the control as well. Thus, 
 in the unfocused config will be as follows:
 
 1. The unfocused config specified in the profile (or in globals/profile defaults)
-2. Overrides made by term control
+2. Overrides made by the terminal control
 3. The parent profile
 
 ## UI/UX Design
@@ -67,7 +67,7 @@ in the unfocused config will be as follows:
 Users will be able to add a new setting to their profiles that will look like this:
 
 ```
-"unfocusedConfig":
+"unfocusedAppearance":
 {
     "colorScheme": "Campbell",
     "cursorColor": "#888",
@@ -101,6 +101,9 @@ for any new setting we add so I would say that this is a reasonable cost for thi
 Should not affect compatibility.
 
 ### Performance, Power, and Efficiency
+
+Rapidly switching between many panes, causing several successive appearance changes in a short period of time, could
+potentially impact performance. However, regular/reasonable pane switching should not have a noticeable effect.
 
 ## Potential Issues
 
