@@ -1901,6 +1901,7 @@ pythonw
 qi
 QJ
 qo
+QOL
 QRSTU
 qsort
 queryable
