@@ -1157,7 +1157,7 @@ prompt the user for permission, but that's an acceptable user experience.
 This spec also has a follow-up spec which introduces further changes upon this
 original draft. Please also refer to:
 
-* November 2020: Windows Terminal Session Management
+* November 2020: Windows Terminal Window Management
 
 ## Resources
 
@@ -1183,4 +1183,4 @@ original draft. Please also refer to:
 [Tab Tear-out in the community toolkit]: https://github.com/windows-toolkit/Sample-TabView-TearOff
 [Quake mode scenarios]: https://github.com/microsoft/terminal/issues/653#issuecomment-661370107
 [`ISwapChainPanelNative2::SetSwapChainHandle`]: https://docs.microsoft.com/en-us/windows/win32/api/windows.ui.xaml.media.dxinterop/nf-windows-ui-xaml-media-dxinterop-iswapchainpanelnative2-setswapchainhandle
-[Elevation Quality of Life Improvements]: https://www.github.com/microsoft/terminal/blob/dev/migrie/s/1032-elevation-qol/doc/specs/%235000%20-%20Process%20Model%202.0/%231032%20-%20Elevation%20Quality%20of%20Life%20Improvements.md
+[Elevation Quality of Life Improvements]: https://www.github.com/microsoft/terminal/blob/main/doc/specs/%235000%20-%20Process%20Model%202.0/%231032%20-%20Elevation%20Quality%20of%20Life%20Improvements.md

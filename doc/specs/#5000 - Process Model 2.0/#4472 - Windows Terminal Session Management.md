@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-10-30
-last updated: 2020-12-10
+last updated: 2020-02-05
 issue id: #4472
 ---
 
@@ -192,8 +192,10 @@ an environment variable does seem to be the only reliable way to be confident
 where the window was created from. We could introduce another environment
 variable instead - `WT_WINDOW_ID`. That would allow us to shortcut the session
 ID lookup. However, I worry about exposing the window ID as an environment
-variable. If we do that, users will inevetably use that instead of the `wt -0`
-alias, which should take care of the work for them.
+variable. If we do that, users will inevitably use that instead of the `wt -0`
+alias, which should take care of the work for them. Additionally, `WT_WINDOW_ID`
+wouldn't update in the child processes as tabs are torn out of windows to create
+new windows.
 
 Both solutions are prone to the user changing the value of the variable to some
 garbage value. If they do that, this lookup will most certainly not work as
@@ -557,4 +559,4 @@ runtime.
 [Tab Tear-out in the community toolkit]: https://github.com/windows-toolkit/Sample-TabView-TearOff
 [Quake mode scenarios]: https://github.com/microsoft/terminal/issues/653#issuecomment-661370107
 [`ISwapChainPanelNative2::SetSwapChainHandle`]: https://docs.microsoft.com/en-us/windows/win32/api/windows.ui.xaml.media.dxinterop/nf-windows-ui-xaml-media-dxinterop-iswapchainpanelnative2-setswapchainhandle
-[Process Model 2.0 Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%235000%20-%20Process%20Model%202.0.md
+[Process Model 2.0 Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%235000%20-%20Process%20Model%202.0/%235000%20-%20Process%20Model%202.0.md
