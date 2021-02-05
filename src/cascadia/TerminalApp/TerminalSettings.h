@@ -17,7 +17,6 @@ Author(s):
 #include "TerminalSettings.g.h"
 #include "../TerminalSettingsModel/IInheritable.h"
 #include "../inc/cppwinrt_utils.h"
-#include "../../types/colorTable.cpp"
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
 

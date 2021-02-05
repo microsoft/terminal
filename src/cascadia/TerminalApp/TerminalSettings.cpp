@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "TerminalSettings.h"
+//#include "../../types/colorTable.cpp"
 
 #include "TerminalSettings.g.cpp"
 
@@ -251,6 +252,10 @@ namespace winrt::TerminalApp::implementation
         //    return span;
         //}
         //return campbellColorTable;
+        // issues:
+        // - converting span to array without brute force?
+        // - campbellColorTable conversion from color to uint32
+        // - including colortable.cpp causes errors
         return {};
     }
 
