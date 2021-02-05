@@ -59,18 +59,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto& newVal{ unbox_value<bool>(args.NewValue()) };
 
         // update visibility for reset button
-        if (auto resetButton{ obj.GetTemplateChild(L"ResetButton") })
+        if (const auto& resetButton{ obj.GetTemplateChild(L"ResetButton") })
         {
-            if (auto elem{ resetButton.try_as<UIElement>() })
+            if (const auto& elem{ resetButton.try_as<UIElement>() })
             {
                 elem.Visibility(newVal ? Visibility::Visible : Visibility::Collapsed);
             }
         }
 
         // update visibility for override message
-        if (auto overrideMsg{ obj.GetTemplateChild(L"OverrideMessage") })
+        if (const auto& overrideMsg{ obj.GetTemplateChild(L"OverrideMessage") })
         {
-            if (auto elem{ overrideMsg.try_as<UIElement>() })
+            if (const auto& elem{ overrideMsg.try_as<UIElement>() })
             {
                 elem.Visibility(newVal ? Visibility::Visible : Visibility::Collapsed);
             }
@@ -80,11 +80,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void SettingContainer::OnApplyTemplate()
     {
         // This message is only populated if `HasSettingValue` is true.
-        const auto overrideMsg{ _GenerateOverrideMessageText() };
+        const auto& overrideMsg{ _GenerateOverrideMessageText() };
 
-        if (auto child{ GetTemplateChild(L"ResetButton") })
+        if (const auto& child{ GetTemplateChild(L"ResetButton") })
         {
-            if (auto button{ child.try_as<Controls::Button>() })
+            if (const auto& button{ child.try_as<Controls::Button>() })
             {
                 // Apply click handler for the reset button.
                 // When clicked, we dispatch the bound ClearSettingValue event,
@@ -93,18 +93,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _ClearSettingValueHandlers(*this, nullptr);
 
                     // move the focus to the child control
-                    if (auto content{ Content() })
+                    if (const auto& content{ Content() })
                     {
-                        if (auto control{ content.try_as<Controls::Control>() })
+                        if (const auto& control{ content.try_as<Controls::Control>() })
                         {
                             control.Focus(FocusState::Programmatic);
                             return;
                         }
-                        else if (auto panel{ content.try_as<Controls::Panel>() })
+                        else if (const auto& panel{ content.try_as<Controls::Panel>() })
                         {
-                            for (auto panelChild : panel.Children())
+                            for (const auto& panelChild : panel.Children())
                             {
-                                if (auto panelControl{ panelChild.try_as<Controls::Control>() })
+                                if (const auto& panelControl{ panelChild.try_as<Controls::Control>() })
                                 {
                                     panelControl.Focus(FocusState::Programmatic);
                                     return;
@@ -126,9 +126,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        if (auto child{ GetTemplateChild(L"OverrideMessage") })
+        if (const auto& child{ GetTemplateChild(L"OverrideMessage") })
         {
-            if (auto tb{ child.try_as<Controls::TextBlock>() })
+            if (const auto& tb{ child.try_as<Controls::TextBlock>() })
             {
                 const auto overrideMsg{ _GenerateOverrideMessageText() };
                 if (!overrideMsg.empty())
@@ -148,9 +148,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        if (auto content{ Content() })
+        if (const auto& content{ Content() })
         {
-            if (auto obj{ content.try_as<DependencyObject>() })
+            if (const auto& obj{ content.try_as<DependencyObject>() })
             {
                 // apply header text as name (automation property)
                 if (const auto& header{ Header() })
