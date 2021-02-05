@@ -138,7 +138,7 @@ namespace Microsoft.Terminal.Wpf
 
             NativeMethods.TerminalSetTheme(this.terminal, theme, fontFamily, fontSize, (int)dpiScale.PixelsPerInchX);
 
-            if (!this.RenderSize.IsEmpty)
+            if (!this.RenderSize.IsEmpty && !this.TerminalControlSize.IsEmpty)
             {
                 this.Resize(this.TerminalControlSize);
             }

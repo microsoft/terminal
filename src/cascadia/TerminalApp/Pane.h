@@ -55,17 +55,19 @@ public:
                         const GUID& profile);
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
     void Relayout();
-    bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::Direction& direction);
-    bool NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::Direction& direction);
+    bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
+    bool NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
 
-    bool CanSplit(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType);
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                                                                  const float splitSize,
                                                                   const GUID& profile,
                                                                   const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
     float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
-    std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitState> PreCalculateAutoSplit(const std::shared_ptr<Pane> target, const winrt::Windows::Foundation::Size parentSize) const;
+    std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitState> PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
+                                                                                                 const winrt::Windows::Foundation::Size parentSize) const;
     std::optional<bool> PreCalculateCanSplit(const std::shared_ptr<Pane> target,
                                              winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                                             const float splitSize,
                                              const winrt::Windows::Foundation::Size availableSpace) const;
     void Shutdown();
     void Close();
@@ -75,9 +77,14 @@ public:
     void Maximize(std::shared_ptr<Pane> zoomedPane);
     void Restore(std::shared_ptr<Pane> zoomedPane);
 
+    std::optional<uint16_t> Id() noexcept;
+    void Id(uint16_t id) noexcept;
+    void FocusPane(const uint16_t id);
+
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
-    DECLARE_EVENT(PaneRaiseVisualBell, _PaneRaiseVisualBellHandlers, winrt::delegate<std::shared_ptr<Pane>>);
+    DECLARE_EVENT(LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
+    DECLARE_EVENT(PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);
 
 private:
     struct SnapSizeResult;
@@ -95,6 +102,8 @@ private:
     winrt::Microsoft::Terminal::Settings::Model::SplitState _splitState{ winrt::Microsoft::Terminal::Settings::Model::SplitState::None };
     float _desiredSplitPosition;
 
+    std::optional<uint16_t> _id;
+
     bool _lastActive{ false };
     std::optional<GUID> _profile{ std::nullopt };
     winrt::event_token _connectionStateChangedToken{ 0 };
@@ -103,6 +112,7 @@ private:
     winrt::event_token _warningBellToken{ 0 };
 
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
+    winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
 
     std::shared_mutex _createCloseLock{};
 
@@ -114,8 +124,8 @@ private:
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
 
-    bool _CanSplit(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType);
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                                                                   const float splitSize,
                                                                    const GUID& profile,
                                                                    const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
@@ -124,8 +134,8 @@ private:
     void _SetupEntranceAnimation();
     void _UpdateBorders();
 
-    bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::Direction& direction);
-    bool _NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::Direction& direction);
+    bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
+    bool _NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
 
     void _CloseChild(const bool closeFirst);
     winrt::fire_and_forget _CloseChildRoutine(const bool closeFirst);
@@ -136,6 +146,8 @@ private:
                                     winrt::Windows::Foundation::IInspectable const& e);
     void _ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                  winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+    void _ControlLostFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
+                                  winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
     std::pair<float, float> _CalcChildrenSizes(const float fullSize) const;
     SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;
@@ -156,15 +168,15 @@ private:
     // - This is used for pane resizing (which will need a pane separator
     //   that's perpendicular to the direction to be able to move the separator
     //   in that direction).
-    // - Additionally, it will be used for moving focus between panes, which
-    //   again happens _across_ a separator.
+    // - Also used for moving focus between panes, which again happens _across_ a separator.
     // Arguments:
     // - direction: The Direction to compare
     // - splitType: The winrt::TerminalApp::SplitState to compare
     // Return Value:
     // - true iff the direction is perpendicular to the splitType. False for
     //   winrt::TerminalApp::SplitState::None.
-    static constexpr bool DirectionMatchesSplit(const winrt::Microsoft::Terminal::Settings::Model::Direction& direction,
+    template<typename T>
+    static constexpr bool DirectionMatchesSplit(const T& direction,
                                                 const winrt::Microsoft::Terminal::Settings::Model::SplitState& splitType)
     {
         if (splitType == winrt::Microsoft::Terminal::Settings::Model::SplitState::None)
@@ -173,13 +185,13 @@ private:
         }
         else if (splitType == winrt::Microsoft::Terminal::Settings::Model::SplitState::Horizontal)
         {
-            return direction == winrt::Microsoft::Terminal::Settings::Model::Direction::Up ||
-                   direction == winrt::Microsoft::Terminal::Settings::Model::Direction::Down;
+            return direction == T::Up ||
+                   direction == T::Down;
         }
         else if (splitType == winrt::Microsoft::Terminal::Settings::Model::SplitState::Vertical)
         {
-            return direction == winrt::Microsoft::Terminal::Settings::Model::Direction::Left ||
-                   direction == winrt::Microsoft::Terminal::Settings::Model::Direction::Right;
+            return direction == T::Left ||
+                   direction == T::Right;
         }
         return false;
     }

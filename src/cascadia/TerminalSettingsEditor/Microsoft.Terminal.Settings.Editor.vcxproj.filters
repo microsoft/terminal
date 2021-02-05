@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Resources\en-US\Resources.resw" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="Utils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="Utils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="EnumEntry.idl" />
+    <Midl Include="Converters.idl">
+      <Filter>Converters</Filter>
+    </Midl>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="TerminalSettingsEditor.def" />
+    <None Include="packages.config" />
+    <None Include="PropertySheet.props" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="CommonResources.xaml" />
+    <Page Include="GlobalAppearance.xaml" />
+    <Page Include="ColorSchemes.xaml" />
+    <Page Include="Interaction.xaml" />
+    <Page Include="Launch.xaml" />
+    <Page Include="MainPage.xaml" />
+    <Page Include="Profiles.xaml" />
+    <Page Include="Rendering.xaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Converters">
+      <UniqueIdentifier>{00f725c8-41b4-40a8-995e-8ee2e49a4a4c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

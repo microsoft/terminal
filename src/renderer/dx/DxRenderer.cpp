@@ -87,7 +87,9 @@ DxEngine::DxEngine() :
     _swapChainDesc{ 0 },
     _swapChainFrameLatencyWaitableObject{ INVALID_HANDLE_VALUE },
     _recreateDeviceRequested{ false },
-    _retroTerminalEffects{ false },
+    _terminalEffectsEnabled{ false },
+    _retroTerminalEffect{ false },
+    _pixelShaderPath{},
     _forceFullRepaintRendering{ false },
     _softwareRendering{ false },
     _antialiasingMode{ D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE },
@@ -230,12 +232,104 @@ _CompileShader(
 }
 
 // Routine Description:
+// - Checks if terminal effects are enabled.
+// Arguments:
+// Return Value:
+// - True if terminal effects are enabled
+bool DxEngine::_HasTerminalEffects() const noexcept
+{
+    return _terminalEffectsEnabled && (_retroTerminalEffect || !_pixelShaderPath.empty());
+}
+
+// Routine Description:
+// - Toggles terminal effects off and on. If no terminal effect is configured has no effect
+// Arguments:
+// Return Value:
+// - Void
+void DxEngine::ToggleShaderEffects()
+{
+    _terminalEffectsEnabled = !_terminalEffectsEnabled;
+    LOG_IF_FAILED(InvalidateAll());
+}
+
+// Routine Description:
+// - Loads pixel shader source depending on _retroTerminalEffect and _pixelShaderPath
+// Arguments:
+// Return Value:
+// - Pixel shader source code
+std::string DxEngine::_LoadPixelShaderFile() const
+{
+    // If the user specified the new pixel shader, it has precedence
+    if (!_pixelShaderPath.empty())
+    {
+        try
+        {
+            wil::unique_hfile hFile{ CreateFileW(_pixelShaderPath.c_str(),
+                                                 GENERIC_READ,
+                                                 FILE_SHARE_READ,
+                                                 nullptr,
+                                                 OPEN_EXISTING,
+                                                 FILE_ATTRIBUTE_NORMAL,
+                                                 nullptr) };
+
+            THROW_LAST_ERROR_IF(!hFile); // This will be caught below.
+
+            // fileSize is in bytes
+            const auto fileSize = GetFileSize(hFile.get(), nullptr);
+            THROW_LAST_ERROR_IF(fileSize == INVALID_FILE_SIZE);
+
+            std::vector<char> utf8buffer;
+            utf8buffer.reserve(fileSize);
+
+            DWORD bytesRead = 0;
+            THROW_LAST_ERROR_IF(!ReadFile(hFile.get(), utf8buffer.data(), fileSize, &bytesRead, nullptr));
+
+            // convert buffer to UTF-8 string
+            std::string utf8string(utf8buffer.data(), fileSize);
+
+            return utf8string;
+        }
+        catch (...)
+        {
+            // If we ran into any problems during loading pixel shader, call to
+            // the warning callback to surface the file not found error
+            const auto exceptionHr = LOG_CAUGHT_EXCEPTION();
+            if (_pfnWarningCallback)
+            {
+                _pfnWarningCallback(exceptionHr);
+            }
+
+            return std::string{};
+        }
+    }
+    else if (_retroTerminalEffect)
+    {
+        return std::string{ retroPixelShaderString };
+    }
+
+    return std::string{};
+}
+
+// Routine Description:
 // - Setup D3D objects for doing shader things for terminal effects.
 // Arguments:
 // Return Value:
 // - HRESULT status.
 HRESULT DxEngine::_SetupTerminalEffects()
 {
+    _pixelShaderLoaded = false;
+
+    const auto pixelShaderSource = _LoadPixelShaderFile();
+    if (pixelShaderSource.empty())
+    {
+        // There's no shader to compile. This might be due to failing to load,
+        // or because there's just no shader enabled at all.
+        // Turn the effects off for now.
+        _terminalEffectsEnabled = false;
+
+        return S_FALSE;
+    }
+
     ::Microsoft::WRL::ComPtr<ID3D11Texture2D> swapBuffer;
     RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&swapBuffer));
 
@@ -260,12 +354,26 @@ HRESULT DxEngine::_SetupTerminalEffects()
 
     // Prepare shaders.
     auto vertexBlob = _CompileShader(screenVertexShaderString, "vs_5_0");
-    auto pixelBlob = _CompileShader(screenPixelShaderString, "ps_5_0");
-    // TODO:GH#3928 move the shader files to to hlsl files and package their
-    // build output to UWP app and load with these.
-    // ::Microsoft::WRL::ComPtr<ID3DBlob> vertexBlob, pixelBlob;
-    // RETURN_IF_FAILED(D3DReadFileToBlob(L"ScreenVertexShader.cso", &vertexBlob));
-    // RETURN_IF_FAILED(D3DReadFileToBlob(L"ScreenPixelShader.cso", &pixelBlob));
+    Microsoft::WRL::ComPtr<ID3DBlob> pixelBlob;
+    // As the pixel shader source is user provided it's possible there's a problem with it
+    //  so load it inside a try catch, on any error log and fallback on the error pixel shader
+    //  If even the error pixel shader fails to load rely on standard exception handling
+    try
+    {
+        pixelBlob = _CompileShader(pixelShaderSource, "ps_5_0");
+    }
+    catch (...)
+    {
+        // Call to the warning callback to surface the shader compile error
+        const auto exceptionHr = LOG_CAUGHT_EXCEPTION();
+        if (_pfnWarningCallback)
+        {
+            // If this fails, it'll return E_FAIL, which is terribly
+            // uninformative. Instead, raise something more useful.
+            _pfnWarningCallback(D2DERR_SHADER_COMPILE_FAILED);
+        }
+        return exceptionHr;
+    }
 
     RETURN_IF_FAILED(_d3dDevice->CreateVertexShader(
         vertexBlob->GetBufferPointer(),
@@ -303,6 +411,8 @@ HRESULT DxEngine::_SetupTerminalEffects()
     pixelShaderSettingsBufferDesc.ByteWidth = sizeof(_pixelShaderSettings);
     pixelShaderSettingsBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
+    _shaderStartTime = std::chrono::steady_clock::now();
+
     _ComputePixelShaderSettings();
 
     D3D11_SUBRESOURCE_DATA pixelShaderSettingsInitData{};
@@ -329,23 +439,46 @@ HRESULT DxEngine::_SetupTerminalEffects()
     // Create the texture sampler state.
     RETURN_IF_FAILED(_d3dDevice->CreateSamplerState(&samplerDesc, &_samplerState));
 
+    _pixelShaderLoaded = true;
     return S_OK;
 }
 
 // Routine Description:
 // - Puts the correct values in _pixelShaderSettings, so the struct can be
-//   passed the GPU.
+//   passed the GPU and updates the GPU resource.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
 void DxEngine::_ComputePixelShaderSettings() noexcept
 {
-    // Retro scan lines alternate every pixel row at 100% scaling.
-    _pixelShaderSettings.ScaledScanLinePeriod = _scale * 1.0f;
+    if (_HasTerminalEffects() && _d3dDeviceContext && _pixelShaderSettingsBuffer)
+    {
+        try
+        {
+            // Set the time (seconds since the shader was loaded)
+            _pixelShaderSettings.Time = std::chrono::duration_cast<std::chrono::duration<float>>(std::chrono::steady_clock::now() - _shaderStartTime).count();
 
-    // Gaussian distribution sigma used for blurring.
-    _pixelShaderSettings.ScaledGaussianSigma = _scale * 2.0f;
+            // Set the UI Scale
+            _pixelShaderSettings.Scale = _scale;
+
+            // Set the display resolution
+            const float w = 1.0f * _displaySizePixels.width<UINT>();
+            const float h = 1.0f * _displaySizePixels.height<UINT>();
+            _pixelShaderSettings.Resolution = XMFLOAT2{ w, h };
+
+            // Set the background
+            DirectX::XMFLOAT4 background{};
+            background.x = _backgroundColor.r;
+            background.y = _backgroundColor.g;
+            background.z = _backgroundColor.b;
+            background.w = _backgroundColor.a;
+            _pixelShaderSettings.Background = background;
+
+            _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, nullptr, &_pixelShaderSettings, 0, 0);
+        }
+        CATCH_LOG();
+    }
 }
 
 // Routine Description;
@@ -521,13 +654,13 @@ try
             }
         }
 
-        if (_retroTerminalEffects)
+        if (_HasTerminalEffects())
         {
             const HRESULT hr = _SetupTerminalEffects();
             if (FAILED(hr))
             {
-                _retroTerminalEffects = false;
                 LOG_HR_MSG(hr, "Failed to setup terminal effects. Disabling.");
+                _terminalEffectsEnabled = false;
             }
         }
 
@@ -559,6 +692,8 @@ try
         }
         CATCH_LOG(); // A failure in the notification function isn't a failure to prepare, so just log it and go on.
     }
+
+    _recreateDeviceRequested = false;
 
     return S_OK;
 }
@@ -675,7 +810,15 @@ void DxEngine::_ReleaseDeviceResources() noexcept
     {
         _haveDeviceResources = false;
 
+        // Destroy Terminal Effect resources
+        _renderTargetView.Reset();
+        _vertexShader.Reset();
+        _pixelShader.Reset();
+        _vertexLayout.Reset();
+        _screenQuadVertexBuffer.Reset();
         _pixelShaderSettingsBuffer.Reset();
+        _samplerState.Reset();
+        _framebufferCapture.Reset();
 
         _d2dBrushForeground.Reset();
         _d2dBrushBackground.Reset();
@@ -802,17 +945,38 @@ void DxEngine::SetCallback(std::function<void()> pfn)
     _pfn = pfn;
 }
 
-bool DxEngine::GetRetroTerminalEffects() const noexcept
+void DxEngine::SetWarningCallback(std::function<void(const HRESULT)> pfn)
 {
-    return _retroTerminalEffects;
+    _pfnWarningCallback = pfn;
 }
 
-void DxEngine::SetRetroTerminalEffects(bool enable) noexcept
+bool DxEngine::GetRetroTerminalEffect() const noexcept
+{
+    return _retroTerminalEffect;
+}
+
+void DxEngine::SetRetroTerminalEffect(bool enable) noexcept
 try
 {
-    if (_retroTerminalEffects != enable)
+    if (_retroTerminalEffect != enable)
     {
-        _retroTerminalEffects = enable;
+        // Enable shader effects if the path isn't empty. Otherwise leave it untouched.
+        _terminalEffectsEnabled = enable ? true : _terminalEffectsEnabled;
+        _retroTerminalEffect = enable;
+        _recreateDeviceRequested = true;
+        LOG_IF_FAILED(InvalidateAll());
+    }
+}
+CATCH_LOG()
+
+void DxEngine::SetPixelShaderPath(std::wstring_view value) noexcept
+try
+{
+    if (_pixelShaderPath != value)
+    {
+        // Enable shader effects if the path isn't empty. Otherwise leave it untouched.
+        _terminalEffectsEnabled = value.empty() ? _terminalEffectsEnabled : true;
+        _pixelShaderPath = { value };
         _recreateDeviceRequested = true;
         LOG_IF_FAILED(InvalidateAll());
     }
@@ -1085,14 +1249,9 @@ try
 {
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
 
-    // If someone explicitly requested differential rendering off, then we need to invalidate everything
+    // If full repaints are needed then we need to invalidate everything
     // so the entire frame is repainted.
-    //
-    // If retro terminal effects are on, we must invalidate everything for them to draw correctly.
-    // Yes, this will further impact the performance of retro terminal effects.
-    // But we're talking about running the entire display pipeline through a shader for
-    // cosmetic effect, so performance isn't likely the top concern with this feature.
-    if (_forceFullRepaintRendering || _retroTerminalEffects)
+    if (_FullRepaintNeeded())
     {
         _invalidMap.set_all();
     }
@@ -1118,7 +1277,6 @@ try
         if (!_haveDeviceResources || _recreateDeviceRequested)
         {
             RETURN_IF_FAILED(_CreateDeviceResources(true));
-            _recreateDeviceRequested = false;
         }
         else if (_displaySizePixels != clientSize || _prevScale != _scale)
         {
@@ -1312,12 +1470,12 @@ void DxEngine::WaitUntilCanRender() noexcept
 {
     if (_presentReady)
     {
-        if (_retroTerminalEffects)
+        if (_HasTerminalEffects() && _pixelShaderLoaded)
         {
             const HRESULT hr2 = _PaintTerminalEffects();
             if (FAILED(hr2))
             {
-                _retroTerminalEffects = false;
+                _pixelShaderLoaded = false;
                 LOG_HR_MSG(hr2, "Failed to paint terminal effects. Disabling.");
             }
         }
@@ -1378,10 +1536,15 @@ void DxEngine::WaitUntilCanRender() noexcept
                 }
             }
 
-            // Finally copy the front image (being presented now) onto the backing buffer
-            // (where we are about to draw the next frame) so we can draw only the differences
-            // next frame.
-            RETURN_IF_FAILED(_CopyFrontToBack());
+            // If we are doing full repaints we don't need to copy front buffer to back buffer
+            if (!_FullRepaintNeeded())
+            {
+                // Finally copy the front image (being presented now) onto the backing buffer
+                // (where we are about to draw the next frame) so we can draw only the differences
+                // next frame.
+                RETURN_IF_FAILED(_CopyFrontToBack());
+            }
+
             _presentReady = false;
 
             _presentDirty.clear();
@@ -1516,13 +1679,13 @@ try
     // offset by half the stroke width. For the start coordinate we add half
     // the stroke width, and for the end coordinate we subtract half the width.
 
-    if (lines & (GridLines::Left | GridLines::Right))
+    if (WI_IsAnyFlagSet(lines, (GridLines::Left | GridLines::Right)))
     {
         const auto halfGridlineWidth = _lineMetrics.gridlineWidth / 2.0f;
         const auto startY = target.y + halfGridlineWidth;
         const auto endY = target.y + font.height - halfGridlineWidth;
 
-        if (lines & GridLines::Left)
+        if (WI_IsFlagSet(lines, GridLines::Left))
         {
             auto x = target.x + halfGridlineWidth;
             for (size_t i = 0; i < cchLine; i++, x += font.width)
@@ -1531,7 +1694,7 @@ try
             }
         }
 
-        if (lines & GridLines::Right)
+        if (WI_IsFlagSet(lines, GridLines::Right))
         {
             auto x = target.x + font.width - halfGridlineWidth;
             for (size_t i = 0; i < cchLine; i++, x += font.width)
@@ -1541,19 +1704,19 @@ try
         }
     }
 
-    if (lines & (GridLines::Top | GridLines::Bottom))
+    if (WI_IsAnyFlagSet(lines, GridLines::Top | GridLines::Bottom))
     {
         const auto halfGridlineWidth = _lineMetrics.gridlineWidth / 2.0f;
         const auto startX = target.x + halfGridlineWidth;
         const auto endX = target.x + fullRunWidth - halfGridlineWidth;
 
-        if (lines & GridLines::Top)
+        if (WI_IsFlagSet(lines, GridLines::Top))
         {
             const auto y = target.y + halfGridlineWidth;
             DrawLine(startX, y, endX, y, _lineMetrics.gridlineWidth);
         }
 
-        if (lines & GridLines::Bottom)
+        if (WI_IsFlagSet(lines, GridLines::Bottom))
         {
             const auto y = target.y + font.height - halfGridlineWidth;
             DrawLine(startX, y, endX, y, _lineMetrics.gridlineWidth);
@@ -1563,24 +1726,24 @@ try
     // In the case of the underline and strikethrough offsets, the stroke width
     // is already accounted for, so they don't require further adjustments.
 
-    if (lines & (GridLines::Underline | GridLines::DoubleUnderline | GridLines::HyperlinkUnderline))
+    if (WI_IsAnyFlagSet(lines, GridLines::Underline | GridLines::DoubleUnderline | GridLines::HyperlinkUnderline))
     {
         const auto halfUnderlineWidth = _lineMetrics.underlineWidth / 2.0f;
         const auto startX = target.x + halfUnderlineWidth;
         const auto endX = target.x + fullRunWidth - halfUnderlineWidth;
         const auto y = target.y + _lineMetrics.underlineOffset;
 
-        if (lines & GridLines::Underline)
+        if (WI_IsFlagSet(lines, GridLines::Underline))
         {
             DrawLine(startX, y, endX, y, _lineMetrics.underlineWidth);
         }
 
-        if (lines & GridLines::HyperlinkUnderline)
+        if (WI_IsFlagSet(lines, GridLines::HyperlinkUnderline))
         {
             DrawHyperlinkLine(startX, y, endX, y, _lineMetrics.underlineWidth);
         }
 
-        if (lines & GridLines::DoubleUnderline)
+        if (WI_IsFlagSet(lines, GridLines::DoubleUnderline))
         {
             DrawLine(startX, y, endX, y, _lineMetrics.underlineWidth);
             const auto y2 = target.y + _lineMetrics.underlineOffset2;
@@ -1588,7 +1751,7 @@ try
         }
     }
 
-    if (lines & GridLines::Strikethrough)
+    if (WI_IsFlagSet(lines, GridLines::Strikethrough))
     {
         const auto halfStrikethroughWidth = _lineMetrics.strikethroughWidth / 2.0f;
         const auto startX = target.x + halfStrikethroughWidth;
@@ -1687,6 +1850,18 @@ try
 }
 CATCH_RETURN()
 
+[[nodiscard]] bool DxEngine::_FullRepaintNeeded() const noexcept
+{
+    // If someone explicitly requested differential rendering off, then we need to invalidate everything
+    // so the entire frame is repainted.
+    //
+    // If terminal effects are on, we must invalidate everything for them to draw correctly.
+    // Yes, this will further impact the performance of terminal effects.
+    // But we're talking about running the entire display pipeline through a shader for
+    // cosmetic effect, so performance isn't likely the top concern with this feature.
+    return _forceFullRepaintRendering || _HasTerminalEffects();
+}
+
 // Routine Description:
 // - Updates the default brush colors used for drawing
 // Arguments:
@@ -1735,6 +1910,7 @@ CATCH_RETURN()
 
     // If we have a drawing context, it may be choosing its antialiasing based
     // on the colors. Update it if it exists.
+    // Also record whether we need to render the text with an italic font.
     // We only need to do this here because this is called all the time on painting frames
     // and will update it in a timely fashion. Changing the AA mode or opacity do affect
     // it, but we will always hit updating the drawing brushes so we don't
@@ -1742,12 +1918,16 @@ CATCH_RETURN()
     if (_drawingContext)
     {
         _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
+        _drawingContext->useItalicFont = textAttributes.IsItalic();
     }
 
     if (textAttributes.IsHyperlink())
     {
         _hyperlinkStrokeStyle = (textAttributes.GetHyperlinkId() == _hyperlinkHoveredId) ? _strokeStyle : _dashStrokeStyle;
     }
+
+    // Update pixel shader settings as background color might have changed
+    _ComputePixelShaderSettings();
 
     return S_OK;
 }
@@ -1766,8 +1946,10 @@ try
                                       fiFontInfo,
                                       _dpi,
                                       _dwriteTextFormat,
+                                      _dwriteTextFormatItalic,
                                       _dwriteTextAnalyzer,
                                       _dwriteFontFace,
+                                      _dwriteFontFaceItalic,
                                       _lineMetrics));
 
     _glyphCell = fiFontInfo.GetSize();
@@ -1775,8 +1957,15 @@ try
     // Calculate and cache the box effect for the base font. Scale is 1.0f because the base font is exactly the scale we want already.
     RETURN_IF_FAILED(CustomTextLayout::s_CalculateBoxEffect(_dwriteTextFormat.Get(), _glyphCell.width(), _dwriteFontFace.Get(), 1.0f, &_boxDrawingEffect));
 
-    // Prepare the text layout
-    _customLayout = WRL::Make<CustomTextLayout>(_dwriteFactory.Get(), _dwriteTextAnalyzer.Get(), _dwriteTextFormat.Get(), _dwriteFontFace.Get(), _glyphCell.width(), _boxDrawingEffect.Get());
+    // Prepare the text layout.
+    _customLayout = WRL::Make<CustomTextLayout>(_dwriteFactory.Get(),
+                                                _dwriteTextAnalyzer.Get(),
+                                                _dwriteTextFormat.Get(),
+                                                _dwriteTextFormatItalic.Get(),
+                                                _dwriteFontFace.Get(),
+                                                _dwriteFontFaceItalic.Get(),
+                                                _glyphCell.width(),
+                                                _boxDrawingEffect.Get());
 
     return S_OK;
 }
@@ -1813,15 +2002,8 @@ CATCH_RETURN();
 
     RETURN_IF_FAILED(InvalidateAll());
 
-    if (_retroTerminalEffects && _d3dDeviceContext && _pixelShaderSettingsBuffer)
-    {
-        _ComputePixelShaderSettings();
-        try
-        {
-            _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, nullptr, &_pixelShaderSettings, 0, 0);
-        }
-        CATCH_RETURN();
-    }
+    // Update pixel shader settings as scale might have changed
+    _ComputePixelShaderSettings();
 
     return S_OK;
 }
@@ -1863,16 +2045,20 @@ float DxEngine::GetScaling() const noexcept
                                                 int const iDpi) noexcept
 {
     Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
+    Microsoft::WRL::ComPtr<IDWriteTextFormat> formatItalic;
     Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> analyzer;
     Microsoft::WRL::ComPtr<IDWriteFontFace1> face;
+    Microsoft::WRL::ComPtr<IDWriteFontFace1> faceItalic;
     LineMetrics lineMetrics;
 
     return _GetProposedFont(pfiFontInfoDesired,
                             pfiFontInfo,
                             iDpi,
                             format,
+                            formatItalic,
                             analyzer,
                             face,
+                            faceItalic,
                             lineMetrics);
 }
 
@@ -2141,8 +2327,10 @@ CATCH_RETURN();
                                                  FontInfo& actual,
                                                  const int dpi,
                                                  Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
+                                                 Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormatItalic,
                                                  Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
                                                  Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace,
+                                                 Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFaceItalic,
                                                  LineMetrics& lineMetrics) const noexcept
 {
     try
@@ -2277,11 +2465,33 @@ CATCH_RETURN();
 
         THROW_IF_FAILED(format.As(&textFormat));
 
+        // We also need to create an italic variant of the font face and text
+        // format, based on the same parameters, but using an italic style.
+        std::wstring fontNameItalic = fontName;
+        DWRITE_FONT_WEIGHT weightItalic = weight;
+        DWRITE_FONT_STYLE styleItalic = DWRITE_FONT_STYLE_ITALIC;
+        DWRITE_FONT_STRETCH stretchItalic = stretch;
+
+        const auto faceItalic = _ResolveFontFaceWithFallback(fontNameItalic, weightItalic, stretchItalic, styleItalic, fontLocaleName);
+
+        Microsoft::WRL::ComPtr<IDWriteTextFormat> formatItalic;
+        THROW_IF_FAILED(_dwriteFactory->CreateTextFormat(fontNameItalic.data(),
+                                                         nullptr,
+                                                         weightItalic,
+                                                         styleItalic,
+                                                         stretchItalic,
+                                                         fontSize,
+                                                         localeName.data(),
+                                                         &formatItalic));
+
+        THROW_IF_FAILED(formatItalic.As(&textFormatItalic));
+
         Microsoft::WRL::ComPtr<IDWriteTextAnalyzer> analyzer;
         THROW_IF_FAILED(_dwriteFactory->CreateTextAnalyzer(&analyzer));
         THROW_IF_FAILED(analyzer.As(&textAnalyzer));
 
         fontFace = face;
+        fontFaceItalic = faceItalic;
 
         THROW_IF_FAILED(textFormat->SetLineSpacing(lineSpacing.method, lineSpacing.height, lineSpacing.baseline));
         THROW_IF_FAILED(textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR));

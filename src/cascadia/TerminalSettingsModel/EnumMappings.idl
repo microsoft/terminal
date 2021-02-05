@@ -1,0 +1,26 @@
+// Copyright (c) Microsoft Corporation
+// Licensed under the MIT license.
+
+import "GlobalAppSettings.idl";
+import "Profile.idl";
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    [default_interface] runtimeclass EnumMappings {
+        // Global Settings
+        static Windows.Foundation.Collections.IMap<String, Windows.UI.Xaml.ElementTheme> ElementTheme { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.UI.Xaml.Controls.TabViewWidthMode> TabViewWidthMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.LaunchMode> LaunchMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.TabSwitcherMode> TabSwitcherMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.TerminalControl.CopyFormat> CopyFormat { get; };
+
+        // Profile Settings
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.CloseOnExitMode> CloseOnExitMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.TerminalControl.ScrollbarState> ScrollbarState { get; };
+        static Windows.Foundation.Collections.IMap<String, Windows.UI.Xaml.Media.Stretch> BackgroundImageStretchMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.TerminalControl.TextAntialiasingMode> TextAntialiasingMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.TerminalControl.CursorStyle> CursorStyle { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.BellStyle> BellStyle { get; };
+        static Windows.Foundation.Collections.IMap<String, UInt16> FontWeight { get; };
+    }
+}

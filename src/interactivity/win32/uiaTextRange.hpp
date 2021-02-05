@@ -17,7 +17,7 @@ Author(s):
 #pragma once
 
 #include "precomp.h"
-#include "..\types\UiaTextRangeBase.hpp"
+#include "../types/UiaTextRangeBase.hpp"
 
 namespace Microsoft::Console::Interactivity::Win32
 {

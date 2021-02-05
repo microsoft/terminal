@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-07-31
-last updated: 2020-12-02
+last updated: 2021-02-05
 issue id: #5000
 ---
 
@@ -10,7 +10,7 @@ issue id: #5000
 ## Abstract
 
 The Windows Terminal currently exists as a single process per window. It has one
-connection per terminal pan, which could be an additional conpty process and
+connection per terminal pane, which could be an additional conpty process and
 associated client processes. This model has proven effective for the simple
 windowing we've done so far. However, this single process model will not be
 enough for more complex scenarios, like dragging tabs into other windows.
@@ -166,11 +166,11 @@ implementation), but also enables using these types _across process boundaries_.
 
 Typically, these classes are given a unique GUID for the class. A process that
 wants to implement one of these out-of-proc WinRT objects can register with the
-system to say "I make `MyClass`'s, and their GUID is `{foo}`". these are called
+system to say "I make `MyClass`'s, and their GUID is `{foo}`". These are called
 WinRT _servers_. Then, consumers (_clients_) of that class can ask the system
 "I'd like to instantiate a `{foo}` please", which will cause the server to
 create a new instance of that object (in the server process), and the client
-will be given a winrt object which can interact with the classes WinRT
+will be given a WinRT object which can interact with the classes WinRT
 projection.
 
 A server can register the types it produces with `CoRegisterClassObject`, like so:
@@ -207,11 +207,13 @@ Now that we have a WinRT object that the content process hosts, we can have the
 window and content process interact using that interface. The next important
 thing to communicate between these processes is the swapchain. The swapchain
 will need to be created by the content process. We also need to be able to
-communicate the `HANDLE` to that swapchain out to the window process. The window process needs to be able to attach that swapchain to the `SwapChainPanel` in the window.
+communicate the `HANDLE` to that swapchain out to the window process. The window
+process needs to be able to attach that swapchain to the `SwapChainPanel` in the
+window.
 
 This is tricky, because WinRT does not natively expose a `HANDLE` type. That
 would allow us to easily pass the `HANDLE` between these processes. Instead
-we'll need to manually cast the `HANDLE` to `uint64_t` at the winRT boundary,
+we'll need to manually cast the `HANDLE` to `uint64_t` at the WinRT boundary,
 and cast it back to a `HANDLE` when we want to use it.
 
 Instead, the window will always need to be the one responsible for calling
@@ -229,6 +231,13 @@ SwapChainPanel to use the same swapchain.
 
 This will allow the content process to draw to the swapchain, and the window
 process to render that same swapchain.
+
+> _author's note_: There's some internal work that's going on in parallel that
+> will make this `DUplicateHandle` business more structured. Unfortunately, that
+> work isn't public quite yet. It should be noted that in the version of this we
+> end up shipping, we'll probably need a split COM & WinRT interface between the
+> window and content processes. The COM interface will handle the passing of the
+> swapchain handle, and the WinRT interface will do everything else.
 
 #### Scenario: Tab Tear-off and Reattach
 
@@ -251,7 +260,7 @@ process is rendering the content process's swapchain.
 
 When a new window is created from a torn-out tab in this manner, we will want to
 ensure that the created window maintains the same maximized state as the origin
-window. If the user tries to tera out a tab from a maximized window, the window
+window. If the user tries to tear out a tab from a maximized window, the window
 we create should _also_ be maximized.
 
 Similar to dragging a tab from one window to another window, we can also detect
@@ -289,7 +298,7 @@ experts that could back up a technical solution.
 Instead of supporting mixed elevation in a single window, we'll introduce a
 number of new properties to profiles and various actions, to improve the user
 experience of running elevated instances. These are detailed in the spec at
-[Elevation QOL Improvements].
+[Elevation Quality of Life Improvements].
 
 Some things we considered during this investigation:
 
@@ -303,7 +312,7 @@ Some things we considered during this investigation:
   - However, it is unfortunately not possible with COM to have an elevated
     client attach to an unelevated server that's registered at runtime. Even in
     a packaged environment, the OS will reject the attempt to `CoCreateInstance`
-    the content process object. this will prevent elevated windows from
+    the content process object. This will prevent elevated windows from
     re-connecting to unelevated client processes.
   - We could theoretically build an RPC tunnel between content and window
     processes, and use the RPC connection to marshal the content process to the
@@ -327,7 +336,7 @@ With the current design, it's easy to connect many content processes to a window
 process, and move those content processes easily between windows. However, we
 want to make sure that it's also possible to communicate between these
 processes. What if we want to have only a single WT instance, so that whenever
-Wt is run, it creates a tab in the existing window? What if you want to run a
+WT is run, it creates a tab in the existing window? What if you want to run a
 commandline in a given WT window?
 
 In addition to the concept of Window and Content Processes, we'll also be
@@ -387,6 +396,11 @@ one?"
 
 #### Scenario: Open new tabs in most recently used window
 
+> 👉 **Note**: This scenario is covered in depth in the spec titled "Windows
+> Terminal Session Management". This section is intended to be an overview of
+> the scenario. It should help show how window management fits in the larger
+> picture of the other process model changes.
+
 A common feature of many browsers is that when a web URL is clicked somewhere,
 the web page is opened as a new tab in the most recently used window of the
 browser. This functionality is often referred to as "glomming", as the new tab
@@ -413,49 +427,15 @@ it'll seem as if the tab just opened in the most recent window.
 
 Users should certainly be able to specify if they want new instances to glom
 onto the MRU window or not. You could imagine that currently, we default to the
-hypothetical value `"glomToLastWindow": false`, meaning that each new wt gets
-it's own new window.
-
-#### Scenario: Single Instance Mode
-
-"Single Instance Mode" is a scenario in which there is only ever one single WT
-window. When Single Instance Mode is active, and the user runs a new `wt.exe`
-commandline, it will always end up running in the existing window, if there is
-one.
-
-In "Single Instance Mode", the monarch _is_ the single instance. When `wt` is
-run, and it determines that it is not the monarch, it'll ask the monarch if it's
-in single instance mode. If it is, then the peasant that's starting up will
-instead pass it's commandline arguments to the monarch process, and let the
-monarch handle them, then exit. In single instance mode the window will still be
-composed from a combination of a window process and multiple different content
-processes, just the same as it would be outside single instance mode.
-
-So, this will make it seem like new starting a new `wt.exe` will just create a
-new tab in the existing window. There are some tricky scenarios involving single
-instance mode. Consider if If someone does `wt -d .` in explorer. For clarity,
-let's label the existing window WT[1], and the second `wt.exe` process WT[2].
-
-An example of this scenario is given in the following diagram:
-
-![single-instance-mode-cwd](single-instance-mode-cwd.png)
-
-In this scenario, we'd want the new tab to be spawned in the current working
-directory of WT[2], not WT[1]. So when WT[1] is about to run the commands that
-were passed to WT[2], WT[1] will need to:
-
-* First, stash it's own CWD
-* Change to the CWD of WT[2]
-* Run the commands from WT[2]
-* Then return to it's original CWD.
-
-One could imagine that single instance mode is the combination of two properties:
-* The user wants new invocation of `wt` to "glom" onto the most recently used
-  window (the hypothetical `"glomToLastWindow": true` setting)
-* The user wants to prevent tab tear-out, or the ability for a `newWindow`
-  action to work. (hypothetically `"allowTabTearOut": false`)
+value `"windowingBehavior": "useNew"`, meaning that each new wt gets its own
+new window.
 
 #### Scenario: Run `wt` in the current window
+
+> 👉 **Note**: This scenario is covered in depth in the spec titled "Windows
+> Terminal Session Management". This section is intended to be an overview of
+> the scenario. It should help show how window management fits in the larger
+> picture of the other process model changes.
 
 One often requested scenario is the ability to run a `wt.exe` commandline in the
 current window, as opposed to always creating a new window. With the ability to
@@ -464,8 +444,7 @@ extension of this scenario being "run a `wt` commandline in _any_ given WT
 window".
 
 This spec by no means attempts to fully document how this functionality should
-work. This scenarios deserves it's own spec to discuss various different naming
-
+work. This scenario deserves its own spec to discuss various different naming
 schemes for the commandline parameters. The following is given as an example of
 how these arguments _might_ be authored and implemented to satisfy some of these
 scenarios.
@@ -475,53 +454,49 @@ monarch, then running a command in a given window with ID `N` should be as easy
 as something like:
 
 ```sh
-wt.exe --session N new-tab ; split-pane
+wt.exe --window N new-tab ; split-pane
 ```
 
-(or for shorthand, `wt -s N new-tab ; split-pane`).
+(or for shorthand, `wt -w N new-tab ; split-pane`).
 
 This would create a new peasant, who could then ask the monarch if there is a
 peasant with ID `N`. If there is, then the peasant can connect to that other
 peasant, dispatch the current commandline to that other peasant, and exit,
 before ever creating a window. If this commandline instead creates a new monarch
 process, then there was _no_ other monarch, and so there must logically not be
-any other existing WT windows, and the `--session N` argument could be safely
+any other existing WT windows, and the `--window N` argument could be safely
 ignored, and the command run in the current window.
 
 We should reserve the session id `0` to always refer to "The current window", if
-there is one. So `wt -s 0 new-tab` will run `new-tab` in the current window (if
+there is one. So `wt -w 0 new-tab` will run `new-tab` in the current window (if
 we're being run from WT).
 
-If `wt -s 0 <commands>` is run _outside_ a WT instance, it could attempt to glom
+If `wt -w 0 <commands>` is run _outside_ a WT instance, it could attempt to glom
 onto _the most recent WT window_ instead. This seems more logical than something
-like `wt --session last` or some other special value indicating "run this in the
+like `wt --window last` or some other special value indicating "run this in the
 MRU window".
 
 That might be a simple, but **wrong**, implementation for "the current window".
 If the peasants always raise an event when their window is focused, and the
 monarch keeps track of the MRU order for peasants, then one could naively assume
-that the execution of `wt -s 0 <commands>` would always return the window the
+that the execution of `wt -w 0 <commands>` would always return the window the
 user was typing in, the current one. However, if someone were to do something
-like `sleep 10 ; wt -s 0 <commands>`, then the user could easily focus another
+like `sleep 10 ; wt -w 0 <commands>`, then the user could easily focus another
 WT window during the sleep, which would cause the MRU window to not be the same
 as the window executing the command.
 
-I'm not sure that there is a better solution for the `-s 0` scenario other than
+I'm not sure that there is a better solution for the `-w 0` scenario other than
 attempting to use the `WT_SESSION` environment variable. If a `wt.exe` process is
-spawned and that's in it's environment variables, it could try and ask the
+spawned and that's in its environment variables, it could try and ask the
 monarch for the peasant who's hosting the session corresponding to that GUID.
 This is more of a theoretical solution than anything else.
-
-In Single-Instance mode, running `wt -s 0` outside a WT window will still cause
-the commandline to glom to the existing single terminal instance, if there is
-one.
 
 #### Scenario: Quake Mode
 
 "Quake mode" has a variety of different scenarios<sup>[[1]](#footnote-1)</sup>
-that have all been requested, more than what fits cleanly into this spec.
-However, there's one key aspect of quake mode that is specifically relevant and
-worth mentioning here.
+that have all been requested, more than what fits cleanly into this spec. **This
+section is not intended to be comprehensive.** However, there's one key aspect
+of quake mode that is specifically relevant and worth mentioning here.
 
 One of the biggest challenges with registering a global shortcut handler is
 _what happens when multiple windows try to register for the same shortcut at the
@@ -579,7 +554,7 @@ class Monarch : Peasant
 }
 ```
 
-The peasant process can instantiate the `Peasant` object itself, in it's process
+The peasant process can instantiate the `Peasant` object itself, in its process
 space. Initially, the `Peasant` object won't have an ID assigned, and the call
 to `AddPeasant` on the `Monarch` will both cause the Monarch to assign the
 `Peasant` an ID, and add it to the Monarch process's list of processes. If the
@@ -593,7 +568,7 @@ really just a peasant with the added responsibility of keeping track of the
 other peasants as well.
 
 It's important that `ExecuteCommandline` takes a `currentDirectory` parameter.
-Consider the scenario `wt -s 0 -d .` - in this scenario, the process that's
+Consider the scenario `wt -w 0 -d .` - in this scenario, the process that's
 executing the provided commandline should first change its working directory to
 the provided `currentDirectory` so that something like `.` actually refers to
 the directory where the command was executed.
@@ -937,7 +912,7 @@ running at the same integrity level will be addressable via the commandline.
 This might be a little confusing to the end user, but is seen as an acceptable
 experience to the alternative of just completely disallowing running commands in
 other elevated windows. If a user is running in an elevated window, they
-probably will still want `wt -s 0 new-tab` to open in the current window.
+probably will still want `wt -w 0 new-tab` to open in the current window.
 
 ### What happens to the content if the monarch dies unexpectedly?
 
@@ -1108,7 +1083,7 @@ launch to use seems like an obvious next step. See also [#961].
   - If we pursue this, then we'll need to make sure that we re-assign the window
     ID's as appropriate. the _new_ window (with the tabs that are being left
     behind) should still have the same peasant ID as the original window, which
-    will now get a new ID (as to )
+    will now get a new ID (as to not conflict)
 * We could definitely do a `NewWindowFromTab(index:int?)` action that creates a
   new window from a current tab once this all lands.
   - Or it could be `NewWindowFromTab(index:union(int,int[])?)` to specify the
@@ -1208,4 +1183,4 @@ original draft. Please also refer to:
 [Tab Tear-out in the community toolkit]: https://github.com/windows-toolkit/Sample-TabView-TearOff
 [Quake mode scenarios]: https://github.com/microsoft/terminal/issues/653#issuecomment-661370107
 [`ISwapChainPanelNative2::SetSwapChainHandle`]: https://docs.microsoft.com/en-us/windows/win32/api/windows.ui.xaml.media.dxinterop/nf-windows-ui-xaml-media-dxinterop-iswapchainpanelnative2-setswapchainhandle
-[Elevation QOL Improvements]: https://www.github.com/microsoft/terminal/blob/dev/migrie/s/1032-elevation-qol/doc/specs/%235000%20-%20Process%20Model%202.0/%231032%20-%20Elevation%20Quality%20of%20Life%20Improvements.md
+[Elevation Quality of Life Improvements]: https://www.github.com/microsoft/terminal/blob/dev/migrie/s/1032-elevation-qol/doc/specs/%235000%20-%20Process%20Model%202.0/%231032%20-%20Elevation%20Quality%20of%20Life%20Improvements.md

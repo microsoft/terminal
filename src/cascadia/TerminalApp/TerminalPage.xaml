@@ -50,9 +50,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             x:Load="False"
             x:Name="CloseAllDialog"
             x:Uid="CloseAllDialog"
-            DefaultButton="Primary"
-            PrimaryButtonClick="_CloseWarningPrimaryButtonOnClick"
-            CloseButtonClick="_CloseWarningCloseButtonOnClick">
+            DefaultButton="Primary">
         </ContentDialog>
 
         <ContentDialog
@@ -60,6 +58,26 @@ the MIT License. See LICENSE in the project root for license information. -->
             x:Name="MultiLinePasteDialog"
             x:Uid="MultiLinePasteDialog"
             DefaultButton="Primary">
+            <StackPanel>
+                <TextBlock
+                    x:Uid="MultiLineWarningText"
+                    TextWrapping="Wrap">
+                </TextBlock>
+                <TextBlock
+                    x:Uid="ClipboardTextHeader"
+                    Margin="0,16,0,0">
+                </TextBlock>
+                <ScrollViewer
+                    Margin="0,8,0,0"
+                    x:Name="ClipboardContentScrollViewer"
+                    MaxHeight="100">
+                    <TextBlock
+                        x:Name="ClipboardText"
+                        TextWrapping="Wrap"
+                        FontFamily="Cascadia Mono">
+                    </TextBlock>
+                </ScrollViewer>
+            </StackPanel>
         </ContentDialog>
 
         <ContentDialog
@@ -93,24 +111,19 @@ the MIT License. See LICENSE in the project root for license information. -->
             </TextBlock>
         </ContentDialog>
 
-
-        <ContentDialog
-            x:Load="False"
-            x:Name="KeyboardServiceDisabledDialog"
-            x:Uid="KeyboardServiceDisabledDialog"
-            DefaultButton="Primary">
-
-            <TextBlock
-                Foreground="{ThemeResource ErrorTextBrush}"
-                IsTextSelectionEnabled="True"
-                TextWrapping="WrapWholeWords"
-                Text="{x:Bind KeyboardServiceDisabledText, Mode=OneWay}" />
-        </ContentDialog>
-
         <local:CommandPalette
             x:Name="CommandPalette"
             Grid.Row="1"
             Visibility="Collapsed"
+            PreviewKeyDown ="_KeyDownHandler"
             VerticalAlignment="Stretch" />
+
+        <mux:InfoBar x:Name="KeyboardWarningInfoBar"
+                     x:Load="False"
+                     IsClosable="True"
+                     IsIconVisible="True"
+                     IsOpen="False"
+                     Severity="Warning"
+                     Message="{x:Bind KeyboardServiceDisabledText, Mode=OneWay}"/>
     </Grid>
 </Page>

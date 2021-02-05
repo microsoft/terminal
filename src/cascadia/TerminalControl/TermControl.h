@@ -106,6 +106,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         hstring Title();
         hstring GetProfileName() const;
+        hstring WorkingDirectory() const;
 
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void PasteTextFromClipboard();
@@ -122,12 +123,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void ResetFontSize();
 
         void SendInput(const winrt::hstring& input);
-        void ToggleRetroEffect();
+        void ToggleShaderEffects();
 
         winrt::fire_and_forget RenderEngineSwapChainChanged();
         void _AttachDxgiSwapChainToXaml(IDXGISwapChain1* swapChain);
         winrt::fire_and_forget _RendererEnteredErrorState();
         void _RenderRetryButton_Click(IInspectable const& button, IInspectable const& args);
+        winrt::fire_and_forget _RendererWarning(const HRESULT hr);
 
         void CreateSearchBoxControl();
 
@@ -178,6 +180,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControl, IInspectable);
         TYPED_EVENT(Initialized, TerminalControl::TermControl, Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(TabColorChanged, IInspectable, IInspectable);
+        TYPED_EVENT(HidePointerCursor, IInspectable, IInspectable);
+        TYPED_EVENT(RestorePointerCursor, IInspectable, IInspectable);
         // clang-format on
 
     private:

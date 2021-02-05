@@ -1046,11 +1046,14 @@ public:
         _tabClearTypes{},
         _isDECCOLMAllowed{ false },
         _windowWidth{ 80 },
+        _bracketedPasteMode{ false },
         _win32InputMode{ false },
         _setDefaultForeground(false),
         _defaultForegroundColor{ RGB(0, 0, 0) },
         _setDefaultBackground(false),
         _defaultBackgroundColor{ RGB(0, 0, 0) },
+        _setDefaultCursorColor(false),
+        _defaultCursorColor{ RGB(0, 0, 0) },
         _hyperlinkMode{ false },
         _options{ s_cMaxOptions, static_cast<DispatchTypes::GraphicsOptions>(s_uiGraphicsCleared) }, // fill with cleared option
         _colorTable{},
@@ -1247,44 +1250,47 @@ public:
         return true;
     }
 
-    bool _PrivateModeParamsHelper(_In_ DispatchTypes::PrivateModeParams const param, const bool fEnable)
+    bool _ModeParamsHelper(_In_ DispatchTypes::ModeParams const param, const bool fEnable)
     {
         bool fSuccess = false;
         switch (param)
         {
-        case DispatchTypes::PrivateModeParams::DECCKM_CursorKeysMode:
+        case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
             // set - Enable Application Mode, reset - Numeric/normal mode
             fSuccess = SetVirtualTerminalInputMode(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::DECANM_AnsiMode:
+        case DispatchTypes::ModeParams::DECANM_AnsiMode:
             fSuccess = SetAnsiMode(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
+        case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
             fSuccess = SetColumns(static_cast<size_t>(fEnable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns));
             break;
-        case DispatchTypes::PrivateModeParams::DECSCNM_ScreenMode:
+        case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
             fSuccess = SetScreenMode(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::DECOM_OriginMode:
+        case DispatchTypes::ModeParams::DECOM_OriginMode:
             // The cursor is also moved to the new home position when the origin mode is set or reset.
             fSuccess = SetOriginMode(fEnable) && CursorPosition(1, 1);
             break;
-        case DispatchTypes::PrivateModeParams::DECAWM_AutoWrapMode:
+        case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
             fSuccess = SetAutoWrapMode(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
+        case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
             fSuccess = EnableCursorBlinking(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::DECTCEM_TextCursorEnableMode:
+        case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
             fSuccess = CursorVisibility(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::XTERM_EnableDECCOLMSupport:
+        case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
             fSuccess = EnableDECCOLMSupport(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::ASB_AlternateScreenBuffer:
+        case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
             fSuccess = fEnable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
             break;
-        case DispatchTypes::PrivateModeParams::W32IM_Win32InputMode:
+        case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
+            fSuccess = EnableXtermBracketedPasteMode(fEnable);
+            break;
+        case DispatchTypes::ModeParams::W32IM_Win32InputMode:
             fSuccess = EnableWin32InputMode(fEnable);
             break;
         default:
@@ -1295,14 +1301,14 @@ public:
         return fSuccess;
     }
 
-    bool SetPrivateMode(const DispatchTypes::PrivateModeParams param) noexcept override
+    bool SetMode(const DispatchTypes::ModeParams param) noexcept override
     {
-        return _PrivateModeParamsHelper(param, true);
+        return _ModeParamsHelper(param, true);
     }
 
-    bool ResetPrivateMode(const DispatchTypes::PrivateModeParams param) noexcept override
+    bool ResetMode(const DispatchTypes::ModeParams param) noexcept override
     {
-        return _PrivateModeParamsHelper(param, false);
+        return _ModeParamsHelper(param, false);
     }
 
     bool SetColumns(_In_ size_t const uiColumns) noexcept override
@@ -1314,6 +1320,12 @@ public:
     bool SetVirtualTerminalInputMode(const bool fApplicationMode) noexcept
     {
         _cursorKeysMode = fApplicationMode;
+        return true;
+    }
+
+    bool EnableXtermBracketedPasteMode(const bool enable) noexcept
+    {
+        _bracketedPasteMode = enable;
         return true;
     }
 
@@ -1431,6 +1443,13 @@ public:
         return true;
     }
 
+    bool SetCursorColor(const DWORD color) noexcept override
+    {
+        _setDefaultCursorColor = true;
+        _defaultCursorColor = color;
+        return true;
+    }
+
     bool SetClipboard(std::wstring_view content) noexcept override
     {
         _copyContent = { content.begin(), content.end() };
@@ -1511,11 +1530,14 @@ public:
     std::vector<DispatchTypes::TabClearType> _tabClearTypes;
     bool _isDECCOLMAllowed;
     size_t _windowWidth;
+    bool _bracketedPasteMode;
     bool _win32InputMode;
     bool _setDefaultForeground;
     DWORD _defaultForegroundColor;
     bool _setDefaultBackground;
     DWORD _defaultBackgroundColor;
+    bool _setDefaultCursorColor;
+    DWORD _defaultCursorColor;
     bool _setColorTableEntry;
     bool _hyperlinkMode;
     std::wstring _copyContent;
@@ -2800,11 +2822,32 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(5u, pDispatch->_column - 1); // so are 1 more than the expected values.
 
         pDispatch->ClearState();
+    }
 
-        Log::Comment(L"Identify Device");
+    TEST_METHOD(TestIdentifyDeviceReport)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        Log::Comment(L"Identify Device in VT52 mode.");
+        mach.SetAnsiMode(false);
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'Z');
         VERIFY_IS_TRUE(pDispatch->_vt52DeviceAttributes);
+        VERIFY_IS_FALSE(pDispatch->_deviceAttributes);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Identify Device in ANSI mode.");
+        mach.SetAnsiMode(true);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'Z');
+        VERIFY_IS_TRUE(pDispatch->_deviceAttributes);
+        VERIFY_IS_FALSE(pDispatch->_vt52DeviceAttributes);
+
+        pDispatch->ClearState();
     }
 
     TEST_METHOD(TestOscSetDefaultForeground)
@@ -2814,6 +2857,7 @@ class StateMachineExternalTest final
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
 
+        // Single param
         mach.ProcessString(L"\033]10;rgb:1/1/1\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultForegroundColor);
@@ -2844,20 +2888,34 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
-        // Multiple params.
+        // Multiple params
         mach.ProcessString(L"\033]10;#111;rgb:2/2/2\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_defaultBackgroundColor);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;#111;DarkOrange\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultBackgroundColor);
 
         pDispatch->ClearState();
 
-        // Partially valid sequences. Only the first color works.
+        mach.ProcessString(L"\033]10;#111;DarkOrange;rgb:2/2/2\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultBackgroundColor);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultCursorColor);
+        VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_defaultCursorColor);
+
+        pDispatch->ClearState();
+
+        // Partially valid multi-param sequences.
         mach.ProcessString(L"\033]10;#111;\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
@@ -2867,12 +2925,28 @@ class StateMachineExternalTest final
         mach.ProcessString(L"\033]10;#111;rgb:\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;#111;#2\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]10;;rgb:1/1/1\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultBackgroundColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]10;#1;rgb:1/1/1\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultBackgroundColor);
 
         pDispatch->ClearState();
 
@@ -2883,17 +2957,6 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;#1\033\\");
-        VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
-
-        pDispatch->ClearState();
-
-        // Invalid multi-param sequences.
-        mach.ProcessString(L"\033]10;;rgb:1/1/1\033\\");
-        VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
-
-        pDispatch->ClearState();
-
-        mach.ProcessString(L"\033]10;#1;rgb:1/1/1\033\\");
         VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
 
         pDispatch->ClearState();
@@ -2912,6 +2975,7 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
+        // Single param
         mach.ProcessString(L"\033]11;rgb:12/34/56\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
         VERIFY_ARE_EQUAL(RGB(0x12, 0x34, 0x56), pDispatch->_defaultBackgroundColor);
@@ -2936,7 +3000,30 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
-        // Partially valid sequences. Only the first color works.
+        // Multiple params
+        mach.ProcessString(L"\033]11;#111;rgb:2/2/2\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_defaultCursorColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]11;#111;DarkOrange\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultCursorColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]11;#111;DarkOrange;rgb:2/2/2\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultCursorColor);
+        // The third param is out of range.
+
+        pDispatch->ClearState();
+
+        // Partially valid multi-param sequences.
         mach.ProcessString(L"\033]11;#111;\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
@@ -2955,6 +3042,20 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
+        mach.ProcessString(L"\033]11;;rgb:1/1/1\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultCursorColor);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultCursorColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]11;#1;rgb:1/1/1\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultCursorColor);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultCursorColor);
+
+        pDispatch->ClearState();
+
         // Invalid sequences.
         mach.ProcessString(L"\033]11;rgb:1/1/\033\\");
         VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
@@ -2962,17 +3063,6 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]11;#1\033\\");
-        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
-
-        pDispatch->ClearState();
-
-        // Invalid multi-param sequences.
-        mach.ProcessString(L"\033]11;;rgb:1/1/1\033\\");
-        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
-
-        pDispatch->ClearState();
-
-        mach.ProcessString(L"\033]11;#1;rgb:1/1/1\033\\");
         VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
 
         pDispatch->ClearState();
@@ -3235,6 +3325,54 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
 
         // Process the closing osc 8 sequence
+        mach.ProcessString(L"\x1b]8;;\x9c");
+        VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
+        VERIFY_IS_TRUE(pDispatch->_uri.empty());
+
+        // Let's try more complicated params and URLs
+        mach.ProcessString(L"\x1b]8;id=testId;https://example.com\x9c");
+        VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
+        VERIFY_ARE_EQUAL(pDispatch->_uri, L"https://example.com");
+        VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
+
+        mach.ProcessString(L"\x1b]8;;\x9c");
+        VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
+        VERIFY_IS_TRUE(pDispatch->_uri.empty());
+
+        // Multiple params
+        mach.ProcessString(L"\x1b]8;id=testId:foo=bar;https://example.com\x9c");
+        VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
+        VERIFY_ARE_EQUAL(pDispatch->_uri, L"https://example.com");
+        VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
+
+        mach.ProcessString(L"\x1b]8;;\x9c");
+        VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
+        VERIFY_IS_TRUE(pDispatch->_uri.empty());
+
+        mach.ProcessString(L"\x1b]8;foo=bar:id=testId;https://example.com\x9c");
+        VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
+        VERIFY_ARE_EQUAL(pDispatch->_uri, L"https://example.com");
+        VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
+
+        mach.ProcessString(L"\x1b]8;;\x9c");
+        VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
+        VERIFY_IS_TRUE(pDispatch->_uri.empty());
+
+        // URIs with query strings
+        mach.ProcessString(L"\x1b]8;id=testId;https://example.com?query1=value1\x9c");
+        VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
+        VERIFY_ARE_EQUAL(pDispatch->_uri, L"https://example.com?query1=value1");
+        VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
+
+        mach.ProcessString(L"\x1b]8;;\x9c");
+        VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
+        VERIFY_IS_TRUE(pDispatch->_uri.empty());
+
+        mach.ProcessString(L"\x1b]8;id=testId;https://example.com?query1=value1;value2;value3\x9c");
+        VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
+        VERIFY_ARE_EQUAL(pDispatch->_uri, L"https://example.com?query1=value1;value2;value3");
+        VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
+
         mach.ProcessString(L"\x1b]8;;\x9c");
         VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
         VERIFY_IS_TRUE(pDispatch->_uri.empty());

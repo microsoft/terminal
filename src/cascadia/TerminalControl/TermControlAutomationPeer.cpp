@@ -9,7 +9,7 @@
 #include "TermControlAutomationPeer.g.cpp"
 
 #include "XamlUiaTextRange.h"
-#include "..\types\UiaTracing.h"
+#include "../types/UiaTracing.h"
 
 using namespace Microsoft::Console::Types;
 using namespace winrt::Windows::UI::Xaml::Automation::Peers;

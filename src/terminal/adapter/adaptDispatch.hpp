@@ -67,8 +67,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool InsertLine(const size_t distance) override; // IL
         bool DeleteLine(const size_t distance) override; // DL
         bool SetColumns(const size_t columns) override; // DECCOLM
-        bool SetPrivateMode(const DispatchTypes::PrivateModeParams param) override; // DECSET
-        bool ResetPrivateMode(const DispatchTypes::PrivateModeParams param) override; // DECRST
+        bool SetMode(const DispatchTypes::ModeParams param) override; // DECSET
+        bool ResetMode(const DispatchTypes::ModeParams param) override; // DECRST
         bool SetCursorKeysMode(const bool applicationMode) override; // DECCKM
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
         bool EnableWin32InputMode(const bool win32InputMode) override; // win32-input-mode
@@ -106,6 +106,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool EnableButtonEventMouseMode(const bool enabled) override; // ?1002
         bool EnableAnyEventMouseMode(const bool enabled) override; // ?1003
         bool EnableAlternateScroll(const bool enabled) override; // ?1007
+        bool EnableXtermBracketedPasteMode(const bool enabled) noexcept override; // ?2004
         bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
         bool SetCursorColor(const COLORREF cursorColor) override;
 
@@ -166,7 +167,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _CursorPositionReport() const;
 
         bool _WriteResponse(const std::wstring_view reply) const;
-        bool _PrivateModeParamsHelper(const DispatchTypes::PrivateModeParams param, const bool enable);
+        bool _ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable);
         bool _DoDECCOLMHelper(const size_t columns);
 
         bool _ClearSingleTabStop();

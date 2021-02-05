@@ -1,0 +1,64 @@
+﻿<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+the MIT License. See LICENSE in the project root for license information. -->
+<Page
+    x:Class="Microsoft.Terminal.Settings.Editor.Interaction"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            
+            <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
+                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
+            </DataTemplate>
+        </ResourceDictionary>
+    </Page.Resources>
+    
+    <ScrollViewer>
+        <StackPanel Style="{StaticResource SettingsStackStyle}">
+            <!--Copy On Select-->
+            <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                              Margin="0">
+                <ToggleSwitch x:Uid="Globals_CopyOnSelect"
+                              IsOn="{x:Bind State.Globals.CopyOnSelect, Mode=TwoWay}"/>
+             </ContentPresenter>
+
+            <!--Copy Format-->
+            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                <muxc:RadioButtons x:Uid="Globals_CopyFormat"
+                                   ItemsSource="{x:Bind CopyFormatList, Mode=OneWay}"
+                                   SelectedItem="{x:Bind CurrentCopyFormat, Mode=TwoWay}"
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+            </ContentPresenter>
+
+            <!--Word Delimiters-->
+            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                <TextBox x:Uid="Globals_WordDelimiters"
+                         Text="{x:Bind State.Globals.WordDelimiters, Mode=TwoWay}"
+                         Style="{StaticResource TextBoxSettingStyle}"/>
+            </ContentPresenter>
+
+            <!--Snap On Resize-->
+            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                <ToggleSwitch x:Uid="Globals_SnapToGridOnResize"
+                              IsOn="{x:Bind State.Globals.SnapToGridOnResize, Mode=TwoWay}"/>
+            </ContentPresenter>
+            
+            <!--Tab Switcher Mode-->
+            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                <muxc:RadioButtons x:Uid="Globals_TabSwitcherMode"
+                                   SelectedItem="{x:Bind CurrentTabSwitcherMode, Mode=TwoWay}"
+                                   ItemsSource="{x:Bind TabSwitcherModeList}"
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+            </ContentPresenter>
+        </StackPanel>
+    </ScrollViewer>
+</Page>
