@@ -26,6 +26,7 @@ IAsync
 IBind
 IBox
 IClass
+IConnection
 IComparable
 ICustom
 IDialog
@@ -44,6 +45,7 @@ llu
 localtime
 lround
 LSHIFT
+MULTIPLEUSE
 msappx
 MULTIPLEUSE
 NCHITTEST
@@ -59,8 +61,8 @@ otms
 OUTLINETEXTMETRICW
 overridable
 PAGESCROLL
-REGCLS
 pmr
+REGCLS
 RETURNCMD
 REGCLS
 rfind

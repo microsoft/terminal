@@ -505,6 +505,7 @@ DCOLORVALUE
 dcommon
 DCompile
 dcompiler
+DComposition
 dde
 DDESHARE
 DDevice
@@ -677,6 +678,7 @@ ECH
 echokey
 ecount
 ECpp
+Edgium
 EDITKEYS
 EDITTEXT
 EDITUPDATE
@@ -1408,6 +1410,7 @@ mingw
 minimizeall
 minkernel
 MINMAXINFO
+mintty
 minwin
 minwindef
 Mip
@@ -1602,6 +1605,7 @@ numlock
 numpad
 NUMSCROLL
 nupkg
+NVDA
 NVIDIA
 NVR
 Nx
@@ -2044,6 +2048,7 @@ runuia
 runut
 rvalue
 RVERTICAL
+rxvt
 RWIN
 safearray
 SAFECAST
@@ -2446,6 +2451,7 @@ typename
 typeof
 typeparam
 TYUI
+UAC
 uap
 uapadmin
 UAX
