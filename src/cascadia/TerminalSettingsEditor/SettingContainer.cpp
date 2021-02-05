@@ -75,20 +75,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 elem.Visibility(newVal ? Visibility::Visible : Visibility::Collapsed);
             }
         }
-
-        // update the automation property
-        if (auto content{ obj.Content() })
-        {
-            // apply override message as help text (automation property)
-            if (const auto overrideMsg{ winrt::get_self<implementation::SettingContainer>(obj)->_GenerateOverrideMessageText() })
-            {
-                Automation::AutomationProperties::SetHelpText(obj, *overrideMsg);
-            }
-        }
     }
 
     void SettingContainer::OnApplyTemplate()
     {
+        // This message is only populated if `HasSettingValue` is true.
+        const auto overrideMsg{ _GenerateOverrideMessageText() };
+
         if (auto child{ GetTemplateChild(L"ResetButton") })
         {
             if (auto button{ child.try_as<Controls::Button>() })
@@ -100,10 +93,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _ClearSettingValueHandlers(*this, nullptr);
                 });
 
-                // apply tooltip and help text (automation property)
-                const auto& helpText{ RS_(L"SettingContainer_ResetButtonHelpText") };
-                Controls::ToolTipService::SetToolTip(child, box_value(helpText));
-                Automation::AutomationProperties::SetName(child, helpText);
+                // apply tooltip and name (automation property)
+                const auto& name{ RS_(L"SettingContainer_ResetButtonHelpText") };
+                Controls::ToolTipService::SetToolTip(child, box_value(name));
+                Automation::AutomationProperties::SetName(child, name);
+                Automation::AutomationProperties::SetHelpText(child, overrideMsg);
 
                 // initialize visibility for reset button
                 button.Visibility(HasSettingValue() ? Visibility::Visible : Visibility::Collapsed);
@@ -114,11 +108,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (auto tb{ child.try_as<Controls::TextBlock>() })
             {
-                if (const auto overrideMsg{ _GenerateOverrideMessageText() })
+                const auto overrideMsg{ _GenerateOverrideMessageText() };
+                if (!overrideMsg.empty())
                 {
                     // Create the override message
                     // TODO GH#6800: the override target will be replaced with hyperlink/text directing the user to another profile.
-                    tb.Text(*_GenerateOverrideMessageText());
+                    tb.Text(overrideMsg);
 
                     // initialize visibility for reset button
                     tb.Visibility(Visibility::Visible);
@@ -145,12 +140,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     }
                 }
 
-                // apply override message as help text (automation property)
-                if (auto overrideMsg{ _GenerateOverrideMessageText() })
-                {
-                    Automation::AutomationProperties::SetHelpText(obj, *overrideMsg);
-                }
-
                 // apply help text as tooltip and full description (automation property)
                 const auto& helpText{ HelpText() };
                 if (!helpText.empty())
@@ -162,12 +151,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    std::optional<std::wstring> SettingContainer::_GenerateOverrideMessageText()
+    hstring SettingContainer::_GenerateOverrideMessageText()
     {
         if (HasSettingValue())
         {
-            return fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideIntro") }, RS_(L"SettingContainer_OverrideTarget"));
+            return hstring{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideIntro") }, RS_(L"SettingContainer_OverrideTarget")) };
         }
-        return std::nullopt;
+        return {};
     }
 }
