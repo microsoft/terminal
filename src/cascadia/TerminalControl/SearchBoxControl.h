@@ -29,6 +29,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void TextBoxKeyDown(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
 
         void SetFocusOnTextbox();
+        void PopulateTextbox(winrt::hstring const& text);
         bool ContainsFocus();
 
         void GoBackwardClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/);

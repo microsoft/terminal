@@ -21,7 +21,7 @@ Author(s):
 #include "Command.g.h"
 #include "TerminalWarnings.h"
 #include "Profile.h"
-#include "..\inc\cppwinrt_utils.h"
+#include "../inc/cppwinrt_utils.h"
 #include "SettingsTypes.h"
 
 // fwdecl unittest classes

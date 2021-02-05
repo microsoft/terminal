@@ -269,6 +269,7 @@ void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty)
             }
 
             TerminateProcess(pPty->hConPtyProcess, 0);
+            CloseHandle(pPty->hConPtyProcess);
             pPty->hConPtyProcess = nullptr;
         }
         // Then take care of the reference handle.

@@ -12,7 +12,7 @@
 #include "../types/inc/GlyphWidth.hpp"
 #include "../types/inc/convert.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 #define LINE_INPUT_BUFFER_SIZE (256 * sizeof(WCHAR))
 

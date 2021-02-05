@@ -36,7 +36,7 @@ typedef NTSTATUS* PNTSTATUS;
 #include "LibraryIncludes.h"
 
 #include <winconp.h>
-#include "..\host\settings.hpp"
+#include "../host/settings.hpp"
 #include <pathcch.h>
 
 #include "conpropsp.hpp"

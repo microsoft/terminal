@@ -64,7 +64,7 @@ Abstract:
 #include <TraceLoggingProvider.h>
 #include <winmeta.h>
 TRACELOGGING_DECLARE_PROVIDER(g_hConhostV2EventTraceProvider);
-#include <telemetry\ProjectTelemetry.h>
+#include <telemetry/ProjectTelemetry.h>
 #include <TraceLoggingActivity.h>
 #include "telemetry.hpp"
 #include "tracing.hpp"
@@ -74,7 +74,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hConhostV2EventTraceProvider);
 #endif
 
 #include <ShellScalingApi.h>
-#include "..\propslib\conpropsp.hpp"
+#include "../propslib/conpropsp.hpp"
 
 // Comment to build against the private SDK.
 #define CON_BUILD_PUBLIC
@@ -84,9 +84,9 @@ TRACELOGGING_DECLARE_PROVIDER(g_hConhostV2EventTraceProvider);
 #define CON_DPIAPI_INDIRECT
 #endif
 
-#include "..\inc\contsf.h"
-#include "..\inc\operators.hpp"
-#include "..\inc\conattrs.hpp"
+#include "../inc/contsf.h"
+#include "../inc/operators.hpp"
+#include "../inc/conattrs.hpp"
 
 // TODO: MSFT 9355094 Find a better way of doing this. http://osgvsowi/9355094
 [[nodiscard]] inline NTSTATUS NTSTATUS_FROM_HRESULT(HRESULT hr)

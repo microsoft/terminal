@@ -4,7 +4,7 @@
 #pragma once
 
 #include "ShortcutActionDispatch.g.h"
-#include "..\inc\cppwinrt_utils.h"
+#include "../inc/cppwinrt_utils.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -43,11 +43,13 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(ScrollDown,           TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(ScrollUpPage,         TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(ScrollDownPage,       TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
+        TYPED_EVENT(ScrollToTop,          TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
+        TYPED_EVENT(ScrollToBottom,       TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(OpenSettings,         TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(ResizePane,           TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(Find,                 TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(MoveFocus,            TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(ToggleRetroEffect,    TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
+        TYPED_EVENT(ToggleShaderEffects,  TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(ToggleFocusMode,      TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(ToggleFullscreen,     TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(ToggleAlwaysOnTop,    TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
@@ -61,6 +63,8 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(CloseOtherTabs,       TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(CloseTabsAfter,       TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(TabSearch,            TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
+        TYPED_EVENT(MoveTab,              TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
+        TYPED_EVENT(BreakIntoDebugger,    TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         // clang-format on
 
     private:

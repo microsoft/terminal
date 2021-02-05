@@ -13,6 +13,9 @@
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
 
+// the console uses 0xffffffff as an "invalid color" value
+constexpr COLORREF INVALID_COLOR = 0xffffffff;
+
 // takes ownership of pDispatch
 OutputStateMachineEngine::OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch) :
     _dispatch(std::move(pDispatch)),
@@ -226,6 +229,10 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
         success = _dispatch->HorizontalTabSet();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::HTS);
         break;
+    case EscActionCodes::DECID_IdentifyDevice:
+        success = _dispatch->DeviceAttributes();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DA);
+        break;
     case EscActionCodes::RIS_ResetToInitialState:
         success = _dispatch->HardReset();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::RIS);
@@ -378,7 +385,7 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const VTPara
         success = _dispatch->SetKeypadMode(false);
         break;
     case Vt52ActionCodes::ExitVt52Mode:
-        success = _dispatch->SetPrivateMode(DispatchTypes::PrivateModeParams::DECANM_AnsiMode);
+        success = _dispatch->SetMode(DispatchTypes::ModeParams::DECANM_AnsiMode);
         break;
     default:
         // If no functions to call, overall dispatch was a failure.
@@ -478,14 +485,14 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         break;
     case CsiActionCodes::DECSET_PrivateModeSet:
         success = parameters.for_each([&](const auto mode) {
-            return _dispatch->SetPrivateMode(mode);
+            return _dispatch->SetMode(DispatchTypes::DECPrivateMode(mode));
         });
         //TODO: MSFT:6367459 Add specific logging for each of the DECSET/DECRST codes
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSET);
         break;
     case CsiActionCodes::DECRST_PrivateModeReset:
         success = parameters.for_each([&](const auto mode) {
-            return _dispatch->ResetPrivateMode(mode);
+            return _dispatch->ResetMode(DispatchTypes::DECPrivateMode(mode));
         });
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRST);
         break;
@@ -668,36 +675,52 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         break;
     }
     case OscActionCodes::SetForegroundColor:
-    {
-        std::vector<DWORD> colors;
-        success = _GetOscSetColor(string, colors);
-        if (success && colors.size() > 0)
-        {
-            success = _dispatch->SetDefaultForeground(til::at(colors, 0));
-        }
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCFG);
-        break;
-    }
     case OscActionCodes::SetBackgroundColor:
-    {
-        std::vector<DWORD> colors;
-        success = _GetOscSetColor(string, colors);
-        if (success && colors.size() > 0)
-        {
-            success = _dispatch->SetDefaultBackground(til::at(colors, 0));
-        }
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCBG);
-        break;
-    }
     case OscActionCodes::SetCursorColor:
     {
         std::vector<DWORD> colors;
         success = _GetOscSetColor(string, colors);
-        if (success && colors.size() > 0)
+        if (success)
         {
-            success = _dispatch->SetCursorColor(til::at(colors, 0));
+            size_t commandIndex = parameter;
+            size_t colorIndex = 0;
+
+            if (commandIndex == OscActionCodes::SetForegroundColor && colors.size() > colorIndex)
+            {
+                const auto color = til::at(colors, colorIndex);
+                if (color != INVALID_COLOR)
+                {
+                    success = success && _dispatch->SetDefaultForeground(color);
+                }
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCFG);
+                commandIndex++;
+                colorIndex++;
+            }
+
+            if (commandIndex == OscActionCodes::SetBackgroundColor && colors.size() > colorIndex)
+            {
+                const auto color = til::at(colors, colorIndex);
+                if (color != INVALID_COLOR)
+                {
+                    success = success && _dispatch->SetDefaultBackground(color);
+                }
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCBG);
+                commandIndex++;
+                colorIndex++;
+            }
+
+            if (commandIndex == OscActionCodes::SetCursorColor && colors.size() > colorIndex)
+            {
+                const auto color = til::at(colors, colorIndex);
+                if (color != INVALID_COLOR)
+                {
+                    success = success && _dispatch->SetCursorColor(color);
+                }
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
+                commandIndex++;
+                colorIndex++;
+            }
         }
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
         break;
     }
     case OscActionCodes::SetClipboard:
@@ -714,7 +737,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     }
     case OscActionCodes::ResetCursorColor:
     {
-        success = _dispatch->SetCursorColor(0xffffffff);
+        success = _dispatch->SetCursorColor(INVALID_COLOR);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCRCC);
         break;
     }
@@ -884,11 +907,16 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
+#pragma warning(push)
+#pragma warning(disable : 26445) // Suppress lifetime check for a reference to gsl::span or std::string_view
+
 // Routine Description:
 // - Given a hyperlink string, attempts to parse the URI encoded. An 'id' parameter
 //   may be provided.
 //   If there is a URI, the well formatted string looks like:
 //          "<params>;<URI>"
+//   To be specific, params is an optional list of key=value assignments, separated by the ':'. Example:
+//          "id=xyz123:foo=bar:baz=value"
 //   If there is no URI, we need to close the hyperlink and the string looks like:
 //          ";"
 // Arguments:
@@ -903,24 +931,32 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 {
     params.clear();
     uri.clear();
-    const auto len = string.size();
+
+    if (string == L";")
+    {
+        return true;
+    }
+
     const size_t midPos = string.find(';');
     if (midPos != std::wstring::npos)
     {
-        if (len != 1)
+        uri = string.substr(midPos + 1);
+        const auto paramStr = string.substr(0, midPos);
+        const auto paramParts = Utils::SplitString(paramStr, ':');
+        for (const auto& part : paramParts)
         {
-            uri = string.substr(midPos + 1);
-            const auto paramStr = string.substr(0, midPos);
-            const auto idPos = paramStr.find(hyperlinkIDParameter);
+            const auto idPos = part.find(hyperlinkIDParameter);
             if (idPos != std::wstring::npos)
             {
-                params = paramStr.substr(idPos + hyperlinkIDParameter.size());
+                params = part.substr(idPos + hyperlinkIDParameter.size());
             }
         }
         return true;
     }
     return false;
 }
+
+#pragma warning(pop)
 
 // Routine Description:
 // - OSC 10, 11, 12 ; spec ST
@@ -930,19 +966,15 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 //   with accumulated Ps. For example "OSC 10;color1;color2" is effectively an "OSC 10;color1"
 //   and an "OSC 11;color2".
 //
-//   However, we do not support the chaining of OSC 10-17 yet. Right now only the first parameter
-//   will take effect.
 // Arguments:
 // - string - the Osc String to parse
 // - rgbs - receives the colors that we parsed in the format: 0x00BBGGRR
 // Return Value:
-// - True if the first table index and color was parsed successfully. False otherwise.
+// - True if at least one color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
                                                std::vector<DWORD>& rgbs) const noexcept
 try
 {
-    bool success = false;
-
     const auto parts = Utils::SplitString(string, L';');
     if (parts.size() < 1)
     {
@@ -956,17 +988,16 @@ try
         if (colorOptional.has_value())
         {
             newRgbs.push_back(colorOptional.value());
-            // Only mark the parsing as a success iff the first color is a success.
-            if (i == 0)
-            {
-                success = true;
-            }
+        }
+        else
+        {
+            newRgbs.push_back(INVALID_COLOR);
         }
     }
 
     rgbs.swap(newRgbs);
 
-    return success;
+    return rgbs.size() > 0;
 }
 CATCH_LOG_RETURN_FALSE()
 

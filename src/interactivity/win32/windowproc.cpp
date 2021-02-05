@@ -13,23 +13,23 @@
 #include "windowio.hpp"
 #include "windowmetrics.hpp"
 
-#include "..\..\host\_output.h"
-#include "..\..\host\output.h"
-#include "..\..\host\dbcs.h"
-#include "..\..\host\handle.h"
-#include "..\..\host\input.h"
-#include "..\..\host\misc.h"
-#include "..\..\host\registry.hpp"
-#include "..\..\host\scrolling.hpp"
-#include "..\..\host\srvinit.h"
+#include "../../host/_output.h"
+#include "../../host/output.h"
+#include "../../host/dbcs.h"
+#include "../../host/handle.h"
+#include "../../host/input.h"
+#include "../../host/misc.h"
+#include "../../host/registry.hpp"
+#include "../../host/scrolling.hpp"
+#include "../../host/srvinit.h"
 
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/ServiceLocator.hpp"
 
-#include "..\..\inc\conint.h"
+#include "../../inc/conint.h"
 
-#include "..\interactivity\win32\CustomWindowMessages.h"
+#include "../interactivity/win32/CustomWindowMessages.h"
 
-#include "..\interactivity\win32\windowUiaProvider.hpp"
+#include "../interactivity/win32/windowUiaProvider.hpp"
 
 #include <iomanip>
 #include <sstream>

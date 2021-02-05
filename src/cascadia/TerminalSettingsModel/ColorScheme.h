@@ -33,7 +33,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
     public:
         ColorScheme();
-        ColorScheme(hstring name, Windows::UI::Color defaultFg, Windows::UI::Color defaultBg, Windows::UI::Color cursorColor);
+        ColorScheme(hstring name);
+        ColorScheme(hstring name, COLORREF defaultFg, COLORREF defaultBg, COLORREF cursorColor);
         com_ptr<ColorScheme> Copy() const;
 
         static com_ptr<ColorScheme> FromJson(const Json::Value& json);
@@ -59,4 +60,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         friend class SettingsModelLocalTests::SettingsTests;
         friend class SettingsModelLocalTests::ColorSchemeTests;
     };
+}
+
+namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
+{
+    BASIC_FACTORY(ColorScheme);
 }

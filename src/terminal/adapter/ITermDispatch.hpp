@@ -78,6 +78,7 @@ public:
     virtual bool EnableButtonEventMouseMode(const bool enabled) = 0; // ?1002
     virtual bool EnableAnyEventMouseMode(const bool enabled) = 0; // ?1003
     virtual bool EnableAlternateScroll(const bool enabled) = 0; // ?1007
+    virtual bool EnableXtermBracketedPasteMode(const bool enabled) = 0; // ?2004
     virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD color) = 0; // OSCColorTable
     virtual bool SetDefaultForeground(const DWORD color) = 0; // OSCDefaultForeground
     virtual bool SetDefaultBackground(const DWORD color) = 0; // OSCDefaultBackground
@@ -88,9 +89,9 @@ public:
 
     virtual bool SetGraphicsRendition(const VTParameters options) = 0; // SGR
 
-    virtual bool SetPrivateMode(const DispatchTypes::PrivateModeParams param) = 0; // DECSET
+    virtual bool SetMode(const DispatchTypes::ModeParams param) = 0; // DECSET
 
-    virtual bool ResetPrivateMode(const DispatchTypes::PrivateModeParams param) = 0; // DECRST
+    virtual bool ResetMode(const DispatchTypes::ModeParams param) = 0; // DECRST
 
     virtual bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) = 0; // DSR, DSR-OS, DSR-CPR
     virtual bool DeviceAttributes() = 0; // DA1

@@ -1,17 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!-- 
-    Microsoft ResX Schema 
-    
+  <!--
+    Microsoft ResX Schema
+
     Version 2.0
-    
-    The primary goals of this format is to allow a simple XML format 
-    that is mostly human readable. The generation and parsing of the 
-    various data types are done through the TypeConverter classes 
+
+    The primary goals of this format is to allow a simple XML format
+    that is mostly human readable. The generation and parsing of the
+    various data types are done through the TypeConverter classes
     associated with the data types.
-    
+
     Example:
-    
+
     ... ado.net/XML headers & schema ...
     <resheader name="resmimetype">text/microsoft-resx</resheader>
     <resheader name="version">2.0</resheader>
@@ -26,36 +26,36 @@
         <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
         <comment>This is a comment</comment>
     </data>
-                
-    There are any number of "resheader" rows that contain simple 
+
+    There are any number of "resheader" rows that contain simple
     name/value pairs.
-    
-    Each data row contains a name, and value. The row also contains a 
-    type or mimetype. Type corresponds to a .NET class that support 
-    text/value conversion through the TypeConverter architecture. 
-    Classes that don't support this are serialized and stored with the 
+
+    Each data row contains a name, and value. The row also contains a
+    type or mimetype. Type corresponds to a .NET class that support
+    text/value conversion through the TypeConverter architecture.
+    Classes that don't support this are serialized and stored with the
     mimetype set.
-    
-    The mimetype is used for serialized objects, and tells the 
-    ResXResourceReader how to depersist the object. This is currently not 
+
+    The mimetype is used for serialized objects, and tells the
+    ResXResourceReader how to depersist the object. This is currently not
     extensible. For a given mimetype the value must be set accordingly:
-    
-    Note - application/x-microsoft.net.object.binary.base64 is the format 
-    that the ResXResourceWriter will generate, however the reader can 
+
+    Note - application/x-microsoft.net.object.binary.base64 is the format
+    that the ResXResourceWriter will generate, however the reader can
     read any of the formats listed below.
-    
+
     mimetype: application/x-microsoft.net.object.binary.base64
-    value   : The object must be serialized with 
+    value   : The object must be serialized with
             : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
             : and then encoded with base64 encoding.
-    
+
     mimetype: application/x-microsoft.net.object.soap.base64
-    value   : The object must be serialized with 
+    value   : The object must be serialized with
             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
             : and then encoded with base64 encoding.
 
     mimetype: application/x-microsoft.net.object.bytearray.base64
-    value   : The object must be serialized into a byte array 
+    value   : The object must be serialized into a byte array
             : using a System.ComponentModel.TypeConverter
             : and then encoded with base64 encoding.
     -->
@@ -154,6 +154,16 @@
     <value>Close tabs after index {0}</value>
     <comment>{0} will be replaced with a number</comment>
   </data>
+  <data name="MoveTabCommandKey" xml:space="preserve">
+    <value>Move tab {0}</value>
+    <comment>{0} will be replaced with a "forward" / "backward"</comment>
+  </data>
+  <data name="MoveTabDirectionForward" xml:space="preserve">
+    <value>forward</value>
+  </data>
+  <data name="MoveTabDirectionBackward" xml:space="preserve">
+    <value>backward</value>
+  </data>
   <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
     <value>Close all tabs after the current tab</value>
   </data>
@@ -189,6 +199,9 @@
   <data name="DirectionUp" xml:space="preserve">
     <value>up</value>
   </data>
+  <data name="DirectionPrevious" xml:space="preserve">
+    <value>previous</value>
+  </data>
   <data name="DuplicatePaneCommandKey" xml:space="preserve">
     <value>Duplicate pane</value>
   </data>
@@ -214,7 +227,10 @@
   </data>
   <data name="MoveFocusWithArgCommandKey" xml:space="preserve">
     <value>Move focus {0}</value>
-    <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", or "DirectionDown"</comment>
+    <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", "DirectionDown"</comment>
+  </data>
+  <data name="MoveFocusToLastUsedPane" xml:space="preserve">
+    <value>Move focus to the last used pane</value>
   </data>
   <data name="NewTabCommandKey" xml:space="preserve">
     <value>New tab</value>
@@ -289,6 +305,12 @@
   <data name="ScrollUpPageCommandKey" xml:space="preserve">
     <value>Scroll up one page</value>
   </data>
+  <data name="ScrollToTopCommandKey" xml:space="preserve">
+    <value>Scroll to the top of history</value>
+  </data>
+  <data name="ScrollToBottomCommandKey" xml:space="preserve">
+    <value>Scroll to the bottom of history</value>
+  </data>
   <data name="SendInputCommandKey" xml:space="preserve">
     <value>Send Input: "{0}"</value>
     <comment>{0} will be replaced with a string of input as defined by the user</comment>
@@ -322,6 +344,9 @@
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Toggle command palette</value>
   </data>
+  <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
+    <value>Toggle command palette in command line mode</value>
+  </data>
   <data name="ToggleFocusModeCommandKey" xml:space="preserve">
     <value>Toggle focus mode</value>
     <comment>"Focus mode" is a mode with minimal UI elements, for a distraction-free experience</comment>
@@ -332,7 +357,13 @@
   <data name="TogglePaneZoomCommandKey" xml:space="preserve">
     <value>Toggle pane zoom</value>
   </data>
-  <data name="ToggleRetroEffectCommandKey" xml:space="preserve">
-    <value>Toggle retro terminal effect</value>
+  <data name="ToggleShaderEffectsCommandKey" xml:space="preserve">
+    <value>Toggle terminal visual effects</value>
+  </data>
+  <data name="BreakIntoDebuggerCommandKey" xml:space="preserve">
+    <value>Break into the debugger</value>
+  </data>
+  <data name="OpenSettingsUICommandKey" xml:space="preserve">
+    <value>Open Settings...</value>
   </data>
 </root>
