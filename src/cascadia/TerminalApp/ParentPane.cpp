@@ -621,9 +621,6 @@ namespace winrt::TerminalApp::implementation
         // Transfer focus to our child.
         newlyFocusedChild.FocusFirstChild();
 
-        //UpdateVisuals();
-        // TODO: do we need a replacement for update visuals here?
-
         return true;
     }
 
