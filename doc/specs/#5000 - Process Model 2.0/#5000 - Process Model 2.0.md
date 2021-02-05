@@ -207,7 +207,9 @@ Now that we have a WinRT object that the content process hosts, we can have the
 window and content process interact using that interface. The next important
 thing to communicate between these processes is the swapchain. The swapchain
 will need to be created by the content process. We also need to be able to
-communicate the `HANDLE` to that swapchain out to the window process. The window process needs to be able to attach that swapchain to the `SwapChainPanel` in the window.
+communicate the `HANDLE` to that swapchain out to the window process. The window
+process needs to be able to attach that swapchain to the `SwapChainPanel` in the
+window.
 
 This is tricky, because WinRT does not natively expose a `HANDLE` type. That
 would allow us to easily pass the `HANDLE` between these processes. Instead
@@ -229,6 +231,13 @@ SwapChainPanel to use the same swapchain.
 
 This will allow the content process to draw to the swapchain, and the window
 process to render that same swapchain.
+
+> _author's note_: There's some internal work that's going on in parallel that
+> will make this `DUplicateHandle` business more structured. Unfortunately, that
+> work isn't public quite yet. It should be noted that in the version of this we
+> end up shipping, we'll probably need a split COM & WinRT interface between the
+> window and content processes. The COM interface will handle the passing of the
+> swapchain handle, and the WinRT interface will do everything else.
 
 #### Scenario: Tab Tear-off and Reattach
 
@@ -478,7 +487,7 @@ as the window executing the command.
 
 I'm not sure that there is a better solution for the `-w 0` scenario other than
 attempting to use the `WT_SESSION` environment variable. If a `wt.exe` process is
-spawned and that's in it's environment variables, it could try and ask the
+spawned and that's in its environment variables, it could try and ask the
 monarch for the peasant who's hosting the session corresponding to that GUID.
 This is more of a theoretical solution than anything else.
 
@@ -545,7 +554,7 @@ class Monarch : Peasant
 }
 ```
 
-The peasant process can instantiate the `Peasant` object itself, in it's process
+The peasant process can instantiate the `Peasant` object itself, in its process
 space. Initially, the `Peasant` object won't have an ID assigned, and the call
 to `AddPeasant` on the `Monarch` will both cause the Monarch to assign the
 `Peasant` an ID, and add it to the Monarch process's list of processes. If the
@@ -1074,7 +1083,7 @@ launch to use seems like an obvious next step. See also [#961].
   - If we pursue this, then we'll need to make sure that we re-assign the window
     ID's as appropriate. the _new_ window (with the tabs that are being left
     behind) should still have the same peasant ID as the original window, which
-    will now get a new ID (as to )
+    will now get a new ID (as to not conflict)
 * We could definitely do a `NewWindowFromTab(index:int?)` action that creates a
   new window from a current tab once this all lands.
   - Or it could be `NewWindowFromTab(index:union(int,int[])?)` to specify the
