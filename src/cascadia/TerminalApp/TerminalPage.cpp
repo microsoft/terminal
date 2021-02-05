@@ -135,6 +135,8 @@ namespace winrt::TerminalApp::implementation
         }
         CATCH_LOG();
 
+        _tabRow.PointerMoved({ this, &TerminalPage::_RestorePointerCursorHandler });
+
         _tabView.CanReorderTabs(!isElevated);
         _tabView.CanDragTabs(!isElevated);
 
