@@ -2037,18 +2037,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   before sending it over the terminal's connection.
     void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
     {
-        auto option = ::Microsoft::Console::Utils::PasteOption::CarriageReturnNewline |
-                      ::Microsoft::Console::Utils::PasteOption::FilterControlCodes;
-
-        if (_terminal->IsXtermBracketedPasteModeEnabled())
-        {
-            WI_SetFlag(option, ::Microsoft::Console::Utils::PasteOption::Bracketed);
-        }
-
-        const auto converted = ::Microsoft::Console::Utils::ConvertPasteString(wstr, option);
-        _connection.WriteInput(converted);
-        _terminal->ClearSelection();
-        _terminal->TrySnapOnInput();
+        _terminal->WritePastedText(wstr);
     }
 
     // Method Description:
