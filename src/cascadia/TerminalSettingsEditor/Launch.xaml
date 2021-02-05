@@ -77,7 +77,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <!--Launch Mode-->
                 <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                     <muxc:RadioButtons x:Uid="Globals_LaunchMode"
-                                   SelectedItem="{x:Bind CurrentLaunchMode}"
+                                   SelectedItem="{x:Bind CurrentLaunchMode, Mode=TwoWay}"
                                    ItemsSource="{x:Bind LaunchModeList}"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
                 </ContentPresenter>
