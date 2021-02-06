@@ -2038,6 +2038,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
     {
         _terminal->WritePastedText(wstr);
+        _terminal->ClearSelection();
+        _terminal->TrySnapOnInput();
     }
 
     // Method Description:

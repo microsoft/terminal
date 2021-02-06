@@ -200,6 +200,14 @@ void UtilsTests::TestFilterStringForPaste()
     VERIFY_ARE_EQUAL(L"echo '.!: keS i3l ldKo -1+9 +2-1' > /tmp/lol\rsleep 1\rmd5sum /tmp/lol",
                      FilterStringForPaste(multiLineWithLotsOfControlCodes, FilterOption::CarriageReturnNewline | FilterOption::ControlCodes));
 
+    // Malicious string that tries to prematurely terminate bracketed
+    const std::wstring malicious = L"echo\x1b[201~";
+    VERIFY_ARE_EQUAL(L"echo[201~", FilterStringForPaste(malicious, FilterOption::CarriageReturnNewline | FilterOption::ControlCodes));
+
+    // C1 control codes
+    const std::wstring c1ControlCodes = L"echo\x9c";
+    VERIFY_ARE_EQUAL(L"echo", FilterStringForPaste(c1ControlCodes, FilterOption::CarriageReturnNewline | FilterOption::ControlCodes));
+
     // Test Unicode content
     const std::wstring unicodeString = L"你好\r\n\x01世界\x02\r\n123";
     VERIFY_ARE_EQUAL(L"你好\r世界\r123",

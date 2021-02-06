@@ -441,23 +441,23 @@ std::wstring Utils::FilterStringForPaste(const std::wstring_view wstr, const Fil
     filtered.reserve(wstr.length());
 
     const auto isControlCode = [](wchar_t c) {
-        if (c >= L'\x20' && c <= L'\x7f')
+        if (c >= L'\x20' && c < L'\x7f')
         {
-            // Printable ASCII characters + DEL.
+            // Printable ASCII characters.
             return false;
         }
 
-        if (c > L'\x7f')
+        if (c > L'\x9f')
         {
             // Not a control code.
             return false;
         }
 
-        // All ASCII control codes will be removed except HT(0x09), LF(0x0a),
-        // CR(0x0d) and DEL(0x7F).
+        // All C0 & C1 control codes will be removed except HT(0x09), LF(0x0a) and CR(0x0d).
         return c >= L'\x00' && c <= L'\x08' ||
                c >= L'\x0b' && c <= L'\x0c' ||
-               c >= L'\x0e' && c <= L'\x1f';
+               c >= L'\x0e' && c <= L'\x1f' ||
+               c >= L'\x7f' && c <= L'\x9F';
     };
 
     std::wstring::size_type pos = 0;
@@ -500,7 +500,7 @@ std::wstring Utils::FilterStringForPaste(const std::wstring_view wstr, const Fil
     // and we can just write the original string
     if (begin == 0)
     {
-        return std::wstring(wstr);
+        return std::wstring{ wstr };
     }
     else
     {

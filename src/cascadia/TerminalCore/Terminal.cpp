@@ -413,9 +413,6 @@ void Terminal::WritePastedText(std::wstring_view stringView)
     {
         _pfnWriteInput(filtered);
     }
-
-    ClearSelection();
-    TrySnapOnInput();
 }
 
 // Method Description:
