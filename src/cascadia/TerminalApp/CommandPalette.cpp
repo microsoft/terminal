@@ -451,6 +451,12 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_lostFocusHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                            Windows::UI::Xaml::RoutedEventArgs const& /*args*/)
     {
+        const auto flyout = _searchBox().ContextFlyout();
+        if (flyout && flyout.IsOpen())
+        {
+            return;
+        }
+
         auto focusedElementOrAncestor = Input::FocusManager::GetFocusedElement(this->XamlRoot()).try_as<DependencyObject>();
         while (focusedElementOrAncestor)
         {
