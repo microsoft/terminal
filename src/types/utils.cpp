@@ -454,10 +454,7 @@ std::wstring Utils::FilterStringForPaste(const std::wstring_view wstr, const Fil
         }
 
         // All C0 & C1 control codes will be removed except HT(0x09), LF(0x0a) and CR(0x0d).
-        return c >= L'\x00' && c <= L'\x08' ||
-               c >= L'\x0b' && c <= L'\x0c' ||
-               c >= L'\x0e' && c <= L'\x1f' ||
-               c >= L'\x7f' && c <= L'\x9F';
+        return c != L'\x09' && c != L'\x0a' && c != L'\x0d';
     };
 
     std::wstring::size_type pos = 0;
