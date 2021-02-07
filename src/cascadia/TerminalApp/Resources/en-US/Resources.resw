@@ -257,6 +257,9 @@
     <value>Failed to parse "startupActions".</value>
     <comment>{Locked="\"startupActions\""}</comment>
   </data>
+  <data name="InvalidProfileEnvironmentVariables" xml:space="preserve">
+    <value>Failed to expand profile environment variables. Please check for circular or self references.</value>
+  </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>An optional command, with arguments, to be spawned in the new tab or pane</value>
   </data>

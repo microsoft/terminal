@@ -43,7 +43,7 @@ namespace Microsoft.Terminal.TerminalControl
 
         String Commandline;
         String StartingDirectory;
-        String EnvironmentVariables;
+        Windows.Foundation.Collections.StringMap EnvironmentVariables;
 
         String BackgroundImage;
         Double BackgroundImageOpacity;

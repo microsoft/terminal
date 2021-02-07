@@ -36,6 +36,12 @@ namespace SettingsModelLocalTests
         TEST_METHOD(LayerProfileProperties);
         TEST_METHOD(LayerProfileIcon);
         TEST_METHOD(LayerProfilesOnArray);
+        TEST_METHOD(ProfileWithEnvVarSelfRefKeyThrows);
+        TEST_METHOD(ProfileWithEnvVarCircularRefsThrows);
+        TEST_METHOD(ProfileWithEnvVarNoReferences);
+        TEST_METHOD(ProfileWithEnvVarProcessEnv);
+        TEST_METHOD(ProfileWithEnvVarComplex);
+        TEST_METHOD(ProfileWithEnvVarWithParent);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -307,4 +313,156 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(L"profile4", settings->_allProfiles.GetAt(0).Name());
     }
 
+    void ProfileTests::ProfileWithEnvVarSelfRefKeyThrows()
+    {
+        const std::string profileString{ R"({
+            "name": "profile0",
+            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "environment": {
+                "VAR_1": "${env:VAR_1}"
+            }
+        })" };
+        auto profile = implementation::Profile::FromJson(VerifyParseSucceeded(profileString));
+        VERIFY_THROWS(profile->EvaluatedEnvironmentVariables(), winrt::hresult_error);
+    }
+
+    void ProfileTests::ProfileWithEnvVarCircularRefsThrows()
+    {
+        const std::string profileString{ R"({
+            "name": "profile0",
+            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "environment": {
+                "VAR_1": "${env:VAR_2}",
+                "VAR_2": "${env:VAR_3}",
+                "VAR_3": "${env:VAR_1}"
+            }
+        })" };
+        auto profile = implementation::Profile::FromJson(VerifyParseSucceeded(profileString));
+        VERIFY_THROWS(profile->EvaluatedEnvironmentVariables(), winrt::hresult_error);
+    }
+
+    void ProfileTests::ProfileWithEnvVarNoReferences()
+    {
+        const std::string profileString{ R"({
+            "name": "profile0",
+            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "environment": {
+                "VAR_1": "value1",
+                "VAR_2": "value2",
+                "VAR_3": "value3"
+            }
+        })" };
+        const auto profile = implementation::Profile::FromJson(VerifyParseSucceeded(profileString));
+        std::vector<winrt::Windows::Foundation::Collections::StringMap> envVarMaps{};
+        envVarMaps.emplace_back(profile->EnvironmentVariables());
+        envVarMaps.emplace_back(profile->EvaluatedEnvironmentVariables());
+        for (auto& envMap : envVarMaps)
+        {
+            VERIFY_ARE_EQUAL(static_cast<uint32_t>(3), envMap.Size());
+            VERIFY_ARE_EQUAL(L"value1", envMap.Lookup(L"VAR_1"));
+            VERIFY_ARE_EQUAL(L"value2", envMap.Lookup(L"VAR_2"));
+            VERIFY_ARE_EQUAL(L"value3", envMap.Lookup(L"VAR_3"));
+        }
+    }
+
+    void ProfileTests::ProfileWithEnvVarProcessEnv()
+    {
+        const std::string profileString{ R"({
+            "name": "profile0",
+            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "environment": {
+                "VAR_1": "${env:SystemRoot}",
+                "VAR_2": "${env:___DOES_NOT_EXIST_IN_ENVIRONMENT___1234567890}"
+            }
+        })" };
+
+        std::wstring expectedSystemRoot(static_cast<size_t>(MAX_PATH), L'\0');
+        VERIFY_IS_TRUE(GetEnvironmentVariableW(L"SystemRoot", expectedSystemRoot.data(), MAX_PATH) > 0);
+        expectedSystemRoot.erase(std::find_if(expectedSystemRoot.rbegin(), expectedSystemRoot.rend(), [](wchar_t ch) -> bool { return ch != L'\0'; }).base(), expectedSystemRoot.end());
+        const auto profile = implementation::Profile::FromJson(VerifyParseSucceeded(profileString));
+        const auto envMap = profile->EvaluatedEnvironmentVariables();
+        VERIFY_ARE_EQUAL(static_cast<uint32_t>(2), envMap.Size());
+        VERIFY_ARE_EQUAL(expectedSystemRoot, envMap.Lookup(L"VAR_1"));
+        VERIFY_ARE_EQUAL(L"", envMap.Lookup(L"VAR_2"));
+    }
+
+    void ProfileTests::ProfileWithEnvVarComplex()
+    {
+        const std::string profileString{ R"({
+            "name": "profile0",
+            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "environment": {
+                "TEST_HOME_DRIVE": "C:",
+                "TEST_HOME": "${env:TEST_HOME_DRIVE}${env:TEST_HOME_PATH}",
+                "TEST_HOME_PATH": "\\Users\\example",
+                "PARAM_START": "${env:TEST_HOME} abc",
+                "PARAM_MIDDLE": "abc ${env:TEST_HOME} abc",
+                "PARAM_END": "abc ${env:TEST_HOME}",
+                "PARAM_MULTIPLE": "${env:PARAM_START};${env:PARAM_MIDDLE};${env:PARAM_END}",
+                "PARAM_MULTIPLE_SAME": "${env:TEST_HOME_DRIVE};${env:TEST_HOME_DRIVE};${env:TEST_HOME_DRIVE};${env:TEST_HOME_DRIVE};${env:TEST_HOME_DRIVE};"
+            }
+        })" };
+
+        const auto profile = implementation::Profile::FromJson(VerifyParseSucceeded(profileString));
+        const auto envMap = profile->EvaluatedEnvironmentVariables();
+        VERIFY_ARE_EQUAL(static_cast<uint32_t>(8), envMap.Size());
+        VERIFY_ARE_EQUAL(L"C:\\Users\\example", envMap.Lookup(L"TEST_HOME"));
+        VERIFY_ARE_EQUAL(L"C:\\Users\\example abc", envMap.Lookup(L"PARAM_START"));
+        VERIFY_ARE_EQUAL(L"abc C:\\Users\\example abc", envMap.Lookup(L"PARAM_MIDDLE"));
+        VERIFY_ARE_EQUAL(L"abc C:\\Users\\example", envMap.Lookup(L"PARAM_END"));
+        VERIFY_ARE_EQUAL(L"C:\\Users\\example abc;abc C:\\Users\\example abc;abc C:\\Users\\example", envMap.Lookup(L"PARAM_MULTIPLE"));
+        VERIFY_ARE_EQUAL(L"C:;C:;C:;C:;C:;", envMap.Lookup(L"PARAM_MULTIPLE_SAME"));
+    }
+
+    void ProfileTests::ProfileWithEnvVarWithParent()
+    {
+        const std::string parentString{ R"({
+            "name": "profile0",
+            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "environment": {
+                "VAR_1": "parent",
+                "VAR_2": "parent",
+                "VAR_4": "parent",
+                "VAR_6": "${env:VAR_3}",
+                "VAR_8": "${env:SystemRoot}"
+            }
+        })" };
+
+        const std::string childString{ R"({
+            "name": "profile0",
+            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "environment": {
+                "VAR_1": "child",
+                "VAR_3": "child",
+                "VAR_5": "${env:VAR_4}",
+                "VAR_7": "${env:VAR_6}"
+            }
+        })" };
+
+        const auto parentProfile = implementation::Profile::FromJson(VerifyParseSucceeded(parentString));
+        const auto childProfile = implementation::Profile::FromJson(VerifyParseSucceeded(childString));
+        childProfile->InsertParent(parentProfile);
+
+        std::wstring expectedSystemRoot(static_cast<size_t>(MAX_PATH), L'\0');
+        VERIFY_IS_TRUE(GetEnvironmentVariableW(L"SystemRoot", expectedSystemRoot.data(), MAX_PATH) > 0);
+        expectedSystemRoot.erase(std::find_if(expectedSystemRoot.rbegin(), expectedSystemRoot.rend(), [](wchar_t ch) -> bool { return ch != L'\0'; }).base(), expectedSystemRoot.end());
+
+        const auto parentEnvVars = parentProfile->EvaluatedEnvironmentVariables();
+        const auto childEnvVars = childProfile->EvaluatedEnvironmentVariables();
+
+        VERIFY_ARE_EQUAL(L"parent", parentEnvVars.Lookup(L"VAR_1"));
+        VERIFY_ARE_EQUAL(L"parent", parentEnvVars.Lookup(L"VAR_2"));
+        VERIFY_ARE_EQUAL(L"parent", parentEnvVars.Lookup(L"VAR_4"));
+        VERIFY_ARE_EQUAL(L"", parentEnvVars.Lookup(L"VAR_6"));
+        VERIFY_ARE_EQUAL(expectedSystemRoot, parentEnvVars.Lookup(L"VAR_8"));
+
+        VERIFY_ARE_EQUAL(L"child", childEnvVars.Lookup(L"VAR_1"));
+        VERIFY_ARE_EQUAL(L"parent", childEnvVars.Lookup(L"VAR_2"));
+        VERIFY_ARE_EQUAL(L"child", childEnvVars.Lookup(L"VAR_3"));
+        VERIFY_ARE_EQUAL(L"parent", childEnvVars.Lookup(L"VAR_4"));
+        VERIFY_ARE_EQUAL(L"parent", childEnvVars.Lookup(L"VAR_5"));
+        VERIFY_ARE_EQUAL(L"child", childEnvVars.Lookup(L"VAR_6"));
+        VERIFY_ARE_EQUAL(L"child", childEnvVars.Lookup(L"VAR_7"));
+        VERIFY_ARE_EQUAL(expectedSystemRoot, childEnvVars.Lookup(L"VAR_8"));
+    }
 }

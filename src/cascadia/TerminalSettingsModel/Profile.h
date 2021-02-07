@@ -122,7 +122,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         GETSET_SETTING(Model::Profile, Model::BellStyle, BellStyle, BellStyle::Audible);
 
+        GETSET_SETTING(Model::Profile, winrt::Windows::Foundation::Collections::StringMap, EnvironmentVariables);
+
+    public:
+        winrt::Windows::Foundation::Collections::StringMap EvaluatedEnvironmentVariables() const;
+        void ValidateEvaluatedEnvironmentVariables() const;
+
     private:
+        winrt::Windows::Foundation::Collections::StringMap _EvaluatedEnvironmentVariables() const;
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
         static guid _GenerateGuidForProfile(const hstring& name, const hstring& source) noexcept;

@@ -314,6 +314,8 @@ void CascadiaSettings::_ValidateSettings()
     _ValidateColorSchemesInCommands();
 
     _ValidateNoGlobalsKey();
+
+    _ValidateProfileEnvironmentVariables();
 }
 
 // Method Description:
@@ -331,6 +333,24 @@ void CascadiaSettings::_ValidateProfilesExist()
         // object is not going to be returned at any point.
 
         throw SettingsException(Microsoft::Terminal::Settings::Model::SettingsLoadErrors::NoProfiles);
+    }
+}
+
+// Method Description:
+// - Checks if the profiles contain invalid environment variable values
+//   profiles at all, we'll throw an error if there aren't any profiles.
+void CascadiaSettings::_ValidateProfileEnvironmentVariables()
+{
+    for (const auto& profile : _allProfiles)
+    {
+        try
+        {
+            profile.ValidateEvaluatedEnvironmentVariables();
+        }
+        catch (...)
+        {
+            _warnings.Append(Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::InvalidProfileEnvironmentVariables);
+        }
     }
 }
 

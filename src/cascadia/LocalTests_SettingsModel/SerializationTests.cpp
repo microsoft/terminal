@@ -106,7 +106,13 @@ namespace SettingsModelLocalTests
 
                 "experimental.input.forceVT": false,
                 "experimental.rendering.forceFullRepaint": false,
-                "experimental.rendering.software": false
+                "experimental.rendering.software": false,
+                "environment":
+                {
+                    "KEY_1": "VALUE_1",
+                    "KEY_2": "${env:KEY_1}",
+                    "KEY_3": "${env:PATH}"
+                }
             })" };
 
         const std::string smallGlobalsString{ R"(

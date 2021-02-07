@@ -103,7 +103,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_SETTING(TerminalApp::TerminalSettings, hstring, StartingDirectory);
         GETSET_SETTING(TerminalApp::TerminalSettings, hstring, StartingTitle);
         GETSET_SETTING(TerminalApp::TerminalSettings, bool, SuppressApplicationTitle);
-        GETSET_SETTING(TerminalApp::TerminalSettings, hstring, EnvironmentVariables);
+        GETSET_SETTING(TerminalApp::TerminalSettings, winrt::Windows::Foundation::Collections::StringMap, EnvironmentVariables);
 
         GETSET_SETTING(TerminalApp::TerminalSettings, Microsoft::Terminal::TerminalControl::ScrollbarState, ScrollState, Microsoft::Terminal::TerminalControl::ScrollbarState::Visible);
 

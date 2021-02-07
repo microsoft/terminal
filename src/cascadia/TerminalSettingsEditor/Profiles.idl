@@ -59,6 +59,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.TerminalControl.CursorStyle, CursorShape);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(UInt32, CursorHeight);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.BellStyle, BellStyle);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.Collections.StringMap, EnvironmentVariables);
     }
 
     runtimeclass DeleteProfileEventArgs

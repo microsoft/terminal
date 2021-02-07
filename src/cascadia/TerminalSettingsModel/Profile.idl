@@ -102,5 +102,9 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.TerminalControl.CursorStyle, CursorShape);
         INHERITABLE_PROFILE_SETTING(UInt32, CursorHeight);
         INHERITABLE_PROFILE_SETTING(BellStyle, BellStyle);
+
+        INHERITABLE_PROFILE_SETTING(Windows.Foundation.Collections.StringMap, EnvironmentVariables);
+        Windows.Foundation.Collections.StringMap EvaluatedEnvironmentVariables { get; };
+        void ValidateEvaluatedEnvironmentVariables();
     }
 }
