@@ -39,6 +39,7 @@ systemroot
 taskkill
 tasklist
 tdbuildteamid
+VCRT
 vcruntime
 visualstudio
 VSTHRD
@@ -47,3 +48,4 @@ wslpath
 wtl
 wtt
 wttlog
+Xamarin
