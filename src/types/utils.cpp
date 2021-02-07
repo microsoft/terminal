@@ -462,13 +462,13 @@ std::wstring Utils::FilterStringForPaste(const std::wstring_view wstr, const Fil
 
     while (pos < wstr.size())
     {
-        const wchar_t c = wstr.at(pos);
+        const wchar_t c = til::at(wstr, pos);
 
         if (WI_IsFlagSet(option, FilterOption::CarriageReturnNewline) && c == L'\n')
         {
             // copy up to but not including the \n
             filtered.append(wstr.cbegin() + begin, wstr.cbegin() + pos);
-            if (!(pos > 0 && (wstr.at(pos - 1) == L'\r')))
+            if (!(pos > 0 && (til::at(wstr, pos - 1) == L'\r')))
             {
                 // there was no \r before the \n we did not copy,
                 // so append our own \r (this effectively replaces the \n
