@@ -19,6 +19,9 @@ Author(s):
 #include "../inc/cppwinrt_utils.h"
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
+#include <winrt/impl/Windows.Foundation.Collections.2.h>
+
+using namespace winrt::Windows::Foundation::Collections;
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -108,7 +111,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_SETTING(hstring, StartingDirectory);
         GETSET_SETTING(hstring, StartingTitle);
         GETSET_SETTING(bool, SuppressApplicationTitle);
-        GETSET_SETTING(hstring, EnvironmentVariables);
+        GETSET_SETTING(StringMap, EnvironmentVariables);
 
         GETSET_SETTING(Microsoft::Terminal::TerminalControl::ScrollbarState, ScrollState, Microsoft::Terminal::TerminalControl::ScrollbarState::Visible);
 

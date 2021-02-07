@@ -907,7 +907,7 @@ namespace winrt::TerminalApp::implementation
         {
             std::wstring guidWString = Utils::GuidToString(profileGuid);
 
-            StringMap envMap{};
+            auto envMap = settings.EnvironmentVariables();
             envMap.Insert(L"WT_PROFILE_ID", guidWString);
             envMap.Insert(L"WSLENV", L"WT_PROFILE_ID");
 

@@ -193,6 +193,11 @@ namespace winrt::TerminalApp::implementation
             const til::color colorRef{ profile.TabColor().Value() };
             _TabColor = static_cast<uint32_t>(colorRef);
         }
+
+        if (profile.HasEnvironmentVariables())
+        {
+            _EnvironmentVariables = profile.EnvironmentVariables();
+        }
     }
 
     // Method Description:

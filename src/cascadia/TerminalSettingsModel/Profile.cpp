@@ -59,6 +59,7 @@ static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 static constexpr std::string_view BellStyleKey{ "bellStyle" };
 static constexpr std::string_view PixelShaderPathKey{ "experimental.pixelShaderPath" };
+static constexpr std::string_view EnvironmentKey{ "environment" };
 
 static constexpr std::wstring_view DesktopWallpaperEnum{ L"desktopWallpaper" };
 
@@ -275,6 +276,75 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
     return sourceMatches;
 }
 
+namespace
+{
+    std::wstring ResolveEnvironmentVariableValue(const std::wstring& key, StringMap& envMap, std::map<std::wstring, bool> seenKeys)
+    {
+        if (envMap.HasKey(key))
+        {
+            if (seenKeys.find(key) != seenKeys.end())
+            {
+                std::wstringstream error;
+                error << L"Self referencing keys in environment settings: ";
+                for (auto it : seenKeys)
+                {
+                    error << L"'" << it.first << L"', ";
+                }
+                error << L"'" << key << L"'";
+                throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::hstring(error.str()));
+            }
+            const std::wregex parameterRegex(L"\\$\\{env:(.*?)\\}");
+            std::wstring value(envMap.Lookup(key)), resolvedValue;
+            auto textIter = value.cbegin();
+            std::wsmatch regexMatch;
+            while (std::regex_search(textIter, value.cend(), regexMatch, parameterRegex))
+            {
+                if (regexMatch.size() != 2)
+                {
+                    std::wstringstream error;
+                    error << L"Unexpected regex match count '" << regexMatch.size()
+                          << L"' (expected '2') when matching '" << std::wstring(textIter, value.cend()) << L"'";
+                    throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::hstring(error.str()));
+                }
+                resolvedValue += std::wstring(textIter, regexMatch[0].first);
+                const auto referencedKey = regexMatch[1];
+                if (referencedKey == key)
+                {
+                    std::wstringstream error;
+                    error << L"Self referencing key '" << key << L"' in environment settings";
+                    throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::hstring(error.str()));
+                }
+                seenKeys[key] = true;
+                resolvedValue += ResolveEnvironmentVariableValue(referencedKey, envMap, seenKeys);
+                textIter = regexMatch[0].second;
+            }
+            std::copy(textIter, value.cend(), std::back_inserter(resolvedValue));
+
+            return resolvedValue;
+        }
+        const auto size = GetEnvironmentVariableW(key.c_str(), nullptr, 0);
+        if (size > 0)
+        {
+            std::wstring value(static_cast<size_t>(size), L'\0');
+            if (GetEnvironmentVariableW(key.c_str(), value.data(), size) > 0)
+            {
+                // Documentation (https://docs.microsoft.com/en-us/windows/win32/api/processenv/nf-processenv-getenvironmentvariablew)
+                // says: "If the function succeeds, the return value is the number of characters stored in the buffer pointed to by lpBuffer,
+                // not including the terminating null character."
+                // However, my SystemDrive "C:" returns 3 and so without trimming we will end up with a stray NULL string terminator
+                // in the string.
+                value.erase(std::find_if(value.rbegin(), value.rend(), [](wchar_t ch) {
+                                return ch != L'\0';
+                            }).base(),
+                            value.end());
+
+                return value;
+            }
+        }
+        return {};
+    }
+}
+
 // Method Description:
 // - Layer values from the given json object on top of the existing properties
 //   of this object. For any keys we're expecting to be able to parse in the
@@ -339,6 +409,26 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
     JsonUtils::GetValueForKey(json, BellStyleKey, _BellStyle);
     JsonUtils::GetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
+
+    const auto environmentKey = std::string(EnvironmentKey);
+    if (json.isMember(environmentKey))
+    {
+        auto environmentNode = json[environmentKey];
+        StringMap rawEnvMap{}, resolvedEnvMap{};
+        for (Json::Value::const_iterator it = environmentNode.begin(); it != environmentNode.end(); ++it)
+        {
+            rawEnvMap.Insert(JsonUtils::GetValue<hstring>(it.key()), JsonUtils::GetValue<hstring>(*it));
+        }
+
+        auto view = rawEnvMap.GetView();
+        for (auto it = view.First(); it.HasCurrent(); it.MoveNext())
+        {
+            const std::wstring key((*it).Key());
+            resolvedEnvMap.Insert(key, ResolveEnvironmentVariableValue(key, rawEnvMap, {}));
+        }
+
+        EnvironmentVariables(resolvedEnvMap);
+    }
 }
 
 // Method Description:

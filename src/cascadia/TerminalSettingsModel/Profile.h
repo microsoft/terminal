@@ -21,6 +21,9 @@ Author(s):
 #include "../inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
 #include <DefaultSettings.h>
+#include <winrt/impl/Windows.Foundation.Collections.2.h>
+
+using namespace winrt::Windows::Foundation::Collections;
 
 // fwdecl unittest classes
 namespace SettingsModelLocalTests
@@ -113,6 +116,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
 
         GETSET_SETTING(Model::BellStyle, BellStyle, BellStyle::Audible);
+
+        GETSET_SETTING(StringMap, EnvironmentVariables);
 
     private:
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);

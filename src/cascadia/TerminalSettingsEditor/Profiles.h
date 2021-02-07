@@ -66,6 +66,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, CursorShape);
         OBSERVABLE_PROJECTED_SETTING(_profile, CursorHeight);
         OBSERVABLE_PROJECTED_SETTING(_profile, BellStyle);
+        OBSERVABLE_PROJECTED_SETTING(_profile, EnvironmentVariables);
 
     private:
         Model::Profile _profile;

@@ -190,5 +190,9 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean HasBellStyle();
         void ClearBellStyle();
         BellStyle BellStyle;
+
+        Boolean HasEnvironmentVariables();
+        void ClearEnvironmentVariables();
+        Windows.Foundation.Collections.StringMap EnvironmentVariables;
     }
 }
