@@ -580,12 +580,17 @@ namespace winrt::TerminalApp::implementation
                     {
                         // 3 is the indeterminate state, set the progress ring as such
                         tab->_headerControl.IsProgressRingIndeterminate(true);
+                        tab->_tabStatus.IsProgressRingIndeterminate(true);
                     }
                     else
                     {
                         // any non-indeterminate state has a value, set the progress ring as such
                         tab->_headerControl.IsProgressRingIndeterminate(false);
-                        tab->_headerControl.ProgressValue(gsl::narrow<uint32_t>(tab->GetActiveTerminalControl().TaskbarProgress()));
+                        tab->_tabStatus.IsProgressRingIndeterminate(false);
+
+                        const auto progressValue = gsl::narrow<uint32_t>(tab->GetActiveTerminalControl().TaskbarProgress());
+                        tab->_headerControl.ProgressValue(progressValue);
+                        tab->_tabStatus.ProgressValue(progressValue);
                     }
                     // Hide the tab icon (the progress ring is placed over it)
                     tab->HideIcon(true);
