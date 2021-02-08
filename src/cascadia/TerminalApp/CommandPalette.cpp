@@ -52,11 +52,8 @@ namespace winrt::TerminalApp::implementation
         RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
             if (Visibility() == Visibility::Visible)
             {
-                if (_filteredActionsView().Items().Size() == 0 && _filteredActions.Size() > 0)
-                {
-                    // Force immediate binding update so we can select an item
-                    Bindings->Update();
-                }
+                // Force immediate binding update so we can select an item
+                Bindings->Update();
 
                 if (_currentMode == CommandPaletteMode::TabSwitchMode)
                 {
