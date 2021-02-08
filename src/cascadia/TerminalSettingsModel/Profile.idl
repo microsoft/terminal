@@ -3,6 +3,14 @@
 
 namespace Microsoft.Terminal.Settings.Model
 {
+    // This tag is used to identify the context in which the Profile was created
+    enum OriginTag
+    {
+        Custom = 0,
+        InBox,
+        Generated
+    };
+
     enum CloseOnExitMode
     {
         Never = 0,
@@ -34,6 +42,8 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass Profile {
         Profile();
         Profile(Guid guid);
+
+        OriginTag Origin { get; };
 
         Boolean HasName();
         void ClearName();
