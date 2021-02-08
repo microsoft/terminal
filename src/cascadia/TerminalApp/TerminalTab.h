@@ -77,6 +77,9 @@ namespace winrt::TerminalApp::implementation
 
         int GetLeafPaneCount() const noexcept;
 
+        void TogglePaneReadOnly();
+        std::shared_ptr<Pane> GetActivePane() const;
+
         DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
         DECLARE_EVENT(ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
         DECLARE_EVENT(ColorCleared, _colorCleared, winrt::delegate<>);
@@ -136,6 +139,8 @@ namespace winrt::TerminalApp::implementation
         void _RecalculateAndApplyTabColor();
         void _ApplyTabColor(const winrt::Windows::UI::Color& color);
         void _ClearTabBackgroundColor();
+
+        void _RecalculateAndApplyReadOnly();
 
         friend class ::TerminalAppLocalTests::TabTests;
     };

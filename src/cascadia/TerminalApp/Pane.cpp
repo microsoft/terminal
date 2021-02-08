@@ -416,8 +416,11 @@ void Pane::_ControlLostFocusHandler(winrt::Windows::Foundation::IInspectable con
 // - <none>
 void Pane::Close()
 {
-    // Fire our Closed event to tell our parent that we should be removed.
-    _ClosedHandlers(nullptr, nullptr);
+    if (!_isClosing.exchange(true))
+    {
+        // Fire our Closed event to tell our parent that we should be removed.
+        _ClosedHandlers(nullptr, nullptr);
+    }
 }
 
 // Method Description:
@@ -2083,6 +2086,13 @@ std::optional<SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane
     // We should not possibly be getting here - both the above branches should
     // return a value.
     FAIL_FAST();
+}
+
+// Method Description:
+// - Returns true if the pane or one of its descendants is read-only
+bool Pane::ContainsReadOnly() const
+{
+    return _IsLeaf() ? _control.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
 }
 
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);

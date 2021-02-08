@@ -105,6 +105,7 @@
         "toggleFocusMode",
         "toggleFullscreen",
         "togglePaneZoom",
+        "toggleReadOnlyMode",
         "toggleShaderEffects",
         "wt",
         "unbound"

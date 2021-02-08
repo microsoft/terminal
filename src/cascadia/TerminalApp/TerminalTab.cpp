@@ -601,6 +601,13 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         });
+
+        control.ReadOnlyChanged([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_RecalculateAndApplyReadOnly();
+            }
+        });
     }
 
     // Method Description:
@@ -635,6 +642,9 @@ namespace winrt::TerminalApp::implementation
             }
             _mruPanes.insert(_mruPanes.begin(), paneId.value());
         }
+
+        _RecalculateAndApplyReadOnly();
+
         // Raise our own ActivePaneChanged event.
         _ActivePaneChangedHandlers();
     }
@@ -1113,6 +1123,38 @@ namespace winrt::TerminalApp::implementation
     bool TerminalTab::IsZoomed()
     {
         return _zoomedPane != nullptr;
+    }
+
+    // Method Description:
+    // - Toggle read-only mode on the active pane
+    void TerminalTab::TogglePaneReadOnly()
+    {
+        auto control = GetActiveTerminalControl();
+        if (control)
+        {
+            control.ToggleReadOnly();
+        }
+    }
+
+    // Method Description:
+    // - Calculates if the tab is read-only.
+    // The tab is considered read-only if one of the panes is read-only.
+    // If after the calculation the tab is read-only we hide the close button on the tab view item
+    void TerminalTab::_RecalculateAndApplyReadOnly()
+    {
+        const auto control = GetActiveTerminalControl();
+        if (control)
+        {
+            _headerControl.IsReadOnlyActive(control.ReadOnly());
+        }
+
+        ReadOnly(_rootPane->ContainsReadOnly());
+        TabViewItem().IsClosable(!ReadOnly());
+    }
+
+    std::shared_ptr<Pane> TerminalTab::GetActivePane() const
+    {
+        return _activePane;
     }
 
     // Method Description:

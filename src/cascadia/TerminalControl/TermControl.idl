@@ -116,5 +116,9 @@ namespace Microsoft.Terminal.TerminalControl
 
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
+
+        Boolean ReadOnly { get; };
+        void ToggleReadOnly();
+        event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
     }
 }

@@ -55,6 +55,12 @@ the MIT License. See LICENSE in the project root for license information. -->
                   Glyph="&#xE8A3;"
                   FontSize="12"
                   Margin="0,0,8,0"/>
+        <FontIcon x:Name="HeaderLockIcon"
+                  FontFamily="Segoe MDL2 Assets"
+                  Visibility="{x:Bind IsReadOnlyActive, Mode=OneWay}"
+                  Glyph="&#xE72E;"
+                  FontSize="12"
+                  Margin="0,0,8,0"/>
         <TextBlock x:Name="HeaderTextBlock"
                    Visibility="Visible"
                    Text="{x:Bind Title, Mode=OneWay}"/>
