@@ -11,6 +11,7 @@
 #include <WinUser.h>
 #include <LibraryResources.h>
 #include "../../types/inc/GlyphWidth.hpp"
+#include "../../types/inc/Utils.hpp"
 
 #include "TermControl.g.cpp"
 #include "TermControlAutomationPeer.h"
@@ -1366,22 +1367,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto cursorPosition = point.Position();
         const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
-        if (!_focused && (_terminal->GetHyperlinkAtPosition(terminalPosition).empty()))
-        {
-            args.Handled(true);
-            return;
-        }
-
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            if (_CanSendVTMouseInput())
+            if (_focused && _CanSendVTMouseInput())
             {
                 _TrySendMouseEvent(point);
                 args.Handled(true);
                 return;
             }
 
-            if (point.Properties().IsLeftButtonPressed())
+            if (_focused && point.Properties().IsLeftButtonPressed())
             {
                 auto lock = _terminal->LockForWriting();
 
@@ -1470,7 +1465,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
             }
         }
-        else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
+        else if (_focused && ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
         {
             const auto contactRect = point.Properties().ContactRect();
             winrt::Windows::Foundation::Point newTouchPoint{ contactRect.X, contactRect.Y };
@@ -2060,9 +2055,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     // Method Description:
     // - Pre-process text pasted (presumably from the clipboard)
-    //   before sending it over the terminal's connection, converting
-    //   Windows-space \r\n line-endings to \r line-endings
-    // - Also converts \n line-endings to \r line-endings
+    //   before sending it over the terminal's connection.
     void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
     {
         if (_isReadOnly)
@@ -2071,58 +2064,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        // Some notes on this implementation:
-        //
-        // - std::regex can do this in a single line, but is somewhat
-        //   overkill for a simple search/replace operation (and its
-        //   performance guarantees aren't exactly stellar)
-        // - The STL doesn't have a simple string search/replace method.
-        //   This fact is lamentable.
-        // - We search for \n, and when we find it we copy the string up to
-        //   the \n (but not including it). Then, we check the if the
-        //   previous character is \r, if its not, then we had a lone \n
-        //   and so we append our own \r
-
-        std::wstring stripped;
-        stripped.reserve(wstr.length());
-
-        std::wstring::size_type pos = 0;
-        std::wstring::size_type begin = 0;
-
-        while ((pos = wstr.find(L"\n", pos)) != std::wstring::npos)
-        {
-            // copy up to but not including the \n
-            stripped.append(wstr.cbegin() + begin, wstr.cbegin() + pos);
-            if (!(pos > 0 && (wstr.at(pos - 1) == L'\r')))
-            {
-                // there was no \r before the \n we did not copy,
-                // so append our own \r (this effectively replaces the \n
-                // with a \r)
-                stripped.push_back(L'\r');
-            }
-            ++pos;
-            begin = pos;
-        }
-
-        // If we entered the while loop even once, begin would be non-zero
-        // (because we set begin = pos right after incrementing pos)
-        // So, if begin is still zero at this point it means we never found a newline
-        // and we can just write the original string
-        if (begin == 0)
-        {
-            _connection.WriteInput(wstr);
-        }
-        else
-        {
-            // copy over the part after the last \n
-            stripped.append(wstr.cbegin() + begin, wstr.cend());
-
-            // we may have removed some characters, so we may not need as much space
-            // as we reserved earlier
-            stripped.shrink_to_fit();
-            _connection.WriteInput(stripped);
-        }
-
+        _terminal->WritePastedText(wstr);
         _terminal->ClearSelection();
         _terminal->TrySnapOnInput();
     }
