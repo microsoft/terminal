@@ -17,11 +17,8 @@ Author(s):
 #include "TerminalSettings.g.h"
 #include "../TerminalSettingsModel/IInheritable.h"
 #include "../inc/cppwinrt_utils.h"
-#include "../../types/inc/colorTable.hpp"
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
-
-using namespace Microsoft::Console::Utils;
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
