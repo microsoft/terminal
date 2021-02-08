@@ -58,6 +58,22 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Called when the timer for the bell indicator in the tab header fires
+    // - Removes the bell indicator from the tab header
+    // Arguments:
+    // - sender, e: not used
+    void TerminalTab::_BellIndicatorTimerTick(Windows::Foundation::IInspectable const& /*sender*/, Windows::Foundation::IInspectable const& /*e*/)
+    {
+        ShowBellIndicator(false);
+        // Just do a sanity check that the timer still exists before we stop it
+        if (_bellIndicatorTimer.has_value())
+        {
+            _bellIndicatorTimer->Stop();
+            _bellIndicatorTimer = std::nullopt;
+        }
+    }
+
+    // Method Description:
     // - Initializes a TabViewItem for this Tab instance.
     // Arguments:
     // - <none>
@@ -144,6 +160,11 @@ namespace winrt::TerminalApp::implementation
             {
                 lastFocusedControl.Focus(_focusState);
                 lastFocusedControl.TaskbarProgressChanged();
+            }
+            // When we gain focus, remove the bell indicator if it is active
+            if (_headerControl.BellIndicator())
+            {
+                ShowBellIndicator(false);
             }
         }
     }
@@ -256,6 +277,45 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Hide or show the bell indicator in the tab header
+    // Arguments:
+    // - show: if true, we show the indicator; if false, we hide the indicator
+    winrt::fire_and_forget TerminalTab::ShowBellIndicator(const bool show)
+    {
+        auto weakThis{ get_weak() };
+
+        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+
+        if (auto tab{ weakThis.get() })
+        {
+            tab->_headerControl.BellIndicator(show);
+            BellIndicator(show);
+        }
+    }
+
+    // Method Description:
+    // - Activates the timer for the bell indicator in the tab
+    // - Called if a bell raised when the tab already has focus
+    winrt::fire_and_forget TerminalTab::ActivateBellIndicatorTimer()
+    {
+        auto weakThis{ get_weak() };
+
+        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+
+        if (auto tab{ weakThis.get() })
+        {
+            if (!tab->_bellIndicatorTimer.has_value())
+            {
+                DispatcherTimer bellIndicatorTimer;
+                bellIndicatorTimer.Interval(std::chrono::milliseconds(2000));
+                bellIndicatorTimer.Tick({ get_weak(), &TerminalTab::_BellIndicatorTimerTick });
+                bellIndicatorTimer.Start();
+                tab->_bellIndicatorTimer.emplace(std::move(bellIndicatorTimer));
+            }
+        }
+    }
+
+    // Method Description:
     // - Gets the title string of the last focused terminal control in our tree.
     //   Returns the empty string if there is no such control.
     // Arguments:
@@ -331,9 +391,19 @@ namespace winrt::TerminalApp::implementation
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
         const auto activePaneId = _activePane->Id();
         auto [first, second] = _activePane->Split(splitType, splitSize, profile, control);
-        first->Id(activePaneId);
-        second->Id(_nextPaneId);
-        ++_nextPaneId;
+        if (activePaneId)
+        {
+            first->Id(activePaneId.value());
+            second->Id(_nextPaneId);
+            ++_nextPaneId;
+        }
+        else
+        {
+            first->Id(_nextPaneId);
+            ++_nextPaneId;
+            second->Id(_nextPaneId);
+            ++_nextPaneId;
+        }
         _activePane = first;
         _AttachEventHandlersToControl(control);
 
@@ -520,13 +590,22 @@ namespace winrt::TerminalApp::implementation
                     // Hide the tab icon (the progress ring is placed over it)
                     tab->HideIcon(true);
                     tab->_headerControl.IsProgressRingActive(true);
+                    tab->IsProgressRingActive(true);
                 }
                 else
                 {
                     // Show the tab icon
                     tab->HideIcon(false);
                     tab->_headerControl.IsProgressRingActive(false);
+                    tab->IsProgressRingActive(false);
                 }
+            }
+        });
+
+        control.ReadOnlyChanged([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_RecalculateAndApplyReadOnly();
             }
         });
     }
@@ -551,16 +630,21 @@ namespace winrt::TerminalApp::implementation
 
         // We need to move the pane to the top of our mru list
         // If its already somewhere in the list, remove it first
-        const auto paneId = pane->Id();
-        for (auto i = _mruPanes.begin(); i != _mruPanes.end(); ++i)
+        if (const auto paneId = pane->Id())
         {
-            if (*i == paneId)
+            for (auto i = _mruPanes.begin(); i != _mruPanes.end(); ++i)
             {
-                _mruPanes.erase(i);
-                break;
+                if (*i == paneId.value())
+                {
+                    _mruPanes.erase(i);
+                    break;
+                }
             }
+            _mruPanes.insert(_mruPanes.begin(), paneId.value());
         }
-        _mruPanes.insert(_mruPanes.begin(), paneId);
+
+        _RecalculateAndApplyReadOnly();
+
         // Raise our own ActivePaneChanged event.
         _ActivePaneChangedHandlers();
     }
@@ -583,10 +667,30 @@ namespace winrt::TerminalApp::implementation
             // Do nothing if the Tab's lifetime is expired or pane isn't new.
             auto tab{ weakThis.get() };
 
-            if (tab && sender != tab->_activePane)
+            if (tab)
             {
-                tab->_UpdateActivePane(sender);
-                tab->_RecalculateAndApplyTabColor();
+                if (sender != tab->_activePane)
+                {
+                    tab->_UpdateActivePane(sender);
+                    tab->_RecalculateAndApplyTabColor();
+                }
+                tab->_focusState = WUX::FocusState::Programmatic;
+                // This tab has gained focus, remove the bell indicator if it is active
+                if (tab->_headerControl.BellIndicator())
+                {
+                    tab->ShowBellIndicator(false);
+                }
+            }
+        });
+
+        pane->LostFocus([weakThis](std::shared_ptr<Pane> /*sender*/) {
+            // Do nothing if the Tab's lifetime is expired or pane isn't new.
+            auto tab{ weakThis.get() };
+
+            if (tab)
+            {
+                // update this tab's focus state
+                tab->_focusState = WUX::FocusState::Unfocused;
             }
         });
 
@@ -620,10 +724,23 @@ namespace winrt::TerminalApp::implementation
         // Add a PaneRaiseVisualBell event handler to the Pane. When the pane emits this event,
         // we need to bubble it all the way to app host. In this part of the chain we bubble it
         // from the hosting tab to the page.
-        pane->PaneRaiseVisualBell([weakThis](auto&& /*s*/) {
+        pane->PaneRaiseBell([weakThis](auto&& /*s*/, auto&& visual) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_TabRaiseVisualBellHandlers();
+                if (visual)
+                {
+                    tab->_TabRaiseVisualBellHandlers();
+
+                    tab->ShowBellIndicator(true);
+
+                    // If this tab is focused, activate the bell indicator timer, which will
+                    // remove the bell indicator once it fires
+                    // (otherwise, the indicator is removed when the tab gets focus)
+                    if (tab->_focusState != WUX::FocusState::Unfocused)
+                    {
+                        tab->ActivateBellIndicatorTimer();
+                    }
+                }
             }
         });
     }
@@ -990,6 +1107,7 @@ namespace winrt::TerminalApp::implementation
         _rootPane->Maximize(_zoomedPane);
         // Update the tab header to show the magnifying glass
         _headerControl.IsPaneZoomed(true);
+        IsPaneZoomed(true);
         Content(_zoomedPane->GetRootElement());
     }
     void TerminalTab::ExitZoom()
@@ -998,12 +1116,66 @@ namespace winrt::TerminalApp::implementation
         _zoomedPane = nullptr;
         // Update the tab header to hide the magnifying glass
         _headerControl.IsPaneZoomed(false);
+        IsPaneZoomed(false);
         Content(_rootPane->GetRootElement());
     }
 
     bool TerminalTab::IsZoomed()
     {
         return _zoomedPane != nullptr;
+    }
+
+    // Method Description:
+    // - Toggle read-only mode on the active pane
+    void TerminalTab::TogglePaneReadOnly()
+    {
+        auto control = GetActiveTerminalControl();
+        if (control)
+        {
+            control.ToggleReadOnly();
+        }
+    }
+
+    // Method Description:
+    // - Calculates if the tab is read-only.
+    // The tab is considered read-only if one of the panes is read-only.
+    // If after the calculation the tab is read-only we hide the close button on the tab view item
+    void TerminalTab::_RecalculateAndApplyReadOnly()
+    {
+        const auto control = GetActiveTerminalControl();
+        if (control)
+        {
+            _headerControl.IsReadOnlyActive(control.ReadOnly());
+        }
+
+        ReadOnly(_rootPane->ContainsReadOnly());
+        TabViewItem().IsClosable(!ReadOnly());
+    }
+
+    std::shared_ptr<Pane> TerminalTab::GetActivePane() const
+    {
+        return _activePane;
+    }
+
+    // Method Description:
+    // - Creates a text for the title run in the tool tip by returning tab title
+    // or <profile name>: <tab title> in the case the profile name differs from the title
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The value to populate in the title run of the tool tip
+    winrt::hstring TerminalTab::_CreateToolTipTitle()
+    {
+        if (const auto& control{ GetActiveTerminalControl() })
+        {
+            const auto profileName{ control.Settings().ProfileName() };
+            if (profileName != Title())
+            {
+                return fmt::format(L"{}: {}", profileName, Title()).data();
+            }
+        }
+
+        return Title();
     }
 
     DEFINE_EVENT(TerminalTab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);

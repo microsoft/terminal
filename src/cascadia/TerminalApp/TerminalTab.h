@@ -41,6 +41,9 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget UpdateIcon(const winrt::hstring iconPath);
         winrt::fire_and_forget HideIcon(const bool hide);
 
+        winrt::fire_and_forget ShowBellIndicator(const bool show);
+        winrt::fire_and_forget ActivateBellIndicatorTimer();
+
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
         winrt::Microsoft::Terminal::Settings::Model::SplitState PreCalculateAutoSplit(winrt::Windows::Foundation::Size rootSize) const;
         bool PreCalculateCanSplit(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
@@ -74,10 +77,19 @@ namespace winrt::TerminalApp::implementation
 
         int GetLeafPaneCount() const noexcept;
 
+        void TogglePaneReadOnly();
+        std::shared_ptr<Pane> GetActivePane() const;
+
         DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
         DECLARE_EVENT(ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
         DECLARE_EVENT(ColorCleared, _colorCleared, winrt::delegate<>);
         DECLARE_EVENT(TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
+
+        OBSERVABLE_GETSET_PROPERTY(bool, IsPaneZoomed, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(bool, IsProgressRingActive, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(bool, IsProgressRingIndeterminate, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(bool, BellIndicator, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(uint32_t, ProgressValue, _PropertyChangedHandlers);
 
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };
@@ -103,11 +115,15 @@ namespace winrt::TerminalApp::implementation
 
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
 
+        std::optional<Windows::UI::Xaml::DispatcherTimer> _bellIndicatorTimer;
+        void _BellIndicatorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
+
         void _MakeTabViewItem();
 
         winrt::fire_and_forget _UpdateHeaderControlMaxWidth();
 
         void _CreateContextMenu() override;
+        virtual winrt::hstring _CreateToolTipTitle() override;
 
         void _RefreshVisualState();
 
@@ -123,6 +139,8 @@ namespace winrt::TerminalApp::implementation
         void _RecalculateAndApplyTabColor();
         void _ApplyTabColor(const winrt::Windows::UI::Color& color);
         void _ClearTabBackgroundColor();
+
+        void _RecalculateAndApplyReadOnly();
 
         friend class ::TerminalAppLocalTests::TabTests;
     };

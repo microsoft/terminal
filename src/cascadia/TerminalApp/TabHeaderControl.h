@@ -26,7 +26,9 @@ namespace winrt::TerminalApp::implementation
         OBSERVABLE_GETSET_PROPERTY(double, RenamerMaxWidth, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(bool, IsProgressRingActive, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(bool, IsProgressRingIndeterminate, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(bool, BellIndicator, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(uint32_t, ProgressValue, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(bool, IsReadOnlyActive, _PropertyChangedHandlers);
 
     private:
         bool _receivedKeyDown{ false };

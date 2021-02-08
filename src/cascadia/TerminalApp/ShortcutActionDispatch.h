@@ -65,6 +65,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(TabSearch,            TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(MoveTab,              TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(BreakIntoDebugger,    TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
+        TYPED_EVENT(TogglePaneReadOnly,   TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         // clang-format on
 
     private:
