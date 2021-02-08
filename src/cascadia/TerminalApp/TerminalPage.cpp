@@ -765,13 +765,13 @@ namespace winrt::TerminalApp::implementation
         const auto child = winrt::get_self<TerminalSettings>(settings)->CreateChild();
         TermControl term{ *child, connection };
 
-        // Check if the profile defines an unfocusedConfig
+        // Check if the profile defines an unfocusedAppearance
         const auto profile = _settings.FindProfile(profileGuid);
-        if (profile.UnfocusedConfig())
+        if (profile.UnfocusedAppearance())
         {
             // Now, make a grandchild for the unfocused appearance
             const auto grandchild = child->CreateChild();
-            grandchild->ApplyAppearanceSettings(profile.UnfocusedConfig(), _settings.GlobalSettings().ColorSchemes());
+            grandchild->ApplyAppearanceSettings(profile.UnfocusedAppearance(), _settings.GlobalSettings().ColorSchemes());
             term.UnfocusedAppearance(*grandchild);
         }
 
@@ -1791,13 +1791,13 @@ namespace winrt::TerminalApp::implementation
             const auto child = (winrt::get_self<TerminalSettings>(controlSettings)->CreateChild());
             TermControl newControl{ *child, controlConnection };
 
-            // Check if the profile defines an unfocusedConfig
+            // Check if the profile defines an UnfocusedAppearance
             const auto profile = _settings.FindProfile(_settings.GetProfileForArgs(newTerminalArgs));
-            if (profile.UnfocusedConfig())
+            if (profile.UnfocusedAppearance())
             {
                 // Now, make a grandchild for the unfocused appearance
                 const auto grandchild = child->CreateChild();
-                grandchild->ApplyAppearanceSettings(profile.UnfocusedConfig(), _settings.GlobalSettings().ColorSchemes());
+                grandchild->ApplyAppearanceSettings(profile.UnfocusedAppearance(), _settings.GlobalSettings().ColorSchemes());
                 newControl.UnfocusedAppearance(*grandchild);
             }
 

@@ -39,7 +39,7 @@ namespace TerminalCoreUnitTests
         bool SuppressApplicationTitle() { return _suppressApplicationTitle; }
         uint32_t SelectionBackground() { return COLOR_WHITE; }
         bool ForceVTInput() { return false; }
-        ICoreAppearance UnfocusedConfig() { return {}; };
+        ICoreAppearance UnfocusedAppearance() { return {}; };
 
         // other implemented methods
         uint32_t GetColorTableEntry(int32_t) const { return 123; }
@@ -61,7 +61,7 @@ namespace TerminalCoreUnitTests
         void SuppressApplicationTitle(bool suppressApplicationTitle) { _suppressApplicationTitle = suppressApplicationTitle; }
         void SelectionBackground(uint32_t) {}
         void ForceVTInput(bool) {}
-        void UnfocusedConfig(ICoreAppearance) {}
+        void UnfocusedAppearance(ICoreAppearance) {}
 
         GETSET_PROPERTY(winrt::Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
         GETSET_PROPERTY(winrt::Windows::Foundation::IReference<uint32_t>, StartingTabColor, nullptr);

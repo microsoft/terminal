@@ -59,7 +59,7 @@ static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTer
 static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 static constexpr std::string_view BellStyleKey{ "bellStyle" };
-static constexpr std::string_view UnfocusedConfigKey{ "unfocusedConfig" };
+static constexpr std::string_view UnfocusedAppearanceKey{ "unfocusedAppearance" };
 static constexpr std::string_view PixelShaderPathKey{ "experimental.pixelShaderPath" };
 
 static constexpr std::wstring_view DesktopWallpaperEnum{ L"desktopWallpaper" };
@@ -341,14 +341,14 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
     JsonUtils::GetValueForKey(json, BellStyleKey, _BellStyle);
 
-    if (json.isMember(JsonKey(UnfocusedConfigKey)))
+    if (json.isMember(JsonKey(UnfocusedAppearanceKey)))
     {
-        // If an unfocused config is defined in this profile, any undefined parameters are
+        // If an unfocused appearance is defined in this profile, any undefined parameters are
         // taken from this profile itself, so add this profile as a parent
-        auto unfocusedConfig{ winrt::make_self<implementation::AppearanceConfig>() };
-        unfocusedConfig->InsertParent(winrt::com_ptr<Profile>(get_strong()));
-        unfocusedConfig->LayerJson(json[JsonKey(UnfocusedConfigKey)]);
-        _UnfocusedConfig = *unfocusedConfig;
+        auto unfocusedAppearance{ winrt::make_self<implementation::AppearanceConfig>() };
+        unfocusedAppearance->InsertParent(winrt::com_ptr<Profile>(get_strong()));
+        unfocusedAppearance->LayerJson(json[JsonKey(UnfocusedAppearanceKey)]);
+        _UnfocusedAppearance = *unfocusedAppearance;
     }
     JsonUtils::GetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
 }
