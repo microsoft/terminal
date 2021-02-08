@@ -81,6 +81,8 @@ public:
     void Id(uint16_t id) noexcept;
     void FocusPane(const uint16_t id);
 
+    bool ContainsReadOnly() const;
+
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
     DECLARE_EVENT(LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
@@ -117,6 +119,8 @@ private:
     std::shared_mutex _createCloseLock{};
 
     Borders _borders{ Borders::None };
+
+    std::atomic<bool> _isClosing{ false };
 
     bool _zoomed{ false };
 

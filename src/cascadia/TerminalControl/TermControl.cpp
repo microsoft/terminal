@@ -11,6 +11,7 @@
 #include <WinUser.h>
 #include <LibraryResources.h>
 #include "../../types/inc/GlyphWidth.hpp"
+#include "../../types/inc/Utils.hpp"
 
 #include "TermControl.g.cpp"
 #include "TermControlAutomationPeer.h"
@@ -889,8 +890,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Whether the key was handled.
     bool TermControl::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
     {
+        if (_isReadOnly)
+        {
+            return false;
+        }
+
         const auto modifiers{ _GetPressedModifierKeys() };
         auto handled = false;
+
         if (vkey == VK_MENU && !down)
         {
             // Manually generate an Alt KeyUp event into the key bindings or terminal.
@@ -967,6 +974,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto modifiers = _GetPressedModifierKeys();
         const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
+
+        if (_isReadOnly)
+        {
+            e.Handled(!keyDown || _TryHandleKeyBinding(vkey, scanCode, modifiers));
+            return;
+        }
+
         if (e.KeyStatus().IsExtendedKey)
         {
             modifiers |= ControlKeyStates::EnhancedKey;
@@ -2022,73 +2036,34 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_SendInputToConnection(const winrt::hstring& wstr)
     {
-        _connection.WriteInput(wstr);
+        if (_isReadOnly)
+        {
+            _RaiseReadOnlyWarning();
+        }
+        else
+        {
+            _connection.WriteInput(wstr);
+        }
     }
 
     void TermControl::_SendInputToConnection(std::wstring_view wstr)
     {
-        _connection.WriteInput(wstr);
+        if (_isReadOnly)
+        {
+            _RaiseReadOnlyWarning();
+        }
+        else
+        {
+            _connection.WriteInput(wstr);
+        }
     }
 
     // Method Description:
     // - Pre-process text pasted (presumably from the clipboard)
-    //   before sending it over the terminal's connection, converting
-    //   Windows-space \r\n line-endings to \r line-endings
-    // - Also converts \n line-endings to \r line-endings
+    //   before sending it over the terminal's connection.
     void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
     {
-        // Some notes on this implementation:
-        //
-        // - std::regex can do this in a single line, but is somewhat
-        //   overkill for a simple search/replace operation (and its
-        //   performance guarantees aren't exactly stellar)
-        // - The STL doesn't have a simple string search/replace method.
-        //   This fact is lamentable.
-        // - We search for \n, and when we find it we copy the string up to
-        //   the \n (but not including it). Then, we check the if the
-        //   previous character is \r, if its not, then we had a lone \n
-        //   and so we append our own \r
-
-        std::wstring stripped;
-        stripped.reserve(wstr.length());
-
-        std::wstring::size_type pos = 0;
-        std::wstring::size_type begin = 0;
-
-        while ((pos = wstr.find(L"\n", pos)) != std::wstring::npos)
-        {
-            // copy up to but not including the \n
-            stripped.append(wstr.cbegin() + begin, wstr.cbegin() + pos);
-            if (!(pos > 0 && (wstr.at(pos - 1) == L'\r')))
-            {
-                // there was no \r before the \n we did not copy,
-                // so append our own \r (this effectively replaces the \n
-                // with a \r)
-                stripped.push_back(L'\r');
-            }
-            ++pos;
-            begin = pos;
-        }
-
-        // If we entered the while loop even once, begin would be non-zero
-        // (because we set begin = pos right after incrementing pos)
-        // So, if begin is still zero at this point it means we never found a newline
-        // and we can just write the original string
-        if (begin == 0)
-        {
-            _connection.WriteInput(wstr);
-        }
-        else
-        {
-            // copy over the part after the last \n
-            stripped.append(wstr.cbegin() + begin, wstr.cend());
-
-            // we may have removed some characters, so we may not need as much space
-            // as we reserved earlier
-            stripped.shrink_to_fit();
-            _connection.WriteInput(stripped);
-        }
-
+        _terminal->WritePastedText(wstr);
         _terminal->ClearSelection();
         _terminal->TrySnapOnInput();
     }
@@ -3287,6 +3262,35 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     const size_t TermControl::TaskbarProgress() const noexcept
     {
         return _terminal->GetTaskbarProgress();
+    }
+
+    // Method Description:
+    // - Checks whether the control is in a read-only mode (in this mode node input is sent to connection).
+    // Return Value:
+    // - True if the mode is read-only
+    bool TermControl::ReadOnly() const noexcept
+    {
+        return _isReadOnly;
+    }
+
+    // Method Description:
+    // - Toggles the read-only flag, raises event describing the value change
+    void TermControl::ToggleReadOnly()
+    {
+        _isReadOnly = !_isReadOnly;
+        _ReadOnlyChangedHandlers(*this, winrt::box_value(_isReadOnly));
+    }
+
+    winrt::fire_and_forget TermControl::_RaiseReadOnlyWarning()
+    {
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_foreground(Dispatcher());
+
+        if (auto control{ weakThis.get() })
+        {
+            auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));
+            control->_raiseNoticeHandlers(*control, std::move(noticeArgs));
+        }
     }
 
     // -------------------------------- WinRT Events ---------------------------------
