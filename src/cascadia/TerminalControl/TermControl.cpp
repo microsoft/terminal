@@ -2058,12 +2058,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   before sending it over the terminal's connection.
     void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
     {
-        if (_isReadOnly)
-        {
-            _RaiseReadOnlyWarning();
-            return;
-        }
-
         _terminal->WritePastedText(wstr);
         _terminal->ClearSelection();
         _terminal->TrySnapOnInput();
