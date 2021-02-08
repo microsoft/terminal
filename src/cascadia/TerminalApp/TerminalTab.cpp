@@ -289,7 +289,7 @@ namespace winrt::TerminalApp::implementation
         if (auto tab{ weakThis.get() })
         {
             tab->_headerControl.BellIndicator(show);
-            BellIndicator(show);
+            _tabStatus.BellIndicator(show);
         }
     }
 
@@ -590,14 +590,14 @@ namespace winrt::TerminalApp::implementation
                     // Hide the tab icon (the progress ring is placed over it)
                     tab->HideIcon(true);
                     tab->_headerControl.IsProgressRingActive(true);
-                    tab->IsProgressRingActive(true);
+                    tab->_tabStatus.IsProgressRingActive(true);
                 }
                 else
                 {
                     // Show the tab icon
                     tab->HideIcon(false);
                     tab->_headerControl.IsProgressRingActive(false);
-                    tab->IsProgressRingActive(false);
+                    tab->_tabStatus.IsProgressRingActive(false);
                 }
             }
         });
@@ -1107,7 +1107,7 @@ namespace winrt::TerminalApp::implementation
         _rootPane->Maximize(_zoomedPane);
         // Update the tab header to show the magnifying glass
         _headerControl.IsPaneZoomed(true);
-        IsPaneZoomed(true);
+        _tabStatus.IsPaneZoomed(true);
         Content(_zoomedPane->GetRootElement());
     }
     void TerminalTab::ExitZoom()
@@ -1116,7 +1116,7 @@ namespace winrt::TerminalApp::implementation
         _zoomedPane = nullptr;
         // Update the tab header to hide the magnifying glass
         _headerControl.IsPaneZoomed(false);
-        IsPaneZoomed(false);
+        _tabStatus.IsPaneZoomed(false);
         Content(_rootPane->GetRootElement());
     }
 
@@ -1145,7 +1145,9 @@ namespace winrt::TerminalApp::implementation
         const auto control = GetActiveTerminalControl();
         if (control)
         {
-            _headerControl.IsReadOnlyActive(control.ReadOnly());
+            const auto isReadOnlyActive = control.ReadOnly();
+            _headerControl.IsReadOnlyActive(isReadOnlyActive);
+            _tabStatus.IsReadOnlyActive(isReadOnlyActive);
         }
 
         ReadOnly(_rootPane->ContainsReadOnly());

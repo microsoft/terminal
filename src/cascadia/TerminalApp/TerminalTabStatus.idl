@@ -1,0 +1,11 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+import "ITabStatus.idl";
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass TerminalTabStatus : ITabStatus, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        TerminalTabStatus();
+    }
+}

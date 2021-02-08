@@ -27,14 +27,7 @@ namespace winrt::TerminalApp::implementation
 
         if (const auto terminalTab{ tab.try_as<winrt::TerminalApp::TerminalTab>() })
         {
-            if (const auto tabImpl{ winrt::get_self<winrt::TerminalApp::implementation::TerminalTab>(terminalTab) })
-            {
-                IsProgressRingActive(tabImpl->IsProgressRingActive());
-                IsProgressRingIndeterminate(tabImpl->IsProgressRingIndeterminate());
-                ProgressValue(tabImpl->ProgressValue());
-                BellIndicator(tabImpl->BellIndicator());
-                IsPaneZoomed(tabImpl->IsPaneZoomed());
-            }
+            TabStatus(terminalTab.TabStatus());
         }
 
         _tabChangedRevoker = tab.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& sender, auto& e) {
@@ -51,33 +44,6 @@ namespace winrt::TerminalApp::implementation
                 else if (changedProperty == L"Icon")
                 {
                     item->Icon(senderTab.Icon());
-                }
-
-                if (const auto terminalTab{ senderTab.try_as<winrt::TerminalApp::TerminalTab>() })
-                {
-                    if (const auto tabImpl{ winrt::get_self<winrt::TerminalApp::implementation::TerminalTab>(terminalTab) })
-                    {
-                        if (changedProperty == L"IsProgressRingActive")
-                        {
-                            item->IsProgressRingActive(tabImpl->IsProgressRingActive());
-                        }
-                        else if (changedProperty == L"IsProgressRingIndeterminate")
-                        {
-                            item->IsProgressRingIndeterminate(tabImpl->IsProgressRingIndeterminate());
-                        }
-                        else if (changedProperty == L"ProgressValue")
-                        {
-                            item->ProgressValue(tabImpl->ProgressValue());
-                        }
-                        else if (changedProperty == L"IsPaneZoomed")
-                        {
-                            item->IsPaneZoomed(tabImpl->IsPaneZoomed());
-                        }
-                        else if (changedProperty == L"BellIndicator")
-                        {
-                            item->BellIndicator(tabImpl->BellIndicator());
-                        }
-                    }
                 }
             }
         });
