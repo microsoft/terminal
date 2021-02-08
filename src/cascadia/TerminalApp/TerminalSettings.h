@@ -17,8 +17,11 @@ Author(s):
 #include "TerminalSettings.g.h"
 #include "../TerminalSettingsModel/IInheritable.h"
 #include "../inc/cppwinrt_utils.h"
+#include "../../types/inc/colorTable.hpp"
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
+
+using namespace Microsoft::Console::Utils;
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -48,8 +51,9 @@ namespace winrt::TerminalApp::implementation
 
         // GetColorTableEntry needs to be implemented manually, to get a
         // particular value from the array.
-        uint32_t GetColorTableEntry(int32_t index) const noexcept;
-        GETSET_ARRAY_SETTING(uint32_t, COLOR_TABLE_SIZE, ColorTable);
+        uint32_t GetColorTableEntry(int32_t index) noexcept;
+        void ColorTable(std::array<uint32_t, 16> colors);
+        std::array<uint32_t, 16> ColorTable();
 
         GETSET_SETTING(uint32_t, DefaultForeground, DEFAULT_FOREGROUND_WITH_ALPHA);
         GETSET_SETTING(uint32_t, DefaultBackground, DEFAULT_BACKGROUND_WITH_ALPHA);
@@ -69,6 +73,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_SETTING(Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
 
         GETSET_SETTING(Microsoft::Terminal::TerminalControl::IControlAppearance, UnfocusedConfig, nullptr);
+
         // When set, StartingTabColor allows to create a terminal with a "sticky" tab color.
         // This color is prioritized above the TabColor (that is usually initialized based on profile settings).
         // Due to this prioritization, the tab color will be preserved upon settings reload
@@ -123,9 +128,9 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(hstring, PixelShaderPath);
 
     private:
-        std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable{};
-
-        void _ApplyProfileSettings(const Microsoft::Terminal::Settings::Model::Profile& profile);
+        std::optional<std::array<uint32_t, COLOR_TABLE_SIZE>> _ColorTable;
+        gsl::span<uint32_t> _getColorTableImpl();
+        void _ApplyProfileSettings(const Microsoft::Terminal::Settings::Model::Profile& profile, const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes);
         void _ApplyGlobalSettings(const Microsoft::Terminal::Settings::Model::GlobalAppSettings& globalSettings) noexcept;
 
         friend class TerminalAppLocalTests::SettingsTests;

@@ -52,7 +52,8 @@ namespace Microsoft.Terminal.Settings.Model
         CloseTabsAfter,
         TabSearch,
         MoveTab,
-        BreakIntoDebugger
+        BreakIntoDebugger,
+        TogglePaneReadOnly
     };
 
     [default_interface] runtimeclass ActionAndArgs {

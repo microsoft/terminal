@@ -75,6 +75,14 @@ namespace winrt::TerminalApp::implementation
     void TabHeaderControl::RenameBoxLostFocusHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                                      Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
+        // If the context menu associated with the renamer text box is open we know it gained the focus.
+        // In this case we ignore this event (we will regain the focus once the menu will be closed).
+        const auto flyout = HeaderRenamerTextBox().ContextFlyout();
+        if (flyout && flyout.IsOpen())
+        {
+            return;
+        }
+
         // Log the data here, rather than in _CloseRenameBox. If we do it there,
         // it'll get fired twice, once when the key is pressed to commit/cancel,
         // and then again when the focus is lost

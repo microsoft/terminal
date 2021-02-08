@@ -59,6 +59,7 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
 
     // Register an event with the control to have it inform us when it gains focus.
     _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
+    _lostFocusRevoker = control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
 
     // When our border is tapped, make sure to transfer focus to our control.
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
@@ -367,15 +368,18 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
     auto paneProfile = settings.FindProfile(_profile.value());
     if (paneProfile)
     {
-        if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
+        // We don't want to do anything if nothing is set, so check for that first
+        if (static_cast<int>(paneProfile.BellStyle()) != 0)
         {
-            const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-            PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
-        }
-        if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual))
-        {
-            // Bubble this event up to app host, starting with bubbling to the hosting tab
-            _PaneRaiseVisualBellHandlers(nullptr);
+            if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
+            {
+                // Audible is set, play the sound
+                const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
+                PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+            }
+
+            // raise the event with the bool value corresponding to the visual flag
+            _PaneRaiseBellHandlers(nullptr, WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual));
         }
     }
 }
@@ -394,6 +398,16 @@ void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable cons
     _GotFocusHandlers(shared_from_this());
 }
 
+// Event Description:
+// - Called when our control loses focus. We'll use this to trigger our LostFocus
+//   callback. The tab that's hosting us should have registered a callback which
+//   can be used to update its own internal focus state
+void Pane::_ControlLostFocusHandler(winrt::Windows::Foundation::IInspectable const& /* sender */,
+                                    RoutedEventArgs const& /* args */)
+{
+    _LostFocusHandlers(shared_from_this());
+}
+
 // Method Description:
 // - Fire our Closed event to tell our parent that we should be removed.
 // Arguments:
@@ -402,8 +416,11 @@ void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable cons
 // - <none>
 void Pane::Close()
 {
-    // Fire our Closed event to tell our parent that we should be removed.
-    _ClosedHandlers(nullptr, nullptr);
+    if (!_isClosing.exchange(true))
+    {
+        // Fire our Closed event to tell our parent that we should be removed.
+        _ClosedHandlers(nullptr, nullptr);
+    }
 }
 
 // Method Description:
@@ -722,6 +739,7 @@ void Pane::_CloseChild(const bool closeFirst)
 
         // re-attach our handler for the control's GotFocus event.
         _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
+        _lostFocusRevoker = _control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
 
         // If we're inheriting the "last active" state from one of our children,
         // focus our control now. This should trigger our own GotFocus event.
@@ -1427,6 +1445,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     // control telling us that it's now focused, we want it telling its new
     // parent.
     _gotFocusRevoker.revoke();
+    _lostFocusRevoker.revoke();
 
     _splitState = actualSplitType;
     _desiredSplitPosition = 1.0f - splitSize;
@@ -1540,9 +1559,9 @@ void Pane::Restore(std::shared_ptr<Pane> zoomedPane)
 //   otherwise the ID value will not make sense (leaves have IDs, parents do not)
 // Return Value:
 // - The ID of this pane
-uint16_t Pane::Id() noexcept
+std::optional<uint16_t> Pane::Id() noexcept
 {
-    return _id.value();
+    return _id;
 }
 
 // Method Description:
@@ -2075,5 +2094,13 @@ std::optional<SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane
     FAIL_FAST();
 }
 
+// Method Description:
+// - Returns true if the pane or one of its descendants is read-only
+bool Pane::ContainsReadOnly() const
+{
+    return _IsLeaf() ? _control.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
+}
+
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
-DEFINE_EVENT(Pane, PaneRaiseVisualBell, _PaneRaiseVisualBellHandlers, winrt::delegate<std::shared_ptr<Pane>>);
+DEFINE_EVENT(Pane, LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
+DEFINE_EVENT(Pane, PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);

@@ -143,6 +143,7 @@ namespace winrt::TerminalApp::implementation
 
         void _ShowAboutDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseWarningDialog();
+        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseReadOnlyDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowMultiLinePasteWarningDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowLargePasteWarningDialog();
 
@@ -159,6 +160,7 @@ namespace winrt::TerminalApp::implementation
         void _ThirdPartyNoticesOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+        void _SUIPreviewKeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _HookupKeyBindings(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap) noexcept;
         void _RegisterActionCallbacks();
 
@@ -174,7 +176,8 @@ namespace winrt::TerminalApp::implementation
 
         void _DuplicateTabViewItem();
         void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
-        void _RemoveTabViewItemByIndex(uint32_t tabIndex);
+        winrt::Windows::Foundation::IAsyncAction _RemoveTab(winrt::TerminalApp::TabBase tab);
+        winrt::fire_and_forget _RemoveTabs(const std::vector<winrt::TerminalApp::TabBase> tabs);
 
         void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, TerminalTab& hostingTab);
 
@@ -189,8 +192,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget _SetFocusedTabIndex(const uint32_t tabIndex);
         void _CloseFocusedTab();
-        void _CloseFocusedPane();
-        void _CloseAllTabs();
+        winrt::fire_and_forget _CloseFocusedPane();
 
         winrt::fire_and_forget _RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page);
 
@@ -311,6 +313,8 @@ namespace winrt::TerminalApp::implementation
         void _HandleOpenTabSearch(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleMoveTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleBreakIntoDebugger(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleTogglePaneReadOnly(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+
         // Make sure to hook new actions up in _RegisterActionCallbacks!
 #pragma endregion
 

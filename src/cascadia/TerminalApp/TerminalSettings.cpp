@@ -236,8 +236,50 @@ namespace winrt::TerminalApp::implementation
         ColorTable(colorTable);
     }
 
-    uint32_t TerminalSettings::GetColorTableEntry(int32_t index) const noexcept
+    uint32_t TerminalSettings::GetColorTableEntry(int32_t index) noexcept
     {
         return ColorTable().at(index);
+    }
+
+    void TerminalSettings::ColorTable(std::array<uint32_t, 16> colors)
+    {
+        _ColorTable = colors;
+    }
+
+    std::array<uint32_t, COLOR_TABLE_SIZE> TerminalSettings::ColorTable()
+    {
+        auto span = _getColorTableImpl();
+        std::array<uint32_t, COLOR_TABLE_SIZE> colorTable{};
+        if (span.size() > 0)
+        {
+            std::transform(span.begin(), span.end(), colorTable.begin(), [](auto&& color) {
+                return static_cast<uint32_t>(til::color{ color });
+            });
+        }
+        else
+        {
+            const auto campbellSpan = CampbellColorTable();
+            std::transform(campbellSpan.begin(), campbellSpan.end(), colorTable.begin(), [](auto&& color) {
+                return static_cast<uint32_t>(til::color{ color });
+            });
+        }
+        return colorTable;
+    }
+
+    gsl::span<uint32_t> TerminalSettings::_getColorTableImpl()
+    {
+        if (_ColorTable.has_value())
+        {
+            return gsl::make_span(*_ColorTable);
+        }
+        for (auto&& parent : _parents)
+        {
+            auto parentSpan = parent->_getColorTableImpl();
+            if (parentSpan.size() > 0)
+            {
+                return parentSpan;
+            }
+        }
+        return {};
     }
 }

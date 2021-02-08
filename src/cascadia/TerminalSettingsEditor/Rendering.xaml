@@ -4,6 +4,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     x:Class="Microsoft.Terminal.Settings.Editor.Rendering"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Microsoft.Terminal.Settings.Editor"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
@@ -22,16 +23,14 @@ the MIT License. See LICENSE in the project root for license information. -->
                        Style="{StaticResource DisclaimerStyle}"/>
 
             <!--Force Full Repaint-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <ToggleSwitch x:Uid="Globals_ForceFullRepaint"
-                              IsOn="{x:Bind State.Globals.ForceFullRepaintRendering, Mode=TwoWay}"/>
-            </ContentPresenter>
+            <local:SettingContainer x:Uid="Globals_ForceFullRepaint">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.ForceFullRepaintRendering, Mode=TwoWay}"/>
+            </local:SettingContainer>
 
             <!--Software Rendering-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <ToggleSwitch x:Uid="Globals_SoftwareRendering"
-                              IsOn="{x:Bind State.Globals.SoftwareRendering, Mode=TwoWay}"/>
-            </ContentPresenter>
+            <local:SettingContainer x:Uid="Globals_SoftwareRendering">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.SoftwareRendering, Mode=TwoWay}"/>
+            </local:SettingContainer>
         </StackPanel>
     </ScrollViewer>
 </Page>

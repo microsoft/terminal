@@ -68,6 +68,9 @@ public:
     // Write goes through the parser
     void Write(std::wstring_view stringView);
 
+    // WritePastedText goes directly to the connection
+    void WritePastedText(std::wstring_view stringView);
+
     [[nodiscard]] std::shared_lock<std::shared_mutex> LockForReading();
     [[nodiscard]] std::unique_lock<std::shared_mutex> LockForWriting();
 
@@ -110,6 +113,8 @@ public:
     bool EnableButtonEventMouseMode(const bool enabled) noexcept override;
     bool EnableAnyEventMouseMode(const bool enabled) noexcept override;
     bool EnableAlternateScrollMode(const bool enabled) noexcept override;
+    bool EnableXtermBracketedPasteMode(const bool enabled) noexcept override;
+    bool IsXtermBracketedPasteModeEnabled() const noexcept override;
 
     bool IsVtInputEnabled() const noexcept override;
 
@@ -251,6 +256,7 @@ private:
     bool _snapOnInput;
     bool _altGrAliasing;
     bool _suppressApplicationTitle;
+    bool _bracketedPasteMode;
 
     size_t _taskbarState;
     size_t _taskbarProgress;

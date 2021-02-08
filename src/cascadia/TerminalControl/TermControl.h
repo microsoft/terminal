@@ -168,6 +168,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const size_t TaskbarState() const noexcept;
         const size_t TaskbarProgress() const noexcept;
 
+        bool ReadOnly() const noexcept;
+        void ToggleReadOnly();
+
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
@@ -186,6 +189,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TYPED_EVENT(TabColorChanged, IInspectable, IInspectable);
         TYPED_EVENT(HidePointerCursor, IInspectable, IInspectable);
         TYPED_EVENT(RestorePointerCursor, IInspectable, IInspectable);
+        TYPED_EVENT(ReadOnlyChanged, IInspectable, IInspectable);
         // clang-format on
 
     private:
@@ -270,6 +274,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void _UpdateSettingsFromUIThread(IControlSettings newSettings);
         void _UpdateAppearanceFromUIThread(IControlAppearance newAppearance);
+        bool _isReadOnly{ false };
 
         void _ApplyUISettings();
         void _UpdateSystemParameterSettings() noexcept;
@@ -345,6 +350,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
 
         winrt::fire_and_forget _AsyncCloseConnection();
+
+        winrt::fire_and_forget _RaiseReadOnlyWarning();
     };
 }
 
