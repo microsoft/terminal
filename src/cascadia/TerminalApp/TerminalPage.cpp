@@ -760,7 +760,9 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        TermControl term{ settings, connection };
+        // Give term control a child of the settings so that any overrides go in the child
+        // This way, when we do a settings reload we just update the parent and the overrides remain
+        TermControl term{ *(winrt::get_self<TerminalSettings>(settings)->CreateChild()), connection };
 
         auto newTabImpl = winrt::make_self<TerminalTab>(profileGuid, term);
 
