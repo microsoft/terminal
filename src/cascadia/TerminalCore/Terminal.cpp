@@ -397,6 +397,24 @@ void Terminal::Write(std::wstring_view stringView)
     _stateMachine->ProcessString(stringView);
 }
 
+void Terminal::WritePastedText(std::wstring_view stringView)
+{
+    auto option = ::Microsoft::Console::Utils::FilterOption::CarriageReturnNewline |
+                  ::Microsoft::Console::Utils::FilterOption::ControlCodes;
+
+    std::wstring filtered = ::Microsoft::Console::Utils::FilterStringForPaste(stringView, option);
+    if (IsXtermBracketedPasteModeEnabled())
+    {
+        filtered.insert(0, L"\x1b[200~");
+        filtered.append(L"\x1b[201~");
+    }
+
+    if (_pfnWriteInput)
+    {
+        _pfnWriteInput(filtered);
+    }
+}
+
 // Method Description:
 // - Attempts to snap to the bottom of the buffer, if SnapOnInput is true. Does
 //   nothing if SnapOnInput is set to false, or we're already at the bottom of
