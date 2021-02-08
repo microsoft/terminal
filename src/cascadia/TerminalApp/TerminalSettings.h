@@ -121,7 +121,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(hstring, PixelShaderPath);
 
     private:
-        std::optional<std::array<uint32_t, 16>> _ColorTable;
+        std::optional<std::array<uint32_t, COLOR_TABLE_SIZE>> _ColorTable;
         gsl::span<uint32_t> _getColorTableImpl();
         void _ApplyProfileSettings(const Microsoft::Terminal::Settings::Model::Profile& profile, const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes);
         void _ApplyGlobalSettings(const Microsoft::Terminal::Settings::Model::GlobalAppSettings& globalSettings) noexcept;
