@@ -363,7 +363,7 @@ namespace winrt::TerminalApp::implementation
                     {
                         auto controlSettings = activeControl.Settings().as<TerminalSettings>();
                         controlSettings->ApplyColorScheme(scheme);
-                        activeControl.UpdateSettings(*controlSettings);
+                        activeControl.UpdateSettings();
                         args.Handled(true);
                     }
                 }
