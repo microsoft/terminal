@@ -630,50 +630,30 @@ namespace winrt::TerminalApp::implementation
             // every other pane.
             _AttachEventHandlersToLeafPane(rootPaneAsLeaf);
             _AttachEventHandlersToControl(rootPaneAsLeaf.GetTerminalControl());
-
-            // When root pane closes, the tab also closes.
-            const auto rootPaneAsLeafImpl = winrt::get_self<implementation::LeafPane>(_rootPane2);
-
-            // When the root pane is a leaf and gets split, it produces a new parent pane that contains
-            // both itself and its new leaf neighbor. We then replace the root pane with the new parent pane.
-            _rootPaneTypeChangedToken = rootPaneAsLeafImpl->GotSplit([weakThis = get_weak()](TerminalApp::ParentPane newParentPane) {
-                if (auto tab{ weakThis.get() })
-                {
-                    tab->_RemoveRootPaneEventHandlers();
-
-                    tab->_rootPane2 = newParentPane;
-                    tab->_SetupRootPaneEventHandlers();
-                    tab->Content(newParentPane);
-                }
-            });
         }
-        else if (const auto rootPaneAsParent = _rootPane2.try_as<ParentPane>())
-        {
-            // When root pane is a parent and one of its children got closed (and so the parent collapses),
-            // we take in its remaining, orphaned child as our own.
-            _rootPaneTypeChangedToken = rootPaneAsParent->ChildClosed([weakThis = get_weak()](TerminalApp::IPane newChildPane) {
-                if (auto tab{ weakThis.get() })
-                {
-                    tab->_RemoveRootPaneEventHandlers();
 
-                    tab->_rootPane2 = newChildPane;
-                    tab->_SetupRootPaneEventHandlers();
-                    tab->Content(newChildPane.try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
-                }
-            });
-        }
+        // When the root pane is a leaf and gets split, it produces a new parent pane that contains
+        // both itself and its new leaf neighbor. We then replace the root pane with the new parent pane.
+
+        // When root pane is a parent and one of its children got closed (and so the parent collapses),
+        // we take in its remaining, orphaned child as our own.
+
+        // Either way, the event handling is the same
+        _rootPaneTypeChangedToken = _rootPane2.PaneTypeChanged([weakThis = get_weak()](auto&& /*s*/, TerminalApp::IPane newPane) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_RemoveRootPaneEventHandlers();
+
+                tab->_rootPane2 = newPane;
+                tab->_SetupRootPaneEventHandlers();
+                tab->Content(newPane.try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
+            }
+        });
     }
 
     void TerminalTab::_RemoveRootPaneEventHandlers()
     {
-        if (const auto rootAsLeaf = _rootPane2.try_as<LeafPane>())
-        {
-            rootAsLeaf->GotSplit(_rootPaneTypeChangedToken);
-        }
-        else if (const auto rootAsParent = _rootPane2.try_as<ParentPane>())
-        {
-            rootAsParent->ChildClosed(_rootPaneTypeChangedToken);
-        }
+        _rootPane2.PaneTypeChanged(_rootPaneTypeChangedToken);
     }
 
     // Method Description:

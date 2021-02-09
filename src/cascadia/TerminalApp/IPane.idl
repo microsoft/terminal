@@ -38,5 +38,7 @@ namespace TerminalApp
         Windows.Foundation.IReference<Boolean> PreCalculateCanSplit(IPane target, Microsoft.Terminal.Settings.Model.SplitState splitType, Single splitSize, Windows.Foundation.Size availableSpace);
 
         SnapSizeResult _CalcSnappedDimension(Boolean widthOrHeight, Single fullSize);
+
+        event Windows.Foundation.TypedEventHandler<IPane, IPane> PaneTypeChanged;
     }
 }

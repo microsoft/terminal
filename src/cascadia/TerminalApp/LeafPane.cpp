@@ -242,9 +242,9 @@ namespace winrt::TerminalApp::implementation
 
         const auto newParent = TerminalApp::ParentPane(*this, newNeighbour, splitType, 1.0f - splitSize);
 
-        _GotSplitHandlers(newParent);
+        _PaneTypeChangedHandlers(nullptr, newParent);
 
-        // Call InitializeChildren after invoking GotSplit handlers, because that is where we are detached and
+        // Call InitializeChildren after invoking PaneTypeChanged handlers, because that is where we are detached and
         // the new parent is attached to xaml view. Only when we are detached can the new parent actually attach us.
         newParent.InitializeChildren();
 
@@ -696,6 +696,5 @@ namespace winrt::TerminalApp::implementation
 
     DEFINE_EVENT(LeafPane, Closed, _ClosedHandlers, winrt::delegate<LeafPane>);
     DEFINE_EVENT(LeafPane, GotFocus, _GotFocusHandlers, winrt::delegate<LeafPane>);
-    DEFINE_EVENT(LeafPane, GotSplit, _GotSplitHandlers, winrt::delegate<TerminalApp::ParentPane>);
     DEFINE_EVENT(LeafPane, PaneRaiseVisualBell, _PaneRaiseVisualBellHandlers, winrt::delegate<LeafPane>);
 }

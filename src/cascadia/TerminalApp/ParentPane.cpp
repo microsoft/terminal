@@ -637,7 +637,8 @@ namespace winrt::TerminalApp::implementation
         const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
 
         const bool splitWidth = _splitState == SplitState::Vertical;
-        const auto totalSize = splitWidth ? Root().ActualWidth() : Root().ActualHeight(); // try ActualWidth
+        // todo: why do ActualWidth and ActualHeight return 0?
+        const auto totalSize = splitWidth ? ActualWidth() : ActualHeight();
         // If we don't have a size yet, it's likely that we're in startup, or we're
         // being executed as a sequence of actions. In that case, just skip the
         // animation.
@@ -795,14 +796,22 @@ namespace winrt::TerminalApp::implementation
             closedChild.ClearActive();
             const auto remainingFirstLeaf = remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>();
             remainingFirstLeaf.SetActive();
-            // todo: this focus call doesn't seem to work? try in handler for child closed
-            //remainingFirstLeaf.GetTerminalControl().Focus(FocusState::Programmatic);
+            // todo: this focus call doesn't seem to work?
+            // I've tried:
+            // - putting the focus call in _CloseChild()
+            // - putting the focus call after _CloseChildRoutine() is called in the Closed event handler
+            // - putting the focus call in TerminalTab::ClosePane, after we call Close() on the active pane
+            // - setting the tab content in TerminalTab::ClosePane, after we call Close() (this was to try and send
+            //   a property changed event to the page so it will call focus on the tab)
+            // - calling TerminalTab::Focus(Programmatic) in TerminalTab::ClosePane, after we call Close() on the active pane
+            // - I don't get why if the root pane changes the focus transfers fine but otherwise it doesnt?
+            remainingFirstLeaf.GetTerminalControl().Focus(FocusState::Programmatic);
         }
 
         // Make sure to only fire off this event _after_ we have set the new active pane, because this event
         // might cause the tab content to change which will fire off a property changed event which eventually
         // results in the tab trying to access the active terminal control, which requires a valid active pane
-        _ChildClosedHandlers(remainingChild);
+        _PaneTypeChangedHandlers(nullptr, remainingChild);
     }
 
     // todo: can the dummy grid needed for the exit animation be put in the xaml file?
@@ -978,8 +987,8 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Adds event handlers to our children
-    // - For child leaves, we handle their Closed and GotSplit events
-    // - For child parents, we handle their ChildClosed event
+    // - For child leaves, we handle their Closed event
+    // - For all children, we listen to their type changed events
     void ParentPane::_SetupChildEventHandlers(const bool isFirstChild)
     {
         auto& child = isFirstChild ? _firstChild : _secondChild;
@@ -999,21 +1008,18 @@ namespace winrt::TerminalApp::implementation
                 _RemoveAllChildEventHandlers(true);
                 _CloseChildRoutine(isFirstChild);
             });
+        }
 
-            // When our child is a leaf and gets split, it produces a new parent pane that contains
-            // both itself and its new leaf neighbor. We then replace that child with the new parent pane.
-            typeChangedToken = childImpl->GotSplit([=](TerminalApp::ParentPane newParent) {
-                _OnChildSplitOrCollapse(isFirstChild, newParent);
-            });
-        }
-        else if (const auto childAsParent = child.try_as<ParentPane>())
-        {
-            // When our child is a parent and one of its children got closed (and so the parent collapses),
-            // we take in its remaining, orphaned child as our own.
-            typeChangedToken = childAsParent->ChildClosed([=](TerminalApp::IPane remainingChild) {
-                _OnChildSplitOrCollapse(isFirstChild, remainingChild);
-            });
-        }
+        // When our child is a leaf and gets split, it produces a new parent pane that contains
+        // both itself and its new leaf neighbor. We then replace that child with the new parent pane.
+
+        // When our child is a parent and one of its children got closed (and so the parent collapses),
+        // we take in its remaining, orphaned child as our own.
+
+        // Either way, the event handling is the same
+        typeChangedToken = child.PaneTypeChanged([=](auto&& /*s*/, IPane newPane) {
+            _OnChildSplitOrCollapse(isFirstChild, newPane);
+        });
     }
 
     void ParentPane::_RemoveAllChildEventHandlers(const bool isFirstChild)
@@ -1026,12 +1032,8 @@ namespace winrt::TerminalApp::implementation
         {
             const auto childImpl = winrt::get_self<implementation::LeafPane>(child);
             childImpl->Closed(closedToken);
-            childImpl->GotSplit(typeChangedToken);
         }
-        else if (const auto childAsParent = child.try_as<ParentPane>())
-        {
-            childAsParent->ChildClosed(typeChangedToken);
-        }
+        child.PaneTypeChanged(typeChangedToken);
     }
 
     void ParentPane::_OnChildSplitOrCollapse(const bool isFirstChild, IPane newChild)
@@ -1400,6 +1402,4 @@ namespace winrt::TerminalApp::implementation
 
         return std::clamp(requestedValue, minSplitPosition, maxSplitPosition);
     }
-
-    DEFINE_EVENT(ParentPane, ChildClosed, _ChildClosedHandlers, winrt::delegate<IPane>);
 }

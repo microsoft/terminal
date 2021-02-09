@@ -78,8 +78,8 @@ namespace winrt::TerminalApp::implementation
 
         DECLARE_EVENT(Closed, _ClosedHandlers, winrt::delegate<LeafPane>);
         DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<LeafPane>);
-        DECLARE_EVENT(GotSplit, _GotSplitHandlers, winrt::delegate<ParentPane>);
         DECLARE_EVENT(PaneRaiseVisualBell, _PaneRaiseVisualBellHandlers, winrt::delegate<LeafPane>);
+        TYPED_EVENT(PaneTypeChanged, IPane, IPane);
 
     private:
         winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };

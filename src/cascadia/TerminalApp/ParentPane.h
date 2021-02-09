@@ -51,7 +51,7 @@ namespace winrt::TerminalApp::implementation
         void PropagateToLeavesOnEdge(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& edge, std::function<void(TerminalApp::LeafPane)> action);
         SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
-        DECLARE_EVENT(ChildClosed, _ChildClosedHandlers, winrt::delegate<TerminalApp::IPane>);
+        TYPED_EVENT(PaneTypeChanged, IPane, IPane);
 
     private:
         struct SnapChildrenSizeResult;
