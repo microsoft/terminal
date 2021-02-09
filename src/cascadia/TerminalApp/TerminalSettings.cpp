@@ -111,6 +111,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalSettings::ApplyAppearanceSettings(const IAppearanceConfig& appearance, const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes)
     {
         _CursorShape = appearance.CursorShape();
+        _CursorHeight = appearance.CursorHeight();
         if (!appearance.ColorSchemeName().empty())
         {
             if (const auto scheme = schemes.TryLookup(appearance.ColorSchemeName()))
@@ -157,7 +158,6 @@ namespace winrt::TerminalApp::implementation
         _HistorySize = profile.HistorySize();
         _SnapOnInput = profile.SnapOnInput();
         _AltGrAliasing = profile.AltGrAliasing();
-        _CursorHeight = profile.CursorHeight();
 
         // Fill in the remaining properties from the profile
         _ProfileName = profile.Name();

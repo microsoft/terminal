@@ -22,6 +22,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         GETSET_SETTING(ConvergedAlignment, BackgroundImageAlignment, ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center);
 
+        GETSET_SETTING(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
         GETSET_SETTING(hstring, ColorSchemeName, L"Campbell");
         GETSET_NULLABLE_SETTING(Windows::UI::Color, Foreground, nullptr);
         GETSET_NULLABLE_SETTING(Windows::UI::Color, Background, nullptr);

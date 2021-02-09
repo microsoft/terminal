@@ -21,5 +21,6 @@ namespace Microsoft.Terminal.TerminalControl
         UInt32 DefaultBackground { get; set; };
         UInt32 CursorColor { get; set; };
         CursorStyle CursorShape;
+        UInt32 CursorHeight;
     };
 }

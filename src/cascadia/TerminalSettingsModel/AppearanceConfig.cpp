@@ -17,6 +17,7 @@ static constexpr std::string_view BackgroundKey{ "background" };
 static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
 static constexpr std::string_view CursorShapeKey{ "cursorShape" };
+static constexpr std::string_view CursorHeightKey{ "cursorHeight" };
 static constexpr std::string_view BackgroundImageKey{ "backgroundImage" };
 static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
 static constexpr std::string_view BackgroundImageOpacityKey{ "backgroundImageOpacity" };
@@ -44,6 +45,7 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, BackgroundKey, _Background);
     JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
     JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
+    JsonUtils::GetValueForKey(json, CursorHeightKey, _CursorHeight);
     JsonUtils::GetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
     JsonUtils::GetValueForKey(json, CursorShapeKey, _CursorShape);
     JsonUtils::GetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);

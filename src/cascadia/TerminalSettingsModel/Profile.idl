@@ -131,10 +131,6 @@ namespace Microsoft.Terminal.Settings.Model
         void ClearAltGrAliasing();
         Boolean AltGrAliasing;
 
-        Boolean HasCursorHeight();
-        void ClearCursorHeight();
-        UInt32 CursorHeight;
-
         Boolean HasBellStyle();
         void ClearBellStyle();
         BellStyle BellStyle;

@@ -15,7 +15,6 @@ namespace Microsoft.Terminal.TerminalControl
         Boolean SnapOnInput;
         Boolean AltGrAliasing;
 
-        UInt32 CursorHeight;
         String StartingTitle;
         Boolean SuppressApplicationTitle;
         String WordDelimiters;

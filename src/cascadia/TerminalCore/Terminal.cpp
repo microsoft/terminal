@@ -114,39 +114,6 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 {
     UpdateAppearance(settings);
 
-    CursorType cursorShape = CursorType::VerticalBar;
-    switch (settings.CursorShape())
-    {
-    case CursorStyle::Underscore:
-        cursorShape = CursorType::Underscore;
-        break;
-    case CursorStyle::FilledBox:
-        cursorShape = CursorType::FullBox;
-        break;
-    case CursorStyle::EmptyBox:
-        cursorShape = CursorType::EmptyBox;
-        break;
-    case CursorStyle::Vintage:
-        cursorShape = CursorType::Legacy;
-        break;
-    case CursorStyle::DoubleUnderscore:
-        cursorShape = CursorType::DoubleUnderscore;
-        break;
-    default:
-    case CursorStyle::Bar:
-        cursorShape = CursorType::VerticalBar;
-        break;
-    }
-
-    if (_buffer)
-    {
-        _buffer->GetCursor().SetStyle(settings.CursorHeight(),
-                                      settings.CursorColor(),
-                                      cursorShape);
-    }
-
-    _defaultCursorShape = cursorShape;
-
     _snapOnInput = settings.SnapOnInput();
     _altGrAliasing = settings.AltGrAliasing();
     _wordDelimiters = settings.WordDelimiters();
@@ -198,6 +165,39 @@ void Terminal::UpdateAppearance(ICoreAppearance appearance)
     {
         _colorTable.at(i) = appearance.GetColorTableEntry(i);
     }
+
+    CursorType cursorShape = CursorType::VerticalBar;
+    switch (appearance.CursorShape())
+    {
+    case CursorStyle::Underscore:
+        cursorShape = CursorType::Underscore;
+        break;
+    case CursorStyle::FilledBox:
+        cursorShape = CursorType::FullBox;
+        break;
+    case CursorStyle::EmptyBox:
+        cursorShape = CursorType::EmptyBox;
+        break;
+    case CursorStyle::Vintage:
+        cursorShape = CursorType::Legacy;
+        break;
+    case CursorStyle::DoubleUnderscore:
+        cursorShape = CursorType::DoubleUnderscore;
+        break;
+    default:
+    case CursorStyle::Bar:
+        cursorShape = CursorType::VerticalBar;
+        break;
+    }
+
+    if (_buffer)
+    {
+        _buffer->GetCursor().SetStyle(appearance.CursorHeight(),
+                                      appearance.CursorColor(),
+                                      cursorShape);
+    }
+
+    _defaultCursorShape = cursorShape;
 }
 
 // Method Description:

@@ -42,6 +42,10 @@ namespace Microsoft.Terminal.Settings.Model
         void ClearCursorShape();
         Microsoft.Terminal.TerminalControl.CursorStyle CursorShape;
 
+        Boolean HasCursorHeight();
+        void ClearCursorHeight();
+        UInt32 CursorHeight;
+
         Boolean HasBackgroundImagePath();
         void ClearBackgroundImagePath();
         String BackgroundImagePath;
