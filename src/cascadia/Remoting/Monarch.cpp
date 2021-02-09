@@ -156,7 +156,14 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         {
             auto result = std::find_if(vec.begin(),
                                        vec.end(),
-                                       [args](auto other) { return args.PeasantID() == other.PeasantID(); });
+                                       [args](auto other) {
+                                           try
+                                           {
+                                               return args.PeasantID() == other.PeasantID();
+                                           }
+                                           CATCH_LOG(); // TODO:MG Oh no, this needs to be fixed in windowingBehavior
+                                           return false;
+                                       });
             if (result != std::end(vec))
             {
                 vec.erase(result);
