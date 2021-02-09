@@ -40,6 +40,7 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(AddHyperlinkCustomIdDifferentUri);
 
         TEST_METHOD(SetTaskbarProgress);
+        TEST_METHOD(SetWorkingDirectory);
     };
 };
 
@@ -387,4 +388,60 @@ void TerminalCoreUnitTests::TerminalApiTest::SetTaskbarProgress()
     // Additional params should be ignored, state and progress still set normally
     VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(1));
     VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(80));
+}
+
+void TerminalCoreUnitTests::TerminalApiTest::SetWorkingDirectory()
+{
+    Terminal term;
+    DummyRenderTarget emptyRT;
+    term.Create({ 100, 100 }, 0, emptyRT);
+
+    auto& stateMachine = *(term._stateMachine);
+
+    // Test setting working directory using OSC 9;9
+    // Initial CWD should be empty
+    VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
+
+    // Invalid sequences should not change CWD
+    stateMachine.ProcessString(L"\x1b]9;9\x9c");
+    VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
+
+    stateMachine.ProcessString(L"\x1b]9;9\"\x9c");
+    VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
+
+    stateMachine.ProcessString(L"\x1b]9;9\"C:\\\"\x9c");
+    VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
+
+    // Valid sequences should change CWD
+    stateMachine.ProcessString(L"\x1b]9;9;\"C:\\\"\x9c");
+    VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"C:\\");
+
+    stateMachine.ProcessString(L"\x1b]9;9;\"C:\\Program Files\"\x9c");
+    VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"C:\\Program Files");
+
+    stateMachine.ProcessString(L"\x1b]9;9;\"D:\\中文\"\x9c");
+    VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"D:\\中文");
+
+    // Test OSC 9;9 sequences without quotation marks
+    stateMachine.ProcessString(L"\x1b]9;9;C:\\\x9c");
+    VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"C:\\");
+
+    stateMachine.ProcessString(L"\x1b]9;9;C:\\Program Files\x9c");
+    VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"C:\\Program Files");
+
+    stateMachine.ProcessString(L"\x1b]9;9;D:\\中文\x9c");
+    VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"D:\\中文");
+
+    // These OSC 9;9 sequences will result in invalid CWD. We shouldn't crash on these.
+    stateMachine.ProcessString(L"\x1b]9;9;\"\x9c");
+    VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"\"");
+
+    stateMachine.ProcessString(L"\x1b]9;9;\"\"\x9c");
+    VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"\"\"");
+
+    stateMachine.ProcessString(L"\x1b]9;9;\"\"\"\x9c");
+    VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"\"");
+
+    stateMachine.ProcessString(L"\x1b]9;9;\"\"\"\"\x9c");
+    VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"\"\"");
 }

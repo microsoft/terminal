@@ -25,51 +25,44 @@ the MIT License. See LICENSE in the project root for license information. -->
     <ScrollViewer>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--Theme-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}"
-                              Margin="0">
-                <muxc:RadioButtons x:Uid="Globals_Theme"
-                                   SelectedItem="{x:Bind CurrentTheme, Mode=TwoWay}"
+            <local:SettingContainer x:Uid="Globals_Theme"
+                                    Margin="0">
+                <muxc:RadioButtons SelectedItem="{x:Bind CurrentTheme, Mode=TwoWay}"
                                    ItemsSource="{x:Bind ThemeList, Mode=OneWay}"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-            </ContentPresenter>
+            </local:SettingContainer>
 
             <!--Always show tabs-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <ToggleSwitch x:Uid="Globals_AlwaysShowTabs"
-                              IsOn="{x:Bind State.Globals.AlwaysShowTabs, Mode=TwoWay}"/>
-            </ContentPresenter>
+            <local:SettingContainer x:Uid="Globals_AlwaysShowTabs">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.AlwaysShowTabs, Mode=TwoWay}"/>
+            </local:SettingContainer>
 
             <!--Show Titlebar-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <ToggleSwitch x:Uid="Globals_ShowTitlebar"
-                              IsOn="{x:Bind State.Globals.ShowTabsInTitlebar, Mode=TwoWay}"/>
-            </ContentPresenter>
+            <local:SettingContainer x:Uid="Globals_ShowTitlebar">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.ShowTabsInTitlebar, Mode=TwoWay}"/>
+            </local:SettingContainer>
 
             <!--Show Title in Titlebar-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <ToggleSwitch x:Uid="Globals_ShowTitleInTitlebar"
-                              IsOn="{x:Bind State.Globals.ShowTitleInTitlebar, Mode=TwoWay}"/>
-            </ContentPresenter>
+            <local:SettingContainer x:Uid="Globals_ShowTitleInTitlebar">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.ShowTitleInTitlebar, Mode=TwoWay}"/>
+            </local:SettingContainer>
 
             <!--Always on Top-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <ToggleSwitch x:Uid="Globals_AlwaysOnTop"
-                              IsOn="{x:Bind State.Globals.AlwaysOnTop, Mode=TwoWay}"/>
-            </ContentPresenter>
+            <local:SettingContainer x:Uid="Globals_AlwaysOnTop">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.AlwaysOnTop, Mode=TwoWay}"/>
+            </local:SettingContainer>
 
             <!--Tab Width Mode-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <muxc:RadioButtons x:Uid="Globals_TabWidthMode"
-                                   SelectedItem="{x:Bind CurrentTabWidthMode, Mode=TwoWay}"
+            <local:SettingContainer x:Uid="Globals_TabWidthMode">
+                <muxc:RadioButtons SelectedItem="{x:Bind CurrentTabWidthMode, Mode=TwoWay}"
                                    ItemsSource="{x:Bind TabWidthModeList, Mode=OneWay}"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-            </ContentPresenter>
+            </local:SettingContainer>
 
             <!--Disable Animations-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <ToggleSwitch x:Uid="Globals_DisableAnimations"
-                              IsOn="{x:Bind State.Globals.DisableAnimations, Mode=TwoWay}"/>
-            </ContentPresenter>
+            <local:SettingContainer x:Uid="Globals_DisableAnimations">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.DisableAnimations, Mode=TwoWay}"/>
+            </local:SettingContainer>
         </StackPanel>
     </ScrollViewer>
 </Page>
