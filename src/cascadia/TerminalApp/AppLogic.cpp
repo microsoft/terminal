@@ -5,6 +5,7 @@
 #include "AppLogic.h"
 #include "WindowingBehavior.h"
 #include "AppLogic.g.cpp"
+#include "FindTargetWindowResult.g.cpp"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include <LibraryResources.h>
@@ -1201,36 +1202,72 @@ namespace winrt::TerminalApp::implementation
     // - WindowingBehaviorUseExisting: We should handle the args "in the current
     //   window ON ANY DESKTOP"
     // - anything else: We should handle the commandline in the window with the given ID.
-    int32_t AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
+    TerminalApp::FindTargetWindowResult AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
     {
+        // TODO:MG Add tests for this method. Localtests? probably.
         ::TerminalApp::AppCommandlineArgs appArgs;
         const auto result = appArgs.ParseArgs(args);
         if (result == 0)
         {
-            const auto parsedTarget = appArgs.GetTargetWindow();
-            if (parsedTarget.has_value())
+            const std::string parsedTarget{ appArgs.GetTargetWindow() };
+
+            // If the user did not provide any value on the commandline,
+            // then lookup our windowing behavior to determine what to do
+            // now.
+            if (parsedTarget.empty())
             {
-                // parsedTarget might be -1, if the user explicitly requested -1
-                // (or any other negative number) on the commandline. So the set
-                // of possible values here is {-1, 0, ℤ+}
-                return *parsedTarget;
-            }
-            else
-            {
-                // If the user did not provide any value on the commandline,
-                // then lookup our windowing behavior to determine what to do
-                // now.
                 const auto windowingBehavior = _settings.GlobalSettings().WindowingBehavior();
+                int32_t windowId = WindowingBehaviorUseNew;
                 switch (windowingBehavior)
                 {
                 case WindowingMode::UseNew:
-                    return WindowingBehaviorUseNew;
+                    windowId = WindowingBehaviorUseNew;
                 case WindowingMode::UseExistingSameDesktop:
-                    return WindowingBehaviorUseExistingSameDesktop;
+                    windowId = WindowingBehaviorUseExistingSameDesktop;
                 case WindowingMode::UseExisting:
-                    return WindowingBehaviorUseExisting;
-                default:
-                    return WindowingBehaviorUseNew;
+                    windowId = WindowingBehaviorUseExisting;
+                }
+                return winrt::make<FindTargetWindowResult>(windowId, L"");
+            }
+
+            // Here, the user _has_ provided a window-id on the commandline.
+            // What is it? Let's start by checking if it's an int, for the
+            // window's ID:
+            try
+            {
+                int32_t windowId = ::base::saturated_cast<int32_t>(std::stoi(parsedTarget));
+
+                // If the user provides _any_ negative number, then treat it as
+                // -1, for "use a new window".
+                if (windowId < 0)
+                {
+                    windowId = -1;
+                }
+
+                // Hooray! This is a valid integer. The set of possible values
+                // here is {-1, 0, ℤ+}. Let's return that window ID.
+                return winrt::make<TerminalApp::implementation::FindTargetWindowResult>(windowId, L"");
+            }
+            catch (...)
+            {
+                // Value was not a valid int. It could be any other string to
+                // use as a title though!
+                //
+                // First, check the reserved keywords:
+                if (parsedTarget == "new")
+                {
+                    return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew, L"");
+                }
+                else if (parsedTarget == "last")
+                {
+                    return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseExistingSameDesktop, L"");
+                }
+                else
+                {
+                    // The string they provided wasn't an int, it wasn't "new"
+                    // or "last", so whatever it is, that's the name they get.
+                    winrt::hstring winrtName{ til::u8u16(parsedTarget) };
+                    return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseName, winrtName);
                 }
             }
         }
@@ -1246,7 +1283,7 @@ namespace winrt::TerminalApp::implementation
         // create a new window. Then, in that new window, we'll try to  set the
         // StartupActions, which will again fail, returning the correct error
         // message.
-        return WindowingBehaviorUseNew;
+        return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew, L"");
     }
 
     // Method Description:

@@ -4,12 +4,23 @@
 #pragma once
 
 #include "AppLogic.g.h"
+#include "FindTargetWindowResult.g.h"
 #include "TerminalPage.h"
 #include "Jumplist.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
 {
+    struct FindTargetWindowResult : FindTargetWindowResultT<FindTargetWindowResult>
+    {
+        GETSET_PROPERTY(int32_t, WindowId, -1);
+        GETSET_PROPERTY(winrt::hstring, WindowName, L"");
+
+    public:
+        FindTargetWindowResult(const int32_t id, const winrt::hstring& name) :
+            _WindowId{ id }, _WindowName{ name } {};
+    };
+
     struct AppLogic : AppLogicT<AppLogic, IInitializeWithWindow>
     {
     public:
@@ -30,7 +41,7 @@ namespace winrt::TerminalApp::implementation
 
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
         int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd);
-        int32_t FindTargetWindow(array_view<const winrt::hstring> actions);
+        TerminalApp::FindTargetWindowResult FindTargetWindow(array_view<const winrt::hstring> actions);
         winrt::hstring ParseCommandlineMessage();
         bool ShouldExitEarly();
 

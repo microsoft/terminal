@@ -69,6 +69,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // Otherwise, the King will tell us if we should make a new window
         _shouldCreateWindow = _isKing;
         std::optional<uint64_t> givenID;
+        winrt::hstring givenName = L""; // TODO:MG If we're the king, we might STILL WANT TO GET THE NAME. How do we get the name?
         if (!_isKing)
         {
             // The monarch may respond back "you should be a new
@@ -86,7 +87,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             {
                 givenID = result.Id().Value();
             }
-
+            givenName = result.WindowName();
             // TraceLogging doesn't have a good solution for logging an
             // optional. So we have to repeat the calls here:
             if (givenID)
@@ -95,6 +96,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                   "WindowManager_ProposeCommandline",
                                   TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
                                   TraceLoggingUInt64(givenID.value(), "Id", "The ID we should assign our peasant"),
+                                  TraceLoggingWideString(givenName.c_str(), "Name", "The name we should assign this window"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
             }
             else
@@ -103,6 +105,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                   "WindowManager_ProposeCommandline",
                                   TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
                                   TraceLoggingPointer(nullptr, "Id", "No ID provided"),
+                                  TraceLoggingWideString(givenName.c_str(), "Name", "The name we should assign this window"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
             }
         }
@@ -113,6 +116,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             TraceLoggingWrite(g_hRemotingProvider,
                               "WindowManager_ProposeCommandline_AsMonarch",
                               TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
+                              TraceLoggingWideString(givenName.c_str(), "Name", "The name we should assign this window"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
         }
 
@@ -120,7 +124,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         {
             // If we should create a new window, then instantiate our Peasant
             // instance, and tell that peasant to handle that commandline.
-            _createOurPeasant({ givenID });
+            _createOurPeasant({ givenID }, givenName);
 
             // Spawn a thread to wait on the monarch, and handle the election
             if (!_isKing)
@@ -208,13 +212,17 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return (ourPID == kingPID);
     }
 
-    Remoting::IPeasant WindowManager::_createOurPeasant(std::optional<uint64_t> givenID)
+    Remoting::IPeasant WindowManager::_createOurPeasant(std::optional<uint64_t> givenID,
+                                                        const winrt::hstring& givenName)
     {
         auto p = winrt::make_self<Remoting::implementation::Peasant>();
         if (givenID)
         {
             p->AssignID(givenID.value());
         }
+
+        // If the name wasn't specified, this will be an empty string.
+        p->WindowName(givenName);
         _peasant = *p;
 
         // Try to add us to the monarch. If that fails, try to find a monarch

@@ -141,6 +141,33 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
     }
 
+    uint64_t Monarch::_lookupPeasantIdForName(const winrt::hstring& name)
+    {
+        if (name.empty())
+        {
+            return 0;
+        }
+
+        for (const auto& [id, p] : _peasants)
+        {
+            try
+            {
+                auto otherName = p.WindowName();
+                if (otherName == name)
+                {
+                    return id;
+                }
+            }
+            catch (...)
+            {
+                LOG_CAUGHT_EXCEPTION();
+                // Remove the peasant from the list of peasants
+                _peasants.erase(id);
+            }
+        }
+        return 0;
+    }
+
     void Monarch::HandleActivatePeasant(const Remoting::WindowActivatedArgs& args)
     {
         // TODO:projects/5 Use a heap/priority queue per-desktop to track which
@@ -278,11 +305,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // After the event was handled, ResultTargetWindow() will be filled with
         // the parsed result.
         const auto targetWindow = findWindowArgs->ResultTargetWindow();
+        const auto& targetWindowName = findWindowArgs->ResultTargetWindowName();
 
         // If there's a valid ID returned, then let's try and find the peasant
         // that goes with it. Alternatively, if we were given a magic windowing
         // constant, we can use that to look up an appropriate peasant.
         if (targetWindow >= 0 ||
+            targetWindow == WindowingBehaviorUseName ||
             targetWindow == WindowingBehaviorUseExistingSameDesktop ||
             targetWindow == WindowingBehaviorUseExisting)
         {
@@ -302,6 +331,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             case WindowingBehaviorUseExisting:
                 windowID = _getMostRecentPeasantID(false);
                 break;
+            case WindowingBehaviorUseName:
+                windowID = _lookupPeasantIdForName(targetWindowName);
+                break;
             default:
                 windowID = ::base::saturated_cast<uint64_t>(targetWindow);
                 break;
@@ -315,7 +347,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             if (auto targetPeasant{ _getPeasant(windowID) })
             {
                 auto result{ winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(false) };
-
+                result->WindowName(targetWindowName);
                 try
                 {
                     // This will raise the peasant's ExecuteCommandlineRequested
@@ -357,6 +389,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
                 auto result{ winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(true) };
                 result->Id(windowID);
+                result->WindowName(targetWindowName);
                 return *result;
             }
         }
@@ -369,7 +402,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 
         // In this case, no usable ID was provided. Return { true, nullopt }
-        return winrt::make<Remoting::implementation::ProposeCommandlineResult>(true);
+        auto result = winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(true);
+        result->WindowName(targetWindowName);
+        return *result;
     }
 
 }
