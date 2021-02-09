@@ -5,6 +5,8 @@
 #include "WindowManager.h"
 #include "MonarchFactory.h"
 #include "CommandlineArgs.h"
+#include "WindowingBehavior.h"
+#include "FindTargetWindowArgs.h"
 
 #include "WindowManager.g.cpp"
 #include "../../types/inc/utils.hpp"
@@ -113,9 +115,28 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         {
             // We're the monarch, we don't need to propose anything. We're just
             // going to do it.
+            //
+            // However, we _do_ need to ask what our name should be. It's
+            // possible someone started the _first_ wt with something like `wt
+            // -w king` as the commandline - we want to make sure we set our
+            // name to "king".
+            auto findWindowArgs{ winrt::make_self<Remoting::implementation::FindTargetWindowArgs>(args) };
+            _raiseFindTargetWindowRequested(nullptr, *findWindowArgs);
+
+            auto responseId = findWindowArgs->ResultTargetWindow();
+            if (responseId > 0)
+            {
+                givenID = ::base::saturated_cast<uint64_t>(responseId);
+            }
+            else if (responseId == WindowingBehaviorUseName)
+            {
+                givenName = findWindowArgs->ResultTargetWindowName();
+            }
+
             TraceLoggingWrite(g_hRemotingProvider,
                               "WindowManager_ProposeCommandline_AsMonarch",
                               TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
+                              TraceLoggingUInt64(givenID.value(), "Id", "The ID we should assign our peasant"),
                               TraceLoggingWideString(givenName.c_str(), "Name", "The name we should assign this window"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
         }
