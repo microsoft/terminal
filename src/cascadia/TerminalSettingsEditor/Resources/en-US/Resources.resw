@@ -829,6 +829,6 @@
     <value>Enable Focus Follow Mouse mode</value>
   </data>
   <data name="Globals_FocusFollowMouse.HelpText" xml:space="preserve">
-    <value>When checked, the terminal will focus pane on mouse hover.</value>
+    <value>When checked, the terminal will the focus pane on mouse hover.</value>
   </data>
 </root>
