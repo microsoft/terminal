@@ -163,7 +163,7 @@ private:                                                                    \
         /*iterate through parents to find one with a value*/                \
         for (auto& parent : _parents)                                       \
         {                                                                   \
-            if (auto source{ parent->name##OverrideSource() })              \
+            if (auto source{ parent->_get##name##OverrideSourceImpl() })    \
             {                                                               \
                 return source;                                              \
             }                                                               \
@@ -272,7 +272,7 @@ private:                                                                    \
         /*iterate through parents to find one with a value*/                \
         for (auto& parent : _parents)                                       \
         {                                                                   \
-            if (auto source{ parent->name##OverrideSource() })              \
+            if (auto source{ parent->_get##name##OverrideSourceImpl() })    \
             {                                                               \
                 return source;                                              \
             }                                                               \

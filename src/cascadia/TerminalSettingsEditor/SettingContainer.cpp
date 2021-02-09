@@ -79,13 +79,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         // update visibility for override message
-        if (const auto& overrideMsg{ obj.GetTemplateChild(L"OverrideMessage") })
-        {
-            if (const auto& elem{ overrideMsg.try_as<UIElement>() })
-            {
-                elem.Visibility(newVal ? Visibility::Visible : Visibility::Collapsed);
-            }
-        }
+        get_self<SettingContainer>(obj)->_UpdateOverrideMessage();
     }
 
     void SettingContainer::OnApplyTemplate()
@@ -212,17 +206,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                     {
                                         msgTarget.Text(RS_(L"SettingContainer_OverrideTargetWSLGenerator"));
                                     }
-                                    else if (profileSource == AzureGeneratorNamespace)
+                                    else if (profileSource == PowershellCoreGeneratorNamespace)
                                     {
                                         msgTarget.Text(RS_(L"SettingContainer_OverrideTargetPowershellGenerator"));
                                     }
-                                    else if (profileSource == PowershellCoreGeneratorNamespace)
+                                    else if (profileSource == AzureGeneratorNamespace)
                                     {
                                         msgTarget.Text(RS_(L"SettingContainer_OverrideTargetAzureCloudShellGenerator"));
                                     }
                                     else
                                     {
-                                        // TODO CARLOS: we should probably have some special handling for proto-extensions here
+                                        // TODO #1690: add special handling for proto-extensions here
                                         // unknown generator; use fallback message instead
                                         msgTarget.Text(RS_(L"SettingContainer_OverrideTarget"));
                                     }
