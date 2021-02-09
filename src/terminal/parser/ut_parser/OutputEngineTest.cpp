@@ -1456,6 +1456,13 @@ public:
         return true;
     }
 
+    bool SetWorkingDirectory(const std::wstring_view hostname, const std::wstring_view path) noexcept override
+    {
+        _cwdHostname = hostname;
+        _cwdPath = path;
+        return true;
+    }
+
     bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept override
     {
         _hyperlinkMode = true;
@@ -1539,6 +1546,8 @@ public:
     bool _setDefaultCursorColor;
     DWORD _defaultCursorColor;
     bool _setColorTableEntry;
+    std::wstring _cwdHostname;
+    std::wstring _cwdPath;
     bool _hyperlinkMode;
     std::wstring _copyContent;
     std::wstring _uri;
@@ -3296,6 +3305,45 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(L"UNCHANGED", pDispatch->_copyContent);
 
         pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestOsc7SetWorkingDirectory)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        // Initial CWD should be empty
+        VERIFY_IS_TRUE(pDispatch->_cwdHostname.empty());
+        VERIFY_IS_TRUE(pDispatch->_cwdPath.empty());
+
+        // Try Unix paths
+        mach.ProcessString(L"\x1b]7;file://localhost/usr/local/bin\x9c");
+        VERIFY_ARE_EQUAL(L"localhost", pDispatch->_cwdHostname);
+        VERIFY_ARE_EQUAL(L"/usr/local/bin", pDispatch->_cwdPath);
+
+        mach.ProcessString(L"\x1b]7;file:///usr/local/bin\x9c");
+        VERIFY_IS_TRUE(pDispatch->_cwdHostname.empty());
+        VERIFY_ARE_EQUAL(L"/usr/local/bin", pDispatch->_cwdPath);
+
+        // Try Windows paths
+        mach.ProcessString(L"\x1b]7;file://WIN-DESKTOP-1/C:/\x9c");
+        VERIFY_ARE_EQUAL(L"WIN-DESKTOP-1", pDispatch->_cwdHostname);
+        VERIFY_ARE_EQUAL(L"/C:/", pDispatch->_cwdPath);
+
+        mach.ProcessString(L"\x1b]7;file:///C:/\x9c");
+        VERIFY_IS_TRUE(pDispatch->_cwdHostname.empty());
+        VERIFY_ARE_EQUAL(L"/C:/", pDispatch->_cwdPath);
+
+        // Try Cygwin paths
+        mach.ProcessString(L"\x1b]7;file://WIN-DESKTOP-1/c\x9c");
+        VERIFY_ARE_EQUAL(L"WIN-DESKTOP-1", pDispatch->_cwdHostname);
+        VERIFY_ARE_EQUAL(L"/c", pDispatch->_cwdPath);
+
+        mach.ProcessString(L"\x1b]7;file:///c\x9c");
+        VERIFY_IS_TRUE(pDispatch->_cwdHostname.empty());
+        VERIFY_ARE_EQUAL(L"/c", pDispatch->_cwdPath);
     }
 
     TEST_METHOD(TestAddHyperlink)

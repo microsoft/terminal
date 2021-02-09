@@ -925,6 +925,7 @@ CATCH_LOG_RETURN_FALSE()
 
 // Routine Description:
 // - Given a file URI string, attempts to parse the URI encoded.
+//   The spec of the file URI is https://freedesktop.org/wiki/Specifications/file-uri-spec/.
 //   The file URIs are of the form:
 //        file://<hostname>/<path>
 bool OutputStateMachineEngine::_ParseFileUri(const std::wstring_view string,
@@ -944,7 +945,7 @@ bool OutputStateMachineEngine::_ParseFileUri(const std::wstring_view string,
     }
 
     size_t current = 7;
-    const auto nextSlash = string.find(L"/", current);
+    size_t nextSlash = string.find(L"/", current);
     if (nextSlash == std::wstring::npos)
     {
         // Invalid URI. Ignore it.
@@ -952,7 +953,7 @@ bool OutputStateMachineEngine::_ParseFileUri(const std::wstring_view string,
     }
 
     hostname = string.substr(current, nextSlash - current);
-    current = nextSlash + 1;
+    current = nextSlash;
     std::wstring _path = std::wstring(string.substr(current, std::wstring::npos));
     UrlUnescapeInPlace(path.data(), 0);
     path = _path;
