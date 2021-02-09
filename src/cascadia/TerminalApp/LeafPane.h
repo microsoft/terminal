@@ -76,7 +76,7 @@ namespace winrt::TerminalApp::implementation
 
         void _UpdateBorders();
 
-        WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
+        DECLARE_EVENT(Closed, _ClosedHandlers, winrt::delegate<LeafPane>);
         DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<LeafPane>);
         DECLARE_EVENT(GotSplit, _GotSplitHandlers, winrt::delegate<ParentPane>);
         DECLARE_EVENT(PaneRaiseVisualBell, _PaneRaiseVisualBellHandlers, winrt::delegate<LeafPane>);

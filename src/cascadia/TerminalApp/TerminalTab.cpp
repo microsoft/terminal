@@ -598,6 +598,28 @@ namespace winrt::TerminalApp::implementation
                 tab->_TabRaiseVisualBellHandlers();
             }
         });
+
+        paneImpl->Closed([weakThis](TerminalApp::LeafPane sender) {
+            if (auto tab{ weakThis.get() })
+            {
+                // Update our mru list
+                for (auto i = tab->_mruPanes.begin(); i != tab->_mruPanes.end(); ++i)
+                {
+                    if (*i == sender.Id())
+                    {
+                        tab->_mruPanes.erase(i);
+                        break;
+                    }
+                }
+
+                // If that was the last leaf, close the tab
+                if (tab->_mruPanes.empty())
+                {
+                    tab->_RemoveRootPaneEventHandlers();
+                    tab->_ClosedHandlers(nullptr, nullptr);
+                }
+            }
+        });
     }
 
     void TerminalTab::_SetupRootPaneEventHandlers()
@@ -611,13 +633,6 @@ namespace winrt::TerminalApp::implementation
 
             // When root pane closes, the tab also closes.
             const auto rootPaneAsLeafImpl = winrt::get_self<implementation::LeafPane>(_rootPane2);
-            _rootPaneClosedToken = rootPaneAsLeafImpl->Closed([weakThis = get_weak()](auto&& /*s*/, auto&& /*e*/) {
-                if (auto tab{ weakThis.get() })
-                {
-                    tab->_RemoveRootPaneEventHandlers();
-                    tab->_ClosedHandlers(nullptr, nullptr);
-                }
-            });
 
             // When the root pane is a leaf and gets split, it produces a new parent pane that contains
             // both itself and its new leaf neighbor. We then replace the root pane with the new parent pane.
@@ -643,14 +658,7 @@ namespace winrt::TerminalApp::implementation
 
                     tab->_rootPane2 = newChildPane;
                     tab->_SetupRootPaneEventHandlers();
-                    if (const auto newContentAsLeaf = newChildPane.try_as<TerminalApp::LeafPane>())
-                    {
-                        tab->Content(newContentAsLeaf);
-                    }
-                    else
-                    {
-                        tab->Content(newChildPane.try_as<TerminalApp::ParentPane>());
-                    }
+                    tab->Content(newChildPane.try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
                 }
             });
         }
@@ -660,7 +668,6 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto rootAsLeaf = _rootPane2.try_as<LeafPane>())
         {
-            rootAsLeaf->Closed(_rootPaneClosedToken);
             rootAsLeaf->GotSplit(_rootPaneTypeChangedToken);
         }
         else if (const auto rootAsParent = _rootPane2.try_as<ParentPane>())

@@ -637,7 +637,7 @@ namespace winrt::TerminalApp::implementation
         const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
 
         const bool splitWidth = _splitState == SplitState::Vertical;
-        const auto totalSize = splitWidth ? Root().ActualWidth() : Root().ActualHeight();
+        const auto totalSize = splitWidth ? Root().ActualWidth() : Root().ActualHeight(); // try ActualWidth
         // If we don't have a size yet, it's likely that we're in startup, or we're
         // being executed as a sequence of actions. In that case, just skip the
         // animation.
@@ -795,7 +795,7 @@ namespace winrt::TerminalApp::implementation
             closedChild.ClearActive();
             const auto remainingFirstLeaf = remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>();
             remainingFirstLeaf.SetActive();
-            // todo: this focus call doesn't seem to work?
+            // todo: this focus call doesn't seem to work? try in handler for child closed
             //remainingFirstLeaf.GetTerminalControl().Focus(FocusState::Programmatic);
         }
 
@@ -808,10 +808,11 @@ namespace winrt::TerminalApp::implementation
     // todo: can the dummy grid needed for the exit animation be put in the xaml file?
     winrt::fire_and_forget ParentPane::_CloseChildRoutine(const bool closeFirst)
     {
+        //auto weakThis = get_weak();
         co_await winrt::resume_foreground(Root().Dispatcher());
 
-        // todo: do we need this weakThis??
-        //if (auto pane{ weakThis.get() })
+        // todo: do we need this weakThis?? YES, do the auto weakThis thing above first
+        //if (auto pane{ weakThis.get() }) 
         //{
             // This will query if animations are enabled via the "Show animations in
             // Windows" setting in the OS
@@ -991,7 +992,7 @@ namespace winrt::TerminalApp::implementation
             const auto childImpl = winrt::get_self<implementation::LeafPane>(child);
 
             // todo: check if we need to do a 'get_weak()' here or something?
-            closedToken = childImpl->Closed([=](auto&& /*s*/, auto&& /*e*/) {
+            closedToken = childImpl->Closed([=](auto&& /*s*/) {
                 // Unsubscribe from events of both our children, as we ourself will also
                 // get closed when our child does.
                 _RemoveAllChildEventHandlers(false);

@@ -278,7 +278,7 @@ namespace winrt::TerminalApp::implementation
     // - todo: not sure if we ever call this anymore
     void LeafPane::Close()
     {
-        _ClosedHandlers(nullptr, nullptr);
+        _ClosedHandlers(*this);
     }
 
     int LeafPane::GetLeafPaneCount() const noexcept
@@ -694,6 +694,7 @@ namespace winrt::TerminalApp::implementation
         return splitType;
     }
 
+    DEFINE_EVENT(LeafPane, Closed, _ClosedHandlers, winrt::delegate<LeafPane>);
     DEFINE_EVENT(LeafPane, GotFocus, _GotFocusHandlers, winrt::delegate<LeafPane>);
     DEFINE_EVENT(LeafPane, GotSplit, _GotSplitHandlers, winrt::delegate<TerminalApp::ParentPane>);
     DEFINE_EVENT(LeafPane, PaneRaiseVisualBell, _PaneRaiseVisualBellHandlers, winrt::delegate<LeafPane>);

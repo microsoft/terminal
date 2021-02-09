@@ -91,7 +91,6 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
         winrt::TerminalApp::TabHeaderControl _headerControl{};
 
-        winrt::event_token _rootPaneClosedToken{ 0 };
         winrt::event_token _rootPaneTypeChangedToken{ 0 };
 
         std::vector<uint16_t> _mruPanes;
