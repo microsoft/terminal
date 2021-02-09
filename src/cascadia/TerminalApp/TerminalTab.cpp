@@ -677,7 +677,7 @@ namespace winrt::TerminalApp::implementation
                 }
                 tab->_focusState = WUX::FocusState::Programmatic;
                 // This tab has gained focus, remove the bell indicator if it is active
-                if (tab->TabStatus().BellIndicator())
+                if (tab->_tabStatus.BellIndicator())
                 {
                     tab->ShowBellIndicator(false);
                 }

@@ -25,11 +25,6 @@ namespace winrt::TerminalApp::implementation
         Name(tab.Title());
         Icon(tab.Icon());
 
-        if (const auto terminalTab{ tab.try_as<winrt::TerminalApp::TerminalTab>() })
-        {
-            TabStatus(terminalTab.TabStatus());
-        }
-
         _tabChangedRevoker = tab.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& sender, auto& e) {
             auto item{ weakThis.get() };
             auto senderTab{ sender.try_as<winrt::TerminalApp::TabBase>() };
@@ -47,5 +42,18 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         });
+
+        if (const auto terminalTab{ tab.try_as<winrt::TerminalApp::TerminalTab>() })
+        {
+            const auto status = terminalTab.TabStatus();
+            TabStatus(status);
+
+            _tabStatusChangedRevoker = status.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& /*sender*/, auto& /*e*/) {
+                // Sometimes nested bindings do not get updated,
+                // thus let's notify property changed on TabStatus when one of its properties changes
+                auto item{ weakThis.get() };
+                item->_PropertyChangedHandlers(*item, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"TabStatus" });
+            });
+        }
     }
 }
