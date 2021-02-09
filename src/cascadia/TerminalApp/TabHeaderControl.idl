@@ -14,6 +14,7 @@ namespace TerminalApp
         Boolean IsProgressRingIndeterminate { get; set; };
         Boolean BellIndicator { get; set; };
         UInt32 ProgressValue { get; set; };
+        Boolean IsReadOnlyActive { get; set; };
 
         TabHeaderControl();
         void BeginRename();

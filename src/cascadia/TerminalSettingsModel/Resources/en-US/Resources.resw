@@ -357,6 +357,9 @@
   <data name="TogglePaneZoomCommandKey" xml:space="preserve">
     <value>Toggle pane zoom</value>
   </data>
+  <data name="TogglePaneReadOnlyCommandKey" xml:space="preserve">
+    <value>Toggle pane read-only mode</value>
+  </data>
   <data name="ToggleShaderEffectsCommandKey" xml:space="preserve">
     <value>Toggle terminal visual effects</value>
   </data>

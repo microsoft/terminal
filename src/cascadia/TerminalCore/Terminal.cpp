@@ -112,8 +112,11 @@ void Terminal::CreateFromSettings(ICoreSettings settings,
 // - settings: an ICoreSettings with new settings values for us to use.
 void Terminal::UpdateSettings(ICoreSettings settings)
 {
+    // Set the default background as transparent to prevent the
+    // DX layer from overwriting the background image or acrylic effect
+    til::color newBackgroundColor{ static_cast<COLORREF>(settings.DefaultBackground()) };
+    _defaultBg = newBackgroundColor.with_alpha(0);
     _defaultFg = settings.DefaultForeground();
-    _defaultBg = settings.DefaultBackground();
 
     CursorType cursorShape = CursorType::VerticalBar;
     switch (settings.CursorShape())
@@ -395,6 +398,24 @@ void Terminal::Write(std::wstring_view stringView)
     auto lock = LockForWriting();
 
     _stateMachine->ProcessString(stringView);
+}
+
+void Terminal::WritePastedText(std::wstring_view stringView)
+{
+    auto option = ::Microsoft::Console::Utils::FilterOption::CarriageReturnNewline |
+                  ::Microsoft::Console::Utils::FilterOption::ControlCodes;
+
+    std::wstring filtered = ::Microsoft::Console::Utils::FilterStringForPaste(stringView, option);
+    if (IsXtermBracketedPasteModeEnabled())
+    {
+        filtered.insert(0, L"\x1b[200~");
+        filtered.append(L"\x1b[201~");
+    }
+
+    if (_pfnWriteInput)
+    {
+        _pfnWriteInput(filtered);
+    }
 }
 
 // Method Description:

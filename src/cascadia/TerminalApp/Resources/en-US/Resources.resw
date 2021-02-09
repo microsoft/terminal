@@ -404,6 +404,18 @@
   <data name="CloseAllDialog.Title" xml:space="preserve">
     <value>Do you want to close all tabs?</value>
   </data>
+  <data name="CloseReadOnlyDialog.CloseButtonText" xml:space="preserve">
+    <value>Close anyway</value>
+  </data>
+  <data name="CloseReadOnlyDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Title" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Content" xml:space="preserve">
+    <value>You are about to close a read-only terminal. Do you wish to continue?</value>
+  </data>
   <data name="LargePasteDialog.CloseButtonText" xml:space="preserve">
     <value>Cancel</value>
   </data>

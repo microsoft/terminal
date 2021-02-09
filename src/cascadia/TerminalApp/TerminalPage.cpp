@@ -135,6 +135,8 @@ namespace winrt::TerminalApp::implementation
         }
         CATCH_LOG();
 
+        _tabRow.PointerMoved({ this, &TerminalPage::_RestorePointerCursorHandler });
+
         _tabView.CanReorderTabs(!isElevated);
         _tabView.CanDragTabs(!isElevated);
 
@@ -446,6 +448,17 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Displays a dialog for warnings found while closing the terminal tab marked as read-only
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseReadOnlyDialog()
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            co_return co_await presenter.ShowDialog(FindName(L"CloseReadOnlyDialog").try_as<WUX::Controls::ContentDialog>());
+        }
+        co_return ContentDialogResult::None;
+    }
+
+    // Method Description:
     // - Displays a dialog to warn the user about the fact that the text that
     //   they are trying to paste contains the "new line" character which can
     //   have the effect of starting commands without the user's knowledge if
@@ -747,7 +760,9 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        TermControl term{ settings, connection };
+        // Give term control a child of the settings so that any overrides go in the child
+        // This way, when we do a settings reload we just update the parent and the overrides remain
+        TermControl term{ *(winrt::get_self<TerminalSettings>(settings)->CreateChild()), connection };
 
         auto newTabImpl = winrt::make_self<TerminalTab>(profileGuid, term);
 
@@ -1053,6 +1068,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->TabSearch({ this, &TerminalPage::_HandleOpenTabSearch });
         _actionDispatch->MoveTab({ this, &TerminalPage::_HandleMoveTab });
         _actionDispatch->BreakIntoDebugger({ this, &TerminalPage::_HandleBreakIntoDebugger });
+        _actionDispatch->TogglePaneReadOnly({ this, &TerminalPage::_HandleTogglePaneReadOnly });
     }
 
     // Method Description:
@@ -1065,8 +1081,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto newTabTitle = tab.Title();
 
-        if (_settings.GlobalSettings().ShowTitleInTitlebar() &&
-            tab.FocusState() != FocusState::Unfocused)
+        if (_settings.GlobalSettings().ShowTitleInTitlebar() && tab == _GetFocusedTab())
         {
             _titleChangeHandlers(*this, newTabTitle);
         }
@@ -1163,7 +1178,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Look for the index of the input tabView in the tabs vector,
-    //   and call _RemoveTabViewItemByIndex
+    //   and call _RemoveTab
     // Arguments:
     // - tabViewItem: the TabViewItem in the TabView that is being removed.
     void TerminalPage::_RemoveTabViewItem(const MUX::Controls::TabViewItem& tabViewItem)
@@ -1172,16 +1187,35 @@ namespace winrt::TerminalApp::implementation
         if (_tabView.TabItems().IndexOf(tabViewItem, tabIndexFromControl))
         {
             // If IndexOf returns true, we've actually got an index
-            _RemoveTabViewItemByIndex(tabIndexFromControl);
+            auto tab{ _tabs.GetAt(tabIndexFromControl) };
+            _RemoveTab(tab);
         }
     }
 
     // Method Description:
     // - Removes the tab (both TerminalControl and XAML)
     // Arguments:
-    // - tabIndex: the index of the tab to be removed
-    void TerminalPage::_RemoveTabViewItemByIndex(uint32_t tabIndex)
+    // - tab: the tab to remove
+    winrt::Windows::Foundation::IAsyncAction TerminalPage::_RemoveTab(winrt::TerminalApp::TabBase tab)
     {
+        if (tab.ReadOnly())
+        {
+            ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
+
+            // The primary action is canceling the removal
+            if (warningResult == ContentDialogResult::Primary)
+            {
+                co_return;
+            }
+        }
+
+        uint32_t tabIndex{};
+        if (!_tabs.IndexOf(tab, tabIndex))
+        {
+            // The tab is already removed
+            co_return;
+        }
+
         // We use _removing flag to suppress _OnTabSelectionChanged events
         // that might get triggered while removing
         _removing = true;
@@ -1191,11 +1225,10 @@ namespace winrt::TerminalApp::implementation
 
         // Removing the tab from the collection should destroy its control and disconnect its connection,
         // but it doesn't always do so. The UI tree may still be holding the control and preventing its destruction.
-        auto tab{ _tabs.GetAt(tabIndex) };
         tab.Shutdown();
 
-        uint32_t mruIndex;
-        if (_mruTabs.IndexOf(_tabs.GetAt(tabIndex), mruIndex))
+        uint32_t mruIndex{};
+        if (_mruTabs.IndexOf(tab, mruIndex))
         {
             _mruTabs.RemoveAt(mruIndex);
         }
@@ -1264,6 +1297,8 @@ namespace winrt::TerminalApp::implementation
             _rearrangeFrom = std::nullopt;
             _rearrangeTo = std::nullopt;
         }
+
+        co_return;
     }
 
     // Method Description:
@@ -1539,7 +1574,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
-            _RemoveTabViewItemByIndex(*index);
+            auto tab{ _tabs.GetAt(*index) };
+            _RemoveTab(tab);
         }
     }
 
@@ -1547,18 +1583,45 @@ namespace winrt::TerminalApp::implementation
     // - Close the currently focused pane. If the pane is the last pane in the
     //   tab, the tab will also be closed. This will happen when we handle the
     //   tab's Closed event.
-    void TerminalPage::_CloseFocusedPane()
+    winrt::fire_and_forget TerminalPage::_CloseFocusedPane()
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
             _UnZoomIfNeeded();
-            terminalTab->ClosePane();
+
+            auto pane = terminalTab->GetActivePane();
+
+            if (const auto pane{ terminalTab->GetActivePane() })
+            {
+                if (const auto control{ pane->GetTerminalControl() })
+                {
+                    if (control.ReadOnly())
+                    {
+                        ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
+
+                        // The primary action is canceling the action
+                        if (warningResult == ContentDialogResult::Primary)
+                        {
+                            co_return;
+                        }
+
+                        // Clean read-only mode to prevent additional prompt if closing the pane triggers closing of a hosting tab
+                        if (control.ReadOnly())
+                        {
+                            control.ToggleReadOnly();
+                        }
+                    }
+
+                    pane->Close();
+                }
+            }
         }
         else if (auto index{ _GetFocusedTabIndex() })
         {
-            if (_tabs.GetAt(*index).try_as<TerminalApp::SettingsTab>())
+            const auto tab{ _tabs.GetAt(*index) };
+            if (tab.try_as<TerminalApp::SettingsTab>())
             {
-                _RemoveTabViewItemByIndex(*index);
+                _RemoveTab(tab);
             }
         }
     }
@@ -1580,17 +1643,21 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        _CloseAllTabs();
+        // Since _RemoveTab is asynchronous, create a snapshot of the  tabs we want to remove
+        std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
+        std::copy(begin(_tabs), end(_tabs), std::back_inserter(tabsToRemove));
+        _RemoveTabs(tabsToRemove);
     }
 
     // Method Description:
-    // - Remove all the tabs opened and the terminal will terminate
-    //   on its own when the last tab is closed.
-    void TerminalPage::_CloseAllTabs()
+    // - Closes provided tabs one by one
+    // Arguments:
+    // - tabs - tabs to remove
+    winrt::fire_and_forget TerminalPage::_RemoveTabs(const std::vector<winrt::TerminalApp::TabBase> tabs)
     {
-        while (_tabs.Size() != 0)
+        for (auto& tab : tabs)
         {
-            _RemoveTabViewItemByIndex(0);
+            co_await _RemoveTab(tab);
         }
     }
 
@@ -2252,7 +2319,10 @@ namespace winrt::TerminalApp::implementation
                 tab.TabViewItem().StartBringIntoView();
 
                 // Raise an event that our title changed
-                _titleChangeHandlers(*this, tab.Title());
+                if (_settings.GlobalSettings().ShowTitleInTitlebar())
+                {
+                    _titleChangeHandlers(*this, tab.Title());
+                }
             }
             CATCH_LOG();
         }

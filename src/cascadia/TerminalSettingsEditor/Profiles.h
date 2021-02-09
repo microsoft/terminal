@@ -130,6 +130,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Profiles();
 
         void OnNavigatedTo(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
+        void OnNavigatedFrom(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
         Model::ColorScheme CurrentColorScheme();
         void CurrentColorScheme(const Model::ColorScheme& val);
@@ -140,12 +141,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         fire_and_forget Icon_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void BIAlignment_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void DeleteConfirmation_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
-        void UseParentProcessDirectory_Check(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
-        void UseParentProcessDirectory_Uncheck(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void Pivot_SelectionChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
 
         // CursorShape visibility logic
-        void CursorShape_Changed(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         bool IsVintageCursor() const;
 
         // manually bind FontWeight
@@ -166,9 +164,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::TerminalControl::ScrollbarState, State().Profile, ScrollState);
 
     private:
+        void _UpdateBIAlignmentControl(const int32_t val);
+
         Windows::Foundation::Collections::IMap<uint16_t, Microsoft::Terminal::Settings::Editor::EnumEntry> _FontWeightMap;
         Editor::EnumEntry _CustomFontWeight{ nullptr };
         std::array<Windows::UI::Xaml::Controls::Primitives::ToggleButton, 9> _BIAlignmentButtons;
+        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
     };
 };
 

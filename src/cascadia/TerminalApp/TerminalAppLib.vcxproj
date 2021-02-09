@@ -78,6 +78,10 @@
     <ClInclude Include="MinMaxCloseControl.h">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="PaletteItemTemplateSelector.h">
+      <DependentUpon>PaletteItemTemplateSelector.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="SettingsTab.h">
       <DependentUpon>SettingsTab.idl</DependentUpon>
     </ClInclude>
@@ -149,6 +153,10 @@
     <ClCompile Include="Jumplist.cpp" />
     <ClCompile Include="MinMaxCloseControl.cpp">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="PaletteItemTemplateSelector.cpp">
+      <DependentUpon>PaletteItemTemplateSelector.idl</DependentUpon>
+      <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="SettingsTab.cpp">
       <DependentUpon>SettingsTab.idl</DependentUpon>
@@ -227,6 +235,9 @@
     <Midl Include="IDirectKeyListener.idl" />
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
+    </Midl>
+    <Midl Include="PaletteItemTemplateSelector.idl">
+      <SubType>Designer</SubType>
     </Midl>
     <Midl Include="SettingsTab.idl" />
     <Midl Include="PaletteItem.idl" />
