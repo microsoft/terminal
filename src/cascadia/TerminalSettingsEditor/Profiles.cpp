@@ -180,6 +180,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _DeleteProfileHandlers(*this, *deleteProfileArgs);
     }
 
+    void ProfilePageNavigationState::Navigate(const IInspectable& target)
+    {
+        _NavigateHandlers(*this, target);
+    }
+
     Profiles::Profiles() :
         _ColorSchemeList{ single_threaded_observable_vector<ColorScheme>() }
     {
@@ -306,6 +311,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         });
 
+        // Hook up the hyperlinks from SettingContainer
+        _RegisterNavigationHandlers(GeneralStack());
+        _RegisterNavigationHandlers(AppearanceStack());
+        _RegisterNavigationHandlers(AdvancedStack());
+
         // Navigate to the pivot in the provided navigation state
         ProfilesPivot().SelectedIndex(static_cast<int>(_State.LastActivePivot()));
     }
@@ -313,6 +323,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Profiles::OnNavigatedFrom(const NavigationEventArgs& /*e*/)
     {
         _ViewModelChangedRevoker.revoke();
+    }
+
+    void Profiles::_RegisterNavigationHandlers(const DependencyObject& root)
+    {
+        const auto childCount{ Media::VisualTreeHelper::GetChildrenCount(root) };
+        for (int32_t i = 0; i < childCount; ++i)
+        {
+            if (const auto& child{ Media::VisualTreeHelper::GetChild(root, i) })
+            {
+                if (const auto& panel{ child.try_as<Controls::Panel>() })
+                {
+                    // this is probably some kind of grouping of settings
+                    // let's search through here too
+                    _RegisterNavigationHandlers(panel);
+                }
+                else if (const auto& container{ child.try_as<Editor::SettingContainer>() })
+                {
+                    container.Navigate([=](const auto&, const auto& args) {
+                        const auto& stateImpl{ winrt::get_self<ProfilePageNavigationState>(_State) };
+                        stateImpl->Navigate(args);
+                    });
+                }
+            }
+        }
     }
 
     ColorScheme Profiles::CurrentColorScheme()

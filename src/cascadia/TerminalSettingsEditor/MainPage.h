@@ -25,6 +25,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SetHostingWindow(uint64_t hostingWindow) noexcept;
         bool TryPropagateHostingWindow(IInspectable object) noexcept;
 
+        void Navigate(const Editor::ProfileViewModel& profile);
+
         TYPED_EVENT(OpenJson, Windows::Foundation::IInspectable, Model::SettingsTarget);
 
     private:

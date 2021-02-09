@@ -193,6 +193,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                             {
                                 // no source; provide system-default view
                                 msgTarget.Text(RS_(L"SettingContainer_OverrideTargetSystemDefaults"));
+                                tb.Inlines().Append(msgTarget);
                             }
                             else if (const auto& profile{ settingSrc.try_as<Model::Profile>() })
                             {
@@ -237,7 +238,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
                                     Documents::Hyperlink hyperlink{};
                                     hyperlink.Click([=](auto&, auto&) {
-                                        // TODO CARLOS: navigate
+                                        _NavigateHandlers(*this, settingSrc);
                                     });
                                     hyperlink.Inlines().Append(msgTarget);
                                     tb.Inlines().Append(hyperlink);

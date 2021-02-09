@@ -335,6 +335,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     // tag these profiles as in-box
     for (const auto& profile : resultPtr->AllProfiles())
     {
+        // TODO CARLOS: it seems like these aren't getting set. Why?
         const auto& profileImpl{ winrt::get_self<implementation::Profile>(profile) };
         profileImpl->Origin(OriginTag::InBox);
     }
