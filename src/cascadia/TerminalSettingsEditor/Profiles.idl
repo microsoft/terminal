@@ -18,9 +18,9 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean BackgroundImageSettingsVisible { get; };
 
         OBSERVABLE_PROJECTED_SETTING(String, Name);
-        OBSERVABLE_PROJECTED_SETTING(Guid, Guid);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, Guid);
         OBSERVABLE_PROJECTED_SETTING(String, Source);
-        OBSERVABLE_PROJECTED_SETTING(Guid, ConnectionType);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, ConnectionType);
         OBSERVABLE_PROJECTED_SETTING(Boolean, Hidden);
         OBSERVABLE_PROJECTED_SETTING(String, Icon);
         OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.Settings.Model.CloseOnExitMode, CloseOnExit);

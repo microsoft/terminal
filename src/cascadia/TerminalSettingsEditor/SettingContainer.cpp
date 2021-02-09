@@ -5,6 +5,7 @@
 #include "SettingContainer.h"
 #include "SettingContainer.g.cpp"
 #include "LibraryResources.h"
+#include "../TerminalSettingsModel/LegacyProfileGeneratorNamespaces.h"
 
 using namespace winrt::Windows::UI::Xaml;
 
@@ -13,6 +14,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     DependencyProperty SettingContainer::_HeaderProperty{ nullptr };
     DependencyProperty SettingContainer::_HelpTextProperty{ nullptr };
     DependencyProperty SettingContainer::_HasSettingValueProperty{ nullptr };
+    DependencyProperty SettingContainer::_SettingOverrideSourceProperty{ nullptr };
 
     SettingContainer::SettingContainer()
     {
@@ -51,6 +53,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     xaml_typename<Editor::SettingContainer>(),
                     PropertyMetadata{ box_value(false), PropertyChangedCallback{ &SettingContainer::_OnHasSettingValueChanged } });
         }
+        if (!_SettingOverrideSourceProperty)
+        {
+            _SettingOverrideSourceProperty =
+                DependencyProperty::Register(
+                    L"SettingOverrideSource",
+                    xaml_typename<bool>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ nullptr });
+        }
     }
 
     void SettingContainer::_OnHasSettingValueChanged(DependencyObject const& d, DependencyPropertyChangedEventArgs const& args)
@@ -79,9 +90,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void SettingContainer::OnApplyTemplate()
     {
-        // This message is only populated if `HasSettingValue` is true.
-        const auto& overrideMsg{ _GenerateOverrideMessageText() };
-
         if (const auto& child{ GetTemplateChild(L"ResetButton") })
         {
             if (const auto& button{ child.try_as<Controls::Button>() })
@@ -115,10 +123,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     }
                 });
 
-                // apply tooltip and name (automation property)
+                // apply tooltip
                 const auto& name{ RS_(L"SettingContainer_ResetButtonHelpText") };
                 Controls::ToolTipService::SetToolTip(child, box_value(name));
                 Automation::AutomationProperties::SetName(child, name);
+
+                // apply name (automation property)
+                // NOTE: this can only be set _once_. Automation clients do not detect any changes.
+                //       As a result, we're using the more generic version of the override message.
+                hstring overrideMsg{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideIntro") }, RS_(L"SettingContainer_OverrideTarget")) };
                 Automation::AutomationProperties::SetHelpText(child, overrideMsg);
 
                 // initialize visibility for reset button
@@ -126,26 +139,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        if (const auto& child{ GetTemplateChild(L"OverrideMessage") })
-        {
-            if (const auto& tb{ child.try_as<Controls::TextBlock>() })
-            {
-                if (!overrideMsg.empty())
-                {
-                    // Create the override message
-                    // TODO GH#6800: the override target will be replaced with hyperlink/text directing the user to another profile.
-                    tb.Text(overrideMsg);
-
-                    // initialize visibility for reset button
-                    tb.Visibility(Visibility::Visible);
-                }
-                else
-                {
-                    // we have no message to render
-                    tb.Visibility(Visibility::Collapsed);
-                }
-            }
-        }
+        _UpdateOverrideMessage();
 
         if (const auto& content{ Content() })
         {
@@ -172,12 +166,112 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    hstring SettingContainer::_GenerateOverrideMessageText()
+    void SettingContainer::_UpdateOverrideMessage()
     {
-        if (HasSettingValue())
+        if (const auto& overrideMsg{ GetTemplateChild(L"OverrideMessage") })
         {
-            return hstring{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideIntro") }, RS_(L"SettingContainer_OverrideTarget")) };
+            if (const auto& tb{ overrideMsg.try_as<Controls::TextBlock>() })
+            {
+                if (HasSettingValue())
+                {
+                    const std::wstring templateText{ RS_(L"SettingContainer_OverrideIntro") };
+                    const auto pos{ templateText.find(L"{}") };
+                    if (pos != std::wstring::npos)
+                    {
+                        // Append Message Prefix
+                        {
+                            Documents::Run msgPrefix{};
+                            msgPrefix.Text(templateText.substr(0, pos));
+                            tb.Inlines().Append(msgPrefix);
+                        }
+
+                        // Append Message Target
+                        {
+                            Documents::Run msgTarget{};
+                            const auto& settingSrc{ SettingOverrideSource() };
+                            if (!settingSrc)
+                            {
+                                // no source; provide system-default view
+                                msgTarget.Text(RS_(L"SettingContainer_OverrideTargetSystemDefaults"));
+                            }
+                            else if (const auto& profile{ settingSrc.try_as<Model::Profile>() })
+                            {
+                                const auto originTag{ profile.Origin() };
+                                if (originTag == Model::OriginTag::InBox)
+                                {
+                                    // in-box profile
+                                    msgTarget.Text(profile.Name());
+                                    tb.Inlines().Append(msgTarget);
+                                }
+                                else if (originTag == Model::OriginTag::Generated)
+                                {
+                                    // from a dynamic profile generator
+                                    const auto& profileSource{ profile.Source() };
+                                    if (profileSource == WslGeneratorNamespace)
+                                    {
+                                        msgTarget.Text(RS_(L"SettingContainer_OverrideTargetWSLGenerator"));
+                                    }
+                                    else if (profileSource == AzureGeneratorNamespace)
+                                    {
+                                        msgTarget.Text(RS_(L"SettingContainer_OverrideTargetPowershellGenerator"));
+                                    }
+                                    else if (profileSource == PowershellCoreGeneratorNamespace)
+                                    {
+                                        msgTarget.Text(RS_(L"SettingContainer_OverrideTargetAzureCloudShellGenerator"));
+                                    }
+                                    else
+                                    {
+                                        // TODO CARLOS: we should probably have some special handling for proto-extensions here
+                                        // unknown generator; use fallback message instead
+                                        msgTarget.Text(RS_(L"SettingContainer_OverrideTarget"));
+                                    }
+                                    tb.Inlines().Append(msgTarget);
+                                }
+                                else
+                                {
+                                    // base layer
+                                    // TODO GH#3818: When we add profile inheritance as a setting,
+                                    //               we'll need an extra conditional check to see if this
+                                    //               is the base layer or some other profile
+                                    msgTarget.Text(RS_(L"Nav_ProfileDefaults/Content"));
+
+                                    Documents::Hyperlink hyperlink{};
+                                    hyperlink.Click([=](auto&, auto&) {
+                                        // TODO CARLOS: navigate
+                                    });
+                                    hyperlink.Inlines().Append(msgTarget);
+                                    tb.Inlines().Append(hyperlink);
+                                }
+                            }
+                            else
+                            {
+                                // unknown source; use fallback message instead
+                                msgTarget.Text(RS_(L"SettingContainer_OverrideTarget"));
+                                tb.Inlines().Append(msgTarget);
+                            }
+                        }
+
+                        // Append Message Suffix
+                        {
+                            Documents::Run msgSuffix{};
+                            msgSuffix.Text(templateText.substr(pos + 2, templateText.npos));
+                            tb.Inlines().Append(msgSuffix);
+                        }
+                    }
+                    else
+                    {
+                        // '{}' was not found
+                        // fallback to more ambiguous version
+                        hstring overrideMsg{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideIntro") }, RS_(L"SettingContainer_OverrideTarget")) };
+                        tb.Text(overrideMsg);
+                    }
+                    tb.Visibility(Visibility::Visible);
+                }
+                else
+                {
+                    tb.Visibility(Visibility::Collapsed);
+                }
+            }
         }
-        return {};
     }
 }
