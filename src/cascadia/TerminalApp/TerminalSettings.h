@@ -92,15 +92,9 @@ namespace winrt::TerminalApp::implementation
         GETSET_SETTING(TerminalApp::TerminalSettings, hstring, BackgroundImage);
         GETSET_SETTING(TerminalApp::TerminalSettings, double, BackgroundImageOpacity, 1.0);
 
-        GETSET_SETTING(TerminalApp::TerminalSettings, winrt::Windows::UI::Xaml::Media::Stretch,
-                       BackgroundImageStretchMode,
-                       winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill);
-        GETSET_SETTING(TerminalApp::TerminalSettings, winrt::Windows::UI::Xaml::HorizontalAlignment,
-                       BackgroundImageHorizontalAlignment,
-                       winrt::Windows::UI::Xaml::HorizontalAlignment::Center);
-        GETSET_SETTING(TerminalApp::TerminalSettings, winrt::Windows::UI::Xaml::VerticalAlignment,
-                       BackgroundImageVerticalAlignment,
-                       winrt::Windows::UI::Xaml::VerticalAlignment::Center);
+        GETSET_SETTING(TerminalApp::TerminalSettings, winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill);
+        GETSET_SETTING(TerminalApp::TerminalSettings, winrt::Windows::UI::Xaml::HorizontalAlignment, BackgroundImageHorizontalAlignment, winrt::Windows::UI::Xaml::HorizontalAlignment::Center);
+        GETSET_SETTING(TerminalApp::TerminalSettings, winrt::Windows::UI::Xaml::VerticalAlignment, BackgroundImageVerticalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment::Center);
 
         GETSET_SETTING(TerminalApp::TerminalSettings, Microsoft::Terminal::TerminalControl::IKeyBindings, KeyBindings, nullptr);
 
