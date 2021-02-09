@@ -102,7 +102,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
-        winrt::fire_and_forget UpdateSettings(IControlSettings newSettings);
+        winrt::fire_and_forget UpdateSettings();
 
         hstring Title();
         hstring GetProfileName() const;

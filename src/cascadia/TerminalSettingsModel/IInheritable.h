@@ -41,6 +41,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return child;
         }
 
+        void ClearParents()
+        {
+            _parents.clear();
+        }
+
         void InsertParent(com_ptr<T> parent)
         {
             _parents.push_back(parent);
