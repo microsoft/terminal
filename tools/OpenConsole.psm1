@@ -116,7 +116,7 @@ function Invoke-TaefInNewWindow()
         [string]$TestDll,
 
         [parameter(Mandatory=$false)]
-        [string]$TaefArgs
+        [string[]]$TaefArgs
     )
 
     Start-Process $OpenConsolePath -Wait -ArgumentList "powershell.exe $TaefPath $TestDll $TaefArgs; Read-Host 'Press enter to continue...'"
@@ -163,7 +163,7 @@ function Invoke-OpenConsoleTests()
         [string]$Test,
 
         [parameter(Mandatory=$false)]
-        [string]$TaefArgs,
+        [string[]]$TaefArgs,
 
         [parameter(Mandatory=$false)]
         [ValidateSet('x64', 'x86')]
@@ -188,7 +188,6 @@ function Invoke-OpenConsoleTests()
         $TestHostAppPath = "$env:OpenConsoleRoot\$Configuration\TestHostApp"
     }
     $OpenConsolePath = "$env:OpenConsoleroot\bin\$OpenConsolePlatform\$Configuration\OpenConsole.exe"
-    $RunTePath = "$env:OpenConsoleRoot\tools\runte.cmd"
     $TaefExePath = "$env:OpenConsoleRoot\packages\Taef.Redist.Wlk.10.57.200731005-develop\build\Binaries\$Platform\te.exe"
     $BinDir = "$env:OpenConsoleRoot\bin\$OpenConsolePlatform\$Configuration"
 

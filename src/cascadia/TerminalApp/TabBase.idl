@@ -8,6 +8,7 @@ namespace TerminalApp
     {
         String Title { get; };
         String Icon { get; };
+        Boolean ReadOnly { get; };
 
         Microsoft.UI.Xaml.Controls.TabViewItem TabViewItem { get; };
         Windows.UI.Xaml.FrameworkElement Content { get; };

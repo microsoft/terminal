@@ -416,8 +416,11 @@ void Pane::_ControlLostFocusHandler(winrt::Windows::Foundation::IInspectable con
 // - <none>
 void Pane::Close()
 {
-    // Fire our Closed event to tell our parent that we should be removed.
-    _ClosedHandlers(nullptr, nullptr);
+    if (!_isClosing.exchange(true))
+    {
+        // Fire our Closed event to tell our parent that we should be removed.
+        _ClosedHandlers(nullptr, nullptr);
+    }
 }
 
 // Method Description:
@@ -639,7 +642,13 @@ void Pane::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
     {
         if (profile == _profile)
         {
-            _control.UpdateSettings(settings);
+            // Update the parent of the control's settings object (and not the object itself) so
+            // that any overrides made by the control don't get affected by the reload
+            auto child = winrt::get_self<winrt::TerminalApp::implementation::TerminalSettings>(_control.Settings());
+            auto parent = winrt::get_self<winrt::TerminalApp::implementation::TerminalSettings>(settings);
+            child->ClearParents();
+            child->InsertParent(0, parent->get_strong());
+            _control.UpdateSettings();
         }
     }
 }
@@ -1550,9 +1559,9 @@ void Pane::Restore(std::shared_ptr<Pane> zoomedPane)
 //   otherwise the ID value will not make sense (leaves have IDs, parents do not)
 // Return Value:
 // - The ID of this pane
-uint16_t Pane::Id() noexcept
+std::optional<uint16_t> Pane::Id() noexcept
 {
-    return _id.value();
+    return _id;
 }
 
 // Method Description:
@@ -2083,6 +2092,13 @@ std::optional<SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane
     // We should not possibly be getting here - both the above branches should
     // return a value.
     FAIL_FAST();
+}
+
+// Method Description:
+// - Returns true if the pane or one of its descendants is read-only
+bool Pane::ContainsReadOnly() const
+{
+    return _IsLeaf() ? _control.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
 }
 
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);

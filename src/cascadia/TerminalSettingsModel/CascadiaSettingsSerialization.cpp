@@ -1078,9 +1078,13 @@ void CascadiaSettings::WriteSettingsToDisk() const
 Json::Value CascadiaSettings::ToJson() const
 {
     // top-level json object
-    // directly inject "globals" and "$schema" into here
+    // directly inject "globals", "$schema", and "disabledProfileSources" into here
     Json::Value json{ _globals->ToJson() };
     JsonUtils::SetValueForKey(json, SchemaKey, JsonKey(SchemaValue));
+    if (_userSettings.isMember(JsonKey(DisabledProfileSourcesKey)))
+    {
+        json[JsonKey(DisabledProfileSourcesKey)] = _userSettings[JsonKey(DisabledProfileSourcesKey)];
+    }
 
     // "profiles" will always be serialized as an object
     Json::Value profiles{ Json::ValueType::objectValue };

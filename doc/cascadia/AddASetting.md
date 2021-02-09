@@ -336,6 +336,8 @@ INITIALIZE_BINDABLE_ENUM_SETTING(LaunchMode, LaunchMode, LaunchMode, L"Globals_L
 
 ### Updating the UI
 
+When adding a setting to the UI, make sure you follow the [UWP design guidance](https://docs.microsoft.com/windows/uwp/design/).
+
 #### Enum Settings
 
 Now, create a XAML control in the relevant XAML file. Use the following tips and tricks to style everything appropriately:
