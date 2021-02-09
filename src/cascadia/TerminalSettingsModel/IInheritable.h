@@ -92,19 +92,13 @@ public:                                                                     \
         return _##name.has_value();                                         \
     }                                                                       \
                                                                             \
-    projectedType name##Source()                                            \
+    projectedType name##OverrideSource()                                    \
     {                                                                       \
-        /*we have a value*/                                                 \
-        if (_##name)                                                        \
-        {                                                                   \
-            return *this;                                                   \
-        }                                                                   \
-                                                                            \
         /*user set value was not set*/                                      \
         /*iterate through parents to find one with a value*/                \
         for (auto& parent : _parents)                                       \
         {                                                                   \
-            if (auto source{ parent->name##Source() })                      \
+            if (auto source{ parent->_get##name##OverrideSourceImpl() })    \
             {                                                               \
                 return source;                                              \
             }                                                               \
@@ -156,6 +150,27 @@ private:                                                                    \
                                                                             \
         /*no value was found*/                                              \
         return std::nullopt;                                                \
+    }                                                                       \
+    projectedType _get##name##OverrideSourceImpl() const                    \
+    {                                                                       \
+        /*we have a value*/                                                 \
+        if (_##name)                                                        \
+        {                                                                   \
+            return *this;                                                   \
+        }                                                                   \
+                                                                            \
+        /*user set value was not set*/                                      \
+        /*iterate through parents to find one with a value*/                \
+        for (auto& parent : _parents)                                       \
+        {                                                                   \
+            if (auto source{ parent->name##OverrideSource() })              \
+            {                                                               \
+                return source;                                              \
+            }                                                               \
+        }                                                                   \
+                                                                            \
+        /*no value was found*/                                              \
+        return nullptr;                                                     \
     }
 
 // This macro is similar to the one above, but is reserved for optional settings
@@ -170,19 +185,13 @@ public:                                                                     \
         return _##name.has_value();                                         \
     }                                                                       \
                                                                             \
-    projectedType name##Source()                                            \
+    projectedType name##OverrideSource()                                    \
     {                                                                       \
-        /*we have a value*/                                                 \
-        if (_##name)                                                        \
-        {                                                                   \
-            return *this;                                                   \
-        }                                                                   \
-                                                                            \
         /*user set value was not set*/                                      \
         /*iterate through parents to find one with a value*/                \
         for (auto parent : _parents)                                        \
         {                                                                   \
-            if (auto source{ parent->name##Source() })                      \
+            if (auto source{ parent->_get##name##OverrideSourceImpl() })    \
             {                                                               \
                 return source;                                              \
             }                                                               \
@@ -250,4 +259,25 @@ private:                                                                    \
                                                                             \
         /*no value was found*/                                              \
         return std::nullopt;                                                \
+    }                                                                       \
+    projectedType _get##name##OverrideSourceImpl() const                    \
+    {                                                                       \
+        /*we have a value*/                                                 \
+        if (_##name)                                                        \
+        {                                                                   \
+            return *this;                                                   \
+        }                                                                   \
+                                                                            \
+        /*user set value was not set*/                                      \
+        /*iterate through parents to find one with a value*/                \
+        for (auto& parent : _parents)                                       \
+        {                                                                   \
+            if (auto source{ parent->name##OverrideSource() })              \
+            {                                                               \
+                return source;                                              \
+            }                                                               \
+        }                                                                   \
+                                                                            \
+        /*no value was found*/                                              \
+        return nullptr;                                                     \
     }
