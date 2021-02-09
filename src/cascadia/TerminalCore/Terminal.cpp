@@ -112,8 +112,11 @@ void Terminal::CreateFromSettings(ICoreSettings settings,
 // - settings: an ICoreSettings with new settings values for us to use.
 void Terminal::UpdateSettings(ICoreSettings settings)
 {
+    // Set the default background as transparent to prevent the
+    // DX layer from overwriting the background image or acrylic effect
+    til::color newBackgroundColor{ static_cast<COLORREF>(settings.DefaultBackground()) };
+    _defaultBg = newBackgroundColor.with_alpha(0);
     _defaultFg = settings.DefaultForeground();
-    _defaultBg = settings.DefaultBackground();
 
     CursorType cursorShape = CursorType::VerticalBar;
     switch (settings.CursorShape())
