@@ -11,5 +11,11 @@ namespace TerminalApp
         TabPaletteItem(TabBase tab);
 
         TabBase Tab { get; };
+
+        Boolean IsProgressRingActive { get; set; };
+        Boolean IsProgressRingIndeterminate { get; set; };
+        UInt32 ProgressValue { get; set; };
+        Boolean IsPaneZoomed { get; set; };
+        Boolean BellIndicator { get; set; };
     }
 }
