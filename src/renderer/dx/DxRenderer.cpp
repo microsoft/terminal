@@ -1445,8 +1445,7 @@ CATCH_RETURN()
 //   It is presumed that if you're using shaders, you're not about performance...
 //   You're instead about OOH SHINY. And that's OK. But returning true here is 100%
 //   a perf detriment.
-[[nodiscard]] 
-bool DxEngine::RequiresContinuousRedraw() noexcept
+[[nodiscard]] bool DxEngine::RequiresContinuousRedraw() noexcept
 {
     // We're only going to request continuous redraw if someone is using
     // a pixel shader from a path because we cannot tell if those are using the
