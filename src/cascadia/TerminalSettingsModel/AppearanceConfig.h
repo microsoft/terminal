@@ -17,6 +17,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         AppearanceConfig();
 
+        static winrt::com_ptr<AppearanceConfig> CopyAppearance(winrt::com_ptr<IAppearanceConfig> source);
+        Json::Value ToJson() const;
+
         void LayerJson(const Json::Value& json);
         winrt::hstring ExpandedBackgroundImagePath();
 

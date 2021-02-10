@@ -28,6 +28,43 @@ AppearanceConfig::AppearanceConfig()
 {
 }
 
+winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(winrt::com_ptr<IAppearanceConfig> source)
+{
+    auto appearance{ winrt::make_self<AppearanceConfig>() };
+    auto sourceAppearance = source.try_as<AppearanceConfig>();
+    appearance->_BackgroundImagePath = sourceAppearance->_BackgroundImagePath;
+    appearance->_BackgroundImageOpacity = sourceAppearance->_BackgroundImageOpacity;
+    appearance->_BackgroundImageStretchMode = sourceAppearance->_BackgroundImageStretchMode;
+    appearance->_ColorSchemeName = sourceAppearance->_ColorSchemeName;
+    appearance->_Foreground = sourceAppearance->_Foreground;
+    appearance->_Background = sourceAppearance->_Background;
+    appearance->_SelectionBackground = sourceAppearance->_SelectionBackground;
+    appearance->_CursorColor = sourceAppearance->_CursorColor;
+    appearance->_CursorShape = sourceAppearance->_CursorShape;
+    appearance->_CursorHeight = sourceAppearance->_CursorHeight;
+    appearance->_BackgroundImageAlignment = sourceAppearance->_BackgroundImageAlignment;
+    return appearance;
+}
+
+Json::Value AppearanceConfig::ToJson() const
+{
+    Json::Value json{ Json::ValueType::objectValue };
+
+    JsonUtils::SetValueForKey(json, ForegroundKey, _Foreground);
+    JsonUtils::SetValueForKey(json, BackgroundKey, _Background);
+    JsonUtils::SetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
+    JsonUtils::SetValueForKey(json, CursorColorKey, _CursorColor);
+    JsonUtils::SetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
+    JsonUtils::SetValueForKey(json, CursorHeightKey, _CursorHeight);
+    JsonUtils::SetValueForKey(json, CursorShapeKey, _CursorShape);
+    JsonUtils::SetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
+    JsonUtils::SetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
+    JsonUtils::SetValueForKey(json, BackgroundImageStretchModeKey, _BackgroundImageStretchMode);
+    JsonUtils::SetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
+
+    return json;
+}
+
 // Method Description:
 // - Layer values from the given json object on top of the existing properties
 //   of this object. For any keys we're expecting to be able to parse in the
