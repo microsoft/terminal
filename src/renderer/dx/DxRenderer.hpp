@@ -84,6 +84,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT StartPaint() noexcept override;
         [[nodiscard]] HRESULT EndPaint() noexcept override;
 
+        [[nodiscard]] bool RequiresContinuousRedraw() noexcept override;
+
         void WaitUntilCanRender() noexcept override;
         [[nodiscard]] HRESULT Present() noexcept override;
 
