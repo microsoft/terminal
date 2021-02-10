@@ -1440,6 +1440,18 @@ CATCH_RETURN()
 }
 
 // Method Description:
+// - When the shaders are on, say that we need to keep redrawing every
+//   possible frame in case they have some smooth action on every frame tick.
+//   It is presumed that if you're using shaders, you're not about performance...
+//   You're instead about OOH SHINY. And that's OK. But returning true here is 100%
+//   a perf detriment.
+[[nodiscard]] 
+bool DxEngine::RequiresContinuousRedraw() noexcept
+{
+    return _HasShaderEffects();
+}
+
+// Method Description:
 // - Blocks until the engine is able to render without blocking.
 // - See https://docs.microsoft.com/en-us/windows/uwp/gaming/reduce-latency-with-dxgi-1-3-swap-chains.
 void DxEngine::WaitUntilCanRender() noexcept
