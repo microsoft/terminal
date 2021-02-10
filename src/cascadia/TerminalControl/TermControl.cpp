@@ -885,6 +885,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Whether the key was handled.
     bool TermControl::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
     {
+        // Short-circuit isReadOnly check to avoid warning dialog
         if (_isReadOnly)
         {
             return false;
@@ -970,6 +971,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
 
+        // Short-circuit isReadOnly check to avoid warning dialog
         if (_isReadOnly)
         {
             e.Handled(!keyDown || _TryHandleKeyBinding(vkey, scanCode, modifiers));
@@ -1369,7 +1371,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            if (_focused && _CanSendVTMouseInput())
+            // Short-circuit isReadOnly check to avoid warning dialog
+            if (_focused && !_isReadOnly && _CanSendVTMouseInput())
             {
                 _TrySendMouseEvent(point);
                 args.Handled(true);
@@ -1521,7 +1524,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            if (_CanSendVTMouseInput())
+            // Short-circuit isReadOnly check to avoid warning dialog
+            if (!_isReadOnly && _CanSendVTMouseInput())
             {
                 _TrySendMouseEvent(point);
                 args.Handled(true);
@@ -1596,7 +1600,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                     const int32_t delta,
                                     const TerminalInput::MouseButtonState state)
     {
-        if (_CanSendVTMouseInput())
+        // Short-circuit isReadOnly check to avoid warning dialog
+        if (!_isReadOnly && _CanSendVTMouseInput())
         {
             // Most mouse event handlers call
             //      _TrySendMouseEvent(point);
