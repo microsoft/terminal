@@ -244,10 +244,6 @@ namespace winrt::TerminalApp::implementation
 
         _PaneTypeChangedHandlers(nullptr, newParent);
 
-        // Call InitializeChildren after invoking PaneTypeChanged handlers, because that is where we are detached and
-        // the new parent is attached to xaml view. Only when we are detached can the new parent actually attach us.
-        newParent.InitializeChildren();
-
         return newNeighbour;
     }
 

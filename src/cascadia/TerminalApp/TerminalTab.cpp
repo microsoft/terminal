@@ -638,12 +638,11 @@ namespace winrt::TerminalApp::implementation
         // When root pane is a parent and one of its children got closed (and so the parent collapses),
         // we take in its remaining, orphaned child as our own.
 
-        // Either way, the event handling is the same
+        // Either way, the event handling is the same - update the event handlers and set the tab's content to the new pane
         _rootPaneTypeChangedToken = _rootPane2.PaneTypeChanged([weakThis = get_weak()](auto&& /*s*/, TerminalApp::IPane newPane) {
             if (auto tab{ weakThis.get() })
             {
                 tab->_RemoveRootPaneEventHandlers();
-
                 tab->_rootPane2 = newPane;
                 tab->_SetupRootPaneEventHandlers();
                 tab->Content(newPane.try_as<winrt::Windows::UI::Xaml::FrameworkElement>());

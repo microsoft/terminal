@@ -38,6 +38,14 @@ namespace winrt::TerminalApp::implementation
 
         _GetGridSetColOrRowFunc()(FirstChild_Root(), 0);
         _GetGridSetColOrRowFunc()(SecondChild_Root(), 1);
+
+        _firstLayoutRevoker = firstChild.GetTerminalControl().LayoutUpdated(winrt::auto_revoke, [&](auto /*s*/, auto /*e*/) {
+            _ChildrenLayoutUpdatedHelper(true);
+        });
+
+        _secondLayoutRevoker = secondChild.GetTerminalControl().LayoutUpdated(winrt::auto_revoke, [&](auto /*s*/, auto /*e*/) {
+            _ChildrenLayoutUpdatedHelper(false);
+        });
     }
 
     // Method Description:
@@ -110,6 +118,10 @@ namespace winrt::TerminalApp::implementation
         return _firstChild.HasFocusedChild() || _secondChild.HasFocusedChild();
     }
 
+    // Method Description:
+    // - Adds our children to the UI tree
+    // - Adds event handlers for our children
+    // - Animates our children
     void ParentPane::InitializeChildren()
     {
         FirstChild_Root().Content(_firstChild);
@@ -625,6 +637,34 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Helper to handle when our children's layouts have updated
+    // - When a child's layout updates, we revoke the revoker to only let this succeed once,
+    //   and then we check if both children's layouts have been updated, if so then we go ahead
+    //   and initialize them
+    // Arguments:
+    // - isFirstChild: which child's layout got updated
+    void ParentPane::_ChildrenLayoutUpdatedHelper(const bool isFirstChild)
+    {
+        if (isFirstChild)
+        {
+            _firstLayoutUpdated = true;
+            _firstLayoutRevoker.revoke();
+        }
+        else
+        {
+            _secondLayoutUpdated = true;
+            _secondLayoutRevoker.revoke();
+        }
+
+        if (_firstLayoutUpdated && _secondLayoutUpdated)
+        {
+            // Once both children have their sizes, we can initialize them
+            // todo: uh will this cause a problem for commandline startup?
+            InitializeChildren();
+        }
+    }
+
+    // Method Description:
     // - Create a pair of animations when a new control enters this pane. This
     //   should _ONLY_ be called in InitializeChildren, AFTER the first and second child panes
     //   have been set up
@@ -1014,7 +1054,8 @@ namespace winrt::TerminalApp::implementation
         // When our child is a parent and one of its children got closed (and so the parent collapses),
         // we take in its remaining, orphaned child as our own.
 
-        // Either way, the event handling is the same
+        // Either way, the event handling is the same - update the event handlers and update the content
+        // of the appropriate root
         typeChangedToken = child.PaneTypeChanged([=](auto&& /*s*/, IPane newPane) {
             _OnChildSplitOrCollapse(isFirstChild, newPane);
         });

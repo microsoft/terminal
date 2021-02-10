@@ -66,10 +66,16 @@ namespace winrt::TerminalApp::implementation
         winrt::event_token _firstTypeChangedToken{ 0 };
         winrt::event_token _secondTypeChangedToken{ 0 };
 
+        bool _firstLayoutUpdated{ false };
+        bool _secondLayoutUpdated{ false };
+        winrt::Microsoft::Terminal::TerminalControl::TermControl::LayoutUpdated_revoker _firstLayoutRevoker;
+        winrt::Microsoft::Terminal::TerminalControl::TermControl::LayoutUpdated_revoker _secondLayoutRevoker;
+
         void _CreateRowColDefinitions();
         bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         bool _NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
 
+        void _ChildrenLayoutUpdatedHelper(const bool isFirstChild);
         void _SetupEntranceAnimation();
         void _CloseChild(const bool closeFirst);
         winrt::fire_and_forget _CloseChildRoutine(const bool closeFirst);
