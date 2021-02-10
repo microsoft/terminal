@@ -13,5 +13,6 @@ fixterms
 uk
 winui
 appshellintegration
+cppreference
 gfycat
 what3words

@@ -44,6 +44,8 @@ public:
     void DisableHelpInExitMessage();
     void FullResetState();
 
+    int GetTargetWindow() const noexcept;
+
 private:
     static const std::wregex _commandDelimiterRegex;
 
@@ -103,6 +105,8 @@ private:
     std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _startupActions;
     std::string _exitMessage;
     bool _shouldExitEarly{ false };
+
+    int _windowTarget{ -1 };
     // Are you adding more args or attributes here? If they are not reset in _resetStateToDefault, make sure to reset them in FullResetState
 
     winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs _getNewTerminalArgs(NewTerminalSubcommand& subcommand);
