@@ -43,6 +43,8 @@ namespace winrt::TerminalApp::implementation
         _MakeTabViewItem();
         _CreateContextMenu();
 
+        _headerControl.TabStatus(_tabStatus);
+
         // Add an event handler for the header control to tell us when they want their title to change
         _headerControl.TitleChangeRequested([weakThis = get_weak()](auto&& title) {
             if (auto tab{ weakThis.get() })
@@ -162,7 +164,7 @@ namespace winrt::TerminalApp::implementation
                 lastFocusedControl.TaskbarProgressChanged();
             }
             // When we gain focus, remove the bell indicator if it is active
-            if (_headerControl.BellIndicator())
+            if (_tabStatus.BellIndicator())
             {
                 ShowBellIndicator(false);
             }
@@ -288,8 +290,7 @@ namespace winrt::TerminalApp::implementation
 
         if (auto tab{ weakThis.get() })
         {
-            tab->_headerControl.BellIndicator(show);
-            BellIndicator(show);
+            _tabStatus.BellIndicator(show);
         }
     }
 
@@ -579,25 +580,25 @@ namespace winrt::TerminalApp::implementation
                     if (tab->GetActiveTerminalControl().TaskbarState() == 3)
                     {
                         // 3 is the indeterminate state, set the progress ring as such
-                        tab->_headerControl.IsProgressRingIndeterminate(true);
+                        tab->_tabStatus.IsProgressRingIndeterminate(true);
                     }
                     else
                     {
                         // any non-indeterminate state has a value, set the progress ring as such
-                        tab->_headerControl.IsProgressRingIndeterminate(false);
-                        tab->_headerControl.ProgressValue(gsl::narrow<uint32_t>(tab->GetActiveTerminalControl().TaskbarProgress()));
+                        tab->_tabStatus.IsProgressRingIndeterminate(false);
+
+                        const auto progressValue = gsl::narrow<uint32_t>(tab->GetActiveTerminalControl().TaskbarProgress());
+                        tab->_tabStatus.ProgressValue(progressValue);
                     }
                     // Hide the tab icon (the progress ring is placed over it)
                     tab->HideIcon(true);
-                    tab->_headerControl.IsProgressRingActive(true);
-                    tab->IsProgressRingActive(true);
+                    tab->_tabStatus.IsProgressRingActive(true);
                 }
                 else
                 {
                     // Show the tab icon
                     tab->HideIcon(false);
-                    tab->_headerControl.IsProgressRingActive(false);
-                    tab->IsProgressRingActive(false);
+                    tab->_tabStatus.IsProgressRingActive(false);
                 }
             }
         });
@@ -676,7 +677,7 @@ namespace winrt::TerminalApp::implementation
                 }
                 tab->_focusState = WUX::FocusState::Programmatic;
                 // This tab has gained focus, remove the bell indicator if it is active
-                if (tab->_headerControl.BellIndicator())
+                if (tab->_tabStatus.BellIndicator())
                 {
                     tab->ShowBellIndicator(false);
                 }
@@ -1106,8 +1107,7 @@ namespace winrt::TerminalApp::implementation
         _zoomedPane = _activePane;
         _rootPane->Maximize(_zoomedPane);
         // Update the tab header to show the magnifying glass
-        _headerControl.IsPaneZoomed(true);
-        IsPaneZoomed(true);
+        _tabStatus.IsPaneZoomed(true);
         Content(_zoomedPane->GetRootElement());
     }
     void TerminalTab::ExitZoom()
@@ -1115,8 +1115,7 @@ namespace winrt::TerminalApp::implementation
         _rootPane->Restore(_zoomedPane);
         _zoomedPane = nullptr;
         // Update the tab header to hide the magnifying glass
-        _headerControl.IsPaneZoomed(false);
-        IsPaneZoomed(false);
+        _tabStatus.IsPaneZoomed(false);
         Content(_rootPane->GetRootElement());
     }
 
@@ -1145,7 +1144,8 @@ namespace winrt::TerminalApp::implementation
         const auto control = GetActiveTerminalControl();
         if (control)
         {
-            _headerControl.IsReadOnlyActive(control.ReadOnly());
+            const auto isReadOnlyActive = control.ReadOnly();
+            _tabStatus.IsReadOnlyActive(isReadOnlyActive);
         }
 
         ReadOnly(_rootPane->ContainsReadOnly());

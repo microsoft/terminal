@@ -154,6 +154,10 @@ namespace Microsoft.Terminal.Settings.Model
         void ClearStartupActions();
         String StartupActions();
 
+        Boolean HasFocusFollowMouse();
+        void ClearFocusFollowMouse();
+        Boolean FocusFollowMouse;
+
         Boolean HasWindowingBehavior();
         void ClearWindowingBehavior();
         WindowingMode WindowingBehavior();

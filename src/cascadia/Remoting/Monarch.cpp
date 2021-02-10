@@ -362,7 +362,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
 
         // If we get here, we couldn't find an existing window. Make a new one.
-
         TraceLoggingWrite(g_hRemotingProvider,
                           "Monarch_ProposeCommandline_NewWindow",
                           TraceLoggingInt64(targetWindow, "targetWindow", "The provided ID"),
