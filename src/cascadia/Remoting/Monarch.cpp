@@ -6,7 +6,6 @@
 #include "Monarch.h"
 #include "CommandlineArgs.h"
 #include "FindTargetWindowArgs.h"
-#include "WindowActivatedArgs.h"
 #include "ProposeCommandlineResult.h"
 
 #include "Monarch.g.cpp"
@@ -137,106 +136,215 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             LOG_CAUGHT_EXCEPTION();
             // Remove the peasant from the list of peasants
             _peasants.erase(peasantID);
+
+            // TODO: Remove the peasant from the MRU windows mapping. They're dead. They can't be the MRU anymore.
+            _clearOldMruEntries(peasantID);
             return nullptr;
         }
     }
 
     void Monarch::HandleActivatePeasant(const Remoting::WindowActivatedArgs& args)
     {
-        // TODO:projects/5 Use a heap/priority queue per-desktop to track which
-        // peasant was the most recent per-desktop. When we want to get the most
-        // recent of all desktops (WindowingBehavior::UseExisting), then use the
-        // most recent of all desktops.
-        // const auto oldLastActiveTime = _lastActivatedTime.time_since_epoch().count();
-        const auto newLastActiveTime = args.ActivatedTime().time_since_epoch().count();
+        // Start by making a local copy of these args. It's easier for us if our
+        // tracking of these args is all in-proc. That way, the only thing that
+        // could fail due to the peasant dying is _this first copy_.
+        winrt::com_ptr<implementation::WindowActivatedArgs> localArgs{ nullptr };
+        try
+        {
+            localArgs = winrt::make_self<implementation::WindowActivatedArgs>(args.PeasantID(),
+                                                                              args.Hwnd(),
+                                                                              args.DesktopID(),
+                                                                              args.ActivatedTime());
+            _doHandleActivatePeasant(localArgs);
+        }
+        catch (...)
+        {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_HandleActivatePeasant_Failed",
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+        }
+    }
 
+    void Monarch::_clearOldMruEntries(const uint64_t peasantID)
+    {
         // * Check all the current lists to look for this peasant.
         //   remove it from any where it exists.
         for (auto& [g, vec] : _mruPeasants)
         {
             auto result = std::find_if(vec.begin(),
                                        vec.end(),
-                                       [args](auto other) {
-                                           try
-                                           {
-                                               return args.PeasantID() == other.PeasantID();
-                                           }
-                                           CATCH_LOG(); // TODO:MG Oh no, this needs to be fixed in windowingBehavior
-                                           return false;
+                                       [peasantID](auto other) {
+                                           return peasantID == other.PeasantID();
                                        });
             if (result != std::end(vec))
             {
                 vec.erase(result);
-                std::make_heap(vec.begin(), vec.end(), Remoting::implementation::CompareWindowActivatedArgs());
+
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "Monarch_RemovedPeasantFromDesktop",
+                                  TraceLoggingUInt64(peasantID, "peasantID", "The ID of the peasant"),
+                                  TraceLoggingGuid(g, "desktopGuid", "The GUID of the previous desktop the window was on"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
+                std::make_heap(vec.begin(),
+                               vec.end(),
+                               Remoting::implementation::CompareWindowActivatedArgs());
                 continue;
             }
         }
+    }
+
+    void Monarch::_doHandleActivatePeasant(const winrt::com_ptr<implementation::WindowActivatedArgs>& localArgs)
+    {
+        const auto newLastActiveTime = localArgs->ActivatedTime().time_since_epoch().count();
+
+        // * Check all the current lists to look for this peasant.
+        //   remove it from any where it exists.
+        _clearOldMruEntries(localArgs->PeasantID());
+
         // * If the current desktop doesn't have a vector, add one.
-        if (_mruPeasants.find(args.DesktopID()) == _mruPeasants.end())
+        const auto desktopGuid{ localArgs->DesktopID() };
+        if (_mruPeasants.find(desktopGuid) == _mruPeasants.end())
         {
-            _mruPeasants[args.DesktopID()] = std::vector<Remoting::WindowActivatedArgs>();
+            _mruPeasants[desktopGuid] = std::vector<Remoting::WindowActivatedArgs>();
         }
         // * Add this args to the queue for the given desktop.
-        _mruPeasants[args.DesktopID()].push_back(args);
-        std::push_heap(_mruPeasants[args.DesktopID()].begin(),
-                       _mruPeasants[args.DesktopID()].end(),
+        _mruPeasants[desktopGuid].push_back(*localArgs);
+        std::push_heap(_mruPeasants[desktopGuid].begin(),
+                       _mruPeasants[desktopGuid].end(),
                        Remoting::implementation::CompareWindowActivatedArgs());
 
         TraceLoggingWrite(g_hRemotingProvider,
                           "Monarch_SetMostRecentPeasant",
-                          TraceLoggingUInt64(args.PeasantID(), "peasantID", "the ID of the activated peasant"),
+                          TraceLoggingUInt64(localArgs->PeasantID(), "peasantID", "the ID of the activated peasant"),
                           // TraceLoggingInt64(oldLastActiveTime, "oldLastActiveTime", "The previous lastActiveTime"),
-                          // TODO:MG add the GUID here, better logging
-                          TraceLoggingInt64(newLastActiveTime, "newLastActiveTime", "The provided args.ActivatedTime()"),
+                          TraceLoggingGuid(desktopGuid, "desktopGuid", "The GUID of the desktop the window is on"),
+                          TraceLoggingInt64(newLastActiveTime, "newLastActiveTime", "The provided localArgs->ActivatedTime()"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 
-    uint64_t Monarch::_getMostRecentPeasantID(bool limitToCurrentDesktop)
+    void Monarch::_collectMRUPeasant(const bool limitToCurrentDesktop,
+                                     std::vector<Remoting::WindowActivatedArgs>& mrus,
+                                     std::vector<Remoting::WindowActivatedArgs>& windowsForDesktop)
     {
-        std::vector<Remoting::WindowActivatedArgs> _mrus;
-        for (auto& [g, vec] : _mruPeasants)
+        while (!windowsForDesktop.empty())
         {
-            if (vec.size() > 0)
+            const auto mruWindowArgs{ *windowsForDesktop.begin() };
+            const auto desktopGuid = mruWindowArgs.DesktopID();
+            // Trying to get the peasant will verify the peasant is still alive.
+            // If they aren't, the peasant will be removed from the ID->Peasant
+            // map, and from the the desktop->[Peasant] map as well.
+            // * If the peasant is dead, just try this loop again.
+            // * Otherwise, try and collect it.
+            auto peasant{ _getPeasant(mruWindowArgs.PeasantID()) };
+            if (!peasant)
             {
-                if (limitToCurrentDesktop && _desktopManager)
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "Monarch_Collect_WasDead",
+                                  TraceLoggingUInt64(mruWindowArgs.PeasantID(), "peasantID", "We thought this peasant was the MRU one, but it was actually already dead."),
+                                  TraceLoggingGuid(desktopGuid, "desktopGuid", "The GUID of the desktop the window is on"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                continue;
+            }
+
+            // Here, the peasant mruWindowArgs belongs to is still alive.
+            if (limitToCurrentDesktop && _desktopManager)
+            {
+                // Check if this peasant is actually on this desktop. We can't
+                // simply get the GUID of the current desktop. We have to ask if
+                // the HWND is on the current desktop.
+                BOOL onCurrentDesktop{ false };
+
+                // SUCCEEDED_LOG will log if it failed, and return true if it
+                // SUCCEEDED
+                if (SUCCEEDED_LOG(_desktopManager->IsWindowOnCurrentVirtualDesktop((HWND)mruWindowArgs.Hwnd(), &onCurrentDesktop)) &&
+                    onCurrentDesktop)
                 {
-                    auto args{ *vec.begin() };
-                    BOOL onCurrentDesktop{ false };
-                    // SUCCEEDED_LOG will log if it failed, and
-                    // return true if it SUCCEEDED
-                    if (SUCCEEDED_LOG(_desktopManager->IsWindowOnCurrentVirtualDesktop((HWND)args.Hwnd(), &onCurrentDesktop)) &&
-                        onCurrentDesktop)
-                    {
-                        _mrus.push_back(args);
-                        std::push_heap(_mrus.begin(),
-                                       _mrus.end(),
-                                       Remoting::implementation::CompareWindowActivatedArgs());
-                    }
-                }
-                else
-                {
-                    _mrus.push_back(*vec.begin());
-                    std::push_heap(_mrus.begin(),
-                                   _mrus.end(),
+                    mrus.push_back(mruWindowArgs);
+
+                    TraceLoggingWrite(g_hRemotingProvider,
+                                      "Monarch_Collect",
+                                      TraceLoggingUInt64(mruWindowArgs.PeasantID(), "peasantID", "the ID of the MRU peasant for a desktop"),
+                                      TraceLoggingGuid(desktopGuid, "desktopGuid", "The GUID of the desktop the window is on"),
+                                      TraceLoggingBoolean(limitToCurrentDesktop, "limitToCurrentDesktop", "TODO"),
+                                      TraceLoggingBool(onCurrentDesktop, "limitToCurrentDesktop", "TODO"),
+                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
+                    // Update the mrus heap, so the actually most recent args is
+                    // at the front.
+                    std::push_heap(mrus.begin(),
+                                   mrus.end(),
                                    Remoting::implementation::CompareWindowActivatedArgs());
                 }
+                // If the MRU window for the list of windows on this desktop
+                // _isn't_ on the current desktop, then _none_ of the windows on
+                // this desktop will be. We'll break out of the loop below.
             }
+            else
+            {
+                // Here, we don't care about which desktop the window is on. We'll add this window to the list of MRU windows.
+                mrus.push_back(mruWindowArgs);
+
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "Monarch_Collect",
+                                  TraceLoggingUInt64(mruWindowArgs.PeasantID(), "peasantID", "the ID of the MRU peasant for a desktop"),
+                                  TraceLoggingGuid(desktopGuid, "desktopGuid", "The GUID of the desktop the window is on"),
+                                  TraceLoggingBoolean(limitToCurrentDesktop, "limitToCurrentDesktop", "TODO"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
+                // Update the mrus heap, so the actually most recent args is at
+                // the front.
+                std::push_heap(mrus.begin(),
+                               mrus.end(),
+                               Remoting::implementation::CompareWindowActivatedArgs());
+            }
+
+            // Exit the loop. Either we took the most recent window from the
+            // windows on the given desktop, or we decided not to. Either way,
+            // we don't need to keep looping.
+            break;
         }
-        if (!_mrus.empty())
+    }
+
+    uint64_t Monarch::_getMostRecentPeasantID(const bool limitToCurrentDesktop)
+    {
+        std::vector<Remoting::WindowActivatedArgs> mrus;
+        for (auto& [g, vec] : _mruPeasants)
         {
-            return _mrus.begin()->PeasantID();
+            if (vec.empty())
+            {
+                continue;
+            }
+            _collectMRUPeasant(limitToCurrentDesktop, mrus, vec);
+        }
+
+        if (!mrus.empty())
+        {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_getMostRecentPeasantID_Found",
+                              TraceLoggingUInt64(mrus.begin()->PeasantID(), "peasantID", "The ID of the MRU peasant"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
+            return mrus.begin()->PeasantID();
         }
         else if (limitToCurrentDesktop)
         {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_getMostRecentPeasantID_NotFound_ThisDesktop",
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
             return 0;
         }
+
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Monarch_getMostRecentPeasantID_NotFound",
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 
         // We haven't yet been told the MRU peasant. Just use the first one.
         // This is just gonna be a random one, but really shouldn't happen
         // in practice. The WindowManager should set the MRU peasant
         // immediately as soon as it creates the monarch/peasant for the
         // first window.
-        else if (_peasants.size() > 0)
+        if (_peasants.size() > 0)
         {
             try
             {
@@ -279,6 +387,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // the parsed result.
         const auto targetWindow = findWindowArgs->ResultTargetWindow();
 
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Monarch_ProposeCommandline",
+                          TraceLoggingInt64(targetWindow, "targetWindow", "The window ID the args specified"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
         // If there's a valid ID returned, then let's try and find the peasant
         // that goes with it. Alternatively, if we were given a magic windowing
         // constant, we can use that to look up an appropriate peasant.
@@ -306,6 +419,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 windowID = ::base::saturated_cast<uint64_t>(targetWindow);
                 break;
             }
+
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_ProposeCommandline",
+                              TraceLoggingInt64(windowID, "windowID", "The actual peasant ID we evaluated the window ID as"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 
             // If_getMostRecentPeasantID returns 0 above, then we couldn't find
             // a matching window for that style of windowing. _getPeasant will
@@ -370,5 +488,4 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // In this case, no usable ID was provided. Return { true, nullopt }
         return winrt::make<Remoting::implementation::ProposeCommandlineResult>(true);
     }
-
 }

@@ -6,6 +6,7 @@
 #include "Monarch.g.h"
 #include "Peasant.h"
 #include "../cascadia/inc/cppwinrt_utils.h"
+#include "WindowActivatedArgs.h"
 
 // We sure different GUIDs here depending on whether we're running a Release,
 // Preview, or Dev build. This ensures that different installs don't
@@ -69,6 +70,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         void _peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& sender,
                                      const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args);
+        void _doHandleActivatePeasant(const winrt::com_ptr<winrt::Microsoft::Terminal::Remoting::implementation::WindowActivatedArgs>& args);
+        void _collectMRUPeasant(const bool limitToCurrentDesktop,
+                                std::vector<Remoting::WindowActivatedArgs>& mrus,
+                                std::vector<Remoting::WindowActivatedArgs>& windowsForDesktop);
+        void _clearOldMruEntries(const uint64_t peasantID);
 
         friend class RemotingUnitTests::RemotingTests;
     };
