@@ -1044,18 +1044,10 @@ namespace winrt::TerminalApp::implementation
 
         (isFirstChild ? _firstChild : _secondChild) = newChild;
 
-        if (const auto newChildAsLeaf = newChild.try_as<TerminalApp::LeafPane>())
-        {
-            isFirstChild ? FirstChild_Root().Content(newChildAsLeaf) : SecondChild_Root().Content(newChildAsLeaf);
-            // todo: do we need this GetGridSetColOrRow call? we already did it once on initialization
-            //_GetGridSetColOrRowFunc()(isFirstChild ? FirstChild_Root() : SecondChild_Root(), isFirstChild ? 0 : 1);
-        }
-        else
-        {
-            const auto newChildAsParent = newChild.try_as<TerminalApp::ParentPane>();
-            isFirstChild ? FirstChild_Root().Content(newChildAsParent) : SecondChild_Root().Content(newChildAsParent);
-            //_GetGridSetColOrRowFunc()(isFirstChild ? FirstChild_Root() : SecondChild_Root(), isFirstChild ? 0 : 1);
-        }
+        isFirstChild ? FirstChild_Root().Content(newChild.try_as<FrameworkElement>()) : SecondChild_Root().Content(newChild.try_as<FrameworkElement>());
+        // todo: do we need this GetGridSetColOrRow call? we already did it once on initialization
+        // and adding it doesn't seem to do anything
+        //_GetGridSetColOrRowFunc()(isFirstChild ? FirstChild_Root() : SecondChild_Root(), isFirstChild ? 0 : 1);
 
         // Setup events appropriate for the new child
         _SetupChildEventHandlers(isFirstChild);
