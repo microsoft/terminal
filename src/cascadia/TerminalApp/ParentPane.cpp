@@ -785,7 +785,8 @@ namespace winrt::TerminalApp::implementation
         {
             // If our remaining child is a parent, we need to propagate the update border call to all leaves that shared
             // an edge with the closed child
-            PropagateToLeavesOnEdge(closedChildDir, [&](TerminalApp::LeafPane paneOnEdge) {
+            const auto remainingAsParent = remainingChild.try_as<ParentPane>();
+            remainingAsParent->PropagateToLeavesOnEdge(closedChildDir, [&](TerminalApp::LeafPane paneOnEdge) {
                 paneOnEdge.UpdateBorderWithClosedNeighbor(closedChild, closedChildDir);
             });
         }
