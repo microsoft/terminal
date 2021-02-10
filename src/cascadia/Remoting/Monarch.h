@@ -63,7 +63,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         std::unordered_map<uint64_t, winrt::Microsoft::Terminal::Remoting::IPeasant> _peasants;
 
-        std::unordered_map<winrt::guid, std::vector<Remoting::WindowActivatedArgs>> _mruPeasants;
+        // std::unordered_map<winrt::guid, std::vector<Remoting::WindowActivatedArgs>> _mruPeasants;
+        std::vector<Remoting::WindowActivatedArgs> _mruPeasants;
 
         winrt::Microsoft::Terminal::Remoting::IPeasant _getPeasant(uint64_t peasantID);
         uint64_t _getMostRecentPeasantID(bool limitToCurrentDesktop);

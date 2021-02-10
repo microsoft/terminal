@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         bool operator()(const Remoting::WindowActivatedArgs& lhs, const Remoting::WindowActivatedArgs& rhs) const
         {
-            return lhs.ActivatedTime() < rhs.ActivatedTime();
+            return lhs.ActivatedTime() > rhs.ActivatedTime();
         }
     };
     struct WindowActivatedArgs : public WindowActivatedArgsT<WindowActivatedArgs>
