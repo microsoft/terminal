@@ -51,7 +51,6 @@ D3D11_INPUT_ELEMENT_DESC _shaderInputLayout[] = {
 
 #pragma hdrstop
 
-
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
@@ -78,8 +77,6 @@ DxEngine::DxEngine() :
     _foregroundColor{ 0 },
     _backgroundColor{ 0 },
     _selectionBackground{},
-    _glyphCell{},
-    _boxDrawingEffect{},
     _haveDeviceResources{ false },
     _swapChainDesc{ 0 },
     _swapChainFrameLatencyWaitableObject{ INVALID_HANDLE_VALUE },
@@ -117,6 +114,8 @@ DxEngine::DxEngine() :
     // Initialize our default selection color to DEFAULT_FOREGROUND, but make
     // sure to set to to a D2D1::ColorF
     SetSelectionBackground(DEFAULT_FOREGROUND);
+
+    _fontRenderData = std::make_unique<DxFontRenderData>(_dwriteFactory);
 }
 
 // Routine Description:
@@ -906,9 +905,9 @@ try
 {
     return _dwriteFactory->CreateTextLayout(string,
                                             gsl::narrow<UINT32>(stringLength),
-                                            _dwriteTextFormat.Get(),
+                                            _fontRenderData->DefaultTextFormat().Get(),
                                             _displaySizePixels.width<float>(),
-                                            _glyphCell.height() != 0 ? _glyphCell.height<float>() : _displaySizePixels.height<float>(),
+                                            _fontRenderData->GlyphCell().height() != 0 ? _fontRenderData->GlyphCell().height<float>() : _displaySizePixels.height<float>(),
                                             ppTextLayout);
 }
 CATCH_RETURN()
@@ -932,7 +931,7 @@ try
 {
     _sizeTarget = Pixels;
 
-    _invalidMap.resize(_sizeTarget / _glyphCell, true);
+    _invalidMap.resize(_sizeTarget / _fontRenderData->GlyphCell(), true);
     return S_OK;
 }
 CATCH_RETURN();
@@ -1085,7 +1084,7 @@ try
     {
         // Dirty client is in pixels. Use divide specialization against glyph factor to make conversion
         // to cells.
-        _InvalidateRectangle(til::rectangle{ *prcDirtyClient }.scale_down(_glyphCell));
+        _InvalidateRectangle(til::rectangle{ *prcDirtyClient }.scale_down(_fontRenderData->GlyphCell()));
     }
 
     return S_OK;
@@ -1308,7 +1307,7 @@ try
         {
             // Get the baseline for this font as that's where we draw from
             DWRITE_LINE_SPACING spacing;
-            RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
+            RETURN_IF_FAILED(_fontRenderData->DefaultTextFormat()->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
 
             // Assemble the drawing context information
             _drawingContext = std::make_unique<DrawingContext>(_d2dDeviceContext.Get(),
@@ -1317,7 +1316,7 @@ try
                                                                _ShouldForceGrayscaleAA(),
                                                                _dwriteFactory.Get(),
                                                                spacing,
-                                                               _glyphCell,
+                                                               _fontRenderData->GlyphCell(),
                                                                _d2dDeviceContext->GetSize(),
                                                                std::nullopt,
                                                                D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
@@ -1359,14 +1358,14 @@ try
 
                 // Scale all dirty rectangles into pixels
                 std::transform(_presentDirty.begin(), _presentDirty.end(), _presentDirty.begin(), [&](til::rectangle rc) {
-                    return rc.scale_up(_glyphCell);
+                    return rc.scale_up(_fontRenderData->GlyphCell());
                 });
 
                 // Invalid scroll is in characters, convert it to pixels.
-                const auto scrollPixels = (_invalidScroll * _glyphCell);
+                const auto scrollPixels = (_invalidScroll * _fontRenderData->GlyphCell());
 
                 // The scroll rect is the entire field of cells, but in pixels.
-                til::rectangle scrollArea{ _invalidMap.size() * _glyphCell };
+                til::rectangle scrollArea{ _invalidMap.size() * _fontRenderData->GlyphCell() };
 
                 // Reduce the size of the rectangle by the scroll.
                 scrollArea -= til::size{} - scrollPixels;
@@ -1592,7 +1591,7 @@ try
         // Runs are counts of cells.
         // Use a transform by the size of one cell to convert cells-to-pixels
         // as we clear.
-        _d2dDeviceContext->SetTransform(D2D1::Matrix3x2F::Scale(_glyphCell));
+        _d2dDeviceContext->SetTransform(D2D1::Matrix3x2F::Scale(_fontRenderData->GlyphCell()));
         for (const auto& rect : _invalidMap.runs())
         {
             // Use aliased.
@@ -1626,7 +1625,7 @@ CATCH_RETURN()
 try
 {
     // Calculate positioning of our origin.
-    const D2D1_POINT_2F origin = til::point{ coord } * _glyphCell;
+    const D2D1_POINT_2F origin = til::point{ coord } * _fontRenderData->GlyphCell();
 
     // Create the text layout
     RETURN_IF_FAILED(_customLayout->Reset());
@@ -1660,7 +1659,7 @@ try
 
     _d2dBrushForeground->SetColor(_ColorFFromColorRef(color));
 
-    const D2D1_SIZE_F font = _glyphCell;
+    const D2D1_SIZE_F font = _fontRenderData->GlyphCell();
     const D2D_POINT_2F target = { coordTarget.X * font.width, coordTarget.Y * font.height };
     const auto fullRunWidth = font.width * gsl::narrow_cast<unsigned>(cchLine);
 
@@ -1675,7 +1674,7 @@ try
     // NOTE: Line coordinates are centered within the line, so they need to be
     // offset by half the stroke width. For the start coordinate we add half
     // the stroke width, and for the end coordinate we subtract half the width.
-
+    const DxFontRenderData::LineMetrics _lineMetrics = _fontRenderData->GetLineMetrics();
     if (WI_IsAnyFlagSet(lines, (GridLines::Left | GridLines::Right)))
     {
         const auto halfGridlineWidth = _lineMetrics.gridlineWidth / 2.0f;
@@ -1779,7 +1778,7 @@ try
     _d2dBrushForeground->SetColor(_selectionBackground);
     const auto resetColorOnExit = wil::scope_exit([&]() noexcept { _d2dBrushForeground->SetColor(existingColor); });
 
-    const D2D1_RECT_F draw = til::rectangle{ Viewport::FromExclusive(rect).ToInclusive() }.scale_up(_glyphCell);
+    const D2D1_RECT_F draw = til::rectangle{ Viewport::FromExclusive(rect).ToInclusive() }.scale_up(_fontRenderData->GlyphCell());
 
     _d2dDeviceContext->FillRectangle(draw, _d2dBrushForeground.Get());
 
@@ -1939,30 +1938,10 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo) noexcept
 try
 {
-    RETURN_IF_FAILED(_GetProposedFont(pfiFontInfoDesired,
-                                      fiFontInfo,
-                                      _dpi,
-                                      _dwriteTextFormat,
-                                      _dwriteTextFormatItalic,
-                                      _dwriteTextAnalyzer,
-                                      _dwriteFontFace,
-                                      _dwriteFontFaceItalic,
-                                      _lineMetrics));
-
-    _glyphCell = fiFontInfo.GetSize();
-
-    // Calculate and cache the box effect for the base font. Scale is 1.0f because the base font is exactly the scale we want already.
-    RETURN_IF_FAILED(CustomTextLayout::s_CalculateBoxEffect(_dwriteTextFormat.Get(), _glyphCell.width(), _dwriteFontFace.Get(), 1.0f, &_boxDrawingEffect));
+    RETURN_IF_FAILED(_fontRenderData->UpdateFont(pfiFontInfoDesired, fiFontInfo, _dpi));
 
     // Prepare the text layout.
-    _customLayout = WRL::Make<CustomTextLayout>(_dwriteFactory.Get(),
-                                                _dwriteTextAnalyzer.Get(),
-                                                _dwriteTextFormat.Get(),
-                                                _dwriteTextFormatItalic.Get(),
-                                                _dwriteFontFace.Get(),
-                                                _dwriteFontFaceItalic.Get(),
-                                                _glyphCell.width(),
-                                                _boxDrawingEffect.Get());
+    _customLayout = WRL::Make<CustomTextLayout>(_fontRenderData.get());
 
     return S_OK;
 }
@@ -1970,16 +1949,16 @@ CATCH_RETURN();
 
 [[nodiscard]] Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcept
 {
-    const short widthInChars = base::saturated_cast<short>(viewInPixels.Width() / _glyphCell.width());
-    const short heightInChars = base::saturated_cast<short>(viewInPixels.Height() / _glyphCell.height());
+    const short widthInChars = base::saturated_cast<short>(viewInPixels.Width() / _fontRenderData->GlyphCell().width());
+    const short heightInChars = base::saturated_cast<short>(viewInPixels.Height() / _fontRenderData->GlyphCell().height());
 
     return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
 }
 
 [[nodiscard]] Viewport DxEngine::GetViewportInPixels(const Viewport& viewInCharacters) noexcept
 {
-    const short widthInPixels = base::saturated_cast<short>(viewInCharacters.Width() * _glyphCell.width());
-    const short heightInPixels = base::saturated_cast<short>(viewInCharacters.Height() * _glyphCell.height());
+    const short widthInPixels = base::saturated_cast<short>(viewInCharacters.Width() * _fontRenderData->GlyphCell().width());
+    const short heightInPixels = base::saturated_cast<short>(viewInCharacters.Height() * _fontRenderData->GlyphCell().height());
 
     return Viewport::FromDimensions(viewInCharacters.Origin(), { widthInPixels, heightInPixels });
 }
@@ -2037,26 +2016,12 @@ float DxEngine::GetScaling() const noexcept
 // - iDpi - <unused>
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::GetProposedFont(const FontInfoDesired& pfiFontInfoDesired,
-                                                FontInfo& pfiFontInfo,
-                                                int const iDpi) noexcept
+[[nodiscard]] HRESULT DxEngine::GetProposedFont(const FontInfoDesired& /*pfiFontInfoDesired*/,
+                                                FontInfo& /*pfiFontInfo*/,
+                                                int const /*iDpi*/) noexcept
 {
-    Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
-    Microsoft::WRL::ComPtr<IDWriteTextFormat> formatItalic;
-    Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> analyzer;
-    Microsoft::WRL::ComPtr<IDWriteFontFace1> face;
-    Microsoft::WRL::ComPtr<IDWriteFontFace1> faceItalic;
-    LineMetrics lineMetrics;
-
-    return _GetProposedFont(pfiFontInfoDesired,
-                            pfiFontInfo,
-                            iDpi,
-                            format,
-                            formatItalic,
-                            analyzer,
-                            face,
-                            faceItalic,
-                            lineMetrics);
+    // No-op
+    return S_OK;
 }
 
 // Routine Description:
@@ -2079,7 +2044,7 @@ float DxEngine::GetScaling() const noexcept
 [[nodiscard]] HRESULT DxEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
 try
 {
-    *pFontSize = _glyphCell;
+    *pFontSize = _fontRenderData->GlyphCell();
     return S_OK;
 }
 CATCH_RETURN();

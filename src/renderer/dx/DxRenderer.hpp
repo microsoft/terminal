@@ -26,6 +26,7 @@
 
 #include "CustomTextLayout.h"
 #include "CustomTextRenderer.h"
+#include "DxFontRenderData.h"
 
 #include "../../types/inc/Viewport.hpp"
 
@@ -153,10 +154,7 @@ namespace Microsoft::Console::Render
         bool _isEnabled;
         bool _isPainting;
 
-        LineMetrics _lineMetrics;
         til::size _displaySizePixels;
-        til::size _glyphCell;
-        ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
 
         D2D1_COLOR_F _defaultForegroundColor;
         D2D1_COLOR_F _defaultBackgroundColor;
@@ -190,6 +188,8 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _strokeStyle;
         ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _dashStrokeStyle;
         ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _hyperlinkStrokeStyle;
+
+        std::unique_ptr<DxFontRenderData> _fontRenderData;
 
         D2D1_STROKE_STYLE_PROPERTIES _strokeStyleProperties;
         D2D1_STROKE_STYLE_PROPERTIES _dashStrokeStyleProperties;

@@ -29,7 +29,6 @@
     <ClInclude Include="..\..\inc\FontInfoBase.hpp" />
     <ClInclude Include="..\..\inc\FontInfoDesired.hpp" />
     <ClInclude Include="..\..\inc\IFontDefaultList.hpp" />
-    <ClInclude Include="..\..\inc\IFontRenderData.hpp" />
     <ClInclude Include="..\..\inc\IRenderData.hpp" />
     <ClInclude Include="..\..\inc\IRenderEngine.hpp" />
     <ClInclude Include="..\..\inc\IRenderer.hpp" />

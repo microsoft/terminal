@@ -11,51 +11,75 @@ static constexpr std::wstring_view FALLBACK_LOCALE = L"en-us";
 
 using namespace Microsoft::Console::Render;
 
-DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwriteFactory):
+DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwriteFactory) noexcept :
     _dwriteFactory(dwriteFactory),
-    _lineMetrics({})
+    _glyphCell{},
+    _lineMetrics({}),
+    _boxDrawingEffect{},
+    _boxDrawingEffectItalic{}
 {
+    ::Microsoft::WRL::ComPtr<IDWriteFactory2> factory2;
+    _hrSystemFontFallback = _dwriteFactory.As(&factory2);
+    if (SUCCEEDED(_hrSystemFontFallback))
+    {
+        factory2->GetSystemFontFallback(&_systemFontFallback);
+    }
 }
 
-Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> DxFontRenderData::Analyzer()
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> DxFontRenderData::Analyzer() noexcept
 {
     return _dwriteTextAnalyzer;
 }
 
-Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::Regular()
+[[nodiscard]] HRESULT DxFontRenderData::HrSystemFontFallback() noexcept
+{
+    return _hrSystemFontFallback;
+}
+
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFallback> DxFontRenderData::GetSystemFontFallback() noexcept
+{
+    return _systemFontFallback;
+}
+
+[[nodiscard]] til::size DxFontRenderData::GlyphCell() noexcept
+{
+    return _glyphCell;
+}
+
+[[nodiscard]] DxFontRenderData::LineMetrics DxFontRenderData::GetLineMetrics() noexcept
+{
+    return _lineMetrics;
+}
+
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::DefaultTextFormat() noexcept
 {
     return _dwriteTextFormat;
 }
 
-Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontRenderData::RegularFontFace()
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontRenderData::DefaultFontFace() noexcept
 {
     return _dwriteFontFace;
 }
 
-Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::Italic()
+[[nodiscard]] Microsoft::WRL::ComPtr<IBoxDrawingEffect> DxFontRenderData::DefaultBoxDrawingEffect() noexcept
+{
+    return _boxDrawingEffect;
+}
+
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::ItalicTextFormat() noexcept
 {
     return _dwriteTextFormatItalic;
 }
 
-Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontRenderData::ItalicFontFace()
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontRenderData::ItalicFontFace() noexcept
 {
     return _dwriteFontFaceItalic;
 }
 
-HRESULT DxFontRenderData::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo,
-                                     const int dpi) noexcept
+[[nodiscard]] Microsoft::WRL::ComPtr<IBoxDrawingEffect> DxFontRenderData::ItalicBoxDrawingEffect() noexcept
 {
-    RETURN_IF_FAILED(_GetProposedFont(pfiFontInfoDesired,
-                                      fiFontInfo,
-                                      dpi,
-                                      _dwriteTextFormat,
-                                      _dwriteTextFormatItalic,
-                                      _dwriteTextAnalyzer,
-                                      _dwriteFontFace,
-                                      _dwriteFontFaceItalic,
-                                      _lineMetrics));
+    return _boxDrawingEffectItalic;
 }
-
 
 // Routine Description:
 // - Updates the font used for drawing
@@ -65,16 +89,8 @@ HRESULT DxFontRenderData::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, 
 // - dpi - The DPI of the screen
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]] HRESULT DxFontRenderData::_GetProposedFont(const FontInfoDesired& desired,
-                                                         FontInfo& actual,
-                                                         const int dpi,
-                                                         Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
-                                                         Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormatItalic,
-                                                         Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
-                                                         Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace,
-                                                         Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFaceItalic,
-                                                         LineMetrics& lineMetrics) const noexcept
-        {
+[[nodiscard]] HRESULT DxFontRenderData::UpdateFont(const FontInfoDesired& desired, FontInfo& actual, const int dpi) noexcept
+{
     try
     {
         std::wstring fontName(desired.GetFaceName());
@@ -205,7 +221,7 @@ HRESULT DxFontRenderData::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, 
                                                          localeName.data(),
                                                          &format));
 
-        THROW_IF_FAILED(format.As(&textFormat));
+        THROW_IF_FAILED(format.As(&_dwriteTextFormat));
 
         // We also need to create an italic variant of the font face and text
         // format, based on the same parameters, but using an italic style.
@@ -226,18 +242,18 @@ HRESULT DxFontRenderData::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, 
                                                          localeName.data(),
                                                          &formatItalic));
 
-        THROW_IF_FAILED(formatItalic.As(&textFormatItalic));
+        THROW_IF_FAILED(formatItalic.As(&_dwriteTextFormatItalic));
 
         Microsoft::WRL::ComPtr<IDWriteTextAnalyzer> analyzer;
         THROW_IF_FAILED(_dwriteFactory->CreateTextAnalyzer(&analyzer));
-        THROW_IF_FAILED(analyzer.As(&textAnalyzer));
+        THROW_IF_FAILED(analyzer.As(&_dwriteTextAnalyzer));
 
-        fontFace = face;
-        fontFaceItalic = faceItalic;
+        _dwriteFontFace = face;
+        _dwriteFontFaceItalic = faceItalic;
 
-        THROW_IF_FAILED(textFormat->SetLineSpacing(lineSpacing.method, lineSpacing.height, lineSpacing.baseline));
-        THROW_IF_FAILED(textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR));
-        THROW_IF_FAILED(textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
+        THROW_IF_FAILED(_dwriteTextFormat->SetLineSpacing(lineSpacing.method, lineSpacing.height, lineSpacing.baseline));
+        THROW_IF_FAILED(_dwriteTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR));
+        THROW_IF_FAILED(_dwriteTextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
 
         // The scaled size needs to represent the pixel box that each character will fit within for the purposes
         // of hit testing math and other such multiplication/division.
@@ -254,57 +270,63 @@ HRESULT DxFontRenderData::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, 
 
         actual.SetFromEngine(fontName,
                              desired.GetFamily(),
-                             textFormat->GetFontWeight(),
+                             _dwriteTextFormat->GetFontWeight(),
                              false,
                              scaled,
                              unscaled);
 
         // There is no font metric for the grid line width, so we use a small
         // multiple of the font size, which typically rounds to a pixel.
-        lineMetrics.gridlineWidth = std::round(fontSize * 0.025f);
+        _lineMetrics.gridlineWidth = std::round(fontSize * 0.025f);
 
         // All other line metrics are in design units, so to get a pixel value,
         // we scale by the font size divided by the design-units-per-em.
         const auto scale = fontSize / fontMetrics.designUnitsPerEm;
-        lineMetrics.underlineOffset = std::round(fontMetrics.underlinePosition * scale);
-        lineMetrics.underlineWidth = std::round(fontMetrics.underlineThickness * scale);
-        lineMetrics.strikethroughOffset = std::round(fontMetrics.strikethroughPosition * scale);
-        lineMetrics.strikethroughWidth = std::round(fontMetrics.strikethroughThickness * scale);
+        _lineMetrics.underlineOffset = std::round(fontMetrics.underlinePosition * scale);
+        _lineMetrics.underlineWidth = std::round(fontMetrics.underlineThickness * scale);
+        _lineMetrics.strikethroughOffset = std::round(fontMetrics.strikethroughPosition * scale);
+        _lineMetrics.strikethroughWidth = std::round(fontMetrics.strikethroughThickness * scale);
 
         // We always want the lines to be visible, so if a stroke width ends up
         // at zero after rounding, we need to make it at least 1 pixel.
-        lineMetrics.gridlineWidth = std::max(lineMetrics.gridlineWidth, 1.0f);
-        lineMetrics.underlineWidth = std::max(lineMetrics.underlineWidth, 1.0f);
-        lineMetrics.strikethroughWidth = std::max(lineMetrics.strikethroughWidth, 1.0f);
+        _lineMetrics.gridlineWidth = std::max(_lineMetrics.gridlineWidth, 1.0f);
+        _lineMetrics.underlineWidth = std::max(_lineMetrics.underlineWidth, 1.0f);
+        _lineMetrics.strikethroughWidth = std::max(_lineMetrics.strikethroughWidth, 1.0f);
 
         // Offsets are relative to the base line of the font, so we subtract
         // from the ascent to get an offset relative to the top of the cell.
-        lineMetrics.underlineOffset = fullPixelAscent - lineMetrics.underlineOffset;
-        lineMetrics.strikethroughOffset = fullPixelAscent - lineMetrics.strikethroughOffset;
+        _lineMetrics.underlineOffset = fullPixelAscent - _lineMetrics.underlineOffset;
+        _lineMetrics.strikethroughOffset = fullPixelAscent - _lineMetrics.strikethroughOffset;
 
         // For double underlines we need a second offset, just below the first,
         // but with a bit of a gap (about double the grid line width).
-        lineMetrics.underlineOffset2 = lineMetrics.underlineOffset +
-                                       lineMetrics.underlineWidth +
-                                       std::round(fontSize * 0.05f);
+        _lineMetrics.underlineOffset2 = _lineMetrics.underlineOffset +
+                                        _lineMetrics.underlineWidth +
+                                        std::round(fontSize * 0.05f);
 
         // However, we don't want the underline to extend past the bottom of the
         // cell, so we clamp the offset to fit just inside.
         const auto maxUnderlineOffset = lineSpacing.height - _lineMetrics.underlineWidth;
-        lineMetrics.underlineOffset2 = std::min(lineMetrics.underlineOffset2, maxUnderlineOffset);
+        _lineMetrics.underlineOffset2 = std::min(_lineMetrics.underlineOffset2, maxUnderlineOffset);
 
         // But if the resulting gap isn't big enough even to register as a thicker
         // line, it's better to place the second line slightly above the first.
-        if (lineMetrics.underlineOffset2 < lineMetrics.underlineOffset + lineMetrics.gridlineWidth)
+        if (_lineMetrics.underlineOffset2 < _lineMetrics.underlineOffset + _lineMetrics.gridlineWidth)
         {
-            lineMetrics.underlineOffset2 = lineMetrics.underlineOffset - lineMetrics.gridlineWidth;
+            _lineMetrics.underlineOffset2 = _lineMetrics.underlineOffset - _lineMetrics.gridlineWidth;
         }
 
         // We also add half the stroke width to the offsets, since the line
         // coordinates designate the center of the line.
-        lineMetrics.underlineOffset += lineMetrics.underlineWidth / 2.0f;
-        lineMetrics.underlineOffset2 += lineMetrics.underlineWidth / 2.0f;
-        lineMetrics.strikethroughOffset += lineMetrics.strikethroughWidth / 2.0f;
+        _lineMetrics.underlineOffset += _lineMetrics.underlineWidth / 2.0f;
+        _lineMetrics.underlineOffset2 += _lineMetrics.underlineWidth / 2.0f;
+        _lineMetrics.strikethroughOffset += _lineMetrics.strikethroughWidth / 2.0f;
+
+        _glyphCell = actual.GetSize();
+
+        // Calculate and cache the box effect for the base font. Scale is 1.0f because the base font is exactly the scale we want already.
+        RETURN_IF_FAILED(s_CalculateBoxEffect(DefaultTextFormat().Get(), _glyphCell.width(), DefaultFontFace().Get(), 1.0f, &_boxDrawingEffect));
+        RETURN_IF_FAILED(s_CalculateBoxEffect(ItalicTextFormat().Get(), _glyphCell.width(), ItalicFontFace().Get(), 1.0f, &_boxDrawingEffectItalic));
     }
     CATCH_RETURN();
 
@@ -497,3 +519,244 @@ HRESULT DxFontRenderData::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, 
     // and return it.
     return retVal;
 }
+
+// Routine Description:
+// - Calculates the box drawing scale/translate matrix values to fit a box glyph into the cell as perfectly as possible.
+// Arguments:
+// - format - Text format used to determine line spacing (height including ascent & descent) as calculated from the base font.
+// - widthPixels - The pixel width of the available cell.
+// - face - The font face that is currently being used, may differ from the base font from the layout.
+// - fontScale -  if the given font face is going to be scaled versus the format, we need to know so we can compensate for that. pass 1.0f for no scaling.
+// - effect - Receives the effect to apply to box drawing characters. If no effect is received, special treatment isn't required.
+// Return Value:
+// - S_OK, GSL/WIL errors, DirectWrite errors, or math errors.
+[[nodiscard]] HRESULT STDMETHODCALLTYPE DxFontRenderData::s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, float fontScale, IBoxDrawingEffect** effect) noexcept
+try
+{
+    // Check for bad in parameters.
+    RETURN_HR_IF(E_INVALIDARG, !format);
+    RETURN_HR_IF(E_INVALIDARG, !face);
+
+    // Check the out parameter and fill it up with null.
+    RETURN_HR_IF(E_INVALIDARG, !effect);
+    *effect = nullptr;
+
+    // The format is based around the main font that was specified by the user.
+    // We need to know its size as well as the final spacing that was calculated around
+    // it when it was first selected to get an idea of how large the bounding box is.
+    const auto fontSize = format->GetFontSize();
+
+    DWRITE_LINE_SPACING_METHOD spacingMethod;
+    float lineSpacing; // total height of the cells
+    float baseline; // vertical position counted down from the top where the characters "sit"
+    RETURN_IF_FAILED(format->GetLineSpacing(&spacingMethod, &lineSpacing, &baseline));
+
+    const float ascentPixels = baseline;
+    const float descentPixels = lineSpacing - baseline;
+
+    // We need this for the designUnitsPerEm which will be required to move back and forth between
+    // Design Units and Pixels. I'll elaborate below.
+    DWRITE_FONT_METRICS1 fontMetrics;
+    face->GetMetrics(&fontMetrics);
+
+    // If we had font fallback occur, the size of the font given to us (IDWriteFontFace1) can be different
+    // than the font size used for the original format (IDWriteTextFormat).
+    const auto scaledFontSize = fontScale * fontSize;
+
+    // This is Unicode FULL BLOCK U+2588.
+    // We presume that FULL BLOCK should be filling its entire cell in all directions so it should provide a good basis
+    // in knowing exactly where to touch every single edge.
+    // We're also presuming that the other box/line drawing glyphs were authored in this font to perfectly inscribe
+    // inside of FULL BLOCK, with the same left/top/right/bottom bearings so they would look great when drawn adjacent.
+    const UINT32 blockCodepoint = L'\x2588';
+
+    // Get the index of the block out of the font.
+    UINT16 glyphIndex;
+    RETURN_IF_FAILED(face->GetGlyphIndicesW(&blockCodepoint, 1, &glyphIndex));
+
+    // If it was 0, it wasn't found in the font. We're going to try again with
+    // Unicode BOX DRAWINGS LIGHT VERTICAL AND HORIZONTAL U+253C which should be touching
+    // all the edges of the possible rectangle, much like a full block should.
+    if (glyphIndex == 0)
+    {
+        const UINT32 alternateCp = L'\x253C';
+        RETURN_IF_FAILED(face->GetGlyphIndicesW(&alternateCp, 1, &glyphIndex));
+    }
+
+    // If we still didn't find the glyph index, we haven't implemented any further logic to figure out the box dimensions.
+    // So we're just going to leave successfully as is and apply no scaling factor. It might look not-right, but it won't
+    // stop the rendering pipeline.
+    RETURN_HR_IF(S_FALSE, glyphIndex == 0);
+
+    // Get the metrics of the given glyph, which we're going to treat as the outline box in which all line/block drawing
+    // glyphs will be inscribed within, perfectly touching each edge as to align when two cells meet.
+    DWRITE_GLYPH_METRICS boxMetrics = { 0 };
+    RETURN_IF_FAILED(face->GetDesignGlyphMetrics(&glyphIndex, 1, &boxMetrics));
+
+    // NOTE: All metrics we receive from DWRITE are going to be in "design units" which are a somewhat agnostic
+    //       way of describing proportions.
+    //       Converting back and forth between real pixels and design units is possible using
+    //       any font's specific fontSize and the designUnitsPerEm FONT_METRIC value.
+    //
+    // Here's what to know about the boxMetrics:
+    //
+    //
+    //
+    //   topLeft --> +--------------------------------+    ---
+    //               |         ^                      |     |
+    //               |         |  topSide             |     |
+    //               |         |  Bearing             |     |
+    //               |         v                      |     |
+    //               |      +-----------------+       |     |
+    //               |      |                 |       |     |
+    //               |      |                 |       |     | a
+    //               |      |                 |       |     | d
+    //               |      |                 |       |     | v
+    //               +<---->+                 |       |     | a
+    //               |      |                 |       |     | n
+    //               | left |                 |       |     | c
+    //               | Side |                 |       |     | e
+    //               | Bea- |                 |       |     | H
+    //               | ring |                 | right |     | e
+    //  vertical     |      |                 | Side  |     | i
+    //  OriginY -->  x      |                 | Bea-  |     | g
+    //               |      |                 | ring  |     | h
+    //               |      |                 |       |     | t
+    //               |      |                 +<----->+     |
+    //               |      +-----------------+       |     |
+    //               |                     ^          |     |
+    //               |       bottomSide    |          |     |
+    //               |          Bearing    |          |     |
+    //               |                     v          |     |
+    //               +--------------------------------+    ---
+    //
+    //
+    //               |                                |
+    //               +--------------------------------+
+    //               |         advanceWidth           |
+    //
+    //
+    // NOTE: The bearings can be negative, in which case it is specifying that the glyphs overhang the box
+    // as defined by the advanceHeight/width.
+    // See also: https://docs.microsoft.com/en-us/windows/win32/api/dwrite/ns-dwrite-dwrite_glyph_metrics
+
+    // The scale is a multiplier and the translation is addition. So *1 and +0 will mean nothing happens.
+    const float defaultBoxVerticalScaleFactor = 1.0f;
+    float boxVerticalScaleFactor = defaultBoxVerticalScaleFactor;
+    const float defaultBoxVerticalTranslation = 0.0f;
+    float boxVerticalTranslation = defaultBoxVerticalTranslation;
+    {
+        // First, find the dimensions of the glyph representing our fully filled box.
+
+        // Ascent is how far up from the baseline we'll draw.
+        // verticalOriginY is the measure from the topLeft corner of the bounding box down to where
+        // the glyph's version of the baseline is.
+        // topSideBearing is how much "gap space" is left between that topLeft and where the glyph
+        // starts drawing. Subtract the gap space to find how far is drawn upward from baseline.
+        const auto boxAscentDesignUnits = boxMetrics.verticalOriginY - boxMetrics.topSideBearing;
+
+        // Descent is how far down from the baseline we'll draw.
+        // advanceHeight is the total height of the drawn bounding box.
+        // verticalOriginY is how much was given to the ascent, so subtract that out.
+        // What remains is then the descent value. Remove the
+        // bottomSideBearing as the "gap space" on the bottom to find how far is drawn downward from baseline.
+        const auto boxDescentDesignUnits = boxMetrics.advanceHeight - boxMetrics.verticalOriginY - boxMetrics.bottomSideBearing;
+
+        // The height, then, of the entire box is just the sum of the ascent above the baseline and the descent below.
+        const auto boxHeightDesignUnits = boxAscentDesignUnits + boxDescentDesignUnits;
+
+        // Second, find the dimensions of the cell we're going to attempt to fit within.
+        // We know about the exact ascent/descent units in pixels as calculated when we chose a font and
+        // adjusted the ascent/descent for a nice perfect baseline and integer total height.
+        // All we need to do is adapt it into Design Units so it meshes nicely with the Design Units above.
+        // Use the formula: Pixels * Design Units Per Em / Font Size = Design Units
+        const auto cellAscentDesignUnits = ascentPixels * fontMetrics.designUnitsPerEm / scaledFontSize;
+        const auto cellDescentDesignUnits = descentPixels * fontMetrics.designUnitsPerEm / scaledFontSize;
+        const auto cellHeightDesignUnits = cellAscentDesignUnits + cellDescentDesignUnits;
+
+        // OK, now do a few checks. If the drawn box touches the top and bottom of the cell
+        // and the box is overall tall enough, then we'll not bother adjusting.
+        // We will presume the font author has set things as they wish them to be.
+        const auto boxTouchesCellTop = boxAscentDesignUnits >= cellAscentDesignUnits;
+        const auto boxTouchesCellBottom = boxDescentDesignUnits >= cellDescentDesignUnits;
+        const auto boxIsTallEnoughForCell = boxHeightDesignUnits >= cellHeightDesignUnits;
+
+        // If not...
+        if (!(boxTouchesCellTop && boxTouchesCellBottom && boxIsTallEnoughForCell))
+        {
+            // Find a scaling factor that will make the total height drawn of this box
+            // perfectly fit the same number of design units as the cell.
+            // Since scale factor is a multiplier, it doesn't matter that this is design units.
+            // The fraction between the two heights in pixels should be exactly the same
+            // (which is what will matter when we go to actually render it... the pixels that is.)
+            // Don't scale below 1.0. If it'd shrink, just center it at the prescribed scale.
+            boxVerticalScaleFactor = std::max(cellHeightDesignUnits / boxHeightDesignUnits, 1.0f);
+
+            // The box as scaled might be hanging over the top or bottom of the cell (or both).
+            // We find out the amount of overhang/underhang on both the top and the bottom.
+            const auto extraAscent = boxAscentDesignUnits * boxVerticalScaleFactor - cellAscentDesignUnits;
+            const auto extraDescent = boxDescentDesignUnits * boxVerticalScaleFactor - cellDescentDesignUnits;
+
+            // This took a bit of time and effort and it's difficult to put into words, but here goes.
+            // We want the average of the two magnitudes to find out how much to "take" from one and "give"
+            // to the other such that both are equal. We presume the glyphs are designed to be drawn
+            // centered in their box vertically to look good.
+            // The ordering around subtraction is required to ensure that the direction is correct with a negative
+            // translation moving up (taking excess descent and adding to ascent) and positive is the opposite.
+            const auto boxVerticalTranslationDesignUnits = (extraAscent - extraDescent) / 2;
+
+            // The translation is just a raw movement of pixels up or down. Since we were working in Design Units,
+            // we need to run the opposite algorithm shown above to go from Design Units to Pixels.
+            boxVerticalTranslation = boxVerticalTranslationDesignUnits * scaledFontSize / fontMetrics.designUnitsPerEm;
+        }
+    }
+
+    // The horizontal adjustments follow the exact same logic as the vertical ones.
+    const float defaultBoxHorizontalScaleFactor = 1.0f;
+    float boxHorizontalScaleFactor = defaultBoxHorizontalScaleFactor;
+    const float defaultBoxHorizontalTranslation = 0.0f;
+    float boxHorizontalTranslation = defaultBoxHorizontalTranslation;
+    {
+        // This is the only difference. We don't have a horizontalOriginX from the metrics.
+        // However, https://docs.microsoft.com/en-us/windows/win32/api/dwrite/ns-dwrite-dwrite_glyph_metrics says
+        // the X coordinate is specified by half the advanceWidth to the right of the horizontalOrigin.
+        // So we'll use that as the "center" and apply it the role that verticalOriginY had above.
+
+        const auto boxCenterDesignUnits = boxMetrics.advanceWidth / 2;
+        const auto boxLeftDesignUnits = boxCenterDesignUnits - boxMetrics.leftSideBearing;
+        const auto boxRightDesignUnits = boxMetrics.advanceWidth - boxMetrics.rightSideBearing - boxCenterDesignUnits;
+        const auto boxWidthDesignUnits = boxLeftDesignUnits + boxRightDesignUnits;
+
+        const auto cellWidthDesignUnits = widthPixels * fontMetrics.designUnitsPerEm / scaledFontSize;
+        const auto cellLeftDesignUnits = cellWidthDesignUnits / 2;
+        const auto cellRightDesignUnits = cellLeftDesignUnits;
+
+        const auto boxTouchesCellLeft = boxLeftDesignUnits >= cellLeftDesignUnits;
+        const auto boxTouchesCellRight = boxRightDesignUnits >= cellRightDesignUnits;
+        const auto boxIsWideEnoughForCell = boxWidthDesignUnits >= cellWidthDesignUnits;
+
+        if (!(boxTouchesCellLeft && boxTouchesCellRight && boxIsWideEnoughForCell))
+        {
+            boxHorizontalScaleFactor = std::max(cellWidthDesignUnits / boxWidthDesignUnits, 1.0f);
+            const auto extraLeft = boxLeftDesignUnits * boxHorizontalScaleFactor - cellLeftDesignUnits;
+            const auto extraRight = boxRightDesignUnits * boxHorizontalScaleFactor - cellRightDesignUnits;
+
+            const auto boxHorizontalTranslationDesignUnits = (extraLeft - extraRight) / 2;
+
+            boxHorizontalTranslation = boxHorizontalTranslationDesignUnits * scaledFontSize / fontMetrics.designUnitsPerEm;
+        }
+    }
+
+    // If we set anything, make a drawing effect. Otherwise, there isn't one.
+    if (defaultBoxVerticalScaleFactor != boxVerticalScaleFactor ||
+        defaultBoxVerticalTranslation != boxVerticalTranslation ||
+        defaultBoxHorizontalScaleFactor != boxHorizontalScaleFactor ||
+        defaultBoxHorizontalTranslation != boxHorizontalTranslation)
+    {
+        // OK, make the object that will represent our effect, stuff the metrics into it, and return it.
+        RETURN_IF_FAILED(WRL::MakeAndInitialize<BoxDrawingEffect>(effect, boxVerticalScaleFactor, boxVerticalTranslation, boxHorizontalScaleFactor, boxHorizontalTranslation));
+    }
+
+    return S_OK;
+}
+CATCH_RETURN()

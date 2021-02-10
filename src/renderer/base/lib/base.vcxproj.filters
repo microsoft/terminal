@@ -68,9 +68,6 @@
     <ClInclude Include="..\..\inc\IFontDefaultList.hpp">
       <Filter>Header Files\inc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\IFontRenderData.hpp">
-      <Filter>Header Files\inc</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\inc\IRenderData.hpp">
       <Filter>Header Files\inc</Filter>
     </ClInclude>
