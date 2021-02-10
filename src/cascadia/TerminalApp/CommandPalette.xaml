@@ -16,7 +16,6 @@ the MIT License. See LICENSE in the project root for license information. -->
     AllowFocusOnInteraction="True"
     PointerPressed="_rootPointerPressed"
     PreviewKeyDown="_previewKeyDownHandler"
-    KeyDown="_keyDownHandler"
     PreviewKeyUp="_keyUpHandler"
     LostFocus="_lostFocusHandler"
     mc:Ignorable="d"
@@ -431,7 +430,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                 AllowDrop="False"
                 IsItemClickEnabled="True"
                 ItemClick="_listItemClicked"
-                PreviewKeyDown="_keyDownHandler"
                 ItemsSource="{x:Bind FilteredActions}"
                 ItemTemplateSelector="{StaticResource PaletteItemTemplateSelector}">
             </ListView>
