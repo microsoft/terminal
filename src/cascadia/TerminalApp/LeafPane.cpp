@@ -541,7 +541,9 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Event Description:
-    // - todo: do we need this anymore? the hosting tab doesn't listen to all leaves anymore (only the root)
+    // - Called when our control gains focus. We'll use this to trigger our GotFocus
+    //   callback. The tab that's hosting us should have registered a callback which
+    //   can be used to mark us as active.
     void LeafPane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& /* sender */,
                                            RoutedEventArgs const& /* args */)
     {

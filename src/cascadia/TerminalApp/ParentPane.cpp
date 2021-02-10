@@ -653,7 +653,6 @@ namespace winrt::TerminalApp::implementation
         // context of this method (not on another thread)
         auto setupAnimation = [=](const auto& size, const bool isFirstChild) {
             auto child = isFirstChild ? _firstChild : _secondChild;
-            // todo: do we need to call child's get root element or can we just use child itself?
             auto childGrid = child.GetRootElement();
             auto control = child.try_as<TerminalApp::LeafPane>().GetTerminalControl();
             // Build up our animation:
@@ -818,12 +817,11 @@ namespace winrt::TerminalApp::implementation
     // todo: can the dummy grid needed for the exit animation be put in the xaml file?
     winrt::fire_and_forget ParentPane::_CloseChildRoutine(const bool closeFirst)
     {
-        //auto weakThis = get_weak();
+        auto weakThis = get_weak();
         co_await winrt::resume_foreground(Root().Dispatcher());
 
-        // todo: do we need this weakThis?? YES, do the auto weakThis thing above first
-        //if (auto pane{ weakThis.get() }) 
-        //{
+        if (auto pane{ weakThis.get() }) 
+        {
             // This will query if animations are enabled via the "Show animations in
             // Windows" setting in the OS
             winrt::Windows::UI::ViewManagement::UISettings uiSettings;
@@ -878,7 +876,6 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Remove both children from the grid
-            //_root.Children().Clear();
             // todo: ContentPresenter doesn't seem to have a 'Clear' method, so just as placeholder for now
             //       we 'detach' the control by replacing it with the empty string
             FirstChild_Root().Content(winrt::box_value(L""));
@@ -907,7 +904,7 @@ namespace winrt::TerminalApp::implementation
             // in the place of the closed pane.
             Controls::Grid dummyGrid;
             //dummyGrid.Background(s_unfocusedBorderBrush);
-            //dummyGrid.Background();
+
             // It should be the size of the closed pane.
             dummyGrid.Width(removedOriginalSize.Width);
             dummyGrid.Height(removedOriginalSize.Height);
@@ -975,15 +972,16 @@ namespace winrt::TerminalApp::implementation
             // When the animation is completed, reparent the child's content up to
             // us, and remove the child nodes from the tree.
             animation.Completed([=](auto&&, auto&&) {
+                // todo: do we need this lock? if so, how do we do it here?
                 //if (auto pane{ weakThis.lock() })
                 //{
                     // We don't need to manually undo any of the above trickiness.
                     // We're going to re-parent the child's content into us anyways
                     //pane->_CloseChild(closeFirst);
-                _CloseChild(closeFirst);
+                    _CloseChild(closeFirst);
                 //}
             });
-        //}
+        }
     }
 
     // Method Description:
@@ -1001,7 +999,6 @@ namespace winrt::TerminalApp::implementation
             // When our child is a leaf and got closed, we close it
             const auto childImpl = winrt::get_self<implementation::LeafPane>(child);
 
-            // todo: check if we need to do a 'get_weak()' here or something?
             closedToken = childImpl->Closed([=](auto&& /*s*/) {
                 // Unsubscribe from events of both our children, as we ourself will also
                 // get closed when our child does.
@@ -1280,8 +1277,6 @@ namespace winrt::TerminalApp::implementation
         if (advanceFirstOrSecond)
         {
             *sizeNode.firstChild = *sizeNode.nextFirstChild;
-            // todo: there has to be a better way to do these recursive calls
-            //_firstChild.AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextFirstChild);
             if (auto firstChildAsLeaf = _firstChild.try_as<TerminalApp::LeafPane>())
             {
                 if (sizeNode.nextFirstChild->isMinimumSize)
@@ -1303,7 +1298,6 @@ namespace winrt::TerminalApp::implementation
         else
         {
             *sizeNode.secondChild = *sizeNode.nextSecondChild;
-            //_secondChild.AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextSecondChild);
             if (auto secondChildAsLeaf = _secondChild.try_as<TerminalApp::LeafPane>())
             {
                 if (sizeNode.nextSecondChild->isMinimumSize)
