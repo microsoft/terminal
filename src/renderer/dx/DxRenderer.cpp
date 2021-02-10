@@ -1448,7 +1448,18 @@ CATCH_RETURN()
 [[nodiscard]] 
 bool DxEngine::RequiresContinuousRedraw() noexcept
 {
-    return _HasTerminalEffects();
+    // We're only going to request continuous redraw if someone is using
+    // a pixel shader from a path because we cannot tell if those are using the
+    // time parameter or not.
+    // And if they are using time, they probably need it to tick continuously.
+    //
+    // By contrast, the in-built retro effect does NOT need it,
+    // so let's not tick for it and save some amount of performance.
+    //
+    // Finally... if we're not using effects at all... let the render thread
+    // go to sleep. It deserves it. That thread works hard. Also it sleeping
+    // saves battery power and all sorts of related perf things.
+    return _terminalEffectsEnabled && !_pixelShaderPath.empty();
 }
 
 // Method Description:
