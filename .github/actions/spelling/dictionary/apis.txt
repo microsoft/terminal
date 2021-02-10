@@ -40,6 +40,7 @@ IPeasant
 IStorage
 ITab
 ITaskbar
+IVirtual
 LCID
 llabs
 llu

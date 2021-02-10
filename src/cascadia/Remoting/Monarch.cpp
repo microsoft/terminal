@@ -226,7 +226,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     }
 
     void Monarch::_collectMRUPeasant(const bool limitToCurrentDesktop,
-                                     std::vector<Remoting::WindowActivatedArgs>& mrus,
+                                     std::vector<Remoting::WindowActivatedArgs>& mruWindows,
                                      std::vector<Remoting::WindowActivatedArgs>& windowsForDesktop)
     {
         while (!windowsForDesktop.empty())
@@ -265,7 +265,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                                                                    &onCurrentDesktop)) &&
                     onCurrentDesktop)
                 {
-                    mrus.push_back(mruWindowArgs);
+                    mruWindows.push_back(mruWindowArgs);
 
                     TraceLoggingWrite(g_hRemotingProvider,
                                       "Monarch_Collect",
@@ -283,10 +283,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                                        "true if this window was in fact on the current desktop"),
                                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 
-                    // Update the mrus heap, so the actually most recent args is
-                    // at the front.
-                    std::push_heap(mrus.begin(),
-                                   mrus.end(),
+                    // Update the mruWindows heap, so the actually most recent
+                    // args is at the front.
+                    std::push_heap(mruWindows.begin(),
+                                   mruWindows.end(),
                                    Remoting::implementation::CompareWindowActivatedArgs());
                 }
                 // If the MRU window for the list of windows on this desktop
@@ -295,8 +295,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             }
             else
             {
-                // Here, we don't care about which desktop the window is on. We'll add this window to the list of MRU windows.
-                mrus.push_back(mruWindowArgs);
+                // Here, we don't care about which desktop the window is on.
+                // We'll add this window to the list of MRU windows.
+                mruWindows.push_back(mruWindowArgs);
 
                 TraceLoggingWrite(g_hRemotingProvider,
                                   "Monarch_Collect",
@@ -304,13 +305,15 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                                      "peasantID",
                                                      "the ID of the MRU peasant for a desktop"),
                                   TraceLoggingGuid(desktopGuid, "desktopGuid", "The GUID of the desktop the window is on"),
-                                  TraceLoggingBoolean(limitToCurrentDesktop, "limitToCurrentDesktop", "TODO"),
+                                  TraceLoggingBoolean(limitToCurrentDesktop,
+                                                      "limitToCurrentDesktop",
+                                                      "True if we should only search for a window on the current desktop"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 
-                // Update the mrus heap, so the actually most recent args is at
+                // Update the mruWindows heap, so the actually most recent args is at
                 // the front.
-                std::push_heap(mrus.begin(),
-                               mrus.end(),
+                std::push_heap(mruWindows.begin(),
+                               mruWindows.end(),
                                Remoting::implementation::CompareWindowActivatedArgs());
             }
 
@@ -323,24 +326,24 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     uint64_t Monarch::_getMostRecentPeasantID(const bool limitToCurrentDesktop)
     {
-        std::vector<Remoting::WindowActivatedArgs> mrus;
+        std::vector<Remoting::WindowActivatedArgs> mruWindows;
         for (auto& [g, vec] : _mruPeasants)
         {
             if (vec.empty())
             {
                 continue;
             }
-            _collectMRUPeasant(limitToCurrentDesktop, mrus, vec);
+            _collectMRUPeasant(limitToCurrentDesktop, mruWindows, vec);
         }
 
-        if (!mrus.empty())
+        if (!mruWindows.empty())
         {
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_getMostRecentPeasantID_Found",
-                              TraceLoggingUInt64(mrus.begin()->PeasantID(), "peasantID", "The ID of the MRU peasant"),
+                              TraceLoggingUInt64(mruWindows.begin()->PeasantID(), "peasantID", "The ID of the MRU peasant"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 
-            return mrus.begin()->PeasantID();
+            return mruWindows.begin()->PeasantID();
         }
         else if (limitToCurrentDesktop)
         {
