@@ -1448,7 +1448,7 @@ CATCH_RETURN()
 [[nodiscard]] 
 bool DxEngine::RequiresContinuousRedraw() noexcept
 {
-    return _HasShaderEffects();
+    return _HasTerminalEffects();
 }
 
 // Method Description:
