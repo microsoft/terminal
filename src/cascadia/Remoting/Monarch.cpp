@@ -45,7 +45,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     }
 
     // Method Description:
-    // - Add the given peasant to the list of peasants we're tracking. This Peasant may have already been assigned an ID. If it hasn't, then give it an ID.
+    // - Add the given peasant to the list of peasants we're tracking. This
+    //   Peasant may have already been assigned an ID. If it hasn't, then give
+    //   it an ID.
     // Arguments:
     // - peasant: the new Peasant to track.
     // Return Value:
@@ -137,7 +139,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // Remove the peasant from the list of peasants
             _peasants.erase(peasantID);
 
-            // TODO: Remove the peasant from the MRU windows mapping. They're dead. They can't be the MRU anymore.
+            // Remove the peasant from the MRU windows mapping. They're dead.
+            // They can't be the MRU anymore.
             _clearOldMruEntries(peasantID);
             return nullptr;
         }
@@ -217,7 +220,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TraceLoggingWrite(g_hRemotingProvider,
                           "Monarch_SetMostRecentPeasant",
                           TraceLoggingUInt64(localArgs->PeasantID(), "peasantID", "the ID of the activated peasant"),
-                          // TraceLoggingInt64(oldLastActiveTime, "oldLastActiveTime", "The previous lastActiveTime"),
                           TraceLoggingGuid(desktopGuid, "desktopGuid", "The GUID of the desktop the window is on"),
                           TraceLoggingInt64(newLastActiveTime, "newLastActiveTime", "The provided localArgs->ActivatedTime()"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
@@ -241,7 +243,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             {
                 TraceLoggingWrite(g_hRemotingProvider,
                                   "Monarch_Collect_WasDead",
-                                  TraceLoggingUInt64(mruWindowArgs.PeasantID(), "peasantID", "We thought this peasant was the MRU one, but it was actually already dead."),
+                                  TraceLoggingUInt64(mruWindowArgs.PeasantID(),
+                                                     "peasantID",
+                                                     "We thought this peasant was the MRU one, but it was actually already dead."),
                                   TraceLoggingGuid(desktopGuid, "desktopGuid", "The GUID of the desktop the window is on"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
                 continue;
@@ -257,17 +261,26 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
                 // SUCCEEDED_LOG will log if it failed, and return true if it
                 // SUCCEEDED
-                if (SUCCEEDED_LOG(_desktopManager->IsWindowOnCurrentVirtualDesktop((HWND)mruWindowArgs.Hwnd(), &onCurrentDesktop)) &&
+                if (SUCCEEDED_LOG(_desktopManager->IsWindowOnCurrentVirtualDesktop((HWND)mruWindowArgs.Hwnd(),
+                                                                                   &onCurrentDesktop)) &&
                     onCurrentDesktop)
                 {
                     mrus.push_back(mruWindowArgs);
 
                     TraceLoggingWrite(g_hRemotingProvider,
                                       "Monarch_Collect",
-                                      TraceLoggingUInt64(mruWindowArgs.PeasantID(), "peasantID", "the ID of the MRU peasant for a desktop"),
-                                      TraceLoggingGuid(desktopGuid, "desktopGuid", "The GUID of the desktop the window is on"),
-                                      TraceLoggingBoolean(limitToCurrentDesktop, "limitToCurrentDesktop", "TODO"),
-                                      TraceLoggingBool(onCurrentDesktop, "limitToCurrentDesktop", "TODO"),
+                                      TraceLoggingUInt64(mruWindowArgs.PeasantID(),
+                                                         "peasantID",
+                                                         "the ID of the MRU peasant for a desktop"),
+                                      TraceLoggingGuid(desktopGuid,
+                                                       "desktopGuid",
+                                                       "The GUID of the desktop the window is on"),
+                                      TraceLoggingBoolean(limitToCurrentDesktop,
+                                                          "limitToCurrentDesktop",
+                                                          "True if we should only search for a window on the current desktop"),
+                                      TraceLoggingBool(onCurrentDesktop,
+                                                       "onCurrentDesktop",
+                                                       "true if this window was in fact on the current desktop"),
                                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 
                     // Update the mrus heap, so the actually most recent args is
@@ -287,7 +300,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
                 TraceLoggingWrite(g_hRemotingProvider,
                                   "Monarch_Collect",
-                                  TraceLoggingUInt64(mruWindowArgs.PeasantID(), "peasantID", "the ID of the MRU peasant for a desktop"),
+                                  TraceLoggingUInt64(mruWindowArgs.PeasantID(),
+                                                     "peasantID",
+                                                     "the ID of the MRU peasant for a desktop"),
                                   TraceLoggingGuid(desktopGuid, "desktopGuid", "The GUID of the desktop the window is on"),
                                   TraceLoggingBoolean(limitToCurrentDesktop, "limitToCurrentDesktop", "TODO"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
@@ -422,7 +437,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_ProposeCommandline",
-                              TraceLoggingInt64(windowID, "windowID", "The actual peasant ID we evaluated the window ID as"),
+                              TraceLoggingInt64(windowID,
+                                                "windowID",
+                                                "The actual peasant ID we evaluated the window ID as"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 
             // If_getMostRecentPeasantID returns 0 above, then we couldn't find
@@ -455,9 +472,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
                 TraceLoggingWrite(g_hRemotingProvider,
                                   "Monarch_ProposeCommandline_Existing",
-                                  TraceLoggingUInt64(windowID, "peasantID", "the ID of the peasant the commandline waws intended for"),
+                                  TraceLoggingUInt64(windowID,
+                                                     "peasantID",
+                                                     "the ID of the peasant the commandline waws intended for"),
                                   TraceLoggingBoolean(true, "foundMatch", "true if we found a peasant with that ID"),
-                                  TraceLoggingBoolean(!result->ShouldCreateWindow(), "succeeded", "true if we successfully dispatched the commandline to the peasant"),
+                                  TraceLoggingBoolean(!result->ShouldCreateWindow(),
+                                                      "succeeded",
+                                                      "true if we successfully dispatched the commandline to the peasant"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
                 return *result;
             }
@@ -469,7 +490,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
                 TraceLoggingWrite(g_hRemotingProvider,
                                   "Monarch_ProposeCommandline_Existing",
-                                  TraceLoggingUInt64(windowID, "peasantID", "the ID of the peasant the commandline waws intended for"),
+                                  TraceLoggingUInt64(windowID,
+                                                     "peasantID",
+                                                     "the ID of the peasant the commandline waws intended for"),
                                   TraceLoggingBoolean(false, "foundMatch", "true if we found a peasant with that ID"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 
