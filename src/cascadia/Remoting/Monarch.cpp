@@ -289,9 +289,22 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                    mruWindows.end(),
                                    Remoting::implementation::CompareWindowActivatedArgs());
                 }
-                // If the MRU window for the list of windows on this desktop
-                // _isn't_ on the current desktop, then _none_ of the windows on
-                // this desktop will be. We'll break out of the loop below.
+
+                // KNOWN BUG with useExistingSameDesktop
+                // 1. Open two windows on desktop A.
+                // 2. Drag the second to desktop B. DON'T let either window get focused.
+                // 3. Switch to desktop A. Again, DON'T activate window 1
+                // 4. Open a new wt.
+                //    - EXPECTED: Opens a new tab in window 1. It's on desktop A.
+                //    - Actual: A new window is created. We see that the MRU
+                //      window on desktop A is window 2. When we ask if window 2
+                //      is on desktop A, _it isn't_, and we assume the rest
+                //      aren't either.
+                //
+                // The simplest bugfix for this would be if we could get some
+                // window message when we change desktops. Otherwise, we have to
+                // check all the windows when we determine one _isn't_ on this
+                // monitor.
             }
             else
             {
