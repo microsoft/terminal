@@ -27,14 +27,14 @@ the MIT License. See LICENSE in the project root for license information. -->
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
-    
+
     <StackPanel x:Name="HeaderStackPanel"
                 Orientation="Horizontal">
         <mux:ProgressRing x:Name="HeaderProgressRing"
-                          IsActive="{x:Bind IsProgressRingActive, Mode=OneWay}"
-                          Visibility="{x:Bind IsProgressRingActive, Mode=OneWay}"
-                          IsIndeterminate="{x:Bind IsProgressRingIndeterminate, Mode=OneWay}"
-                          Value="{x:Bind ProgressValue, Mode=OneWay}"
+                          IsActive="{x:Bind TabStatus.IsProgressRingActive, Mode=OneWay}"
+                          Visibility="{x:Bind TabStatus.IsProgressRingActive, Mode=OneWay}"
+                          IsIndeterminate="{x:Bind TabStatus.IsProgressRingIndeterminate, Mode=OneWay}"
+                          Value="{x:Bind TabStatus.ProgressValue, Mode=OneWay}"
                           MinHeight="0"
                           MinWidth="0"
                           Height="15"
@@ -45,19 +45,19 @@ the MIT License. See LICENSE in the project root for license information. -->
         and use a negative margin for the progress ring here to put it where the icon would be-->
         <FontIcon x:Name="HeaderBellIndicator"
                   FontFamily="Segoe MDL2 Assets"
-                  Visibility="{x:Bind BellIndicator, Mode=OneWay}"
+                  Visibility="{x:Bind TabStatus.BellIndicator, Mode=OneWay}"
                   Glyph="&#xEA8F;"
                   FontSize="12"
                   Margin="0,0,8,0"/>
         <FontIcon x:Name="HeaderZoomIcon"
                   FontFamily="Segoe MDL2 Assets"
-                  Visibility="{x:Bind IsPaneZoomed, Mode=OneWay}"
+                  Visibility="{x:Bind TabStatus.IsPaneZoomed, Mode=OneWay}"
                   Glyph="&#xE8A3;"
                   FontSize="12"
                   Margin="0,0,8,0"/>
         <FontIcon x:Name="HeaderLockIcon"
                   FontFamily="Segoe MDL2 Assets"
-                  Visibility="{x:Bind IsReadOnlyActive, Mode=OneWay}"
+                  Visibility="{x:Bind TabStatus.IsReadOnlyActive, Mode=OneWay}"
                   Glyph="&#xE72E;"
                   FontSize="12"
                   Margin="0,0,8,0"/>
