@@ -263,7 +263,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
-        void _ApplyUISettings();
+        void _ApplyUISettings(const IControlSettings&);
+        void _UpdateSettingsOnUIThread(const IControlSettings& newSettings);
         void _UpdateSystemParameterSettings() noexcept;
         void _InitializeBackgroundBrush();
         winrt::fire_and_forget _BackgroundColorChanged(const COLORREF color);
