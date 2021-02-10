@@ -294,7 +294,7 @@ namespace SettingsModelLocalTests
 
     void ColorSchemeTests::UpdateSchemeReferences()
     {
-        const std::string settingsString{ R"({
+        const std::string settingsString{ R"json({
                                                 "defaultProfile": "Inherited reference",
                                                 "profiles": {
                                                     "defaults": {
@@ -322,9 +322,9 @@ namespace SettingsModelLocalTests
                                                 "schemes": [
                                                     { "name": "Scheme 1" },
                                                     { "name": "Scheme 2" },
-                                                    { "name": "Scheme 1 (renamed) " }
+                                                    { "name": "Scheme 1 (renamed)" }
                                                 ]
-                                            })" };
+                                            })json" };
 
         auto settings{ winrt::make_self<CascadiaSettings>(false) };
         settings->_ParseJsonString(settingsString, false);
@@ -332,8 +332,8 @@ namespace SettingsModelLocalTests
         settings->LayerJson(settings->_userSettings);
         settings->_ValidateSettings();
 
-        // update all references from scheme 1 --> 3
-        const auto newName{ L"Scheme 1 (renamed) " };
+        // update all references to "Scheme 1"
+        const auto newName{ L"Scheme 1 (renamed)" };
         settings->UpdateColorSchemeReferences(L"Scheme 1", newName);
 
         // verify profile defaults
