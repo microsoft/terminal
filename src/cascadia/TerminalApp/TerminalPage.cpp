@@ -354,10 +354,14 @@ namespace winrt::TerminalApp::implementation
     //   other side of the co_await.
     // - initial: if true, we're parsing these args during startup, and we
     //   should fire an Initialized event.
+    // - cwd: If not empty, we should try switching to this provided directory
+    //   while processing these actions. This will allow something like `wt -w 0
+    //   nt -d .` from inside another directory to work as expected.
     // Return Value:
     // - <none>
     winrt::fire_and_forget TerminalPage::ProcessStartupActions(Windows::Foundation::Collections::IVector<ActionAndArgs> actions,
-                                                               const bool initial)
+                                                               const bool initial,
+                                                               const winrt::hstring cwd)
     {
         // If there are no actions left, do nothing.
         if (actions.Size() == 0)
@@ -368,6 +372,30 @@ namespace winrt::TerminalApp::implementation
 
         // Handle it on a subsequent pass of the UI thread.
         co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
+
+        // If the caller provided a CWD, switch to that directory, then switch
+        // back once we're done. This looks weird though, because we have to set
+        // up the scope_exit _first_. We'll release the scope_exit if we don't
+        // actually need it.
+        std::wstring originalCwd{ wil::GetCurrentDirectoryW<std::wstring>() };
+        auto restoreCwd = wil::scope_exit([&originalCwd]() {
+            // ignore errors, we'll just power on through. We'd rather do
+            // something rather than fail silently if the directory doesn't
+            // actually exist.
+            LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectory(originalCwd.c_str()));
+        });
+        if (cwd.empty())
+        {
+            restoreCwd.release();
+        }
+        else
+        {
+            // ignore errors, we'll just power on through. We'd rather do
+            // something rather than fail silently if the directory doesn't
+            // actually exist.
+            LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectory(cwd.c_str()));
+        }
+
         if (auto page{ weakThis.get() })
         {
             for (const auto& action : actions)
@@ -883,9 +911,28 @@ namespace winrt::TerminalApp::implementation
             envMap.Insert(L"WT_PROFILE_ID", guidWString);
             envMap.Insert(L"WSLENV", L"WT_PROFILE_ID");
 
+            // Update the path to be relative to whatever our CWD is.
+            //
+            // Refer to the examples in
+            // https://en.cppreference.com/w/cpp/filesystem/path/append
+            //
+            // We need to do this here, to ensure we tell the ConptyConnection
+            // the correct starting path. If we're being invoked from another
+            // terminal instance (e.g. wt -w 0 -d .), then we have switched our
+            // CWD to the provided path. We should treat the StartingDirectory
+            // as relative to the current CWD.
+            //
+            // The connection must be informed of the current CWD on
+            // construction, because the connection might not spawn the child
+            // process until later, on another thread, after we've already
+            // restored the CWD to it's original value.
+            std::wstring cwdString{ wil::GetCurrentDirectoryW<std::wstring>() };
+            std::filesystem::path cwd{ cwdString };
+            cwd /= settings.StartingDirectory().c_str();
+
             auto conhostConn = TerminalConnection::ConptyConnection(
                 settings.Commandline(),
-                settings.StartingDirectory(),
+                winrt::hstring{ cwd.c_str() },
                 settings.StartingTitle(),
                 envMap.GetView(),
                 settings.InitialRows(),

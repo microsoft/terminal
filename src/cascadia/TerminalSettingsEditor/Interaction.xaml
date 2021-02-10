@@ -54,6 +54,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                                    ItemsSource="{x:Bind TabSwitcherModeList}"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
             </local:SettingContainer>
+
+            <!-- Focus Follow Mouse Mode-->
+            <local:SettingContainer x:Uid="Globals_FocusFollowMouse">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.FocusFollowMouse, Mode=TwoWay}"/>
+            </local:SettingContainer>
         </StackPanel>
     </ScrollViewer>
 </Page>
