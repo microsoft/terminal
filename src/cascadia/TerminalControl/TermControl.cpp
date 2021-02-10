@@ -278,7 +278,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Given new settings for this profile, applies the settings to the current terminal.
     // - This method is separate from UpdateSettings because there is an apparent optimizer
     //   issue that causes one of our hstring -> wstring_view conversions to result in garbage,
-    //   but only from a coroutine context.
+    //   but only from a coroutine context. See GH#8723.
     // - INVARIANT: This method must be called from the UI thread.
     // Arguments:
     // - newSettings: New settings values for the profile in this terminal.
