@@ -647,17 +647,31 @@ namespace winrt::TerminalApp::implementation
         {
             _firstLayoutUpdated = true;
             _firstLayoutRevoker.revoke();
+            if (auto firstAsLeaf = _firstChild.try_as<LeafPane>())
+            {
+                // todo:
+                // - this UpdateSettings call is here because sometimes, when there's a split pane argument on startup,
+                //   certain appearance settings don't show (e.g. background image, color scheme)
+                // - calling update settings here, after we get the child's layout updated event, fixes it
+                // - there should be a better way around this (possibly in TermControl?)
+                firstAsLeaf->UpdateSettings(firstAsLeaf->GetTerminalControl().Settings().try_as<TerminalApp::TerminalSettings>(), firstAsLeaf->GetProfile());
+            }
         }
         else
         {
             _secondLayoutUpdated = true;
             _secondLayoutRevoker.revoke();
+            if (auto secondAsLeaf = _secondChild.try_as<LeafPane>())
+            {
+                secondAsLeaf->UpdateSettings(secondAsLeaf->GetTerminalControl().Settings().try_as<TerminalApp::TerminalSettings>(), secondAsLeaf->GetProfile());
+            }
         }
 
         if (_firstLayoutUpdated && _secondLayoutUpdated)
         {
             // Once both children have their sizes, we can initialize them
             // todo: uh will this cause a problem for commandline startup?
+            // ostensibly not - commandline split pane arguments get handled fine it seems
             _SetupEntranceAnimation();
         }
     }
@@ -813,7 +827,7 @@ namespace winrt::TerminalApp::implementation
         // Detach all the controls from our grid, so they can be attached later.
         // todo: ContentPresenter doesn't seem to have a 'Clear' method, so just as placeholder for now
         //       we 'detach' the control by replacing it with the empty string
-        FirstChild_Root().Content(winrt::box_value(L""));
+        FirstChild_Root().Content(nullptr);//NULL, nullptr
         SecondChild_Root().Content(winrt::box_value(L""));
 
         const auto closedChildDir = (_splitState == SplitState::Vertical) ?
@@ -836,25 +850,36 @@ namespace winrt::TerminalApp::implementation
         }
 
         // If any children of closed pane was previously active, we move the focus to the remaining child
-        if (closedChild.GetActivePane())
-        {
-            //closedChild.ClearActive();
-            //const auto remainingFirstLeaf = remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>();
-            //remainingFirstLeaf.SetActive();
-
-            //_firstLayoutRevoker = remainingFirstLeaf.GetTerminalControl().LayoutUpdated(winrt::auto_revoke, [=](auto /*s*/, auto /*e*/) {
-            //    remainingFirstLeaf.GetTerminalControl().Focus(FocusState::Programmatic);
-            //    //_firstLayoutRevoker.revoke();
-            //});
-        }
+        //bool setupEvent{ false };
+        //if (closedChild.GetActivePane())
+        //{
+        //    closedChild.ClearActive();
+        //    const auto remainingFirstLeaf = remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>();
+        //    remainingFirstLeaf.SetActive();
+        //    setupEvent = true;
+        //}
 
         // Make sure to only fire off this event _after_ we have set the new active pane, because this event
         // might cause the tab content to change which will fire off a property changed event which eventually
         // results in the tab trying to access the active terminal control, which requires a valid active pane
         _PaneTypeChangedHandlers(nullptr, remainingChild);
+
+        //if (setupEvent)
+        //{
+        //    const auto remainingFirstLeaf = remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>();
+
+        //     // Trying to get the revoker here causes a crash (and we also crash if we try to get the revoker in
+        //     // _CloseChildRoutine, after it calls _CloseChild)
+        //     // Its probably because both times we try to get the revoker on the foreground thread?
+        //     // Simply trying to call Focus on the TerminalControl here (not in the LayoutUpdated handler) doesn't transfer the focus
+
+        //    _firstLayoutRevoker = remainingFirstLeaf.GetTerminalControl().LayoutUpdated(winrt::auto_revoke, [&](auto /*s*/, auto /*e*/) {
+        //        remainingFirstLeaf.GetTerminalControl().Focus(FocusState::Programmatic);
+        //        //_firstLayoutRevoker.revoke();
+        //    });
+        //}
     }
 
-    // todo: can the dummy grid needed for the exit animation be put in the xaml file?
     winrt::fire_and_forget ParentPane::_CloseChildRoutine(const bool closeFirst)
     {
         auto weakThis = get_weak();
@@ -1012,7 +1037,7 @@ namespace winrt::TerminalApp::implementation
             // When the animation is completed, reparent the child's content up to
             // us, and remove the child nodes from the tree.
             animation.Completed([=](auto&&, auto&&) {
-                // todo: do we need this lock? if so, how do we do it here?
+                // todo: do we need this lock? if so, how do we do it in the new implementation?
                 //if (auto pane{ weakThis.lock() })
                 //{
                     // We don't need to manually undo any of the above trickiness.
@@ -1056,7 +1081,12 @@ namespace winrt::TerminalApp::implementation
                     _CloseChildRoutine(isFirstChild);
                     _firstLayoutRevoker = remainingFirstLeaf.GetTerminalControl().LayoutUpdated(winrt::auto_revoke, [=](auto /*s*/, auto /*e*/) {
                         remainingFirstLeaf.GetTerminalControl().Focus(FocusState::Programmatic);
-                        // todo: I don't like that we don't revoke this
+                        // todo, fix these issues:
+                        // - this transfers the focus fine in debug build, but not in release
+                        // - IF we change _CloseChildRoutine to just _CloseChild, then it works in release (so its probably
+                        //   some sort of race because _CloseChildRoutine is a fire_and_forget function)
+                        // - I don't like that we don't revoke this (revoking this causes the focus to not _stay_ with the control,
+                        //   it loses the focus for some reason, so the last layoutUpdated event helps to get the focus back)
                         //_firstLayoutRevoker.revoke();
                     });
                 }
