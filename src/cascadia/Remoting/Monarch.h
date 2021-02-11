@@ -72,9 +72,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void _peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& sender,
                                      const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args);
         void _doHandleActivatePeasant(const winrt::com_ptr<winrt::Microsoft::Terminal::Remoting::implementation::WindowActivatedArgs>& args);
-        void _collectMRUPeasant(const bool limitToCurrentDesktop,
-                                std::vector<Remoting::WindowActivatedArgs>& mrus,
-                                std::vector<Remoting::WindowActivatedArgs>& windowsForDesktop);
         void _clearOldMruEntries(const uint64_t peasantID);
 
         friend class RemotingUnitTests::RemotingTests;
