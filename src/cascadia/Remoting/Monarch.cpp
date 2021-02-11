@@ -204,16 +204,16 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         if (result != std::end(_mruPeasants))
         {
-            _mruPeasants.erase(result);
-
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_RemovedPeasantFromDesktop",
                               TraceLoggingUInt64(peasantID, "peasantID", "The ID of the peasant"),
-                              // TraceLoggingGuid(g, "desktopGuid", "The GUID of the previous desktop the window was on"),
+                              TraceLoggingGuid(result->DesktopID(), "desktopGuid", "The GUID of the previous desktop the window was on"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
+            _mruPeasants.erase(result);
         }
 
-        // TODO:MG Sort the vector again, now that all the old ones are gone.
+        // Sort the vector again, now that all the old ones are gone.
         std::sort(_mruPeasants.begin(),
                   _mruPeasants.end(),
                   Remoting::implementation::CompareWindowActivatedArgs());
