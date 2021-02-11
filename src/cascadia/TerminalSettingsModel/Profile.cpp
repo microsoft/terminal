@@ -116,12 +116,19 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
     profile->_BackgroundImageAlignment = source->_BackgroundImageAlignment;
     profile->_ConnectionType = source->_ConnectionType;
 
-    //if (source->_UnfocusedAppearance)
-    //{
-    //    winrt::com_ptr<AppearanceConfig> appearanceImpl;
-    //    appearanceImpl.copy_from(winrt::get_self<AppearanceConfig>(source->_UnfocusedAppearance.value()));
-    //    profile->_UnfocusedAppearance.value(*AppearanceConfig::CopyAppearance(appearanceImpl));
-    //}
+    if (source->_UnfocusedAppearance)
+    {
+        if (source->_UnfocusedAppearance.value() == nullptr)
+        {
+            profile->_UnfocusedAppearance = nullptr;
+        }
+        else
+        {
+            winrt::com_ptr<AppearanceConfig> appearanceImpl;
+            appearanceImpl.copy_from(winrt::get_self<AppearanceConfig>(source->_UnfocusedAppearance.value()));
+            //profile->_UnfocusedAppearance = *AppearanceConfig::CopyAppearance(appearanceImpl);
+        }
+    }
 
     return profile;
 }
@@ -551,7 +558,10 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, BellStyleKey, _BellStyle);
     JsonUtils::SetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
 
-    // todo: call appearance config ToJson
+    if (_UnfocusedAppearance)
+    {
+        json[JsonKey(UnfocusedAppearanceKey)] = winrt::get_self<AppearanceConfig>(_UnfocusedAppearance.value())->ToJson();
+    }
 
     return json;
 }
