@@ -102,7 +102,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
-        winrt::fire_and_forget UpdateSettings(IControlSettings newSettings);
+        winrt::fire_and_forget UpdateSettings();
 
         hstring Title();
         hstring GetProfileName() const;
@@ -166,6 +166,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const size_t TaskbarState() const noexcept;
         const size_t TaskbarProgress() const noexcept;
 
+        bool ReadOnly() const noexcept;
+        void ToggleReadOnly();
+
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
@@ -184,6 +187,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TYPED_EVENT(TabColorChanged, IInspectable, IInspectable);
         TYPED_EVENT(HidePointerCursor, IInspectable, IInspectable);
         TYPED_EVENT(RestorePointerCursor, IInspectable, IInspectable);
+        TYPED_EVENT(ReadOnlyChanged, IInspectable, IInspectable);
         // clang-format on
 
     private:
@@ -265,6 +269,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
+        bool _isReadOnly{ false };
+
         void _ApplyUISettings();
         void _UpdateSystemParameterSettings() noexcept;
         void _InitializeBackgroundBrush();
@@ -338,6 +344,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _CurrentCursorPositionHandler(const IInspectable& sender, const CursorPositionEventArgs& eventArgs);
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
         winrt::fire_and_forget _AsyncCloseConnection();
+
+        winrt::fire_and_forget _RaiseReadOnlyWarning();
     };
 }
 

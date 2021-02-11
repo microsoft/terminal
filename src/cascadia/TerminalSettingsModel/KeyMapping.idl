@@ -53,7 +53,8 @@ namespace Microsoft.Terminal.Settings.Model
         TabSearch,
         MoveTab,
         BreakIntoDebugger,
-        FindMatch
+        FindMatch,
+        TogglePaneReadOnly
     };
 
     [default_interface] runtimeclass ActionAndArgs {

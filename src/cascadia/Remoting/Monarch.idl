@@ -5,11 +5,26 @@ import "Peasant.idl";
 
 namespace Microsoft.Terminal.Remoting
 {
+
+    [default_interface] runtimeclass FindTargetWindowArgs {
+        CommandlineArgs Args { get; };
+        Int32 ResultTargetWindow;
+    }
+
+    [default_interface] runtimeclass ProposeCommandlineResult {
+        Windows.Foundation.IReference<UInt64> Id { get; };
+        // TODO:projects/5 - also return the name here, if the name was set on the commandline
+        Boolean ShouldCreateWindow { get; }; // If you name this `CreateWindow`, the compiler will explode
+    }
+
     [default_interface] runtimeclass Monarch {
         Monarch();
 
         UInt64 GetPID();
         UInt64 AddPeasant(IPeasant peasant);
-        Boolean ProposeCommandline(CommandlineArgs args);
+        ProposeCommandlineResult ProposeCommandline(CommandlineArgs args);
+        void HandleActivatePeasant(WindowActivatedArgs args);
+
+        event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
     };
 }

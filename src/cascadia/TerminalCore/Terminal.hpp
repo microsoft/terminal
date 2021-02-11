@@ -66,6 +66,9 @@ public:
     // Write goes through the parser
     void Write(std::wstring_view stringView);
 
+    // WritePastedText goes directly to the connection
+    void WritePastedText(std::wstring_view stringView);
+
     [[nodiscard]] std::shared_lock<std::shared_mutex> LockForReading();
     [[nodiscard]] std::unique_lock<std::shared_mutex> LockForWriting();
 

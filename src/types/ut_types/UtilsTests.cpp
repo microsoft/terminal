@@ -23,6 +23,7 @@ class UtilsTests
     TEST_METHOD(TestSwapColorPalette);
     TEST_METHOD(TestGuidToString);
     TEST_METHOD(TestSplitString);
+    TEST_METHOD(TestFilterStringForPaste);
     TEST_METHOD(TestStringToUint);
     TEST_METHOD(TestColorFromXTermColor);
 
@@ -129,6 +130,88 @@ void UtilsTests::TestSplitString()
     VERIFY_ARE_EQUAL(L"123", result.at(0));
     VERIFY_ARE_EQUAL(L"456", result.at(1));
     VERIFY_ARE_EQUAL(L"789", result.at(2));
+}
+
+void UtilsTests::TestFilterStringForPaste()
+{
+    // Test carriage return
+    const std::wstring noNewLine = L"Hello World";
+    VERIFY_ARE_EQUAL(L"Hello World", FilterStringForPaste(noNewLine, FilterOption::CarriageReturnNewline));
+
+    const std::wstring singleCR = L"Hello World\r";
+    VERIFY_ARE_EQUAL(L"Hello World\r", FilterStringForPaste(singleCR, FilterOption::CarriageReturnNewline));
+
+    const std::wstring singleLF = L"Hello World\n";
+    VERIFY_ARE_EQUAL(L"Hello World\r", FilterStringForPaste(singleLF, FilterOption::CarriageReturnNewline));
+
+    const std::wstring singleCRLF = L"Hello World\r\n";
+    VERIFY_ARE_EQUAL(L"Hello World\r", FilterStringForPaste(singleCRLF, FilterOption::CarriageReturnNewline));
+
+    const std::wstring multiCR = L"Hello\rWorld\r";
+    VERIFY_ARE_EQUAL(L"Hello\rWorld\r", FilterStringForPaste(multiCR, FilterOption::CarriageReturnNewline));
+
+    const std::wstring multiLF = L"Hello\nWorld\n";
+    VERIFY_ARE_EQUAL(L"Hello\rWorld\r", FilterStringForPaste(multiLF, FilterOption::CarriageReturnNewline));
+
+    const std::wstring multiCRLF = L"Hello\r\nWorld\r\n";
+    VERIFY_ARE_EQUAL(L"Hello\rWorld\r", FilterStringForPaste(multiCRLF, FilterOption::CarriageReturnNewline));
+
+    const std::wstring multiCR_NoNewLine = L"Hello\rWorld\r123";
+    VERIFY_ARE_EQUAL(L"Hello\rWorld\r123", FilterStringForPaste(multiCR_NoNewLine, FilterOption::CarriageReturnNewline));
+
+    const std::wstring multiLF_NoNewLine = L"Hello\nWorld\n123";
+    VERIFY_ARE_EQUAL(L"Hello\rWorld\r123", FilterStringForPaste(multiLF_NoNewLine, FilterOption::CarriageReturnNewline));
+
+    const std::wstring multiCRLF_NoNewLine = L"Hello\r\nWorld\r\n123";
+    VERIFY_ARE_EQUAL(L"Hello\rWorld\r123", FilterStringForPaste(multiCRLF_NoNewLine, FilterOption::CarriageReturnNewline));
+
+    // Test control code filtering
+    const std::wstring noNewLineWithControlCodes = L"Hello\x01\x02\x03 123";
+    VERIFY_ARE_EQUAL(L"Hello 123", FilterStringForPaste(noNewLineWithControlCodes, FilterOption::ControlCodes));
+
+    const std::wstring singleCRWithControlCodes = L"Hello World\r\x01\x02\x03 123";
+    VERIFY_ARE_EQUAL(L"Hello World\r 123", FilterStringForPaste(singleCRWithControlCodes, FilterOption::ControlCodes));
+
+    const std::wstring singleLFWithControlCodes = L"Hello World\n\x01\x02\x03 123";
+    VERIFY_ARE_EQUAL(L"Hello World\n 123", FilterStringForPaste(singleLFWithControlCodes, FilterOption::ControlCodes));
+
+    const std::wstring singleCRLFWithControlCodes = L"Hello World\r\n\x01\x02\x03 123";
+    VERIFY_ARE_EQUAL(L"Hello World\r\n 123", FilterStringForPaste(singleCRLFWithControlCodes, FilterOption::ControlCodes));
+
+    VERIFY_ARE_EQUAL(L"Hello World\r 123", FilterStringForPaste(singleCRWithControlCodes, FilterOption::CarriageReturnNewline | FilterOption::ControlCodes));
+    VERIFY_ARE_EQUAL(L"Hello World\r 123", FilterStringForPaste(singleLFWithControlCodes, FilterOption::CarriageReturnNewline | FilterOption::ControlCodes));
+    VERIFY_ARE_EQUAL(L"Hello World\r 123", FilterStringForPaste(singleCRLFWithControlCodes, FilterOption::CarriageReturnNewline | FilterOption::ControlCodes));
+
+    const std::wstring multiCRWithControlCodes = L"Hello\r\x01\x02\x03World\r\x01\x02\x03 123";
+    VERIFY_ARE_EQUAL(L"Hello\rWorld\r 123", FilterStringForPaste(multiCRWithControlCodes, FilterOption::ControlCodes));
+
+    const std::wstring multiLFWithControlCodes = L"Hello\n\x01\x02\x03World\n\x01\x02\x03 123";
+    VERIFY_ARE_EQUAL(L"Hello\nWorld\n 123", FilterStringForPaste(multiLFWithControlCodes, FilterOption::ControlCodes));
+
+    const std::wstring multiCRLFWithControlCodes = L"Hello\r\nWorld\r\n\x01\x02\x03 123";
+    VERIFY_ARE_EQUAL(L"Hello\r\nWorld\r\n 123", FilterStringForPaste(multiCRLFWithControlCodes, FilterOption::ControlCodes));
+
+    VERIFY_ARE_EQUAL(L"Hello\rWorld\r 123", FilterStringForPaste(multiCRWithControlCodes, FilterOption::CarriageReturnNewline | FilterOption::ControlCodes));
+    VERIFY_ARE_EQUAL(L"Hello\rWorld\r 123", FilterStringForPaste(multiLFWithControlCodes, FilterOption::CarriageReturnNewline | FilterOption::ControlCodes));
+    VERIFY_ARE_EQUAL(L"Hello\rWorld\r 123", FilterStringForPaste(multiCRLFWithControlCodes, FilterOption::CarriageReturnNewline | FilterOption::ControlCodes));
+
+    const std::wstring multiLineWithLotsOfControlCodes = L"e\bc\bh\bo\b \b'.\b!\b:\b\b \bke\bS\b \bi3\bl \bld\bK\bo\b -1\b+\b9 +\b2\b-1'\b >\b \b/\bt\bm\bp\b/\bl\bo\bl\b\r\nsleep 1\r\nmd5sum /tmp/lol";
+
+    VERIFY_ARE_EQUAL(L"echo '.!: keS i3l ldKo -1+9 +2-1' > /tmp/lol\rsleep 1\rmd5sum /tmp/lol",
+                     FilterStringForPaste(multiLineWithLotsOfControlCodes, FilterOption::CarriageReturnNewline | FilterOption::ControlCodes));
+
+    // Malicious string that tries to prematurely terminate bracketed
+    const std::wstring malicious = L"echo\x1b[201~";
+    VERIFY_ARE_EQUAL(L"echo[201~", FilterStringForPaste(malicious, FilterOption::CarriageReturnNewline | FilterOption::ControlCodes));
+
+    // C1 control codes
+    const std::wstring c1ControlCodes = L"echo\x9c";
+    VERIFY_ARE_EQUAL(L"echo", FilterStringForPaste(c1ControlCodes, FilterOption::CarriageReturnNewline | FilterOption::ControlCodes));
+
+    // Test Unicode content
+    const std::wstring unicodeString = L"你好\r\n\x01世界\x02\r\n123";
+    VERIFY_ARE_EQUAL(L"你好\r世界\r123",
+                     FilterStringForPaste(unicodeString, FilterOption::CarriageReturnNewline | FilterOption::ControlCodes));
 }
 
 void UtilsTests::TestStringToUint()

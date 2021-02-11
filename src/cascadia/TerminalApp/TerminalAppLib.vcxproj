@@ -78,6 +78,10 @@
     <ClInclude Include="MinMaxCloseControl.h">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="PaletteItemTemplateSelector.h">
+      <DependentUpon>PaletteItemTemplateSelector.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="SettingsTab.h">
       <DependentUpon>SettingsTab.idl</DependentUpon>
     </ClInclude>
@@ -91,6 +95,10 @@
     </ClInclude>
     <ClInclude Include="TerminalPage.h">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="TerminalTabStatus.h">
+      <DependentUpon>TerminalTabStatus.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="TitlebarControl.h">
@@ -150,6 +158,10 @@
     <ClCompile Include="MinMaxCloseControl.cpp">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="PaletteItemTemplateSelector.cpp">
+      <DependentUpon>PaletteItemTemplateSelector.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="SettingsTab.cpp">
       <DependentUpon>SettingsTab.idl</DependentUpon>
     </ClCompile>
@@ -163,6 +175,10 @@
     </ClCompile>
     <ClCompile Include="TerminalPage.cpp">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="TerminalTabStatus.cpp">
+      <DependentUpon>TerminalTabStatus.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="TitlebarControl.cpp">
@@ -228,6 +244,9 @@
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
     </Midl>
+    <Midl Include="PaletteItemTemplateSelector.idl">
+      <SubType>Designer</SubType>
+    </Midl>
     <Midl Include="SettingsTab.idl" />
     <Midl Include="PaletteItem.idl" />
     <Midl Include="ShortcutActionDispatch.idl" />
@@ -243,6 +262,9 @@
     <Midl Include="TerminalPage.idl">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="TerminalTabStatus.idl">
+      <SubType>Designer</SubType>
     </Midl>
     <Midl Include="TitlebarControl.idl">
       <DependentUpon>TitlebarControl.xaml</DependentUpon>
