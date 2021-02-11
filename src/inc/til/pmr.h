@@ -13,7 +13,20 @@
 namespace til::pmr
 {
 #ifdef __INSIDE_WINDOWS
-    [[nodiscard]] inline std::pmr::memory_resource* get_default_resource() noexcept
+    // I really, really didn't want to have to stick this function in here.
+    // However, the default constructor for optional (really, "optional construct base")
+    // insists on being able to default-construct its type. We have an instance in til
+    // of an optional<vector<..., pmr allocator>> that forces _Aligned_get_default_resource
+    // to get pulled in. This pragma mollifies the linker, and using this function in
+    // get_default_resource below forces it to be included by the compiler.
+    // I *believe* that if the VC++ Runtime is updated to include the PMR source,
+    // this will safely no-op (since it's an ALTERNATENAME).
+#if defined(_M_AMD64) || defined(_M_ARM64)
+#pragma comment(linker, "/ALTERNATENAME:_Aligned_get_default_resource=TIL_PMR_Aligned_get_default_resource")
+#else
+#pragma comment(linker, "/ALTERNATENAME:__Aligned_get_default_resource=_TIL_PMR_Aligned_get_default_resource")
+#endif
+    extern "C" _TIL_INLINEPREFIX std::pmr::memory_resource* __cdecl TIL_PMR_Aligned_get_default_resource() noexcept
     {
         class aligned_new_delete_resource : public std::pmr::memory_resource
         {
@@ -45,6 +58,11 @@ namespace til::pmr
 
         static aligned_new_delete_resource resource;
         return &resource;
+    }
+
+    [[nodiscard]] inline std::pmr::memory_resource* get_default_resource() noexcept
+    {
+        return TIL_PMR_Aligned_get_default_resource();
     }
 #else // !__INSIDE_WINDOWS
     [[nodiscard]] inline std::pmr::memory_resource* get_default_resource() noexcept
