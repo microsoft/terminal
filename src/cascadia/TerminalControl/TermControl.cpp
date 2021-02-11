@@ -973,13 +973,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::_KeyHandler(Input::KeyRoutedEventArgs const& e, const bool keyDown)
     {
-        // If the current focused element is a child element of searchbox,
-        // we do not send this event up to terminal
-        if (_searchBox && _searchBox->ContainsFocus())
-        {
-            return;
-        }
-
         // Mark the event as handled and do nothing if we're closing, or the key
         // was the Windows key.
         //
@@ -1029,6 +1022,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (!modifiers.IsAltGrPressed() && keyDown && _TryHandleKeyBinding(vkey, scanCode, modifiers))
         {
             e.Handled(true);
+            return;
+        }
+
+        // If the current focused element is a child element of searchbox,
+        // we do not send this event up to terminal
+        if (_searchBox && _searchBox->ContainsFocus())
+        {
             return;
         }
 
