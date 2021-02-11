@@ -355,8 +355,73 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         {
             return 0;
         }
+
+        int positionInList = 0;
+        while (_mruPeasants.begin() + positionInList < _mruPeasants.end())
+        {
+            auto mruWindowArgs{ *(_mruPeasants.begin() + positionInList) };
+            auto peasant{ _getPeasant(mruWindowArgs.PeasantID()) };
+            if (!peasant)
+            {
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "Monarch_Collect_WasDead",
+                                  TraceLoggingUInt64(mruWindowArgs.PeasantID(),
+                                                     "peasantID",
+                                                     "We thought this peasant was the MRU one, but it was actually already dead."),
+                                  TraceLoggingGuid(mruWindowArgs.DesktopID(), "desktopGuid", "The GUID of the desktop the window is on"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                // We'll go through the loop again. We removed the current one
+                // at positionInList, so the next one in positionInList will be
+                // a new, different peasant.
+                continue;
+            }
+
+            if (limitToCurrentDesktop && _desktopManager)
+            {
+                // Check if this peasant is actually on this desktop. We can't
+                // simply get the GUID of the current desktop. We have to ask if
+                // the HWND is on the current desktop.
+                BOOL onCurrentDesktop{ false };
+
+                // SUCCEEDED_LOG will log if it failed, and return true if it
+                // SUCCEEDED
+                if (SUCCEEDED_LOG(_desktopManager->IsWindowOnCurrentVirtualDesktop((HWND)mruWindowArgs.Hwnd(),
+                                                                                   &onCurrentDesktop)) &&
+                    onCurrentDesktop)
+                {
+                    TraceLoggingWrite(g_hRemotingProvider,
+                                      "Monarch_Collect",
+                                      TraceLoggingUInt64(mruWindowArgs.PeasantID(),
+                                                         "peasantID",
+                                                         "the ID of the MRU peasant for a desktop"),
+                                      TraceLoggingGuid(mruWindowArgs.DesktopID(),
+                                                       "desktopGuid",
+                                                       "The GUID of the desktop the window is on"),
+                                      TraceLoggingBoolean(limitToCurrentDesktop,
+                                                          "limitToCurrentDesktop",
+                                                          "True if we should only search for a window on the current desktop"),
+                                      TraceLoggingBool(onCurrentDesktop,
+                                                       "onCurrentDesktop",
+                                                       "true if this window was in fact on the current desktop"),
+                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                    return mruWindowArgs.PeasantID();
+                }
+                // If theis window wasn't on the current
+            }
+            else
+            {
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "Monarch_getMostRecentPeasantID_Found",
+                                  TraceLoggingUInt64(mruWindowArgs.PeasantID(), "peasantID", "The ID of the MRU peasant"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
+                return mruWindowArgs.PeasantID();
+            }
+            positionInList++;
+        }
         // TODO: Still need to check if that peasant is actually still alive
-        return _mruPeasants.begin()->PeasantID();
+        // return _mruPeasants.begin()->PeasantID();
+        // return 0;
         // std::vector<Remoting::WindowActivatedArgs> mruWindows;
         // for (auto& [g, vec] : _mruPeasants)
         // {
@@ -384,30 +449,30 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         //     return 0;
         // }
 
-        // TraceLoggingWrite(g_hRemotingProvider,
-        //                   "Monarch_getMostRecentPeasantID_NotFound",
-        //                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Monarch_getMostRecentPeasantID_NotFound",
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 
-        // // We haven't yet been told the MRU peasant. Just use the first one.
-        // // This is just gonna be a random one, but really shouldn't happen
-        // // in practice. The WindowManager should set the MRU peasant
-        // // immediately as soon as it creates the monarch/peasant for the
-        // // first window.
-        // if (_peasants.size() > 0)
-        // {
-        //     try
-        //     {
-        //         return _peasants.begin()->second.GetID();
-        //     }
-        //     catch (...)
-        //     {
-        //         // This shouldn't really happen. If we're the monarch, then the
-        //         // first peasant should also _be us_. So we should be able to
-        //         // get our own ID.
-        //         return 0;
-        //     }
-        // }
-        // return 0;
+        // We haven't yet been told the MRU peasant. Just use the first one.
+        // This is just gonna be a random one, but really shouldn't happen
+        // in practice. The WindowManager should set the MRU peasant
+        // immediately as soon as it creates the monarch/peasant for the
+        // first window.
+        if (_peasants.size() > 0)
+        {
+            try
+            {
+                return _peasants.begin()->second.GetID();
+            }
+            catch (...)
+            {
+                // This shouldn't really happen. If we're the monarch, then the
+                // first peasant should also _be us_. So we should be able to
+                // get our own ID.
+                return 0;
+            }
+        }
+        return 0;
     }
 
     // Method Description:
