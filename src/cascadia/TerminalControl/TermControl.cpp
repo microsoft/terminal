@@ -290,24 +290,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - This event handler works to give the search box an attempt to process
-    //   keybindings. Most notably, we need this for the findPrevious and
-    //   findNext actions to be actionable from within the search box.
-    void TermControl::_SearchKeyHandler(Windows::Foundation::IInspectable const& /*sender*/,
-                                        Input::KeyRoutedEventArgs const& e)
-    {
-        const auto modifiers = _GetPressedModifierKeys();
-        const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
-        const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
-
-        if (!modifiers.IsAltGrPressed() &&
-            _TryHandleKeyBinding(vkey, scanCode, modifiers))
-        {
-            e.Handled(true);
-        }
-    }
-
-    // Method Description:
     // - Given new settings for this profile, applies the settings to the current terminal.
     // Arguments:
     // - newSettings: New settings values for the profile in this terminal.
@@ -1025,8 +1007,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        // If the current focused element is a child element of searchbox,
-        // we do not send this event up to terminal
+        // If the current focused element is a child element of searchbox, we do
+        // not send this event up to terminal. Do this _AFTER_ the call to
+        // _TryHandleKeyBinding, so that keybindings (esp. findMatch) will still
+        // work when the search box is open.
         if (_searchBox && _searchBox->ContainsFocus())
         {
             return;

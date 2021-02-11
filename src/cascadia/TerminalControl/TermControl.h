@@ -337,8 +337,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _CompositionCompleted(winrt::hstring text);
         void _CurrentCursorPositionHandler(const IInspectable& sender, const CursorPositionEventArgs& eventArgs);
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
-        void _SearchKeyHandler(Windows::Foundation::IInspectable const& sender,
-                               Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         winrt::fire_and_forget _AsyncCloseConnection();
     };
 }
