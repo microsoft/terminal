@@ -28,7 +28,6 @@ using namespace ABI::Windows::ApplicationModel::AppExtensions;
 #define DELEGATION_CONSOLE_EXTENSION_NAME L"com.microsoft.windows.console.host"
 #define DELEGATION_TERMINAL_EXTENSION_NAME L"com.microsoft.windows.terminal.host"
 
-
 template<typename T, typename std::enable_if<std::is_base_of<DelegationConfig::DelegationBase, T>::value>::type* = nullptr>
 HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
 {

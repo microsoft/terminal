@@ -30,8 +30,7 @@ void EdpPolicy::AuditClipboard(const std::wstring_view /*destinationName*/) noex
     return S_FALSE;
 }
 
-[[nodiscard]]
-HRESULT DefaultApp::CheckDefaultAppPolicy(bool& isEnabled) noexcept
+[[nodiscard]] HRESULT DefaultApp::CheckDefaultAppPolicy(bool& isEnabled) noexcept
 {
     isEnabled = false;
     return S_OK;
