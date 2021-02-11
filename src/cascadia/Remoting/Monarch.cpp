@@ -196,27 +196,27 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     void Monarch::_clearOldMruEntries(const uint64_t peasantID)
     {
-        // Search for the WindowActivatedArgs from this peasant
-        auto result = std::find_if(std::begin(_mruPeasants), //_mruPeasants.begin(),
-                                   std::end(_mruPeasants), //_mruPeasants.end(),
+        auto result = std::find_if(_mruPeasants.begin(),
+                                   _mruPeasants.end(),
                                    [peasantID](auto other) {
                                        return peasantID == other.PeasantID();
                                    });
 
         if (result != std::end(_mruPeasants))
-        // if (result != _mruPeasants.end())
         {
             _mruPeasants.erase(result);
 
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_RemovedPeasantFromDesktop",
                               TraceLoggingUInt64(peasantID, "peasantID", "The ID of the peasant"),
-                              TraceLoggingGuid(result->DesktopID(), "desktopGuid", "The GUID of the previous desktop the window was on"),
+                              // TraceLoggingGuid(g, "desktopGuid", "The GUID of the previous desktop the window was on"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
         }
 
-        // The list was previously in-order, and it's still in-order without
-        // this entry.
+        // TODO:MG Sort the vector again, now that all the old ones are gone.
+        std::sort(_mruPeasants.begin(),
+                  _mruPeasants.end(),
+                  Remoting::implementation::CompareWindowActivatedArgs());
     }
 
     void Monarch::_doHandleActivatePeasant(const winrt::com_ptr<implementation::WindowActivatedArgs>& localArgs)
@@ -232,16 +232,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         // * Add this args to the queue for the given desktop.
         // _mruPeasants[desktopGuid].push_back(*localArgs);
-        // _mruPeasants.insert(std::lower_bound(_mruPeasants.begin(),
+        // _mruPeasants.insert(std::upper_bound(_mruPeasants.begin(),
         //                                      _mruPeasants.end(),
         //                                      *localArgs,
-        //                                      // Remoting::implementation::CompareWindowActivatedArgs()),
-        //                                      // [](const auto& first, const auto& second) { return first.ActivatedTime() < second.ActivatedTime(); }),
-        //                                      [](const auto& first, const auto& second) { return first.ActivatedTime() >= second.ActivatedTime(); }),
-        //                     // [](const auto& first, const auto& second) { return first.ActivatedTime() < second.ActivatedTime(); }),
-        //                     // [](const auto& first, const auto& second) { return first.ActivatedTime() < second.ActivatedTime(); }),
+        //                                      [](const auto& first, const auto& second) { return first.ActivatedTime() < second.ActivatedTime(); }),
         //                     *localArgs);
-
         _mruPeasants.push_back(*localArgs);
         std::sort(_mruPeasants.begin(),
                   _mruPeasants.end(),
