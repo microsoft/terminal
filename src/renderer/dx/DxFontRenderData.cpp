@@ -15,8 +15,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     _dwriteFactory(dwriteFactory),
     _glyphCell{},
     _lineMetrics({}),
-    _boxDrawingEffect{},
-    _boxDrawingEffectItalic{}
+    _boxDrawingEffect{}
 {
 }
 
@@ -70,11 +69,6 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
 [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontRenderData::ItalicFontFace() noexcept
 {
     return _dwriteFontFaceItalic;
-}
-
-[[nodiscard]] Microsoft::WRL::ComPtr<IBoxDrawingEffect> DxFontRenderData::ItalicBoxDrawingEffect() noexcept
-{
-    return _boxDrawingEffectItalic;
 }
 
 // Routine Description:
@@ -322,7 +316,6 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
 
         // Calculate and cache the box effect for the base font. Scale is 1.0f because the base font is exactly the scale we want already.
         RETURN_IF_FAILED(s_CalculateBoxEffect(DefaultTextFormat().Get(), _glyphCell.width(), DefaultFontFace().Get(), 1.0f, &_boxDrawingEffect));
-        RETURN_IF_FAILED(s_CalculateBoxEffect(ItalicTextFormat().Get(), _glyphCell.width(), ItalicFontFace().Get(), 1.0f, &_boxDrawingEffectItalic));
     }
     CATCH_RETURN();
 

@@ -87,7 +87,6 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _dwriteFontFaceItalic;
 
         ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
-        ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffectItalic;
 
         ::Microsoft::WRL::ComPtr<IDWriteFontFallback> _systemFontFallback;
 
