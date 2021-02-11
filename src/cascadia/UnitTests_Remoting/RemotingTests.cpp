@@ -122,7 +122,7 @@ namespace RemotingUnitTests
         if (arguments.size() > 0)
         {
             const auto index = std::stoi(arguments.at(0).c_str());
-            args.ResultTargetWindow(index);
+            args.ResultTargetWindow(index >= 0 ? index : -1);
         }
     }
 
