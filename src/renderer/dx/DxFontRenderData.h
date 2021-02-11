@@ -33,8 +33,7 @@ namespace Microsoft::Console::Render
         // DirectWrite text analyzer from the factory
         [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> Analyzer() noexcept;
 
-        [[nodiscard]] HRESULT HrSystemFontFallback() noexcept;
-        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFallback> GetSystemFontFallback() noexcept;
+        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFallback> GetSystemFontFallback();
 
         [[nodiscard]] til::size GlyphCell() noexcept;
         [[nodiscard]] LineMetrics GetLineMetrics() noexcept;
@@ -59,6 +58,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& desired, FontInfo& fiFontInfo, const int dpi) noexcept;
 
+        [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, float fontScale, IBoxDrawingEffect** effect) noexcept;
     private:
         [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _ResolveFontFaceWithFallback(std::wstring& familyName,
                                                                                               DWRITE_FONT_WEIGHT& weight,
@@ -77,8 +77,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] std::wstring _GetFontFamilyName(gsl::not_null<IDWriteFontFamily*> const fontFamily,
                                                       std::wstring& localeName) const;
 
-        [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, float fontScale, IBoxDrawingEffect** effect) noexcept;
-
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
 
         ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
@@ -90,7 +88,6 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
         ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffectItalic;
 
-        HRESULT _hrSystemFontFallback;
         ::Microsoft::WRL::ComPtr<IDWriteFontFallback> _systemFontFallback;
 
         til::size _glyphCell;

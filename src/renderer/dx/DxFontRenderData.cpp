@@ -18,12 +18,6 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     _boxDrawingEffect{},
     _boxDrawingEffectItalic{}
 {
-    ::Microsoft::WRL::ComPtr<IDWriteFactory2> factory2;
-    _hrSystemFontFallback = _dwriteFactory.As(&factory2);
-    if (SUCCEEDED(_hrSystemFontFallback))
-    {
-        factory2->GetSystemFontFallback(&_systemFontFallback);
-    }
 }
 
 [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> DxFontRenderData::Analyzer() noexcept
@@ -31,13 +25,15 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     return _dwriteTextAnalyzer;
 }
 
-[[nodiscard]] HRESULT DxFontRenderData::HrSystemFontFallback() noexcept
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFallback> DxFontRenderData::GetSystemFontFallback()
 {
-    return _hrSystemFontFallback;
-}
+    if (!_systemFontFallback)
+    {
+        ::Microsoft::WRL::ComPtr<IDWriteFactory2> factory2;
+        THROW_IF_FAILED(_dwriteFactory.As(&factory2));
+        factory2->GetSystemFontFallback(&_systemFontFallback);
+    }
 
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFallback> DxFontRenderData::GetSystemFontFallback() noexcept
-{
     return _systemFontFallback;
 }
 
@@ -334,193 +330,6 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
 }
 
 // Routine Description:
-// - Attempts to locate the font given, but then begins falling back if we cannot find it.
-// - We'll try to fall back to Consolas with the given weight/stretch/style first,
-//   then try Consolas again with normal weight/stretch/style,
-//   and if nothing works, then we'll throw an error.
-// Arguments:
-// - familyName - The font name we should be looking for
-// - weight - The weight (bold, light, etc.)
-// - stretch - The stretch of the font is the spacing between each letter
-// - style - Normal, italic, etc.
-// Return Value:
-// - Smart pointer holding interface reference for queryable font data.
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontRenderData::_ResolveFontFaceWithFallback(std::wstring& familyName,
-                                                                                                      DWRITE_FONT_WEIGHT& weight,
-                                                                                                      DWRITE_FONT_STRETCH& stretch,
-                                                                                                      DWRITE_FONT_STYLE& style,
-                                                                                                      std::wstring& localeName) const
-{
-    auto face = _FindFontFace(familyName, weight, stretch, style, localeName);
-
-    if (!face)
-    {
-        for (const auto fallbackFace : FALLBACK_FONT_FACES)
-        {
-            familyName = fallbackFace;
-            face = _FindFontFace(familyName, weight, stretch, style, localeName);
-
-            if (face)
-            {
-                break;
-            }
-
-            familyName = fallbackFace;
-            weight = DWRITE_FONT_WEIGHT_NORMAL;
-            stretch = DWRITE_FONT_STRETCH_NORMAL;
-            style = DWRITE_FONT_STYLE_NORMAL;
-            face = _FindFontFace(familyName, weight, stretch, style, localeName);
-
-            if (face)
-            {
-                break;
-            }
-        }
-    }
-
-    THROW_HR_IF_NULL(E_FAIL, face);
-
-    return face;
-}
-
-// Routine Description:
-// - Locates a suitable font face from the given information
-// Arguments:
-// - familyName - The font name we should be looking for
-// - weight - The weight (bold, light, etc.)
-// - stretch - The stretch of the font is the spacing between each letter
-// - style - Normal, italic, etc.
-// Return Value:
-// - Smart pointer holding interface reference for queryable font data.
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontRenderData::_FindFontFace(std::wstring& familyName,
-                                                                                       DWRITE_FONT_WEIGHT& weight,
-                                                                                       DWRITE_FONT_STRETCH& stretch,
-                                                                                       DWRITE_FONT_STYLE& style,
-                                                                                       std::wstring& localeName) const
-{
-    Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace;
-
-    Microsoft::WRL::ComPtr<IDWriteFontCollection> fontCollection;
-    THROW_IF_FAILED(_dwriteFactory->GetSystemFontCollection(&fontCollection, false));
-
-    UINT32 familyIndex;
-    BOOL familyExists;
-    THROW_IF_FAILED(fontCollection->FindFamilyName(familyName.data(), &familyIndex, &familyExists));
-
-    if (familyExists)
-    {
-        Microsoft::WRL::ComPtr<IDWriteFontFamily> fontFamily;
-        THROW_IF_FAILED(fontCollection->GetFontFamily(familyIndex, &fontFamily));
-
-        Microsoft::WRL::ComPtr<IDWriteFont> font;
-        THROW_IF_FAILED(fontFamily->GetFirstMatchingFont(weight, stretch, style, &font));
-
-        Microsoft::WRL::ComPtr<IDWriteFontFace> fontFace0;
-        THROW_IF_FAILED(font->CreateFontFace(&fontFace0));
-
-        THROW_IF_FAILED(fontFace0.As(&fontFace));
-
-        // Retrieve metrics in case the font we created was different than what was requested.
-        weight = font->GetWeight();
-        stretch = font->GetStretch();
-        style = font->GetStyle();
-
-        // Dig the family name out at the end to return it.
-        familyName = _GetFontFamilyName(fontFamily.Get(), localeName);
-    }
-
-    return fontFace;
-}
-
-// Routine Description:
-// - Helper to retrieve the user's locale preference or fallback to the default.
-// Arguments:
-// - <none>
-// Return Value:
-// - A locale that can be used on construction of assorted DX objects that want to know one.
-[[nodiscard]] std::wstring DxFontRenderData::_GetLocaleName() const
-{
-    std::array<wchar_t, LOCALE_NAME_MAX_LENGTH> localeName;
-
-    const auto returnCode = GetUserDefaultLocaleName(localeName.data(), gsl::narrow<int>(localeName.size()));
-    if (returnCode)
-    {
-        return { localeName.data() };
-    }
-    else
-    {
-        return { FALLBACK_LOCALE.data(), FALLBACK_LOCALE.size() };
-    }
-}
-
-// Routine Description:
-// - Retrieves the font family name out of the given object in the given locale.
-// - If we can't find a valid name for the given locale, we'll fallback and report it back.
-// Arguments:
-// - fontFamily - DirectWrite font family object
-// - localeName - The locale in which the name should be retrieved.
-//              - If fallback occurred, this is updated to what we retrieved instead.
-// Return Value:
-// - Localized string name of the font family
-[[nodiscard]] std::wstring DxFontRenderData::_GetFontFamilyName(gsl::not_null<IDWriteFontFamily*> const fontFamily,
-                                                                std::wstring& localeName) const
-{
-    // See: https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritefontcollection
-    Microsoft::WRL::ComPtr<IDWriteLocalizedStrings> familyNames;
-    THROW_IF_FAILED(fontFamily->GetFamilyNames(&familyNames));
-
-    // First we have to find the right family name for the locale. We're going to bias toward what the caller
-    // requested, but fallback if we need to and reply with the locale we ended up choosing.
-    UINT32 index = 0;
-    BOOL exists = false;
-
-    // This returns S_OK whether or not it finds a locale name. Check exists field instead.
-    // If it returns an error, it's a real problem, not an absence of this locale name.
-    // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-findlocalename
-    THROW_IF_FAILED(familyNames->FindLocaleName(localeName.data(), &index, &exists));
-
-    // If we tried and it still doesn't exist, try with the fallback locale.
-    if (!exists)
-    {
-        localeName = FALLBACK_LOCALE;
-        THROW_IF_FAILED(familyNames->FindLocaleName(localeName.data(), &index, &exists));
-    }
-
-    // If it still doesn't exist, we're going to try index 0.
-    if (!exists)
-    {
-        index = 0;
-
-        // Get the locale name out so at least the caller knows what locale this name goes with.
-        UINT32 length = 0;
-        THROW_IF_FAILED(familyNames->GetLocaleNameLength(index, &length));
-        localeName.resize(length);
-
-        // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getlocalenamelength
-        // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getlocalename
-        // GetLocaleNameLength does not include space for null terminator, but GetLocaleName needs it so add one.
-        THROW_IF_FAILED(familyNames->GetLocaleName(index, localeName.data(), length + 1));
-    }
-
-    // OK, now that we've decided which family name and the locale that it's in... let's go get it.
-    UINT32 length = 0;
-    THROW_IF_FAILED(familyNames->GetStringLength(index, &length));
-
-    // Make our output buffer and resize it so it is allocated.
-    std::wstring retVal;
-    retVal.resize(length);
-
-    // FINALLY, go fetch the string name.
-    // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getstringlength
-    // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getstring
-    // Once again, GetStringLength is without the null, but GetString needs the null. So add one.
-    THROW_IF_FAILED(familyNames->GetString(index, retVal.data(), length + 1));
-
-    // and return it.
-    return retVal;
-}
-
-// Routine Description:
 // - Calculates the box drawing scale/translate matrix values to fit a box glyph into the cell as perfectly as possible.
 // Arguments:
 // - format - Text format used to determine line spacing (height including ascent & descent) as calculated from the base font.
@@ -760,3 +569,190 @@ try
     return S_OK;
 }
 CATCH_RETURN()
+
+// Routine Description:
+// - Attempts to locate the font given, but then begins falling back if we cannot find it.
+// - We'll try to fall back to Consolas with the given weight/stretch/style first,
+//   then try Consolas again with normal weight/stretch/style,
+//   and if nothing works, then we'll throw an error.
+// Arguments:
+// - familyName - The font name we should be looking for
+// - weight - The weight (bold, light, etc.)
+// - stretch - The stretch of the font is the spacing between each letter
+// - style - Normal, italic, etc.
+// Return Value:
+// - Smart pointer holding interface reference for queryable font data.
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontRenderData::_ResolveFontFaceWithFallback(std::wstring& familyName,
+                                                                                                      DWRITE_FONT_WEIGHT& weight,
+                                                                                                      DWRITE_FONT_STRETCH& stretch,
+                                                                                                      DWRITE_FONT_STYLE& style,
+                                                                                                      std::wstring& localeName) const
+{
+    auto face = _FindFontFace(familyName, weight, stretch, style, localeName);
+
+    if (!face)
+    {
+        for (const auto fallbackFace : FALLBACK_FONT_FACES)
+        {
+            familyName = fallbackFace;
+            face = _FindFontFace(familyName, weight, stretch, style, localeName);
+
+            if (face)
+            {
+                break;
+            }
+
+            familyName = fallbackFace;
+            weight = DWRITE_FONT_WEIGHT_NORMAL;
+            stretch = DWRITE_FONT_STRETCH_NORMAL;
+            style = DWRITE_FONT_STYLE_NORMAL;
+            face = _FindFontFace(familyName, weight, stretch, style, localeName);
+
+            if (face)
+            {
+                break;
+            }
+        }
+    }
+
+    THROW_HR_IF_NULL(E_FAIL, face);
+
+    return face;
+}
+
+// Routine Description:
+// - Locates a suitable font face from the given information
+// Arguments:
+// - familyName - The font name we should be looking for
+// - weight - The weight (bold, light, etc.)
+// - stretch - The stretch of the font is the spacing between each letter
+// - style - Normal, italic, etc.
+// Return Value:
+// - Smart pointer holding interface reference for queryable font data.
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontRenderData::_FindFontFace(std::wstring& familyName,
+                                                                                       DWRITE_FONT_WEIGHT& weight,
+                                                                                       DWRITE_FONT_STRETCH& stretch,
+                                                                                       DWRITE_FONT_STYLE& style,
+                                                                                       std::wstring& localeName) const
+{
+    Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace;
+
+    Microsoft::WRL::ComPtr<IDWriteFontCollection> fontCollection;
+    THROW_IF_FAILED(_dwriteFactory->GetSystemFontCollection(&fontCollection, false));
+
+    UINT32 familyIndex;
+    BOOL familyExists;
+    THROW_IF_FAILED(fontCollection->FindFamilyName(familyName.data(), &familyIndex, &familyExists));
+
+    if (familyExists)
+    {
+        Microsoft::WRL::ComPtr<IDWriteFontFamily> fontFamily;
+        THROW_IF_FAILED(fontCollection->GetFontFamily(familyIndex, &fontFamily));
+
+        Microsoft::WRL::ComPtr<IDWriteFont> font;
+        THROW_IF_FAILED(fontFamily->GetFirstMatchingFont(weight, stretch, style, &font));
+
+        Microsoft::WRL::ComPtr<IDWriteFontFace> fontFace0;
+        THROW_IF_FAILED(font->CreateFontFace(&fontFace0));
+
+        THROW_IF_FAILED(fontFace0.As(&fontFace));
+
+        // Retrieve metrics in case the font we created was different than what was requested.
+        weight = font->GetWeight();
+        stretch = font->GetStretch();
+        style = font->GetStyle();
+
+        // Dig the family name out at the end to return it.
+        familyName = _GetFontFamilyName(fontFamily.Get(), localeName);
+    }
+
+    return fontFace;
+}
+
+// Routine Description:
+// - Helper to retrieve the user's locale preference or fallback to the default.
+// Arguments:
+// - <none>
+// Return Value:
+// - A locale that can be used on construction of assorted DX objects that want to know one.
+[[nodiscard]] std::wstring DxFontRenderData::_GetLocaleName() const
+{
+    std::array<wchar_t, LOCALE_NAME_MAX_LENGTH> localeName;
+
+    const auto returnCode = GetUserDefaultLocaleName(localeName.data(), gsl::narrow<int>(localeName.size()));
+    if (returnCode)
+    {
+        return { localeName.data() };
+    }
+    else
+    {
+        return { FALLBACK_LOCALE.data(), FALLBACK_LOCALE.size() };
+    }
+}
+
+// Routine Description:
+// - Retrieves the font family name out of the given object in the given locale.
+// - If we can't find a valid name for the given locale, we'll fallback and report it back.
+// Arguments:
+// - fontFamily - DirectWrite font family object
+// - localeName - The locale in which the name should be retrieved.
+//              - If fallback occurred, this is updated to what we retrieved instead.
+// Return Value:
+// - Localized string name of the font family
+[[nodiscard]] std::wstring DxFontRenderData::_GetFontFamilyName(gsl::not_null<IDWriteFontFamily*> const fontFamily,
+                                                                std::wstring& localeName) const
+{
+    // See: https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritefontcollection
+    Microsoft::WRL::ComPtr<IDWriteLocalizedStrings> familyNames;
+    THROW_IF_FAILED(fontFamily->GetFamilyNames(&familyNames));
+
+    // First we have to find the right family name for the locale. We're going to bias toward what the caller
+    // requested, but fallback if we need to and reply with the locale we ended up choosing.
+    UINT32 index = 0;
+    BOOL exists = false;
+
+    // This returns S_OK whether or not it finds a locale name. Check exists field instead.
+    // If it returns an error, it's a real problem, not an absence of this locale name.
+    // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-findlocalename
+    THROW_IF_FAILED(familyNames->FindLocaleName(localeName.data(), &index, &exists));
+
+    // If we tried and it still doesn't exist, try with the fallback locale.
+    if (!exists)
+    {
+        localeName = FALLBACK_LOCALE;
+        THROW_IF_FAILED(familyNames->FindLocaleName(localeName.data(), &index, &exists));
+    }
+
+    // If it still doesn't exist, we're going to try index 0.
+    if (!exists)
+    {
+        index = 0;
+
+        // Get the locale name out so at least the caller knows what locale this name goes with.
+        UINT32 length = 0;
+        THROW_IF_FAILED(familyNames->GetLocaleNameLength(index, &length));
+        localeName.resize(length);
+
+        // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getlocalenamelength
+        // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getlocalename
+        // GetLocaleNameLength does not include space for null terminator, but GetLocaleName needs it so add one.
+        THROW_IF_FAILED(familyNames->GetLocaleName(index, localeName.data(), length + 1));
+    }
+
+    // OK, now that we've decided which family name and the locale that it's in... let's go get it.
+    UINT32 length = 0;
+    THROW_IF_FAILED(familyNames->GetStringLength(index, &length));
+
+    // Make our output buffer and resize it so it is allocated.
+    std::wstring retVal;
+    retVal.resize(length);
+
+    // FINALLY, go fetch the string name.
+    // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getstringlength
+    // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getstring
+    // Once again, GetStringLength is without the null, but GetString needs the null. So add one.
+    THROW_IF_FAILED(familyNames->GetString(index, retVal.data(), length + 1));
+
+    // and return it.
+    return retVal;
+}

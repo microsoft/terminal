@@ -1245,7 +1245,6 @@ CATCH_RETURN();
 
         if (!fallback)
         {
-            RETURN_IF_FAILED(_fontRenderData->HrSystemFontFallback());
             fallback = _fontRenderData->GetSystemFontFallback();
         }
 
@@ -1452,7 +1451,11 @@ try
         }
         else
         {
-            run.drawingEffect = _fontRenderData->ItalicBoxDrawingEffect();
+            ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> eff;
+            RETURN_IF_FAILED(DxFontRenderData::s_CalculateBoxEffect(_formatInUse, _width, run.fontFace.Get(), run.fontScale, &eff));
+
+            // store data in the run
+            run.drawingEffect = std::move(eff);
         }
     }
 
