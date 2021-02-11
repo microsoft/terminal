@@ -185,6 +185,10 @@ void AppCommandlineArgs::_buildParser()
     maximized->excludes(fullscreen);
     focus->excludes(fullscreen);
 
+    _app.add_option("-w,--window",
+                    _windowTarget,
+                    RS_A(L"CmdWindowTargetArgDesc"));
+
     // Subcommands
     _buildNewTabParser();
     _buildSplitPaneParser();
@@ -531,6 +535,7 @@ void AppCommandlineArgs::_resetStateToDefault()
     // DON'T clear _launchMode here! This will get called once for every
     // subcommand, so we don't want `wt -F new-tab ; split-pane` clearing out
     // the "global" fullscreen flag (-F).
+    // Same with _windowTarget.
 }
 
 // Function Description:
@@ -848,4 +853,11 @@ void AppCommandlineArgs::FullResetState()
     _startupActions.clear();
     _exitMessage = "";
     _shouldExitEarly = false;
+
+    _windowTarget = -1;
+}
+
+int AppCommandlineArgs::GetTargetWindow() const noexcept
+{
+    return _windowTarget;
 }

@@ -1,17 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!-- 
-    Microsoft ResX Schema 
-    
+  <!--
+    Microsoft ResX Schema
+
     Version 2.0
-    
-    The primary goals of this format is to allow a simple XML format 
-    that is mostly human readable. The generation and parsing of the 
-    various data types are done through the TypeConverter classes 
+
+    The primary goals of this format is to allow a simple XML format
+    that is mostly human readable. The generation and parsing of the
+    various data types are done through the TypeConverter classes
     associated with the data types.
-    
+
     Example:
-    
+
     ... ado.net/XML headers & schema ...
     <resheader name="resmimetype">text/microsoft-resx</resheader>
     <resheader name="version">2.0</resheader>
@@ -26,36 +26,36 @@
         <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
         <comment>This is a comment</comment>
     </data>
-                
-    There are any number of "resheader" rows that contain simple 
+
+    There are any number of "resheader" rows that contain simple
     name/value pairs.
-    
-    Each data row contains a name, and value. The row also contains a 
-    type or mimetype. Type corresponds to a .NET class that support 
-    text/value conversion through the TypeConverter architecture. 
-    Classes that don't support this are serialized and stored with the 
+
+    Each data row contains a name, and value. The row also contains a
+    type or mimetype. Type corresponds to a .NET class that support
+    text/value conversion through the TypeConverter architecture.
+    Classes that don't support this are serialized and stored with the
     mimetype set.
-    
-    The mimetype is used for serialized objects, and tells the 
-    ResXResourceReader how to depersist the object. This is currently not 
+
+    The mimetype is used for serialized objects, and tells the
+    ResXResourceReader how to depersist the object. This is currently not
     extensible. For a given mimetype the value must be set accordingly:
-    
-    Note - application/x-microsoft.net.object.binary.base64 is the format 
-    that the ResXResourceWriter will generate, however the reader can 
+
+    Note - application/x-microsoft.net.object.binary.base64 is the format
+    that the ResXResourceWriter will generate, however the reader can
     read any of the formats listed below.
-    
+
     mimetype: application/x-microsoft.net.object.binary.base64
-    value   : The object must be serialized with 
+    value   : The object must be serialized with
             : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
             : and then encoded with base64 encoding.
-    
+
     mimetype: application/x-microsoft.net.object.soap.base64
-    value   : The object must be serialized with 
+    value   : The object must be serialized with
             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
             : and then encoded with base64 encoding.
 
     mimetype: application/x-microsoft.net.object.bytearray.base64
-    value   : The object must be serialized into a byte array 
+    value   : The object must be serialized into a byte array
             : using a System.ComponentModel.TypeConverter
             : and then encoded with base64 encoding.
     -->
@@ -180,13 +180,13 @@
   <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
     <value>Always show tabs</value>
   </data>
-  <data name="Globals_AlwaysShowTabs.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_AlwaysShowTabs.HelpText" xml:space="preserve">
     <value>When unchecked, the tab bar will appear when a new tab is created.</value>
   </data>
   <data name="Globals_CopyFormatting.Content" xml:space="preserve">
     <value>Copy formatting</value>
   </data>
-  <data name="Globals_CopyFormatting.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_CopyFormatting.HelpText" xml:space="preserve">
     <value>When checked, the color and font formatting of selected text is also copied to your clipboard. When unchecked, only plain text is copied to your clipboard.</value>
   </data>
   <data name="Globals_CopyOnSelect.Header" xml:space="preserve">
@@ -195,31 +195,31 @@
   <data name="Globals_DefaultProfile.Header" xml:space="preserve">
     <value>Default profile</value>
   </data>
-  <data name="Globals_DefaultProfile.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_DefaultProfile.HelpText" xml:space="preserve">
     <value>Profile that opens when clicking the '+' icon or by typing the new tab key binding.</value>
   </data>
   <data name="Globals_ForceFullRepaint.Header" xml:space="preserve">
     <value>Redraw entire screen when display updates</value>
   </data>
-  <data name="Globals_ForceFullRepaint.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_ForceFullRepaint.HelpText" xml:space="preserve">
     <value>When unchecked, the terminal will render only the updates to the screen between frames.</value>
   </data>
   <data name="Globals_InitialCols.Header" xml:space="preserve">
     <value>Columns</value>
   </data>
-  <data name="Globals_InitialCols.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_InitialCols.HelpText" xml:space="preserve">
     <value>The number of columns displayed in the window upon first load. Measured in characters.</value>
   </data>
   <data name="Globals_InitialRows.Header" xml:space="preserve">
     <value>Rows</value>
   </data>
-  <data name="Globals_InitialRows.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_InitialRows.HelpText" xml:space="preserve">
     <value>The number of rows displayed in the window upon first load. Measured in characters.</value>
   </data>
   <data name="Globals_LaunchMode.Header" xml:space="preserve">
     <value>Launch mode</value>
   </data>
-  <data name="Globals_LaunchMode.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_LaunchMode.HelpText" xml:space="preserve">
     <value>How the terminal will appear on launch. Focus will hide the tabs and title bar.</value>
     <comment>'Focus' must match &lt;Globals_LaunchModeFocus.Content&gt;.</comment>
   </data>
@@ -238,43 +238,43 @@
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>Hide the title bar (requires relaunch)</value>
   </data>
-  <data name="Globals_ShowTitlebar.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_ShowTitlebar.HelpText" xml:space="preserve">
     <value>When unchecked, the title bar will appear above the tabs.</value>
   </data>
   <data name="Globals_ShowTitleInTitlebar.Header" xml:space="preserve">
     <value>Use active terminal title as application title</value>
   </data>
-  <data name="Globals_ShowTitleInTitlebar.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_ShowTitleInTitlebar.HelpText" xml:space="preserve">
     <value>When unchecked, the title bar will be 'Windows Terminal'.</value>
   </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
     <value>Snap window resizing to character grid</value>
   </data>
-  <data name="Globals_SnapToGridOnResize.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_SnapToGridOnResize.HelpText" xml:space="preserve">
     <value>When unchecked, the window will resize smoothly.</value>
   </data>
   <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
     <value>Use software rendering</value>
   </data>
-  <data name="Globals_SoftwareRendering.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
     <value>When checked, the terminal will use the software renderer (a.k.a. WARP) instead of the hardware one.</value>
   </data>
   <data name="Globals_StartOnUserLogin.Header" xml:space="preserve">
     <value>Launch on machine startup</value>
   </data>
-  <data name="Globals_StartOnUserLogin.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_StartOnUserLogin.HelpText" xml:space="preserve">
     <value>When checked, this enables the launch of Windows Terminal at machine startup.</value>
   </data>
   <data name="Globals_AlwaysOnTop.Header" xml:space="preserve">
     <value>Always on top</value>
   </data>
-  <data name="Globals_AlwaysOnTop.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_AlwaysOnTop.HelpText" xml:space="preserve">
     <value>Windows Terminal will always be the topmost window on the desktop.</value>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Tab width mode</value>
   </data>
-  <data name="Globals_TabWidthMode.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_TabWidthMode.HelpText" xml:space="preserve">
     <value>Compact will shrink unfocused tabs to the size of the icon.</value>
     <comment>'Compact' must match the value for &lt;Globals_TabWidthModeCompact.Content&gt;.</comment>
   </data>
@@ -290,7 +290,7 @@
   <data name="Globals_Theme.Header" xml:space="preserve">
     <value>Theme</value>
   </data>
-  <data name="Globals_Theme.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_Theme.HelpText" xml:space="preserve">
     <value>Sets the theme of the application.</value>
   </data>
   <data name="Globals_ThemeDark.Content" xml:space="preserve">
@@ -305,7 +305,7 @@
   <data name="Globals_WordDelimiters.Header" xml:space="preserve">
     <value>Word delimiters</value>
   </data>
-  <data name="Globals_WordDelimiters.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_WordDelimiters.HelpText" xml:space="preserve">
     <value>Symbols used to define boundaries between words.</value>
   </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
@@ -329,10 +329,10 @@
   <data name="Nav_Rendering.Content" xml:space="preserve">
     <value>Rendering</value>
   </data>
-  <data name="Profile_AcrylicOpacity.Text" xml:space="preserve">
+  <data name="Profile_AcrylicOpacity.Header" xml:space="preserve">
     <value>Acrylic opacity</value>
   </data>
-  <data name="Profile_AcrylicOpacity.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_AcrylicOpacity.HelpText" xml:space="preserve">
     <value>Sets the transparency of the window.</value>
   </data>
   <data name="Profile_Advanced.Header" xml:space="preserve">
@@ -341,13 +341,13 @@
   <data name="Profile_AltGrAliasing.Header" xml:space="preserve">
     <value>AltGr aliasing</value>
   </data>
-  <data name="Profile_AltGrAliasing.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_AltGrAliasing.HelpText" xml:space="preserve">
     <value>By default Windows treats Ctrl+Alt as an alias for AltGr. When unchecked, this behavior will be disabled.</value>
   </data>
   <data name="Profile_AntialiasingMode.Header" xml:space="preserve">
     <value>Text antialiasing (requires relaunch)</value>
   </data>
-  <data name="Profile_AntialiasingMode.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_AntialiasingMode.HelpText" xml:space="preserve">
     <value>Controls how text is antialiased in the renderer.</value>
   </data>
   <data name="Profile_AntialiasingModeAliased.Content" xml:space="preserve">
@@ -362,22 +362,16 @@
   <data name="Profile_Appearance.Header" xml:space="preserve">
     <value>Appearance</value>
   </data>
-  <data name="Profile_BackgroundColor.Header" xml:space="preserve">
-    <value>Background color</value>
-  </data>
-  <data name="Profile_BackgroundColorToolTip.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Sets the background color of the text. Overrides the background from the color scheme.</value>
-  </data>
   <data name="Profile_BackgroundImage.Header" xml:space="preserve">
     <value>Background image path</value>
   </data>
-  <data name="Profile_BackgroundImage.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_BackgroundImage.HelpText" xml:space="preserve">
     <value>File location of the image used in the background of the window.</value>
   </data>
-  <data name="Profile_BackgroundImageAlignment.Text" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignment.Header" xml:space="preserve">
     <value>Background image alignment</value>
   </data>
-  <data name="Profile_BackgroundImageAlignment.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignment.HelpText" xml:space="preserve">
     <value>Sets how the background image aligns to the boundaries of the window.</value>
   </data>
   <data name="Profile_BackgroundImageAlignmentBottom.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
@@ -419,16 +413,16 @@
   <data name="Profile_BackgroundImageBrowse.Content" xml:space="preserve">
     <value>Browse...</value>
   </data>
-  <data name="Profile_BackgroundImageOpacity.Text" xml:space="preserve">
+  <data name="Profile_BackgroundImageOpacity.Header" xml:space="preserve">
     <value>Background image opacity</value>
   </data>
-  <data name="Profile_BackgroundImageOpacity.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_BackgroundImageOpacity.HelpText" xml:space="preserve">
     <value>Sets the transparency of the background image.</value>
   </data>
   <data name="Profile_BackgroundImageStretchMode.Header" xml:space="preserve">
     <value>Background image stretch mode</value>
   </data>
-  <data name="Profile_BackgroundImageStretchMode.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_BackgroundImageStretchMode.HelpText" xml:space="preserve">
     <value>Sets how the background image is resized to fill the window.</value>
   </data>
   <data name="Profile_BackgroundImageStretchModeFill.Content" xml:space="preserve">
@@ -458,28 +452,22 @@
   <data name="Profile_ColorScheme.Header" xml:space="preserve">
     <value>Color scheme</value>
   </data>
-  <data name="Profile_ColorScheme.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_ColorScheme.HelpText" xml:space="preserve">
     <value>Name of the color scheme to use.</value>
   </data>
   <data name="Profile_Commandline.Header" xml:space="preserve">
     <value>Command line</value>
   </data>
-  <data name="Profile_Commandline.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_Commandline.HelpText" xml:space="preserve">
     <value>Executable used in the profile.</value>
   </data>
   <data name="Profile_CommandlineBrowse.Content" xml:space="preserve">
     <value>Browse...</value>
   </data>
-  <data name="Profile_CursorColor.Header" xml:space="preserve">
-    <value>Cursor color</value>
-  </data>
-  <data name="Profile_CursorColorToolTip.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Sets the color of the cursor. Overrides the cursor color from the color scheme.</value>
-  </data>
   <data name="Profile_CursorHeight.Header" xml:space="preserve">
     <value>Cursor height</value>
   </data>
-  <data name="Profile_CursorHeight.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_CursorHeight.HelpText" xml:space="preserve">
     <value>Sets the percentage height of the cursor starting from the bottom. Only works with the vintage cursor shape.</value>
   </data>
   <data name="Profile_CursorShape.Header" xml:space="preserve">
@@ -506,32 +494,26 @@
     <comment>{Locked="▃"}</comment>
   </data>
   <data name="Profile_CursorShapeDoubleUnderscore.Content" xml:space="preserve">
-    <value>Double Underscore ( ‗ )</value>
+    <value>Double underscore ( ‗ )</value>
     <comment>{Locked="‗"}</comment>
   </data>
   <data name="Profile_FontFace.Header" xml:space="preserve">
     <value>Font face</value>
   </data>
-  <data name="Profile_FontFace.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_FontFace.HelpText" xml:space="preserve">
     <value>Name of the font face used in the profile.</value>
   </data>
   <data name="Profile_FontSize.Header" xml:space="preserve">
     <value>Font size</value>
   </data>
-  <data name="Profile_FontSize.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_FontSize.HelpText" xml:space="preserve">
     <value>Size of the font in points.</value>
   </data>
   <data name="Profile_FontWeight.Header" xml:space="preserve">
     <value>Font weight</value>
   </data>
-  <data name="Profile_FontWeight.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_FontWeight.HelpText" xml:space="preserve">
     <value>Sets the weight (lightness or heaviness of the strokes) for the given font.</value>
-  </data>
-  <data name="Profile_ForegroundColor.Header" xml:space="preserve">
-    <value>Foreground color</value>
-  </data>
-  <data name="Profile_ForegroundColorToolTip.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Sets the text color. Overrides the foreground from the color scheme.</value>
   </data>
   <data name="Profile_General.Header" xml:space="preserve">
     <value>General</value>
@@ -539,19 +521,19 @@
   <data name="Profile_Hidden.Header" xml:space="preserve">
     <value>Hide profile from dropdown</value>
   </data>
-  <data name="Profile_Hidden.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_Hidden.HelpText" xml:space="preserve">
     <value>If checked, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file.</value>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>History size</value>
   </data>
-  <data name="Profile_HistorySize.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_HistorySize.HelpText" xml:space="preserve">
     <value>The number of lines above the ones displayed in the window you can scroll back to.</value>
   </data>
   <data name="Profile_Icon.Header" xml:space="preserve">
     <value>Icon</value>
   </data>
-  <data name="Profile_Icon.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_Icon.HelpText" xml:space="preserve">
     <value>Emoji or image file location of the icon used in the profile.</value>
   </data>
   <data name="Profile_IconBrowse.Content" xml:space="preserve">
@@ -560,13 +542,13 @@
   <data name="Profile_Padding.Header" xml:space="preserve">
     <value>Padding</value>
   </data>
-  <data name="Profile_Padding.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_Padding.HelpText" xml:space="preserve">
     <value>Sets the padding around the text within the window.</value>
   </data>
   <data name="Profile_RetroTerminalEffect.Header" xml:space="preserve">
     <value>Retro terminal effects</value>
   </data>
-  <data name="Profile_RetroTerminalEffect.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_RetroTerminalEffect.HelpText" xml:space="preserve">
     <value>When checked, enables retro terminal effects such as glowing text and scan lines.</value>
   </data>
   <data name="Profile_ScrollbarVisibility.Header" xml:space="preserve">
@@ -578,19 +560,13 @@
   <data name="Profile_ScrollbarVisibilityVisible.Content" xml:space="preserve">
     <value>Visible</value>
   </data>
-  <data name="Profile_SelectionBackgroundColor.Header" xml:space="preserve">
-    <value>Selection background color</value>
-  </data>
-  <data name="Profile_SelectionBackgroundColorToolTip.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Sets the background color of selected text. Overrides the selection background set in the color scheme.</value>
-  </data>
   <data name="Profile_SnapOnInput.Header" xml:space="preserve">
     <value>Scroll to input when typing</value>
   </data>
   <data name="Profile_StartingDirectory.Header" xml:space="preserve">
     <value>Starting directory</value>
   </data>
-  <data name="Profile_StartingDirectory.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_StartingDirectory.HelpText" xml:space="preserve">
     <value>The directory the profile starts in when it is loaded.</value>
   </data>
   <data name="Profile_StartingDirectoryBrowse.Content" xml:space="preserve">
@@ -605,19 +581,19 @@
   <data name="Profile_SuppressApplicationTitle.Header" xml:space="preserve">
     <value>Suppress title changes</value>
   </data>
-  <data name="Profile_SuppressApplicationTitle.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_SuppressApplicationTitle.HelpText" xml:space="preserve">
     <value>Use the tab title to override the default title of the tab and suppress any title change messages from the application.</value>
   </data>
   <data name="Profile_TabTitle.Header" xml:space="preserve">
     <value>Tab title</value>
   </data>
-  <data name="Profile_TabTitle.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_TabTitle.HelpText" xml:space="preserve">
     <value>Replaces the profile name as the title to pass to the shell on startup.</value>
   </data>
   <data name="Profile_UseAcrylic.Header" xml:space="preserve">
     <value>Enable acrylic</value>
   </data>
-  <data name="Profile_UseAcrylic.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_UseAcrylic.HelpText" xml:space="preserve">
     <value>Applies a translucent texture to the background of the window.</value>
   </data>
   <data name="Profile_UseDesktopImage.Content" xml:space="preserve">
@@ -654,7 +630,7 @@
   <data name="Profile_BellStyle.Header" xml:space="preserve">
     <value>Bell notification style</value>
   </data>
-  <data name="Profile_BellStyle.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_BellStyle.HelpText" xml:space="preserve">
     <value>Controls what happens when the application emits a BEL character.</value>
     <comment>"Audible" and "None" must match the values for Profile_BellStyleAudible.Content and Profile_BellStyleNone.Content respectively.</comment>
   </data>
@@ -738,7 +714,7 @@
   <data name="Profile_DeleteButton.Text" xml:space="preserve">
     <value>Delete profile</value>
   </data>
-  <data name="Profile_Name.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Profile_Name.HelpText" xml:space="preserve">
     <value>The name of the profile that appears in the dropdown.</value>
   </data>
   <data name="Profile_Name.Header" xml:space="preserve">
@@ -802,7 +778,7 @@
   <data name="Globals_TabSwitcherMode.Header" xml:space="preserve">
     <value>Tab switcher interface style</value>
   </data>
-  <data name="Globals_TabSwitcherMode.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_TabSwitcherMode.HelpText" xml:space="preserve">
     <value>Defines the terminal behavior when switching tabs with the keyboard.</value>
   </data>
   <data name="Globals_TabSwitcherModeMru.Content" xml:space="preserve">
@@ -817,7 +793,7 @@
   <data name="Globals_CopyFormat.Header" xml:space="preserve">
     <value>Text format when copying</value>
   </data>
-  <data name="Globals_CopyFormat.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_CopyFormat.HelpText" xml:space="preserve">
     <value>Defines the type of formatting in which selected text is copied to your clipboard.</value>
   </data>
   <data name="Globals_CopyFormatNone.Content" xml:space="preserve">
@@ -837,5 +813,22 @@
   </data>
   <data name="ColorScheme_RenameErrorTip.Title" xml:space="preserve">
     <value>This color scheme name is already in use.</value>
+  </data>
+  <data name="SettingContainer_OverrideIntro" xml:space="preserve">
+    <value>This overrides the value in {}.</value>
+    <comment>"{}" is the object being overridden. Generally, it will be the name of another profile.</comment>
+  </data>
+  <data name="SettingContainer_ResetButtonHelpText" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="SettingContainer_OverrideTarget" xml:space="preserve">
+    <value>a lower layer</value>
+    <comment>This is the object of "SettingContainer_OverrideIntro".</comment>
+  </data>
+  <data name="Globals_FocusFollowMouse.Header" xml:space="preserve">
+    <value>Enable Focus Follow Mouse mode</value>
+  </data>
+  <data name="Globals_FocusFollowMouse.HelpText" xml:space="preserve">
+    <value>When checked, the terminal will the focus pane on mouse hover.</value>
   </data>
 </root>

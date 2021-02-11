@@ -13,6 +13,9 @@
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
 
+// the console uses 0xffffffff as an "invalid color" value
+constexpr COLORREF INVALID_COLOR = 0xffffffff;
+
 // takes ownership of pDispatch
 OutputStateMachineEngine::OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch) :
     _dispatch(std::move(pDispatch)),
@@ -672,36 +675,52 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         break;
     }
     case OscActionCodes::SetForegroundColor:
-    {
-        std::vector<DWORD> colors;
-        success = _GetOscSetColor(string, colors);
-        if (success && colors.size() > 0)
-        {
-            success = _dispatch->SetDefaultForeground(til::at(colors, 0));
-        }
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCFG);
-        break;
-    }
     case OscActionCodes::SetBackgroundColor:
-    {
-        std::vector<DWORD> colors;
-        success = _GetOscSetColor(string, colors);
-        if (success && colors.size() > 0)
-        {
-            success = _dispatch->SetDefaultBackground(til::at(colors, 0));
-        }
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCBG);
-        break;
-    }
     case OscActionCodes::SetCursorColor:
     {
         std::vector<DWORD> colors;
         success = _GetOscSetColor(string, colors);
-        if (success && colors.size() > 0)
+        if (success)
         {
-            success = _dispatch->SetCursorColor(til::at(colors, 0));
+            size_t commandIndex = parameter;
+            size_t colorIndex = 0;
+
+            if (commandIndex == OscActionCodes::SetForegroundColor && colors.size() > colorIndex)
+            {
+                const auto color = til::at(colors, colorIndex);
+                if (color != INVALID_COLOR)
+                {
+                    success = success && _dispatch->SetDefaultForeground(color);
+                }
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCFG);
+                commandIndex++;
+                colorIndex++;
+            }
+
+            if (commandIndex == OscActionCodes::SetBackgroundColor && colors.size() > colorIndex)
+            {
+                const auto color = til::at(colors, colorIndex);
+                if (color != INVALID_COLOR)
+                {
+                    success = success && _dispatch->SetDefaultBackground(color);
+                }
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCBG);
+                commandIndex++;
+                colorIndex++;
+            }
+
+            if (commandIndex == OscActionCodes::SetCursorColor && colors.size() > colorIndex)
+            {
+                const auto color = til::at(colors, colorIndex);
+                if (color != INVALID_COLOR)
+                {
+                    success = success && _dispatch->SetCursorColor(color);
+                }
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
+                commandIndex++;
+                colorIndex++;
+            }
         }
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
         break;
     }
     case OscActionCodes::SetClipboard:
@@ -718,7 +737,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     }
     case OscActionCodes::ResetCursorColor:
     {
-        success = _dispatch->SetCursorColor(0xffffffff);
+        success = _dispatch->SetCursorColor(INVALID_COLOR);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCRCC);
         break;
     }
@@ -947,19 +966,15 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 //   with accumulated Ps. For example "OSC 10;color1;color2" is effectively an "OSC 10;color1"
 //   and an "OSC 11;color2".
 //
-//   However, we do not support the chaining of OSC 10-17 yet. Right now only the first parameter
-//   will take effect.
 // Arguments:
 // - string - the Osc String to parse
 // - rgbs - receives the colors that we parsed in the format: 0x00BBGGRR
 // Return Value:
-// - True if the first table index and color was parsed successfully. False otherwise.
+// - True if at least one color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
                                                std::vector<DWORD>& rgbs) const noexcept
 try
 {
-    bool success = false;
-
     const auto parts = Utils::SplitString(string, L';');
     if (parts.size() < 1)
     {
@@ -973,17 +988,16 @@ try
         if (colorOptional.has_value())
         {
             newRgbs.push_back(colorOptional.value());
-            // Only mark the parsing as a success iff the first color is a success.
-            if (i == 0)
-            {
-                success = true;
-            }
+        }
+        else
+        {
+            newRgbs.push_back(INVALID_COLOR);
         }
     }
 
     rgbs.swap(newRgbs);
 
-    return success;
+    return rgbs.size() > 0;
 }
 CATCH_LOG_RETURN_FALSE()
 
