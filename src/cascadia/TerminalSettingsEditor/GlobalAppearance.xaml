@@ -19,6 +19,8 @@ the MIT License. See LICENSE in the project root for license information. -->
             <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
                 <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
             </DataTemplate>
+            
+            <local:InvertedBooleanConverter x:Key="InvertedBooleanConverter"/>
         </ResourceDictionary>
     </Page.Resources>
 
@@ -61,7 +63,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             <!--Disable Animations-->
             <local:SettingContainer x:Uid="Globals_DisableAnimations">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.DisableAnimations, Mode=TwoWay}"/>
+                <ToggleSwitch IsOn="{x:Bind State.Globals.DisableAnimations, Mode=TwoWay, Converter={StaticResource InvertedBooleanConverter}}"/>
             </local:SettingContainer>
         </StackPanel>
     </ScrollViewer>
