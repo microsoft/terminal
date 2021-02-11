@@ -18,11 +18,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return winrt::box_value(!winrt::unbox_value<bool>(value));
     }
 
-    Foundation::IInspectable InvertedBooleanConverter::ConvertBack(Foundation::IInspectable const& /*value*/,
+    Foundation::IInspectable InvertedBooleanConverter::ConvertBack(Foundation::IInspectable const& value,
                                                                                Windows::UI::Xaml::Interop::TypeName const& /* targetType */,
                                                                                Foundation::IInspectable const& /*parameter*/,
                                                                                hstring const& /* language */)
     {
-        throw hresult_not_implemented();
+        return winrt::box_value(!winrt::unbox_value<bool>(value));
     }
 }
