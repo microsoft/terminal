@@ -16,7 +16,12 @@
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
+#include "../types/inc/utils.hpp"
+
+#include "IConsoleHandoff.h"
+
 using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::Utils;
 
 // From ntstatus.h, which we cannot include without causing a bunch of other conflicts. So we just include the one code we need.
 //
@@ -142,7 +147,8 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCloseObject(_In_ PCONSOLE_API_MSG pMessag
 // - The response data to this request message.
 PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API_MSG pReceiveMsg)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    Globals& Globals = ServiceLocator::LocateGlobals();
+    CONSOLE_INFORMATION& gci = Globals.getConsoleInformation();
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AttachConsole);
 
     ConsoleProcessHandle* ProcessData = nullptr;
@@ -157,6 +163,54 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     if (!NT_SUCCESS(Status))
     {
         goto Error;
+    }
+
+    
+
+    // If we are NOT a PTY session (headless)...
+    // we have FOUND a CLSID for a different console to be the default startup handler...
+    // we are NOT already receiving an inbound console connection handoff...
+    // and the client app is going to end up showing a window...
+    // then attempt to delegate the startup to the registered replacement.
+    if (!Globals.launchArgs.IsHeadless() && Globals.handoffConsoleClsid && !Globals.handoffTarget && ConsoleConnectionDeservesVisibleWindow(&Cac))
+    {
+        try
+        {
+            // Go get ourselves some COM.
+            auto coinit = wil::CoInitializeEx(COINIT_MULTITHREADED);
+
+            // Get the class/interface to the handoff handler. Local machine only.
+            ::Microsoft::WRL::ComPtr<IConsoleHandoff> handoff;
+            THROW_IF_FAILED(CoCreateInstance(Globals.handoffConsoleClsid.value(), nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&handoff)));
+
+            // Pack up just enough of the attach message for the other console to process it.
+            // NOTE: It can and will pick up the size/title/etc parameters from the driver again.
+            CONSOLE_PORTABLE_ATTACH_MSG msg{};
+            msg.IdHighPart = pReceiveMsg->Descriptor.Identifier.HighPart;
+            msg.IdLowPart = pReceiveMsg->Descriptor.Identifier.LowPart;
+            msg.Process = pReceiveMsg->Descriptor.Process;
+            msg.Object = pReceiveMsg->Descriptor.Object;
+            msg.Function = pReceiveMsg->Descriptor.Function;
+            msg.InputSize = pReceiveMsg->Descriptor.InputSize;
+            msg.OutputSize = pReceiveMsg->Descriptor.OutputSize;
+
+            // Attempt to get server handle out of our own communication stack to pass it on.
+            HANDLE serverHandle;
+            THROW_IF_FAILED(Globals.pDeviceComm->GetServerHandle(&serverHandle));
+
+            // Okay, moment of truth! If they say they successfully took it over, we're going to clean up.
+            // If they fail, we'll throw here and it'll log and we'll just start normally.
+            THROW_IF_FAILED(handoff->EstablishHandoff(serverHandle,
+                                                      Globals.hInputEvent.get(),
+                                                      &msg));
+
+            // Unlock in case anything tries to spool down as we exit.
+            UnlockConsole();
+
+            // We've handed off responsibility. Exit process to clean up any outstanding things we have open.
+            ExitProcess(S_OK);
+        }
+        CATCH_LOG(); // Just log, don't do anything more. We'll move on to launching normally on failure.
     }
 
     Status = NTSTATUS_FROM_HRESULT(gci.ProcessHandleList.AllocProcessData(dwProcessId,
