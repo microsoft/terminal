@@ -938,14 +938,17 @@ bool OutputStateMachineEngine::_ParseFileUri(const std::wstring_view string,
     }
 
     const auto prefix = string.substr(0, 7);
-    if (!prefix.compare(L"file://") == 0)
+    if (prefix.compare(L"file://") != 0)
     {
         // We don't support URI format other than "file://".
         return false;
     }
 
+    hostname.clear();
+    path.clear();
+
     size_t current = 7;
-    size_t nextSlash = string.find(L"/", current);
+    const size_t nextSlash = string.find(L"/", current);
     if (nextSlash == std::wstring::npos)
     {
         // Invalid URI. Ignore it.
@@ -955,8 +958,11 @@ bool OutputStateMachineEngine::_ParseFileUri(const std::wstring_view string,
     hostname = string.substr(current, nextSlash - current);
     current = nextSlash;
     std::wstring _path = std::wstring(string.substr(current, std::wstring::npos));
-    UrlUnescapeInPlace(path.data(), 0);
-    path = _path;
+    if (SUCCEEDED(UrlUnescapeInPlace(_path.data(), URL_ESCAPE_AS_UTF8 | URL_DONT_UNESCAPE_EXTRA_INFO)))
+    {
+        const auto end = _path.find(L'\0');
+        path = _path.substr(0, end);
+    }
 
     return true;
 }
