@@ -352,8 +352,8 @@ namespace winrt::TerminalApp::implementation
             // When we're zooming the pane, we'll need to remove it from our UI
             // tree. Easy way: just remove both children. We'll re-attach both
             // when we un-zoom.
-            FirstChild_Root().Content(winrt::box_value(L""));
-            SecondChild_Root().Content(winrt::box_value(L""));
+            FirstChild_Root().Content(nullptr);
+            SecondChild_Root().Content(nullptr);
         }
 
         // Always recurse into both children. If the (un)zoomed pane was one of
@@ -825,10 +825,8 @@ namespace winrt::TerminalApp::implementation
         const auto remainingChild = closeFirst ? _secondChild : _firstChild;
 
         // Detach all the controls from our grid, so they can be attached later.
-        // todo: ContentPresenter doesn't seem to have a 'Clear' method, so just as placeholder for now
-        //       we 'detach' the control by replacing it with the empty string
-        FirstChild_Root().Content(nullptr);//NULL, nullptr
-        SecondChild_Root().Content(winrt::box_value(L""));
+        FirstChild_Root().Content(nullptr);
+        SecondChild_Root().Content(nullptr);
 
         const auto closedChildDir = (_splitState == SplitState::Vertical) ?
                                         (closeFirst ? ResizeDirection::Left : ResizeDirection::Right) :
@@ -943,8 +941,8 @@ namespace winrt::TerminalApp::implementation
             // Remove both children from the grid
             // todo: ContentPresenter doesn't seem to have a 'Clear' method, so just as placeholder for now
             //       we 'detach' the control by replacing it with the empty string
-            FirstChild_Root().Content(winrt::box_value(L""));
-            SecondChild_Root().Content(winrt::box_value(L""));
+            FirstChild_Root().Content(nullptr);
+            SecondChild_Root().Content(nullptr);
             // Add the remaining child back to the grid, in the right place.
             if (const auto remainingAsLeaf = remainingChild.try_as<TerminalApp::LeafPane>())
             {
