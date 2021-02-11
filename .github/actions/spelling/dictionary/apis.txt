@@ -23,6 +23,7 @@ Hashtable
 HIGHCONTRASTON
 HIGHCONTRASTW
 href
+IApp
 IAppearance
 IAsync
 IBind
@@ -37,6 +38,7 @@ IExplorer
 IInheritable
 IMap
 IObject
+IPackage
 IPeasant
 IStorage
 ITab

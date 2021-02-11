@@ -105,7 +105,7 @@ HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
         ComPtr<IInspectable> anotherInspectable;
         RETURN_IF_FAILED(anotherMap->Lookup(HStringReference(L"#text").Get(), &anotherInspectable));
 
-        // But this time that Inspectable is an IPropertyValue, which is a PROPVARIANT in a trenchcoat.
+        // But this time that Inspectable is an IPropertyValue, which is a PROPVARIANT in a trench coat.
         ComPtr<IPropertyValue> propValue;
         RETURN_IF_FAILED(anotherInspectable.As(&propValue));
 

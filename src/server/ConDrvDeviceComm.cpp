@@ -175,7 +175,7 @@ ConDrvDeviceComm::~ConDrvDeviceComm()
 }
 
 // Routine Description:
-// - Provides acccess to the raw server handle so it can be used to hand off
+// - Provides access to the raw server handle so it can be used to hand off
 //   the session to another console host server.
 [[nodiscard]] HRESULT ConDrvDeviceComm::GetServerHandle(_Out_ HANDLE* pHandle) const
 {
