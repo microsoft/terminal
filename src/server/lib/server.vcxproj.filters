@@ -72,6 +72,9 @@
     <ClCompile Include="..\ProcessPolicy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\ConsoleShimPolicy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h">
@@ -137,5 +140,11 @@
     <ClInclude Include="..\ProcessPolicy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\ConsoleShimPolicy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
 </Project>
