@@ -244,6 +244,8 @@ namespace winrt::TerminalApp::implementation
 
         _PaneTypeChangedHandlers(nullptr, newParent);
 
+        newParent.InitializeChildren();
+
         return newNeighbour;
     }
 

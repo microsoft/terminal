@@ -129,8 +129,6 @@ namespace winrt::TerminalApp::implementation
 
         _SetupChildEventHandlers(true);
         _SetupChildEventHandlers(false);
-
-        _SetupEntranceAnimation();
     }
 
     // Method Description:
@@ -660,7 +658,7 @@ namespace winrt::TerminalApp::implementation
         {
             // Once both children have their sizes, we can initialize them
             // todo: uh will this cause a problem for commandline startup?
-            InitializeChildren();
+            _SetupEntranceAnimation();
         }
     }
 
@@ -677,8 +675,15 @@ namespace winrt::TerminalApp::implementation
         const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
 
         const bool splitWidth = _splitState == SplitState::Vertical;
-        // todo: why do ActualWidth and ActualHeight return 0?
         const auto totalSize = splitWidth ? ActualWidth() : ActualHeight();
+
+        // There's a chance that we're in startup and so by the time we get here one of our children is
+        // actually a parent, don't try to animate in that case
+        if (!(_firstChild.try_as<TerminalApp::LeafPane>() && _secondChild.try_as<TerminalApp::LeafPane>()))
+        {
+            return;
+        }
+
         // If we don't have a size yet, it's likely that we're in startup, or we're
         // being executed as a sequence of actions. In that case, just skip the
         // animation.
@@ -833,19 +838,14 @@ namespace winrt::TerminalApp::implementation
         // If any children of closed pane was previously active, we move the focus to the remaining child
         if (closedChild.GetActivePane())
         {
-            closedChild.ClearActive();
-            const auto remainingFirstLeaf = remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>();
-            remainingFirstLeaf.SetActive();
-            // todo: this focus call doesn't seem to work?
-            // I've tried:
-            // - putting the focus call in _CloseChild()
-            // - putting the focus call after _CloseChildRoutine() is called in the Closed event handler
-            // - putting the focus call in TerminalTab::ClosePane, after we call Close() on the active pane
-            // - setting the tab content in TerminalTab::ClosePane, after we call Close() (this was to try and send
-            //   a property changed event to the page so it will call focus on the tab)
-            // - calling TerminalTab::Focus(Programmatic) in TerminalTab::ClosePane, after we call Close() on the active pane
-            // - I don't get why if the root pane changes the focus transfers fine but otherwise it doesnt?
-            remainingFirstLeaf.GetTerminalControl().Focus(FocusState::Programmatic);
+            //closedChild.ClearActive();
+            //const auto remainingFirstLeaf = remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>();
+            //remainingFirstLeaf.SetActive();
+
+            //_firstLayoutRevoker = remainingFirstLeaf.GetTerminalControl().LayoutUpdated(winrt::auto_revoke, [=](auto /*s*/, auto /*e*/) {
+            //    remainingFirstLeaf.GetTerminalControl().Focus(FocusState::Programmatic);
+            //    //_firstLayoutRevoker.revoke();
+            //});
         }
 
         // Make sure to only fire off this event _after_ we have set the new active pane, because this event
@@ -1034,7 +1034,7 @@ namespace winrt::TerminalApp::implementation
         auto& closedToken = isFirstChild ? _firstClosedToken : _secondClosedToken;
         auto& typeChangedToken = isFirstChild ? _firstTypeChangedToken : _secondTypeChangedToken;
 
-        if (const auto childAsLeaf = child.try_as<LeafPane>())
+        if (const auto childAsLeaf = child.try_as<TerminalApp::LeafPane>())
         {
             // When our child is a leaf and got closed, we close it
             const auto childImpl = winrt::get_self<implementation::LeafPane>(child);
@@ -1044,7 +1044,26 @@ namespace winrt::TerminalApp::implementation
                 // get closed when our child does.
                 _RemoveAllChildEventHandlers(false);
                 _RemoveAllChildEventHandlers(true);
-                _CloseChildRoutine(isFirstChild);
+
+                if (childAsLeaf.WasLastFocused())
+                {
+                    // make sure to transfer focus to the remaining child if the
+                    // child we are about to close has focus
+                    childAsLeaf.ClearActive();
+                    auto& remainingChild = isFirstChild ? _secondChild : _firstChild;
+                    const auto remainingFirstLeaf = remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>();
+                    remainingFirstLeaf.SetActive();
+                    _CloseChildRoutine(isFirstChild);
+                    _firstLayoutRevoker = remainingFirstLeaf.GetTerminalControl().LayoutUpdated(winrt::auto_revoke, [=](auto /*s*/, auto /*e*/) {
+                        remainingFirstLeaf.GetTerminalControl().Focus(FocusState::Programmatic);
+                        // todo: I don't like that we don't revoke this
+                        //_firstLayoutRevoker.revoke();
+                    });
+                }
+                else
+                {
+                    _CloseChildRoutine(isFirstChild);
+                }
             });
         }
 
