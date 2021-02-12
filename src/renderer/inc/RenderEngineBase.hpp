@@ -40,6 +40,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
 
+        [[nodiscard]] virtual bool RequiresContinuousRedraw() noexcept override;
+
         void WaitUntilCanRender() noexcept override;
 
     protected:

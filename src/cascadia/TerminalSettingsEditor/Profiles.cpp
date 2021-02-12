@@ -11,6 +11,7 @@
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Controls;
+using namespace winrt::Windows::UI::Xaml::Data;
 using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
@@ -26,6 +27,50 @@ static const std::array<winrt::guid, 2> InBoxProfileGuids{
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    ProfileViewModel::ProfileViewModel(const Model::Profile& profile) :
+        _profile{ profile }
+    {
+        // Add a property changed handler to our own property changed event.
+        // When the BackgroundImagePath changes, we _also_ need to change the
+        // value of UseDesktopBGImage.
+        //
+        // We need to do this so if someone manually types "desktopWallpaper"
+        // into the path TextBox, we properly update the checkbox and stored
+        // _lastBgImagePath. Without this, then we'll permanently hide the text
+        // box, prevent it from ever being changed again.
+        //
+        // We do the same for the starting directory path
+        PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
+            const auto viewModelProperty{ args.PropertyName() };
+            if (viewModelProperty == L"BackgroundImagePath")
+            {
+                _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsVisible");
+            }
+            else if (viewModelProperty == L"IsBaseLayer")
+            {
+                _NotifyChanges(L"BackgroundImageSettingsVisible");
+            }
+            else if (viewModelProperty == L"StartingDirectory")
+            {
+                _NotifyChanges(L"UseParentProcessDirectory", L"UseCustomStartingDirectory");
+            }
+        });
+
+        // Cache the original BG image path. If the user clicks "Use desktop
+        // wallpaper", then un-checks it, this is the string we'll restore to
+        // them.
+        if (BackgroundImagePath() != L"desktopWallpaper")
+        {
+            _lastBgImagePath = BackgroundImagePath();
+        }
+
+        // Do the same for the starting directory
+        if (!StartingDirectory().empty())
+        {
+            _lastStartingDirectoryPath = StartingDirectory();
+        }
+    }
+
     bool ProfileViewModel::CanDeleteProfile() const
     {
         const auto guid{ Guid() };
@@ -49,6 +94,86 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    bool ProfileViewModel::UseDesktopBGImage()
+    {
+        return BackgroundImagePath() == L"desktopWallpaper";
+    }
+
+    void ProfileViewModel::UseDesktopBGImage(const bool useDesktop)
+    {
+        if (useDesktop)
+        {
+            // Stash the current value of BackgroundImagePath. If the user
+            // checks and un-checks the "Use desktop wallpaper" button, we want
+            // the path that we display in the text box to remain unchanged.
+            //
+            // Only stash this value if it's not the special "desktopWallpaper"
+            // value.
+            if (BackgroundImagePath() != L"desktopWallpaper")
+            {
+                _lastBgImagePath = BackgroundImagePath();
+            }
+            BackgroundImagePath(L"desktopWallpaper");
+        }
+        else if (HasBackgroundImagePath())
+        {
+            // Restore the path we had previously cached. This might be the
+            // empty string.
+            BackgroundImagePath(_lastBgImagePath);
+        }
+    }
+
+    bool ProfileViewModel::UseParentProcessDirectory()
+    {
+        return StartingDirectory().empty();
+    }
+
+    // This function simply returns the opposite of UseParentProcessDirectory.
+    // We bind the 'IsEnabled' parameters of the textbox and browse button
+    // to this because it needs to be the reverse of UseParentProcessDirectory
+    // but we don't want to create a whole new converter for inverting a boolean
+    bool ProfileViewModel::UseCustomStartingDirectory()
+    {
+        return !UseParentProcessDirectory();
+    }
+
+    void ProfileViewModel::UseParentProcessDirectory(const bool useParent)
+    {
+        if (useParent)
+        {
+            // Stash the current value of StartingDirectory. If the user
+            // checks and un-checks the "Use parent process directory" button, we want
+            // the path that we display in the text box to remain unchanged.
+            //
+            // Only stash this value if it's not empty
+            if (!StartingDirectory().empty())
+            {
+                _lastStartingDirectoryPath = StartingDirectory();
+            }
+            StartingDirectory(L"");
+        }
+        else if (HasStartingDirectory())
+        {
+            // Restore the path we had previously cached as long as it wasn't empty
+            // If it was empty, set the starting directory to %USERPROFILE%
+            // (we need to set it to something non-empty otherwise we will automatically
+            // disable the text box)
+            if (_lastStartingDirectoryPath.empty())
+            {
+                StartingDirectory(L"%USERPROFILE%");
+            }
+            else
+            {
+                StartingDirectory(_lastStartingDirectoryPath);
+            }
+        }
+    }
+
+    bool ProfileViewModel::BackgroundImageSettingsVisible()
+    {
+        return IsBaseLayer() || BackgroundImagePath() != L"";
+    }
+
     void ProfilePageNavigationState::DeleteProfile()
     {
         auto deleteProfileArgs{ winrt::make_self<DeleteProfileEventArgs>(_Profile.Guid()) };
@@ -61,10 +186,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
 
         INITIALIZE_BINDABLE_ENUM_SETTING(CursorShape, CursorStyle, winrt::Microsoft::Terminal::TerminalControl::CursorStyle, L"Profile_CursorShape", L"Content");
-        INITIALIZE_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch, L"Profile_BackgroundImageStretchMode", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(BackgroundImageStretchMode, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch, L"Profile_BackgroundImageStretchMode", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(AntiAliasingMode, TextAntialiasingMode, winrt::Microsoft::Terminal::TerminalControl::TextAntialiasingMode, L"Profile_AntialiasingMode", L"Content");
-        INITIALIZE_BINDABLE_ENUM_SETTING(CloseOnExitMode, CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
-        INITIALIZE_BINDABLE_ENUM_SETTING(BellStyle, BellStyle, winrt::Microsoft::Terminal::Settings::Model::BellStyle, L"Profile_BellStyle", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(CloseOnExitMode, CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(BellStyle, BellStyle, winrt::Microsoft::Terminal::Settings::Model::BellStyle, L"Profile_BellStyle", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::TerminalControl::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
 
         // manually add Custom FontWeight option. Don't add it to the Map
@@ -82,6 +207,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _BIAlignmentButtons.at(6) = BIAlign_BottomLeft();
         _BIAlignmentButtons.at(7) = BIAlign_Bottom();
         _BIAlignmentButtons.at(8) = BIAlign_BottomRight();
+
+        // apply automation properties to more complex setting controls
+        for (const auto& biButton : _BIAlignmentButtons)
+        {
+            const auto tooltip{ ToolTipService::GetToolTip(biButton) };
+            Automation::AutomationProperties::SetName(biButton, unbox_value<hstring>(tooltip));
+        }
+
+        const auto startingDirCheckboxTooltip{ ToolTipService::GetToolTip(StartingDirectoryUseParentCheckbox()) };
+        Automation::AutomationProperties::SetFullDescription(StartingDirectoryUseParentCheckbox(), unbox_value<hstring>(startingDirCheckboxTooltip));
+
+        const auto backgroundImgCheckboxTooltip{ ToolTipService::GetToolTip(UseDesktopImageCheckBox()) };
+        Automation::AutomationProperties::SetFullDescription(UseDesktopImageCheckBox(), unbox_value<hstring>(backgroundImgCheckboxTooltip));
+
+        Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"Profile_DeleteButton/Text"));
     }
 
     void Profiles::OnNavigatedTo(const NavigationEventArgs& e)
@@ -114,6 +254,65 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             disclaimer = RS_(L"Profile_DeleteButtonDisclaimerDynamic");
         }
         DeleteButtonDisclaimer().Text(disclaimer);
+
+        // Check the use parent directory box if the starting directory is empty
+        if (_State.Profile().StartingDirectory().empty())
+        {
+            StartingDirectoryUseParentCheckbox().IsChecked(true);
+        }
+
+        // Subscribe to some changes in the view model
+        // These changes should force us to update our own set of "Current<Setting>" members,
+        // and propagate those changes to the UI
+        _ViewModelChangedRevoker = _State.Profile().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
+            const auto settingName{ args.PropertyName() };
+            if (settingName == L"CursorShape")
+            {
+                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
+                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
+            }
+            else if (settingName == L"BackgroundImageStretchMode")
+            {
+                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentBackgroundImageStretchMode" });
+            }
+            else if (settingName == L"AntialiasingMode")
+            {
+                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentAntiAliasingMode" });
+            }
+            else if (settingName == L"CloseOnExit")
+            {
+                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCloseOnExitMode" });
+            }
+            else if (settingName == L"BellStyle")
+            {
+                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentBellStyle" });
+            }
+            else if (settingName == L"ScrollState")
+            {
+                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentScrollState" });
+            }
+            else if (settingName == L"FontWeight")
+            {
+                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentFontWeight" });
+                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsCustomFontWeight" });
+            }
+            else if (settingName == L"ColorSchemeName")
+            {
+                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
+            }
+            else if (settingName == L"BackgroundImageAlignment")
+            {
+                _UpdateBIAlignmentControl(static_cast<int32_t>(_State.Profile().BackgroundImageAlignment()));
+            }
+        });
+
+        // Navigate to the pivot in the provided navigation state
+        ProfilesPivot().SelectedIndex(static_cast<int>(_State.LastActivePivot()));
+    }
+
+    void Profiles::OnNavigatedFrom(const NavigationEventArgs& /*e*/)
+    {
+        _ViewModelChangedRevoker.revoke();
     }
 
     ColorScheme Profiles::CurrentColorScheme()
@@ -238,7 +437,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // So the TwoWay binding doesn't update on the State --> Slider direction
                 FontWeightSlider().Value(weight);
             }
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"IsCustomFontWeight" });
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsCustomFontWeight" });
         }
     }
 
@@ -252,29 +451,41 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles::BIAlignment_Click(IInspectable const& sender, RoutedEventArgs const& /*e*/)
     {
-        if (const auto& button{ sender.try_as<Windows::UI::Xaml::Controls::Primitives::ToggleButton>() })
+        if (const auto& button{ sender.try_as<Primitives::ToggleButton>() })
         {
             if (const auto& tag{ button.Tag().try_as<int32_t>() })
             {
-                // Update the Profile's value
+                // Update the Profile's value and the control
                 _State.Profile().BackgroundImageAlignment(static_cast<ConvergedAlignment>(*tag));
-
-                // reset all of the buttons to unchecked, except for the one that was clicked
-                for (const auto& biButton : _BIAlignmentButtons)
-                {
-                    biButton.IsChecked(biButton == button);
-                }
+                _UpdateBIAlignmentControl(*tag);
             }
         }
     }
 
-    void Profiles::CursorShape_Changed(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    // Method Description:
+    // - Resets all of the buttons to unchecked, and checks the one with the provided tag
+    // Arguments:
+    // - val - the background image alignment (ConvergedAlignment) that we want to represent in the control
+    void Profiles::_UpdateBIAlignmentControl(const int32_t val)
     {
-        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"IsVintageCursor" });
+        for (const auto& biButton : _BIAlignmentButtons)
+        {
+            if (const auto& biButtonAlignment{ biButton.Tag().try_as<int32_t>() })
+            {
+                biButton.IsChecked(biButtonAlignment == val);
+            }
+        }
     }
 
     bool Profiles::IsVintageCursor() const
     {
         return _State.Profile().CursorShape() == TerminalControl::CursorStyle::Vintage;
     }
+
+    void Profiles::Pivot_SelectionChanged(Windows::Foundation::IInspectable const& /*sender*/,
+                                          RoutedEventArgs const& /*e*/)
+    {
+        _State.LastActivePivot(static_cast<Editor::ProfilesPivots>(ProfilesPivot().SelectedIndex()));
+    }
+
 }

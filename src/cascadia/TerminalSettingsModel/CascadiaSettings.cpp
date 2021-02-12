@@ -865,6 +865,33 @@ winrt::Microsoft::Terminal::Settings::Model::ColorScheme CascadiaSettings::GetCo
     return _globals->ColorSchemes().TryLookup(schemeName);
 }
 
+// Method Description:
+// - updates all references to that color scheme with the new name
+// Arguments:
+// - oldName: the original name for the color scheme
+// - newName: the new name for the color scheme
+// Return Value:
+// - <none>
+void CascadiaSettings::UpdateColorSchemeReferences(const hstring oldName, const hstring newName)
+{
+    // update profiles.defaults, if necessary
+    if (_userDefaultProfileSettings &&
+        _userDefaultProfileSettings->HasColorSchemeName() &&
+        _userDefaultProfileSettings->ColorSchemeName() == oldName)
+    {
+        _userDefaultProfileSettings->ColorSchemeName(newName);
+    }
+
+    // update all profiles referencing this color scheme
+    for (const auto& profile : _allProfiles)
+    {
+        if (profile.HasColorSchemeName() && profile.ColorSchemeName() == oldName)
+        {
+            profile.ColorSchemeName(newName);
+        }
+    }
+}
+
 winrt::hstring CascadiaSettings::ApplicationDisplayName()
 {
     try

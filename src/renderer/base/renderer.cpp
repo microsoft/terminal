@@ -133,6 +133,14 @@ try
 
     auto endPaint = wil::scope_exit([&]() {
         LOG_IF_FAILED(pEngine->EndPaint());
+
+        // If the engine tells us it really wants to redraw immediately,
+        // tell the thread so it doesn't go to sleep and ticks again
+        // at the next opportunity.
+        if (pEngine->RequiresContinuousRedraw())
+        {
+            _NotifyPaintFrame();
+        }
     });
 
     // A. Prep Colors
@@ -662,7 +670,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
                 // 1. this row wrapped
                 // 2. We're painting the last col of the row.
                 // In that case, set lineWrapped=true for the _PaintBufferOutputHelper call.
-                const auto lineWrapped = (buffer.GetRowByOffset(bufferLine.Origin().Y).GetCharRow().WasWrapForced()) &&
+                const auto lineWrapped = (buffer.GetRowByOffset(bufferLine.Origin().Y).WasWrapForced()) &&
                                          (bufferLine.RightExclusive() == buffer.GetSize().Width());
 
                 // Ask the helper to paint through this specific line.

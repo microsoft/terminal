@@ -66,6 +66,9 @@ public:
     // Write goes through the parser
     void Write(std::wstring_view stringView);
 
+    // WritePastedText goes directly to the connection
+    void WritePastedText(std::wstring_view stringView);
+
     [[nodiscard]] std::shared_lock<std::shared_mutex> LockForReading();
     [[nodiscard]] std::unique_lock<std::shared_mutex> LockForWriting();
 
@@ -108,6 +111,8 @@ public:
     bool EnableButtonEventMouseMode(const bool enabled) noexcept override;
     bool EnableAnyEventMouseMode(const bool enabled) noexcept override;
     bool EnableAlternateScrollMode(const bool enabled) noexcept override;
+    bool EnableXtermBracketedPasteMode(const bool enabled) noexcept override;
+    bool IsXtermBracketedPasteModeEnabled() const noexcept override;
 
     bool IsVtInputEnabled() const noexcept override;
 
@@ -117,6 +122,8 @@ public:
     bool EndHyperlink() noexcept override;
 
     bool SetTaskbarProgress(const size_t state, const size_t progress) noexcept override;
+    bool SetWorkingDirectory(std::wstring_view uri) noexcept override;
+    std::wstring_view GetWorkingDirectory() noexcept override;
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -247,12 +254,14 @@ private:
     bool _snapOnInput;
     bool _altGrAliasing;
     bool _suppressApplicationTitle;
+    bool _bracketedPasteMode;
 
     size_t _taskbarState;
     size_t _taskbarProgress;
 
     size_t _hyperlinkPatternId;
 
+    std::wstring _workingDirectory;
 #pragma region Text Selection
     // a selection is represented as a range between two COORDs (start and end)
     // the pivot is the COORD that remains selected when you extend a selection in any direction

@@ -899,10 +899,10 @@ namespace TerminalAppLocalTests
             page->_SelectNextTab(true);
         });
 
-        const auto palette = winrt::get_self<implementation::CommandPalette>(page->CommandPalette());
+        const auto palette = winrt::get_self<winrt::TerminalApp::implementation::CommandPalette>(page->CommandPalette());
 
         VERIFY_ARE_EQUAL(1u, palette->_switcherStartIdx, L"Verify the index is 1 as we went right");
-        VERIFY_ARE_EQUAL(implementation::CommandPaletteMode::TabSwitchMode, palette->_currentMode, L"Verify we are in the tab switcher mode");
+        VERIFY_ARE_EQUAL(winrt::TerminalApp::implementation::CommandPaletteMode::TabSwitchMode, palette->_currentMode, L"Verify we are in the tab switcher mode");
 
         Log::Comment(L"Verify command palette preserves MRU order of tabs");
         VERIFY_ARE_EQUAL(4u, palette->_filteredActions.Size());

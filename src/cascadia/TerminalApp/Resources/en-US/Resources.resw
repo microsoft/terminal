@@ -253,6 +253,10 @@
     <value>Found a "splitPane" command with an invalid "size". This command will be ignored. Make sure the size is between 0 and 1, exclusive.</value>
     <comment>{Locked="\"splitPane\"","\"size\""}</comment>
   </data>
+  <data name="FailedToParseStartupActions" xml:space="preserve">
+    <value>Failed to parse "startupActions".</value>
+    <comment>{Locked="\"startupActions\""}</comment>
+  </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>An optional command, with arguments, to be spawned in the new tab or pane</value>
   </data>
@@ -318,8 +322,21 @@
   <data name="CmdFullscreenDesc" xml:space="preserve">
     <value>Launch the window in fullscreen mode</value>
   </data>
+  <data name="CmdMoveFocusDesc" xml:space="preserve">
+    <value>Move focus to the adjacent pane in the specified direction</value>
+  </data>
+  <data name="CmdMFDesc" xml:space="preserve">
+    <value>An alias for the "move-focus" subcommand.</value>
+    <comment>{Locked="\"move-focus\""}</comment>
+  </data>
+  <data name="CmdMoveFocusDirectionArgDesc" xml:space="preserve">
+    <value>The direction to move focus in</value>
+  </data>
   <data name="CmdFocusDesc" xml:space="preserve">
     <value>Launch the window in focus mode</value>
+  </data>
+  <data name="CmdWindowTargetArgDesc" xml:space="preserve">
+    <value>Specify a terminal window to run the given commandline in. "0" always refers to the current window. </value>
   </data>
   <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Press the button to open a new terminal tab with your default profile. Open the flyout to select which profile you want to open.</value>
@@ -390,6 +407,18 @@
   <data name="CloseAllDialog.Title" xml:space="preserve">
     <value>Do you want to close all tabs?</value>
   </data>
+  <data name="CloseReadOnlyDialog.CloseButtonText" xml:space="preserve">
+    <value>Close anyway</value>
+  </data>
+  <data name="CloseReadOnlyDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Title" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Content" xml:space="preserve">
+    <value>You are about to close a read-only terminal. Do you wish to continue?</value>
+  </data>
   <data name="LargePasteDialog.CloseButtonText" xml:space="preserve">
     <value>Cancel</value>
   </data>
@@ -405,7 +434,7 @@
   <data name="MultiLinePasteDialog.CloseButtonText" xml:space="preserve">
     <value>Cancel</value>
   </data>
-  <data name="MultiLinePasteDialog.Content" xml:space="preserve">
+  <data name="MultiLineWarningText.Text" xml:space="preserve">
     <value>You are about to paste text that contains multiple lines. If you paste this text into your shell, it may result in the unexpected execution of commands. Do you wish to continue?</value>
   </data>
   <data name="MultiLinePasteDialog.PrimaryButtonText" xml:space="preserve">
@@ -526,5 +555,8 @@
   </data>
   <data name="NoticeWarning" xml:space="preserve">
     <value>Warning</value>
+  </data>
+  <data name="ClipboardTextHeader.Text" xml:space="preserve">
+    <value>Clipboard contents (preview):</value>
   </data>
 </root>

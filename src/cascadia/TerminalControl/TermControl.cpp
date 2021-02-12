@@ -11,6 +11,7 @@
 #include <WinUser.h>
 #include <LibraryResources.h>
 #include "../../types/inc/GlyphWidth.hpp"
+#include "../../types/inc/Utils.hpp"
 
 #include "TermControl.g.cpp"
 #include "TermControlAutomationPeer.h"
@@ -277,12 +278,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Method Description:
     // - Given new settings for this profile, applies the settings to the current terminal.
     // Arguments:
-    // - newSettings: New settings values for the profile in this terminal.
+    // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::UpdateSettings(IControlSettings newSettings)
+    winrt::fire_and_forget TermControl::UpdateSettings()
     {
-        _settings = newSettings;
         auto weakThis{ get_weak() };
 
         // Dispatch a call to the UI thread to apply the new settings to the
@@ -559,10 +559,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 solidColor.Color(newBgColor);
             }
-
-            // Set the default background as transparent to prevent the
-            // DX layer from overwriting the background image or acrylic effect
-            _settings.DefaultBackground(static_cast<COLORREF>(newBgColor.with_alpha(0)));
         }
     }
 
@@ -869,6 +865,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        _HidePointerCursorHandlers(*this, nullptr);
+
         const auto ch = e.Character();
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
         auto modifiers = _GetPressedModifierKeys();
@@ -887,8 +885,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Whether the key was handled.
     bool TermControl::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
     {
+        // Short-circuit isReadOnly check to avoid warning dialog
+        if (_isReadOnly)
+        {
+            return false;
+        }
+
         const auto modifiers{ _GetPressedModifierKeys() };
         auto handled = false;
+
         if (vkey == VK_MENU && !down)
         {
             // Manually generate an Alt KeyUp event into the key bindings or terminal.
@@ -965,6 +970,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto modifiers = _GetPressedModifierKeys();
         const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
+
+        // Short-circuit isReadOnly check to avoid warning dialog
+        if (_isReadOnly)
+        {
+            e.Handled(!keyDown || _TryHandleKeyBinding(vkey, scanCode, modifiers));
+            return;
+        }
+
         if (e.KeyStatus().IsExtendedKey)
         {
             modifiers |= ControlKeyStates::EnhancedKey;
@@ -1213,6 +1226,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        _RestorePointerCursorHandlers(*this, nullptr);
+
         _CapturePointer(sender, args);
 
         const auto ptr = args.Pointer();
@@ -1342,27 +1357,29 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        _RestorePointerCursorHandlers(*this, nullptr);
+
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
         const auto cursorPosition = point.Position();
         const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
-        if (!_focused && (_terminal->GetHyperlinkAtPosition(terminalPosition).empty()))
+        if (!_focused && _settings.FocusFollowMouse())
         {
-            args.Handled(true);
-            return;
+            Focus(FocusState::Pointer);
         }
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            if (_CanSendVTMouseInput())
+            // Short-circuit isReadOnly check to avoid warning dialog
+            if (_focused && !_isReadOnly && _CanSendVTMouseInput())
             {
                 _TrySendMouseEvent(point);
                 args.Handled(true);
                 return;
             }
 
-            if (point.Properties().IsLeftButtonPressed())
+            if (_focused && point.Properties().IsLeftButtonPressed())
             {
                 auto lock = _terminal->LockForWriting();
 
@@ -1451,7 +1468,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
             }
         }
-        else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
+        else if (_focused && ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
         {
             const auto contactRect = point.Properties().ContactRect();
             winrt::Windows::Foundation::Point newTouchPoint{ contactRect.X, contactRect.Y };
@@ -1507,7 +1524,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            if (_CanSendVTMouseInput())
+            // Short-circuit isReadOnly check to avoid warning dialog
+            if (!_isReadOnly && _CanSendVTMouseInput())
             {
                 _TrySendMouseEvent(point);
                 args.Handled(true);
@@ -1549,6 +1567,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        _RestorePointerCursorHandlers(*this, nullptr);
+
         const auto point = args.GetCurrentPoint(*this);
         const auto props = point.Properties();
         const TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(), props.IsMiddleButtonPressed(), props.IsRightButtonPressed() };
@@ -1580,7 +1600,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                     const int32_t delta,
                                     const TerminalInput::MouseButtonState state)
     {
-        if (_CanSendVTMouseInput())
+        // Short-circuit isReadOnly check to avoid warning dialog
+        if (!_isReadOnly && _CanSendVTMouseInput())
         {
             // Most mouse event handlers call
             //      _TrySendMouseEvent(point);
@@ -1980,6 +2001,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        _RestorePointerCursorHandlers(*this, nullptr);
+
         _focused = false;
 
         if (_uiaEngine.get())
@@ -2013,41 +2036,35 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_SendInputToConnection(const winrt::hstring& wstr)
     {
-        _connection.WriteInput(wstr);
+        if (_isReadOnly)
+        {
+            _RaiseReadOnlyWarning();
+        }
+        else
+        {
+            _connection.WriteInput(wstr);
+        }
     }
 
     void TermControl::_SendInputToConnection(std::wstring_view wstr)
     {
-        _connection.WriteInput(wstr);
+        if (_isReadOnly)
+        {
+            _RaiseReadOnlyWarning();
+        }
+        else
+        {
+            _connection.WriteInput(wstr);
+        }
     }
 
     // Method Description:
     // - Pre-process text pasted (presumably from the clipboard)
-    //   before sending it over the terminal's connection, converting
-    //   Windows-space \r\n line-endings to \r line-endings
+    //   before sending it over the terminal's connection.
     void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
     {
-        // Some notes on this implementation:
-        //
-        // - std::regex can do this in a single line, but is somewhat
-        //   overkill for a simple search/replace operation (and its
-        //   performance guarantees aren't exactly stellar)
-        // - The STL doesn't have a simple string search/replace method.
-        //   This fact is lamentable.
-        // - This line-ending conversion is intentionally fairly
-        //   conservative, to avoid stripping out lone \n characters
-        //   where they could conceivably be intentional.
-
-        std::wstring stripped{ wstr };
-
-        std::wstring::size_type pos = 0;
-
-        while ((pos = stripped.find(L"\r\n", pos)) != std::wstring::npos)
-        {
-            stripped.replace(pos, 2, L"\r");
-        }
-
-        _connection.WriteInput(stripped);
+        _terminal->WritePastedText(wstr);
+        _terminal->ClearSelection();
         _terminal->TrySnapOnInput();
     }
 
@@ -2428,6 +2445,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _settings.ProfileName();
     }
 
+    hstring TermControl::WorkingDirectory() const
+    {
+        hstring hstr{ _terminal->GetWorkingDirectory() };
+        return hstr;
+    }
+
     // Method Description:
     // - Given a copy-able selection, get the selected text from the buffer and send it to the
     //     Windows Clipboard (CascadiaWin32:main.cpp).
@@ -2533,6 +2556,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (!_closing.exchange(true))
         {
+            _RestorePointerCursorHandlers(*this, nullptr);
+
             // Stop accepting new output and state changes before we disconnect everything.
             _connection.TerminalOutput(_connectionOutputEventToken);
             _connectionStateChangedRevoker.revoke();
@@ -2546,6 +2571,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // don't really care to wait for the connection to be completely
             // closed. We can just do it whenever.
             _AsyncCloseConnection();
+
+            {
+                // GH#8734:
+                // We lock the terminal here to make sure it isn't still being
+                // used in the connection thread before we destroy the renderer.
+                // However, we must unlock it again prior to triggering the
+                // teardown, to avoid the render thread being deadlocked. The
+                // renderer may be waiting to acquire the terminal lock, while
+                // we're waiting for the renderer to finish.
+                auto lock = _terminal->LockForWriting();
+            }
 
             if (auto localRenderEngine{ std::exchange(_renderEngine, nullptr) })
             {
@@ -3226,6 +3262,35 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     const size_t TermControl::TaskbarProgress() const noexcept
     {
         return _terminal->GetTaskbarProgress();
+    }
+
+    // Method Description:
+    // - Checks whether the control is in a read-only mode (in this mode node input is sent to connection).
+    // Return Value:
+    // - True if the mode is read-only
+    bool TermControl::ReadOnly() const noexcept
+    {
+        return _isReadOnly;
+    }
+
+    // Method Description:
+    // - Toggles the read-only flag, raises event describing the value change
+    void TermControl::ToggleReadOnly()
+    {
+        _isReadOnly = !_isReadOnly;
+        _ReadOnlyChangedHandlers(*this, winrt::box_value(_isReadOnly));
+    }
+
+    winrt::fire_and_forget TermControl::_RaiseReadOnlyWarning()
+    {
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_foreground(Dispatcher());
+
+        if (auto control{ weakThis.get() })
+        {
+            auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));
+            control->_raiseNoticeHandlers(*control, std::move(noticeArgs));
+        }
     }
 
     // -------------------------------- WinRT Events ---------------------------------

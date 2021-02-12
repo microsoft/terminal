@@ -42,6 +42,16 @@ HRESULT RenderEngineBase::PrepareRenderInfo(const RenderFrameInfo& /*info*/) noe
 }
 
 // Method Description:
+// - By default, no one should need continuous redraw. It ruins performance
+//   in terms of CPU, memory, and battery life to just paint forever.
+//   That's why we sleep when there's nothing to draw.
+//   But if you REALLY WANT to do special effects... you need to keep painting.
+[[nodiscard]] bool RenderEngineBase::RequiresContinuousRedraw() noexcept
+{
+    return false;
+}
+
+// Method Description:
 // - Blocks until the engine is able to render without blocking.
 void RenderEngineBase::WaitUntilCanRender() noexcept
 {

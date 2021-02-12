@@ -411,6 +411,8 @@ HRESULT DxEngine::_SetupTerminalEffects()
     pixelShaderSettingsBufferDesc.ByteWidth = sizeof(_pixelShaderSettings);
     pixelShaderSettingsBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
+    _shaderStartTime = std::chrono::steady_clock::now();
+
     _ComputePixelShaderSettings();
 
     D3D11_SUBRESOURCE_DATA pixelShaderSettingsInitData{};
@@ -454,9 +456,8 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
     {
         try
         {
-            // Set the time
-            //  TODO:GH#7013 Grab timestamp
-            _pixelShaderSettings.Time = 0.0f;
+            // Set the time (seconds since the shader was loaded)
+            _pixelShaderSettings.Time = std::chrono::duration_cast<std::chrono::duration<float>>(std::chrono::steady_clock::now() - _shaderStartTime).count();
 
             // Set the UI Scale
             _pixelShaderSettings.Scale = _scale;
@@ -1436,6 +1437,28 @@ CATCH_RETURN()
     CATCH_RETURN();
 
     return S_OK;
+}
+
+// Method Description:
+// - When the shaders are on, say that we need to keep redrawing every
+//   possible frame in case they have some smooth action on every frame tick.
+//   It is presumed that if you're using shaders, you're not about performance...
+//   You're instead about OOH SHINY. And that's OK. But returning true here is 100%
+//   a perf detriment.
+[[nodiscard]] bool DxEngine::RequiresContinuousRedraw() noexcept
+{
+    // We're only going to request continuous redraw if someone is using
+    // a pixel shader from a path because we cannot tell if those are using the
+    // time parameter or not.
+    // And if they are using time, they probably need it to tick continuously.
+    //
+    // By contrast, the in-built retro effect does NOT need it,
+    // so let's not tick for it and save some amount of performance.
+    //
+    // Finally... if we're not using effects at all... let the render thread
+    // go to sleep. It deserves it. That thread works hard. Also it sleeping
+    // saves battery power and all sorts of related perf things.
+    return _terminalEffectsEnabled && !_pixelShaderPath.empty();
 }
 
 // Method Description:

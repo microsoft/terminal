@@ -2166,6 +2166,17 @@ bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
 }
 
 //Routine Description:
+// Enable "bracketed paste mode".
+//Arguments:
+// - enabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::EnableXtermBracketedPasteMode(const bool /*enabled*/) noexcept
+{
+    return NoOp();
+}
+
+//Routine Description:
 // Set Cursor Style - Changes the cursor's style to match the given Dispatch
 //      cursor style. Unix styles are a combination of the shape and the blinking state.
 //Arguments:

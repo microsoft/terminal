@@ -59,7 +59,7 @@ public:                                                   \
     _BASE_OBSERVABLE_PROJECTED_SETTING(target, name) \
     void Clear##name()                               \
     {                                                \
-        const auto hadValue{ target.Has##Name() };   \
+        const auto hadValue{ target.Has##name() };   \
         target.Clear##name();                        \
         if (hadValue)                                \
         {                                            \

@@ -565,25 +565,33 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     // for the 5 least significant ones to be zeroed out.
     if (keyEvent.IsAltPressed() && keyEvent.IsCtrlPressed())
     {
-        auto ch = keyEvent.GetCharData();
-        if (ch == UNICODE_NULL)
-        {
-            // For Alt+Ctrl+Key messages GetCharData() returns 0.
-            // The values of the ASCII characters and virtual key codes
-            // of <Space>, A-Z (as used below) are numerically identical.
-            // -> Get the char from the virtual key.
-            ch = keyEvent.GetVirtualKeyCode();
-        }
+        const auto ch = keyEvent.GetCharData();
+        const auto vkey = keyEvent.GetVirtualKeyCode();
+
+        // For Alt+Ctrl+Key messages GetCharData() usually returns 0.
+        // Luckily the numerical values of the ASCII characters and virtual key codes
+        // of <Space> and A-Z, as used below, are numerically identical.
+        // -> Get the char from the virtual key if it's 0.
+        const auto ctrlAltChar = keyEvent.GetCharData() != 0 ? keyEvent.GetCharData() : keyEvent.GetVirtualKeyCode();
+
         // Alt+Ctrl acts as a substitute for AltGr on Windows.
         // For instance using a German keyboard both AltGr+< and Alt+Ctrl+< produce a | (pipe) character.
         // The below condition primitively ensures that we allow all common Alt+Ctrl combinations
         // while preserving most of the functionality of Alt+Ctrl as a substitute for AltGr.
-        if (ch == UNICODE_SPACE || (ch > 0x40 && ch <= 0x5A))
+        if (ctrlAltChar == UNICODE_SPACE || (ctrlAltChar > 0x40 && ctrlAltChar <= 0x5A))
         {
             // Pressing the control key causes all bits but the 5 least
             // significant ones to be zeroed out (when using ASCII).
-            ch &= 0b11111;
-            _SendEscapedInputSequence(ch);
+            _SendEscapedInputSequence(ctrlAltChar & 0b11111);
+            return true;
+        }
+
+        // Currently, when we're called with Alt+Ctrl+@, ch will be 0, since Ctrl+@ equals a null byte.
+        // VkKeyScanW(0) in turn returns the vkey for the null character (ASCII @).
+        // -> Use the vkey to determine if Ctrl+@ is being pressed and produce ^[^@.
+        if (ch == UNICODE_NULL && vkey == LOBYTE(VkKeyScanW(0)))
+        {
+            _SendEscapedInputSequence(L'\0');
             return true;
         }
     }
@@ -627,9 +635,28 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
             _SendNullInputSequence(keyEvent.GetActiveModifierKeys());
             return true;
         }
+
+        // Not all keyboard layouts contain mappings for Ctrl-key combinations.
+        // For instance the US one contains a mapping of Ctrl+\ to ^\,
+        // but the UK extended layout doesn't, in which case ch is null.
+        if (ch == UNICODE_NULL)
+        {
+            // -> Try to infer the character from the vkey.
+            auto mappedChar = LOWORD(MapVirtualKeyW(keyEvent.GetVirtualKeyCode(), MAPVK_VK_TO_CHAR));
+            if (mappedChar)
+            {
+                // Pressing the control key causes all bits but the 5 least
+                // significant ones to be zeroed out (when using ASCII).
+                mappedChar &= 0b11111;
+                _SendChar(mappedChar);
+                return true;
+            }
+        }
     }
 
     // Check any other key mappings (like those for the F1-F12 keys).
+    // These mappings will kick in no matter which modifiers are pressed and as such
+    // must be checked last, or otherwise we'd override more complex key combinations.
     const auto mapping = _getKeyMapping(keyEvent, _ansiMode, _cursorApplicationMode, _keypadApplicationMode);
     if (_translateDefaultMapping(keyEvent, mapping, senderFunc))
     {

@@ -84,6 +84,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT StartPaint() noexcept override;
         [[nodiscard]] HRESULT EndPaint() noexcept override;
 
+        [[nodiscard]] bool RequiresContinuousRedraw() noexcept override;
+
         void WaitUntilCanRender() noexcept override;
         [[nodiscard]] HRESULT Present() noexcept override;
 
@@ -245,6 +247,8 @@ namespace Microsoft::Console::Render
         //  Allows user to load a pixel shader from a few presets or from a file path
         std::wstring _pixelShaderPath;
         bool _pixelShaderLoaded{ false };
+
+        std::chrono::steady_clock::time_point _shaderStartTime;
 
         // DX resources needed for terminal effects
         ::Microsoft::WRL::ComPtr<ID3D11RenderTargetView> _renderTargetView;
