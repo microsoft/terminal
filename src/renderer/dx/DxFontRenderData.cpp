@@ -24,7 +24,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     return _dwriteTextAnalyzer;
 }
 
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFallback> DxFontRenderData::GetSystemFontFallback()
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFallback> DxFontRenderData::SystemFontFallback()
 {
     if (!_systemFontFallback)
     {
@@ -34,6 +34,26 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     }
 
     return _systemFontFallback;
+}
+
+[[nodiscard]] std::wstring DxFontRenderData::UserLocaleName()
+{
+    if (_userLocaleName.empty())
+    {
+        std::array<wchar_t, LOCALE_NAME_MAX_LENGTH> localeName;
+
+        const auto returnCode = GetUserDefaultLocaleName(localeName.data(), gsl::narrow<int>(localeName.size()));
+        if (returnCode)
+        {
+            _userLocaleName = { localeName.data() };
+        }
+        else
+        {
+            _userLocaleName = { FALLBACK_LOCALE.data(), FALLBACK_LOCALE.size() };
+        }
+    }
+
+    return _userLocaleName;
 }
 
 [[nodiscard]] til::size DxFontRenderData::GlyphCell() noexcept
@@ -87,7 +107,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
         DWRITE_FONT_WEIGHT weight = static_cast<DWRITE_FONT_WEIGHT>(desired.GetWeight());
         DWRITE_FONT_STYLE style = DWRITE_FONT_STYLE_NORMAL;
         DWRITE_FONT_STRETCH stretch = DWRITE_FONT_STRETCH_NORMAL;
-        std::wstring localeName = _GetLocaleName();
+        std::wstring localeName = UserLocaleName();
 
         // _ResolveFontFaceWithFallback overrides the last argument with the locale name of the font,
         // but we should use the system's locale to render the text.
@@ -660,27 +680,6 @@ CATCH_RETURN()
     }
 
     return fontFace;
-}
-
-// Routine Description:
-// - Helper to retrieve the user's locale preference or fallback to the default.
-// Arguments:
-// - <none>
-// Return Value:
-// - A locale that can be used on construction of assorted DX objects that want to know one.
-[[nodiscard]] std::wstring DxFontRenderData::_GetLocaleName() const
-{
-    std::array<wchar_t, LOCALE_NAME_MAX_LENGTH> localeName;
-
-    const auto returnCode = GetUserDefaultLocaleName(localeName.data(), gsl::narrow<int>(localeName.size()));
-    if (returnCode)
-    {
-        return { localeName.data() };
-    }
-    else
-    {
-        return { FALLBACK_LOCALE.data(), FALLBACK_LOCALE.size() };
-    }
 }
 
 // Routine Description:

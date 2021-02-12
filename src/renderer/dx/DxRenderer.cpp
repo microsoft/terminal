@@ -2016,12 +2016,12 @@ float DxEngine::GetScaling() const noexcept
 // - iDpi - <unused>
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::GetProposedFont(const FontInfoDesired& /*pfiFontInfoDesired*/,
-                                                FontInfo& /*pfiFontInfo*/,
-                                                int const /*iDpi*/) noexcept
+[[nodiscard]] HRESULT DxEngine::GetProposedFont(const FontInfoDesired& pfiFontInfoDesired,
+                                                FontInfo& pfiFontInfo,
+                                                int const iDpi) noexcept
 {
-    // No-op
-    return S_OK;
+    DxFontRenderData fontRenderData(_dwriteFactory);
+    return fontRenderData.UpdateFont(pfiFontInfoDesired, pfiFontInfo, iDpi);
 }
 
 // Routine Description:

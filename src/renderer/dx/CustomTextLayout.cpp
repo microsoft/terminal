@@ -22,7 +22,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<DxFontRenderData*> const fontRe
     _fontRenderData{ fontRenderData },
     _formatInUse{ fontRenderData->DefaultTextFormat().Get() },
     _fontInUse{ fontRenderData->DefaultFontFace().Get() },
-    _localeName{},
+    _localeName{ _fontRenderData->UserLocaleName() },
     _numberSubstitution{},
     _readingDirection{ DWRITE_READING_DIRECTION_LEFT_TO_RIGHT },
     _runs{},
@@ -31,9 +31,6 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<DxFontRenderData*> const fontRe
     _width{ gsl::narrow_cast<size_t>(fontRenderData->GlyphCell().width()) },
     _isEntireTextSimple{ false }
 {
-    // Fetch the locale name out once now from the format
-    _localeName.resize(gsl::narrow_cast<size_t>(_fontRenderData->DefaultTextFormat()->GetLocaleNameLength()) + 1); // +1 for null
-    THROW_IF_FAILED(_fontRenderData->DefaultTextFormat()->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
 }
 
 //Routine Description:
@@ -1245,7 +1242,7 @@ CATCH_RETURN();
 
         if (!fallback)
         {
-            fallback = _fontRenderData->GetSystemFontFallback();
+            fallback = _fontRenderData->SystemFontFallback();
         }
 
         // Walk through and analyze the entire string

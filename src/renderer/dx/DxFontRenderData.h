@@ -33,7 +33,10 @@ namespace Microsoft::Console::Render
         // DirectWrite text analyzer from the factory
         [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> Analyzer() noexcept;
 
-        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFallback> GetSystemFontFallback();
+        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFallback> SystemFontFallback();
+
+        // A locale that can be used on construction of assorted DX objects that want to know one.
+        [[nodiscard]] std::wstring UserLocaleName();
 
         [[nodiscard]] til::size GlyphCell() noexcept;
         [[nodiscard]] LineMetrics GetLineMetrics() noexcept;
@@ -53,9 +56,6 @@ namespace Microsoft::Console::Render
         // The italic variant of the font face to use while calculating layout for italic text
         [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> ItalicFontFace() noexcept;
 
-        // Box drawing scaling effects that are cached for the italic font across layouts
-        [[nodiscard]] Microsoft::WRL::ComPtr<IBoxDrawingEffect> ItalicBoxDrawingEffect() noexcept;
-
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& desired, FontInfo& fiFontInfo, const int dpi) noexcept;
 
         [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, float fontScale, IBoxDrawingEffect** effect) noexcept;
@@ -73,8 +73,6 @@ namespace Microsoft::Console::Render
                                                                                DWRITE_FONT_STYLE& style,
                                                                                std::wstring& localeName) const;
 
-        [[nodiscard]] std::wstring _GetLocaleName() const;
-
         [[nodiscard]] std::wstring _GetFontFamilyName(gsl::not_null<IDWriteFontFamily*> const fontFamily,
                                                       std::wstring& localeName) const;
 
@@ -89,6 +87,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
 
         ::Microsoft::WRL::ComPtr<IDWriteFontFallback> _systemFontFallback;
+        std::wstring _userLocaleName;
 
         til::size _glyphCell;
 
