@@ -939,8 +939,6 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Remove both children from the grid
-            // todo: ContentPresenter doesn't seem to have a 'Clear' method, so just as placeholder for now
-            //       we 'detach' the control by replacing it with the empty string
             FirstChild_Root().Content(nullptr);
             SecondChild_Root().Content(nullptr);
             // Add the remaining child back to the grid, in the right place.
