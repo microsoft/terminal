@@ -28,7 +28,7 @@ AppearanceConfig::AppearanceConfig()
 {
 }
 
-winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(const winrt::com_ptr<IAppearanceConfig> source)
+winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(const winrt::com_ptr<AppearanceConfig> source)
 {
     auto appearance{ winrt::make_self<AppearanceConfig>() };
     auto const sourceAppearance = source.try_as<AppearanceConfig>();

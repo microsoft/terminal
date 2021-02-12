@@ -126,7 +126,7 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
         {
             winrt::com_ptr<AppearanceConfig> appearanceImpl;
             appearanceImpl.copy_from(winrt::get_self<AppearanceConfig>(source->_UnfocusedAppearance.value()));
-            //profile->_UnfocusedAppearance = *AppearanceConfig::CopyAppearance(appearanceImpl);
+            profile->_UnfocusedAppearance = *AppearanceConfig::CopyAppearance(appearanceImpl);
         }
     }
 
