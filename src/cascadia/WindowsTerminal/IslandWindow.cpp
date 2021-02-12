@@ -844,5 +844,30 @@ void IslandWindow::_ApplyWindowSize()
                                          SWP_FRAMECHANGED | SWP_NOACTIVATE));
 }
 
+winrt::fire_and_forget IslandWindow::SummonWindow()
+{
+    // On the foreground thread:
+    co_await winrt::resume_foreground(_rootGrid.Dispatcher());
+
+    // From: https://stackoverflow.com/a/59659421
+    // > The trick is to make windows ‘think’ that our process and the target
+    // > window (hwnd) are related by attaching the threads (using
+    // > AttachThreadInput API) and using an alternative API: BringWindowToTop.
+    // If the window is minimized, then restore it. We don't want to do this
+    // always though, because SW_RESTORE'ing a maximized window will
+    // restore-down it.
+    if (IsIconic(_window.get()))
+    {
+        LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
+    }
+    const DWORD windowThreadProcessId = GetWindowThreadProcessId(GetForegroundWindow(), LPDWORD(0));
+    const DWORD currentThreadId = GetCurrentThreadId();
+
+    LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, true));
+    LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
+    LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_SHOW));
+    LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, false));
+}
+
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
 DEFINE_EVENT(IslandWindow, WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
