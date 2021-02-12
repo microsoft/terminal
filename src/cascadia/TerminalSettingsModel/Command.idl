@@ -1,10 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "KeyMapping.idl";
-import "Profile.idl";
-import "ColorScheme.idl";
-import "TerminalWarnings.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {

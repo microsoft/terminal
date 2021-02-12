@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "TermControl.idl";
 
 namespace Microsoft.Terminal.TerminalControl
 {

@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "EnumEntry.idl";
-import "MainPage.idl";
 
 #include "ViewModelHelpers.idl.h"
 

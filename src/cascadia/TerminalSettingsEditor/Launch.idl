@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "EnumEntry.idl"; 
 
 namespace Microsoft.Terminal.Settings.Editor
 {

@@ -1,9 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "PaletteItem.idl";
-import "TabBase.idl";
-import "TerminalTabStatus.idl";
 
 namespace TerminalApp
 {

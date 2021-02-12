@@ -1,5 +1,3 @@
-import "PaletteItem.idl";
-import "TabBase.idl";
 
 namespace TerminalApp
 {

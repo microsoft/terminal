@@ -2,6 +2,23 @@
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildThisFileDirectory)common.build.post.props" />
 
+  <PropertyGroup>
+    <ProjectMergedIdl>$(IntDir)\Merged_$(ProjectName).idl</ProjectMergedIdl>
+  </PropertyGroup>
+  <!-- Merge all idl files into one -->
+  <Target Name="MergeIDLFiles" Inputs="@(Midl)" Outputs="$(ProjectMergedIdl)" BeforeTargets="CppWinRTSetMidlReferences;Midl">
+    <PropertyGroup>
+      <MidlLines>@(Midl-&gt;'#include &lt;%(FullPath)&gt;', '
+')</MidlLines>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(ProjectMergedIdl)" Lines="$(MidlLines)" WriteOnlyWhenDifferent="true" Overwrite="true" />
+    <ItemGroup>
+      <OriginalMidl Include="@(Midl)" />
+      <Midl Remove="@(OriginalMidl)" />
+      <Midl Include="$(ProjectMergedIdl)" />
+    </ItemGroup>
+  </Target>
+
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.201017.1\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.201017.1\build\native\Microsoft.Windows.CppWinRT.targets')" />
   </ImportGroup>

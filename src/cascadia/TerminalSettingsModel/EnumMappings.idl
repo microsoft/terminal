@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation
 // Licensed under the MIT license.
 
-import "GlobalAppSettings.idl";
-import "Profile.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {

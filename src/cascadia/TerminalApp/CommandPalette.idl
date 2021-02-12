@@ -1,10 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "TabBase.idl";
-import "IDirectKeyListener.idl";
-import "HighlightedTextControl.idl";
-import "FilteredCommand.idl";
 
 namespace TerminalApp
 {

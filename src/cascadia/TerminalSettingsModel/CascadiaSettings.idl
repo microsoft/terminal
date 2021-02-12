@@ -1,9 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "GlobalAppSettings.idl";
-import "Profile.idl";
-import "TerminalWarnings.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
