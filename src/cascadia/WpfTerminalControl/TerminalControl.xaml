@@ -10,22 +10,10 @@
              x:Name="terminalUserControl">
     <Grid x:Name="terminalGrid">
         <Grid.ColumnDefinitions>
-            <!-- Terminal Renderer -->
             <ColumnDefinition />
-            <!-- Scrollbar -->
             <ColumnDefinition Width="Auto"/>
-            <!-- Right Border, only visible when autoresize is off. -->
-            <ColumnDefinition x:Name="RightColumn"/>
         </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <!-- Terminal Renderer -->
-            <RowDefinition/>
-            <!-- Bottom Border, only visible when autoresize is off. -->
-            <RowDefinition x:Name="BottomRow"/>
-        </Grid.RowDefinitions>
-        <local:TerminalContainer x:Name="termContainer" Grid.Column="0" Grid.Row="0"/>
+        <local:TerminalContainer x:Name="termContainer"/>
         <ScrollBar x:Name="scrollbar" Scroll="Scrollbar_Scroll" SmallChange="1" Grid.Column="1" />
-        <Border x:Name="BottomBorder" Grid.Row="1" Grid.ColumnSpan="2"/>
-        <Border x:Name="RightBorder" Grid.Column="2" Grid.RowSpan="2"/>
     </Grid>
 </UserControl>
