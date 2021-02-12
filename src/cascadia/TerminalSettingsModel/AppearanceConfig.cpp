@@ -28,10 +28,10 @@ AppearanceConfig::AppearanceConfig()
 {
 }
 
-winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(winrt::com_ptr<IAppearanceConfig> source)
+winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(const winrt::com_ptr<IAppearanceConfig> source)
 {
     auto appearance{ winrt::make_self<AppearanceConfig>() };
-    auto sourceAppearance = source.try_as<AppearanceConfig>();
+    auto const sourceAppearance = source.try_as<AppearanceConfig>();
     appearance->_BackgroundImagePath = sourceAppearance->_BackgroundImagePath;
     appearance->_BackgroundImageOpacity = sourceAppearance->_BackgroundImageOpacity;
     appearance->_BackgroundImageStretchMode = sourceAppearance->_BackgroundImageStretchMode;
