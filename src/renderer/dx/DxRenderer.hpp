@@ -181,7 +181,8 @@ namespace Microsoft::Console::Render
 
         bool _firstFrame;
         bool _invalidateFullRows;
-        til::bitmap _invalidMap;
+        std::pmr::unsynchronized_pool_resource _pool;
+        til::pmr::bitmap _invalidMap;
         til::point _invalidScroll;
         bool _allInvalid;
 
