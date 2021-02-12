@@ -94,14 +94,14 @@ namespace Microsoft.Terminal.Wpf
 
             var backgroundColor = new SolidColorBrush(Color.FromRgb(r, g, b));
 
-            // DefaultBackground uses Win32 COLORREF syntax which is BGR instead of RGB.
+            // DefaultForeground uses Win32 COLORREF syntax which is BGR instead of RGB.
             b = Convert.ToByte((theme.DefaultForeground >> 16) & 0xff);
             g = Convert.ToByte((theme.DefaultForeground >> 8) & 0xff);
             r = Convert.ToByte(theme.DefaultForeground & 0xff);
 
             var foregroundColor = new SolidColorBrush(Color.FromRgb(r, g, b));
 
-            // Background for terminal border shown when the terminal renderer is smaller than the window size.
+            // Background for terminal control shown when the terminal renderer is smaller than the window size.
             EllipseGeometry backgroundEllipse = new EllipseGeometry(new Point(10, 10), 20, 20);
             RectangleGeometry dotRectangle = new RectangleGeometry(new Rect(1, 1, 1, 1));
 
@@ -114,7 +114,7 @@ namespace Microsoft.Terminal.Wpf
             backgroundGeometry.Brush = backgroundColor;
             backgroundGeometry.Pen = new Pen(foregroundColor, 1);
 
-            DrawingBrush drawingBrush = new DrawingBrush()
+            DrawingBrush backgroundBrush = new DrawingBrush()
             {
                 Drawing = backgroundGeometry,
                 TileMode = TileMode.Tile,
@@ -123,7 +123,7 @@ namespace Microsoft.Terminal.Wpf
                 ViewportUnits = BrushMappingMode.Absolute,
             };
 
-            this.terminalUserControl.Background = drawingBrush;
+            this.terminalUserControl.Background = backgroundBrush;
         }
 
         /// <summary>
