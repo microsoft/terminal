@@ -240,6 +240,9 @@ namespace winrt::TerminalApp::implementation
                                                 Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
         auto key = e.OriginalKey();
+        auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
+        auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
+        auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
 
         // Some keypresses such as Tab, Return, Esc, and Arrow Keys are ignored by controls because
         // they're not considered input key presses. While they don't raise KeyDown events,
@@ -250,10 +253,6 @@ namespace winrt::TerminalApp::implementation
         // a really widely used keyboard navigation key.
         if (_currentMode == CommandPaletteMode::TabSwitchMode && _keymap)
         {
-            auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
-            auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
-            auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
-
             winrt::Microsoft::Terminal::TerminalControl::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
             const auto action = _keymap.TryLookup(kc);
             if (action)
@@ -269,41 +268,21 @@ namespace winrt::TerminalApp::implementation
                     e.Handled(true);
                 }
             }
-        }
-        else if (key == VirtualKey::Home)
-        {
-            auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control);
-            if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
-            {
-                ScrollToTop();
-                e.Handled(true);
-            }
-        }
-        else if (key == VirtualKey::End)
-        {
-            auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control);
-            if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
-            {
-                ScrollToBottom();
-                e.Handled(true);
-            }
-        }
-    }
 
-    // Method Description:
-    // - Process keystrokes in the input box. This is used for moving focus up
-    //   and down the list of commands in Action mode, and for executing
-    //   commands in both Action mode and Commandline mode.
-    // Arguments:
-    // - e: the KeyRoutedEventArgs containing info about the keystroke.
-    // Return Value:
-    // - <none>
-    void CommandPalette::_keyDownHandler(IInspectable const& /*sender*/,
-                                         Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
-    {
-        auto key = e.OriginalKey();
+            return;
+        }
 
-        if (key == VirtualKey::Up)
+        if (key == VirtualKey::Home && ctrlDown)
+        {
+            ScrollToTop();
+            e.Handled(true);
+        }
+        else if (key == VirtualKey::End && ctrlDown)
+        {
+            ScrollToBottom();
+            e.Handled(true);
+        }
+        else if (key == VirtualKey::Up)
         {
             // Action Mode: Move focus to the next item in the list.
             SelectNextItem(false);
@@ -349,16 +328,22 @@ namespace winrt::TerminalApp::implementation
 
             e.Handled(true);
         }
-        else if (key == VirtualKey::Back)
+        else if (key == VirtualKey::Back && _searchBox().Text().empty() && _lastFilterTextWasEmpty && _currentMode == CommandPaletteMode::ActionMode)
         {
             // If the last filter text was empty, and we're backspacing from
             // that state, then the user "backspaced" the virtual '>' we're
             // using as the action mode indicator. Switch into commandline mode.
-            if (_searchBox().Text().empty() && _lastFilterTextWasEmpty && _currentMode == CommandPaletteMode::ActionMode)
-            {
-                _switchToMode(CommandPaletteMode::CommandlineMode);
-            }
-
+            _switchToMode(CommandPaletteMode::CommandlineMode);
+            e.Handled(true);
+        }
+        else if (key == VirtualKey::C && ctrlDown)
+        {
+            _searchBox().CopySelectionToClipboard();
+            e.Handled(true);
+        }
+        else if (key == VirtualKey::V && ctrlDown)
+        {
+            _searchBox().PasteFromClipboard();
             e.Handled(true);
         }
     }

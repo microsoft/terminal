@@ -133,6 +133,14 @@ try
 
     auto endPaint = wil::scope_exit([&]() {
         LOG_IF_FAILED(pEngine->EndPaint());
+
+        // If the engine tells us it really wants to redraw immediately,
+        // tell the thread so it doesn't go to sleep and ticks again
+        // at the next opportunity.
+        if (pEngine->RequiresContinuousRedraw())
+        {
+            _NotifyPaintFrame();
+        }
     });
 
     // A. Prep Colors

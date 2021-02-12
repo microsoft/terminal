@@ -10,7 +10,7 @@
 #include "ascii.hpp"
 #include "../input/terminalInput.hpp"
 #include "../../inc/unicode.hpp"
-#include "../../types/inc/convert.hpp"
+#include "../../interactivity/inc/EventSynthesis.hpp"
 
 #include <vector>
 #include <functional>
@@ -379,7 +379,7 @@ bool TestInteractDispatch::WriteString(const std::wstring_view string)
     {
         // We're forcing the translation to CP_USA, so that it'll be constant
         //  regardless of the CP the test is running in
-        std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(wch, CP_USA);
+        std::deque<std::unique_ptr<KeyEvent>> convertedEvents = Microsoft::Console::Interactivity::CharToKeyEvents(wch, CP_USA);
         std::move(convertedEvents.begin(),
                   convertedEvents.end(),
                   std::back_inserter(keyEvents));
