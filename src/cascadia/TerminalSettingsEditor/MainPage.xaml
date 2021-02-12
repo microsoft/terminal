@@ -35,7 +35,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                          Header="{Binding ElementName=SettingsNav, Path=SelectedItem.Content, Mode=OneWay}"
                          Loaded="SettingsNav_Loaded"
                          ItemInvoked="SettingsNav_ItemInvoked"
-                         IsBackButtonVisible="Collapsed">
+                         IsBackButtonVisible="Collapsed"
+                         TabFocusNavigation="Cycle">
 
         <muxc:NavigationView.MenuItems>
     
