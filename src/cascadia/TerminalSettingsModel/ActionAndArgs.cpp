@@ -19,7 +19,6 @@ static constexpr std::string_view ExecuteCommandlineKey{ "wt" };
 static constexpr std::string_view FindKey{ "find" };
 static constexpr std::string_view MoveFocusKey{ "moveFocus" };
 static constexpr std::string_view NewTabKey{ "newTab" };
-static constexpr std::string_view NewWindowKey{ "newWindow" };
 static constexpr std::string_view NextTabKey{ "nextTab" };
 static constexpr std::string_view OpenNewTabDropdownKey{ "openNewTabDropdown" };
 static constexpr std::string_view OpenSettingsKey{ "openSettings" }; // TODO GH#2557: Add args for OpenSettings
@@ -52,6 +51,7 @@ static constexpr std::string_view ToggleShaderEffectsKey{ "toggleShaderEffects" 
 static constexpr std::string_view MoveTabKey{ "moveTab" };
 static constexpr std::string_view BreakIntoDebuggerKey{ "breakIntoDebugger" };
 static constexpr std::string_view TogglePaneReadOnlyKey{ "toggleReadOnlyMode" };
+static constexpr std::string_view NewWindowKey{ "newWindow" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
@@ -83,7 +83,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { FindKey, ShortcutAction::Find },
         { MoveFocusKey, ShortcutAction::MoveFocus },
         { NewTabKey, ShortcutAction::NewTab },
-        { NewWindowKey, ShortcutAction::NewWindow },
         { NextTabKey, ShortcutAction::NextTab },
         { OpenNewTabDropdownKey, ShortcutAction::OpenNewTabDropdown },
         { OpenSettingsKey, ShortcutAction::OpenSettings },
@@ -117,6 +116,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { BreakIntoDebuggerKey, ShortcutAction::BreakIntoDebugger },
         { UnboundKey, ShortcutAction::Invalid },
         { TogglePaneReadOnlyKey, ShortcutAction::TogglePaneReadOnly },
+        { NewWindowKey, ShortcutAction::NewWindow },
     };
 
     using ParseResult = std::tuple<IActionArgs, std::vector<SettingsLoadWarnings>>;

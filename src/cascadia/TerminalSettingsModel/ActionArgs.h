@@ -26,6 +26,7 @@
 #include "ScrollDownArgs.g.h"
 #include "MoveTabArgs.g.h"
 #include "ToggleCommandPaletteArgs.g.h"
+#include "NewWindowArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
@@ -75,6 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     public:
         hstring GenerateName() const;
+        hstring ToCommandline() const;
 
         bool Equals(const Model::NewTerminalArgs& other)
         {
@@ -838,6 +840,41 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return *copy;
         }
     };
+
+    struct NewWindowArgs : public NewWindowArgsT<NewWindowArgs>
+    {
+        NewWindowArgs() = default;
+        NewWindowArgs(const Model::NewTerminalArgs& terminalArgs) :
+            _TerminalArgs{ terminalArgs } {};
+        GETSET_PROPERTY(Model::NewTerminalArgs, TerminalArgs, nullptr);
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<NewWindowArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_TerminalArgs.Equals(_TerminalArgs);
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<NewWindowArgs>();
+            args->_TerminalArgs = NewTerminalArgs::FromJson(json);
+            return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<NewWindowArgs>() };
+            copy->_TerminalArgs = _TerminalArgs.Copy();
+            return *copy;
+        }
+    };
+
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
@@ -853,4 +890,5 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(CloseTabsAfterArgs);
     BASIC_FACTORY(MoveTabArgs);
     BASIC_FACTORY(OpenSettingsArgs);
+    BASIC_FACTORY(NewWindowArgs);
 }

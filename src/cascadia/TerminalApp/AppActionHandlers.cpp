@@ -5,6 +5,8 @@
 #include "App.h"
 
 #include "TerminalPage.h"
+#include "../WinRTUtils/inc/WtExeUtils.h"
+#include "../../types/inc/utils.hpp"
 #include "Utils.h"
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -567,6 +569,89 @@ namespace winrt::TerminalApp::implementation
             actionArgs.Handled(true);
             DebugBreak();
         }
+    }
+
+    // Function Description:
+    // - Helper to launch a new WT instance elevated. It'll do this by asking
+    //   the shell to elevate the process for us. This might cause a UAC prompt.
+    //   The elevation is performed on a background thread, as to not block the
+    //   UI thread.
+    // Arguments:
+    // - newTerminalArgs: A NewTerminalArgs describing the terminal instance
+    //   that should be spawned. The Profile should be filled in with the GUID
+    //   of the profile we want to launch.
+    // Return Value:
+    // - <none>
+    // Important: Don't take the param by reference, since we'll be doing work
+    // on another thread.
+    fire_and_forget _OpenNewWindow(const bool elevate,
+                                   const NewTerminalArgs newTerminalArgs)
+    {
+        // Hop to the BG thread
+        co_await winrt::resume_background();
+
+        // This will get us the correct exe for dev/preview/release. If you
+        // don't stick this in a local, it'll get mangled by ShellExecute. I
+        // have no idea why.
+        const auto exePath{ GetWtExePath() };
+
+        // Build the commandline to pass to wt for this set of NewTerminalArgs
+        // `-w -1` will ensure a new window is created.
+        winrt::hstring cmdline{
+            fmt::format(L"-w -1 new-tab {}",
+                        newTerminalArgs ? newTerminalArgs.ToCommandline().c_str() :
+                                          L"")
+        };
+
+        // Build the args to ShellExecuteEx. We need to use ShellExecuteEx so we
+        // can pass the SEE_MASK_NOASYNC flag. That flag allows us to safely
+        // call this on the background thread, and have ShellExecute _not_ call
+        // back to us on the main thread. Without this, if you close the
+        // Terminal quickly after the UAC prompt, the elevated WT will never
+        // actually spawn.
+        SHELLEXECUTEINFOW seInfo{ 0 };
+        seInfo.cbSize = sizeof(seInfo);
+        seInfo.fMask = SEE_MASK_NOASYNC;
+        seInfo.lpVerb = elevate ? L"runas" : L"open";
+        seInfo.lpFile = exePath.c_str();
+        seInfo.lpParameters = cmdline.c_str();
+        seInfo.nShow = SW_SHOWNORMAL;
+        LOG_IF_WIN32_BOOL_FALSE(ShellExecuteExW(&seInfo));
+
+        co_return;
+    }
+
+    void TerminalPage::_HandleNewWindow(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& actionArgs)
+    {
+        NewTerminalArgs newTerminalArgs{ nullptr };
+        if (actionArgs)
+        {
+            if (const auto& realArgs = actionArgs.ActionArgs().try_as<NewWindowArgs>())
+            {
+                newTerminalArgs = realArgs.TerminalArgs();
+            }
+        }
+        if (!newTerminalArgs)
+        {
+            newTerminalArgs = NewTerminalArgs();
+        }
+        // { args ? args.TerminalArgs() : nullptr };
+        auto [profileGuid, settings] = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
+        // manually fill in the evaluated profile
+        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profileGuid));
+        _OpenNewWindow(false, newTerminalArgs);
+        actionArgs.Handled(true);
+        // if (args == nullptr)
+        // {
+        //     _OpenNewTab(nullptr);
+        //     args.Handled(true);
+        // }
+        // else if (const auto& realArgs = args.ActionArgs().try_as<NewTabArgs>())
+        // {
+        //     _OpenNewTab(realArgs.TerminalArgs());
+        //     args.Handled(true);
+        // }
     }
 
 }

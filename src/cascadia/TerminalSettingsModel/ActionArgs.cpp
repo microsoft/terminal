@@ -24,6 +24,7 @@
 #include "CloseTabsAfterArgs.g.cpp"
 #include "MoveTabArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
+#include "NewWindowArgs.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -73,6 +74,53 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Chop off the last ", "
         return winrt::hstring{ s.substr(0, s.size() - 2) };
+    }
+
+    winrt::hstring NewTerminalArgs::ToCommandline() const
+    {
+        std::wstringstream ss;
+
+        if (!_Profile.empty())
+        {
+            ss << fmt::format(L"--profile \"{}\" ", _Profile);
+        }
+        // The caller is always expected to provide the evaluated profile in the
+        // NewTerminalArgs, not the index
+        //
+        // else if (_ProfileIndex)
+        // {
+        //     ss << fmt::format(L"profile index: {}, ", _ProfileIndex.Value());
+        // }
+
+        if (!_StartingDirectory.empty())
+        {
+            ss << fmt::format(L"--startingDirectory \"{}\" ", _StartingDirectory);
+        }
+
+        if (!_TabTitle.empty())
+        {
+            ss << fmt::format(L"--title \"{}\" ", _TabTitle);
+        }
+
+        if (_TabColor)
+        {
+            const til::color tabColor{ _TabColor.Value() };
+            ss << fmt::format(L"--tabColor \"{}\" ", tabColor.ToHexString(true));
+        }
+
+        if (!_Commandline.empty())
+        {
+            ss << fmt::format(L" -- \"{}\" ", _Commandline);
+        }
+
+        auto s = ss.str();
+        if (s.empty())
+        {
+            return L"";
+        }
+
+        // Chop off the last " "
+        return winrt::hstring{ s.substr(0, s.size() - 1) };
     }
 
     winrt::hstring CopyTextArgs::GenerateName() const
@@ -430,5 +478,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"ToggleCommandPaletteCommandLineModeCommandKey");
         }
         return RS_(L"ToggleCommandPaletteCommandKey");
+    }
+
+    winrt::hstring NewWindowArgs::GenerateName() const
+    {
+        winrt::hstring newTerminalArgsStr;
+        if (_TerminalArgs)
+        {
+            newTerminalArgsStr = _TerminalArgs.GenerateName();
+        }
+
+        if (newTerminalArgsStr.empty())
+        {
+            return RS_(L"NewWindowCommandKey");
+        }
+        return winrt::hstring{
+            fmt::format(L"{}, {}", RS_(L"NewWindowCommandKey"), newTerminalArgsStr)
+        };
     }
 }

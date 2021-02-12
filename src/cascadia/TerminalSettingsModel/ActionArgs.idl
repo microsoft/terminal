@@ -86,6 +86,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         Boolean Equals(NewTerminalArgs other);
         String GenerateName();
+        String ToCommandline();
     };
 
     [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
@@ -203,5 +204,11 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs
     {
         CommandPaletteLaunchMode LaunchMode { get; };
+    };
+
+    [default_interface] runtimeclass NewWindowArgs : IActionArgs
+    {
+        NewWindowArgs(NewTerminalArgs terminalArgs);
+        NewTerminalArgs TerminalArgs { get; };
     };
 }
