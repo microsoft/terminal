@@ -103,6 +103,8 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
 {
     try
     {
+        _userLocaleName.clear();
+
         std::wstring fontName(desired.GetFaceName());
         DWRITE_FONT_WEIGHT weight = static_cast<DWRITE_FONT_WEIGHT>(desired.GetWeight());
         DWRITE_FONT_STYLE style = DWRITE_FONT_STYLE_NORMAL;

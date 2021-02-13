@@ -22,7 +22,6 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<DxFontRenderData*> const fontRe
     _fontRenderData{ fontRenderData },
     _formatInUse{ fontRenderData->DefaultTextFormat().Get() },
     _fontInUse{ fontRenderData->DefaultFontFace().Get() },
-    _localeName{ _fontRenderData->UserLocaleName() },
     _numberSubstitution{},
     _readingDirection{ DWRITE_READING_DIRECTION_LEFT_TO_RIGHT },
     _runs{},
@@ -31,6 +30,8 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<DxFontRenderData*> const fontRe
     _width{ gsl::narrow_cast<size_t>(fontRenderData->GlyphCell().width()) },
     _isEntireTextSimple{ false }
 {
+    _localeName.resize(gsl::narrow_cast<size_t>(fontRenderData->DefaultTextFormat()->GetLocaleNameLength()) + 1); // +1 for null
+    THROW_IF_FAILED(fontRenderData->DefaultTextFormat()->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
 }
 
 //Routine Description:
