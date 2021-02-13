@@ -162,11 +162,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             {
             }
 
-            bitmap(til::size sz, bool fill) :
-                bitmap(sz, fill, allocator_type{})
-            {
-            }
-
             bitmap(til::size sz, const allocator_type& allocator) :
                 bitmap(sz, false, allocator)
             {
@@ -178,6 +173,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 _rc(sz),
                 _bits(_sz.area(), fill ? std::numeric_limits<unsigned long long>::max() : 0, _alloc),
                 _runs{ _alloc }
+            {
+            }
+
+            bitmap(til::size sz, bool fill) :
+                bitmap(sz, fill, allocator_type{})
             {
             }
 
