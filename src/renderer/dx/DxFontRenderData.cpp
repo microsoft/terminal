@@ -267,52 +267,55 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
                              scaled,
                              unscaled);
 
+        LineMetrics lineMetrics;
         // There is no font metric for the grid line width, so we use a small
         // multiple of the font size, which typically rounds to a pixel.
-        _lineMetrics.gridlineWidth = std::round(fontSize * 0.025f);
+        lineMetrics.gridlineWidth = std::round(fontSize * 0.025f);
 
         // All other line metrics are in design units, so to get a pixel value,
         // we scale by the font size divided by the design-units-per-em.
         const auto scale = fontSize / fontMetrics.designUnitsPerEm;
-        _lineMetrics.underlineOffset = std::round(fontMetrics.underlinePosition * scale);
-        _lineMetrics.underlineWidth = std::round(fontMetrics.underlineThickness * scale);
-        _lineMetrics.strikethroughOffset = std::round(fontMetrics.strikethroughPosition * scale);
-        _lineMetrics.strikethroughWidth = std::round(fontMetrics.strikethroughThickness * scale);
+        lineMetrics.underlineOffset = std::round(fontMetrics.underlinePosition * scale);
+        lineMetrics.underlineWidth = std::round(fontMetrics.underlineThickness * scale);
+        lineMetrics.strikethroughOffset = std::round(fontMetrics.strikethroughPosition * scale);
+        lineMetrics.strikethroughWidth = std::round(fontMetrics.strikethroughThickness * scale);
 
         // We always want the lines to be visible, so if a stroke width ends up
         // at zero after rounding, we need to make it at least 1 pixel.
-        _lineMetrics.gridlineWidth = std::max(_lineMetrics.gridlineWidth, 1.0f);
-        _lineMetrics.underlineWidth = std::max(_lineMetrics.underlineWidth, 1.0f);
-        _lineMetrics.strikethroughWidth = std::max(_lineMetrics.strikethroughWidth, 1.0f);
+        lineMetrics.gridlineWidth = std::max(lineMetrics.gridlineWidth, 1.0f);
+        lineMetrics.underlineWidth = std::max(lineMetrics.underlineWidth, 1.0f);
+        lineMetrics.strikethroughWidth = std::max(lineMetrics.strikethroughWidth, 1.0f);
 
         // Offsets are relative to the base line of the font, so we subtract
         // from the ascent to get an offset relative to the top of the cell.
-        _lineMetrics.underlineOffset = fullPixelAscent - _lineMetrics.underlineOffset;
-        _lineMetrics.strikethroughOffset = fullPixelAscent - _lineMetrics.strikethroughOffset;
+        lineMetrics.underlineOffset = fullPixelAscent - lineMetrics.underlineOffset;
+        lineMetrics.strikethroughOffset = fullPixelAscent - lineMetrics.strikethroughOffset;
 
         // For double underlines we need a second offset, just below the first,
         // but with a bit of a gap (about double the grid line width).
-        _lineMetrics.underlineOffset2 = _lineMetrics.underlineOffset +
-                                        _lineMetrics.underlineWidth +
+        lineMetrics.underlineOffset2 = lineMetrics.underlineOffset +
+                                        lineMetrics.underlineWidth +
                                         std::round(fontSize * 0.05f);
 
         // However, we don't want the underline to extend past the bottom of the
         // cell, so we clamp the offset to fit just inside.
-        const auto maxUnderlineOffset = lineSpacing.height - _lineMetrics.underlineWidth;
-        _lineMetrics.underlineOffset2 = std::min(_lineMetrics.underlineOffset2, maxUnderlineOffset);
+        const auto maxUnderlineOffset = lineSpacing.height - lineMetrics.underlineWidth;
+        lineMetrics.underlineOffset2 = std::min(lineMetrics.underlineOffset2, maxUnderlineOffset);
 
         // But if the resulting gap isn't big enough even to register as a thicker
         // line, it's better to place the second line slightly above the first.
-        if (_lineMetrics.underlineOffset2 < _lineMetrics.underlineOffset + _lineMetrics.gridlineWidth)
+        if (lineMetrics.underlineOffset2 < lineMetrics.underlineOffset + lineMetrics.gridlineWidth)
         {
-            _lineMetrics.underlineOffset2 = _lineMetrics.underlineOffset - _lineMetrics.gridlineWidth;
+            lineMetrics.underlineOffset2 = lineMetrics.underlineOffset - lineMetrics.gridlineWidth;
         }
 
         // We also add half the stroke width to the offsets, since the line
         // coordinates designate the center of the line.
-        _lineMetrics.underlineOffset += _lineMetrics.underlineWidth / 2.0f;
-        _lineMetrics.underlineOffset2 += _lineMetrics.underlineWidth / 2.0f;
-        _lineMetrics.strikethroughOffset += _lineMetrics.strikethroughWidth / 2.0f;
+        lineMetrics.underlineOffset += lineMetrics.underlineWidth / 2.0f;
+        lineMetrics.underlineOffset2 += lineMetrics.underlineWidth / 2.0f;
+        lineMetrics.strikethroughOffset += lineMetrics.strikethroughWidth / 2.0f;
+
+        _lineMetrics = lineMetrics;
 
         _glyphCell = actual.GetSize();
 
