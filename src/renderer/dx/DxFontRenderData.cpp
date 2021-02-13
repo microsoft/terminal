@@ -36,26 +36,6 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     return _systemFontFallback;
 }
 
-[[nodiscard]] std::wstring DxFontRenderData::UserLocaleName()
-{
-    if (_userLocaleName.empty())
-    {
-        std::array<wchar_t, LOCALE_NAME_MAX_LENGTH> localeName;
-
-        const auto returnCode = GetUserDefaultLocaleName(localeName.data(), gsl::narrow<int>(localeName.size()));
-        if (returnCode)
-        {
-            _userLocaleName = { localeName.data() };
-        }
-        else
-        {
-            _userLocaleName = { FALLBACK_LOCALE.data(), FALLBACK_LOCALE.size() };
-        }
-    }
-
-    return _userLocaleName;
-}
-
 [[nodiscard]] til::size DxFontRenderData::GlyphCell() noexcept
 {
     return _glyphCell;
@@ -109,7 +89,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
         DWRITE_FONT_WEIGHT weight = static_cast<DWRITE_FONT_WEIGHT>(desired.GetWeight());
         DWRITE_FONT_STYLE style = DWRITE_FONT_STYLE_NORMAL;
         DWRITE_FONT_STRETCH stretch = DWRITE_FONT_STRETCH_NORMAL;
-        std::wstring localeName = UserLocaleName();
+        std::wstring localeName = _GetUserLocaleName();
 
         // _ResolveFontFaceWithFallback overrides the last argument with the locale name of the font,
         // but we should use the system's locale to render the text.
@@ -749,4 +729,24 @@ CATCH_RETURN()
 
     // and return it.
     return retVal;
+}
+
+[[nodiscard]] std::wstring DxFontRenderData::_GetUserLocaleName()
+{
+    if (_userLocaleName.empty())
+    {
+        std::array<wchar_t, LOCALE_NAME_MAX_LENGTH> localeName;
+
+        const auto returnCode = GetUserDefaultLocaleName(localeName.data(), gsl::narrow<int>(localeName.size()));
+        if (returnCode)
+        {
+            _userLocaleName = { localeName.data() };
+        }
+        else
+        {
+            _userLocaleName = { FALLBACK_LOCALE.data(), FALLBACK_LOCALE.size() };
+        }
+    }
+
+    return _userLocaleName;
 }

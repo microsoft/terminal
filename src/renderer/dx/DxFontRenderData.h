@@ -35,9 +35,6 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFallback> SystemFontFallback();
 
-        // A locale that can be used on construction of assorted DX objects that want to know one.
-        [[nodiscard]] std::wstring UserLocaleName();
-
         [[nodiscard]] til::size GlyphCell() noexcept;
         [[nodiscard]] LineMetrics GetLineMetrics() noexcept;
 
@@ -75,6 +72,9 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] std::wstring _GetFontFamilyName(gsl::not_null<IDWriteFontFamily*> const fontFamily,
                                                       std::wstring& localeName) const;
+
+        // A locale that can be used on construction of assorted DX objects that want to know one.
+        [[nodiscard]] std::wstring _GetUserLocaleName();
 
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
 
