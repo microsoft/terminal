@@ -370,6 +370,15 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             return 0; // eat the message
         }
     }
+    case WM_ACTIVATE:
+    {
+        // wparam = 0 indicates the window was deactivated
+        if (LOWORD(wparam) != 0)
+        {
+            _WindowActivatedHandlers();
+        }
+        break;
+    }
 
     case WM_NCLBUTTONDOWN:
     case WM_NCLBUTTONUP:

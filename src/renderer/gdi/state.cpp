@@ -33,7 +33,7 @@ GdiEngine::GdiEngine() :
     _fPaintStarted(false),
     _hfont(nullptr),
     _hfontItalic(nullptr),
-    _pool{}, // It's important the pool is first so it can be given to the others on construction.
+    _pool{ til::pmr::get_default_resource() }, // It's important the pool is first so it can be given to the others on construction.
     _polyStrings{ &_pool },
     _polyWidths{ &_pool }
 {
