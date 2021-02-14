@@ -294,8 +294,8 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
         // For double underlines we need a second offset, just below the first,
         // but with a bit of a gap (about double the grid line width).
         lineMetrics.underlineOffset2 = lineMetrics.underlineOffset +
-                                        lineMetrics.underlineWidth +
-                                        std::round(fontSize * 0.05f);
+                                       lineMetrics.underlineWidth +
+                                       std::round(fontSize * 0.05f);
 
         // However, we don't want the underline to extend past the bottom of the
         // cell, so we clamp the offset to fit just inside.
