@@ -20,6 +20,8 @@ using namespace winrt::Windows::Foundation::Collections;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    static constexpr int ColorTableDivider = 8;
+
     static const std::array<hstring, 16> TableColorNames = {
         RS_(L"ColorScheme_Black/ToolTip"),
         RS_(L"ColorScheme_Red/ToolTip"),
@@ -72,8 +74,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         for (uint8_t i = 0; i < TableColorNames.size(); ++i)
         {
             auto entry = winrt::make<ColorTableEntry>(i, Windows::UI::Color{ 0, 0, 0, 0 });
-            _CurrentNonBrightColorTable.Append(entry);
-            _CurrentBrightColorTable.Append(entry);
+
+            if (i < ColorTableDivider)
+            {
+                _CurrentNonBrightColorTable.Append(entry);
+            }
+            else
+            {
+                _CurrentBrightColorTable.Append(entry);
+            }
         }
 
         // Try to look up the scheme that was navigated to. If we find it, immediately select it.
@@ -139,16 +148,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 
     // Function Description:
-    // - Called when a ColorPicker control has selected a new color. This is specifically
+    // - Called when a ColorPicker control of the non-bright colour table has selected a new color. This is specifically
     //   called by color pickers assigned to a color table entry. It takes the index
     //   that's been stuffed in the Tag property of the color picker and uses it
-    //   to update the color table accordingly.
+    //   to update the non-bright color table accordingly.
     // Arguments:
-    // - sender: the color picker that raised this event.
+    // - sender: the color picker of the non-bright colour table that raised this event.
     // - args: the args that contains the new color that was picked.
     // Return Value:
     // - <none>
-    void ColorSchemes::ColorPickerChanged(IInspectable const& sender,
+    void ColorSchemes::NonBrightColorPickerChanged(IInspectable const& sender,
                                           ColorChangedEventArgs const& args)
     {
         if (auto picker = sender.try_as<ColorPicker>())
@@ -158,7 +167,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 auto index = winrt::unbox_value<uint8_t>(tag);
                 CurrentColorScheme().SetColorTableEntry(index, args.NewColor());
                 _CurrentNonBrightColorTable.GetAt(index).Color(args.NewColor());
-                _CurrentBrightColorTable.GetAt(index).Color(args.NewColor());
+            }
+        }
+    }
+
+    // Function Description:
+    // - Called when a ColorPicker control of the bright colour table has selected a new color. This is specifically
+    //   called by color pickers assigned to a color table entry. It takes the index
+    //   that's been stuffed in the Tag property of the color picker and uses it
+    //   to update the bright color table accordingly.
+    // Arguments:
+    // - sender: the color picker of the bright colour table that raised this event.
+    // - args: the args that contains the new color that was picked.
+    // Return Value:
+    // - <none>
+    void ColorSchemes::BrightColorPickerChanged(IInspectable const& sender,
+                                                   ColorChangedEventArgs const& args)
+    {
+        if (auto picker = sender.try_as<ColorPicker>())
+        {
+            if (auto tag = picker.Tag())
+            {
+                auto index = winrt::unbox_value<uint8_t>(tag);
+                CurrentColorScheme().SetColorTableEntry(index, args.NewColor());
+                _CurrentBrightColorTable.GetAt(index - ColorTableDivider).Color(args.NewColor());
             }
         }
     }
@@ -295,8 +327,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         for (uint8_t i = 0; i < TableColorNames.size(); ++i)
         {
-            _CurrentNonBrightColorTable.GetAt(i).Color(colorScheme.Table()[i]);
-            _CurrentBrightColorTable.GetAt(i).Color(colorScheme.Table()[i]);
+            if (i < ColorTableDivider)
+            {
+                _CurrentNonBrightColorTable.GetAt(i).Color(colorScheme.Table()[i]);
+            }
+            else
+            {
+                _CurrentBrightColorTable.GetAt(i).Color(colorScheme.Table()[i]);
+            }
         }
     }
 

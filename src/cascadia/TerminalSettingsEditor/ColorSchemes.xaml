@@ -54,12 +54,15 @@ the MIT License. See LICENSE in the project root for license information. -->
         <Grid Margin="{StaticResource StandardIndentMargin}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1*" MaxWidth="240"/>
-                <ColumnDefinition Width="1*" MinWidth="240"/>
+                <ColumnDefinition Width="1*" MaxWidth="120"/>
+                <ColumnDefinition Width="1*" MaxWidth="120"/>
+                <ColumnDefinition Width="1*" MaxWidth="120"/>
+                <ColumnDefinition Width="1*" MaxWidth="120"/>
                 <ColumnDefinition Width="1*"/>
             </Grid.ColumnDefinitions>
 
@@ -67,7 +70,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <StackPanel Orientation="Horizontal"
                         Grid.Row="0"
                         Grid.Column="0"
-                        Grid.ColumnSpan="2">
+                        Grid.ColumnSpan="4">
 
                 <StackPanel Orientation="Horizontal"
                             Visibility="{x:Bind IsRenaming, Converter={StaticResource InvertedBooleanToVisibilityConverter}, Mode=OneWay}">
@@ -141,11 +144,56 @@ the MIT License. See LICENSE in the project root for license information. -->
                 </Button>
             </StackPanel>
 
-            <!-- Color Table (Left Column)-->
+            <StackPanel Grid.Row="1"
+                        Grid.Column="0"
+                        Grid.ColumnSpan="3"
+                        Margin="0,24,0,0">
+                <TextBlock x:Uid="ColorSchemeLabel"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="1"
+                        Grid.Column="3"
+                        Grid.ColumnSpan="2"
+                        Margin="0,24,0,0">
+                <TextBlock x:Uid="AdditionalLabel"/>
+            </StackPanel>
+
+            <!-- Labels column -->
+            <ItemsControl x:Name="ColorTableLabels"
+                          Grid.Row="2"
+                          Grid.Column="0"
+                          Style="{StaticResource ItemsControlStyle}">
+                <StackPanel Style="{StaticResource ColorStackPanelStyle}">
+                    <TextBlock x:Uid="ColorScheme_BlackLabel"/>
+                </StackPanel>
+                <StackPanel Style="{StaticResource ColorStackPanelStyle}">
+                    <TextBlock x:Uid="ColorScheme_RedLabel"/>
+                </StackPanel>
+                <StackPanel Style="{StaticResource ColorStackPanelStyle}">
+                    <TextBlock x:Uid="ColorScheme_GreenLabel"/>
+                </StackPanel>
+                <StackPanel Style="{StaticResource ColorStackPanelStyle}">
+                    <TextBlock x:Uid="ColorScheme_YellowLabel"/>
+                </StackPanel>
+                <StackPanel Style="{StaticResource ColorStackPanelStyle}">
+                    <TextBlock x:Uid="ColorScheme_BlueLabel"/>
+                </StackPanel>
+                <StackPanel Style="{StaticResource ColorStackPanelStyle}">
+                    <TextBlock x:Uid="ColorScheme_PurpleLabel"/>
+                </StackPanel>
+                <StackPanel Style="{StaticResource ColorStackPanelStyle}">
+                    <TextBlock x:Uid="ColorScheme_CyanLabel"/>
+                </StackPanel>
+                <StackPanel Style="{StaticResource ColorStackPanelStyle}">
+                    <TextBlock x:Uid="ColorScheme_WhiteLabel"/>
+                </StackPanel>
+            </ItemsControl>
+
+            <!-- Non-bright color column -->
             <ItemsControl x:Name="ColorTableControl"
                           ItemsSource="{x:Bind CurrentNonBrightColorTable, Mode=OneWay}"
-                          Grid.Row="1"
-                          Grid.Column="0"
+                          Grid.Row="2"
+                          Grid.Column="1"
                           Style="{StaticResource ItemsControlStyle}">
 
                 <ItemsControl.ItemsPanel>
@@ -180,7 +228,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     <Flyout>
                                         <ColorPicker Tag="{x:Bind Index, Mode=OneWay}"
                                                      Color="{x:Bind Color, Mode=OneWay}"
-                                                     ColorChanged="ColorPickerChanged"/>
+                                                     ColorChanged="NonBrightColorPickerChanged"/>
                                     </Flyout>
                                 </Button.Flyout>
                             </Button>
@@ -189,8 +237,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <ItemsControl Grid.Row="1"
-                          Grid.Column="1"
+            <!-- Bright colour column -->
+            <ItemsControl Grid.Row="2"
+                          Grid.Column="2"
                           Style="{StaticResource ItemsControlStyle}"
                           ItemsSource="{x:Bind CurrentBrightColorTable}">
 
@@ -204,15 +253,56 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <DataTemplate x:DataType="local:ColorTableEntry">
                         <StackPanel Style="{StaticResource ColorStackPanelStyle}">
                             <Button Background="{x:Bind Color, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}"
-                                    ToolTipService.ToolTip="{x:Bind Name, Mode=OneWay}"/>
+                                    ToolTipService.ToolTip="{x:Bind Name, Mode=OneWay}">
+                                <Button.Resources>
+                                    <!-- Resources to colorize hover/pressed states based on the color of the button -->
+                                    <ResourceDictionary>
+                                        <ResourceDictionary.ThemeDictionaries>
+                                            <ResourceDictionary x:Key="Light">
+                                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{x:Bind Color, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
+                                            </ResourceDictionary>
+                                            <ResourceDictionary x:Key="Dark">
+                                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{x:Bind Color, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
+                                            </ResourceDictionary>
+                                            <!-- No High contrast dictionary, let's just leave that unchanged. -->
+                                        </ResourceDictionary.ThemeDictionaries>
+                                    </ResourceDictionary>
+                                </Button.Resources>
+
+                                <Button.Flyout>
+                                    <Flyout>
+                                        <ColorPicker Tag="{x:Bind Index, Mode=OneWay}"
+                                                     Color="{x:Bind Color, Mode=OneWay}"
+                                                     ColorChanged="BrightColorPickerChanged"/>
+                                    </Flyout>
+                                </Button.Flyout>
+                            </Button>
                         </StackPanel>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-            
+
+            <ItemsControl x:Name="AdditionalTableLabels"
+                          Grid.Row="2"
+                          Grid.Column="3"
+                          Style="{StaticResource ItemsControlStyle}">
+                <StackPanel Style="{StaticResource ColorStackPanelStyle}">
+                    <TextBlock x:Uid="ColorScheme_ForegroundLabel"/>
+                </StackPanel>
+                <StackPanel Style="{StaticResource ColorStackPanelStyle}">
+                    <TextBlock x:Uid="ColorScheme_BackgroundLabel"/>
+                </StackPanel>
+                <StackPanel Style="{StaticResource ColorStackPanelStyle}">
+                    <TextBlock x:Uid="ColorScheme_CursorLabel"/>
+                </StackPanel>
+                <StackPanel Style="{StaticResource ColorStackPanelStyle}">
+                    <TextBlock x:Uid="ColorScheme_SelectionLabel"/>
+                </StackPanel>
+            </ItemsControl>
+
             <!-- Additional Colors (Right Column) -->
-            <ItemsControl Grid.Row="1"
-                          Grid.Column="2"
+            <ItemsControl Grid.Row="2"
+                          Grid.Column="4"
                           Style="{StaticResource ItemsControlStyle}">
                 <StackPanel Style="{StaticResource ColorStackPanelStyle}">
                     <Button x:Uid="ColorScheme_Foreground"
@@ -328,7 +418,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </ItemsControl>
 
             <!--Delete Button-->
-            <StackPanel Grid.Row="2"
+            <StackPanel Grid.Row="3"
                         Grid.Column="0"
                         Grid.ColumnSpan="2"
                         Style="{StaticResource PivotStackStyle}">

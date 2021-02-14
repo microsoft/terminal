@@ -838,4 +838,46 @@
   <data name="ColorScheme_RenameErrorTip.Title" xml:space="preserve">
     <value>This color scheme name is already in use.</value>
   </data>
+  <data name="AdditionalLabel.Text" xml:space="preserve">
+    <value>Additional Colors</value>
+  </data>
+  <data name="ColorSchemeLabel.Text" xml:space="preserve">
+    <value>Color Scheme</value>
+  </data>
+  <data name="ColorScheme_BackgroundLabel.Text" xml:space="preserve">
+    <value>Background</value>
+  </data>
+  <data name="ColorScheme_BlackLabel.Text" xml:space="preserve">
+    <value>Black</value>
+  </data>
+  <data name="ColorScheme_BlueLabel.Text" xml:space="preserve">
+    <value>Blue</value>
+  </data>
+  <data name="ColorScheme_CursorLabel.Text" xml:space="preserve">
+    <value>Cursor</value>
+  </data>
+  <data name="ColorScheme_CyanLabel.Text" xml:space="preserve">
+    <value>Cyan</value>
+  </data>
+  <data name="ColorScheme_ForegroundLabel.Text" xml:space="preserve">
+    <value>Foreground</value>
+  </data>
+  <data name="ColorScheme_GreenLabel.Text" xml:space="preserve">
+    <value>Green</value>
+  </data>
+  <data name="ColorScheme_PurpleLabel.Text" xml:space="preserve">
+    <value>Purple</value>
+  </data>
+  <data name="ColorScheme_RedLabel.Text" xml:space="preserve">
+    <value>Red</value>
+  </data>
+  <data name="ColorScheme_SelectionLabel.Text" xml:space="preserve">
+    <value>Selection</value>
+  </data>
+  <data name="ColorScheme_WhiteLabel.Text" xml:space="preserve">
+    <value>White</value>
+  </data>
+  <data name="ColorScheme_YellowLabel.Text" xml:space="preserve">
+    <value>Yellow</value>
+  </data>
 </root>
