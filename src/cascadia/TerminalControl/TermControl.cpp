@@ -1106,7 +1106,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _terminal->ClearSelection();
                 _renderer->TriggerSelection();
             }
-            
+
             if (vkey == VK_ESCAPE)
             {
                 return true;
