@@ -1090,7 +1090,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                        const WORD scanCode,
                                        const ControlKeyStates modifiers,
                                        const bool keyDown)
-    {
+    {    
         // When there is a selection active, escape should clear it and NOT flow through
         // to the terminal. With any other keypress, it should clear the selection AND
         // flow through to the terminal.
@@ -1100,14 +1100,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // selection.
         if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey) && vkey != VK_SNAPSHOT)
         {
-            _terminal->ClearSelection();
-            _renderer->TriggerSelection();
-
+            // GH#8791 - don't dismiss selection if Windows key was also pressed as a key-combination.
+            if (!(GetKeyState(VK_LWIN) & 0x8000) && !(GetKeyState(VK_RWIN) & 0x8000))
+            {
+                _terminal->ClearSelection();
+                _renderer->TriggerSelection();
+            }
+            
             if (vkey == VK_ESCAPE)
             {
                 return true;
             }
-        }
+        }   
 
         if (vkey == VK_ESCAPE ||
             vkey == VK_RETURN)
