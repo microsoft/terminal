@@ -474,7 +474,19 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
     {
         if (parts.size() >= 2)
         {
-            return _terminalApi.SetWorkingDirectory(til::at(parts, 1));
+            const auto path = til::at(parts, 1);
+            // The path should be surrounded with '"' according to the documentation of ConEmu.
+            // An example: 9;"D:/"
+            if (path.at(0) == L'"' && path.at(path.size() - 1) == L'"' && path.size() >= 3)
+            {
+                return _terminalApi.SetWorkingDirectory(path.substr(1, path.size() - 2));
+            }
+            else
+            {
+                // If we fail to find the surrounding quotation marks, we'll give the path a try anyway.
+                // ConEmu also does this.
+                return _terminalApi.SetWorkingDirectory(path);
+            }
         }
     }
 

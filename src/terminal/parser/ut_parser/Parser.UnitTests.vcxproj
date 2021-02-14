@@ -38,6 +38,9 @@
     <ProjectReference Include="..\lib\parser.vcxproj">
       <Project>{3ae13314-1939-4dfa-9c14-38ca0834050c}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\interactivity\base\lib\InteractivityBase.vcxproj">
+      <Project>{06ec74cb-9a12-429c-b551-8562ec964846}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

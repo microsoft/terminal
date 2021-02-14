@@ -53,6 +53,9 @@
     <ClInclude Include="StringIsEmptyConverter.h">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="PaddingConverter.h">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="StringIsNotDesktopConverter.h">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
@@ -86,6 +89,9 @@
     <ClInclude Include="Rendering.h">
       <DependentUpon>Rendering.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="SettingContainer.h">
+      <DependentUpon>SettingContainer.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Utils.h" />
   </ItemGroup>
   <!-- ========================= XAML files ======================== -->
@@ -114,6 +120,9 @@
     <Page Include="Rendering.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="SettingContainerStyle.xaml">
+      <Type>DefaultStyle</Type>
+    </Page>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -133,6 +142,9 @@
       <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="StringIsEmptyConverter.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="PaddingConverter.cpp">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="StringIsNotDesktopConverter.cpp">
@@ -168,6 +180,9 @@
     <ClCompile Include="Rendering.cpp">
       <DependentUpon>Rendering.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="SettingContainer.cpp">
+      <DependentUpon>SettingContainer.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
@@ -199,6 +214,9 @@
     </Midl>
     <Midl Include="Profiles.idl">
       <DependentUpon>Profiles.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="SettingContainer.idl">
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>

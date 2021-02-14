@@ -29,7 +29,7 @@ namespace TerminalApp
         Boolean IsElevated();
 
         Int32 SetStartupCommandline(String[] commands);
-        Int32 ExecuteCommandline(String[] commands);
+        Int32 ExecuteCommandline(String[] commands, String cwd);
         String ParseCommandlineMessage { get; };
         Boolean ShouldExitEarly { get; };
 
@@ -55,6 +55,8 @@ namespace TerminalApp
 
         UInt64 GetLastActiveControlTaskbarState();
         UInt64 GetLastActiveControlTaskbarProgress();
+
+        Int32 FindTargetWindow(String[] args);
 
         // See IDialogPresenter and TerminalPage's DialogPresenter for more
         // information.

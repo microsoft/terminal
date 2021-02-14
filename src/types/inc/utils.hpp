@@ -52,6 +52,19 @@ namespace Microsoft::Console::Utils
     bool StringToUint(const std::wstring_view wstr, unsigned int& value);
     std::vector<std::wstring_view> SplitString(const std::wstring_view wstr, const wchar_t delimiter) noexcept;
 
+    enum FilterOption
+    {
+        None = 0,
+        // Convert CR+LF and LF-only line endings to CR-only.
+        CarriageReturnNewline = 1u << 0,
+        // For security reasons, remove most control characters.
+        ControlCodes = 1u << 1,
+    };
+
+    DEFINE_ENUM_FLAG_OPERATORS(FilterOption)
+
+    std::wstring FilterStringForPaste(const std::wstring_view wstr, const FilterOption option);
+
     constexpr uint16_t EndianSwap(uint16_t value)
     {
         return (value & 0xFF00) >> 8 |

@@ -15,50 +15,50 @@ the MIT License. See LICENSE in the project root for license information. -->
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="CommonResources.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-            
+
             <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
                 <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
             </DataTemplate>
         </ResourceDictionary>
     </Page.Resources>
-    
+
     <ScrollViewer>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--Copy On Select-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}"
-                              Margin="0">
-                <ToggleSwitch x:Uid="Globals_CopyOnSelect"
-                              IsOn="{x:Bind State.Globals.CopyOnSelect, Mode=TwoWay}"/>
-             </ContentPresenter>
+            <local:SettingContainer x:Uid="Globals_CopyOnSelect"
+                                     Margin="0">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.CopyOnSelect, Mode=TwoWay}"/>
+             </local:SettingContainer>
 
             <!--Copy Format-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <muxc:RadioButtons x:Uid="Globals_CopyFormat"
-                                   ItemsSource="{x:Bind CopyFormatList, Mode=OneWay}"
+            <local:SettingContainer x:Uid="Globals_CopyFormat">
+                <muxc:RadioButtons ItemsSource="{x:Bind CopyFormatList, Mode=OneWay}"
                                    SelectedItem="{x:Bind CurrentCopyFormat, Mode=TwoWay}"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-            </ContentPresenter>
+            </local:SettingContainer>
 
             <!--Word Delimiters-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <TextBox x:Uid="Globals_WordDelimiters"
-                         Text="{x:Bind State.Globals.WordDelimiters, Mode=TwoWay}"
+            <local:SettingContainer x:Uid="Globals_WordDelimiters">
+                <TextBox Text="{x:Bind State.Globals.WordDelimiters, Mode=TwoWay}"
                          Style="{StaticResource TextBoxSettingStyle}"/>
-            </ContentPresenter>
+            </local:SettingContainer>
 
             <!--Snap On Resize-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <ToggleSwitch x:Uid="Globals_SnapToGridOnResize"
-                              IsOn="{x:Bind State.Globals.SnapToGridOnResize, Mode=TwoWay}"/>
-            </ContentPresenter>
-            
+            <local:SettingContainer x:Uid="Globals_SnapToGridOnResize">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.SnapToGridOnResize, Mode=TwoWay}"/>
+            </local:SettingContainer>
+
             <!--Tab Switcher Mode-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <muxc:RadioButtons x:Uid="Globals_TabSwitcherMode"
-                                   SelectedItem="{x:Bind CurrentTabSwitcherMode}"
+            <local:SettingContainer x:Uid="Globals_TabSwitcherMode">
+                <muxc:RadioButtons SelectedItem="{x:Bind CurrentTabSwitcherMode, Mode=TwoWay}"
                                    ItemsSource="{x:Bind TabSwitcherModeList}"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-            </ContentPresenter>
+            </local:SettingContainer>
+
+            <!-- Focus Follow Mouse Mode-->
+            <local:SettingContainer x:Uid="Globals_FocusFollowMouse">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.FocusFollowMouse, Mode=TwoWay}"/>
+            </local:SettingContainer>
         </StackPanel>
     </ScrollViewer>
 </Page>
