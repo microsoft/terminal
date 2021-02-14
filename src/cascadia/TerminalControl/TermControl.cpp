@@ -1090,7 +1090,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                        const WORD scanCode,
                                        const ControlKeyStates modifiers,
                                        const bool keyDown)
-    {    
+    {
         // When there is a selection active, escape should clear it and NOT flow through
         // to the terminal. With any other keypress, it should clear the selection AND
         // flow through to the terminal.
@@ -1111,7 +1111,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 return true;
             }
-        }   
+        }
 
         if (vkey == VK_ESCAPE ||
             vkey == VK_RETURN)
