@@ -218,13 +218,13 @@ namespace Microsoft::Console::VirtualTerminal
             // SaveForegroundColor = 30,
             if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::SaveForegroundColor)))
             {
-                result.SetForegroundFrom(savedAttribute);
+                result.SetForeground(savedAttribute.GetForeground());
             }
 
             // SaveBackgroundColor = 31,
             if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::SaveBackgroundColor)))
             {
-                result.SetBackgroundFrom(savedAttribute);
+                result.SetBackground(savedAttribute.GetBackground());
             }
         }
         catch (std::out_of_range&)
