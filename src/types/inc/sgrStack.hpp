@@ -58,7 +58,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         TextAttribute _CombineWithCurrentAttributes(const TextAttribute& currentAttributes,
                                                     const TextAttribute& savedAttribute,
-                                                    const AttrBitset validParts) noexcept; // valid parts of savedAttribute
+                                                    const AttrBitset validParts); // valid parts of savedAttribute
 
         struct SavedSgrAttributes
         {

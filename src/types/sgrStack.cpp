@@ -19,46 +19,46 @@ namespace Microsoft::Console::VirtualTerminal
     {
         AttrBitset validParts;
 
-        if (options.empty())
+        try
         {
-            // We save all current attributes.
-            validParts.set(static_cast<size_t>(SgrSaveRestoreStackOptions::All));
-        }
-        else
-        {
-            // Each option is encoded as a bit in validParts. All options (that fit) are
-            // encoded; options that aren't supported are ignored when read back (popped).
-            // So if you try to save only unsupported aspects of the current text
-            // attributes, you'll do what is effectively an "empty" push (the subsequent
-            // pop will not change the current attributes), which is the correct behavior.
-
-            for (size_t i = 0; i < options.size(); i++)
+            if (options.empty())
             {
-                // TRICKY: The VTParameter could be a fake/materialized parameter, in
-                // which case it has a default value, and the default value of a
-                // VTParameter depends on what you are assigning to: if you assign /
-                // convert directly to a size_t, then the default is "1", but for other
-                // size_t-sized types, the default is "0". We want "default is 0", so we
-                // convert to a SgrSaveRestoreStackOptions first.
-                const SgrSaveRestoreStackOptions option = options.at(i);
-                const size_t optionAsIndex = static_cast<size_t>(option);
+                // We save all current attributes.
+                validParts.set(static_cast<size_t>(SgrSaveRestoreStackOptions::All));
+            }
+            else
+            {
+                // Each option is encoded as a bit in validParts. All options (that fit) are
+                // encoded; options that aren't supported are ignored when read back (popped).
+                // So if you try to save only unsupported aspects of the current text
+                // attributes, you'll do what is effectively an "empty" push (the subsequent
+                // pop will not change the current attributes), which is the correct behavior.
 
-                // Options must be specified singly; not in combination. Values that are
-                // out of range will be ignored.
-                if (optionAsIndex < validParts.size())
+                for (size_t i = 0; i < options.size(); i++)
                 {
-                    try
+                    // TRICKY: The VTParameter could be a fake/materialized parameter, in
+                    // which case it has a default value, and the default value of a
+                    // VTParameter depends on what you are assigning to: if you assign /
+                    // convert directly to a size_t, then the default is "1", but for other
+                    // size_t-sized types, the default is "0". We want "default is 0", so we
+                    // convert to a SgrSaveRestoreStackOptions first.
+                    const SgrSaveRestoreStackOptions option = options.at(i);
+                    const size_t optionAsIndex = static_cast<size_t>(option);
+
+                    // Options must be specified singly; not in combination. Values that are
+                    // out of range will be ignored.
+                    if (optionAsIndex < validParts.size())
                     {
                         validParts.set(optionAsIndex);
                     }
-                    catch (std::out_of_range&)
-                    {
-                        // We should not be able to reach here: we already checked
-                        // optionAsIndex against the size of the bitset.
-                        RaiseFailFastException(nullptr, nullptr, 0);
-                    }
                 }
             }
+        }
+        catch (std::out_of_range&)
+        {
+            // We should not be able to reach here: we pre-check that everything should be
+            // in range.
+            RaiseFailFastException(nullptr, nullptr, 0);
         }
 
         if (_numSavedAttrs < gsl::narrow<int>(_storedSgrAttributes.size()))
@@ -87,15 +87,24 @@ namespace Microsoft::Console::VirtualTerminal
 
             SavedSgrAttributes& restoreMe = _storedSgrAttributes.at(_nextPushIndex);
 
-            if (restoreMe.ValidParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::All)))
+            try
             {
-                return restoreMe.TextAttributes;
+                if (restoreMe.ValidParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::All)))
+                {
+                    return restoreMe.TextAttributes;
+                }
+                else
+                {
+                    return _CombineWithCurrentAttributes(currentAttributes,
+                                                         restoreMe.TextAttributes,
+                                                         restoreMe.ValidParts);
+                }
             }
-            else
+            catch (std::out_of_range&)
             {
-                return _CombineWithCurrentAttributes(currentAttributes,
-                                                     restoreMe.TextAttributes,
-                                                     restoreMe.ValidParts);
+                // We should not be able to reach here: we pre-check that everything
+                // should be in range.
+                RaiseFailFastException(nullptr, nullptr, 0);
             }
         }
 
@@ -104,7 +113,7 @@ namespace Microsoft::Console::VirtualTerminal
 
     TextAttribute SgrStack::_CombineWithCurrentAttributes(const TextAttribute& currentAttributes,
                                                           const TextAttribute& savedAttribute,
-                                                          const AttrBitset validParts) noexcept // of savedAttribute
+                                                          const AttrBitset validParts) // of savedAttribute
     {
         // If we are restoring all attributes, we should have just taken savedAttribute
         // before we even got here.
