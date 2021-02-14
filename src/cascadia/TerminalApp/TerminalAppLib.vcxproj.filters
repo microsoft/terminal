@@ -131,6 +131,9 @@
     <Midl Include="HighlightedText.idl">
       <Filter>highlightedText</Filter>
     </Midl>
+    <Midl Include="TerminalTabStatus.idl">
+      <Filter>tab</Filter>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

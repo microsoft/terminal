@@ -43,6 +43,7 @@ SOURCES = \
     ..\InteractivityFactory.cpp \
     ..\ServiceLocator.cpp \
     ..\VtApiRedirection.cpp \
+    ..\EventSynthesis.cpp \
 
 INCLUDES = \
     $(INCLUDES); \

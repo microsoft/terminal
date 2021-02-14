@@ -43,6 +43,8 @@ namespace winrt::TerminalApp::implementation
         _MakeTabViewItem();
         _CreateContextMenu();
 
+        _headerControl.TabStatus(_tabStatus);
+
         // Add an event handler for the header control to tell us when they want their title to change
         _headerControl.TitleChangeRequested([weakThis = get_weak()](auto&& title) {
             if (auto tab{ weakThis.get() })
@@ -162,7 +164,7 @@ namespace winrt::TerminalApp::implementation
                 lastFocusedControl.TaskbarProgressChanged();
             }
             // When we gain focus, remove the bell indicator if it is active
-            if (_headerControl.BellIndicator())
+            if (_tabStatus.BellIndicator())
             {
                 ShowBellIndicator(false);
             }
@@ -288,7 +290,7 @@ namespace winrt::TerminalApp::implementation
 
         if (auto tab{ weakThis.get() })
         {
-            tab->_headerControl.BellIndicator(show);
+            _tabStatus.BellIndicator(show);
         }
     }
 
@@ -390,9 +392,19 @@ namespace winrt::TerminalApp::implementation
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
         const auto activePaneId = _activePane->Id();
         auto [first, second] = _activePane->Split(splitType, splitSize, profile, control);
-        first->Id(activePaneId);
-        second->Id(_nextPaneId);
-        ++_nextPaneId;
+        if (activePaneId)
+        {
+            first->Id(activePaneId.value());
+            second->Id(_nextPaneId);
+            ++_nextPaneId;
+        }
+        else
+        {
+            first->Id(_nextPaneId);
+            ++_nextPaneId;
+            second->Id(_nextPaneId);
+            ++_nextPaneId;
+        }
         _activePane = first;
         _AttachEventHandlersToControl(control);
 
@@ -568,24 +580,33 @@ namespace winrt::TerminalApp::implementation
                     if (tab->GetActiveTerminalControl().TaskbarState() == 3)
                     {
                         // 3 is the indeterminate state, set the progress ring as such
-                        tab->_headerControl.IsProgressRingIndeterminate(true);
+                        tab->_tabStatus.IsProgressRingIndeterminate(true);
                     }
                     else
                     {
                         // any non-indeterminate state has a value, set the progress ring as such
-                        tab->_headerControl.IsProgressRingIndeterminate(false);
-                        tab->_headerControl.ProgressValue(gsl::narrow<uint32_t>(tab->GetActiveTerminalControl().TaskbarProgress()));
+                        tab->_tabStatus.IsProgressRingIndeterminate(false);
+
+                        const auto progressValue = gsl::narrow<uint32_t>(tab->GetActiveTerminalControl().TaskbarProgress());
+                        tab->_tabStatus.ProgressValue(progressValue);
                     }
                     // Hide the tab icon (the progress ring is placed over it)
                     tab->HideIcon(true);
-                    tab->_headerControl.IsProgressRingActive(true);
+                    tab->_tabStatus.IsProgressRingActive(true);
                 }
                 else
                 {
                     // Show the tab icon
                     tab->HideIcon(false);
-                    tab->_headerControl.IsProgressRingActive(false);
+                    tab->_tabStatus.IsProgressRingActive(false);
                 }
+            }
+        });
+
+        control.ReadOnlyChanged([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_RecalculateAndApplyReadOnly();
             }
         });
     }
@@ -610,16 +631,21 @@ namespace winrt::TerminalApp::implementation
 
         // We need to move the pane to the top of our mru list
         // If its already somewhere in the list, remove it first
-        const auto paneId = pane->Id();
-        for (auto i = _mruPanes.begin(); i != _mruPanes.end(); ++i)
+        if (const auto paneId = pane->Id())
         {
-            if (*i == paneId)
+            for (auto i = _mruPanes.begin(); i != _mruPanes.end(); ++i)
             {
-                _mruPanes.erase(i);
-                break;
+                if (*i == paneId.value())
+                {
+                    _mruPanes.erase(i);
+                    break;
+                }
             }
+            _mruPanes.insert(_mruPanes.begin(), paneId.value());
         }
-        _mruPanes.insert(_mruPanes.begin(), paneId);
+
+        _RecalculateAndApplyReadOnly();
+
         // Raise our own ActivePaneChanged event.
         _ActivePaneChangedHandlers();
     }
@@ -651,7 +677,7 @@ namespace winrt::TerminalApp::implementation
                 }
                 tab->_focusState = WUX::FocusState::Programmatic;
                 // This tab has gained focus, remove the bell indicator if it is active
-                if (tab->_headerControl.BellIndicator())
+                if (tab->_tabStatus.BellIndicator())
                 {
                     tab->ShowBellIndicator(false);
                 }
@@ -1081,7 +1107,7 @@ namespace winrt::TerminalApp::implementation
         _zoomedPane = _activePane;
         _rootPane->Maximize(_zoomedPane);
         // Update the tab header to show the magnifying glass
-        _headerControl.IsPaneZoomed(true);
+        _tabStatus.IsPaneZoomed(true);
         Content(_zoomedPane->GetRootElement());
     }
     void TerminalTab::ExitZoom()
@@ -1089,13 +1115,46 @@ namespace winrt::TerminalApp::implementation
         _rootPane->Restore(_zoomedPane);
         _zoomedPane = nullptr;
         // Update the tab header to hide the magnifying glass
-        _headerControl.IsPaneZoomed(false);
+        _tabStatus.IsPaneZoomed(false);
         Content(_rootPane->GetRootElement());
     }
 
     bool TerminalTab::IsZoomed()
     {
         return _zoomedPane != nullptr;
+    }
+
+    // Method Description:
+    // - Toggle read-only mode on the active pane
+    void TerminalTab::TogglePaneReadOnly()
+    {
+        auto control = GetActiveTerminalControl();
+        if (control)
+        {
+            control.ToggleReadOnly();
+        }
+    }
+
+    // Method Description:
+    // - Calculates if the tab is read-only.
+    // The tab is considered read-only if one of the panes is read-only.
+    // If after the calculation the tab is read-only we hide the close button on the tab view item
+    void TerminalTab::_RecalculateAndApplyReadOnly()
+    {
+        const auto control = GetActiveTerminalControl();
+        if (control)
+        {
+            const auto isReadOnlyActive = control.ReadOnly();
+            _tabStatus.IsReadOnlyActive(isReadOnlyActive);
+        }
+
+        ReadOnly(_rootPane->ContainsReadOnly());
+        TabViewItem().IsClosable(!ReadOnly());
+    }
+
+    std::shared_ptr<Pane> TerminalTab::GetActivePane() const
+    {
+        return _activePane;
     }
 
     // Method Description:

@@ -30,6 +30,12 @@ AppHost::AppHost() noexcept :
 {
     _logic = _app.Logic(); // get a ref to app's logic
 
+    // Inform the WindowManager that it can use us to find the target window for
+    // a set of commandline args. This needs to be done before
+    // _HandleCommandlineArgs, because WE might end up being the monarch. That
+    // would mean we'd need to be responsible for looking that up.
+    _windowManager.FindTargetWindowRequested({ this, &AppHost::_FindTargetWindow });
+
     // If there were commandline args to our process, try and process them here.
     // Do this before AppLogic::Create, otherwise this will have no effect.
     //
@@ -64,6 +70,7 @@ AppHost::AppHost() noexcept :
                                                 std::placeholders::_1,
                                                 std::placeholders::_2));
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
+    _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
 }
@@ -161,7 +168,7 @@ void AppHost::_HandleCommandlineArgs()
     {
         if (auto args{ peasant.InitialArgs() })
         {
-            const auto result = _logic.SetStartupCommandline(args.Args());
+            const auto result = _logic.SetStartupCommandline(args.Commandline());
             const auto message = _logic.ParseCommandlineMessage();
             if (!message.empty())
             {
@@ -188,12 +195,6 @@ void AppHost::_HandleCommandlineArgs()
         // use to send the actions to the app.
         peasant.ExecuteCommandlineRequested({ this, &AppHost::_DispatchCommandline });
     }
-
-    // TODO:projects/5 if we end up not creating a new window, we crash. I'm
-    // thinking this is because the XAML host is not happy about being torn
-    // down before it has a chance to do really anything. Is there some way
-    // to get the app logic without instantiating the entire app? or at
-    // least the parts we'll need for remoting?
 }
 
 // Method Description:
@@ -516,8 +517,51 @@ bool AppHost::HasWindow()
     return _shouldCreateWindow;
 }
 
+// Method Description:
+// - Event handler for the Peasant::ExecuteCommandlineRequested event. Take the
+//   provided commandline args, and attempt to parse them and perform the
+//   actions immediately. The parsing is performed by AppLogic.
+// - This is invoked when another wt.exe instance runs something like `wt -w 1
+//   new-tab`, and the Monarch delegates the commandline to this instance.
+// Arguments:
+// - args: the bundle of a commandline and working directory to use for this invocation.
+// Return Value:
+// - <none>
 void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*sender*/,
-                                   winrt::Microsoft::Terminal::Remoting::CommandlineArgs args)
+                                   Remoting::CommandlineArgs args)
 {
-    _logic.ExecuteCommandline(args.Args());
+    _logic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory());
+}
+
+// Method Description:
+// - Event handler for the WindowManager::FindTargetWindowRequested event. The
+//   manager will ask us how to figure out what the target window is for a set
+//   of commandline arguments. We'll take those arguments, and ask AppLogic to
+//   parse them for us. We'll then set ResultTargetWindow in the given args, so
+//   the sender can use that result.
+// Arguments:
+// - args: the bundle of a commandline and working directory to find the correct target window for.
+// Return Value:
+// - <none>
+void AppHost::_FindTargetWindow(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                const Remoting::FindTargetWindowArgs& args)
+{
+    const auto targetWindow = _logic.FindTargetWindow(args.Args().Commandline());
+    args.ResultTargetWindow(targetWindow);
+}
+
+winrt::fire_and_forget AppHost::_WindowActivated()
+{
+    co_await winrt::resume_background();
+
+    if (auto peasant{ _windowManager.CurrentWindow() })
+    {
+        // TODO: projects/5 - in the future, we'll want to actually get the
+        // desktop GUID in IslandWindow, and bubble that up here, then down to
+        // the Peasant. For now, we're just leaving space for it.
+        Remoting::WindowActivatedArgs args{ peasant.GetID(),
+                                            winrt::guid{},
+                                            winrt::clock().now() };
+        peasant.ActivateWindow(args);
+    }
 }
