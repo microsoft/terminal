@@ -1100,8 +1100,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // selection.
         if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey) && vkey != VK_SNAPSHOT)
         {
+            CoreWindow window = CoreWindow::GetForCurrentThread();
+            const auto leftWinKeyState = window.GetKeyState(VirtualKey::LeftWindows);
+            const auto rightWinKeyState = window.GetKeyState(VirtualKey::RightWindows);
+            const auto isLeftWinKeyDown = WI_IsFlagSet(leftWinKeyState, CoreVirtualKeyStates::Down);
+            const auto isRightWinKeyDown = WI_IsFlagSet(rightWinKeyState, CoreVirtualKeyStates::Down);
+
             // GH#8791 - don't dismiss selection if Windows key was also pressed as a key-combination.
-            if (!(GetKeyState(VK_LWIN) & 0x8000) && !(GetKeyState(VK_RWIN) & 0x8000))
+            if (!isLeftWinKeyDown && !isRightWinKeyDown)
             {
                 _terminal->ClearSelection();
                 _renderer->TriggerSelection();
