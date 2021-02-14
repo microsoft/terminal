@@ -53,6 +53,16 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        _headerControl.RenameEnded([weakThis = get_weak()](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                if (const auto control{ tab->GetActiveTerminalControl() })
+                {
+                    control.Focus(FocusState::Programmatic);
+                }
+            }
+        });
+
         _UpdateHeaderControlMaxWidth();
 
         // Use our header control as the TabViewItem's header

@@ -108,5 +108,6 @@ namespace winrt::TerminalApp::implementation
     {
         HeaderRenamerTextBox().Visibility(Windows::UI::Xaml::Visibility::Collapsed);
         HeaderTextBlock().Visibility(Windows::UI::Xaml::Visibility::Visible);
+        _RenameEndedHandlers(*this, nullptr);
     }
 }
