@@ -1100,7 +1100,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // selection.
         if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey) && vkey != VK_SNAPSHOT)
         {
-            CoreWindow window = CoreWindow::GetForCurrentThread();
+            const CoreWindow window = CoreWindow::GetForCurrentThread();
             const auto leftWinKeyState = window.GetKeyState(VirtualKey::LeftWindows);
             const auto rightWinKeyState = window.GetKeyState(VirtualKey::RightWindows);
             const auto isLeftWinKeyDown = WI_IsFlagSet(leftWinKeyState, CoreVirtualKeyStates::Down);
@@ -2891,7 +2891,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
     ControlKeyStates TermControl::_GetPressedModifierKeys() const
     {
-        CoreWindow window = CoreWindow::GetForCurrentThread();
+        const CoreWindow window = CoreWindow::GetForCurrentThread();
         // DONT USE
         //      != CoreVirtualKeyStates::None
         // OR
