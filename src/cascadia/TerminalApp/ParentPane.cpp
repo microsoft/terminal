@@ -662,8 +662,6 @@ namespace winrt::TerminalApp::implementation
         if (_firstLayoutUpdated && _secondLayoutUpdated)
         {
             // Once both children have their sizes, we can initialize them
-            // todo: uh will this cause a problem for commandline startup?
-            // ostensibly not - commandline split pane arguments get handled fine it seems
             _SetupEntranceAnimation();
         }
     }

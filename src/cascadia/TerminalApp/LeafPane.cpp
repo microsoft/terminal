@@ -285,7 +285,6 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Fire our Closed event to tell our parent that we should be removed.
-    // - todo: not sure if we ever call this anymore
     void LeafPane::Close()
     {
         _ClosedHandlers(*this);
