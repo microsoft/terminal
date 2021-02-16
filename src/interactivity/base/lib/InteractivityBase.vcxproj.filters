@@ -27,6 +27,9 @@
     <ClCompile Include="..\ApiDetector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\EventSynthesis.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\InteractivityFactory.hpp">
@@ -72,6 +75,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\VtApiRedirection.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\EventSynthesis.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -154,6 +154,17 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleTogglePaneReadOnly(const IInspectable& /*sender*/,
+                                                 const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            activeTab->TogglePaneReadOnly();
+        }
+
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleScrollUpPage(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {
@@ -352,7 +363,7 @@ namespace winrt::TerminalApp::implementation
                     {
                         auto controlSettings = activeControl.Settings().as<TerminalSettings>();
                         controlSettings->ApplyColorScheme(scheme);
-                        activeControl.UpdateSettings(*controlSettings);
+                        activeControl.UpdateSettings();
                         args.Handled(true);
                     }
                 }
@@ -465,17 +476,19 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            // Remove tabs after the current one
-            while (_tabs.Size() > index + 1)
+            // Since _RemoveTab is asynchronous, create a snapshot of the  tabs we want to remove
+            std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
+            if (index > 0)
             {
-                _RemoveTabViewItemByIndex(_tabs.Size() - 1);
+                std::copy(begin(_tabs), begin(_tabs) + index, std::back_inserter(tabsToRemove));
             }
 
-            // Remove all of them leading up to the selected tab
-            while (_tabs.Size() > 1)
+            if (index + 1 < _tabs.Size())
             {
-                _RemoveTabViewItemByIndex(0);
+                std::copy(begin(_tabs) + index + 1, end(_tabs), std::back_inserter(tabsToRemove));
             }
+
+            _RemoveTabs(tabsToRemove);
 
             actionArgs.Handled(true);
         }
@@ -502,11 +515,10 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            // Remove tabs after the current one
-            while (_tabs.Size() > index + 1)
-            {
-                _RemoveTabViewItemByIndex(_tabs.Size() - 1);
-            }
+            // Since _RemoveTab is asynchronous, create a snapshot of the  tabs we want to remove
+            std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
+            std::copy(begin(_tabs) + index + 1, end(_tabs), std::back_inserter(tabsToRemove));
+            _RemoveTabs(tabsToRemove);
 
             // TODO:GH#7182 For whatever reason, if you run this action
             // when the tab that's currently focused is _before_ the `index`

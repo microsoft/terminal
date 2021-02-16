@@ -27,6 +27,7 @@
     "snapToGridOnResize": true,
     "disableAnimations": false,
     "startupActions": "",
+    "focusFollowMouse": false,
 
     "profiles":
     [
@@ -336,6 +337,7 @@
         { "command": { "action": "moveFocus", "direction": "up" }, "keys": "alt+up" },
         { "command": { "action": "moveFocus", "direction": "previous" }, "keys": "ctrl+alt+left" },
         { "command": "togglePaneZoom" },
+        { "command": "toggleReadOnlyMode" },
 
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },

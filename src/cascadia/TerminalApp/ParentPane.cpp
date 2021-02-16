@@ -118,6 +118,11 @@ namespace winrt::TerminalApp::implementation
         return _firstChild.HasFocusedChild() || _secondChild.HasFocusedChild();
     }
 
+    bool ParentPane::ContainsReadOnly()
+    {
+        return _firstChild.ContainsReadOnly() || _secondChild.ContainsReadOnly();
+    }
+
     // Method Description:
     // - Adds our children to the UI tree
     // - Adds event handlers for our children
@@ -647,24 +652,11 @@ namespace winrt::TerminalApp::implementation
         {
             _firstLayoutUpdated = true;
             _firstLayoutRevoker.revoke();
-            if (auto firstAsLeaf = _firstChild.try_as<LeafPane>())
-            {
-                // todo:
-                // - this UpdateSettings call is here because sometimes, when there's a split pane argument on startup,
-                //   certain appearance settings don't show (e.g. background image, color scheme)
-                // - calling update settings here, after we get the child's layout updated event, fixes it
-                // - there should be a better way around this (possibly in TermControl?)
-                firstAsLeaf->UpdateSettings(firstAsLeaf->GetTerminalControl().Settings().try_as<TerminalApp::TerminalSettings>(), firstAsLeaf->GetProfile());
-            }
         }
         else
         {
             _secondLayoutUpdated = true;
             _secondLayoutRevoker.revoke();
-            if (auto secondAsLeaf = _secondChild.try_as<LeafPane>())
-            {
-                secondAsLeaf->UpdateSettings(secondAsLeaf->GetTerminalControl().Settings().try_as<TerminalApp::TerminalSettings>(), secondAsLeaf->GetProfile());
-            }
         }
 
         if (_firstLayoutUpdated && _secondLayoutUpdated)

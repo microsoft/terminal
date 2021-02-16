@@ -61,6 +61,7 @@ namespace winrt::TerminalApp::implementation
 
         // Register an event with the control to have it inform us when it gains focus.
         _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &LeafPane::_ControlGotFocusHandler });
+        _lostFocusRevoker = control.LostFocus(winrt::auto_revoke, { this, &LeafPane::_ControlLostFocusHandler });
     }
 
     void LeafPane::BorderTappedHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
@@ -155,7 +156,13 @@ namespace winrt::TerminalApp::implementation
     {
         if (profile == _profile)
         {
-            _control.UpdateSettings(settings);
+            // Update the parent of the control's settings object (and not the object itself) so
+            // that any overrides made by the control don't get affected by the reload
+            auto child = winrt::get_self<winrt::TerminalApp::implementation::TerminalSettings>(_control.Settings());
+            auto parent = winrt::get_self<winrt::TerminalApp::implementation::TerminalSettings>(settings);
+            child->ClearParents();
+            child->InsertParent(0, parent->get_strong());
+            _control.UpdateSettings();
         }
     }
 
@@ -198,6 +205,11 @@ namespace winrt::TerminalApp::implementation
     bool LeafPane::HasFocusedChild()
     {
         return _control && _lastActive;
+    }
+
+    bool LeafPane::ContainsReadOnly()
+    {
+        return _control.ReadOnly();
     }
 
     // Method Description:
@@ -548,6 +560,12 @@ namespace winrt::TerminalApp::implementation
         _GotFocusHandlers(*this);
     }
 
+    void LeafPane::_ControlLostFocusHandler(winrt::Windows::Foundation::IInspectable const& /* sender */,
+                                            RoutedEventArgs const& /* args */)
+    {
+        _LostFocusHandlers(*this);
+    }
+
     // Method Description:
     // - Sets the thickness of each side of our borders to match our _borders state.
     void LeafPane::_UpdateBorders()
@@ -696,5 +714,6 @@ namespace winrt::TerminalApp::implementation
 
     DEFINE_EVENT(LeafPane, Closed, _ClosedHandlers, winrt::delegate<LeafPane>);
     DEFINE_EVENT(LeafPane, GotFocus, _GotFocusHandlers, winrt::delegate<LeafPane>);
+    DEFINE_EVENT(LeafPane, LostFocus, _LostFocusHandlers, winrt::delegate<LeafPane>);
     DEFINE_EVENT(LeafPane, PaneRaiseVisualBell, _PaneRaiseVisualBellHandlers, winrt::delegate<LeafPane>);
 }

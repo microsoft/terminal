@@ -93,6 +93,8 @@
         "scrollDownPage",
         "scrollUp",
         "scrollUpPage",
+        "scrollToBottom",
+        "scrollToTop",
         "sendInput",
         "setColorScheme",
         "setTabColor",
@@ -103,6 +105,7 @@
         "toggleFocusMode",
         "toggleFullscreen",
         "togglePaneZoom",
+        "toggleReadOnlyMode",
         "toggleShaderEffects",
         "wt",
         "unbound"
@@ -630,6 +633,11 @@
         "copyOnSelect": {
           "default": false,
           "description": "When set to true, a selection is immediately copied to your clipboard upon creation. When set to false, the selection persists and awaits further action.",
+          "type": "boolean"
+        },
+        "focusFollowMouse": {
+          "default": false,
+          "description": "When set to true, the terminal will focus the pane on mouse hover.",
           "type": "boolean"
         },
         "copyFormatting": {

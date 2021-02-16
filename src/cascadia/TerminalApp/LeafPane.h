@@ -30,6 +30,8 @@ namespace winrt::TerminalApp::implementation
         void FocusFirstChild();
         bool HasFocusedChild();
 
+        bool ContainsReadOnly();
+
         bool WasLastFocused() const noexcept;
         void UpdateVisuals();
         void ClearActive();
@@ -78,6 +80,7 @@ namespace winrt::TerminalApp::implementation
 
         DECLARE_EVENT(Closed, _ClosedHandlers, winrt::delegate<LeafPane>);
         DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<LeafPane>);
+        DECLARE_EVENT(LostFocus, _LostFocusHandlers, winrt::delegate<LeafPane>);
         DECLARE_EVENT(PaneRaiseVisualBell, _PaneRaiseVisualBellHandlers, winrt::delegate<LeafPane>);
         TYPED_EVENT(PaneTypeChanged, IPane, IPane);
 
@@ -96,12 +99,15 @@ namespace winrt::TerminalApp::implementation
         winrt::event_token _warningBellToken{ 0 };
 
         winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
+        winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
 
         void _ControlConnectionStateChangedHandler(const winrt::Microsoft::Terminal::TerminalControl::TermControl& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
         void _ControlWarningBellHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                         winrt::Windows::Foundation::IInspectable const& e);
         void _ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                      winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+        void _ControlLostFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
+                                      winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
         static void _SetupResources();
 

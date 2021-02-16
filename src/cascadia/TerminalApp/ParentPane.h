@@ -20,6 +20,8 @@ namespace winrt::TerminalApp::implementation
         void FocusFirstChild();
         bool HasFocusedChild();
 
+        bool ContainsReadOnly();
+
         void InitializeChildren();
 
         void Shutdown();

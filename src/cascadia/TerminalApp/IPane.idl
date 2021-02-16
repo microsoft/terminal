@@ -21,6 +21,8 @@ namespace TerminalApp
         IPane FindFirstLeaf();
         Boolean HasFocusedChild();
 
+        Boolean ContainsReadOnly();
+
         Windows.UI.Xaml.Controls.Grid GetRootElement();
 
         void Shutdown();
