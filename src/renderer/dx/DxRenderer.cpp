@@ -66,8 +66,8 @@ using namespace Microsoft::Console::Types;
 DxEngine::DxEngine() :
     RenderEngineBase(),
     _invalidateFullRows{ true },
-    _pool{til::pmr::get_default_resource()},
-    _invalidMap{&_pool},
+    _pool{ til::pmr::get_default_resource() },
+    _invalidMap{ &_pool },
     _invalidScroll{},
     _allInvalid{ false },
     _firstFrame{ true },
