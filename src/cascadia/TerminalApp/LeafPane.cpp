@@ -23,7 +23,6 @@ using namespace TerminalApp;
 
 namespace winrt::TerminalApp::implementation
 {
-
     winrt::Windows::UI::Xaml::Media::SolidColorBrush LeafPane::s_focusedBorderBrush = { nullptr };
     winrt::Windows::UI::Xaml::Media::SolidColorBrush LeafPane::s_unfocusedBorderBrush = { nullptr };
 
@@ -430,9 +429,9 @@ namespace winrt::TerminalApp::implementation
     // Note:
     // - This method is highly similar to Pane::PreCalculateAutoSplit
     IReference<bool> LeafPane::PreCalculateCanSplit(const IPane target,
-                                                       SplitState splitType,
-                                                       const float splitSize,
-                                                       const winrt::Windows::Foundation::Size availableSpace) const
+                                                    SplitState splitType,
+                                                    const float splitSize,
+                                                    const winrt::Windows::Foundation::Size availableSpace) const
     {
         if (winrt::get_self<implementation::LeafPane>(target) == this)
         {

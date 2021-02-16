@@ -486,8 +486,8 @@ namespace winrt::TerminalApp::implementation
         {
             const auto& adjacentChild = (_splitState == SplitState::Vertical && edge == ResizeDirection::Left ||
                                          _splitState == SplitState::Horizontal && edge == ResizeDirection::Up) ?
-                                           _firstChild :
-                                           _secondChild;
+                                            _firstChild :
+                                            _secondChild;
             if (auto adjChildAsLeaf = adjacentChild.try_as<TerminalApp::LeafPane>())
             {
                 action(adjChildAsLeaf);
@@ -879,7 +879,7 @@ namespace winrt::TerminalApp::implementation
         auto weakThis = get_weak();
         co_await winrt::resume_foreground(Root().Dispatcher());
 
-        if (auto pane{ weakThis.get() }) 
+        if (auto pane{ weakThis.get() })
         {
             // This will query if animations are enabled via the "Show animations in
             // Windows" setting in the OS
