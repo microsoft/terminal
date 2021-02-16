@@ -319,6 +319,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     // Function Description:
     // - Updates the currently modifiable color table based on the given current color scheme.
+    //   There are 7 non-bright colours and 7 bright colours.  
     // Arguments:
     // - colorScheme: the color scheme to retrieve the color table from
     // Return Value:
@@ -327,14 +328,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         for (uint8_t i = 0; i < TableColorNames.size(); ++i)
         {
-            if (i < ColorTableDivider)
-            {
-                _CurrentNonBrightColorTable.GetAt(i).Color(colorScheme.Table()[i]);
-            }
-            else
-            {
-                _CurrentBrightColorTable.GetAt(i).Color(colorScheme.Table()[i]);
-            }
+            // Fill the element of "_CurrentNonBrightColorTable" with the non-bright colors (lower index on the color scheme object's table: 0-7).
+            int indexNonBrightColor = i;
+            // Fill the element of "_CurrentBrightColorTable" with the bright colors (higher index on the color scheme object's table: 8-15).
+            int indexBrightColor = i + ColorTableDivider;
+
+            _CurrentNonBrightColorTable.GetAt(i).Color(colorScheme.Table()[indexNonBrightColor]);
+            _CurrentBrightColorTable.GetAt(i).Color(colorScheme.Table()[indexBrightColor]);
         }
     }
 
