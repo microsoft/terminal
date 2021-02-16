@@ -275,7 +275,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     // Method Description:
     // - updates the content frame to present a view of the profile page
-    // - NOTE: this does not update the selected item. If that functionality is desired, use the public version (Navigate()) instead
+    // - NOTE: this does not update the selected item.
     // Arguments:
     // - profile - the profile object we are getting a view of
     void MainPage::_Navigate(const Editor::ProfileViewModel& profile)
@@ -288,54 +288,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Add an event handler for when the user wants to delete a profile.
         _lastProfilesNavState.DeleteProfile({ this, &MainPage::_DeleteProfile });
 
-        // Add an event handler for when the user wants to navigate to another page
-        _lastProfilesNavState.Navigate([=](const auto&, const auto& args) {
-            if (const auto& profile{ args.try_as<Model::Profile>() })
-            {
-                if (profile == _settingsClone.ProfileDefaults())
-                {
-                    // navigate to base layer
-                    SettingsNav().SelectedItem(BaseLayerMenuItem());
-                    _Navigate(hstring{ globalProfileTag });
-                }
-                else
-                {
-                    // navigate to another profile
-                    Navigate(_viewModelForProfile(profile));
-                }
-            }
-        });
-
         contentFrame().Navigate(xaml_typename<Editor::Profiles>(), _lastProfilesNavState);
-    }
-
-    // Method Description:
-    // - updates the selected item, and updates the content frame to present a view of the profile page
-    // - NOTE: this does not update the selected item. If that functionality is desired, use the public version (Navigate()) instead
-    // Arguments:
-    // - profile - the profile object we are getting a view of
-    void MainPage::Navigate(const Editor::ProfileViewModel& profile)
-    {
-        for (const auto& item : SettingsNav().MenuItems())
-        {
-            if (const auto& navItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
-            {
-                if (const auto& tag{ navItem.Tag() })
-                {
-                    if (const auto& profileTag{ tag.try_as<Editor::ProfileViewModel>() })
-                    {
-                        if (profileTag == profile)
-                        {
-                            SettingsNav().SelectedItem(item);
-                        }
-                    }
-                }
-            }
-        }
-
-        // TODO GH#6800: The profile page we're navigating to is not a menu item.
-        //               This page should be exposed as a read-only page.
-        _Navigate(profile);
     }
 
     void MainPage::OpenJsonTapped(IInspectable const& /*sender*/, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& /*args*/)

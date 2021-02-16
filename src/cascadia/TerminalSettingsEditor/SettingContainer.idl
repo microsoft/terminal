@@ -20,6 +20,5 @@ namespace Microsoft.Terminal.Settings.Editor
         static Windows.UI.Xaml.DependencyProperty SettingOverrideSourceProperty { get; };
 
         event Windows.Foundation.TypedEventHandler<SettingContainer, Object> ClearSettingValue;
-        event Windows.Foundation.TypedEventHandler<SettingContainer, Object> Navigate;
     };
 }

@@ -55,7 +55,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         DEPENDENCY_PROPERTY(bool, HasSettingValue);
         DEPENDENCY_PROPERTY(IInspectable, SettingOverrideSource);
         TYPED_EVENT(ClearSettingValue, Editor::SettingContainer, Windows::Foundation::IInspectable);
-        TYPED_EVENT(Navigate, Editor::SettingContainer, Windows::Foundation::IInspectable);
 
     private:
         static void _InitializeProperties();

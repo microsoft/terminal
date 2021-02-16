@@ -27,10 +27,6 @@ the MIT License. See LICENSE in the project root for license information. -->
         <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
     </Style>
 
-    <Style x:Key="SettingContainerOverrideTextStyle" TargetType="TextBlock">
-        <Setter Property="FontStyle" Value="Italic"/>
-    </Style>
-
     <Style TargetType="local:SettingContainer">
         <Setter Property="Margin" Value="0,24,0,0"/>
         <Setter Property="IsTabStop" Value="False"/>
@@ -51,10 +47,6 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                         <!--This is where the actual setting control will go-->
                         <ContentPresenter Content="{TemplateBinding Content}"/>
-
-                        <!--The text displayed when a setting is being overridden-->
-                        <TextBlock x:Name="OverrideMessage"
-                                   Style="{StaticResource SettingContainerOverrideTextStyle}"/>
                     </StackPanel>
                 </ControlTemplate>
             </Setter.Value>

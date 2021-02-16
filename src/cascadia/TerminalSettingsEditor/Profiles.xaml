@@ -58,8 +58,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <!-- General Tab -->
             <PivotItem x:Uid="Profile_General">
                 <ScrollViewer>
-                    <StackPanel x:Name="GeneralStack"
-                                Style="{StaticResource PivotStackStyle}">
+                    <StackPanel Style="{StaticResource PivotStackStyle}">
 
                         <!--Name-->
                         <!--NOTE: Has/Clear is not bound because we don't want the reset button & override text to appear.
@@ -208,7 +207,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <!-- Appearance Tab -->
             <PivotItem x:Uid="Profile_Appearance">
                 <ScrollViewer>
-                    <StackPanel x:Name="AppearanceStack">
+                    <StackPanel>
                         <StackPanel Style="{StaticResource PivotStackStyle}">
                             <!--Grouping: Text-->
                             <TextBlock x:Uid="Profile_TextHeader" Style="{StaticResource SubtitleTextBlockStyle}"/>
@@ -620,8 +619,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <!-- Advanced Tab -->
             <PivotItem x:Uid="Profile_Advanced">
                 <ScrollViewer>
-                    <StackPanel x:Name="AdvancedStack"
-                                Style="{StaticResource PivotStackStyle}">
+                    <StackPanel Style="{StaticResource PivotStackStyle}">
                         <!--Suppress Application Title-->
                         <local:SettingContainer x:Uid="Profile_SuppressApplicationTitle"
                                                 HasSettingValue="{x:Bind State.Profile.HasSuppressApplicationTitle, Mode=OneWay}"

@@ -111,13 +111,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         void DeleteProfile();
-        void Navigate(const IInspectable& target);
 
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes() { return _Schemes; }
         void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) { _Schemes = val; }
 
         TYPED_EVENT(DeleteProfile, Editor::ProfilePageNavigationState, Editor::DeleteProfileEventArgs);
-        TYPED_EVENT(Navigate, Editor::ProfilePageNavigationState, Windows::Foundation::IInspectable);
         GETSET_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
         GETSET_PROPERTY(Editor::ProfilesPivots, LastActivePivot, Editor::ProfilesPivots::General);
         GETSET_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
@@ -167,7 +165,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         void _UpdateBIAlignmentControl(const int32_t val);
-        void _RegisterNavigationHandlers(const DependencyObject& root);
 
         Windows::Foundation::Collections::IMap<uint16_t, Microsoft::Terminal::Settings::Editor::EnumEntry> _FontWeightMap;
         Editor::EnumEntry _CustomFontWeight{ nullptr };
