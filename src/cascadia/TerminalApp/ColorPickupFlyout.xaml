@@ -12,7 +12,7 @@
         </Style>
     </Flyout.FlyoutPresenterStyle>
     <StackPanel Orientation="Horizontal">
-        <StackPanel>
+        <StackPanel XYFocusKeyboardNavigation="Enabled">
             <VariableSizedWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="4" HorizontalAlignment="Center" Margin="0, 3, 0, 0">
                 <VariableSizedWrapGrid.Resources>
                     <Style TargetType="Rectangle">
