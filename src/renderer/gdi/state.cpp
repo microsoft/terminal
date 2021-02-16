@@ -31,6 +31,7 @@ GdiEngine::GdiEngine() :
     _lastBg(INVALID_COLOR),
     _lastFontItalic(false),
     _fPaintStarted(false),
+    _invalidCharacters{},
     _hfont(nullptr),
     _hfontItalic(nullptr),
     _pool{ til::pmr::get_default_resource() }, // It's important the pool is first so it can be given to the others on construction.
@@ -392,7 +393,7 @@ GdiEngine::~GdiEngine()
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // -  S_OK if PostMessageW succeeded, otherwise E_FAIL
-[[nodiscard]] HRESULT GdiEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/) noexcept
+[[nodiscard]] HRESULT GdiEngine::_DoUpdateTitle(_In_ const std::wstring_view /*newTitle*/) noexcept
 {
     // the CM_UPDATE_TITLE handler in windowproc will query the updated title.
     return PostMessageW(_hwndTargetWindow, CM_UPDATE_TITLE, 0, (LPARAM) nullptr) ? S_OK : E_FAIL;

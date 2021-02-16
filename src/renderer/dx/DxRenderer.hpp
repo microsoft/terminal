@@ -113,7 +113,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, int const iDpi) noexcept override;
 
-        [[nodiscard]] std::vector<til::rectangle> GetDirtyArea() override;
+        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept override;
 
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
@@ -130,7 +130,7 @@ namespace Microsoft::Console::Render
         void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept;
 
     protected:
-        [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
+        [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring_view newTitle) noexcept override;
         [[nodiscard]] HRESULT _PaintTerminalEffects() noexcept;
         [[nodiscard]] bool _FullRepaintNeeded() const noexcept;
 
@@ -181,7 +181,8 @@ namespace Microsoft::Console::Render
 
         bool _firstFrame;
         bool _invalidateFullRows;
-        til::bitmap _invalidMap;
+        std::pmr::unsynchronized_pool_resource _pool;
+        til::pmr::bitmap _invalidMap;
         til::point _invalidScroll;
         bool _allInvalid;
 
