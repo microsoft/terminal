@@ -854,6 +854,12 @@ namespace winrt::TerminalApp::implementation
         // results in the tab trying to access the active terminal control, which requires a valid active pane
         _PaneTypeChangedHandlers(nullptr, remainingChild);
 
+        const auto remainingFirstLeaf = remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>();
+
+        Dispatcher().TryRunAsync(CoreDispatcherPriority::Normal, [=]() {
+            remainingFirstLeaf.GetTerminalControl().Focus(FocusState::Programmatic);
+        });
+
         //if (setupEvent)
         //{
         //    const auto remainingFirstLeaf = remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>();
@@ -1020,19 +1026,13 @@ namespace winrt::TerminalApp::implementation
             // Start the animation.
             s.Begin();
 
-            //std::weak_ptr<Pane> weakThis{ shared_from_this() };
-
+            auto strongThis{ get_strong() };
             // When the animation is completed, reparent the child's content up to
             // us, and remove the child nodes from the tree.
             animation.Completed([=](auto&&, auto&&) {
-                // todo: do we need this lock? if so, how do we do it in the new implementation?
-                //if (auto pane{ weakThis.lock() })
-                //{
-                    // We don't need to manually undo any of the above trickiness.
-                    // We're going to re-parent the child's content into us anyways
-                    //pane->_CloseChild(closeFirst);
-                    _CloseChild(closeFirst);
-                //}
+                // We don't need to manually undo any of the above trickiness.
+                // We're going to re-parent the child's content into us anyways
+                strongThis->_CloseChild(closeFirst);
             });
         }
     }
@@ -1067,16 +1067,16 @@ namespace winrt::TerminalApp::implementation
                     const auto remainingFirstLeaf = remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>();
                     remainingFirstLeaf.SetActive();
                     _CloseChildRoutine(isFirstChild);
-                    _firstLayoutRevoker = remainingFirstLeaf.GetTerminalControl().LayoutUpdated(winrt::auto_revoke, [=](auto /*s*/, auto /*e*/) {
-                        remainingFirstLeaf.GetTerminalControl().Focus(FocusState::Programmatic);
-                        // todo, fix these issues:
-                        // - this transfers the focus fine in debug build, but not in release
-                        // - IF we change _CloseChildRoutine to just _CloseChild, then it works in release (so its probably
-                        //   some sort of race because _CloseChildRoutine is a fire_and_forget function)
-                        // - I don't like that we don't revoke this (revoking this causes the focus to not _stay_ with the control,
-                        //   it loses the focus for some reason, so the last layoutUpdated event helps to get the focus back)
-                        //_firstLayoutRevoker.revoke();
-                    });
+                    //_firstLayoutRevoker = remainingFirstLeaf.GetTerminalControl().LayoutUpdated(winrt::auto_revoke, [=](auto /*s*/, auto /*e*/) {
+                    //    remainingFirstLeaf.GetTerminalControl().Focus(FocusState::Programmatic);
+                    //    // todo, fix these issues:
+                    //    // - this transfers the focus fine in debug build, but not consistently in release
+                    //    // - IF we change _CloseChildRoutine to just _CloseChild, then it works more consistently in release but still not completely
+                    //    // - so its probably some sort of race somewhere?
+                    //    // - I don't like that we don't revoke this (revoking this causes the focus to not _stay_ with the control,
+                    //    //   it loses the focus for some reason, so the last layoutUpdated event helps to get the focus back)
+                    //    //_firstLayoutRevoker.revoke();
+                    //});
                 }
                 else
                 {
