@@ -92,8 +92,8 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
 
     private:
-        IPane _rootPane2;
-        std::optional<TerminalApp::LeafPane> _zoomedPane2;
+        IPane _rootPane;
+        std::optional<TerminalApp::LeafPane> _zoomedPane;
         winrt::hstring _lastIconPath{};
         winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
         std::optional<winrt::Windows::UI::Color> _themeTabColor{};
@@ -136,7 +136,7 @@ namespace winrt::TerminalApp::implementation
         void _SetupRootPaneEventHandlers();
         void _RemoveRootPaneEventHandlers();
 
-        void _UpdateActivePane2(TerminalApp::LeafPane pane);
+        void _UpdateActivePane(TerminalApp::LeafPane pane);
 
         winrt::hstring _GetActiveTitle() const;
 
