@@ -36,14 +36,7 @@ namespace Microsoft::Console::VirtualTerminal
 
                 for (size_t i = 0; i < options.size(); i++)
                 {
-                    // TRICKY: The VTParameter could be a fake/materialized parameter, in
-                    // which case it has a default value, and the default value of a
-                    // VTParameter depends on what you are assigning to: if you assign /
-                    // convert directly to a size_t, then the default is "1", but for other
-                    // size_t-sized types, the default is "0". We want "default is 0", so we
-                    // convert to a SgrSaveRestoreStackOptions first.
-                    const SgrSaveRestoreStackOptions option = options.at(i);
-                    const size_t optionAsIndex = static_cast<size_t>(option);
+                    const size_t optionAsIndex = options.at(i).value_or(0);
 
                     // Options must be specified singly; not in combination. Values that are
                     // out of range will be ignored.
@@ -54,11 +47,13 @@ namespace Microsoft::Console::VirtualTerminal
                 }
             }
         }
-        catch (std::out_of_range&)
+        catch (...)
         {
-            // We should not be able to reach here: we pre-check that everything should be
-            // in range.
-            RaiseFailFastException(nullptr, nullptr, 0);
+            // The static analyzer knows that the bitset operations can throw
+            // std::out_of_range. However, we know that won't happen, because we pre-check
+            // that everything should be in range. So we plan to never execute this
+            // failfast:
+            FAIL_FAST_CAUGHT_EXCEPTION();
         }
 
         if (_numSavedAttrs < gsl::narrow<int>(_storedSgrAttributes.size()))
@@ -100,11 +95,13 @@ namespace Microsoft::Console::VirtualTerminal
                                                          restoreMe.ValidParts);
                 }
             }
-            catch (std::out_of_range&)
+            catch (...)
             {
-                // We should not be able to reach here: we pre-check that everything
-                // should be in range.
-                RaiseFailFastException(nullptr, nullptr, 0);
+                // The static analyzer knows that the bitset operations can throw
+                // std::out_of_range. However, we know that won't happen, because we
+                // pre-check that everything should be in range. So we plan to never
+                // execute this failfast:
+                FAIL_FAST_CAUGHT_EXCEPTION();
             }
         }
 
@@ -142,96 +139,71 @@ namespace Microsoft::Console::VirtualTerminal
         //              Ps = 3 1  -> Background color.
         //
         //  (some closing braces for people with editors that get thrown off without them: }})
-        //
-        // Note that not all of these attributes are actually supported by
-        // renderers/conhost, despite setters/getters on TextAttribute.
 
-        try
+        // Boldness = 1,
+        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Boldness)))
         {
-            // Boldness = 1,
-            if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Boldness)))
-            {
-                result.SetBold(savedAttribute.IsBold());
-            }
-
-            // Faintness = 2,
-            if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Faintness)))
-            {
-                result.SetFaint(savedAttribute.IsFaint());
-            }
-
-            // Italics = 3,
-            if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Italics)))
-            {
-                result.SetItalic(savedAttribute.IsItalic());
-            }
-
-            // Underline = 4,
-            if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Underline)))
-            {
-                result.SetUnderlined(savedAttribute.IsUnderlined());
-            }
-
-            // Blink = 5,
-            if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Blink)))
-            {
-                result.SetBlinking(savedAttribute.IsBlinking());
-            }
-
-            // Negative = 7,
-            if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Negative)))
-            {
-                if (savedAttribute.IsReverseVideo())
-                {
-                    if (!result.IsReverseVideo())
-                    {
-                        result.Invert();
-                    }
-                }
-                else
-                {
-                    if (result.IsReverseVideo())
-                    {
-                        result.Invert();
-                    }
-                }
-            }
-
-            // Invisible = 8,
-            if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Invisible)))
-            {
-                result.SetInvisible(savedAttribute.IsInvisible());
-            }
-
-            // CrossedOut = 9,
-            if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::CrossedOut)))
-            {
-                result.SetCrossedOut(savedAttribute.IsCrossedOut());
-            }
-
-            // DoublyUnderlined = 21,
-            if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::DoublyUnderlined)))
-            {
-                result.SetDoublyUnderlined(savedAttribute.IsDoublyUnderlined());
-            }
-
-            // SaveForegroundColor = 30,
-            if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::SaveForegroundColor)))
-            {
-                result.SetForeground(savedAttribute.GetForeground());
-            }
-
-            // SaveBackgroundColor = 31,
-            if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::SaveBackgroundColor)))
-            {
-                result.SetBackground(savedAttribute.GetBackground());
-            }
+            result.SetBold(savedAttribute.IsBold());
         }
-        catch (std::out_of_range&)
+
+        // Faintness = 2,
+        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Faintness)))
         {
-            // We should not be able to reach here: all values passed to bitset::test are
-            // constants, clearly in range of the bitset.
-            RaiseFailFastException(nullptr, nullptr, 0);
+            result.SetFaint(savedAttribute.IsFaint());
+        }
+
+        // Italics = 3,
+        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Italics)))
+        {
+            result.SetItalic(savedAttribute.IsItalic());
+        }
+
+        // Underline = 4,
+        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Underline)))
+        {
+            result.SetUnderlined(savedAttribute.IsUnderlined());
+        }
+
+        // Blink = 5,
+        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Blink)))
+        {
+            result.SetBlinking(savedAttribute.IsBlinking());
+        }
+
+        // Negative = 7,
+        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Negative)))
+        {
+            result.SetReverseVideo(savedAttribute.IsReverseVideo());
+        }
+
+        // Invisible = 8,
+        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Invisible)))
+        {
+            result.SetInvisible(savedAttribute.IsInvisible());
+        }
+
+        // CrossedOut = 9,
+        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::CrossedOut)))
+        {
+            result.SetCrossedOut(savedAttribute.IsCrossedOut());
+        }
+
+        // DoublyUnderlined = 21,
+        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::DoublyUnderlined)))
+        {
+            result.SetDoublyUnderlined(savedAttribute.IsDoublyUnderlined());
+        }
+
+        // SaveForegroundColor = 30,
+        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::SaveForegroundColor)))
+        {
+            result.SetForeground(savedAttribute.GetForeground());
+        }
+
+        // SaveBackgroundColor = 31,
+        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::SaveBackgroundColor)))
+        {
+            result.SetBackground(savedAttribute.GetBackground());
         }
 
         return result;
