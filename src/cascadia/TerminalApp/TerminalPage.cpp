@@ -863,12 +863,9 @@ namespace winrt::TerminalApp::implementation
             {
                 if (!page->_newTabButton.Flyout().IsOpen())
                 {
-                    if (const auto tab{ page->_GetFocusedTabImpl() })
+                    if (const auto tab{ page->_GetFocusedTab() })
                     {
-                        if (const auto control{ tab->GetActiveTerminalControl() })
-                        {
-                            control.Focus(FocusState::Programmatic);
-                        }
+                        tab.Focus(FocusState::Programmatic);
                     }
                 }
             }
