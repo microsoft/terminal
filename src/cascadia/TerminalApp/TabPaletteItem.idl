@@ -3,6 +3,7 @@
 
 import "PaletteItem.idl";
 import "TabBase.idl";
+import "TerminalTabStatus.idl";
 
 namespace TerminalApp
 {
@@ -12,10 +13,6 @@ namespace TerminalApp
 
         TabBase Tab { get; };
 
-        Boolean IsProgressRingActive { get; set; };
-        Boolean IsProgressRingIndeterminate { get; set; };
-        UInt32 ProgressValue { get; set; };
-        Boolean IsPaneZoomed { get; set; };
-        Boolean BellIndicator { get; set; };
+        TerminalTabStatus TabStatus { get; };
     }
 }

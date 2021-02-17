@@ -17,11 +17,8 @@ Author(s):
 #include "TerminalSettings.g.h"
 #include "../TerminalSettingsModel/IInheritable.h"
 #include "../inc/cppwinrt_utils.h"
-#include "../../types/inc/colorTable.hpp"
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
-
-using namespace Microsoft::Console::Utils;
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -69,6 +66,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_SETTING(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
         GETSET_SETTING(hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
         GETSET_SETTING(bool, CopyOnSelect, false);
+        GETSET_SETTING(bool, FocusFollowMouse, false);
 
         GETSET_SETTING(Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
 

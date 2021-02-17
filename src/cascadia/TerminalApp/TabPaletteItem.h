@@ -19,16 +19,12 @@ namespace winrt::TerminalApp::implementation
             return _tab.get();
         }
 
-        OBSERVABLE_GETSET_PROPERTY(bool, IsProgressRingActive, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(bool, IsProgressRingIndeterminate, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(uint32_t, ProgressValue, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(bool, IsPaneZoomed, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(bool, BellIndicator, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(winrt::TerminalApp::TerminalTabStatus, TabStatus, _PropertyChangedHandlers);
 
     private:
         winrt::weak_ref<winrt::TerminalApp::TabBase> _tab;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _tabChangedRevoker;
-        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _tabHeaderChangedRevoker;
+        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _tabStatusChangedRevoker;
     };
 }
 

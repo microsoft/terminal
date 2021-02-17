@@ -25,18 +25,6 @@ namespace winrt::TerminalApp::implementation
         Name(tab.Title());
         Icon(tab.Icon());
 
-        if (const auto terminalTab{ tab.try_as<winrt::TerminalApp::TerminalTab>() })
-        {
-            if (const auto tabImpl{ winrt::get_self<winrt::TerminalApp::implementation::TerminalTab>(terminalTab) })
-            {
-                IsProgressRingActive(tabImpl->IsProgressRingActive());
-                IsProgressRingIndeterminate(tabImpl->IsProgressRingIndeterminate());
-                ProgressValue(tabImpl->ProgressValue());
-                BellIndicator(tabImpl->BellIndicator());
-                IsPaneZoomed(tabImpl->IsPaneZoomed());
-            }
-        }
-
         _tabChangedRevoker = tab.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& sender, auto& e) {
             auto item{ weakThis.get() };
             auto senderTab{ sender.try_as<winrt::TerminalApp::TabBase>() };
@@ -52,34 +40,20 @@ namespace winrt::TerminalApp::implementation
                 {
                     item->Icon(senderTab.Icon());
                 }
-
-                if (const auto terminalTab{ senderTab.try_as<winrt::TerminalApp::TerminalTab>() })
-                {
-                    if (const auto tabImpl{ winrt::get_self<winrt::TerminalApp::implementation::TerminalTab>(terminalTab) })
-                    {
-                        if (changedProperty == L"IsProgressRingActive")
-                        {
-                            item->IsProgressRingActive(tabImpl->IsProgressRingActive());
-                        }
-                        else if (changedProperty == L"IsProgressRingIndeterminate")
-                        {
-                            item->IsProgressRingIndeterminate(tabImpl->IsProgressRingIndeterminate());
-                        }
-                        else if (changedProperty == L"ProgressValue")
-                        {
-                            item->ProgressValue(tabImpl->ProgressValue());
-                        }
-                        else if (changedProperty == L"IsPaneZoomed")
-                        {
-                            item->IsPaneZoomed(tabImpl->IsPaneZoomed());
-                        }
-                        else if (changedProperty == L"BellIndicator")
-                        {
-                            item->BellIndicator(tabImpl->BellIndicator());
-                        }
-                    }
-                }
             }
         });
+
+        if (const auto terminalTab{ tab.try_as<winrt::TerminalApp::TerminalTab>() })
+        {
+            const auto status = terminalTab.TabStatus();
+            TabStatus(status);
+
+            _tabStatusChangedRevoker = status.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& /*sender*/, auto& /*e*/) {
+                // Sometimes nested bindings do not get updated,
+                // thus let's notify property changed on TabStatus when one of its properties changes
+                auto item{ weakThis.get() };
+                item->_PropertyChangedHandlers(*item, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"TabStatus" });
+            });
+        }
     }
 }

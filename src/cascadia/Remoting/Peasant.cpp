@@ -50,6 +50,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             _initialArgs = args;
         }
 
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Peasant_ExecuteCommandline",
+                          TraceLoggingUInt64(GetID(), "peasantID", "Our ID"),
+                          TraceLoggingWideString(args.CurrentDirectory().c_str(), "directory", "the provided cwd"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
         // Raise an event with these args. The AppHost will listen for this
         // event to know when to take these args and dispatch them to a
         // currently-running window.
@@ -61,6 +67,54 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     Remoting::CommandlineArgs Peasant::InitialArgs()
     {
         return _initialArgs;
+    }
+
+    void Peasant::ActivateWindow(const Remoting::WindowActivatedArgs& args)
+    {
+        // TODO: projects/5 - somehow, pass an identifier for the current
+        // desktop into this method. The Peasant shouldn't need to be able to
+        // figure it out, but it will need to report it to the monarch.
+
+        // Store these new args as our last activated state. If a new monarch
+        // comes looking, we can use this info to tell them when we were last
+        // activated.
+        _lastActivatedArgs = args;
+
+        bool successfullyNotified = false;
+        // Raise our WindowActivated event, to let the monarch know we've been
+        // activated.
+        try
+        {
+            // Try/catch this, because the other side of this event is handled
+            // by the monarch. The monarch might have died. If they have, this
+            // will throw an exception. Just eat it, the election thread will
+            // handle hooking up the new one.
+            _WindowActivatedHandlers(*this, args);
+            successfullyNotified = true;
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+        }
+
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Peasant_ActivateWindow",
+                          TraceLoggingUInt64(GetID(), "peasantID", "Our ID"),
+                          TraceLoggingBoolean(successfullyNotified, "successfullyNotified", "true if we successfully notified the monarch"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+    }
+
+    // Method Description:
+    // - Retrieve the WindowActivatedArgs describing the last activation of this
+    //   peasant. New monarchs can use this state to determine when we were last
+    //   activated.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a WindowActivatedArgs with info about when and where we were last activated.
+    Remoting::WindowActivatedArgs Peasant::GetLastActivatedArgs()
+    {
+        return _lastActivatedArgs;
     }
 
 }

@@ -15,29 +15,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\precomp.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\precomp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="resource.h">
+    <ClInclude Include="IConsoleHandoff_h.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ConhostV2.def">
+    <Midl Include="IConsoleHandoff.idl">
       <Filter>Source Files</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="Host.DLL.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
+    </Midl>
   </ItemGroup>
 </Project>

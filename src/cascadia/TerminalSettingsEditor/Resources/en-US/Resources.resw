@@ -825,4 +825,10 @@
     <value>a lower layer</value>
     <comment>This is the object of "SettingContainer_OverrideIntro".</comment>
   </data>
+  <data name="Globals_FocusFollowMouse.Header" xml:space="preserve">
+    <value>Enable Focus Follow Mouse mode</value>
+  </data>
+  <data name="Globals_FocusFollowMouse.HelpText" xml:space="preserve">
+    <value>When checked, the terminal will the focus pane on mouse hover.</value>
+  </data>
 </root>

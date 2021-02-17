@@ -355,9 +355,9 @@ public:
         return false;
     }
 
-    const std::wstring GetConsoleTitle() const noexcept override
+    const std::wstring_view GetConsoleTitle() const noexcept override
     {
-        return std::wstring{};
+        return std::wstring_view{};
     }
 
     const bool IsSelectionActive() const override

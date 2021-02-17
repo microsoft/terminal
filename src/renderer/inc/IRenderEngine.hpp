@@ -55,6 +55,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT StartPaint() noexcept = 0;
         [[nodiscard]] virtual HRESULT EndPaint() noexcept = 0;
 
+        [[nodiscard]] virtual bool RequiresContinuousRedraw() noexcept = 0;
         virtual void WaitUntilCanRender() noexcept = 0;
         [[nodiscard]] virtual HRESULT Present() noexcept = 0;
 
@@ -70,7 +71,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT InvalidateAll() noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept = 0;
 
-        [[nodiscard]] virtual HRESULT InvalidateTitle(const std::wstring& proposedTitle) noexcept = 0;
+        [[nodiscard]] virtual HRESULT InvalidateTitle(const std::wstring_view proposedTitle) noexcept = 0;
 
         [[nodiscard]] virtual HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept = 0;
 
@@ -99,10 +100,10 @@ namespace Microsoft::Console::Render
                                                       _Out_ FontInfo& FontInfo,
                                                       const int iDpi) noexcept = 0;
 
-        virtual std::vector<til::rectangle> GetDirtyArea() = 0;
+        [[nodiscard]] virtual HRESULT GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept = 0;
         [[nodiscard]] virtual HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept = 0;
         [[nodiscard]] virtual HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept = 0;
-        [[nodiscard]] virtual HRESULT UpdateTitle(const std::wstring& newTitle) noexcept = 0;
+        [[nodiscard]] virtual HRESULT UpdateTitle(const std::wstring_view newTitle) noexcept = 0;
     };
 
     inline Microsoft::Console::Render::IRenderEngine::~IRenderEngine() {}

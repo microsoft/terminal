@@ -87,6 +87,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(Model::TabSwitcherMode, TabSwitcherMode, Model::TabSwitcherMode::InOrder);
         GETSET_SETTING(bool, DisableAnimations, false);
         GETSET_SETTING(hstring, StartupActions, L"");
+        GETSET_SETTING(bool, FocusFollowMouse, false);
 
     private:
         guid _defaultProfile;

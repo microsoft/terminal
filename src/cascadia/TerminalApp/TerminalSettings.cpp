@@ -3,11 +3,13 @@
 
 #include "pch.h"
 #include "TerminalSettings.h"
+#include "../../types/inc/colorTable.hpp"
 
 #include "TerminalSettings.g.cpp"
 
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace Microsoft::Console::Utils;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -209,6 +211,7 @@ namespace winrt::TerminalApp::implementation
 
         _WordDelimiters = globalSettings.WordDelimiters();
         _CopyOnSelect = globalSettings.CopyOnSelect();
+        _FocusFollowMouse = globalSettings.FocusFollowMouse();
         _ForceFullRepaintRendering = globalSettings.ForceFullRepaintRendering();
         _SoftwareRendering = globalSettings.SoftwareRendering();
         _ForceVTInput = globalSettings.ForceVTInput();

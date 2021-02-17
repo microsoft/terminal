@@ -133,6 +133,14 @@ try
 
     auto endPaint = wil::scope_exit([&]() {
         LOG_IF_FAILED(pEngine->EndPaint());
+
+        // If the engine tells us it really wants to redraw immediately,
+        // tell the thread so it doesn't go to sleep and ticks again
+        // at the next opportunity.
+        if (pEngine->RequiresContinuousRedraw())
+        {
+            _NotifyPaintFrame();
+        }
     });
 
     // A. Prep Colors
@@ -459,7 +467,7 @@ void Renderer::TriggerCircling()
 // - <none>
 void Renderer::TriggerTitleChange()
 {
-    const std::wstring newTitle = _pData->GetConsoleTitle();
+    const auto newTitle = _pData->GetConsoleTitle();
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         LOG_IF_FAILED(pEngine->InvalidateTitle(newTitle));
@@ -475,7 +483,7 @@ void Renderer::TriggerTitleChange()
 // - the HRESULT of the underlying engine's UpdateTitle call.
 HRESULT Renderer::_PaintTitle(IRenderEngine* const pEngine)
 {
-    const std::wstring newTitle = _pData->GetConsoleTitle();
+    const auto newTitle = _pData->GetConsoleTitle();
     return pEngine->UpdateTitle(newTitle);
 }
 
@@ -619,9 +627,10 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 
     // This is effectively the number of cells on the visible screen that need to be redrawn.
     // The origin is always 0, 0 because it represents the screen itself, not the underlying buffer.
-    const auto dirtyAreas = pEngine->GetDirtyArea();
+    gsl::span<const til::rectangle> dirtyAreas;
+    LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
 
-    for (const auto dirtyRect : dirtyAreas)
+    for (const auto& dirtyRect : dirtyAreas)
     {
         auto dirty = Viewport::FromInclusive(dirtyRect);
 
@@ -1036,7 +1045,10 @@ void Renderer::_PaintOverlay(IRenderEngine& engine,
         // Set it up in a Viewport helper structure and trim it the IME viewport to be within the full console viewport.
         Viewport viewConv = Viewport::FromInclusive(srCaView);
 
-        for (SMALL_RECT srDirty : engine.GetDirtyArea())
+        gsl::span<const til::rectangle> dirtyAreas;
+        LOG_IF_FAILED(engine.GetDirtyArea(dirtyAreas));
+
+        for (SMALL_RECT srDirty : dirtyAreas)
         {
             // Dirty is an inclusive rectangle, but oddly enough the IME was an exclusive one, so correct it.
             srDirty.Bottom++;
@@ -1093,13 +1105,14 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 {
     try
     {
-        auto dirtyAreas = pEngine->GetDirtyArea();
+        gsl::span<const til::rectangle> dirtyAreas;
+        LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
 
         // Get selection rectangles
         const auto rectangles = _GetSelectionRects();
         for (auto rect : rectangles)
         {
-            for (auto dirtyRect : dirtyAreas)
+            for (auto& dirtyRect : dirtyAreas)
             {
                 // Make a copy as `TrimToViewport` will manipulate it and
                 // can destroy it for the next dirtyRect to test against.
