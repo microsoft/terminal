@@ -106,7 +106,11 @@ namespace winrt::TerminalApp::implementation
     // - Hides the rename box and displays the title text block
     void TabHeaderControl::_CloseRenameBox()
     {
-        HeaderRenamerTextBox().Visibility(Windows::UI::Xaml::Visibility::Collapsed);
-        HeaderTextBlock().Visibility(Windows::UI::Xaml::Visibility::Visible);
+        if (HeaderRenamerTextBox().Visibility() == Windows::UI::Xaml::Visibility::Visible)
+        {
+            HeaderRenamerTextBox().Visibility(Windows::UI::Xaml::Visibility::Collapsed);
+            HeaderTextBlock().Visibility(Windows::UI::Xaml::Visibility::Visible);
+            _RenameEndedHandlers(*this, nullptr);
+        }
     }
 }
