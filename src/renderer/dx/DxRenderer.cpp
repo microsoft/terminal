@@ -583,7 +583,7 @@ try
         _swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
         _swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
         _swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-        _swapChainDesc.BufferCount = 2;
+        _swapChainDesc.BufferCount = 3;
         _swapChainDesc.SampleDesc.Count = 1;
         _swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
         _swapChainDesc.Scaling = DXGI_SCALING_NONE;
@@ -1429,11 +1429,14 @@ CATCH_RETURN()
     {
         Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer;
         Microsoft::WRL::ComPtr<ID3D11Resource> frontBuffer;
+        Microsoft::WRL::ComPtr<ID3D11Resource> moreBack;
 
         RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
         RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(1, IID_PPV_ARGS(&frontBuffer)));
+        RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(2, IID_PPV_ARGS(&moreBack)));
 
         _d3dDeviceContext->CopyResource(backBuffer.Get(), frontBuffer.Get());
+        _d3dDeviceContext->CopyResource(moreBack.Get(), frontBuffer.Get());
     }
     CATCH_RETURN();
 
@@ -1493,15 +1496,15 @@ void DxEngine::WaitUntilCanRender() noexcept
 {
     if (_presentReady)
     {
-        if (_HasTerminalEffects() && _pixelShaderLoaded)
-        {
-            const HRESULT hr2 = _PaintTerminalEffects();
-            if (FAILED(hr2))
-            {
-                _pixelShaderLoaded = false;
-                LOG_HR_MSG(hr2, "Failed to paint terminal effects. Disabling.");
-            }
-        }
+        // if (_HasTerminalEffects() && _pixelShaderLoaded)
+        // {
+        //     const HRESULT hr2 = _PaintTerminalEffects();
+        //     if (FAILED(hr2))
+        //     {
+        //         _pixelShaderLoaded = false;
+        //         LOG_HR_MSG(hr2, "Failed to paint terminal effects. Disabling.");
+        //     }
+        // }
 
         try
         {
@@ -1576,6 +1579,16 @@ void DxEngine::WaitUntilCanRender() noexcept
             _presentParams = { 0 };
         }
         CATCH_RETURN();
+
+        if (_HasTerminalEffects() && _pixelShaderLoaded)
+        {
+            const HRESULT hr2 = _PaintTerminalEffects();
+            if (FAILED(hr2))
+            {
+                _pixelShaderLoaded = false;
+                LOG_HR_MSG(hr2, "Failed to paint terminal effects. Disabling.");
+            }
+        }
     }
 
     return S_OK;
@@ -1838,7 +1851,7 @@ try
 
     // Capture current frame in swap chain to a texture.
     ::Microsoft::WRL::ComPtr<ID3D11Texture2D> swapBuffer;
-    RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&swapBuffer)));
+    RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(2, IID_PPV_ARGS(&swapBuffer)));
     _d3dDeviceContext->CopyResource(_framebufferCapture.Get(), swapBuffer.Get());
 
     // Prepare captured texture as input resource to shader program.
@@ -1869,6 +1882,9 @@ try
     _d3dDeviceContext->PSSetConstantBuffers(0, 1, _pixelShaderSettingsBuffer.GetAddressOf());
     _d3dDeviceContext->Draw(ARRAYSIZE(_screenQuadVertices), 0);
 
+    RETURN_IF_FAILED(_dxgiSwapChain->Present(1, 0));
+    // Present(1, 0)?
+
     return S_OK;
 }
 CATCH_RETURN()
@@ -1882,7 +1898,7 @@ CATCH_RETURN()
     // Yes, this will further impact the performance of terminal effects.
     // But we're talking about running the entire display pipeline through a shader for
     // cosmetic effect, so performance isn't likely the top concern with this feature.
-    return _forceFullRepaintRendering || _HasTerminalEffects();
+    return _forceFullRepaintRendering /* || _HasTerminalEffects()*/;
 }
 
 // Routine Description:
