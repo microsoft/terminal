@@ -1100,8 +1100,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // selection.
         if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey) && vkey != VK_SNAPSHOT)
         {
-            _terminal->ClearSelection();
-            _renderer->TriggerSelection();
+            const CoreWindow window = CoreWindow::GetForCurrentThread();
+            const auto leftWinKeyState = window.GetKeyState(VirtualKey::LeftWindows);
+            const auto rightWinKeyState = window.GetKeyState(VirtualKey::RightWindows);
+            const auto isLeftWinKeyDown = WI_IsFlagSet(leftWinKeyState, CoreVirtualKeyStates::Down);
+            const auto isRightWinKeyDown = WI_IsFlagSet(rightWinKeyState, CoreVirtualKeyStates::Down);
+
+            // GH#8791 - don't dismiss selection if Windows key was also pressed as a key-combination.
+            if (!isLeftWinKeyDown && !isRightWinKeyDown)
+            {
+                _terminal->ClearSelection();
+                _renderer->TriggerSelection();
+            }
 
             if (vkey == VK_ESCAPE)
             {
@@ -2881,7 +2891,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
     ControlKeyStates TermControl::_GetPressedModifierKeys() const
     {
-        CoreWindow window = CoreWindow::GetForCurrentThread();
+        const CoreWindow window = CoreWindow::GetForCurrentThread();
         // DONT USE
         //      != CoreVirtualKeyStates::None
         // OR
