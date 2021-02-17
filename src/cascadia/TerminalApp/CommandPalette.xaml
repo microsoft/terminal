@@ -285,7 +285,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <!-- This HorizontalContentAlignment="Stretch" is important
                         to make sure it takes the entire width of the line -->
                         <ListViewItem HorizontalContentAlignment="Stretch"
-                                  IsTabStop="False"
                                   AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
                                   AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}">
 
