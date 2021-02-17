@@ -868,11 +868,37 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(4u, page->_mruTabs.Size());
 
         Log::Comment(L"give alphabetical names to all switch tab actions");
-        RunOnUIThread([&page]() {
+        TestOnUIThread([&page]() {
             page->_GetTerminalTabImpl(page->_tabs.GetAt(0))->Title(L"a");
+        });
+        TestOnUIThread([&page]() {
             page->_GetTerminalTabImpl(page->_tabs.GetAt(1))->Title(L"b");
+        });
+        TestOnUIThread([&page]() {
             page->_GetTerminalTabImpl(page->_tabs.GetAt(2))->Title(L"c");
+        });
+        TestOnUIThread([&page]() {
             page->_GetTerminalTabImpl(page->_tabs.GetAt(3))->Title(L"d");
+        });
+
+        // Mysteriously, setting the title isn't instantaneous. If you don't
+        // sleep here, then it's very possible that the checks below to sanity
+        // check the titles _will fail_.
+        Log::Comment(L"Sleep to let events propagate");
+        Sleep(500);
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Sanity check the titles of our tabs are what we set them to.");
+
+            VERIFY_ARE_EQUAL(L"a", page->_tabs.GetAt(0).Title());
+            VERIFY_ARE_EQUAL(L"b", page->_tabs.GetAt(1).Title());
+            VERIFY_ARE_EQUAL(L"c", page->_tabs.GetAt(2).Title());
+            VERIFY_ARE_EQUAL(L"d", page->_tabs.GetAt(3).Title());
+
+            VERIFY_ARE_EQUAL(L"d", page->_mruTabs.GetAt(0).Title());
+            VERIFY_ARE_EQUAL(L"c", page->_mruTabs.GetAt(1).Title());
+            VERIFY_ARE_EQUAL(L"b", page->_mruTabs.GetAt(2).Title());
+            VERIFY_ARE_EQUAL(L"a", page->_mruTabs.GetAt(3).Title());
         });
 
         Log::Comment(L"Change the tab switch order to MRU switching");

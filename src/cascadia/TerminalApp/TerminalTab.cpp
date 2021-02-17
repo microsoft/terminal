@@ -104,15 +104,21 @@ namespace winrt::TerminalApp::implementation
 
         if (auto tab{ weakThis.get() })
         {
-            const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
-            if (settings.GlobalSettings().TabWidthMode() == winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::SizeToContent)
+            try
             {
-                tab->_headerControl.RenamerMaxWidth(HeaderRenameBoxWidthTitleLength);
+                // Make sure to try/catch this, because the LocalTests won't be
+                // able to use this helper.
+                const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
+                if (settings.GlobalSettings().TabWidthMode() == winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::SizeToContent)
+                {
+                    tab->_headerControl.RenamerMaxWidth(HeaderRenameBoxWidthTitleLength);
+                }
+                else
+                {
+                    tab->_headerControl.RenamerMaxWidth(HeaderRenameBoxWidthDefault);
+                }
             }
-            else
-            {
-                tab->_headerControl.RenamerMaxWidth(HeaderRenameBoxWidthDefault);
-            }
+            CATCH_LOG()
         }
     }
 
