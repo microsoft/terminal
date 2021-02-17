@@ -611,7 +611,7 @@ namespace RemotingUnitTests
 
     // TODO:projects/5
     //
-    // In order to test WindowingBehaviorUseExistingSameDesktop, we'll have to
+    // In order to test WindowingBehaviorUseExisting, we'll have to
     // create our own IVirtualDesktopManager implementation that can be subbed
     // in for testing. We can't _actually_ create HWNDs as a part of the test
     // and move them to different desktops. Instead, we'll have to create a stub

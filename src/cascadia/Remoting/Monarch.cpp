@@ -410,23 +410,23 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // that goes with it. Alternatively, if we were given a magic windowing
         // constant, we can use that to look up an appropriate peasant.
         if (targetWindow >= 0 ||
-            targetWindow == WindowingBehaviorUseExistingSameDesktop ||
-            targetWindow == WindowingBehaviorUseExisting)
+            targetWindow == WindowingBehaviorUseExisting ||
+            targetWindow == WindowingBehaviorUseAnyExisting)
         {
             uint64_t windowID = 0;
             switch (targetWindow)
             {
             case WindowingBehaviorUseCurrent:
-            case WindowingBehaviorUseExistingSameDesktop:
+            case WindowingBehaviorUseExisting:
                 // TODO:projects/5 for now, just use the MRU window. Technically,
-                // UseExistingSameDesktop and UseCurrent are different.
+                // UseExisting and UseCurrent are different.
                 // UseCurrent implies that we should try to do the WT_SESSION
                 // lookup to find the window that spawned this process (then
                 // fall back to sameDesktop if we can't find a match). For now,
                 // it's good enough to just try to find a match on this desktop.
                 windowID = _getMostRecentPeasantID(true);
                 break;
-            case WindowingBehaviorUseExisting:
+            case WindowingBehaviorUseAnyExisting:
                 windowID = _getMostRecentPeasantID(false);
                 break;
             default:

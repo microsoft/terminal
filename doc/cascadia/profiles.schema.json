@@ -812,6 +812,16 @@
               "type": "string"
             }
           ]
+        },
+        "windowingBehavior": {
+          "default": "useNew",
+          "description": "Controls how new terminal instances attach to existing windows.",
+          "enum": [
+            "useNew",
+            "useAny",
+            "useAnyExisting"
+          ],
+          "type": "string"
         }
       },
       "required": [
