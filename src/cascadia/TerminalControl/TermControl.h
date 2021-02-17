@@ -244,7 +244,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
 
         // Track the last cell we hovered over (used in pointerMovedHandler)
-        COORD _lastHoveredCell;
+        std::optional<COORD> _lastHoveredCell;
         // Track the last hyperlink ID we hovered over
         uint16_t _lastHoveredId;
 
@@ -283,6 +283,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _PointerPressedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _PointerMovedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _PointerReleasedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
+        void _PointerExitedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _MouseWheelHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs const& e);
         void _GotFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
@@ -345,6 +346,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         winrt::fire_and_forget _AsyncCloseConnection();
 
         winrt::fire_and_forget _RaiseReadOnlyWarning();
+
+        void _UpdateHoveredCell(const std::optional<COORD>& terminalPosition);
     };
 }
 

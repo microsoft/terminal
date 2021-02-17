@@ -66,7 +66,8 @@ using namespace Microsoft::Console::Types;
 DxEngine::DxEngine() :
     RenderEngineBase(),
     _invalidateFullRows{ true },
-    _invalidMap{},
+    _pool{ til::pmr::get_default_resource() },
+    _invalidMap{ &_pool },
     _invalidScroll{},
     _allInvalid{ false },
     _firstFrame{ true },
@@ -2087,13 +2088,16 @@ float DxEngine::GetScaling() const noexcept
 // Routine Description:
 // - Gets the area that we currently believe is dirty within the character cell grid
 // Arguments:
-// - <none>
+// - area - Rectangle describing dirty area in characters.
 // Return Value:
-// - Rectangle describing dirty area in characters.
-[[nodiscard]] std::vector<til::rectangle> DxEngine::GetDirtyArea()
+// - S_OK
+[[nodiscard]] HRESULT DxEngine::GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept
+try
 {
-    return _invalidMap.runs();
+    area = _invalidMap.runs();
+    return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Gets the current font size
@@ -2141,7 +2145,7 @@ CATCH_RETURN();
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/) noexcept
+[[nodiscard]] HRESULT DxEngine::_DoUpdateTitle(_In_ const std::wstring_view /*newTitle*/) noexcept
 {
     if (_hwndTarget != INVALID_HANDLE_VALUE)
     {

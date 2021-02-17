@@ -28,7 +28,6 @@ using namespace ABI::Windows::ApplicationModel::AppExtensions;
 #define DELEGATION_CONSOLE_EXTENSION_NAME L"com.microsoft.windows.console.host"
 #define DELEGATION_TERMINAL_EXTENSION_NAME L"com.microsoft.windows.terminal.host"
 
-
 template<typename T, typename std::enable_if<std::is_base_of<DelegationConfig::DelegationBase, T>::value>::type* = nullptr>
 HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
 {
@@ -106,7 +105,7 @@ HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
         ComPtr<IInspectable> anotherInspectable;
         RETURN_IF_FAILED(anotherMap->Lookup(HStringReference(L"#text").Get(), &anotherInspectable));
 
-        // But this time that Inspectable is an IPropertyValue, which is a PROPVARIANT in a trenchcoat.
+        // But this time that Inspectable is an IPropertyValue, which is a PROPVARIANT in a trench coat.
         ComPtr<IPropertyValue> propValue;
         RETURN_IF_FAILED(anotherInspectable.As(&propValue));
 

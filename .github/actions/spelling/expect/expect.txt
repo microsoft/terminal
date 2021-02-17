@@ -22,6 +22,7 @@ activatable
 ACTIVEBORDER
 ACTIVECAPTION
 ADDALIAS
+ADDB
 ADDREF
 addressof
 ADDSTRING
@@ -1636,6 +1637,7 @@ ONECOREWINDOWS
 onehalf
 ONLCR
 Oo
+openconsoleproxy
 openbash
 opencode
 opencon

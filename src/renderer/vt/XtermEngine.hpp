@@ -59,7 +59,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _MoveCursor(const COORD coord) noexcept override;
 
-        [[nodiscard]] HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept override;
+        [[nodiscard]] HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept override;
 
 #ifdef UNIT_TESTING
         friend class VtRendererTest;
