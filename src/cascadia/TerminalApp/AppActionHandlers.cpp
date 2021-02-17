@@ -577,6 +577,7 @@ namespace winrt::TerminalApp::implementation
     //   The elevation is performed on a background thread, as to not block the
     //   UI thread.
     // Arguments:
+    // - elevate: If true, launch the new Terminal elevated using `runas`
     // - newTerminalArgs: A NewTerminalArgs describing the terminal instance
     //   that should be spawned. The Profile should be filled in with the GUID
     //   of the profile we want to launch.
@@ -612,6 +613,8 @@ namespace winrt::TerminalApp::implementation
         SHELLEXECUTEINFOW seInfo{ 0 };
         seInfo.cbSize = sizeof(seInfo);
         seInfo.fMask = SEE_MASK_NOASYNC;
+        // `runas` will cause the shell to launch this child process elevated.
+        // `open` will just run the executable normally.
         seInfo.lpVerb = elevate ? L"runas" : L"open";
         seInfo.lpFile = exePath.c_str();
         seInfo.lpParameters = cmdline.c_str();
@@ -625,6 +628,7 @@ namespace winrt::TerminalApp::implementation
                                         const ActionEventArgs& actionArgs)
     {
         NewTerminalArgs newTerminalArgs{ nullptr };
+        // If the caller provided NewTerminalArgs, then try to use those
         if (actionArgs)
         {
             if (const auto& realArgs = actionArgs.ActionArgs().try_as<NewWindowArgs>())
@@ -632,26 +636,23 @@ namespace winrt::TerminalApp::implementation
                 newTerminalArgs = realArgs.TerminalArgs();
             }
         }
+        // Otherwise, if no NewTerminalArgs were provided, then just use a
+        // default-constructed one. The default-constructed one implies that
+        // nothing about the lauch should be modified (just use the default
+        // profile).
         if (!newTerminalArgs)
         {
             newTerminalArgs = NewTerminalArgs();
         }
-        // { args ? args.TerminalArgs() : nullptr };
-        auto [profileGuid, settings] = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
-        // manually fill in the evaluated profile
+
+        auto [profileGuid, settings] = TerminalSettings::BuildSettings(_settings,
+                                                                       newTerminalArgs,
+                                                                       *_bindings);
+
+        // Manually fill in the evaluated profile.
         newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profileGuid));
         _OpenNewWindow(false, newTerminalArgs);
         actionArgs.Handled(true);
-        // if (args == nullptr)
-        // {
-        //     _OpenNewTab(nullptr);
-        //     args.Handled(true);
-        // }
-        // else if (const auto& realArgs = args.ActionArgs().try_as<NewTabArgs>())
-        // {
-        //     _OpenNewTab(realArgs.TerminalArgs());
-        //     args.Handled(true);
-        // }
     }
 
 }

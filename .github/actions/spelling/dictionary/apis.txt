@@ -81,6 +81,7 @@ shobjidl
 SIZENS
 smoothstep
 GETDESKWALLPAPER
+SHELLEXECUTEINFOW
 snprintf
 spsc
 sregex
