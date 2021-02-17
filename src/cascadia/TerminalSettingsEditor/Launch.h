@@ -31,6 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_PROPERTY(Editor::LaunchPageNavigationState, State, nullptr);
 
         GETSET_BINDABLE_ENUM_SETTING(LaunchMode, Model::LaunchMode, State().Settings().GlobalSettings, LaunchMode);
+        GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, State().Settings().GlobalSettings, WindowingBehavior);
     };
 }
 
