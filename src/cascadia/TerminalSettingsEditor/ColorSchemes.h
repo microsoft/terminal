@@ -24,6 +24,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         ColorSchemes();
 
+        void SizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
         void ColorSchemeSelectionChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& args);
@@ -51,6 +52,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _UpdateColorTable(const winrt::Microsoft::Terminal::Settings::Model::ColorScheme& colorScheme);
         void _UpdateColorSchemeList();
         void _RenameCurrentScheme(hstring newName);
+
+        double _colorPanelHorizontalWidth;
     };
 
     struct ColorTableEntry : ColorTableEntryT<ColorTableEntry>

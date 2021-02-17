@@ -60,6 +60,33 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _CurrentBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
     {
         InitializeComponent();
+
+        ToolTipService::SetToolTip(ForegroundButton(), box_value(RS_(L"ColorScheme_Foreground/Text")));
+        Automation::AutomationProperties::SetName(ForegroundButton(), RS_(L"ColorScheme_Foreground/Text"));
+
+        ToolTipService::SetToolTip(BackgroundButton(), box_value(RS_(L"ColorScheme_Background/Text")));
+        Automation::AutomationProperties::SetName(BackgroundButton(), RS_(L"ColorScheme_Background/Text"));
+
+        ToolTipService::SetToolTip(CursorColorButton(), box_value(RS_(L"ColorScheme_CursorColor/Text")));
+        Automation::AutomationProperties::SetName(CursorColorButton(), RS_(L"ColorScheme_CursorColor/Text"));
+
+        ToolTipService::SetToolTip(SelectionBackgroundButton(), box_value(RS_(L"ColorScheme_SelectionBackground/Text")));
+        Automation::AutomationProperties::SetName(SelectionBackgroundButton(), RS_(L"ColorScheme_SelectionBackground/Text"));
+    }
+
+    void ColorSchemes::SizeChanged(IInspectable const& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e)
+    {
+        // Record the width for ColorPanel when it's in horizontal mode
+        if (ColorPanel().Orientation() == Orientation::Horizontal)
+        {
+            const auto indentMargin{ Resources().Lookup(winrt::box_value(L"StandardIndentMargin")).as<Thickness>() };
+            const auto colorPanelWidth{ ColorPanel().ActualWidth() };
+            _colorPanelHorizontalWidth = colorPanelWidth + indentMargin.Left + indentMargin.Right;
+        }
+
+        // Update the ColorPanel orientation
+        // If it doesn't fit, make it vertical
+        ColorPanel().Orientation(e.NewSize().Width < _colorPanelHorizontalWidth ? Orientation::Vertical : Orientation::Horizontal);
     }
 
     void ColorSchemes::OnNavigatedTo(const NavigationEventArgs& e)
@@ -99,10 +126,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // populate color table grid
         const auto colorLabelStyle{ Resources().Lookup(winrt::box_value(L"ColorLabelStyle")).as<Windows::UI::Xaml::Style>() };
+        const auto colorControlStyle{ Resources().Lookup(winrt::box_value(L"ColorControlStyle")).as<Windows::UI::Xaml::Style>() };
         const auto colorTableEntryTemplate{ Resources().Lookup(winrt::box_value(L"ColorTableEntryTemplate")).as<DataTemplate>() };
-        auto setupColorControl = [colorTableEntryTemplate, colorTableGrid{ ColorTableGrid() }](auto colorRef, uint32_t row, uint32_t col) {
+        auto setupColorControl = [colorTableEntryTemplate, colorControlStyle, colorTableGrid{ ColorTableGrid() }](auto colorRef, uint32_t row, uint32_t col) {
             ContentControl colorControl{};
             colorControl.ContentTemplate(colorTableEntryTemplate);
+            colorControl.Style(colorControlStyle);
 
             Data::Binding binding{};
             binding.Source(colorRef);

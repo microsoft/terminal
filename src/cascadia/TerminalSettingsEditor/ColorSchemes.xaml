@@ -9,7 +9,8 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    SizeChanged="SizeChanged">
 
     <Page.Resources>
         <ResourceDictionary>
@@ -31,6 +32,10 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <Setter Property="ColumnSpacing" Value="10"/>
             </Style>
 
+            <Style x:Key="ColorControlStyle" TargetType="ContentControl">
+                <Setter Property="IsTabStop" Value="False"/>
+            </Style>
+
             <Style x:Key="ColorButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
                 <Setter Property="BorderBrush" Value="{StaticResource SystemBaseLowColor}"/>
                 <Setter Property="Height" Value="30"/>
@@ -47,7 +52,9 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             <DataTemplate x:Key="ColorTableEntryTemplate" x:DataType="local:ColorTableEntry">
                 <Button Background="{x:Bind Color, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}"
+                        ToolTipService.ToolTip="{x:Bind Name}"
                         Style="{StaticResource ColorButtonStyle}">
+                        <!--AutomationProperties.Name="{x:Bind Name}"-->
                     <Button.Resources>
                         <!-- Resources to colorize hover/pressed states based on the color of the button -->
                         <ResourceDictionary>
@@ -110,20 +117,6 @@ the MIT License. See LICENSE in the project root for license information. -->
     </Page.Resources>
 
     <ScrollViewer>
-        
-        <VisualStateManager.VisualStateGroups>
-            <VisualStateGroup>
-                <VisualState>
-                    <VisualState.StateTriggers>
-                        <AdaptiveTrigger MinWindowWidth="600"/>
-                    </VisualState.StateTriggers>
-                    <VisualState.Setters>
-                        <Setter Target="ColorPanel.Orientation" Value="Horizontal"/>
-                    </VisualState.Setters>
-                </VisualState>
-            </VisualStateGroup>
-        </VisualStateManager.VisualStateGroups>
-
         <StackPanel Margin="{StaticResource StandardIndentMargin}"
                     Spacing="24">
 
@@ -258,8 +251,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                                    Style="{StaticResource ColorLabelStyle}"
                                    Grid.Row="0"
                                    Grid.Column="0"/>
-                        <ContentControl ContentTemplate="{StaticResource ColorTemplate}"
+                        <ContentControl x:Name="ForegroundButton"
+                                        ContentTemplate="{StaticResource ColorTemplate}"
                                         Content="{x:Bind CurrentColorScheme.Foreground, Mode=TwoWay}"
+                                        Style="{StaticResource ColorControlStyle}"
+                                        ToolTipService.ToolTip="{Binding ElementName=ForegroundHeader, Path=Text}"
                                         Grid.Row="0"
                                         Grid.Column="1"/>
 
@@ -268,8 +264,10 @@ the MIT License. See LICENSE in the project root for license information. -->
                                    Style="{StaticResource ColorLabelStyle}"
                                    Grid.Row="1"
                                    Grid.Column="0"/>
-                        <ContentControl ContentTemplate="{StaticResource ColorTemplate}"
+                        <ContentControl x:Name="BackgroundButton"
+                                        ContentTemplate="{StaticResource ColorTemplate}"
                                         Content="{x:Bind CurrentColorScheme.Background, Mode=TwoWay}"
+                                        Style="{StaticResource ColorControlStyle}"
                                         Grid.Row="1"
                                         Grid.Column="1"/>
 
@@ -278,8 +276,10 @@ the MIT License. See LICENSE in the project root for license information. -->
                                    Style="{StaticResource ColorLabelStyle}"
                                    Grid.Row="2"
                                    Grid.Column="0"/>
-                        <ContentControl ContentTemplate="{StaticResource ColorTemplate}"
+                        <ContentControl x:Name="CursorColorButton"
+                                        ContentTemplate="{StaticResource ColorTemplate}"
                                         Content="{x:Bind CurrentColorScheme.CursorColor, Mode=TwoWay}"
+                                        Style="{StaticResource ColorControlStyle}"
                                         Grid.Row="2"
                                         Grid.Column="1"/>
 
@@ -288,8 +288,10 @@ the MIT License. See LICENSE in the project root for license information. -->
                                    Style="{StaticResource ColorLabelStyle}"
                                    Grid.Row="3"
                                    Grid.Column="0"/>
-                        <ContentControl ContentTemplate="{StaticResource ColorTemplate}"
+                        <ContentControl x:Name="SelectionBackgroundButton"
+                                        ContentTemplate="{StaticResource ColorTemplate}"
                                         Content="{x:Bind CurrentColorScheme.SelectionBackground, Mode=TwoWay}"
+                                        Style="{StaticResource ColorControlStyle}"
                                         Grid.Row="3"
                                         Grid.Column="1"/>
                     </Grid>
