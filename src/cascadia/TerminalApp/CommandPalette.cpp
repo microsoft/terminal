@@ -261,15 +261,15 @@ namespace winrt::TerminalApp::implementation
                 {
                     SelectNextItem(false);
                     e.Handled(true);
+                    return;
                 }
                 else if (action.Action() == ShortcutAction::NextTab)
                 {
                     SelectNextItem(true);
                     e.Handled(true);
+                    return;
                 }
             }
-
-            return;
         }
 
         if (key == VirtualKey::Home && ctrlDown)

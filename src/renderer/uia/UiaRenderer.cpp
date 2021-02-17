@@ -427,12 +427,16 @@ CATCH_RETURN();
 // - Gets the area that we currently believe is dirty within the character cell grid
 // - Not currently used by UiaEngine.
 // Arguments:
-// - <none>
+// - area - Rectangle describing dirty area in characters.
 // Return Value:
-// - Rectangle describing dirty area in characters.
-[[nodiscard]] std::vector<til::rectangle> UiaEngine::GetDirtyArea()
+// - S_OK.
+[[nodiscard]] HRESULT UiaEngine::GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept
 {
-    return { Viewport::Empty().ToInclusive() };
+    // Magic static is only valid because any instance of this object has the same behavior.
+    // Use member variable instead if this ever changes.
+    const static til::rectangle empty;
+    area = { &empty, 1 };
+    return S_OK;
 }
 
 // Routine Description:
@@ -465,7 +469,7 @@ CATCH_RETURN();
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::_DoUpdateTitle(_In_ const std::wstring_view /*newTitle*/) noexcept
 {
     return S_FALSE;
 }
