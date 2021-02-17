@@ -110,6 +110,20 @@ the MIT License. See LICENSE in the project root for license information. -->
     </Page.Resources>
 
     <ScrollViewer>
+        
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState>
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="600"/>
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="ColorPanel.Orientation" Value="Horizontal"/>
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
         <StackPanel Margin="{StaticResource StandardIndentMargin}"
                     Spacing="24">
 
@@ -190,7 +204,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </StackPanel>
 
             <!-- Color Table (Left Column)-->
-            <StackPanel Orientation="Horizontal"
+            <StackPanel x:Name="ColorPanel"
                         Spacing="48">
                 <StackPanel>
                     <TextBlock x:Uid="ColorScheme_ColorTableHeader"
