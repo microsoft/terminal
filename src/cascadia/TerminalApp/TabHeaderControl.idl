@@ -19,5 +19,6 @@ namespace TerminalApp
         void BeginRename();
 
         event TitleChangeRequestedArgs TitleChangeRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> RenameEnded;
     }
 }

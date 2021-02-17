@@ -29,6 +29,8 @@ namespace winrt::TerminalApp::implementation
         OBSERVABLE_GETSET_PROPERTY(bool, BellIndicator, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(uint32_t, ProgressValue, _PropertyChangedHandlers);
 
+        TYPED_EVENT(RenameEnded, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+
     private:
         bool _receivedKeyDown{ false };
         bool _renameCancelled{ false };
