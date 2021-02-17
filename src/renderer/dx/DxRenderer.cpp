@@ -583,7 +583,7 @@ try
         _swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
         _swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
         _swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-        _swapChainDesc.BufferCount = 3;
+        _swapChainDesc.BufferCount = 2;
         _swapChainDesc.SampleDesc.Count = 1;
         _swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
         _swapChainDesc.Scaling = DXGI_SCALING_NONE;
@@ -1429,14 +1429,14 @@ CATCH_RETURN()
     {
         Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer;
         Microsoft::WRL::ComPtr<ID3D11Resource> frontBuffer;
-        Microsoft::WRL::ComPtr<ID3D11Resource> moreBack;
+        // Microsoft::WRL::ComPtr<ID3D11Resource> moreBack;
 
         RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
         RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(1, IID_PPV_ARGS(&frontBuffer)));
-        RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(2, IID_PPV_ARGS(&moreBack)));
+        // RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(2, IID_PPV_ARGS(&moreBack)));
 
-        _d3dDeviceContext->CopyResource(backBuffer.Get(), frontBuffer.Get());
-        _d3dDeviceContext->CopyResource(moreBack.Get(), frontBuffer.Get());
+        _d3dDeviceContext->CopyResource(backBuffer.Get(), frontBuffer.Get()); // 1->0
+        // _d3dDeviceContext->CopyResource(moreBack.Get(), frontBuffer.Get()); // 1->2
     }
     CATCH_RETURN();
 
@@ -1517,6 +1517,7 @@ void DxEngine::WaitUntilCanRender() noexcept
             if (!_firstFrame)
             {
                 hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);
+                // hr = S_OK; // _dxgiSwapChain->Present1(1, 0, &_presentParams);
 
                 // These two error codes are indicated for destroy-and-recreate
                 // If we were told to destroy-and-recreate, we're going to skip straight into doing that
@@ -1562,14 +1563,14 @@ void DxEngine::WaitUntilCanRender() noexcept
                 }
             }
 
-            // If we are doing full repaints we don't need to copy front buffer to back buffer
-            if (!_FullRepaintNeeded())
-            {
-                // Finally copy the front image (being presented now) onto the backing buffer
-                // (where we are about to draw the next frame) so we can draw only the differences
-                // next frame.
-                RETURN_IF_FAILED(_CopyFrontToBack());
-            }
+            // // If we are doing full repaints we don't need to copy front buffer to back buffer
+            // if (!_FullRepaintNeeded())
+            // {
+            //     // Finally copy the front image (being presented now) onto the backing buffer
+            //     // (where we are about to draw the next frame) so we can draw only the differences
+            //     // next frame.
+            //     RETURN_IF_FAILED(_CopyFrontToBack());
+            // }
 
             _presentReady = false;
 
@@ -1851,7 +1852,36 @@ try
 
     // Capture current frame in swap chain to a texture.
     ::Microsoft::WRL::ComPtr<ID3D11Texture2D> swapBuffer;
-    RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(2, IID_PPV_ARGS(&swapBuffer)));
+    // normal  | extra      | Buffer | Get    |                 |
+    // present | present    | Count  | Buffer | CopyFrontToBack | result
+    // ------- | ---------- | ------ | ------ | --------------- | -------
+    // normal  | after      | 3      | 2      | 1->0, 1->2      | dirty line shaded correctly, once. Everything else accumulates pain
+    // normal  | after      | 3      | 2      | 1->0,           | Flickering, dirty line shaded correctly, once. Everything else accumulates pain
+    // normal  | after      | 3      | 1      | 1->0, 1->2      | Really bad. Dirty line accumulates pain, everything else BLACK
+    // normal  | after      | 3      | 0      | 1->0, 1->2      | Same as above, but now no ONE is shaded
+    // normal  | after      | 3      | 0      | 1->0,           | Roughly same as above
+    // normal  | after      | 3      | 2      | 1->2,           | Flickering, dirty line shaded correctly, once. Everything else accumulates pain
+    // normal  | before     | 3      | 2      | 1->0, 1->2      | Exceptionally bad flickering. No one is getting shaded.
+    // normal  | before     | 3      | 1      | 1->0, 1->2      | Exceptionally bad flickering. No one is getting shaded.
+    // normal  | before     | 3      | 0      | 1->0, 1->2      | Exceptionally bad flickering. No one is getting shaded.
+    // normal  | before     | 2      | 0      | 1->0,           | Absolutely no shading at all
+    // normal  | before     | 2      | 1      | 1->0,           | Absolutely no shading at all
+    // normal  | after      | 2      | 0      | 1->0,           | * No accumulation, everything shaded, minor flicker tho
+    // normal  | after      | 2      | 1      | 1->0,           | * No accumulation, everything shaded, minor flicker tho
+    // 2 buffers with this after present seems close. I wonder if the first present is the issue now. Or the first copy?
+    // None    | after      | 2      | 1      | None            | No flicker, only pain accumulation.
+    // None    | before     | 2      | 0      | None            | Flips between buffers, no shading at all. Very bad
+    // None    | before     | 2      | 1      | None            | Flips between buffers, no shading at all. Very bad.
+    // None    | after      | 2      | 0      | 1->0 after      | dirty shaded, rest acculumates pain
+    // None    | after      | 2      | 1      | 1->0 after      | Everything accumulates
+    // None    | after      | 2      | 0      | 1->0 before     | Everything accumulates
+    // None    | after      | 2      | 1      | 1->0 before     | Everything accumulates
+    // normal  | before     | 2      | 0      | None            | bad flicker between frames, no shading
+    // normal  | after      | 2      | 1      | None            | * No accumulation, everything shaded, minor flicker tho
+    // normal  | after(0,0) | 2      | 1      | None            | * (no difference from the above)
+
+    // RETURN_IF_FAILED(_CopyFrontToBack()); // before
+    RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(1, IID_PPV_ARGS(&swapBuffer)));
     _d3dDeviceContext->CopyResource(_framebufferCapture.Get(), swapBuffer.Get());
 
     // Prepare captured texture as input resource to shader program.
@@ -1880,9 +1910,11 @@ try
     _d3dDeviceContext->PSSetShaderResources(0, 1, shaderResource.GetAddressOf());
     _d3dDeviceContext->PSSetSamplers(0, 1, _samplerState.GetAddressOf());
     _d3dDeviceContext->PSSetConstantBuffers(0, 1, _pixelShaderSettingsBuffer.GetAddressOf());
+    // RETURN_IF_FAILED(_dxgiSwapChain->Present(1, 0)); // before
     _d3dDeviceContext->Draw(ARRAYSIZE(_screenQuadVertices), 0);
 
-    RETURN_IF_FAILED(_dxgiSwapChain->Present(1, 0));
+    RETURN_IF_FAILED(_dxgiSwapChain->Present(0, 0)); // after
+    // RETURN_IF_FAILED(_CopyFrontToBack()); // after
     // Present(1, 0)?
 
     return S_OK;
