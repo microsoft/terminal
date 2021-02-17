@@ -43,7 +43,8 @@
                   Background="Transparent"
                   PointerPressed="_PointerPressedHandler"
                   PointerMoved="_PointerMovedHandler"
-                  PointerReleased="_PointerReleasedHandler">
+                  PointerReleased="_PointerReleasedHandler"
+                  PointerExited="_PointerExitedHandler">
 
                 <SwapChainPanel x:Name="SwapChainPanel"
                                 SizeChanged="_SwapChainSizeChanged"

@@ -1442,48 +1442,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
             }
 
-            if (terminalPosition != _lastHoveredCell)
-            {
-                const auto uri = _terminal->GetHyperlinkAtPosition(terminalPosition);
-                if (!uri.empty())
-                {
-                    // Update the tooltip with the URI
-                    HoveredUri().Text(uri);
-
-                    // Set the border thickness so it covers the entire cell
-                    const auto charSizeInPixels = CharacterDimensions();
-                    const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
-                    const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
-                    const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
-                    HyperlinkTooltipBorder().BorderThickness(newThickness);
-
-                    // Compute the location of the top left corner of the cell in DIPS
-                    const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
-                    const til::point startPos{ terminalPosition.X, terminalPosition.Y };
-                    const til::size fontSize{ _actualFont.GetSize() };
-                    const til::point posInPixels{ startPos * fontSize };
-                    const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
-                    const til::point locationInDIPs{ posInDIPs + marginsInDips };
-
-                    // Move the border to the top left corner of the cell
-                    OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
-                    OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
-                }
-                _lastHoveredCell = terminalPosition;
-
-                const auto newId = _terminal->GetHyperlinkIdAtPosition(terminalPosition);
-                const auto newInterval = _terminal->GetHyperlinkIntervalFromPosition(terminalPosition);
-                // If the hyperlink ID changed or the interval changed, trigger a redraw all
-                // (so this will happen both when we move onto a link and when we move off a link)
-                if (newId != _lastHoveredId || (newInterval != _lastHoveredInterval))
-                {
-                    _lastHoveredId = newId;
-                    _lastHoveredInterval = newInterval;
-                    _renderEngine->UpdateHyperlinkHoveredId(newId);
-                    _renderer->UpdateLastHoveredInterval(newInterval);
-                    _renderer->TriggerRedrawAll();
-                }
-            }
+            _UpdateHoveredCell(terminalPosition);
         }
         else if (_focused && ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
         {
@@ -3316,6 +3275,74 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     const size_t TermControl::TaskbarProgress() const noexcept
     {
         return _terminal->GetTaskbarProgress();
+    }
+
+    // Method description:
+    // - Updates last hovered cell, renders / removes rendering of hyper-link if required
+    // Arguments:
+    // - terminalPosition: The terminal position of the pointer
+    void TermControl::_UpdateHoveredCell(const std::optional<COORD>& terminalPosition)
+    {
+        if (terminalPosition == _lastHoveredCell)
+        {
+            return;
+        }
+
+        _lastHoveredCell = terminalPosition;
+
+        if (terminalPosition.has_value())
+        {
+            const auto uri = _terminal->GetHyperlinkAtPosition(*terminalPosition);
+            if (!uri.empty())
+            {
+                // Update the tooltip with the URI
+                HoveredUri().Text(uri);
+
+                // Set the border thickness so it covers the entire cell
+                const auto charSizeInPixels = CharacterDimensions();
+                const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
+                const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
+                const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
+                HyperlinkTooltipBorder().BorderThickness(newThickness);
+
+                // Compute the location of the top left corner of the cell in DIPS
+                const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
+                const til::point startPos{ terminalPosition->X, terminalPosition->Y };
+                const til::size fontSize{ _actualFont.GetSize() };
+                const til::point posInPixels{ startPos * fontSize };
+                const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
+                const til::point locationInDIPs{ posInDIPs + marginsInDips };
+
+                // Move the border to the top left corner of the cell
+                OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
+                OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
+            }
+        }
+
+        const uint16_t newId = terminalPosition.has_value() ? _terminal->GetHyperlinkIdAtPosition(*terminalPosition) : 0u;
+        const auto newInterval = terminalPosition.has_value() ? _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition) : std::nullopt;
+
+        // If the hyperlink ID changed or the interval changed, trigger a redraw all
+        // (so this will happen both when we move onto a link and when we move off a link)
+        if (newId != _lastHoveredId || (newInterval != _lastHoveredInterval))
+        {
+            _lastHoveredId = newId;
+            _lastHoveredInterval = newInterval;
+            _renderEngine->UpdateHyperlinkHoveredId(newId);
+            _renderer->UpdateLastHoveredInterval(newInterval);
+            _renderer->TriggerRedrawAll();
+        }
+    }
+
+    // Method Description:
+    // - Handle a mouse exited event, specifically clearing last hovered cell
+    // and removing selection from hyper link if exists
+    // Arguments:
+    // - sender: not used
+    // - args: event data
+    void TermControl::_PointerExitedHandler(Windows::Foundation::IInspectable const& /*sender*/, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
+    {
+        _UpdateHoveredCell(std::nullopt);
     }
 
     // -------------------------------- WinRT Events ---------------------------------
