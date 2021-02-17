@@ -68,7 +68,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         // update visibility for override message and reset button
         const auto& obj{ d.try_as<Editor::SettingContainer>() };
-        get_self<SettingContainer>(obj)->_UpdateOverrideMessage();
+        get_self<SettingContainer>(obj)->_UpdateOverrideSystem();
     }
 
     void SettingContainer::OnApplyTemplate()
@@ -107,17 +107,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 });
 
                 // apply name (automation property)
-                Automation::AutomationProperties::SetName(child, RS_(L"SettingContainer_ResetButtonHelpText"));
-
-                // apply help text (automation property)
-                // NOTE: this can only be set _once_. Automation clients do not detect any changes.
-                //       As a result, we're using the more generic version of the override message.
-                const hstring overrideMsg{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideIntro") }, RS_(L"SettingContainer_OverrideTarget")) };
-                Automation::AutomationProperties::SetHelpText(child, overrideMsg);
+                Automation::AutomationProperties::SetName(child, RS_(L"SettingContainer_OverrideMessageBaseLayer"));
             }
         }
 
-        _UpdateOverrideMessage();
+        _UpdateOverrideSystem();
 
         if (const auto& content{ Content() })
         {
@@ -144,7 +138,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void SettingContainer::_UpdateOverrideMessage()
+    // Method Description:
+    // - Updates the override system visibility and text
+    // Arguments:
+    // - <none>
+    void SettingContainer::_UpdateOverrideSystem()
     {
         if (const auto& child{ GetTemplateChild(L"ResetButton") })
         {
@@ -154,65 +152,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     // We want to be smart about showing the override system.
                     // Don't just show it if the user explicitly set the setting.
-                    // If this flag is set, we'll hide the entire override system.
-                    bool hideOverrideSystem = false;
+                    // If the tooltip is empty, we'll hide the entire override system.
+                    hstring tooltip;
 
-                    const std::wstring templateText{ RS_(L"SettingContainer_OverrideIntro") };
-                    const auto pos{ templateText.find(L"{}") };
-                    std::wstring tooltip{};
-                    if (pos != std::wstring::npos)
+                    const auto& settingSrc{ SettingOverrideSource() };
+                    if (!settingSrc)
                     {
-                        // Append Message Prefix
-                        tooltip = templateText.substr(0, pos);
-
-                        // Append Message Target
-                        {
-                            const auto& settingSrc{ SettingOverrideSource() };
-                            if (!settingSrc)
-                            {
-                                // no source; we're using the system-default value
-                                hideOverrideSystem = true;
-                            }
-                            else if (const auto& profile{ settingSrc.try_as<Model::Profile>() })
-                            {
-                                const auto originTag{ profile.Origin() };
-                                if (originTag == Model::OriginTag::InBox)
-                                {
-                                    // in-box profile
-                                    hideOverrideSystem = true;
-                                }
-                                else if (originTag == Model::OriginTag::Generated)
-                                {
-                                    // from a dynamic profile generator
-                                    // TODO #1690: add special handling for proto-extensions here
-                                    hideOverrideSystem = true;
-                                }
-                                else
-                                {
-                                    // base layer
-                                    // TODO GH#3818: When we add profile inheritance as a setting,
-                                    //               we'll need an extra conditional check to see if this
-                                    //               is the base layer or some other profile
-                                    tooltip += RS_(L"Nav_ProfileDefaults/Content");
-                                }
-                            }
-                            else
-                            {
-                                // unknown source
-                                hideOverrideSystem = true;
-                            }
-                        }
-
-                        // Append Message Suffix
-                        tooltip += templateText.substr(pos + 2, templateText.npos);
+                        // no source; we're using the system-default value
+                        tooltip = L"";
+                    }
+                    else if (const auto& profile{ settingSrc.try_as<Model::Profile>() })
+                    {
+                        tooltip = _GenerateOverrideSystem(profile);
                     }
                     else
                     {
-                        // '{}' was not found
-                        hideOverrideSystem = true;
+                        // unknown source
+                        tooltip = L"";
                     }
+
                     Controls::ToolTipService::SetToolTip(button, box_value(tooltip));
-                    button.Visibility(hideOverrideSystem ? Visibility::Collapsed : Visibility::Visible);
+                    button.Visibility(tooltip.empty() ? Visibility::Collapsed : Visibility::Visible);
                 }
                 else
                 {
@@ -220,6 +180,36 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     button.Visibility(Visibility::Collapsed);
                 }
             }
+        }
+    }
+
+    // Method Description:
+    // - Helper function for generating the override message
+    // Arguments:
+    // - profile: the profile that defines the setting (aka SettingOverrideSource)
+    // Return Value:
+    // - text specifying where the setting was defined. If empty, we don't want to show the system.
+    hstring SettingContainer::_GenerateOverrideSystem(const Model::Profile& profile)
+    {
+        const auto originTag{ profile.Origin() };
+        if (originTag == Model::OriginTag::InBox)
+        {
+            // in-box profile
+            return L"";
+        }
+        else if (originTag == Model::OriginTag::Generated)
+        {
+            // from a dynamic profile generator
+            // TODO #1690: add special handling for proto-extensions here
+            return L"";
+        }
+        else
+        {
+            // base layer
+            // TODO GH#3818: When we add profile inheritance as a setting,
+            //               we'll need an extra conditional check to see if this
+            //               is the base layer or some other profile
+            return RS_(L"SettingContainer_OverrideMessageBaseLayer");
         }
     }
 }
