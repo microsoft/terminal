@@ -17,16 +17,18 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <ResourceDictionary Source="CommonResources.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            <Thickness x:Key="ColorSchemesStandardControlMargin">0,0,10,20</Thickness>
-            <Thickness x:Key="ColorEntrySpacing">0,10,10,0</Thickness>
-
-            <Style x:Key="ColorStackPanelStyle" TargetType="StackPanel">
-                <Setter Property="Margin" Value="{StaticResource ColorSchemesStandardControlMargin}"/>
-                <Setter Property="Height" Value="59"/>
+            <Style x:Key="GroupHeaderStyle" TargetType="TextBlock" BasedOn="{StaticResource SubtitleTextBlockStyle}">
+                <Setter Property="Margin" Value="0,0,0,4"/>
             </Style>
 
-            <Style x:Key="ColorHeaderStyle" TargetType="TextBlock">
-                <Setter Property="Margin" Value="0,0,0,5"/>
+            <Style x:Key="ColorLabelStyle" TargetType="TextBlock">
+                <Setter Property="HorizontalAlignment" Value="Left"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+            </Style>
+
+            <Style x:Key="ColorTableGridStyle" TargetType="Grid">
+                <Setter Property="RowSpacing" Value="10"/>
+                <Setter Property="ColumnSpacing" Value="10"/>
             </Style>
 
             <Style x:Key="ColorButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
@@ -43,53 +45,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <Setter Property="IsAlphaTextInputVisible" Value="True"/>
             </Style>
 
-            <DataTemplate x:Key="LabelledColorTableEntry" x:DataType="local:ColorTableEntry">
-                <Grid Margin="{StaticResource ColorEntrySpacing}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!--Label-->
-                    <TextBlock Text="{x:Bind Name}"
-                               HorizontalAlignment="Left"
-                               VerticalAlignment="Center"
-                               Grid.Column="0"/>
-                               <!--MinWidth="100"-->
-
-                    <Button Background="{x:Bind Color, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}"
-                            Style="{StaticResource ColorButtonStyle}"
-                            Grid.Column="1">
-                        <Button.Resources>
-                            <!-- Resources to colorize hover/pressed states based on the color of the button -->
-                            <ResourceDictionary>
-                                <ResourceDictionary.ThemeDictionaries>
-                                    <ResourceDictionary x:Key="Light">
-                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{x:Bind Color, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
-                                    </ResourceDictionary>
-                                    <ResourceDictionary x:Key="Dark">
-                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{x:Bind Color, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
-                                    </ResourceDictionary>
-                                    <!-- No High contrast dictionary, let's just leave that unchanged. -->
-                                </ResourceDictionary.ThemeDictionaries>
-                            </ResourceDictionary>
-                        </Button.Resources>
-
-                        <Button.Flyout>
-                            <Flyout>
-                                <ColorPicker Tag="{x:Bind Index, Mode=OneWay}"
-                                             Color="{x:Bind Color, Mode=OneWay}"
-                                             ColorChanged="ColorPickerChanged"/>
-                            </Flyout>
-                        </Button.Flyout>
-                    </Button>
-                </Grid>
-            </DataTemplate>
-
-            <DataTemplate x:Key="UnlabelledColorTableEntry" x:DataType="local:ColorTableEntry">
+            <DataTemplate x:Key="ColorTableEntryTemplate" x:DataType="local:ColorTableEntry">
                 <Button Background="{x:Bind Color, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}"
-                        Style="{StaticResource ColorButtonStyle}"
-                        Margin="{StaticResource ColorEntrySpacing}">
+                        Style="{StaticResource ColorButtonStyle}">
                     <Button.Resources>
                         <!-- Resources to colorize hover/pressed states based on the color of the button -->
                         <ResourceDictionary>
@@ -115,6 +73,34 @@ the MIT License. See LICENSE in the project root for license information. -->
                 </Button>
             </DataTemplate>
 
+            <DataTemplate x:Key="ColorTemplate" x:DataType="Color">
+                <Button Background="{Binding Color, ElementName=ColorPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}"
+                        Style="{StaticResource ColorButtonStyle}">
+                    <Button.Resources>
+                        <!-- Resources to colorize hover/pressed states based on the color of the button -->
+                        <ResourceDictionary>
+                            <ResourceDictionary.ThemeDictionaries>
+                                <ResourceDictionary x:Key="Light">
+                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{Binding Color, ElementName=ColorPicker, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
+                                </ResourceDictionary>
+                                <ResourceDictionary x:Key="Dark">
+                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{Binding Color, ElementName=ColorPicker, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
+                                </ResourceDictionary>
+                                <!-- No High contrast dictionary, let's just leave that unchanged. -->
+                            </ResourceDictionary.ThemeDictionaries>
+                        </ResourceDictionary>
+                    </Button.Resources>
+
+                    <Button.Flyout>
+                        <Flyout>
+                            <ColorPicker x:Name="ColorPicker"
+                                         Color="{x:Bind Mode=OneWay}"
+                                         ColorChanged="ColorPickerChanged"/>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+            </DataTemplate>
+
             <local:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
             <local:ColorToHexConverter x:Key="ColorToHexConverter"/>
             <local:InvertedBooleanToVisibilityConverter x:Key="InvertedBooleanToVisibilityConverter"/>
@@ -124,22 +110,11 @@ the MIT License. See LICENSE in the project root for license information. -->
     </Page.Resources>
 
     <ScrollViewer>
-        <Grid Margin="{StaticResource StandardIndentMargin}">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1*" MaxWidth="480"/>
-                <ColumnDefinition Width="1*"/>
-            </Grid.ColumnDefinitions>
+        <StackPanel Margin="{StaticResource StandardIndentMargin}"
+                    Spacing="24">
 
             <!--Select Color and Add New Button-->
-            <StackPanel Orientation="Horizontal"
-                        Grid.Row="0"
-                        Grid.Column="0"
-                        Grid.ColumnSpan="2">
+            <StackPanel Orientation="Horizontal">
 
                 <StackPanel Orientation="Horizontal"
                             Visibility="{x:Bind IsRenaming, Converter={StaticResource InvertedBooleanToVisibilityConverter}, Mode=OneWay}">
@@ -215,163 +190,100 @@ the MIT License. See LICENSE in the project root for license information. -->
             </StackPanel>
 
             <!-- Color Table (Left Column)-->
-            <Grid Grid.Row="1"
-                  Grid.Column="0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal"
+                        Spacing="48">
+                <StackPanel>
+                    <TextBlock x:Uid="ColorScheme_ColorTableHeader"
+                               Style="{StaticResource GroupHeaderStyle}"/>
+                    <Grid x:Name="ColorTableGrid"
+                          Style="{StaticResource ColorTableGridStyle}">
+                        <Grid.ColumnDefinitions>
+                            <!--Labels-->
+                            <ColumnDefinition Width="Auto"/>
 
-                <!--Non-Bright Colors-->
-                <ItemsControl Grid.Column="0"
-                              ItemsSource="{x:Bind CurrentNonBrightColorTable, Mode=OneWay}"
-                              ItemTemplate="{StaticResource LabelledColorTableEntry}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <ItemsStackPanel Orientation="Vertical"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                </ItemsControl>
+                            <!--Regular Colors-->
+                            <ColumnDefinition Width="Auto"/>
 
-                <!--Bright Colors-->
-                <ItemsControl Grid.Column="1"
-                              ItemsSource="{x:Bind CurrentBrightColorTable, Mode=OneWay}"
-                              ItemTemplate="{StaticResource UnlabelledColorTableEntry}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <ItemsStackPanel Orientation="Vertical"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                </ItemsControl>
-            </Grid>
+                            <!--Bright Colors-->
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-            <!-- Additional Colors (Right Column) -->
-            <ItemsControl Grid.Row="1"
-                          Grid.Column="1"
-                          Style="{StaticResource ItemsControlStyle}">
-
-                <StackPanel Style="{StaticResource ColorStackPanelStyle}">
-                    <TextBlock x:Uid="ColorScheme_Foreground"
-                               Style="{StaticResource ColorHeaderStyle}"/>
-                    <Button Background="{Binding Color, ElementName=ForegroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
-
-
-                        <Button.Resources>
-                            <!-- Resources to colorize hover/pressed states based on the color of the button -->
-                            <ResourceDictionary>
-                                <ResourceDictionary.ThemeDictionaries>
-                                    <ResourceDictionary x:Key="Light">
-                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{Binding Color, ElementName=ForegroundPicker, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
-                                    </ResourceDictionary>
-                                    <ResourceDictionary x:Key="Dark">
-                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{Binding Color, ElementName=ForegroundPicker, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
-                                    </ResourceDictionary>
-                                    <!-- No High contrast dictionary, let's just leave that unchanged. -->
-                                </ResourceDictionary.ThemeDictionaries>
-                            </ResourceDictionary>
-                        </Button.Resources>
-
-                        <Button.Flyout>
-                            <Flyout>
-                                <ColorPicker x:Name="ForegroundPicker" Color="{x:Bind CurrentColorScheme.Foreground, Mode=TwoWay}"/>
-                            </Flyout>
-                        </Button.Flyout>
-                    </Button>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                    </Grid>
                 </StackPanel>
-                <StackPanel Style="{StaticResource ColorStackPanelStyle}">
-                    <TextBlock x:Uid="ColorScheme_Background"
-                               Style="{StaticResource ColorHeaderStyle}"/>
-                    <Button Background="{Binding Color, ElementName=BackgroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
 
+                <!-- Additional Colors (Right Column) -->
+                <StackPanel>
+                    <TextBlock x:Uid="ColorScheme_FunctionalColorsHeader"
+                               Style="{StaticResource GroupHeaderStyle}"/>
+                    <Grid Style="{StaticResource ColorTableGridStyle}">
 
-                        <Button.Resources>
-                            <!-- Resources to colorize hover/pressed states based on the color of the button -->
-                            <ResourceDictionary>
-                                <ResourceDictionary.ThemeDictionaries>
-                                    <ResourceDictionary x:Key="Light">
-                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{Binding Color, ElementName=BackgroundPicker, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
-                                    </ResourceDictionary>
-                                    <ResourceDictionary x:Key="Dark">
-                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{Binding Color, ElementName=BackgroundPicker, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
-                                    </ResourceDictionary>
-                                    <!-- No High contrast dictionary, let's just leave that unchanged. -->
-                                </ResourceDictionary.ThemeDictionaries>
-                            </ResourceDictionary>
-                        </Button.Resources>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                        <Button.Flyout>
-                            <Flyout>
-                                <ColorPicker x:Name="BackgroundPicker"
-                                             Color="{x:Bind CurrentColorScheme.Background, Mode=TwoWay}"/>
-                            </Flyout>
-                        </Button.Flyout>
-                    </Button>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!--Foreground-->
+                        <TextBlock x:Uid="ColorScheme_Foreground"
+                                   Style="{StaticResource ColorLabelStyle}"
+                                   Grid.Row="0"
+                                   Grid.Column="0"/>
+                        <ContentControl ContentTemplate="{StaticResource ColorTemplate}"
+                                        Content="{x:Bind CurrentColorScheme.Foreground, Mode=TwoWay}"
+                                        Grid.Row="0"
+                                        Grid.Column="1"/>
+
+                        <!--Background-->
+                        <TextBlock x:Uid="ColorScheme_Background"
+                                   Style="{StaticResource ColorLabelStyle}"
+                                   Grid.Row="1"
+                                   Grid.Column="0"/>
+                        <ContentControl ContentTemplate="{StaticResource ColorTemplate}"
+                                        Content="{x:Bind CurrentColorScheme.Background, Mode=TwoWay}"
+                                        Grid.Row="1"
+                                        Grid.Column="1"/>
+
+                        <!--Cursor Color-->
+                        <TextBlock x:Uid="ColorScheme_CursorColor"
+                                   Style="{StaticResource ColorLabelStyle}"
+                                   Grid.Row="2"
+                                   Grid.Column="0"/>
+                        <ContentControl ContentTemplate="{StaticResource ColorTemplate}"
+                                        Content="{x:Bind CurrentColorScheme.CursorColor, Mode=TwoWay}"
+                                        Grid.Row="2"
+                                        Grid.Column="1"/>
+
+                        <!--Selection Background-->
+                        <TextBlock x:Uid="ColorScheme_SelectionBackground"
+                                   Style="{StaticResource ColorLabelStyle}"
+                                   Grid.Row="3"
+                                   Grid.Column="0"/>
+                        <ContentControl ContentTemplate="{StaticResource ColorTemplate}"
+                                        Content="{x:Bind CurrentColorScheme.SelectionBackground, Mode=TwoWay}"
+                                        Grid.Row="3"
+                                        Grid.Column="1"/>
+                    </Grid>
                 </StackPanel>
-                <StackPanel Style="{StaticResource ColorStackPanelStyle}">
-                    <TextBlock x:Uid="ColorScheme_CursorColor"
-                               Style="{StaticResource ColorHeaderStyle}"/>
-                    <Button Background="{Binding Color, ElementName=CursorColorPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
-
-
-                        <Button.Resources>
-                            <!-- Resources to colorize hover/pressed states based on the color of the button -->
-                            <ResourceDictionary>
-                                <ResourceDictionary.ThemeDictionaries>
-                                    <ResourceDictionary x:Key="Light">
-                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{Binding Color, ElementName=CursorColorPicker, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
-                                    </ResourceDictionary>
-                                    <ResourceDictionary x:Key="Dark">
-                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{Binding Color, ElementName=CursorColorPicker, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
-                                    </ResourceDictionary>
-                                    <!-- No High contrast dictionary, let's just leave that unchanged. -->
-                                </ResourceDictionary.ThemeDictionaries>
-                            </ResourceDictionary>
-                        </Button.Resources>
-
-                        <Button.Flyout>
-                            <Flyout>
-                                <ColorPicker x:Name="CursorColorPicker"
-                                             Color="{x:Bind CurrentColorScheme.CursorColor, Mode=TwoWay}"/>
-                            </Flyout>
-                        </Button.Flyout>
-                    </Button>
-                </StackPanel>
-                <StackPanel Style="{StaticResource ColorStackPanelStyle}">
-                    <TextBlock x:Uid="ColorScheme_SelectionBackground"
-                               Style="{StaticResource ColorHeaderStyle}"/>
-                    <Button Background="{Binding Color, ElementName=SelectionBackgroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
-
-
-                        <Button.Resources>
-                            <!-- Resources to colorize hover/pressed states based on the color of the button -->
-                            <ResourceDictionary>
-                                <ResourceDictionary.ThemeDictionaries>
-                                    <ResourceDictionary x:Key="Light">
-                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{Binding Color, ElementName=SelectionBackgroundPicker, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
-                                    </ResourceDictionary>
-                                    <ResourceDictionary x:Key="Dark">
-                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{Binding Color, ElementName=SelectionBackgroundPicker, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
-                                    </ResourceDictionary>
-                                    <!-- No High contrast dictionary, let's just leave that unchanged. -->
-                                </ResourceDictionary.ThemeDictionaries>
-                            </ResourceDictionary>
-                        </Button.Resources>
-
-                        <Button.Flyout>
-                            <Flyout>
-                                <ColorPicker x:Name="SelectionBackgroundPicker"
-                                             Color="{x:Bind CurrentColorScheme.SelectionBackground, Mode=TwoWay}"/>
-                            </Flyout>
-                        </Button.Flyout>
-                    </Button>
-                </StackPanel>
-            </ItemsControl>
+            </StackPanel>
 
             <!--Delete Button-->
-            <StackPanel Grid.Row="2"
-                        Grid.Column="0"
-                        Grid.ColumnSpan="2"
-                        Style="{StaticResource PivotStackStyle}">
+            <StackPanel Style="{StaticResource PivotStackStyle}">
                 <Button x:Name="DeleteButton"
                         IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}"
                         Style="{StaticResource DeleteButtonStyle}">
@@ -427,6 +339,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                            Style="{StaticResource DisclaimerStyle}"
                            VerticalAlignment="Center"/>
             </StackPanel>
-        </Grid>
+        </StackPanel>
     </ScrollViewer>
 </Page>

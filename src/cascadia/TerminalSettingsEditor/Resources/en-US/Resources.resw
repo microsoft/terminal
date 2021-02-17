@@ -831,4 +831,10 @@
   <data name="Globals_FocusFollowMouse.HelpText" xml:space="preserve">
     <value>When checked, the terminal will the focus pane on mouse hover.</value>
   </data>
+  <data name="ColorScheme_ColorTableHeader.Text" xml:space="preserve">
+    <value>Color table</value>
+  </data>
+  <data name="ColorScheme_FunctionalColorsHeader.Text" xml:space="preserve">
+    <value>Functional colors</value>
+  </data>
 </root>

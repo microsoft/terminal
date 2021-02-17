@@ -96,6 +96,39 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             auto scheme = *it;
             ColorSchemeComboBox().SelectedItem(scheme);
         }
+
+        // populate color table grid
+        const auto colorLabelStyle{ Resources().Lookup(winrt::box_value(L"ColorLabelStyle")).as<Windows::UI::Xaml::Style>() };
+        const auto colorTableEntryTemplate{ Resources().Lookup(winrt::box_value(L"ColorTableEntryTemplate")).as<DataTemplate>() };
+        auto setupColorControl = [colorTableEntryTemplate, colorTableGrid{ ColorTableGrid() }](auto colorRef, uint32_t row, uint32_t col) {
+            ContentControl colorControl{};
+            colorControl.ContentTemplate(colorTableEntryTemplate);
+
+            Data::Binding binding{};
+            binding.Source(colorRef);
+            binding.Mode(Data::BindingMode::TwoWay);
+            colorControl.SetBinding(ContentControl::ContentProperty(), binding);
+
+            colorTableGrid.Children().Append(colorControl);
+            Grid::SetRow(colorControl, row);
+            Grid::SetColumn(colorControl, col);
+        };
+        for (uint32_t row = 0; row < ColorTableGrid().RowDefinitions().Size(); ++row)
+        {
+            // color label
+            TextBlock label{};
+            label.Text(TableColorNames[row]);
+            label.Style(colorLabelStyle);
+            ColorTableGrid().Children().Append(label);
+            Grid::SetRow(label, row);
+            Grid::SetColumn(label, 0);
+
+            // regular color
+            setupColorControl(_CurrentNonBrightColorTable.GetAt(row), row, 1);
+
+            // bright color
+            setupColorControl(_CurrentBrightColorTable.GetAt(row), row, 2);
+        }
     }
 
     // Function Description:
