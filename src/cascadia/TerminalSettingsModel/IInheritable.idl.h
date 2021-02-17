@@ -3,7 +3,7 @@
 
 #pragma once
 
-#define PROJECTED_SETTING(Type, Name) \
+#define INHERITABLE_SETTING(Type, Name) \
     Type Name                         \
     {                                 \
         get;                          \

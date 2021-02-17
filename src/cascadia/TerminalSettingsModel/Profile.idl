@@ -47,55 +47,55 @@ namespace Microsoft.Terminal.Settings.Model
 
         OriginTag Origin { get; };
 
-        PROJECTED_SETTING(String, Name);
+        INHERITABLE_SETTING(String, Name);
 
         Boolean HasGuid();
         Guid Guid;
 
-        PROJECTED_SETTING(String, Source);
+        INHERITABLE_SETTING(String, Source);
 
         Boolean HasConnectionType();
         Guid ConnectionType;
 
-        PROJECTED_SETTING(Boolean, Hidden);
-        PROJECTED_SETTING(String, Icon);
-        PROJECTED_SETTING(CloseOnExitMode, CloseOnExit);
-        PROJECTED_SETTING(String, TabTitle);
-        PROJECTED_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, TabColor);
-        PROJECTED_SETTING(Boolean, SuppressApplicationTitle);
-        PROJECTED_SETTING(Boolean, UseAcrylic);
-        PROJECTED_SETTING(Double, AcrylicOpacity);
-        PROJECTED_SETTING(Microsoft.Terminal.TerminalControl.ScrollbarState, ScrollState);
-        PROJECTED_SETTING(String, FontFace);
-        PROJECTED_SETTING(Int32, FontSize);
-        PROJECTED_SETTING(Windows.UI.Text.FontWeight, FontWeight);
-        PROJECTED_SETTING(String, Padding);
-        PROJECTED_SETTING(String, Commandline);
+        INHERITABLE_SETTING(Boolean, Hidden);
+        INHERITABLE_SETTING(String, Icon);
+        INHERITABLE_SETTING(CloseOnExitMode, CloseOnExit);
+        INHERITABLE_SETTING(String, TabTitle);
+        INHERITABLE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, TabColor);
+        INHERITABLE_SETTING(Boolean, SuppressApplicationTitle);
+        INHERITABLE_SETTING(Boolean, UseAcrylic);
+        INHERITABLE_SETTING(Double, AcrylicOpacity);
+        INHERITABLE_SETTING(Microsoft.Terminal.TerminalControl.ScrollbarState, ScrollState);
+        INHERITABLE_SETTING(String, FontFace);
+        INHERITABLE_SETTING(Int32, FontSize);
+        INHERITABLE_SETTING(Windows.UI.Text.FontWeight, FontWeight);
+        INHERITABLE_SETTING(String, Padding);
+        INHERITABLE_SETTING(String, Commandline);
 
-        PROJECTED_SETTING(String, StartingDirectory);
+        INHERITABLE_SETTING(String, StartingDirectory);
         String EvaluatedStartingDirectory { get; };
 
-        PROJECTED_SETTING(String, BackgroundImagePath);
+        INHERITABLE_SETTING(String, BackgroundImagePath);
         String ExpandedBackgroundImagePath { get; };
 
-        PROJECTED_SETTING(Double, BackgroundImageOpacity);
-        PROJECTED_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
-        PROJECTED_SETTING(ConvergedAlignment, BackgroundImageAlignment);
-        PROJECTED_SETTING(Microsoft.Terminal.TerminalControl.TextAntialiasingMode, AntialiasingMode);
-        PROJECTED_SETTING(Boolean, RetroTerminalEffect);
-        PROJECTED_SETTING(String, PixelShaderPath);
-        PROJECTED_SETTING(Boolean, ForceFullRepaintRendering);
-        PROJECTED_SETTING(Boolean, SoftwareRendering);
-        PROJECTED_SETTING(String, ColorSchemeName);
-        PROJECTED_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Foreground);
-        PROJECTED_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Background);
-        PROJECTED_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, SelectionBackground);
-        PROJECTED_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, CursorColor);
-        PROJECTED_SETTING(Int32, HistorySize);
-        PROJECTED_SETTING(Boolean, SnapOnInput);
-        PROJECTED_SETTING(Boolean, AltGrAliasing);
-        PROJECTED_SETTING(Microsoft.Terminal.TerminalControl.CursorStyle, CursorShape);
-        PROJECTED_SETTING(UInt32, CursorHeight);
-        PROJECTED_SETTING(BellStyle, BellStyle);
+        INHERITABLE_SETTING(Double, BackgroundImageOpacity);
+        INHERITABLE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
+        INHERITABLE_SETTING(ConvergedAlignment, BackgroundImageAlignment);
+        INHERITABLE_SETTING(Microsoft.Terminal.TerminalControl.TextAntialiasingMode, AntialiasingMode);
+        INHERITABLE_SETTING(Boolean, RetroTerminalEffect);
+        INHERITABLE_SETTING(String, PixelShaderPath);
+        INHERITABLE_SETTING(Boolean, ForceFullRepaintRendering);
+        INHERITABLE_SETTING(Boolean, SoftwareRendering);
+        INHERITABLE_SETTING(String, ColorSchemeName);
+        INHERITABLE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Foreground);
+        INHERITABLE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Background);
+        INHERITABLE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, SelectionBackground);
+        INHERITABLE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, CursorColor);
+        INHERITABLE_SETTING(Int32, HistorySize);
+        INHERITABLE_SETTING(Boolean, SnapOnInput);
+        INHERITABLE_SETTING(Boolean, AltGrAliasing);
+        INHERITABLE_SETTING(Microsoft.Terminal.TerminalControl.CursorStyle, CursorShape);
+        INHERITABLE_SETTING(UInt32, CursorHeight);
+        INHERITABLE_SETTING(BellStyle, BellStyle);
     }
 }
