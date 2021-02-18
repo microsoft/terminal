@@ -57,8 +57,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     ColorSchemes::ColorSchemes() :
         _ColorSchemeList{ single_threaded_observable_vector<Model::ColorScheme>() },
         _CurrentNonBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() },
-        _CurrentBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() },
-        _colorPanelHorizontalWidth{ std::nullopt }
+        _CurrentBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
     {
         InitializeComponent();
 
@@ -88,21 +87,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Automation::AutomationProperties::SetName(RenameCancelButton(), RS_(L"RenameCancel/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetName(AddNewButton(), RS_(L"ColorScheme_AddNewButton/Text"));
         Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"ColorScheme_DeleteButton/Text"));
-    }
-
-    void ColorSchemes::SizeChanged(IInspectable const& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e)
-    {
-        // Record the width for ColorPanel when it's in horizontal mode
-        if (!_colorPanelHorizontalWidth && ColorPanel().Orientation() == Orientation::Horizontal)
-        {
-            const auto indentMargin{ Resources().Lookup(winrt::box_value(L"StandardIndentMargin")).as<Thickness>() };
-            const auto colorPanelWidth{ ColorPanel().ActualWidth() };
-            _colorPanelHorizontalWidth = colorPanelWidth + indentMargin.Left + indentMargin.Right;
-        }
-
-        // Update the ColorPanel orientation
-        // If it doesn't fit, make it vertical
-        ColorPanel().Orientation(e.NewSize().Width < _colorPanelHorizontalWidth ? Orientation::Vertical : Orientation::Horizontal);
     }
 
     void ColorSchemes::OnNavigatedTo(const NavigationEventArgs& e)
@@ -148,8 +132,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             ContentControl colorControl{};
             colorControl.ContentTemplate(colorTableEntryTemplate);
             colorControl.Style(colorControlStyle);
-            ToolTipService::SetToolTip(colorControl, box_value(colorName));
-            Automation::AutomationProperties::SetName(colorControl, colorName);
 
             Data::Binding binding{};
             binding.Source(colorRef);

@@ -9,8 +9,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    SizeChanged="SizeChanged">
+    mc:Ignorable="d">
 
     <Page.Resources>
         <ResourceDictionary>
@@ -53,8 +52,8 @@ the MIT License. See LICENSE in the project root for license information. -->
             <DataTemplate x:Key="ColorTableEntryTemplate" x:DataType="local:ColorTableEntry">
                 <Button Background="{x:Bind Color, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}"
                         ToolTipService.ToolTip="{x:Bind Name}"
+                        AutomationProperties.Name="{x:Bind Name}"
                         Style="{StaticResource ColorButtonStyle}">
-                        <!--AutomationProperties.Name="{x:Bind Name}"-->
                     <Button.Resources>
                         <!-- Resources to colorize hover/pressed states based on the color of the button -->
                         <ResourceDictionary>
@@ -118,6 +117,22 @@ the MIT License. See LICENSE in the project root for license information. -->
     </Page.Resources>
 
     <ScrollViewer>
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState>
+                    <VisualState.StateTriggers>
+                        <!--Official guidance states that 640 is the breakpoint between small and medium devices.
+                        Since MinWindowWidth is an inclusive range, we need to add 1 to it.-->
+                        <AdaptiveTrigger MinWindowWidth="641"/>
+                    </VisualState.StateTriggers>
+
+                    <VisualState.Setters>
+                        <Setter Target="ColorPanel.Orientation" Value="Horizontal"/>
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
         <StackPanel Margin="{StaticResource StandardIndentMargin}"
                     Spacing="24">
 
