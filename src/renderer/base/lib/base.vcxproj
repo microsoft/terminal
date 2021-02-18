@@ -6,7 +6,7 @@
     <RootNamespace>base</RootNamespace>
     <ProjectName>RendererBase</ProjectName>
     <TargetName>ConRenderBase</TargetName>
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType> 
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
