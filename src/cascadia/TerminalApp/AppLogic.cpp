@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include "AppLogic.h"
-#include "WindowingBehavior.h"
+#include "../inc/WindowingBehavior.h"
 #include "AppLogic.g.cpp"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
