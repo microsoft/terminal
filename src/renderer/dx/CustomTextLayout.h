@@ -76,6 +76,7 @@ namespace Microsoft::Console::Render
                 glyphCount(),
                 bidiLevel(),
                 script(),
+                isTextSimple(),
                 isNumberSubstituted(),
                 isSideways(),
                 fontFace{ nullptr },
@@ -90,6 +91,7 @@ namespace Microsoft::Console::Render
             UINT32 glyphCount; // number of glyphs associated with this run of text
             DWRITE_SCRIPT_ANALYSIS script;
             UINT8 bidiLevel;
+            bool isTextSimple;
             bool isNumberSubstituted;
             bool isSideways;
             ::Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace;
