@@ -222,7 +222,7 @@ private:
 
     void _SetFirstRowIndex(const SHORT FirstRowIndex) noexcept;
 
-    COORD _GetPreviousFromCursor() const noexcept;
+    COORD _GetPreviousFromCursor() const;
 
     void _SetWrapOnCurrentRow();
     void _AdjustWrapOnCurrentRow(const bool fSet);

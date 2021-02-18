@@ -636,7 +636,7 @@ COORD TextBuffer::GetLastNonSpaceCharacter(std::optional<const Microsoft::Consol
 // Return Value:
 // - Coordinate position in screen coordinates of the character just before the cursor.
 // - NOTE: Will return 0,0 if already in the top left corner
-COORD TextBuffer::_GetPreviousFromCursor() const noexcept
+COORD TextBuffer::_GetPreviousFromCursor() const
 {
     COORD coordPosition = GetCursor().GetPosition();
 
