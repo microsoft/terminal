@@ -315,6 +315,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleOpenTabSearch(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleMoveTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleBreakIntoDebugger(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleFindMatch(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleTogglePaneReadOnly(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleNewWindow(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
 

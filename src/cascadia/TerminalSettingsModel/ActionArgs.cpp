@@ -23,6 +23,7 @@
 #include "CloseOtherTabsArgs.g.cpp"
 #include "CloseTabsAfterArgs.g.cpp"
 #include "MoveTabArgs.g.cpp"
+#include "FindMatchArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
 #include "NewWindowArgs.g.cpp"
 
@@ -478,6 +479,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"ToggleCommandPaletteCommandLineModeCommandKey");
         }
         return RS_(L"ToggleCommandPaletteCommandKey");
+    }
+
+    winrt::hstring FindMatchArgs::GenerateName() const
+    {
+        switch (_Direction)
+        {
+        case FindMatchDirection::Next:
+            return winrt::hstring{ RS_(L"FindNextCommandKey") };
+        case FindMatchDirection::Previous:
+            return winrt::hstring{ RS_(L"FindPrevCommandKey") };
+        }
+        return L"";
     }
 
     winrt::hstring NewWindowArgs::GenerateName() const

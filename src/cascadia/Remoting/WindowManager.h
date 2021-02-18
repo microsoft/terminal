@@ -59,7 +59,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         bool _performElection();
         void _createPeasantThread();
         void _waitOnMonarchThread();
-
         void _raiseFindTargetWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                              const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
     };

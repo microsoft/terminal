@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include "AppLogic.h"
-#include "WindowingBehavior.h"
+#include "../inc/WindowingBehavior.h"
 #include "AppLogic.g.cpp"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
@@ -1199,9 +1199,9 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - 0: We should handle the args "in the current window".
     // - WindowingBehaviorUseNew: We should handle the args in a new window
-    // - WindowingBehaviorUseExistingSameDesktop: We should handle the args "in
+    // - WindowingBehaviorUseExisting: We should handle the args "in
     //   the current window ON THIS DESKTOP"
-    // - WindowingBehaviorUseExisting: We should handle the args "in the current
+    // - WindowingBehaviorUseAnyExisting: We should handle the args "in the current
     //   window ON ANY DESKTOP"
     // - anything else: We should handle the commandline in the window with the given ID.
     int32_t AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
@@ -1226,12 +1226,11 @@ namespace winrt::TerminalApp::implementation
                 const auto windowingBehavior = _settings.GlobalSettings().WindowingBehavior();
                 switch (windowingBehavior)
                 {
-                case WindowingMode::UseNew:
-                    return WindowingBehaviorUseNew;
-                case WindowingMode::UseExistingSameDesktop:
-                    return WindowingBehaviorUseExistingSameDesktop;
                 case WindowingMode::UseExisting:
                     return WindowingBehaviorUseExisting;
+                case WindowingMode::UseAnyExisting:
+                    return WindowingBehaviorUseAnyExisting;
+                case WindowingMode::UseNew:
                 default:
                     return WindowingBehaviorUseNew;
                 }

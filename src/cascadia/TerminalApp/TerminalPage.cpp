@@ -1131,6 +1131,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->TabSearch({ this, &TerminalPage::_HandleOpenTabSearch });
         _actionDispatch->MoveTab({ this, &TerminalPage::_HandleMoveTab });
         _actionDispatch->BreakIntoDebugger({ this, &TerminalPage::_HandleBreakIntoDebugger });
+        _actionDispatch->FindMatch({ this, &TerminalPage::_HandleFindMatch });
         _actionDispatch->TogglePaneReadOnly({ this, &TerminalPage::_HandleTogglePaneReadOnly });
         _actionDispatch->NewWindow({ this, &TerminalPage::_HandleNewWindow });
     }

@@ -34,6 +34,7 @@ Author(s):
 
 #include <WexTestClass.h>
 #include "consoletaeftemplates.hpp"
+#include "winrtTaefTemplates.hpp"
 
 #include <winrt/Windows.system.h>
 #include <winrt/Windows.Foundation.h>
