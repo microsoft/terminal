@@ -649,11 +649,11 @@ COORD TextBuffer::_GetPreviousFromCursor() const noexcept
         // Otherwise, only if we're not on the top row (e.g. we don't move anywhere in the top left corner. there is no previous)
         if (coordPosition.Y > 0)
         {
-            // move the cursor to the right edge
-            coordPosition.X = GetSize().RightInclusive();
-
-            // and up one line
+            // move the cursor up one line
             coordPosition.Y--;
+
+            // and to the right edge
+            coordPosition.X = GetLineWidth(coordPosition.Y) - 1;
         }
     }
 
