@@ -582,7 +582,7 @@ try
 
         _swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
         _swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        _swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+        _swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
         _swapChainDesc.BufferCount = 2;
         _swapChainDesc.SampleDesc.Count = 1;
         _swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
@@ -1516,8 +1516,8 @@ void DxEngine::WaitUntilCanRender() noexcept
             // We'll do it first because if it fails, we'll try again with full presentation.
             if (!_firstFrame)
             {
-                hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);
-                // hr = S_OK; // _dxgiSwapChain->Present1(1, 0, &_presentParams);
+                // hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);
+                hr = S_OK; // _dxgiSwapChain->Present1(1, 0, &_presentParams);
 
                 // These two error codes are indicated for destroy-and-recreate
                 // If we were told to destroy-and-recreate, we're going to skip straight into doing that
@@ -1563,7 +1563,16 @@ void DxEngine::WaitUntilCanRender() noexcept
                 }
             }
 
-            // // If we are doing full repaints we don't need to copy front buffer to back buffer
+            // if (_HasTerminalEffects() && _pixelShaderLoaded)
+            // {
+            //     const HRESULT hr2 = _PaintTerminalEffects();
+            //     if (FAILED(hr2))
+            //     {
+            //         _pixelShaderLoaded = false;
+            //         LOG_HR_MSG(hr2, "Failed to paint terminal effects. Disabling.");
+            //     }
+            // }
+            // If we are doing full repaints we don't need to copy front buffer to back buffer
             // if (!_FullRepaintNeeded())
             // {
             //     // Finally copy the front image (being presented now) onto the backing buffer
@@ -1852,36 +1861,90 @@ try
 
     // Capture current frame in swap chain to a texture.
     ::Microsoft::WRL::ComPtr<ID3D11Texture2D> swapBuffer;
-    // normal  | extra      | Buffer | Get    |                 |
-    // present | present    | Count  | Buffer | CopyFrontToBack | result
-    // ------- | ---------- | ------ | ------ | --------------- | -------
-    // normal  | after      | 3      | 2      | 1->0, 1->2      | dirty line shaded correctly, once. Everything else accumulates pain
-    // normal  | after      | 3      | 2      | 1->0,           | Flickering, dirty line shaded correctly, once. Everything else accumulates pain
-    // normal  | after      | 3      | 1      | 1->0, 1->2      | Really bad. Dirty line accumulates pain, everything else BLACK
-    // normal  | after      | 3      | 0      | 1->0, 1->2      | Same as above, but now no ONE is shaded
-    // normal  | after      | 3      | 0      | 1->0,           | Roughly same as above
-    // normal  | after      | 3      | 2      | 1->2,           | Flickering, dirty line shaded correctly, once. Everything else accumulates pain
-    // normal  | before     | 3      | 2      | 1->0, 1->2      | Exceptionally bad flickering. No one is getting shaded.
-    // normal  | before     | 3      | 1      | 1->0, 1->2      | Exceptionally bad flickering. No one is getting shaded.
-    // normal  | before     | 3      | 0      | 1->0, 1->2      | Exceptionally bad flickering. No one is getting shaded.
-    // normal  | before     | 2      | 0      | 1->0,           | Absolutely no shading at all
-    // normal  | before     | 2      | 1      | 1->0,           | Absolutely no shading at all
-    // normal  | after      | 2      | 0      | 1->0,           | * No accumulation, everything shaded, minor flicker tho
-    // normal  | after      | 2      | 1      | 1->0,           | * No accumulation, everything shaded, minor flicker tho
-    // 2 buffers with this after present seems close. I wonder if the first present is the issue now. Or the first copy?
-    // None    | after      | 2      | 1      | None            | No flicker, only pain accumulation.
-    // None    | before     | 2      | 0      | None            | Flips between buffers, no shading at all. Very bad
-    // None    | before     | 2      | 1      | None            | Flips between buffers, no shading at all. Very bad.
-    // None    | after      | 2      | 0      | 1->0 after      | dirty shaded, rest acculumates pain
-    // None    | after      | 2      | 1      | 1->0 after      | Everything accumulates
-    // None    | after      | 2      | 0      | 1->0 before     | Everything accumulates
-    // None    | after      | 2      | 1      | 1->0 before     | Everything accumulates
-    // normal  | before     | 2      | 0      | None            | bad flicker between frames, no shading
-    // normal  | after      | 2      | 1      | None            | * No accumulation, everything shaded, minor flicker tho
-    // normal  | after(0,0) | 2      | 1      | None            | * (no difference from the above)
+    // shader  | normal  | extra      | Buffer | Get    |                 |
+    // order   | present | present    | Count  | Buffer | CopyFrontToBack | result
+    // ------- | ------- | ---------- | ------ | ------ | --------------- | -------
+    // after   | normal  | after      | 3      | 2      | 1->0, 1->2      | dirty line shaded correctly, once. Everything else accumulates pain
+    // after   | normal  | after      | 3      | 2      | 1->0,           | Flickering, dirty line shaded correctly, once. Everything else accumulates pain
+    // after   | normal  | after      | 3      | 1      | 1->0, 1->2      | Really bad. Dirty line accumulates pain, everything else BLACK
+    // after   | normal  | after      | 3      | 0      | 1->0, 1->2      | Same as above, but now no ONE is shaded
+    // after   | normal  | after      | 3      | 0      | 1->0,           | Roughly same as above
+    // after   | normal  | after      | 3      | 2      | 1->2,           | Flickering, dirty line shaded correctly, once. Everything else accumulates pain
+    // after   | normal  | before     | 3      | 2      | 1->0, 1->2      | Exceptionally bad flickering. No one is getting shaded.
+    // after   | normal  | before     | 3      | 1      | 1->0, 1->2      | Exceptionally bad flickering. No one is getting shaded.
+    // after   | normal  | before     | 3      | 0      | 1->0, 1->2      | Exceptionally bad flickering. No one is getting shaded.
+    // after   | normal  | before     | 2      | 0      | 1->0,           | Absolutely no shading at all
+    // after   | normal  | before     | 2      | 1      | 1->0,           | Absolutely no shading at all
+    // after   | normal  | after      | 2      | 0      | 1->0,           | * No accumulation, everything shaded, minor flicker tho
+    // after   | normal  | after      | 2      | 1      | 1->0,           | * No accumulation, everything shaded, minor flicker tho
+    // after   | None    | after      | 2      | 1      | None            | No flicker, only pain accumulation.
+    // after   | None    | before     | 2      | 0      | None            | Flips between buffers, no shading at all. Very bad
+    // after   | None    | before     | 2      | 1      | None            | Flips between buffers, no shading at all. Very bad.
+    // after   | None    | after      | 2      | 0      | 1->0 after      | dirty shaded, rest acculumates pain
+    // after   | None    | after      | 2      | 1      | 1->0 after      | Everything accumulates
+    // after   | None    | after      | 2      | 0      | 1->0 before     | Everything accumulates
+    // after   | None    | after      | 2      | 1      | 1->0 before     | Everything accumulates
+    // after   | normal  | before     | 2      | 0      | None            | bad flicker between frames, no shading
+    // after   | normal  | after      | 2      | 1      | None            | ** No accumulation, everything shaded, minor flicker tho
+    // after   | normal  | after(0,0) | 2      | 1      | None            | ** (no difference from the above)
+    // before  | None    | after(1,0) | 2      | 0      | None            | Flips between buffers, dirty line is shaded, rest accumulates
+    // before  | None    | after(1,0) | 2      | 1      | None            | TOTALLY BLANK
+    // before  | None    | after(1,0) | 2      | 0      | 0->1 before     | Flips between buffers, dirty line is shaded, rest accumulates
+    // between | None    | after(1,0) | 2      | 1      | 0->1 before     | Just accumulates
+    // before  | None    | after(1,0) | 2      | 0      | 0->1 after      | Flips between buffers, dirty line is shaded, rest accumulates
+    // before  | None    | after(1,0) | 2      | 1      | 0->1 before     | TOTALLY BLANK
+    // between | normal  | None       | 2      | 0      | 1->0 post shader| seemingly nothing shaded?
+    // between | normal  | None       | 2      | 1      | 1->0 post shader| seemingly nothing shaded?
+    // between | normal  | after      | 2      | 0      | 1->0 post shader| flicker, dirty shaded, everything else accumulates
+    // between | None    | None       | 2      | 0      | 0->1 before     | Seemingly never updates? Nothing shaded? yikes
+    // between | None    | None       | 2      | 1      | 0->1 before     | Seemingly never updates? Nothing shaded? yikes
+    // before  | normal  | None       | 2      | 0      | 0->1 before     | Flips between buffers, dirty line is shaded, rest accumulates
+    // before  | normal  | None       | 2      | 0      | None            | Flips between buffers, dirty line is shaded, rest accumulates (but somehow differently than above)?
+    // before  | normal  | None       | 2      | 1      | None            | Totally blank
+    // before  | normal  | None       | 2      | 1      | 0->1 before     | Totally Blank
+    // before  | normal  | None       | 2      | 1      | 1->0 before     | Totally Blank
+    // before  | normal  | None       | 2      | 0      | 1->0 before     | Totally Blank
+    // before  | normal  | None       | 2      | 0      | 1->0 after      | Flips between buffers, dirty line is shaded, rest accumulates
+    // before  | normal  | None       | 2      | 1      | 1->0 after      | Totally Blank
+    // after   | normal  | None       | 2      | 1      | 1->0 before     | accumulates, dirty line unshaded
+    // after   | normal  | None       | 2      | 0      | 1->0 before     | accumulates, dirty line unshaded (same as above)
+    // after   | None    | after      | 2      | 0      | 1->0 before     | Just accumulates
+    // after   | None    | after      | 2      | 1      | 1->0 before     | Just accumulates
+    // after   | None    | after      | 2      | 0      | 0->1 before     |
+    // after   | None    | after      | 2      | 1      | 0->1 before     | Just accumulates
+    // after   | None    | after      | 2      | 1      | None            | Just accumulates
+    // after   | None    | after      | 2      | 0      | None            | dirty line shaded, everything else flips and accumulates
+    // Here I started using DXGI_SWAP_EFFECT_FLIP_DISCARD
+    // after   | None    | after      | 2      | 0      | None            | dirty line shaded, everything else flips and accumulates
+    // after   | None    | after      | 2      | 0      | 1->0 after      | never updates? ho boy
+    // after   | None    | after      | 2      | 0      | 0->1 after      | never updates? ho boy
+
+    // * 2 buffers with an extra after present seems close. I wonder if the first present is the issue now. Or the first copy?
+    // ** Can't seemingly get rid of the minor flicker. I'm betting this is still because of the first Present1
+
+    auto copyBackToFront = [this]() {
+        try
+        {
+            Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer;
+            Microsoft::WRL::ComPtr<ID3D11Resource> frontBuffer;
+            // Microsoft::WRL::ComPtr<ID3D11Resource> moreBack;
+
+            RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
+            RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(1, IID_PPV_ARGS(&frontBuffer)));
+            // RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(2, IID_PPV_ARGS(&moreBack)));
+
+            _d3dDeviceContext->CopyResource(frontBuffer.Get(), backBuffer.Get()); // 0->1
+            // _d3dDeviceContext->CopyResource(backBuffer.Get(), frontBuffer.Get()); // 1->0
+            // _d3dDeviceContext->CopyResource(moreBack.Get(), frontBuffer.Get()); // 1->2
+        }
+        CATCH_RETURN();
+        return S_OK;
+    };
+    copyBackToFront;
+    // RETURN_IF_FAILED(copyBackToFront()); // 0->1 before
 
     // RETURN_IF_FAILED(_CopyFrontToBack()); // before
-    RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(1, IID_PPV_ARGS(&swapBuffer)));
+    RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&swapBuffer)));
     _d3dDeviceContext->CopyResource(_framebufferCapture.Get(), swapBuffer.Get());
 
     // Prepare captured texture as input resource to shader program.
@@ -1913,9 +1976,9 @@ try
     // RETURN_IF_FAILED(_dxgiSwapChain->Present(1, 0)); // before
     _d3dDeviceContext->Draw(ARRAYSIZE(_screenQuadVertices), 0);
 
-    RETURN_IF_FAILED(_dxgiSwapChain->Present(0, 0)); // after
+    RETURN_IF_FAILED(_dxgiSwapChain->Present(1, 0)); // after
     // RETURN_IF_FAILED(_CopyFrontToBack()); // after
-    // Present(1, 0)?
+    RETURN_IF_FAILED(copyBackToFront()); // 0->1 after
 
     return S_OK;
 }
