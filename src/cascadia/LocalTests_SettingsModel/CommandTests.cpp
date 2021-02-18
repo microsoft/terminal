@@ -456,10 +456,6 @@ namespace SettingsModelLocalTests
             const auto& terminalArgs = realArgs.TerminalArgs();
             VERIFY_IS_NOT_NULL(terminalArgs);
             auto cmdline = terminalArgs.ToCommandline();
-            // DebugBreak();
-            // Log::Comment(NoThrowString().Format(
-            //     L"cmdline: \"%s\"", cmdline.c_str()));
-            // VERIFY_ARE_EQUAL(winrt::hstring{ L"-- \"bar.exe\"" }, terminalArgs.ToCommandline());
             VERIFY_ARE_EQUAL(L"-- \"bar.exe\"", cmdline);
         }
 
