@@ -171,10 +171,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         winrt::com_ptr<implementation::WindowActivatedArgs> localArgs{ nullptr };
         try
         {
-            localArgs = winrt::make_self<implementation::WindowActivatedArgs>(args.PeasantID(),
-                                                                              args.Hwnd(),
-                                                                              args.DesktopID(),
-                                                                              args.ActivatedTime());
+            localArgs = winrt::make_self<implementation::WindowActivatedArgs>(args);
             // This method will actually do the hard work
             _doHandleActivatePeasant(localArgs);
         }
@@ -198,7 +195,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         auto result = std::find_if(_mruPeasants.begin(),
                                    _mruPeasants.end(),
-                                   [peasantID](auto other) {
+                                   [peasantID](auto&& other) {
                                        return peasantID == other.PeasantID();
                                    });
 
@@ -288,7 +285,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         // Here, there's at least one MRU peasant.
         //
-        // We're going to iterate over these peasants toll we find one that both:
+        // We're going to iterate over these peasants until we find one that both:
         // 1. Is alive
         // 2. Meets our selection criteria (do we care if it is on this desktop?)
         //
@@ -299,9 +296,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         //   - If it isn't on the current desktop, we'll loop again, on the
         //     following peasant.
         // * If we don't care, then we'll just return that one.
-
+        //
+        // We're not just using an iterator because the contents of the list
+        // might change while we're iterating here (if the peasant is dead we'll
+        // remove it from the list).
         int positionInList = 0;
-        while (_mruPeasants.begin() + positionInList < _mruPeasants.end())
+        while (_mruPeasants.cbegin() + positionInList < _mruPeasants.cend())
         {
             const auto mruWindowArgs{ *(_mruPeasants.begin() + positionInList) };
             const auto peasant{ _getPeasant(mruWindowArgs.PeasantID()) };
@@ -328,7 +328,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 BOOL onCurrentDesktop{ false };
 
                 // SUCCEEDED_LOG will log if it failed, and return true if it SUCCEEDED
-                if (SUCCEEDED_LOG(_desktopManager->IsWindowOnCurrentVirtualDesktop((HWND)mruWindowArgs.Hwnd(),
+                if (SUCCEEDED_LOG(_desktopManager->IsWindowOnCurrentVirtualDesktop(reinterpret_cast<HWND>(mruWindowArgs.Hwnd()),
                                                                                    &onCurrentDesktop)) &&
                     onCurrentDesktop)
                 {

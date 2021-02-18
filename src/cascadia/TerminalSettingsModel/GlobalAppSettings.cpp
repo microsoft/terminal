@@ -119,6 +119,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_DisableAnimations = _DisableAnimations;
     globals->_StartupActions = _StartupActions;
     globals->_FocusFollowMouse = _FocusFollowMouse;
+    globals->_WindowingBehavior = _WindowingBehavior;
 
     globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
     globals->_validDefaultProfile = _validDefaultProfile;

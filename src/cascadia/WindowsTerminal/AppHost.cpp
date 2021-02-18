@@ -575,7 +575,7 @@ GUID AppHost::_CurrentDesktopGuid()
     GUID currentDesktopGuid{ 0 };
     try
     {
-        auto manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
+        const auto manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
         if (manager)
         {
             LOG_IF_FAILED(manager->GetWindowDesktopId(_window->GetHandle(), &currentDesktopGuid));
