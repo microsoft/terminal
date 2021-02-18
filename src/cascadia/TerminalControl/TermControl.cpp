@@ -225,6 +225,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    void TermControl::SearchMatch(const bool goForward)
+    {
+        if (!_searchBox)
+        {
+            CreateSearchBoxControl();
+        }
+        else
+        {
+            _Search(_searchBox->TextBox().Text(), goForward, false);
+        }
+    }
+
     // Method Description:
     // - Search text in text buffer. This is triggered if the user click
     //   search button or press enter.
@@ -234,7 +246,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - caseSensitive: boolean that represents if the current search is case sensitive
     // Return Value:
     // - <none>
-    void TermControl::_Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive)
+    void TermControl::_Search(const winrt::hstring& text,
+                              const bool goForward,
+                              const bool caseSensitive)
     {
         if (text.size() == 0 || _closing)
         {
@@ -267,7 +281,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - RoutedEventArgs: not used
     // Return Value:
     // - <none>
-    void TermControl::_CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/, RoutedEventArgs const& /*args*/)
+    void TermControl::_CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                             RoutedEventArgs const& /*args*/)
     {
         _searchBox->Visibility(Visibility::Collapsed);
 
@@ -1098,7 +1113,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // modifier key. We'll wait for a real keystroke to dismiss the
         // GH #7395 - don't dismiss selection when taking PrintScreen
         // selection.
-        if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey) && vkey != VK_SNAPSHOT)
+        // GH#8522, GH#3758 - Only dismiss the selection on key _down_. If we
+        // dismiss on key up, then there's chance that we'll immediately dismiss
+        // a selection created by an action bound to a keydown.
+        if (_terminal->IsSelectionActive() &&
+            !KeyEvent::IsModifierKey(vkey) &&
+            vkey != VK_SNAPSHOT &&
+            keyDown)
         {
             const CoreWindow window = CoreWindow::GetForCurrentThread();
             const auto leftWinKeyState = window.GetKeyState(VirtualKey::LeftWindows);
