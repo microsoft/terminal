@@ -2398,7 +2398,9 @@ void SCREEN_INFORMATION::ClearTextData()
 // - word boundary positions
 std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(const COORD position) const
 {
-    COORD clampedPosition = position;
+    // The position argument is in screen coordinates, but we need the
+    // equivalent buffer position, taking line rendition into account.
+    COORD clampedPosition = _textBuffer->ScreenToBufferPosition(position);
     GetBufferSize().Clamp(clampedPosition);
 
     COORD start{ clampedPosition };
@@ -2467,6 +2469,12 @@ std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(const COORD position
             }
         }
     }
+
+    // The calculated range is in buffer coordinates, but the caller is
+    // expecting screen offsets, so we have to convert these back again.
+    start = _textBuffer->BufferToScreenPosition(start);
+    end = _textBuffer->BufferToScreenPosition(end);
+
     return { start, end };
 }
 
