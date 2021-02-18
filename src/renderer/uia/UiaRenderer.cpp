@@ -21,6 +21,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
     _cursorChanged{ false },
     _isEnabled{ true },
     _prevSelection{},
+    _prevCursorRegion{},
     RenderEngineBase()
 {
 }
@@ -66,18 +67,18 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - Notifies us that the console has changed the position of the cursor.
 //  For UIA, this doesn't mean anything. So do nothing.
 // Arguments:
-// - pcoordCursor - the new position of the cursor
+// - psrRegion - the region covered by the cursor
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT UiaEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
+[[nodiscard]] HRESULT UiaEngine::InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept
 try
 {
-    RETURN_HR_IF_NULL(E_INVALIDARG, pcoordCursor);
+    RETURN_HR_IF_NULL(E_INVALIDARG, psrRegion);
 
     // check if cursor moved
-    if (*pcoordCursor != _prevCursorPos)
+    if (*psrRegion != _prevCursorRegion)
     {
-        _prevCursorPos = *pcoordCursor;
+        _prevCursorRegion = *psrRegion;
         _cursorChanged = true;
     }
     return S_OK;

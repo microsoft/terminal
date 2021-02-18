@@ -38,7 +38,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/) noexcept
+[[nodiscard]] HRESULT BgfxEngine::InvalidateCursor(const SMALL_RECT* const /*psrRegion*/) noexcept
 {
     return S_OK;
 }

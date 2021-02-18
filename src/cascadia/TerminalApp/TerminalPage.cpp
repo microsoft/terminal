@@ -858,6 +858,19 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        newTabImpl->TabRenamerDeactivated([weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+            if (const auto page{ weakThis.get() })
+            {
+                if (!page->_newTabButton.Flyout().IsOpen())
+                {
+                    if (const auto tab{ page->_GetFocusedTab() })
+                    {
+                        tab.Focus(FocusState::Programmatic);
+                    }
+                }
+            }
+        });
+
         if (debugConnection) // this will only be set if global debugging is on and tap is active
         {
             TermControl newControl{ settings, debugConnection };

@@ -432,10 +432,9 @@ bool AdaptDispatch::_InsertDeleteHelper(const size_t count, const bool isInsert)
 
     const auto cursor = csbiex.dwCursorPosition;
     // Rectangle to cut out of the existing buffer. This is inclusive.
-    // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
     SMALL_RECT srScroll;
     srScroll.Left = cursor.X;
-    srScroll.Right = SHORT_MAX;
+    srScroll.Right = _pConApi->PrivateGetLineWidth(cursor.Y) - 1;
     srScroll.Top = cursor.Y;
     srScroll.Bottom = srScroll.Top;
 
@@ -534,7 +533,7 @@ bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& c
     case DispatchTypes::EraseType::ToEnd:
     case DispatchTypes::EraseType::All:
         // Remember the .X value is 1 farther than the right most column in the buffer. Therefore no +1.
-        nLength = csbiex.dwSize.X - coordStartPosition.X;
+        nLength = _pConApi->PrivateGetLineWidth(lineId) - coordStartPosition.X;
         break;
     }
 
@@ -622,6 +621,23 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 
     if (success)
     {
+        // When erasing the display, every line that is erased in full should be
+        // reset to single width. When erasing to the end, this could include
+        // the current line, if the cursor is in the first column. When erasing
+        // from the beginning, though, the current line would never be included,
+        // because the cursor could never be in the rightmost column (assuming
+        // the line is double width).
+        if (eraseType == DispatchTypes::EraseType::FromBeginning)
+        {
+            const auto endRow = csbiex.dwCursorPosition.Y;
+            _pConApi->PrivateResetLineRenditionRange(csbiex.srWindow.Top, endRow);
+        }
+        if (eraseType == DispatchTypes::EraseType::ToEnd)
+        {
+            const auto startRow = csbiex.dwCursorPosition.Y + (csbiex.dwCursorPosition.X > 0 ? 1 : 0);
+            _pConApi->PrivateResetLineRenditionRange(startRow, csbiex.srWindow.Bottom);
+        }
+
         // What we need to erase is grouped into 3 types:
         // 1. Lines before cursor
         // 2. Cursor Line
@@ -695,6 +711,18 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
     }
 
     return success;
+}
+
+// Routine Description:
+// - DECSWL/DECDWL/DECDHL - Sets the line rendition attribute for the current line.
+// Arguments:
+// - rendition - Determines whether the line will be rendered as single width, double
+//   width, or as one half of a double height line.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
+{
+    return _pConApi->PrivateSetCurrentLineRendition(rendition);
 }
 
 // Routine Description:
@@ -1931,6 +1959,8 @@ bool AdaptDispatch::ScreenAlignmentPattern()
         auto fillPosition = COORD{ 0, csbiex.srWindow.Top };
         const auto fillLength = (csbiex.srWindow.Bottom - csbiex.srWindow.Top) * csbiex.dwSize.X;
         success = _pConApi->PrivateFillRegion(fillPosition, fillLength, L'E', false);
+        // Reset the line rendition for all of these rows.
+        success = success && _pConApi->PrivateResetLineRenditionRange(csbiex.srWindow.Top, csbiex.srWindow.Bottom);
         // Reset the meta/extended attributes (but leave the colors unchanged).
         TextAttribute attr;
         if (_pConApi->PrivateGetTextAttributes(attr))
@@ -1995,6 +2025,8 @@ bool AdaptDispatch::_EraseScrollback()
             const COORD coordBelowStartPosition = { 0, height };
             // Again we need to use the default attributes, hence standardFillAttrs is false.
             success = _pConApi->PrivateFillRegion(coordBelowStartPosition, totalAreaBelow, L' ', false);
+            // Also reset the line rendition for all of the cleared rows.
+            success = success && _pConApi->PrivateResetLineRenditionRange(height, csbiex.dwSize.Y);
 
             if (success)
             {

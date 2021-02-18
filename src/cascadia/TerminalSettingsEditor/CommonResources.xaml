@@ -65,7 +65,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
     <!--Button-Related Styling-->
     <Style x:Key="BaseButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
-        <Setter Property="VerticalAlignment" Value="Bottom"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
     <Style x:Key="BrowseButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">

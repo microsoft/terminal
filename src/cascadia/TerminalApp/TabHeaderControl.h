@@ -25,6 +25,8 @@ namespace winrt::TerminalApp::implementation
         OBSERVABLE_GETSET_PROPERTY(double, RenamerMaxWidth, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::TerminalApp::TerminalTabStatus, TabStatus, _PropertyChangedHandlers);
 
+        TYPED_EVENT(RenameEnded, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+
     private:
         bool _receivedKeyDown{ false };
         bool _renameCancelled{ false };
