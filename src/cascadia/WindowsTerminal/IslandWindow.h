@@ -38,6 +38,8 @@ public:
     void FlashTaskbar();
     void SetTaskbarProgress(const size_t state, const size_t progress);
 
+    winrt::fire_and_forget SummonWindow();
+
 #pragma endregion
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

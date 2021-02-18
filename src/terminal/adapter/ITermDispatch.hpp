@@ -13,6 +13,7 @@ Abstract:
 */
 #pragma once
 #include "DispatchTypes.hpp"
+#include "../buffer/out/LineRendition.hpp"
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -88,6 +89,10 @@ public:
     virtual bool EraseCharacters(const size_t numChars) = 0; // ECH
 
     virtual bool SetGraphicsRendition(const VTParameters options) = 0; // SGR
+    virtual bool SetLineRendition(const LineRendition rendition) = 0; // DECSWL, DECDWL, DECDHL
+
+    virtual bool PushGraphicsRendition(const VTParameters options) = 0; // XTPUSHSGR
+    virtual bool PopGraphicsRendition() = 0; // XTPOPSGR
 
     virtual bool SetMode(const DispatchTypes::ModeParams param) = 0; // DECSET
 

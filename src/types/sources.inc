@@ -44,6 +44,7 @@ SOURCES= \
     ..\utils.cpp \
     ..\ThemeUtils.cpp \
     ..\ScreenInfoUiaProviderBase.cpp \
+    ..\sgrStack.cpp \
     ..\UiaTextRangeBase.cpp \
     ..\UiaTracing.cpp \
     ..\TermControlUiaProvider.cpp \

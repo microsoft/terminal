@@ -138,7 +138,9 @@ namespace Microsoft.Terminal.Wpf
 
             NativeMethods.TerminalSetTheme(this.terminal, theme, fontFamily, fontSize, (int)dpiScale.PixelsPerInchX);
 
-            if (!this.RenderSize.IsEmpty && !this.TerminalControlSize.IsEmpty)
+            // Validate before resizing that we have a non-zero size.
+            if (!this.RenderSize.IsEmpty && !this.TerminalControlSize.IsEmpty
+                && this.TerminalControlSize.Width != 0 && this.TerminalControlSize.Height != 0)
             {
                 this.Resize(this.TerminalControlSize);
             }
@@ -166,7 +168,7 @@ namespace Microsoft.Terminal.Wpf
         {
             if (renderSize.Width == 0 || renderSize.Height == 0)
             {
-                throw new ArgumentException(nameof(renderSize), "Terminal column or row count cannot be 0.");
+                throw new ArgumentException("Terminal column or row count cannot be 0.", nameof(renderSize));
             }
 
             NativeMethods.TerminalTriggerResize(
@@ -191,11 +193,11 @@ namespace Microsoft.Terminal.Wpf
         {
             if (rows == 0)
             {
-                throw new ArgumentException(nameof(rows), "Terminal row count cannot be 0.");
+                throw new ArgumentException("Terminal row count cannot be 0.", nameof(rows));
             }
             else if (columns == 0)
             {
-                throw new ArgumentException(nameof(columns), "Terminal column count cannot be 0.");
+                throw new ArgumentException("Terminal column count cannot be 0.", nameof(columns));
             }
 
             NativeMethods.SIZE dimensionsInPixels;

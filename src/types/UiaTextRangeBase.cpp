@@ -410,7 +410,8 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
 
         // GH#6402: Get the actual buffer size here, instead of the one
         //          constrained by the virtual bottom.
-        const auto bufferSize = _pData->GetTextBuffer().GetSize();
+        const auto& buffer = _pData->GetTextBuffer();
+        const auto bufferSize = buffer.GetSize();
 
         // these viewport vars are converted to the buffer coordinate space
         const auto viewport = bufferSize.ConvertToOrigin(_pData->GetViewport());
@@ -448,11 +449,14 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
         }
         else
         {
-            const auto textRects = _pData->GetTextBuffer().GetTextRects(startAnchor, endAnchor, _blockRange);
+            const auto textRects = buffer.GetTextRects(startAnchor, endAnchor, _blockRange, true);
 
             for (const auto& rect : textRects)
             {
-                til::rectangle r{ rect };
+                // Convert the buffer coordinates to an equivalent range of
+                // screen cells, taking line rendition into account.
+                const auto lineRendition = buffer.GetLineRendition(rect.Top);
+                til::rectangle r{ BufferToScreenLine(rect, lineRendition) };
                 r -= viewportOrigin;
                 _getBoundingRect(r, coords);
             }
@@ -551,7 +555,7 @@ std::wstring UiaTextRangeBase::_getTextValue(std::optional<unsigned int> maxLeng
         auto inclusiveEnd = _end;
         bufferSize.DecrementInBounds(inclusiveEnd, true);
 
-        const auto textRects = buffer.GetTextRects(_start, inclusiveEnd, _blockRange);
+        const auto textRects = buffer.GetTextRects(_start, inclusiveEnd, _blockRange, true);
         const auto bufferData = buffer.GetText(true,
                                                false,
                                                textRects);
