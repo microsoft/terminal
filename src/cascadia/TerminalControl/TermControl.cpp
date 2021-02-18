@@ -958,10 +958,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::_KeyHandler(Input::KeyRoutedEventArgs const& e, const bool keyDown)
     {
-        // If the current focused element is a child element of searchbox, we do
-        // not send this event up to terminal. Do this _AFTER_ the call to
-        // _TryHandleKeyBinding, so that keybindings (esp. findMatch) will still
-        // work when the search box is open.
+        // If the current focused element is a child element of searchbox,
+        // we do not send this event up to terminal
         if (_searchBox && _searchBox->ContainsFocus())
         {
             return;
