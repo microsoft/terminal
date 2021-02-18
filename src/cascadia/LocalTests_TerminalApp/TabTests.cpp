@@ -881,12 +881,6 @@ namespace TerminalAppLocalTests
             page->_GetTerminalTabImpl(page->_tabs.GetAt(3))->Title(L"d");
         });
 
-        // Mysteriously, setting the title isn't instantaneous. If you don't
-        // sleep here, then it's very possible that the checks below to sanity
-        // check the titles _will fail_.
-        Log::Comment(L"Sleep to let events propagate");
-        Sleep(500);
-
         TestOnUIThread([&page]() {
             Log::Comment(L"Sanity check the titles of our tabs are what we set them to.");
 
@@ -932,9 +926,6 @@ namespace TerminalAppLocalTests
             // * then dismiss itself, because we can't fake holing down an
             //   anchor key in the tests
         });
-
-        Log::Comment(L"Sleep to let events propagate");
-        Sleep(500);
 
         TestOnUIThread([&page]() {
             VERIFY_ARE_EQUAL(L"c", page->_mruTabs.GetAt(0).Title());
