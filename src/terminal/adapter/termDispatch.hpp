@@ -83,6 +83,9 @@ public:
 
     bool SetGraphicsRendition(const VTParameters /*options*/) noexcept override { return false; } // SGR
 
+    bool PushGraphicsRendition(const VTParameters /*options*/) noexcept override { return false; } // XTPUSHSGR
+    bool PopGraphicsRendition() noexcept override { return false; } // XTPOPSGR
+
     bool SetMode(const DispatchTypes::ModeParams /*param*/) noexcept override { return false; } // DECSET
 
     bool ResetMode(const DispatchTypes::ModeParams /*param*/) noexcept override { return false; } // DECRST
