@@ -249,6 +249,27 @@ public:
         return _privateSetTextAttributesResult;
     }
 
+    bool PrivateSetCurrentLineRendition(const LineRendition /*lineRendition*/)
+    {
+        Log::Comment(L"PrivateSetCurrentLineRendition MOCK called...");
+
+        return false;
+    }
+
+    bool PrivateResetLineRenditionRange(const size_t /*startRow*/, const size_t /*endRow*/)
+    {
+        Log::Comment(L"PrivateResetLineRenditionRange MOCK called...");
+
+        return false;
+    }
+
+    SHORT PrivateGetLineWidth(const size_t /*row*/) const
+    {
+        Log::Comment(L"PrivateGetLineWidth MOCK called...");
+
+        return _bufferSize.X;
+    }
+
     bool PrivateWriteConsoleInputW(std::deque<std::unique_ptr<IInputEvent>>& events,
                                    size_t& eventsWritten) override
     {

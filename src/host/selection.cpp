@@ -59,7 +59,7 @@ std::vector<SMALL_RECT> Selection::GetSelectionRects() const
     endSelectionAnchor.Y = (_coordSelectionAnchor.Y == _srSelectionRect.Top) ? _srSelectionRect.Bottom : _srSelectionRect.Top;
 
     const auto blockSelection = !IsLineSelection();
-    return screenInfo.GetTextBuffer().GetTextRects(_coordSelectionAnchor, endSelectionAnchor, blockSelection);
+    return screenInfo.GetTextBuffer().GetTextRects(_coordSelectionAnchor, endSelectionAnchor, blockSelection, false);
 }
 
 // Routine Description:
@@ -417,7 +417,7 @@ void Selection::ColorSelection(const COORD coordSelectionStart, const COORD coor
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         const auto& screenInfo = gci.GetActiveOutputBuffer();
 
-        const auto rectangles = screenInfo.GetTextBuffer().GetTextRects(coordSelectionStart, coordSelectionEnd);
+        const auto rectangles = screenInfo.GetTextBuffer().GetTextRects(coordSelectionStart, coordSelectionEnd, false, true);
         for (const auto& rect : rectangles)
         {
             ColorSelection(rect, attr);

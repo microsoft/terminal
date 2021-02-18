@@ -54,7 +54,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
 
     try
     {
-        return _buffer->GetTextRects(_selection->start, _selection->end, _blockSelection);
+        return _buffer->GetTextRects(_selection->start, _selection->end, _blockSelection, false);
     }
     CATCH_LOG();
     return result;

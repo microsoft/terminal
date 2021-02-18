@@ -86,6 +86,10 @@ namespace Microsoft::Console::VirtualTerminal
             LS1R_LockingShift = VTID("~"),
             LS2R_LockingShift = VTID("}"),
             LS3R_LockingShift = VTID("|"),
+            DECDHL_DoubleHeightLineTop = VTID("#3"),
+            DECDHL_DoubleHeightLineBottom = VTID("#4"),
+            DECSWL_SingleWidthLine = VTID("#5"),
+            DECDWL_DoubleWidthLine = VTID("#6"),
             DECALN_ScreenAlignmentPattern = VTID("#8")
         };
 

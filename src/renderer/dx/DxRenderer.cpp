@@ -1055,24 +1055,15 @@ try
 CATCH_RETURN()
 
 // Routine Description:
-// - Invalidates one specific character coordinate
+// - Invalidates the cells of the cursor
 // Arguments:
-// - pcoordCursor - single point in the character cell grid
+// - psrRegion - the region covered by the cursor
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
-try
+[[nodiscard]] HRESULT DxEngine::InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept
 {
-    RETURN_HR_IF_NULL(E_INVALIDARG, pcoordCursor);
-
-    if (!_allInvalid)
-    {
-        _InvalidateRectangle(til::rectangle{ *pcoordCursor, til::size{ 1, 1 } });
-    }
-
-    return S_OK;
+    return Invalidate(psrRegion);
 }
-CATCH_RETURN()
 
 // Routine Description:
 // - Invalidates a rectangle describing a pixel area on the display
