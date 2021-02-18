@@ -200,11 +200,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                 </Button>
             </StackPanel>
 
-            <!-- Color Table (Left Column)-->
+            <!-- Terminal Colors (Left Column)-->
             <StackPanel x:Name="ColorPanel"
                         Spacing="48">
                 <StackPanel>
-                    <TextBlock x:Uid="ColorScheme_ColorTableHeader"
+                    <TextBlock x:Uid="ColorScheme_TerminalColorsHeader"
                                Style="{StaticResource GroupHeaderStyle}"/>
                     <Grid x:Name="ColorTableGrid"
                           Style="{StaticResource ColorTableGridStyle}">
@@ -232,9 +232,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </Grid>
                 </StackPanel>
 
-                <!-- Additional Colors (Right Column) -->
+                <!-- System Colors (Right Column) -->
                 <StackPanel>
-                    <TextBlock x:Uid="ColorScheme_FunctionalColorsHeader"
+                    <TextBlock x:Uid="ColorScheme_SystemColorsHeader"
                                Style="{StaticResource GroupHeaderStyle}"/>
                     <Grid Style="{StaticResource ColorTableGridStyle}">
 

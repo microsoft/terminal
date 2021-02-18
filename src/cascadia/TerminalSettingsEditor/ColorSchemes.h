@@ -53,7 +53,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _UpdateColorSchemeList();
         void _RenameCurrentScheme(hstring newName);
 
-        double _colorPanelHorizontalWidth;
+        std::optional<double> _colorPanelHorizontalWidth;
     };
 
     struct ColorTableEntry : ColorTableEntryT<ColorTableEntry>
