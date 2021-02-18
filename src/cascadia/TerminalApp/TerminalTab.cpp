@@ -609,6 +609,19 @@ namespace winrt::TerminalApp::implementation
                 tab->_RecalculateAndApplyReadOnly();
             }
         });
+
+        control.FocusFollowMouseRequested([weakThis](auto&& sender, auto&&) {
+            if (const auto tab{ weakThis.get() })
+            {
+                if (tab->_focusState != FocusState::Unfocused)
+                {
+                    if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::TerminalControl::TermControl>() })
+                    {
+                        termControl.Focus(FocusState::Pointer);
+                    }
+                }
+            }
+        });
     }
 
     // Method Description:
