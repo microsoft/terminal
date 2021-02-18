@@ -77,6 +77,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _touchAnchor{ std::nullopt },
         _cursorTimer{},
         _blinkTimer{},
+        _invertTimer{},
         _lastMouseClickTimestamp{},
         _lastMouseClickPos{},
         _selectionNeedsToBeCopied{ false },
@@ -834,6 +835,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // The user has disabled blinking
                 _blinkTimer = std::nullopt;
             }
+
+            DispatcherTimer invertTimer;
+            invertTimer.Interval(UpdatePatternLocationsInterval);
+            invertTimer.Tick({ get_weak(), &TermControl::_InvertTimerTick });
+            _invertTimer.emplace(std::move(invertTimer));
 
             // import value from WinUser (convert from milli-seconds to micro-seconds)
             _multiClickTimer = GetDoubleClickTime() * 1000;
@@ -3231,6 +3237,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     const size_t TermControl::TaskbarProgress() const noexcept
     {
         return _terminal->GetTaskbarProgress();
+    }
+
+    winrt::fire_and_forget TermControl::InvertScreenColors()
+    {
+        co_await winrt::resume_foreground(Dispatcher());
+
+        _invertTimer.value().Start();
+        _terminal->SetScreenMode(true);
+    }
+
+    void TermControl::_InvertTimerTick(Windows::Foundation::IInspectable const& /* sender */,
+                                                         Windows::Foundation::IInspectable const& /* e */)
+    {
+        _terminal->SetScreenMode(false);
+        _invertTimer.value().Stop();
     }
 
     // Method Description:

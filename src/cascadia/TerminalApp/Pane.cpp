@@ -380,6 +380,7 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
 
             // raise the event with the bool value corresponding to the visual flag
             _PaneRaiseBellHandlers(nullptr, WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual));
+            _control.InvertScreenColors();
         }
     }
 }

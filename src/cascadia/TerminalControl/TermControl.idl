@@ -112,6 +112,8 @@ namespace Microsoft.Terminal.TerminalControl
         UInt64 TaskbarState { get; };
         UInt64 TaskbarProgress { get; };
 
+        void InvertScreenColors();
+
         String WorkingDirectory { get; };
 
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
