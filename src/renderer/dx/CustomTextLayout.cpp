@@ -133,6 +133,7 @@ CATCH_RETURN()
                                                                _In_ IDWriteTextRenderer* renderer,
                                                                FLOAT originX,
                                                                FLOAT originY) noexcept
+try
 {
     const auto drawingContext = static_cast<const DrawingContext*>(clientDrawingContext);
     _formatInUse = drawingContext->useItalicFont ? _fontRenderData->ItalicTextFormat().Get() : _fontRenderData->DefaultTextFormat().Get();
@@ -151,6 +152,7 @@ CATCH_RETURN()
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Uses the internal text information and the analyzers/font information from construction

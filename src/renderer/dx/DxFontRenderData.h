@@ -4,6 +4,7 @@
 #pragma once
 
 #include "../../renderer/inc/FontInfoDesired.hpp"
+#include "DxFontInfo.h"
 #include "BoxDrawingEffect.h"
 
 #include <dwrite.h>
@@ -31,50 +32,38 @@ namespace Microsoft::Console::Render
         DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwriteFactory) noexcept;
 
         // DirectWrite text analyzer from the factory
-        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> Analyzer() noexcept;
+        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> Analyzer();
 
         [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFallback> SystemFontFallback();
+
+        // A locale that can be used on construction of assorted DX objects that want to know one.
+        [[nodiscard]] std::wstring UserLocaleName();
 
         [[nodiscard]] til::size GlyphCell() noexcept;
         [[nodiscard]] LineMetrics GetLineMetrics() noexcept;
 
         // The DirectWrite format object representing the size and other text properties to be applied (by default)
-        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextFormat> DefaultTextFormat() noexcept;
+        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextFormat> DefaultTextFormat();
 
         // The DirectWrite font face to use while calculating layout (by default)
-        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DefaultFontFace() noexcept;
+        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DefaultFontFace();
 
         // Box drawing scaling effects that are cached for the base font across layouts
-        [[nodiscard]] Microsoft::WRL::ComPtr<IBoxDrawingEffect> DefaultBoxDrawingEffect() noexcept;
+        [[nodiscard]] Microsoft::WRL::ComPtr<IBoxDrawingEffect> DefaultBoxDrawingEffect();
 
         // The italic variant of the format object representing the size and other text properties for italic text
-        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextFormat> ItalicTextFormat() noexcept;
+        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextFormat> ItalicTextFormat();
 
         // The italic variant of the font face to use while calculating layout for italic text
-        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> ItalicFontFace() noexcept;
+        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> ItalicFontFace();
 
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& desired, FontInfo& fiFontInfo, const int dpi) noexcept;
 
         [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, float fontScale, IBoxDrawingEffect** effect) noexcept;
 
     private:
-        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _ResolveFontFaceWithFallback(std::wstring& familyName,
-                                                                                              DWRITE_FONT_WEIGHT& weight,
-                                                                                              DWRITE_FONT_STRETCH& stretch,
-                                                                                              DWRITE_FONT_STYLE& style,
-                                                                                              std::wstring& localeName) const;
-
-        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _FindFontFace(std::wstring& familyName,
-                                                                               DWRITE_FONT_WEIGHT& weight,
-                                                                               DWRITE_FONT_STRETCH& stretch,
-                                                                               DWRITE_FONT_STYLE& style,
-                                                                               std::wstring& localeName) const;
-
-        [[nodiscard]] std::wstring _GetFontFamilyName(gsl::not_null<IDWriteFontFamily*> const fontFamily,
-                                                      std::wstring& localeName) const;
-
-        // A locale that can be used on construction of assorted DX objects that want to know one.
-        [[nodiscard]] std::wstring _GetUserLocaleName();
+        void _BuildFontRenderData(const FontInfoDesired& desired, FontInfo& actual, const int dpi);
+        Microsoft::WRL::ComPtr<IDWriteTextFormat> _BuildTextFormat(const DxFontInfo fontInfo, const std::wstring_view localeName);
 
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
 
@@ -88,9 +77,11 @@ namespace Microsoft::Console::Render
 
         ::Microsoft::WRL::ComPtr<IDWriteFontFallback> _systemFontFallback;
         std::wstring _userLocaleName;
+        DxFontInfo _defaultFontInfo;
 
+        float _fontSize;
         til::size _glyphCell;
-
+        DWRITE_LINE_SPACING _lineSpacing;
         LineMetrics _lineMetrics;
     };
 }
