@@ -426,199 +426,198 @@ CATCH_RETURN()
 // Return Value:
 // - None
 void DxFontRenderData::_BuildFontRenderData(const FontInfoDesired& desired, FontInfo& actual, const int dpi)
-{   
-        const auto face = DefaultFontFace();
+{
+    const auto face = DefaultFontFace();
 
-        DWRITE_FONT_METRICS1 fontMetrics;
-        face->GetMetrics(&fontMetrics);
+    DWRITE_FONT_METRICS1 fontMetrics;
+    face->GetMetrics(&fontMetrics);
 
-        const UINT32 spaceCodePoint = L'M';
-        UINT16 spaceGlyphIndex;
-        THROW_IF_FAILED(face->GetGlyphIndicesW(&spaceCodePoint, 1, &spaceGlyphIndex));
+    const UINT32 spaceCodePoint = L'M';
+    UINT16 spaceGlyphIndex;
+    THROW_IF_FAILED(face->GetGlyphIndicesW(&spaceCodePoint, 1, &spaceGlyphIndex));
 
-        INT32 advanceInDesignUnits;
-        THROW_IF_FAILED(face->GetDesignGlyphAdvances(1, &spaceGlyphIndex, &advanceInDesignUnits));
+    INT32 advanceInDesignUnits;
+    THROW_IF_FAILED(face->GetDesignGlyphAdvances(1, &spaceGlyphIndex, &advanceInDesignUnits));
 
-        DWRITE_GLYPH_METRICS spaceMetrics = { 0 };
-        THROW_IF_FAILED(face->GetDesignGlyphMetrics(&spaceGlyphIndex, 1, &spaceMetrics));
+    DWRITE_GLYPH_METRICS spaceMetrics = { 0 };
+    THROW_IF_FAILED(face->GetDesignGlyphMetrics(&spaceGlyphIndex, 1, &spaceMetrics));
 
-        // The math here is actually:
-        // Requested Size in Points * DPI scaling factor * Points to Pixels scaling factor.
-        // - DPI = dots per inch
-        // - PPI = points per inch or "points" as usually seen when choosing a font size
-        // - The DPI scaling factor is the current monitor DPI divided by 96, the default DPI.
-        // - The Points to Pixels factor is based on the typography definition of 72 points per inch.
-        //    As such, converting requires taking the 96 pixel per inch default and dividing by the 72 points per inch
-        //    to get a factor of 1 and 1/3.
-        // This turns into something like:
-        // - 12 ppi font * (96 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 16 pixels tall font for 100% display (96 dpi is 100%)
-        // - 12 ppi font * (144 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 24 pixels tall font for 150% display (144 dpi is 150%)
-        // - 12 ppi font * (192 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 32 pixels tall font for 200% display (192 dpi is 200%)
-        float heightDesired = static_cast<float>(desired.GetEngineSize().Y) * static_cast<float>(USER_DEFAULT_SCREEN_DPI) / POINTS_PER_INCH;
+    // The math here is actually:
+    // Requested Size in Points * DPI scaling factor * Points to Pixels scaling factor.
+    // - DPI = dots per inch
+    // - PPI = points per inch or "points" as usually seen when choosing a font size
+    // - The DPI scaling factor is the current monitor DPI divided by 96, the default DPI.
+    // - The Points to Pixels factor is based on the typography definition of 72 points per inch.
+    //    As such, converting requires taking the 96 pixel per inch default and dividing by the 72 points per inch
+    //    to get a factor of 1 and 1/3.
+    // This turns into something like:
+    // - 12 ppi font * (96 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 16 pixels tall font for 100% display (96 dpi is 100%)
+    // - 12 ppi font * (144 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 24 pixels tall font for 150% display (144 dpi is 150%)
+    // - 12 ppi font * (192 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 32 pixels tall font for 200% display (192 dpi is 200%)
+    float heightDesired = static_cast<float>(desired.GetEngineSize().Y) * static_cast<float>(USER_DEFAULT_SCREEN_DPI) / POINTS_PER_INCH;
 
-        // The advance is the number of pixels left-to-right (X dimension) for the given font.
-        // We're finding a proportional factor here with the design units in "ems", not an actual pixel measurement.
+    // The advance is the number of pixels left-to-right (X dimension) for the given font.
+    // We're finding a proportional factor here with the design units in "ems", not an actual pixel measurement.
 
-        // Now we play trickery with the font size. Scale by the DPI to get the height we expect.
-        heightDesired *= (static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI));
+    // Now we play trickery with the font size. Scale by the DPI to get the height we expect.
+    heightDesired *= (static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI));
 
-        const float widthAdvance = static_cast<float>(advanceInDesignUnits) / fontMetrics.designUnitsPerEm;
+    const float widthAdvance = static_cast<float>(advanceInDesignUnits) / fontMetrics.designUnitsPerEm;
 
-        // Use the real pixel height desired by the "em" factor for the width to get the number of pixels
-        // we will need per character in width. This will almost certainly result in fractional X-dimension pixels.
-        const float widthApprox = heightDesired * widthAdvance;
+    // Use the real pixel height desired by the "em" factor for the width to get the number of pixels
+    // we will need per character in width. This will almost certainly result in fractional X-dimension pixels.
+    const float widthApprox = heightDesired * widthAdvance;
 
-        // Since we can't deal with columns of the presentation grid being fractional pixels in width, round to the nearest whole pixel.
-        const float widthExact = round(widthApprox);
+    // Since we can't deal with columns of the presentation grid being fractional pixels in width, round to the nearest whole pixel.
+    const float widthExact = round(widthApprox);
 
-        // Now reverse the "em" factor from above to turn the exact pixel width into a (probably) fractional
-        // height in pixels of each character. It's easier for us to pad out height and align vertically
-        // than it is horizontally.
-        const auto fontSize = widthExact / widthAdvance;
-        _fontSize = fontSize;
+    // Now reverse the "em" factor from above to turn the exact pixel width into a (probably) fractional
+    // height in pixels of each character. It's easier for us to pad out height and align vertically
+    // than it is horizontally.
+    const auto fontSize = widthExact / widthAdvance;
+    _fontSize = fontSize;
 
-        // Now figure out the basic properties of the character height which include ascent and descent
-        // for this specific font size.
-        const float ascent = (fontSize * fontMetrics.ascent) / fontMetrics.designUnitsPerEm;
-        const float descent = (fontSize * fontMetrics.descent) / fontMetrics.designUnitsPerEm;
+    // Now figure out the basic properties of the character height which include ascent and descent
+    // for this specific font size.
+    const float ascent = (fontSize * fontMetrics.ascent) / fontMetrics.designUnitsPerEm;
+    const float descent = (fontSize * fontMetrics.descent) / fontMetrics.designUnitsPerEm;
 
-        // Get the gap.
-        const float gap = (fontSize * fontMetrics.lineGap) / fontMetrics.designUnitsPerEm;
-        const float halfGap = gap / 2;
+    // Get the gap.
+    const float gap = (fontSize * fontMetrics.lineGap) / fontMetrics.designUnitsPerEm;
+    const float halfGap = gap / 2;
 
-        // We're going to build a line spacing object here to track all of this data in our format.
-        DWRITE_LINE_SPACING lineSpacing = {};
-        lineSpacing.method = DWRITE_LINE_SPACING_METHOD_UNIFORM;
+    // We're going to build a line spacing object here to track all of this data in our format.
+    DWRITE_LINE_SPACING lineSpacing = {};
+    lineSpacing.method = DWRITE_LINE_SPACING_METHOD_UNIFORM;
 
-        // We need to make sure the baseline falls on a round pixel (not a fractional pixel).
-        // If the baseline is fractional, the text appears blurry, especially at small scales.
-        // Since we also need to make sure the bounding box as a whole is round pixels
-        // (because the entire console system maths in full cell units),
-        // we're just going to ceiling up the ascent and descent to make a full pixel amount
-        // and set the baseline to the full round pixel ascent value.
-        //
-        // For reference, for the letters "ag":
-        // ...
-        //          gggggg      bottom of previous line
-        //
-        // -----------------    <===========================================|
-        //                         | topSideBearing       |  1/2 lineGap    |
-        // aaaaaa   ggggggg     <-------------------------|-------------|   |
-        //      a   g    g                                |             |   |
-        //  aaaaa   ggggg                                 |<-ascent     |   |
-        // a    a   g                                     |             |   |---- lineHeight
-        // aaaaa a  gggggg      <----baseline, verticalOriginY----------|---|
-        //          g     g                               |<-descent    |   |
-        //          gggggg      <-------------------------|-------------|   |
-        //                         | bottomSideBearing    | 1/2 lineGap     |
-        // -----------------    <===========================================|
-        //
-        // aaaaaa   ggggggg     top of next line
-        // ...
-        //
-        // Also note...
-        // We're going to add half the line gap to the ascent and half the line gap to the descent
-        // to ensure that the spacing is balanced vertically.
-        // Generally speaking, the line gap is added to the ascent by DirectWrite itself for
-        // horizontally drawn text which can place the baseline and glyphs "lower" in the drawing
-        // box than would be desired for proper alignment of things like line and box characters
-        // which will try to sit centered in the area and touch perfectly with their neighbors.
+    // We need to make sure the baseline falls on a round pixel (not a fractional pixel).
+    // If the baseline is fractional, the text appears blurry, especially at small scales.
+    // Since we also need to make sure the bounding box as a whole is round pixels
+    // (because the entire console system maths in full cell units),
+    // we're just going to ceiling up the ascent and descent to make a full pixel amount
+    // and set the baseline to the full round pixel ascent value.
+    //
+    // For reference, for the letters "ag":
+    // ...
+    //          gggggg      bottom of previous line
+    //
+    // -----------------    <===========================================|
+    //                         | topSideBearing       |  1/2 lineGap    |
+    // aaaaaa   ggggggg     <-------------------------|-------------|   |
+    //      a   g    g                                |             |   |
+    //  aaaaa   ggggg                                 |<-ascent     |   |
+    // a    a   g                                     |             |   |---- lineHeight
+    // aaaaa a  gggggg      <----baseline, verticalOriginY----------|---|
+    //          g     g                               |<-descent    |   |
+    //          gggggg      <-------------------------|-------------|   |
+    //                         | bottomSideBearing    | 1/2 lineGap     |
+    // -----------------    <===========================================|
+    //
+    // aaaaaa   ggggggg     top of next line
+    // ...
+    //
+    // Also note...
+    // We're going to add half the line gap to the ascent and half the line gap to the descent
+    // to ensure that the spacing is balanced vertically.
+    // Generally speaking, the line gap is added to the ascent by DirectWrite itself for
+    // horizontally drawn text which can place the baseline and glyphs "lower" in the drawing
+    // box than would be desired for proper alignment of things like line and box characters
+    // which will try to sit centered in the area and touch perfectly with their neighbors.
 
-        const auto fullPixelAscent = ceil(ascent + halfGap);
-        const auto fullPixelDescent = ceil(descent + halfGap);
-        lineSpacing.height = fullPixelAscent + fullPixelDescent;
-        lineSpacing.baseline = fullPixelAscent;
+    const auto fullPixelAscent = ceil(ascent + halfGap);
+    const auto fullPixelDescent = ceil(descent + halfGap);
+    lineSpacing.height = fullPixelAscent + fullPixelDescent;
+    lineSpacing.baseline = fullPixelAscent;
 
-        // According to MSDN (https://docs.microsoft.com/en-us/windows/win32/api/dwrite_3/ne-dwrite_3-dwrite_font_line_gap_usage)
-        // Setting "ENABLED" means we've included the line gapping in the spacing numbers given.
-        lineSpacing.fontLineGapUsage = DWRITE_FONT_LINE_GAP_USAGE_ENABLED;
+    // According to MSDN (https://docs.microsoft.com/en-us/windows/win32/api/dwrite_3/ne-dwrite_3-dwrite_font_line_gap_usage)
+    // Setting "ENABLED" means we've included the line gapping in the spacing numbers given.
+    lineSpacing.fontLineGapUsage = DWRITE_FONT_LINE_GAP_USAGE_ENABLED;
 
-        _lineSpacing = lineSpacing;
+    _lineSpacing = lineSpacing;
 
-        // The scaled size needs to represent the pixel box that each character will fit within for the purposes
-        // of hit testing math and other such multiplication/division.
-        COORD coordSize = { 0 };
-        coordSize.X = gsl::narrow<SHORT>(widthExact);
-        coordSize.Y = gsl::narrow_cast<SHORT>(lineSpacing.height);
+    // The scaled size needs to represent the pixel box that each character will fit within for the purposes
+    // of hit testing math and other such multiplication/division.
+    COORD coordSize = { 0 };
+    coordSize.X = gsl::narrow<SHORT>(widthExact);
+    coordSize.Y = gsl::narrow_cast<SHORT>(lineSpacing.height);
 
-        // Unscaled is for the purposes of re-communicating this font back to the renderer again later.
-        // As such, we need to give the same original size parameter back here without padding
-        // or rounding or scaling manipulation.
-        const COORD unscaled = desired.GetEngineSize();
+    // Unscaled is for the purposes of re-communicating this font back to the renderer again later.
+    // As such, we need to give the same original size parameter back here without padding
+    // or rounding or scaling manipulation.
+    const COORD unscaled = desired.GetEngineSize();
 
-        const COORD scaled = coordSize;
+    const COORD scaled = coordSize;
 
-        actual.SetFromEngine(_defaultFontInfo.GetFamilyName(),
-                             desired.GetFamily(),
-                             DefaultTextFormat()->GetFontWeight(),
-                             false,
-                             scaled,
-                             unscaled);
+    actual.SetFromEngine(_defaultFontInfo.GetFamilyName(),
+                         desired.GetFamily(),
+                         DefaultTextFormat()->GetFontWeight(),
+                         false,
+                         scaled,
+                         unscaled);
 
-        LineMetrics lineMetrics;
-        // There is no font metric for the grid line width, so we use a small
-        // multiple of the font size, which typically rounds to a pixel.
-        lineMetrics.gridlineWidth = std::round(fontSize * 0.025f);
+    LineMetrics lineMetrics;
+    // There is no font metric for the grid line width, so we use a small
+    // multiple of the font size, which typically rounds to a pixel.
+    lineMetrics.gridlineWidth = std::round(fontSize * 0.025f);
 
-        // All other line metrics are in design units, so to get a pixel value,
-        // we scale by the font size divided by the design-units-per-em.
-        const auto scale = fontSize / fontMetrics.designUnitsPerEm;
-        lineMetrics.underlineOffset = std::round(fontMetrics.underlinePosition * scale);
-        lineMetrics.underlineWidth = std::round(fontMetrics.underlineThickness * scale);
-        lineMetrics.strikethroughOffset = std::round(fontMetrics.strikethroughPosition * scale);
-        lineMetrics.strikethroughWidth = std::round(fontMetrics.strikethroughThickness * scale);
+    // All other line metrics are in design units, so to get a pixel value,
+    // we scale by the font size divided by the design-units-per-em.
+    const auto scale = fontSize / fontMetrics.designUnitsPerEm;
+    lineMetrics.underlineOffset = std::round(fontMetrics.underlinePosition * scale);
+    lineMetrics.underlineWidth = std::round(fontMetrics.underlineThickness * scale);
+    lineMetrics.strikethroughOffset = std::round(fontMetrics.strikethroughPosition * scale);
+    lineMetrics.strikethroughWidth = std::round(fontMetrics.strikethroughThickness * scale);
 
-        // We always want the lines to be visible, so if a stroke width ends up
-        // at zero after rounding, we need to make it at least 1 pixel.
-        lineMetrics.gridlineWidth = std::max(lineMetrics.gridlineWidth, 1.0f);
-        lineMetrics.underlineWidth = std::max(lineMetrics.underlineWidth, 1.0f);
-        lineMetrics.strikethroughWidth = std::max(lineMetrics.strikethroughWidth, 1.0f);
+    // We always want the lines to be visible, so if a stroke width ends up
+    // at zero after rounding, we need to make it at least 1 pixel.
+    lineMetrics.gridlineWidth = std::max(lineMetrics.gridlineWidth, 1.0f);
+    lineMetrics.underlineWidth = std::max(lineMetrics.underlineWidth, 1.0f);
+    lineMetrics.strikethroughWidth = std::max(lineMetrics.strikethroughWidth, 1.0f);
 
-        // Offsets are relative to the base line of the font, so we subtract
-        // from the ascent to get an offset relative to the top of the cell.
-        lineMetrics.underlineOffset = fullPixelAscent - lineMetrics.underlineOffset;
-        lineMetrics.strikethroughOffset = fullPixelAscent - lineMetrics.strikethroughOffset;
+    // Offsets are relative to the base line of the font, so we subtract
+    // from the ascent to get an offset relative to the top of the cell.
+    lineMetrics.underlineOffset = fullPixelAscent - lineMetrics.underlineOffset;
+    lineMetrics.strikethroughOffset = fullPixelAscent - lineMetrics.strikethroughOffset;
 
-        // For double underlines we need a second offset, just below the first,
-        // but with a bit of a gap (about double the grid line width).
-        lineMetrics.underlineOffset2 = lineMetrics.underlineOffset +
-                                       lineMetrics.underlineWidth +
-                                       std::round(fontSize * 0.05f);
+    // For double underlines we need a second offset, just below the first,
+    // but with a bit of a gap (about double the grid line width).
+    lineMetrics.underlineOffset2 = lineMetrics.underlineOffset +
+                                   lineMetrics.underlineWidth +
+                                   std::round(fontSize * 0.05f);
 
-        // However, we don't want the underline to extend past the bottom of the
-        // cell, so we clamp the offset to fit just inside.
-        const auto maxUnderlineOffset = lineSpacing.height - lineMetrics.underlineWidth;
-        lineMetrics.underlineOffset2 = std::min(lineMetrics.underlineOffset2, maxUnderlineOffset);
+    // However, we don't want the underline to extend past the bottom of the
+    // cell, so we clamp the offset to fit just inside.
+    const auto maxUnderlineOffset = lineSpacing.height - lineMetrics.underlineWidth;
+    lineMetrics.underlineOffset2 = std::min(lineMetrics.underlineOffset2, maxUnderlineOffset);
 
-        // But if the resulting gap isn't big enough even to register as a thicker
-        // line, it's better to place the second line slightly above the first.
-        if (lineMetrics.underlineOffset2 < lineMetrics.underlineOffset + lineMetrics.gridlineWidth)
-        {
-            lineMetrics.underlineOffset2 = lineMetrics.underlineOffset - lineMetrics.gridlineWidth;
-        }
+    // But if the resulting gap isn't big enough even to register as a thicker
+    // line, it's better to place the second line slightly above the first.
+    if (lineMetrics.underlineOffset2 < lineMetrics.underlineOffset + lineMetrics.gridlineWidth)
+    {
+        lineMetrics.underlineOffset2 = lineMetrics.underlineOffset - lineMetrics.gridlineWidth;
+    }
 
-        // We also add half the stroke width to the offsets, since the line
-        // coordinates designate the center of the line.
-        lineMetrics.underlineOffset += lineMetrics.underlineWidth / 2.0f;
-        lineMetrics.underlineOffset2 += lineMetrics.underlineWidth / 2.0f;
-        lineMetrics.strikethroughOffset += lineMetrics.strikethroughWidth / 2.0f;
+    // We also add half the stroke width to the offsets, since the line
+    // coordinates designate the center of the line.
+    lineMetrics.underlineOffset += lineMetrics.underlineWidth / 2.0f;
+    lineMetrics.underlineOffset2 += lineMetrics.underlineWidth / 2.0f;
+    lineMetrics.strikethroughOffset += lineMetrics.strikethroughWidth / 2.0f;
 
-        _lineMetrics = lineMetrics;
+    _lineMetrics = lineMetrics;
 
-        _glyphCell = actual.GetSize();
+    _glyphCell = actual.GetSize();
 }
-
 
 Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(const DxFontInfo fontInfo, const std::wstring_view localeName)
 {
     Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
     THROW_IF_FAILED(_dwriteFactory->CreateTextFormat(fontInfo.GetFamilyName().data(),
-                                                    nullptr,
-                                                    fontInfo.GetWeight(),
-                                                    fontInfo.GetStyle(),
-                                                    fontInfo.GetStretch(),
-                                                    _fontSize,
-                                                    localeName.data(),
-                                                    &format));
+                                                     nullptr,
+                                                     fontInfo.GetWeight(),
+                                                     fontInfo.GetStyle(),
+                                                     fontInfo.GetStretch(),
+                                                     _fontSize,
+                                                     localeName.data(),
+                                                     &format));
     return format;
 }

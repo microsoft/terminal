@@ -9,8 +9,7 @@ static constexpr std::wstring_view FALLBACK_FONT_FACES[] = { L"Consolas", L"Luci
 
 using namespace Microsoft::Console::Render;
 
-
-DxFontInfo::DxFontInfo() noexcept:
+DxFontInfo::DxFontInfo() noexcept :
     _familyName(),
     _weight(DWRITE_FONT_WEIGHT_NORMAL),
     _style(DWRITE_FONT_STYLE_NORMAL),
