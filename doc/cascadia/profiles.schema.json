@@ -76,6 +76,7 @@
         "copy",
         "duplicateTab",
         "find",
+        "findMatch",
         "moveFocus",
         "moveTab",
         "newTab",
@@ -135,6 +136,13 @@
       "enum": [
         "forward",
         "backward"
+      ],
+      "type": "string"
+    },
+    "FindMatchDirection": {
+      "enum": [
+        "next",
+        "prev"
       ],
       "type": "string"
     },
@@ -559,6 +567,23 @@
         }
       ]
     },
+    "FindMatchAction": {
+      "description": "Arguments corresponding to a Find Match Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "findMatch" },
+            "direction": {
+              "$ref": "#/definitions/FindMatchDirection",
+              "default": "prev",
+              "description": "The direction to search in. \"prev\" will search upwards in the buffer, and \"next\" will search downwards."
+            }
+          }
+        }
+      ],
+      "required": [ "direction" ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -583,6 +608,7 @@
               { "$ref": "#/definitions/ScrollUpAction" },
               { "$ref": "#/definitions/ScrollDownAction" },
               { "$ref": "#/definitions/MoveTabAction" },
+              { "$ref": "#/definitions/FindMatchAction" },
               { "type": "null" }
             ]
         },

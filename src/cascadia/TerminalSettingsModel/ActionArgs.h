@@ -26,6 +26,7 @@
 #include "ScrollDownArgs.g.h"
 #include "MoveTabArgs.g.h"
 #include "ToggleCommandPaletteArgs.g.h"
+#include "FindMatchArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
@@ -838,6 +839,50 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return *copy;
         }
     };
+
+    struct FindMatchArgs : public FindMatchArgsT<FindMatchArgs>
+    {
+        FindMatchArgs() = default;
+        FindMatchArgs(FindMatchDirection direction) :
+            _Direction{ direction } {};
+        GETSET_PROPERTY(FindMatchDirection, Direction, FindMatchDirection::None);
+
+        static constexpr std::string_view DirectionKey{ "direction" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<FindMatchArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Direction == _Direction;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<FindMatchArgs>();
+            JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
+            if (args->_Direction == FindMatchDirection::None)
+            {
+                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
+            }
+            else
+            {
+                return { *args, {} };
+            }
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<FindMatchArgs>() };
+            copy->_Direction = _Direction;
+            return *copy;
+        }
+    };
+
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
@@ -853,4 +898,5 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(CloseTabsAfterArgs);
     BASIC_FACTORY(MoveTabArgs);
     BASIC_FACTORY(OpenSettingsArgs);
+    BASIC_FACTORY(FindMatchArgs);
 }
