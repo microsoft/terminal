@@ -572,10 +572,11 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Function Description:
-    // - Helper to launch a new WT instance elevated. It'll do this by asking
-    //   the shell to elevate the process for us. This might cause a UAC prompt.
-    //   The elevation is performed on a background thread, as to not block the
-    //   UI thread.
+    // - Helper to launch a new WT instance. It can either launch the instance
+    //   elevated or unelevated.
+    // - To launch elevated, it will as the shell to elevate the process for us.
+    //   This might cause a UAC prompt. The elevation is performed on a
+    //   background thread, as to not block the UI thread.
     // Arguments:
     // - elevate: If true, launch the new Terminal elevated using `runas`
     // - newTerminalArgs: A NewTerminalArgs describing the terminal instance
@@ -638,7 +639,7 @@ namespace winrt::TerminalApp::implementation
         }
         // Otherwise, if no NewTerminalArgs were provided, then just use a
         // default-constructed one. The default-constructed one implies that
-        // nothing about the lauch should be modified (just use the default
+        // nothing about the launch should be modified (just use the default
         // profile).
         if (!newTerminalArgs)
         {
