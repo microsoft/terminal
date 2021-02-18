@@ -1223,12 +1223,11 @@ namespace winrt::TerminalApp::implementation
                 const auto windowingBehavior = _settings.GlobalSettings().WindowingBehavior();
                 switch (windowingBehavior)
                 {
-                case WindowingMode::UseNew:
-                    return WindowingBehaviorUseNew;
                 case WindowingMode::UseExisting:
                     return WindowingBehaviorUseExisting;
                 case WindowingMode::UseAnyExisting:
                     return WindowingBehaviorUseAnyExisting;
+                case WindowingMode::UseNew:
                 default:
                     return WindowingBehaviorUseNew;
                 }
