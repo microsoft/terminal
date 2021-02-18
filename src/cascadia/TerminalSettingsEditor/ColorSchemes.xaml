@@ -81,7 +81,8 @@ the MIT License. See LICENSE in the project root for license information. -->
             </DataTemplate>
 
             <DataTemplate x:Key="ColorTemplate" x:DataType="Color">
-                <Button Background="{Binding Color, ElementName=ColorPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}"
+                <Button x:Name="ColorButton"
+                        Background="{Binding Color, ElementName=ColorPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}"
                         Style="{StaticResource ColorButtonStyle}">
                     <Button.Resources>
                         <!-- Resources to colorize hover/pressed states based on the color of the button -->
@@ -166,6 +167,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                     <!--Accept rename button-->
                     <Button x:Uid="RenameAccept"
+                            x:Name="RenameAcceptButton"
                             Style="{StaticResource AccentSmallButtonStyle}"
                             Click="RenameAccept_Click">
                         <StackPanel Orientation="Horizontal">
@@ -175,6 +177,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </Button>
                     <!--Cancel rename button-->
                     <Button x:Uid="RenameCancel"
+                            x:Name="RenameCancelButton"
                             Style="{StaticResource SmallButtonStyle}"
                             Click="RenameCancel_Click">
                         <StackPanel Orientation="Horizontal">
@@ -185,7 +188,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                 </StackPanel>
 
                 <!--Add new button-->
-                <Button Click="AddNew_Click"
+                <Button x:Name="AddNewButton"
+                        Click="AddNew_Click"
                         Style="{StaticResource BrowseButtonStyle}">
                     <StackPanel Orientation="Horizontal">
                         <FontIcon Glyph="&#xE710;"

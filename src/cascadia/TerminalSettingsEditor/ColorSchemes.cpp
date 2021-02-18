@@ -61,17 +61,38 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
-        ToolTipService::SetToolTip(ForegroundButton(), box_value(RS_(L"ColorScheme_Foreground/Text")));
-        Automation::AutomationProperties::SetName(ForegroundButton(), RS_(L"ColorScheme_Foreground/Text"));
+        const auto foregroundButton{ ForegroundButton() };
+        ToolTipService::SetToolTip(foregroundButton, box_value(RS_(L"ColorScheme_Foreground/Text")));
+        Automation::AutomationProperties::SetName(foregroundButton, RS_(L"ColorScheme_Foreground/Text"));
 
-        ToolTipService::SetToolTip(BackgroundButton(), box_value(RS_(L"ColorScheme_Background/Text")));
-        Automation::AutomationProperties::SetName(BackgroundButton(), RS_(L"ColorScheme_Background/Text"));
+        const auto backgroundButton{ BackgroundButton() };
+        ToolTipService::SetToolTip(backgroundButton, box_value(RS_(L"ColorScheme_Background/Text")));
+        Automation::AutomationProperties::SetName(backgroundButton, RS_(L"ColorScheme_Background/Text"));
 
-        ToolTipService::SetToolTip(CursorColorButton(), box_value(RS_(L"ColorScheme_CursorColor/Text")));
-        Automation::AutomationProperties::SetName(CursorColorButton(), RS_(L"ColorScheme_CursorColor/Text"));
+        const auto cursorColorButton{ CursorColorButton() };
+        ToolTipService::SetToolTip(cursorColorButton, box_value(RS_(L"ColorScheme_CursorColor/Text")));
+        Automation::AutomationProperties::SetName(cursorColorButton, RS_(L"ColorScheme_CursorColor/Text"));
 
-        ToolTipService::SetToolTip(SelectionBackgroundButton(), box_value(RS_(L"ColorScheme_SelectionBackground/Text")));
-        Automation::AutomationProperties::SetName(SelectionBackgroundButton(), RS_(L"ColorScheme_SelectionBackground/Text"));
+        const auto selectionBackgroundButton{ SelectionBackgroundButton() };
+        ToolTipService::SetToolTip(selectionBackgroundButton, box_value(RS_(L"ColorScheme_SelectionBackground/Text")));
+        Automation::AutomationProperties::SetName(selectionBackgroundButton, RS_(L"ColorScheme_SelectionBackground/Text"));
+
+        const auto comboBox{ ColorSchemeComboBox() };
+        Automation::AutomationProperties::SetName(comboBox, RS_(L"ColorScheme_Name/Header"));
+        Automation::AutomationProperties::SetFullDescription(comboBox, RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        ToolTipService::SetToolTip(comboBox, box_value(RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip")));
+
+        Automation::AutomationProperties::SetName(RenameButton(), RS_(L"Rename/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+
+        const auto nameBox{ NameBox() };
+        Automation::AutomationProperties::SetName(nameBox, RS_(L"ColorScheme_Name/Header"));
+        Automation::AutomationProperties::SetFullDescription(nameBox, RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        ToolTipService::SetToolTip(nameBox, box_value(RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip")));
+
+        Automation::AutomationProperties::SetName(RenameAcceptButton(), RS_(L"RenameAccept/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetName(RenameCancelButton(), RS_(L"RenameCancel/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetName(AddNewButton(), RS_(L"ColorScheme_AddNewButton/Text"));
+        Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"ColorScheme_DeleteButton/Text"));
     }
 
     void ColorSchemes::SizeChanged(IInspectable const& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e)
@@ -128,10 +149,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto colorLabelStyle{ Resources().Lookup(winrt::box_value(L"ColorLabelStyle")).as<Windows::UI::Xaml::Style>() };
         const auto colorControlStyle{ Resources().Lookup(winrt::box_value(L"ColorControlStyle")).as<Windows::UI::Xaml::Style>() };
         const auto colorTableEntryTemplate{ Resources().Lookup(winrt::box_value(L"ColorTableEntryTemplate")).as<DataTemplate>() };
-        auto setupColorControl = [colorTableEntryTemplate, colorControlStyle, colorTableGrid{ ColorTableGrid() }](auto colorRef, uint32_t row, uint32_t col) {
+        auto setupColorControl = [colorTableEntryTemplate, colorControlStyle, colorTableGrid{ ColorTableGrid() }](hstring colorName, auto&& colorRef, uint32_t row, uint32_t col) {
             ContentControl colorControl{};
             colorControl.ContentTemplate(colorTableEntryTemplate);
             colorControl.Style(colorControlStyle);
+            ToolTipService::SetToolTip(colorControl, box_value(colorName));
+            Automation::AutomationProperties::SetName(colorControl, colorName);
 
             Data::Binding binding{};
             binding.Source(colorRef);
@@ -153,10 +176,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             Grid::SetColumn(label, 0);
 
             // regular color
-            setupColorControl(_CurrentNonBrightColorTable.GetAt(row), row, 1);
+            setupColorControl(TableColorNames[row], _CurrentNonBrightColorTable.GetAt(row), row, 1);
 
             // bright color
-            setupColorControl(_CurrentBrightColorTable.GetAt(row), row, 2);
+            setupColorControl(TableColorNames[row + ColorTableDivider], _CurrentBrightColorTable.GetAt(row), row, 2);
         }
     }
 
