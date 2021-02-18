@@ -1376,7 +1376,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (!_focused && _settings.FocusFollowMouse())
         {
-            Focus(FocusState::Pointer);
+            _FocusFollowMouseRequestedHandlers(*this, nullptr);
         }
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
