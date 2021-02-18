@@ -836,11 +836,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _blinkTimer = std::nullopt;
             }
 
-            DispatcherTimer invertTimer;
-            invertTimer.Interval(UpdatePatternLocationsInterval);
-            invertTimer.Tick({ get_weak(), &TermControl::_InvertTimerTick });
-            _invertTimer.emplace(std::move(invertTimer));
-
             // import value from WinUser (convert from milli-seconds to micro-seconds)
             _multiClickTimer = GetDoubleClickTime() * 1000;
 
@@ -3241,17 +3236,28 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     winrt::fire_and_forget TermControl::InvertScreenColors()
     {
-        co_await winrt::resume_foreground(Dispatcher());
+        if (!_invertTimer)
+        {
+            co_await winrt::resume_foreground(Dispatcher());
 
-        _invertTimer.value().Start();
-        _terminal->SetScreenMode(true);
+            DispatcherTimer invertTimer;
+            invertTimer.Interval(UpdatePatternLocationsInterval);
+            invertTimer.Tick({ get_weak(), &TermControl::_InvertTimerTick });
+            invertTimer.Start();
+            _invertTimer.emplace(std::move(invertTimer));
+            _terminal->SetScreenMode(true);
+        }
     }
 
     void TermControl::_InvertTimerTick(Windows::Foundation::IInspectable const& /* sender */,
                                                          Windows::Foundation::IInspectable const& /* e */)
     {
-        _terminal->SetScreenMode(false);
-        _invertTimer.value().Stop();
+        if (_invertTimer)
+        {
+            _terminal->SetScreenMode(false);
+            _invertTimer.value().Stop();
+            _invertTimer = std::nullopt;
+        }
     }
 
     // Method Description:
