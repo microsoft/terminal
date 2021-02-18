@@ -11,12 +11,6 @@ static constexpr std::wstring_view VerbDisplayName{ L"Open in Windows Terminal" 
 static constexpr std::wstring_view VerbDevBuildDisplayName{ L"Open in Windows Terminal (Dev Build)" };
 static constexpr std::wstring_view VerbName{ L"WindowsTerminalOpenHere" };
 
-static constexpr std::wstring_view WtExe{ L"wt.exe" };
-static constexpr std::wstring_view WtdExe{ L"wtd.exe" };
-static constexpr std::wstring_view WindowsTerminalExe{ L"WindowsTerminal.exe" };
-
-static constexpr std::wstring_view LocalAppDataAppsPath{ L"%LOCALAPPDATA%\\Microsoft\\WindowsApps\\" };
-
 // This code is aggressively copied from
 //   https://github.com/microsoft/Windows-classic-samples/blob/master/Samples/
 //   Win7Samples/winui/shell/appshellintegration/ExplorerCommandVerb/ExplorerCommandVerb.cpp
@@ -62,7 +56,7 @@ HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
         siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
 
         // Append a "\." to the given path, so that this will work in "C:\"
-        std::wstring cmdline = fmt::format(L"\"{}\" -d \"{}\\.\"", _getExePath(), pszName.get());
+        std::wstring cmdline = fmt::format(L"\"{}\" -d \"{}\\.\"", GetWtExePath(), pszName.get());
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
             nullptr,
             cmdline.data(),

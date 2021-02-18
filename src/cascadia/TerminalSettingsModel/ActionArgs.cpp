@@ -110,7 +110,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (!_Commandline.empty())
         {
-            ss << fmt::format(L" -- \"{}\" ", _Commandline);
+            ss << fmt::format(L"-- \"{}\" ", _Commandline);
         }
 
         auto s = ss.str();
