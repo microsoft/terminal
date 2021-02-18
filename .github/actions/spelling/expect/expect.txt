@@ -2843,6 +2843,8 @@ XSubstantial
 xtended
 xterm
 XTest
+XTPUSHSGR
+XTPOPSGR
 xunit
 xutr
 xvalue

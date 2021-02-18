@@ -225,12 +225,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::RenameAccept_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
         _RenameCurrentScheme(NameBox().Text());
+        RenameButton().Focus(FocusState::Programmatic);
     }
 
     void ColorSchemes::RenameCancel_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
         IsRenaming(false);
         RenameErrorTip().IsOpen(false);
+        RenameButton().Focus(FocusState::Programmatic);
     }
 
     void ColorSchemes::NameBox_PreviewKeyDown(IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
@@ -246,6 +248,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             RenameErrorTip().IsOpen(false);
             e.Handled(true);
         }
+        ColorSchemeComboBox().Focus(FocusState::Programmatic);
     }
 
     void ColorSchemes::_RenameCurrentScheme(hstring newName)

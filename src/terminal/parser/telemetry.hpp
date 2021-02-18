@@ -101,6 +101,8 @@ namespace Microsoft::Console::VirtualTerminal
             OSCBG,
             DECALN,
             OSCSCB,
+            XTPUSHSGR,
+            XTPOPSGR,
             // Only use this last enum as a count of the number of codes.
             NUMBER_OF_CODES
         };
