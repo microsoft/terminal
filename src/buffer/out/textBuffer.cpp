@@ -290,13 +290,14 @@ bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
     // We only need to compensate for leading bytes
     if (dbcsAttribute.IsLeading())
     {
-        short const sBufferWidth = GetSize().Width();
+        const auto cursorPosition = GetCursor().GetPosition();
+        const auto lineWidth = GetLineWidth(cursorPosition.Y);
 
         // If we're about to lead on the last column in the row, we need to add a padding space
-        if (GetCursor().GetPosition().X == sBufferWidth - 1)
+        if (cursorPosition.X == lineWidth - 1)
         {
             // set that we're wrapping for double byte reasons
-            auto& row = GetRowByOffset(GetCursor().GetPosition().Y);
+            auto& row = GetRowByOffset(cursorPosition.Y);
             row.SetDoubleBytePadded(true);
 
             // then move the cursor forward and onto the next row
