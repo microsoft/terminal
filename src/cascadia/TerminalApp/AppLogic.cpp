@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "AppLogic.h"
+#include "../inc/WindowingBehavior.h"
 #include "AppLogic.g.cpp"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
@@ -1197,7 +1198,11 @@ namespace winrt::TerminalApp::implementation
     // - args: an array of strings to process as a commandline. These args can contain spaces
     // Return Value:
     // - 0: We should handle the args "in the current window".
-    // - -1: We should handle the args in a new window
+    // - WindowingBehaviorUseNew: We should handle the args in a new window
+    // - WindowingBehaviorUseExisting: We should handle the args "in
+    //   the current window ON THIS DESKTOP"
+    // - WindowingBehaviorUseAnyExisting: We should handle the args "in the current
+    //   window ON ANY DESKTOP"
     // - anything else: We should handle the commandline in the window with the given ID.
     int32_t AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
     {
@@ -1205,19 +1210,31 @@ namespace winrt::TerminalApp::implementation
         const auto result = appArgs.ParseArgs(args);
         if (result == 0)
         {
-            return appArgs.GetTargetWindow();
-
-            // TODO:projects/5
-            //
-            // In the future, we'll want to use the windowingBehavior setting to
-            // determine what happens when a window ID wasn't manually provided.
-            //
-            // Maybe that'd be a special return value out of here, to tell the
-            // monarch to do something special:
-            //
-            // -1 -> create a new window
-            // -2 -> find the mru, this desktop
-            // -3 -> MRU, any desktop (is this not just 0?)
+            const auto parsedTarget = appArgs.GetTargetWindow();
+            if (parsedTarget.has_value())
+            {
+                // parsedTarget might be -1, if the user explicitly requested -1
+                // (or any other negative number) on the commandline. So the set
+                // of possible values here is {-1, 0, ℤ+}
+                return *parsedTarget;
+            }
+            else
+            {
+                // If the user did not provide any value on the commandline,
+                // then lookup our windowing behavior to determine what to do
+                // now.
+                const auto windowingBehavior = _settings.GlobalSettings().WindowingBehavior();
+                switch (windowingBehavior)
+                {
+                case WindowingMode::UseExisting:
+                    return WindowingBehaviorUseExisting;
+                case WindowingMode::UseAnyExisting:
+                    return WindowingBehaviorUseAnyExisting;
+                case WindowingMode::UseNew:
+                default:
+                    return WindowingBehaviorUseNew;
+                }
+            }
         }
 
         // Any unsuccessful parse will be a new window. That new window will try
@@ -1231,7 +1248,7 @@ namespace winrt::TerminalApp::implementation
         // create a new window. Then, in that new window, we'll try to  set the
         // StartupActions, which will again fail, returning the correct error
         // message.
-        return -1;
+        return WindowingBehaviorUseNew;
     }
 
     // Method Description:

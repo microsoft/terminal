@@ -51,4 +51,5 @@ private:
 
     void _FindTargetWindow(const winrt::Windows::Foundation::IInspectable& sender,
                            const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
+    GUID _CurrentDesktopGuid();
 };
