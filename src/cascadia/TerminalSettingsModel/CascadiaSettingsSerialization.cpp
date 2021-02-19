@@ -142,7 +142,11 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
         // created by now, because we're going to check in there for any generators
         // that should be disabled (if the user had any settings.)
         resultPtr->_LoadDynamicProfiles();
-        resultPtr->_LoadFragmentExtensions();
+        try
+        {
+            resultPtr->_LoadFragmentExtensions();
+        }
+        CATCH_LOG();
 
         if (!fileHasData)
         {
