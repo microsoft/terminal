@@ -78,6 +78,8 @@ namespace winrt::TerminalApp::implementation
         int GetLeafPaneCount() const noexcept;
 
         void TogglePaneReadOnly();
+        void ToggleInputBroadcast();
+
         std::shared_ptr<Pane> GetActivePane() const;
 
         winrt::TerminalApp::TerminalTabStatus TabStatus()

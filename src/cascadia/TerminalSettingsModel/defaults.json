@@ -340,6 +340,7 @@
         { "command": { "action": "moveFocus", "direction": "previous" }, "keys": "ctrl+alt+left" },
         { "command": "togglePaneZoom" },
         { "command": "toggleReadOnlyMode" },
+        { "command": "toggleInputBroadcast" },
 
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },

@@ -179,6 +179,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                                 FontSize="12"
                                 Margin="0,0,8,0"/>
 
+                            <FontIcon x:Name="HeaderBroadcastIcon"
+                                      FontFamily="Segoe MDL2 Assets"
+                                      Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsInputBroadcastActive, Mode=OneWay}"
+                                      Glyph="&#xEC05;"
+                                      FontSize="12"
+                                      Margin="0,0,8,0"/>
+
                         </StackPanel>
                     </Grid>
                 </ListViewItem>

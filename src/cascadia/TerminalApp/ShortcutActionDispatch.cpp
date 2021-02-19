@@ -266,6 +266,11 @@ namespace winrt::TerminalApp::implementation
             _TogglePaneReadOnlyHandlers(*this, eventArgs);
             break;
         }
+        case ShortcutAction::ToggleInputBroadcast:
+        {
+            _ToggleInputBroadcastHandlers(*this, eventArgs);
+            break;
+        }
         default:
             return false;
         }

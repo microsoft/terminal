@@ -631,9 +631,12 @@ namespace winrt::TerminalApp::implementation
         control.KeySent([weakThis](auto&& sender, auto&& e) {
             if (const auto tab{ weakThis.get() })
             {
-                if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::TerminalControl::TermControl>() })
+                if (tab->_tabStatus.IsInputBroadcastActive())
                 {
-                    tab->_rootPane->BroadcastKey(termControl, e.VKey(), e.ScanCode(), e.Modifiers(), e.KeyDown());
+                    if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::TerminalControl::TermControl>() })
+                    {
+                        tab->_rootPane->BroadcastKey(termControl, e.VKey(), e.ScanCode(), e.Modifiers(), e.KeyDown());
+                    }
                 }
             }
         });
@@ -641,9 +644,12 @@ namespace winrt::TerminalApp::implementation
         control.CharSent([weakThis](auto&& sender, auto&& e) {
             if (const auto tab{ weakThis.get() })
             {
-                if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::TerminalControl::TermControl>() })
+                if (tab->_tabStatus.IsInputBroadcastActive())
                 {
-                    tab->_rootPane->BroadcastChar(termControl, e.Character(), e.ScanCode(), e.Modifiers());
+                    if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::TerminalControl::TermControl>() })
+                    {
+                        tab->_rootPane->BroadcastChar(termControl, e.Character(), e.ScanCode(), e.Modifiers());
+                    }
                 }
             }
         });
@@ -1171,6 +1177,13 @@ namespace winrt::TerminalApp::implementation
         {
             control.ToggleReadOnly();
         }
+    }
+
+    // Method Description:
+    // - Toggle read-only mode on the active pane
+    void TerminalTab::ToggleInputBroadcast()
+    {
+        _tabStatus.IsInputBroadcastActive(!_tabStatus.IsInputBroadcastActive());
     }
 
     // Method Description:

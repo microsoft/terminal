@@ -366,6 +366,9 @@
   <data name="TogglePaneReadOnlyCommandKey" xml:space="preserve">
     <value>Toggle pane read-only mode</value>
   </data>
+  <data name="ToggleInputBroadcastCommandKey" xml:space="preserve">
+    <value>Toggle input broadcast</value>
+  </data>
   <data name="ToggleShaderEffectsCommandKey" xml:space="preserve">
     <value>Toggle terminal visual effects</value>
   </data>
