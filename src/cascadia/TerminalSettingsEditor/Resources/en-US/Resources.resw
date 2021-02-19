@@ -641,7 +641,7 @@
     <value>None</value>
   </data>
   <data name="Globals_DisableAnimations.Header" xml:space="preserve">
-    <value>Pane animations</value>
+    <value>Disable pane animations</value>
   </data>
   <data name="Profile_FontWeightBlack.Content" xml:space="preserve">
     <value>Black</value>
@@ -827,5 +827,8 @@
   </data>
   <data name="Globals_FocusFollowMouse.Header" xml:space="preserve">
     <value>Automatically focus pane on mouse hover</value>
+  </data>
+  <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
+    <value>Pane animations</value>
   </data>
 </root>
