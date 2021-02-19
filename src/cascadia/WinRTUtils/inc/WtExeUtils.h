@@ -15,7 +15,7 @@ static constexpr std::wstring_view LocalAppDataAppsPath{ L"%LOCALAPPDATA%\\Micro
 // - <none>
 // Return Value:
 // - true if we believe this extension is being run in the dev build package.
-bool IsDevBuild()
+_TIL_INLINEPREFIX bool IsDevBuild()
 {
     // use C++11 magic statics to make sure we only do this once.
     static bool isDevBuild = []() -> bool {
@@ -45,7 +45,7 @@ bool IsDevBuild()
 // - <none>
 // Return Value:
 // - the full path to the exe, one of `wt.exe`, `wtd.exe`, or `WindowsTerminal.exe`.
-std::wstring GetWtExePath()
+_TIL_INLINEPREFIX std::wstring GetWtExePath()
 {
     // use C++11 magic statics to make sure we only do this once.
     static const std::wstring exePath = []() -> std::wstring {
