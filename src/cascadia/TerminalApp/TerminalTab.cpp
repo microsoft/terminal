@@ -628,6 +628,16 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         });
+
+        control.KeySent([weakThis](auto&& sender, auto&& e) {
+            if (const auto tab{ weakThis.get() })
+            {
+                if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::TerminalControl::TermControl>() })
+                {
+                    tab->_rootPane->BroadcastKey(termControl, e.VKey(), e.ScanCode(), e.Modifiers(), e.KeyDown());
+                }
+            }
+        });
     }
 
     // Method Description:

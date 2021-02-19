@@ -2101,6 +2101,22 @@ bool Pane::ContainsReadOnly() const
     return _IsLeaf() ? _control.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
 }
 
+void Pane::BroadcastKey(const winrt::Microsoft::Terminal::TerminalControl::TermControl& sourceControl, const WORD vkey, const WORD scanCode, const DWORD modifiers, const bool keyDown)
+{
+    if (_IsLeaf())
+    {
+        if (_control != sourceControl)
+        {
+            _control.TrySendKeyEvent(vkey, scanCode, modifiers, keyDown);
+        }
+    }
+    else
+    {
+        _firstChild->BroadcastKey(sourceControl, vkey, scanCode, modifiers, keyDown);
+        _secondChild->BroadcastKey(sourceControl, vkey, scanCode, modifiers, keyDown);
+    }
+}
+
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 DEFINE_EVENT(Pane, LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 DEFINE_EVENT(Pane, PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);

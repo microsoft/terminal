@@ -83,6 +83,8 @@ public:
 
     bool ContainsReadOnly() const;
 
+    void BroadcastKey(const winrt::Microsoft::Terminal::TerminalControl::TermControl& sourceControl, const WORD vkey, const WORD scanCode, const DWORD modifiers, const bool keyDown);
+
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
     DECLARE_EVENT(LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);

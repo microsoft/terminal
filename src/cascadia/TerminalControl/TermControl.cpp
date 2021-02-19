@@ -1092,6 +1092,25 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Invokes TrySendKeyEvent and triggers KeySent event
+    // Arguments:
+    // - vkey: The vkey of the key pressed.
+    // - scanCode: The scan code of the key pressed.
+    // - keyStates: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
+    // - keyDown: If true, the key was pressed, otherwise the key was released.
+    bool TermControl::_TrySendKeyEvent(const WORD vkey,
+                                       const WORD scanCode,
+                                       const ControlKeyStates keyStates,
+                                       const bool keyDown)
+    {
+        const auto modifiers = keyStates.Value();
+        const auto result = TrySendKeyEvent(vkey, scanCode, modifiers, keyDown);
+        auto keySentArgs = winrt::make<KeySentEventArgs>(vkey, scanCode, modifiers, keyDown);
+        _keySentHandlers(*this, std::move(keySentArgs));
+        return result;
+    }
+
+    // Method Description:
     // - Send this particular key event to the terminal.
     //   See Terminal::SendKeyEvent for more information.
     // - Clears the current selection.
@@ -1101,9 +1120,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - scanCode: The scan code of the key pressed.
     // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
     // - keyDown: If true, the key was pressed, otherwise the key was released.
-    bool TermControl::_TrySendKeyEvent(const WORD vkey,
+    bool TermControl::TrySendKeyEvent(const WORD vkey,
                                        const WORD scanCode,
-                                       const ControlKeyStates modifiers,
+                                       const DWORD modifiers,
                                        const bool keyDown)
     {
         // When there is a selection active, escape should clear it and NOT flow through
@@ -1149,7 +1168,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // If the terminal translated the key, mark the event as handled.
         // This will prevent the system from trying to get the character out
         // of it and sending us a CharacterReceived event.
-        const auto handled = vkey ? _terminal->SendKeyEvent(vkey, scanCode, modifiers, keyDown) : true;
+        ControlKeyStates keyStates{ modifiers };
+        const auto handled = vkey ? _terminal->SendKeyEvent(vkey, scanCode, keyStates, keyDown) : true;
 
         if (_cursorTimer.has_value())
         {
@@ -3363,5 +3383,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControl, IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControl, TerminalControl::NoticeEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, KeySent, _keySentHandlers, TerminalControl::TermControl, TerminalControl::KeySentEventArgs);
     // clang-format on
 }

@@ -8,6 +8,7 @@
 #include "PasteFromClipboardEventArgs.g.h"
 #include "OpenHyperlinkEventArgs.g.h"
 #include "NoticeEventArgs.g.h"
+#include "KeySentEventArgs.g.h"
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
@@ -98,6 +99,28 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const hstring _message;
     };
 
+     struct KeySentEventArgs :
+        public KeySentEventArgsT<KeySentEventArgs>
+     {
+     public:
+         KeySentEventArgs(const WORD vkey, const WORD scanCode, const DWORD modifiers, const bool keyDown) :
+             _vkey(vkey),
+             _scanCode(scanCode),
+             _modifiers(modifiers),
+             _keyDown(keyDown) {}
+
+         WORD VKey() { return _vkey; };
+         WORD ScanCode() { return _scanCode; };
+         DWORD Modifiers() { return _modifiers; };
+         bool KeyDown() { return _keyDown; };
+
+     private:
+         const WORD _vkey;
+         const WORD _scanCode;
+         const DWORD _modifiers;
+         const bool _keyDown;
+     };
+
     struct TermControl : TermControlT<TermControl>
     {
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
@@ -169,6 +192,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         bool ReadOnly() const noexcept;
         void ToggleReadOnly();
 
+        bool TrySendKeyEvent(const WORD vkey, const WORD scanCode, const DWORD modifiers, const bool keyDown);
+
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
@@ -180,6 +205,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControl, IInspectable);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControl, TerminalControl::NoticeEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(KeySent, _keySentHandlers, TerminalControl::TermControl, TerminalControl::KeySentEventArgs);
 
         TYPED_EVENT(WarningBell, IInspectable, IInspectable);
         TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControl, IInspectable);
