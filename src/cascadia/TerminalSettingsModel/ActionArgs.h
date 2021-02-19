@@ -444,7 +444,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         OpenSettingsArgs() = default;
         OpenSettingsArgs(const SettingsTarget& target) :
             _Target{ target } {}
-        GETSET_PROPERTY(SettingsTarget, Target, SettingsTarget::SettingsFile);
+        GETSET_PROPERTY(SettingsTarget, Target, SettingsTarget::SettingsUI);
 
         static constexpr std::string_view TargetKey{ "target" };
 
