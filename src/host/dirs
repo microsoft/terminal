@@ -1,4 +1,5 @@
-DIRS=exe \
+DIRS=proxy \
+     exe \
      lib \
      ut_lib \
      ut_host \

@@ -23,6 +23,7 @@
 #include <deque>
 #include <list>
 #include <memory>
+#include <memory_resource>
 #include <map>
 #include <mutex>
 #include <shared_mutex>
@@ -61,11 +62,9 @@
 // GSL
 // Block GSL Multi Span include because it both has C++17 deprecated iterators
 // and uses the C-namespaced "max" which conflicts with Windows definitions.
-#ifndef BLOCK_GSL
 #define GSL_MULTI_SPAN_H
 #include <gsl/gsl>
 #include <gsl/span_ext>
-#endif
 
 // CppCoreCheck
 #include <CppCoreCheck/Warnings.h>
@@ -75,6 +74,9 @@
 #pragma warning(disable:4100) // unreferenced parameter
 #include <base/numerics/safe_math.h>
 #pragma warning(pop)
+
+// Boost
+#include "boost/container/small_vector.hpp"
 
 // IntSafe
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
@@ -92,6 +94,9 @@
 
 // {fmt}, a C++20-compatible formatting library
 #include <fmt/format.h>
+
+#define USE_INTERVAL_TREE_NAMESPACE
+#include <IntervalTree.h>
 
 // SAL
 #include <sal.h>

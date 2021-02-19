@@ -9,7 +9,7 @@
 #include "globals.h"
 #include "srvinit.h"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;

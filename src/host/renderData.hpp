@@ -14,8 +14,8 @@ Author(s):
 
 #pragma once
 
-#include "..\renderer\inc\IRenderData.hpp"
-#include "..\types\IUiaData.h"
+#include "../renderer/inc/IRenderData.hpp"
+#include "../types/IUiaData.h"
 
 class RenderData final :
     public Microsoft::Console::Render::IRenderData,
@@ -46,7 +46,7 @@ public:
     CursorType GetCursorStyle() const noexcept override;
     ULONG GetCursorPixelWidth() const noexcept override;
     COLORREF GetCursorColor() const noexcept override;
-    bool IsCursorDoubleWidth() const noexcept override;
+    bool IsCursorDoubleWidth() const override;
 
     bool IsScreenReversed() const noexcept override;
 
@@ -54,10 +54,12 @@ public:
 
     const bool IsGridLineDrawingAllowed() noexcept override;
 
-    const std::wstring GetConsoleTitle() const noexcept override;
+    const std::wstring_view GetConsoleTitle() const noexcept override;
 
     const std::wstring GetHyperlinkUri(uint16_t id) const noexcept override;
     const std::wstring GetHyperlinkCustomId(uint16_t id) const noexcept override;
+
+    const std::vector<size_t> GetPatternId(const COORD location) const noexcept override;
 #pragma endregion
 
 #pragma region IUiaData

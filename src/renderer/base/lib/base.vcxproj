@@ -10,6 +10,7 @@
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
+    <ClCompile Include="..\BlinkingState.cpp" />
     <ClCompile Include="..\Cluster.cpp" />
     <ClCompile Include="..\FontInfo.cpp" />
     <ClCompile Include="..\FontInfoBase.cpp" />
@@ -22,6 +23,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\inc\BlinkingState.hpp" />
     <ClInclude Include="..\..\inc\Cluster.hpp" />
     <ClInclude Include="..\..\inc\FontInfo.hpp" />
     <ClInclude Include="..\..\inc\FontInfoBase.hpp" />

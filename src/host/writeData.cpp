@@ -5,9 +5,9 @@
 #include "writeData.hpp"
 
 #include "_stream.h"
-#include "..\types\inc\convert.hpp"
+#include "../types/inc/convert.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 // Routine Description:
 // - Creates a new write data object for used in servicing write console requests

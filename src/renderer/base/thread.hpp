@@ -14,8 +14,8 @@ Author(s):
 
 #pragma once
 
-#include "..\inc\IRenderer.hpp"
-#include "..\inc\IRenderThread.hpp"
+#include "../inc/IRenderer.hpp"
+#include "../inc/IRenderThread.hpp"
 
 namespace Microsoft::Console::Render
 {

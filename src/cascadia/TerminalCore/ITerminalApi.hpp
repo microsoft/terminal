@@ -34,6 +34,7 @@ namespace Microsoft::Terminal::Core
         virtual bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept = 0;
         virtual bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept = 0;
 
+        virtual bool WarningBell() noexcept = 0;
         virtual bool SetWindowTitle(std::wstring_view title) noexcept = 0;
 
         virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD color) noexcept = 0;
@@ -54,6 +55,8 @@ namespace Microsoft::Terminal::Core
         virtual bool EnableButtonEventMouseMode(const bool enabled) noexcept = 0;
         virtual bool EnableAnyEventMouseMode(const bool enabled) noexcept = 0;
         virtual bool EnableAlternateScrollMode(const bool enabled) noexcept = 0;
+        virtual bool EnableXtermBracketedPasteMode(const bool enabled) noexcept = 0;
+        virtual bool IsXtermBracketedPasteModeEnabled() const = 0;
 
         virtual bool IsVtInputEnabled() const = 0;
 
@@ -61,6 +64,14 @@ namespace Microsoft::Terminal::Core
 
         virtual bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept = 0;
         virtual bool EndHyperlink() noexcept = 0;
+
+        virtual bool SetTaskbarProgress(const size_t state, const size_t progress) noexcept = 0;
+
+        virtual bool SetWorkingDirectory(std::wstring_view uri) noexcept = 0;
+        virtual std::wstring_view GetWorkingDirectory() noexcept = 0;
+
+        virtual bool PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) noexcept = 0;
+        virtual bool PopGraphicsRendition() noexcept = 0;
 
     protected:
         ITerminalApi() = default;

@@ -52,10 +52,12 @@ const TextAttribute Terminal::GetDefaultBrushColors() noexcept
 
 std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& attr) const noexcept
 {
+    _blinkingState.RecordBlinkingUsage(attr);
     auto colors = attr.CalculateRgbColors({ _colorTable.data(), _colorTable.size() },
                                           _defaultFg,
                                           _defaultBg,
-                                          _screenReversed);
+                                          _screenReversed,
+                                          _blinkingState.IsBlinkingFaint());
     colors.first |= 0xff000000;
     // We only care about alpha for the default BG (which enables acrylic)
     // If the bg isn't the default bg color, or reverse video is enabled, make it fully opaque.
@@ -131,6 +133,32 @@ const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uin
     return _buffer->GetCustomIdFromId(id);
 }
 
+// Method Description:
+// - Gets the regex pattern ids of a location
+// Arguments:
+// - The location
+// Return value:
+// - The pattern IDs of the location
+const std::vector<size_t> Terminal::GetPatternId(const COORD location) const noexcept
+{
+    // Look through our interval tree for this location
+    const auto intervals = _patternIntervalTree.findOverlapping(COORD{ location.X + 1, location.Y }, location);
+    if (intervals.size() == 0)
+    {
+        return {};
+    }
+    else
+    {
+        std::vector<size_t> result{};
+        for (const auto& interval : intervals)
+        {
+            result.emplace_back(interval.value);
+        }
+        return result;
+    }
+    return {};
+}
+
 std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() noexcept
 try
 {
@@ -187,7 +215,7 @@ void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
     SetSelectionEnd(realCoordEnd, SelectionExpansionMode::Cell);
 }
 
-const std::wstring Terminal::GetConsoleTitle() const noexcept
+const std::wstring_view Terminal::GetConsoleTitle() const noexcept
 try
 {
     if (_title.has_value())

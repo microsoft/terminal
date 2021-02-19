@@ -6,8 +6,8 @@
 
 #include "CommonState.hpp"
 
-#include "..\..\host\renderData.hpp"
-#include "..\..\renderer\base\renderer.hpp"
+#include "../../host/renderData.hpp"
+#include "../../renderer/base/renderer.hpp"
 
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;

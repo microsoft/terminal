@@ -4,7 +4,7 @@
 #include "precomp.h"
 #include "UiaTextRangeBase.hpp"
 #include "ScreenInfoUiaProviderBase.h"
-#include "..\buffer\out\search.h"
+#include "../buffer/out/search.h"
 #include "UiaTracing.h"
 
 using namespace Microsoft::Console::Types;
@@ -279,10 +279,21 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
         }
         else if (unit <= TextUnit_Line)
         {
-            // expand to line
-            _start.X = 0;
-            _end.X = 0;
-            _end.Y = base::ClampAdd(_start.Y, 1);
+            if (_start == bufferEnd)
+            {
+                // Special case: if we are at the bufferEnd,
+                //   move _start back one, instead of _end forward
+                _start.X = 0;
+                _start.Y = base::ClampSub(_start.Y, 1);
+                _end = bufferEnd;
+            }
+            else
+            {
+                // expand to line
+                _start.X = 0;
+                _end.X = 0;
+                _end.Y = base::ClampAdd(_start.Y, 1);
+            }
         }
         else
         {
@@ -399,7 +410,8 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
 
         // GH#6402: Get the actual buffer size here, instead of the one
         //          constrained by the virtual bottom.
-        const auto bufferSize = _pData->GetTextBuffer().GetSize();
+        const auto& buffer = _pData->GetTextBuffer();
+        const auto bufferSize = buffer.GetSize();
 
         // these viewport vars are converted to the buffer coordinate space
         const auto viewport = bufferSize.ConvertToOrigin(_pData->GetViewport());
@@ -437,11 +449,14 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
         }
         else
         {
-            const auto textRects = _pData->GetTextBuffer().GetTextRects(startAnchor, endAnchor, _blockRange);
+            const auto textRects = buffer.GetTextRects(startAnchor, endAnchor, _blockRange, true);
 
             for (const auto& rect : textRects)
             {
-                til::rectangle r{ rect };
+                // Convert the buffer coordinates to an equivalent range of
+                // screen cells, taking line rendition into account.
+                const auto lineRendition = buffer.GetLineRendition(rect.Top);
+                til::rectangle r{ BufferToScreenLine(rect, lineRendition) };
                 r -= viewportOrigin;
                 _getBoundingRect(r, coords);
             }
@@ -515,8 +530,7 @@ CATCH_RETURN();
 // - the text that the UiaTextRange encompasses
 #pragma warning(push)
 #pragma warning(disable : 26447) // compiler isn't filtering throws inside the try/catch
-std::wstring UiaTextRangeBase::_getTextValue(std::optional<unsigned int> maxLength) const noexcept
-try
+std::wstring UiaTextRangeBase::_getTextValue(std::optional<unsigned int> maxLength) const
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
@@ -529,11 +543,19 @@ try
         const auto& buffer = _pData->GetTextBuffer();
         const auto bufferSize = buffer.GetSize();
 
+        // TODO GH#5406: create a different UIA parent object for each TextBuffer
+        // nvaccess/nvda#11428: Ensure our endpoints are in bounds
+        // otherwise, we'll FailFast catastrophically
+        if (!bufferSize.IsInBounds(_start, true) || !bufferSize.IsInBounds(_end, true))
+        {
+            THROW_HR(E_FAIL);
+        }
+
         // convert _end to be inclusive
         auto inclusiveEnd = _end;
         bufferSize.DecrementInBounds(inclusiveEnd, true);
 
-        const auto textRects = buffer.GetTextRects(_start, inclusiveEnd, _blockRange);
+        const auto textRects = buffer.GetTextRects(_start, inclusiveEnd, _blockRange, true);
         const auto bufferData = buffer.GetText(true,
                                                false,
                                                textRects);
@@ -552,11 +574,6 @@ try
     }
 
     return textData;
-}
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return {};
 }
 #pragma warning(pop)
 
@@ -773,7 +790,7 @@ try
         }
         else
         {
-            // we can align to the top so we'll just move the viewport
+            // we can't align to the top so we'll just move the viewport
             // to the bottom of the screen buffer
             newViewport.Bottom = bottomRow;
             newViewport.Top = bottomRow - viewportHeight + 1;
@@ -785,9 +802,13 @@ try
         // check if we can align to the bottom
         if (static_cast<unsigned int>(endScreenInfoRow) >= viewportHeight)
         {
+            // GH#7839: endScreenInfoRow may be ExclusiveEnd
+            //          ExclusiveEnd is past the bottomRow
+            //          so we need to clamp to the bottom row to stay in bounds
+
             // we can align to bottom
-            newViewport.Bottom = endScreenInfoRow;
-            newViewport.Top = endScreenInfoRow - viewportHeight + 1;
+            newViewport.Bottom = std::min(endScreenInfoRow, bottomRow);
+            newViewport.Top = base::ClampedNumeric<short>(newViewport.Bottom) - viewportHeight + 1;
         }
         else
         {
@@ -804,7 +825,8 @@ try
 
     Unlock.reset();
 
-    _ChangeViewport(newViewport);
+    const gsl::not_null<ScreenInfoUiaProviderBase*> provider = static_cast<ScreenInfoUiaProviderBase*>(_pProvider);
+    provider->ChangeViewport(newViewport);
 
     UiaTracing::TextRange::ScrollIntoView(alignToTop, *this);
     return S_OK;
@@ -953,7 +975,7 @@ void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
             }
             break;
         case MovementDirection::Backward:
-            success = buffer.MoveToPreviousGlyph(target, allowBottomExclusive);
+            success = buffer.MoveToPreviousGlyph(target);
             if (success)
             {
                 (*pAmountMoved)--;
@@ -1123,7 +1145,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
             }
 
             // NOTE: Automatically detects if we are trying to move past origin
-            success = bufferSize.DecrementInBounds(nextPos, allowBottomExclusive);
+            success = bufferSize.DecrementInBounds(nextPos, true);
 
             if (success)
             {

@@ -85,7 +85,7 @@ try
 
     // since we explicitly just moved down a row, clear the wrap status on the
     // row we just came from
-    _buffer->GetRowByOffset(cursorPos.Y).GetCharRow().SetWrapForced(false);
+    _buffer->GetRowByOffset(cursorPos.Y).SetWrapForced(false);
 
     cursorPos.Y++;
     if (withReturn)
@@ -249,7 +249,7 @@ try
         startPos.X = viewport.Left();
         nlength = viewport.RightExclusive() - startPos.X;
         break;
-    case DispatchTypes::EraseType::Scrollback:
+    default:
         return false;
     }
 
@@ -341,6 +341,14 @@ try
     Terminal::_NotifyScrollEvent();
     SetCursorPosition(relativeCursor.X, relativeCursor.Y);
 
+    return true;
+}
+CATCH_LOG_RETURN_FALSE()
+
+bool Terminal::WarningBell() noexcept
+try
+{
+    _pfnWarningBell();
     return true;
 }
 CATCH_LOG_RETURN_FALSE()
@@ -529,6 +537,17 @@ bool Terminal::EnableAlternateScrollMode(const bool enabled) noexcept
     return true;
 }
 
+bool Terminal::EnableXtermBracketedPasteMode(const bool enabled) noexcept
+{
+    _bracketedPasteMode = enabled;
+    return true;
+}
+
+bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept
+{
+    return _bracketedPasteMode;
+}
+
 bool Terminal::IsVtInputEnabled() const noexcept
 {
     // We should never be getting this call in Terminal.
@@ -574,7 +593,7 @@ CATCH_LOG_RETURN_FALSE()
 bool Terminal::AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept
 {
     auto attr = _buffer->GetCurrentAttributes();
-    const auto id = _buffer->GetHyperlinkId(params);
+    const auto id = _buffer->GetHyperlinkId(uri, params);
     attr.SetHyperlinkId(id);
     _buffer->SetCurrentAttributes(attr);
     _buffer->AddHyperlinkToMap(uri, id);
@@ -590,5 +609,62 @@ bool Terminal::EndHyperlink() noexcept
     auto attr = _buffer->GetCurrentAttributes();
     attr.SetHyperlinkId(0);
     _buffer->SetCurrentAttributes(attr);
+    return true;
+}
+
+// Method Description:
+// - Updates the taskbar progress indicator
+// Arguments:
+// - state: indicates the progress state
+// - progress: indicates the progress value
+// Return Value:
+// - true
+bool Terminal::SetTaskbarProgress(const size_t state, const size_t progress) noexcept
+{
+    _taskbarState = state;
+    _taskbarProgress = progress;
+    if (_pfnTaskbarProgressChanged)
+    {
+        _pfnTaskbarProgressChanged();
+    }
+    return true;
+}
+
+bool Terminal::SetWorkingDirectory(std::wstring_view uri) noexcept
+{
+    _workingDirectory = uri;
+    return true;
+}
+
+std::wstring_view Terminal::GetWorkingDirectory() noexcept
+{
+    return _workingDirectory;
+}
+
+// Method Description:
+// - Saves the current text attributes to an internal stack.
+// Arguments:
+// - options, cOptions: if present, specify which portions of the current text attributes
+//   should be saved. Only a small subset of GraphicsOptions are actually supported;
+//   others are ignored. If no options are specified, all attributes are stored.
+// Return Value:
+// - true
+bool Terminal::PushGraphicsRendition(const VTParameters options) noexcept
+{
+    _sgrStack.Push(_buffer->GetCurrentAttributes(), options);
+    return true;
+}
+
+// Method Description:
+// - Restores text attributes from the internal stack. If only portions of text attributes
+//   were saved, combines those with the current attributes.
+// Arguments:
+// - <none>
+// Return Value:
+// - true
+bool Terminal::PopGraphicsRendition() noexcept
+{
+    const TextAttribute current = _buffer->GetCurrentAttributes();
+    _buffer->SetCurrentAttributes(_sgrStack.Pop(current));
     return true;
 }

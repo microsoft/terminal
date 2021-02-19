@@ -14,7 +14,7 @@ Author(s):
 
 #pragma once
 
-#include "..\inc\RenderEngineBase.hpp"
+#include "../inc/RenderEngineBase.hpp"
 
 namespace Microsoft::Console::Render
 {
@@ -30,7 +30,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
         [[nodiscard]] HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept override;
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
-        [[nodiscard]] HRESULT InvalidateCursor(const COORD* const pcoordCursor) noexcept override;
+        [[nodiscard]] HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
         [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept override;
         [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
@@ -40,6 +40,11 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT Present() noexcept override;
 
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
+
+        [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
+        [[nodiscard]] HRESULT PrepareLineTransform(const LineRendition lineRendition,
+                                                   const size_t targetRow,
+                                                   const size_t viewportLeft) noexcept override;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
@@ -66,12 +71,12 @@ namespace Microsoft::Console::Render
                                               _Out_ FontInfo& Font,
                                               const int iDpi) noexcept override;
 
-        [[nodiscard]] std::vector<til::rectangle> GetDirtyArea() override;
+        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
 
     protected:
-        [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
+        [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring_view newTitle) noexcept override;
 
     private:
         HWND _hwndTargetWindow;
@@ -82,11 +87,13 @@ namespace Microsoft::Console::Render
 
         bool _fPaintStarted;
 
+        til::rectangle _invalidCharacters;
         PAINTSTRUCT _psInvalidData;
         HDC _hdcMemoryContext;
         bool _isTrueTypeFont;
         UINT _fontCodepage;
         HFONT _hfont;
+        HFONT _hfontItalic;
         TEXTMETRICW _tmFontMetrics;
 
         static const size_t s_cPolyTextCache = 80;
@@ -95,6 +102,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _FlushBufferLines() noexcept;
 
         std::vector<RECT> cursorInvertRects;
+        XFORM cursorInvertTransform;
 
         struct LineMetrics
         {
@@ -122,6 +130,17 @@ namespace Microsoft::Console::Render
 
         COLORREF _lastFg;
         COLORREF _lastBg;
+        bool _lastFontItalic;
+
+        XFORM _currentLineTransform;
+        LineRendition _currentLineRendition;
+
+        // Memory pooling to save alloc/free work to the OS for things
+        // frequently created and dropped.
+        // It's important the pool is first so it can be given to the others on construction.
+        std::pmr::unsynchronized_pool_resource _pool;
+        std::pmr::vector<std::pmr::wstring> _polyStrings;
+        std::pmr::vector<std::pmr::basic_string<int>> _polyWidths;
 
         [[nodiscard]] HRESULT _InvalidCombine(const RECT* const prc) noexcept;
         [[nodiscard]] HRESULT _InvalidOffset(const POINT* const ppt) noexcept;
@@ -152,7 +171,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _GetProposedFont(const FontInfoDesired& FontDesired,
                                                _Out_ FontInfo& Font,
                                                const int iDpi,
-                                               _Inout_ wil::unique_hfont& hFont) noexcept;
+                                               _Inout_ wil::unique_hfont& hFont,
+                                               _Inout_ wil::unique_hfont& hFontItalic) noexcept;
 
         COORD _GetFontSize() const;
         bool _IsMinimized() const;
@@ -171,5 +191,12 @@ namespace Microsoft::Console::Render
         void _CreateDebugWindow();
         HDC _debugContext;
 #endif
+    };
+
+    constexpr XFORM IDENTITY_XFORM = { 1, 0, 0, 1 };
+
+    inline bool operator==(const XFORM& lhs, const XFORM& rhs) noexcept
+    {
+        return ::memcmp(&lhs, &rhs, sizeof(XFORM)) == 0;
     };
 }

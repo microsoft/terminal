@@ -125,7 +125,9 @@ bool ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BU
 // - true if successful (see DoSrvSetConsoleCursorPosition). false otherwise.
 bool ConhostInternalGetSet::SetConsoleCursorPosition(const COORD position)
 {
-    return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleCursorPositionImpl(_io.GetActiveOutputBuffer(), position));
+    auto& info = _io.GetActiveOutputBuffer();
+    const auto clampedPosition = info.GetTextBuffer().ClampPositionWithinLine(position);
+    return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleCursorPositionImpl(info, clampedPosition));
 }
 
 // Routine Description:
@@ -180,6 +182,48 @@ bool ConhostInternalGetSet::PrivateSetTextAttributes(const TextAttribute& attrs)
 {
     _io.GetActiveOutputBuffer().SetAttributes(attrs);
     return true;
+}
+
+// Method Description:
+// - Sets the line rendition attribute for the current row of the active screen
+//   buffer. This controls how character cells are scaled when the row is rendered.
+// Arguments:
+// - lineRendition: The new LineRendition attribute to use
+// Return Value:
+// - true if successful. false otherwise.
+bool ConhostInternalGetSet::PrivateSetCurrentLineRendition(const LineRendition lineRendition)
+{
+    auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
+    textBuffer.SetCurrentLineRendition(lineRendition);
+    return true;
+}
+
+// Method Description:
+// - Resets the line rendition attribute to SingleWidth for a specified range
+//   of row numbers.
+// Arguments:
+// - startRow: The row number of first line to be modified
+// - endRow: The row number following the last line to be modified
+// Return Value:
+// - true if successful. false otherwise.
+bool ConhostInternalGetSet::PrivateResetLineRenditionRange(const size_t startRow, const size_t endRow)
+{
+    auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
+    textBuffer.ResetLineRenditionRange(startRow, endRow);
+    return true;
+}
+
+// Method Description:
+// - Returns the number of cells that will fit on the specified row when
+//   rendered with its current line rendition.
+// Arguments:
+// - row: The row number of the line to measure
+// Return Value:
+// - the number of cells that will fit on the line
+SHORT ConhostInternalGetSet::PrivateGetLineWidth(const size_t row) const
+{
+    const auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
+    return textBuffer.GetLineWidth(row);
 }
 
 // Routine Description:

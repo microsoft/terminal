@@ -15,8 +15,8 @@
     <ClCompile Include="..\ApiMessage.cpp" />
     <ClCompile Include="..\ApiMessageState.cpp" />
     <ClCompile Include="..\ApiSorter.cpp" />
+    <ClCompile Include="..\ConDrvDeviceComm.cpp" />
     <ClCompile Include="..\ConsoleShimPolicy.cpp" />
-    <ClCompile Include="..\DeviceComm.cpp" />
     <ClCompile Include="..\DeviceHandle.cpp" />
     <ClCompile Include="..\Entrypoints.cpp" />
     <ClCompile Include="..\IoDispatchers.cpp" />
@@ -57,6 +57,16 @@
     <ClInclude Include="..\WaitTerminationReason.h" />
     <ClInclude Include="..\WinNTControl.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\host\proxy\Host.Proxy.vcxproj">
+      <Project>{e437b604-3e98-4f40-a927-e173e818ea4b}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+        <AdditionalIncludeDirectories>$(IntDir)..\OpenConsoleProxy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />
 </Project>

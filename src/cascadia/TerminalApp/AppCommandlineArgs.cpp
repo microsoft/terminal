@@ -4,10 +4,11 @@
 #include "pch.h"
 #include "AppLogic.h"
 #include "AppCommandlineArgs.h"
-#include "ActionArgs.h"
+#include "../types/inc/utils.hpp"
 #include <LibraryResources.h>
 
 using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace TerminalApp;
 
 // Either a ; at the start of a line, or a ; preceded by any non-\ char.
@@ -69,50 +70,29 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
         {
             throw CLI::CallForHelp();
         }
-        // Clear the parser's internal state
-        _app.clear();
 
-        // attempt to parse the commandline
+        // attempt to parse the commandline prefix of the form [options][subcommand]
         _app.parse(args);
+        auto remainingParams = _app.remaining_size();
 
         // If we parsed the commandline, and _no_ subcommands were provided, try
-        // parsing again as a "new-tab" command.
-
+        // parse the remaining suffix as a "new-tab" command.
         if (_noCommandsProvided())
         {
-            _newTabCommand.subcommand->clear();
             _newTabCommand.subcommand->parse(args);
+            remainingParams = _newTabCommand.subcommand->remaining_size();
         }
-    }
-    catch (const CLI::CallForHelp& e)
-    {
-        return _handleExit(_app, e);
+
+        // if after parsing the prefix and (optionally) the implicit tab subcommand
+        // we still have unparsed parameters we need to fail
+        if (remainingParams > 0)
+        {
+            throw CLI::ExtrasError(args);
+        }
     }
     catch (const CLI::ParseError& e)
     {
-        // If we parsed the commandline, and _no_ subcommands were provided, try
-        // parsing again as a "new-tab" command.
-        if (_noCommandsProvided())
-        {
-            try
-            {
-                // CLI11 mutated the original vector the first time it tried to
-                // parse the args. Reconstruct it the way CLI11 wants here.
-                // "See above for why it's begin() + 1"
-                std::vector<std::string> args{ command.Args().begin() + 1, command.Args().end() };
-                std::reverse(args.begin(), args.end());
-                _newTabCommand.subcommand->clear();
-                _newTabCommand.subcommand->parse(args);
-            }
-            catch (const CLI::ParseError& e)
-            {
-                return _handleExit(*_newTabCommand.subcommand, e);
-            }
-        }
-        else
-        {
-            return _handleExit(_app, e);
-        }
+        return _handleExit(_app, e);
     }
     return 0;
 }
@@ -157,40 +137,63 @@ int AppCommandlineArgs::_handleExit(const CLI::App& command, const CLI::Error& e
 // - <none>
 void AppCommandlineArgs::_buildParser()
 {
+    // We define or parser as a prefix command, to support "implicit new tab subcommand" scenario.
+    // In this scenario we will try to parse the prefix that contains parameters like launch mode,
+    // but will not encounter an explicit command.
+    // Instead we will encounter an argument that doesn't belong to the prefix indicating the prefix is over.
+    // Then we will try to parse the remaining arguments as a new tab subcommand.
+    // E.g., for "wt.exe -M -d c:/", we will use -M for the launch mode, but once we will encounter -d
+    // we will know that the prefix is over and try to handle the suffix as a new tab subcommand
+    _app.prefix_command();
+
     // -v,--version: Displays version info
     auto versionCallback = [this](int64_t /*count*/) {
-        if (const auto appLogic{ winrt::TerminalApp::implementation::AppLogic::Current() })
-        {
-            // Set our message to display the application name and the current version.
-            _exitMessage = fmt::format("{0}\n{1}",
-                                       til::u16u8(appLogic->ApplicationDisplayName()),
-                                       til::u16u8(appLogic->ApplicationVersion()));
-            // Theoretically, we don't need to exit now, since this isn't really
-            // an error case. However, in practice, it feels weird to have `wt
-            // -v` open a new tab, and makes enough sense that `wt -v ;
-            // split-pane` (or whatever) just displays the version and exits.
-            _shouldExitEarly = true;
-        }
+        // Set our message to display the application name and the current version.
+        _exitMessage = fmt::format("{0}\n{1}",
+                                   til::u16u8(CascadiaSettings::ApplicationDisplayName()),
+                                   til::u16u8(CascadiaSettings::ApplicationVersion()));
+        // Theoretically, we don't need to exit now, since this isn't really
+        // an error case. However, in practice, it feels weird to have `wt
+        // -v` open a new tab, and makes enough sense that `wt -v ;
+        // split-pane` (or whatever) just displays the version and exits.
+        _shouldExitEarly = true;
     };
     _app.add_flag_function("-v,--version", versionCallback, RS_A(L"CmdVersionDesc"));
 
-    // Maximized and Fullscreen flags
+    // Launch mode related flags
     //   -M,--maximized: Maximizes the window on launch
     //   -F,--fullscreen: Fullscreens the window on launch
+    //   -f,--focus: Sets the terminal into the Focus mode
+    // While fullscreen excludes both maximized and focus mode, the user can combine between the maximized and focused (-fM)
     auto maximizedCallback = [this](int64_t /*count*/) {
-        _launchMode = winrt::TerminalApp::LaunchMode::MaximizedMode;
+        _launchMode = (_launchMode.has_value() && _launchMode.value() == LaunchMode::FocusMode) ?
+                          LaunchMode::MaximizedFocusMode :
+                          LaunchMode::MaximizedMode;
     };
     auto fullscreenCallback = [this](int64_t /*count*/) {
-        _launchMode = winrt::TerminalApp::LaunchMode::FullscreenMode;
+        _launchMode = LaunchMode::FullscreenMode;
     };
+    auto focusCallback = [this](int64_t /*count*/) {
+        _launchMode = (_launchMode.has_value() && _launchMode.value() == LaunchMode::MaximizedMode) ?
+                          LaunchMode::MaximizedFocusMode :
+                          LaunchMode::FocusMode;
+    };
+
     auto maximized = _app.add_flag_function("-M,--maximized", maximizedCallback, RS_A(L"CmdMaximizedDesc"));
     auto fullscreen = _app.add_flag_function("-F,--fullscreen", fullscreenCallback, RS_A(L"CmdFullscreenDesc"));
+    auto focus = _app.add_flag_function("-f,--focus", focusCallback, RS_A(L"CmdFocusDesc"));
     maximized->excludes(fullscreen);
+    focus->excludes(fullscreen);
+
+    _app.add_option("-w,--window",
+                    _windowTarget,
+                    RS_A(L"CmdWindowTargetArgDesc"));
 
     // Subcommands
     _buildNewTabParser();
     _buildSplitPaneParser();
     _buildFocusTabParser();
+    _buildMoveFocusParser();
 }
 
 // Method Description:
@@ -214,14 +217,13 @@ void AppCommandlineArgs::_buildNewTabParser()
         // command was parsed.
         subcommand.subcommand->callback([&, this]() {
             // Build the NewTab action from the values we've parsed on the commandline.
-            auto newTabAction = winrt::make_self<implementation::ActionAndArgs>();
-            newTabAction->Action(ShortcutAction::NewTab);
-            auto args = winrt::make_self<implementation::NewTabArgs>();
+            ActionAndArgs newTabAction{};
+            newTabAction.Action(ShortcutAction::NewTab);
             // _getNewTerminalArgs MUST be called before parsing any other options,
             // as it might clear those options while finding the commandline
-            args->TerminalArgs(_getNewTerminalArgs(subcommand));
-            newTabAction->Args(*args);
-            _startupActions.push_back(*newTabAction);
+            NewTabArgs args{ _getNewTerminalArgs(subcommand) };
+            newTabAction.Args(args);
+            _startupActions.push_back(newTabAction);
         });
     };
 
@@ -250,6 +252,10 @@ void AppCommandlineArgs::_buildSplitPaneParser()
                                                                      _splitVertical,
                                                                      RS_A(L"CmdSplitPaneVerticalArgDesc"));
         subcommand._verticalOption->excludes(subcommand._horizontalOption);
+        auto* sizeOpt = subcommand.subcommand->add_option("-s,--size",
+                                                          _splitPaneSize,
+                                                          RS_A(L"CmdSplitPaneSizeArgDesc"));
+        sizeOpt->check(CLI::Range(0.01f, 0.99f));
 
         // When ParseCommand is called, if this subcommand was provided, this
         // callback function will be triggered on the same thread. We can be sure
@@ -257,29 +263,29 @@ void AppCommandlineArgs::_buildSplitPaneParser()
         // command was parsed.
         subcommand.subcommand->callback([&, this]() {
             // Build the SplitPane action from the values we've parsed on the commandline.
-            auto splitPaneActionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
-            splitPaneActionAndArgs->Action(ShortcutAction::SplitPane);
-            auto args = winrt::make_self<implementation::SplitPaneArgs>();
+            ActionAndArgs splitPaneActionAndArgs{};
+            splitPaneActionAndArgs.Action(ShortcutAction::SplitPane);
+
             // _getNewTerminalArgs MUST be called before parsing any other options,
             // as it might clear those options while finding the commandline
-            args->TerminalArgs(_getNewTerminalArgs(subcommand));
-            args->SplitStyle(SplitState::Automatic);
+            auto terminalArgs{ _getNewTerminalArgs(subcommand) };
+            auto style{ SplitState::Automatic };
             // Make sure to use the `Option`s here to check if they were set -
             // _getNewTerminalArgs might reset them while parsing a commandline
             if ((*subcommand._horizontalOption || *subcommand._verticalOption))
             {
                 if (_splitHorizontal)
                 {
-                    args->SplitStyle(SplitState::Horizontal);
+                    style = SplitState::Horizontal;
                 }
                 else if (_splitVertical)
                 {
-                    args->SplitStyle(SplitState::Vertical);
+                    style = SplitState::Vertical;
                 }
             }
-
-            splitPaneActionAndArgs->Args(*args);
-            _startupActions.push_back(*splitPaneActionAndArgs);
+            SplitPaneArgs args{ style, _splitPaneSize, terminalArgs };
+            splitPaneActionAndArgs.Args(args);
+            _startupActions.push_back(splitPaneActionAndArgs);
         });
     };
 
@@ -319,26 +325,73 @@ void AppCommandlineArgs::_buildFocusTabParser()
         // command was parsed.
         subcommand->callback([&, this]() {
             // Build the action from the values we've parsed on the commandline.
-            auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();
+            ActionAndArgs focusTabAction{};
 
             if (_focusTabIndex >= 0)
             {
-                focusTabAction->Action(ShortcutAction::SwitchToTab);
-                auto args = winrt::make_self<implementation::SwitchToTabArgs>();
-                args->TabIndex(_focusTabIndex);
-                focusTabAction->Args(*args);
-                _startupActions.push_back(*focusTabAction);
+                focusTabAction.Action(ShortcutAction::SwitchToTab);
+                SwitchToTabArgs args{ static_cast<unsigned int>(_focusTabIndex) };
+                focusTabAction.Args(args);
+                _startupActions.push_back(focusTabAction);
             }
             else if (_focusNextTab || _focusPrevTab)
             {
-                focusTabAction->Action(_focusNextTab ? ShortcutAction::NextTab : ShortcutAction::PrevTab);
-                _startupActions.push_back(*focusTabAction);
+                focusTabAction.Action(_focusNextTab ? ShortcutAction::NextTab : ShortcutAction::PrevTab);
+                _startupActions.push_back(std::move(focusTabAction));
             }
         });
     };
 
     setupSubcommand(_focusTabCommand);
     setupSubcommand(_focusTabShort);
+}
+
+// Method Description:
+// - Adds the `move-focus` subcommand and related options to the commandline parser.
+// - Additionally adds the `mf` subcommand, which is just a shortened version of `move-focus`
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppCommandlineArgs::_buildMoveFocusParser()
+{
+    _moveFocusCommand = _app.add_subcommand("move-focus", RS_A(L"CmdMoveFocusDesc"));
+    _moveFocusShort = _app.add_subcommand("mf", RS_A(L"CmdMFDesc"));
+
+    auto setupSubcommand = [this](auto* subcommand) {
+        std::map<std::string, FocusDirection> map = {
+            { "left", FocusDirection::Left },
+            { "right", FocusDirection::Right },
+            { "up", FocusDirection::Up },
+            { "down", FocusDirection::Down }
+        };
+
+        auto* directionOpt = subcommand->add_option("direction",
+                                                    _moveFocusDirection,
+                                                    RS_A(L"CmdMoveFocusDirectionArgDesc"));
+
+        directionOpt->transform(CLI::CheckedTransformer(map, CLI::ignore_case));
+        directionOpt->required();
+        // When ParseCommand is called, if this subcommand was provided, this
+        // callback function will be triggered on the same thread. We can be sure
+        // that `this` will still be safe - this function just lets us know this
+        // command was parsed.
+        subcommand->callback([&, this]() {
+            if (_moveFocusDirection != FocusDirection::None)
+            {
+                MoveFocusArgs args{ _moveFocusDirection };
+
+                ActionAndArgs actionAndArgs{};
+                actionAndArgs.Action(ShortcutAction::MoveFocus);
+                actionAndArgs.Args(args);
+
+                _startupActions.push_back(std::move(actionAndArgs));
+            }
+        });
+    };
+
+    setupSubcommand(_moveFocusCommand);
+    setupSubcommand(_moveFocusShort);
 }
 
 // Method Description:
@@ -360,6 +413,10 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
                                                                _startingTitle,
                                                                RS_A(L"CmdTitleArgDesc"));
 
+    subcommand.tabColorOption = subcommand.subcommand->add_option("--tabColor",
+                                                                  _startingTabColor,
+                                                                  RS_A(L"CmdTabColorArgDesc"));
+
     // Using positionals_at_end allows us to support "wt new-tab -d wsl -d Ubuntu"
     // without CLI11 thinking that we've specified -d twice.
     // There's an alternate construction where we make all subcommands "prefix commands",
@@ -379,7 +436,7 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
 // - A fully initialized NewTerminalArgs corresponding to values we've currently parsed.
 NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewTerminalSubcommand& subcommand)
 {
-    auto args = winrt::make_self<implementation::NewTerminalArgs>();
+    NewTerminalArgs args{};
 
     if (!_commandline.empty())
     {
@@ -403,25 +460,31 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
             }
         }
 
-        args->Commandline(winrt::to_hstring(cmdlineBuffer.str()));
+        args.Commandline(winrt::to_hstring(cmdlineBuffer.str()));
     }
 
     if (*subcommand.profileNameOption)
     {
-        args->Profile(winrt::to_hstring(_profileName));
+        args.Profile(winrt::to_hstring(_profileName));
     }
 
     if (*subcommand.startingDirectoryOption)
     {
-        args->StartingDirectory(winrt::to_hstring(_startingDirectory));
+        args.StartingDirectory(winrt::to_hstring(_startingDirectory));
     }
 
     if (*subcommand.titleOption)
     {
-        args->TabTitle(winrt::to_hstring(_startingTitle));
+        args.TabTitle(winrt::to_hstring(_startingTitle));
     }
 
-    return *args;
+    if (*subcommand.tabColorOption)
+    {
+        const auto tabColor = Microsoft::Console::Utils::ColorFromHexString(_startingTabColor);
+        args.TabColor(static_cast<winrt::Windows::UI::Color>(tabColor));
+    }
+
+    return args;
 }
 
 // Method Description:
@@ -438,6 +501,8 @@ bool AppCommandlineArgs::_noCommandsProvided()
              *_newTabShort.subcommand ||
              *_focusTabCommand ||
              *_focusTabShort ||
+             *_moveFocusCommand ||
+             *_moveFocusShort ||
              *_newPaneShort.subcommand ||
              *_newPaneCommand.subcommand);
 }
@@ -455,18 +520,22 @@ void AppCommandlineArgs::_resetStateToDefault()
     _profileName.clear();
     _startingDirectory.clear();
     _startingTitle.clear();
+    _startingTabColor.clear();
     _commandline.clear();
 
     _splitVertical = false;
     _splitHorizontal = false;
+    _splitPaneSize = 0.5f;
 
     _focusTabIndex = -1;
     _focusNextTab = false;
     _focusPrevTab = false;
 
+    _moveFocusDirection = FocusDirection::None;
     // DON'T clear _launchMode here! This will get called once for every
     // subcommand, so we don't want `wt -F new-tab ; split-pane` clearing out
     // the "global" fullscreen flag (-F).
+    // Same with _windowTarget.
 }
 
 // Function Description:
@@ -599,7 +668,7 @@ void AppCommandlineArgs::_addCommandsForArg(std::vector<Commandline>& commands, 
 // - <none>
 // Return Value:
 // - the deque of actions we've buffered as a result of parsing commands.
-std::vector<winrt::TerminalApp::ActionAndArgs>& AppCommandlineArgs::GetStartupActions()
+std::vector<ActionAndArgs>& AppCommandlineArgs::GetStartupActions()
 {
     return _startupActions;
 }
@@ -652,18 +721,15 @@ void AppCommandlineArgs::ValidateStartupCommands()
         _startupActions.front().Action() != ShortcutAction::NewTab)
     {
         // Build the NewTab action from the values we've parsed on the commandline.
-        auto newTabAction = winrt::make_self<implementation::ActionAndArgs>();
-        newTabAction->Action(ShortcutAction::NewTab);
-        auto args = winrt::make_self<implementation::NewTabArgs>();
-        auto newTerminalArgs = winrt::make_self<implementation::NewTerminalArgs>();
-        args->TerminalArgs(*newTerminalArgs);
-        newTabAction->Args(*args);
+        NewTerminalArgs newTerminalArgs{};
+        NewTabArgs args{ newTerminalArgs };
+        ActionAndArgs newTabAction{ ShortcutAction::NewTab, args };
         // push the arg onto the front
-        _startupActions.insert(_startupActions.begin(), 1, *newTabAction);
+        _startupActions.insert(_startupActions.begin(), 1, newTabAction);
     }
 }
 
-std::optional<winrt::TerminalApp::LaunchMode> AppCommandlineArgs::GetLaunchMode() const noexcept
+std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> AppCommandlineArgs::GetLaunchMode() const noexcept
 {
     return _launchMode;
 }
@@ -715,4 +781,83 @@ int AppCommandlineArgs::ParseArgs(winrt::array_view<const winrt::hstring>& args)
     // If all the args were successfully parsed, we'll have some commands
     // built in _appArgs, which we'll use when the application starts up.
     return 0;
+}
+
+// Method Description:
+// - Attempts to parse an array of commandline args into a list of
+//   commands to execute, and then parses these commands. As commands are
+//   successfully parsed, they will generate ShortcutActions for us to be
+//   able to execute. If we fail to parse any commands, we'll return the
+//   error code from the failure to parse that command, and stop processing
+//   additional commands.
+// - The first arg in args should be the program name "wt" (or some variant). It
+//   will be ignored during parsing.
+// Arguments:
+// - args: ExecuteCommandlineArgs describing the command line to parse
+// Return Value:
+// - 0 if the commandline was successfully parsed
+int AppCommandlineArgs::ParseArgs(const winrt::Microsoft::Terminal::Settings::Model::ExecuteCommandlineArgs& args)
+{
+    if (!args || args.Commandline().empty())
+    {
+        return 0;
+    }
+
+    // Convert the commandline into an array of args with
+    // CommandLineToArgvW, similar to how the app typically does when
+    // called from the commandline.
+    int argc = 0;
+    wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(args.Commandline().c_str(), &argc) };
+    if (argv)
+    {
+        std::vector<winrt::hstring> args;
+
+        // Make sure the first argument is wt.exe, because ParseArgs will
+        // always skip the program name. The particular value of this first
+        // string doesn't terribly matter.
+        args.emplace_back(L"wt.exe");
+        for (auto& elem : wil::make_range(argv.get(), argc))
+        {
+            args.emplace_back(elem);
+        }
+        winrt::array_view<const winrt::hstring> argsView{ args };
+        return ParseArgs(argsView);
+    }
+    return 0;
+}
+
+// Method Description:
+// - Allows disabling addition of help-related info in the exit message
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppCommandlineArgs::DisableHelpInExitMessage()
+{
+    _app.set_help_flag();
+    _app.set_help_all_flag();
+}
+
+// Method Description:
+// - Resets the state to allow external consumers to reuse this instance
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppCommandlineArgs::FullResetState()
+{
+    _resetStateToDefault();
+
+    _currentCommandline = nullptr;
+    _launchMode = std::nullopt;
+    _startupActions.clear();
+    _exitMessage = "";
+    _shouldExitEarly = false;
+
+    _windowTarget = -1;
+}
+
+int AppCommandlineArgs::GetTargetWindow() const noexcept
+{
+    return _windowTarget;
 }

@@ -3,17 +3,17 @@
 
 #include "precomp.h"
 #include <wextestclass.h>
-#include "..\..\inc\consoletaeftemplates.hpp"
-#include "..\..\types\inc\Viewport.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
+#include "../../types/inc/Viewport.hpp"
 
-#include "..\..\renderer\vt\Xterm256Engine.hpp"
-#include "..\..\renderer\vt\XtermEngine.hpp"
-#include "..\..\renderer\base\Renderer.hpp"
-#include "..\Settings.hpp"
-#include "..\VtIo.hpp"
+#include "../../renderer/vt/Xterm256Engine.hpp"
+#include "../../renderer/vt/XtermEngine.hpp"
+#include "../../renderer/base/Renderer.hpp"
+#include "../Settings.hpp"
+#include "../VtIo.hpp"
 
 #ifndef __INSIDE_WINDOWS
-#include "..\..\renderer\dx\DxRenderer.hpp"
+#include "../../renderer/dx/DxRenderer.hpp"
 #endif
 
 using namespace WEX::Common;
@@ -355,9 +355,9 @@ public:
         return false;
     }
 
-    const std::wstring GetConsoleTitle() const noexcept override
+    const std::wstring_view GetConsoleTitle() const noexcept override
     {
-        return std::wstring{};
+        return std::wstring_view{};
     }
 
     const bool IsSelectionActive() const override
@@ -398,6 +398,11 @@ public:
     }
 
     const std::wstring GetHyperlinkCustomId(uint16_t /*id*/) const noexcept
+    {
+        return {};
+    }
+
+    const std::vector<size_t> GetPatternId(const COORD /*location*/) const noexcept
     {
         return {};
     }

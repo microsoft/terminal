@@ -8,10 +8,11 @@
 #include "output.h"
 #include "srvinit.h"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
-#include "..\types\inc\convert.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../types/inc/convert.hpp"
 
 using Microsoft::Console::Interactivity::ServiceLocator;
+using Microsoft::Console::Render::BlinkingState;
 using Microsoft::Console::VirtualTerminal::VtIo;
 
 CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
@@ -23,6 +24,8 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // ExeAliasList initialized below
     _OriginalTitle(),
     _Title(),
+    _Prefix(),
+    _TitleAndPrefix(),
     _LinkTitle(),
     Flags(0),
     PopupCount(0),
@@ -114,7 +117,12 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
     try
     {
         gci.SetTitle(title);
-        gci.SetOriginalTitle(std::wstring(TranslateConsoleTitle(gci.GetTitle().c_str(), TRUE, FALSE)));
+
+        // TranslateConsoleTitle must have a null terminated string.
+        // This should only happen once on startup so the copy shouldn't be costly
+        // but could be eliminated by rewriting TranslateConsoleTitle.
+        const std::wstring nullTerminatedTitle{ gci.GetTitle() };
+        gci.SetOriginalTitle(std::wstring(TranslateConsoleTitle(nullTerminatedTitle.c_str(), TRUE, FALSE)));
     }
     catch (...)
     {
@@ -222,7 +230,8 @@ InputBuffer* const CONSOLE_INFORMATION::GetActiveInputBuffer() const
 // - the default foreground color of the console.
 COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const noexcept
 {
-    return Settings::CalculateDefaultForeground();
+    const auto fg = GetDefaultForegroundColor();
+    return fg != INVALID_COLOR ? fg : GetColorTableEntry(LOBYTE(GetFillAttribute()) & FG_ATTRS);
 }
 
 // Method Description:
@@ -236,7 +245,25 @@ COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const noexcept
 // - the default background color of the console.
 COLORREF CONSOLE_INFORMATION::GetDefaultBackground() const noexcept
 {
-    return Settings::CalculateDefaultBackground();
+    const auto bg = GetDefaultBackgroundColor();
+    return bg != INVALID_COLOR ? bg : GetColorTableEntry((LOBYTE(GetFillAttribute()) & BG_ATTRS) >> 4);
+}
+
+// Method Description:
+// - Get the colors of a particular text attribute, using our color table,
+//      and our configured default attributes.
+// Arguments:
+// - attr: the TextAttribute to retrieve the foreground color of.
+// Return Value:
+// - The color values of the attribute's foreground and background.
+std::pair<COLORREF, COLORREF> CONSOLE_INFORMATION::LookupAttributeColors(const TextAttribute& attr) const noexcept
+{
+    _blinkingState.RecordBlinkingUsage(attr);
+    return attr.CalculateRgbColors(Get256ColorTable(),
+                                   GetDefaultForeground(),
+                                   GetDefaultBackground(),
+                                   IsScreenReversed(),
+                                   _blinkingState.IsBlinkingFaint());
 }
 
 // Method Description:
@@ -249,6 +276,7 @@ COLORREF CONSOLE_INFORMATION::GetDefaultBackground() const noexcept
 void CONSOLE_INFORMATION::SetTitle(const std::wstring_view newTitle)
 {
     _Title = std::wstring{ newTitle.begin(), newTitle.end() };
+    _TitleAndPrefix = _Prefix + _Title;
 
     auto* const pRender = ServiceLocator::LocateGlobals().pRender;
     if (pRender)
@@ -264,9 +292,10 @@ void CONSOLE_INFORMATION::SetTitle(const std::wstring_view newTitle)
 // - newTitlePrefix: The new value to use for the title prefix
 // Return Value:
 // - <none>
-void CONSOLE_INFORMATION::SetTitlePrefix(const std::wstring& newTitlePrefix)
+void CONSOLE_INFORMATION::SetTitlePrefix(const std::wstring_view newTitlePrefix)
 {
-    _TitlePrefix = newTitlePrefix;
+    _Prefix = newTitlePrefix;
+    _TitleAndPrefix = _Prefix + _Title;
 
     auto* const pRender = ServiceLocator::LocateGlobals().pRender;
     if (pRender)
@@ -282,7 +311,7 @@ void CONSOLE_INFORMATION::SetTitlePrefix(const std::wstring& newTitlePrefix)
 // - originalTitle: The new value to use for the console's original title
 // Return Value:
 // - <none>
-void CONSOLE_INFORMATION::SetOriginalTitle(const std::wstring& originalTitle)
+void CONSOLE_INFORMATION::SetOriginalTitle(const std::wstring_view originalTitle)
 {
     _OriginalTitle = originalTitle;
 }
@@ -294,7 +323,7 @@ void CONSOLE_INFORMATION::SetOriginalTitle(const std::wstring& originalTitle)
 // - linkTitle: The new value to use for the console's link title
 // Return Value:
 // - <none>
-void CONSOLE_INFORMATION::SetLinkTitle(const std::wstring& linkTitle)
+void CONSOLE_INFORMATION::SetLinkTitle(const std::wstring_view linkTitle)
 {
     _LinkTitle = linkTitle;
 }
@@ -304,8 +333,8 @@ void CONSOLE_INFORMATION::SetLinkTitle(const std::wstring& linkTitle)
 // Arguments:
 // - <none>
 // Return Value:
-// - a reference to the console's title.
-const std::wstring& CONSOLE_INFORMATION::GetTitle() const noexcept
+// - the console's title.
+const std::wstring_view CONSOLE_INFORMATION::GetTitle() const noexcept
 {
     return _Title;
 }
@@ -316,10 +345,10 @@ const std::wstring& CONSOLE_INFORMATION::GetTitle() const noexcept
 // Arguments:
 // - <none>
 // Return Value:
-// - a new wstring containing the combined prefix and title.
-const std::wstring CONSOLE_INFORMATION::GetTitleAndPrefix() const
+// - the combined prefix and title.
+const std::wstring_view CONSOLE_INFORMATION::GetTitleAndPrefix() const
 {
-    return _TitlePrefix + _Title;
+    return _TitleAndPrefix;
 }
 
 // Method Description:
@@ -327,8 +356,8 @@ const std::wstring CONSOLE_INFORMATION::GetTitleAndPrefix() const
 // Arguments:
 // - <none>
 // Return Value:
-// - a reference to the console's original title.
-const std::wstring& CONSOLE_INFORMATION::GetOriginalTitle() const noexcept
+// - the console's original title.
+const std::wstring_view CONSOLE_INFORMATION::GetOriginalTitle() const noexcept
 {
     return _OriginalTitle;
 }
@@ -338,8 +367,8 @@ const std::wstring& CONSOLE_INFORMATION::GetOriginalTitle() const noexcept
 // Arguments:
 // - <none>
 // Return Value:
-// - a reference to the console's link title.
-const std::wstring& CONSOLE_INFORMATION::GetLinkTitle() const noexcept
+// - the console's link title.
+const std::wstring_view CONSOLE_INFORMATION::GetLinkTitle() const noexcept
 {
     return _LinkTitle;
 }
@@ -353,6 +382,17 @@ const std::wstring& CONSOLE_INFORMATION::GetLinkTitle() const noexcept
 Microsoft::Console::CursorBlinker& CONSOLE_INFORMATION::GetCursorBlinker() noexcept
 {
     return _blinker;
+}
+
+// Method Description:
+// - return a reference to the console's blinking state.
+// Arguments:
+// - <none>
+// Return Value:
+// - a reference to the console's blinking state.
+BlinkingState& CONSOLE_INFORMATION::GetBlinkingState() const noexcept
+{
+    return _blinkingState;
 }
 
 // Method Description:

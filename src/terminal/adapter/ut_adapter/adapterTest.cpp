@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 #include <wextestclass.h>
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include "adaptDispatch.hpp"
 
@@ -247,6 +247,27 @@ public:
         }
 
         return _privateSetTextAttributesResult;
+    }
+
+    bool PrivateSetCurrentLineRendition(const LineRendition /*lineRendition*/)
+    {
+        Log::Comment(L"PrivateSetCurrentLineRendition MOCK called...");
+
+        return false;
+    }
+
+    bool PrivateResetLineRenditionRange(const size_t /*startRow*/, const size_t /*endRow*/)
+    {
+        Log::Comment(L"PrivateResetLineRenditionRange MOCK called...");
+
+        return false;
+    }
+
+    SHORT PrivateGetLineWidth(const size_t /*row*/) const
+    {
+        Log::Comment(L"PrivateGetLineWidth MOCK called...");
+
+        return _bufferSize.X;
     }
 
     bool PrivateWriteConsoleInputW(std::deque<std::unique_ptr<IInputEvent>>& events,
@@ -1255,7 +1276,7 @@ public:
 
         _testGetSet->PrepData();
 
-        DispatchTypes::GraphicsOptions rgOptions[16];
+        VTParameter rgOptions[16];
         size_t cOptions = 0;
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
@@ -1292,7 +1313,7 @@ public:
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiGraphicsOptions", uiGraphicsOption));
         graphicsOption = (DispatchTypes::GraphicsOptions)uiGraphicsOption;
 
-        DispatchTypes::GraphicsOptions rgOptions[16];
+        VTParameter rgOptions[16];
         size_t cOptions = 1;
         rgOptions[0] = graphicsOption;
 
@@ -1599,13 +1620,151 @@ public:
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
     }
 
+    TEST_METHOD(GraphicsPushPopTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+
+        VTParameter rgOptions[16];
+        VTParameter rgStackOptions[16];
+        size_t cOptions = 1;
+
+        Log::Comment(L"Test 1: Basic push and pop");
+
+        rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
+        _testGetSet->_expectedAttribute = {};
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        cOptions = 0;
+        VERIFY_IS_TRUE(_pDispatch->PushGraphicsRendition({ rgStackOptions, cOptions }));
+
+        VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
+
+        Log::Comment(L"Test 2: Push, change color, pop");
+
+        VERIFY_IS_TRUE(_pDispatch->PushGraphicsRendition({ rgStackOptions, cOptions }));
+
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundCyan;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(3);
+        _testGetSet->_expectedAttribute.SetDefaultBackground();
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        cOptions = 0;
+        _testGetSet->_expectedAttribute = {};
+        VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
+
+        Log::Comment(L"Test 3: two pushes (nested) and pops");
+
+        // First push:
+        VERIFY_IS_TRUE(_pDispatch->PushGraphicsRendition({ rgStackOptions, cOptions }));
+
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundRed;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_RED);
+        _testGetSet->_expectedAttribute.SetDefaultBackground();
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // Second push:
+        cOptions = 0;
+        VERIFY_IS_TRUE(_pDispatch->PushGraphicsRendition({ rgStackOptions, cOptions }));
+
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundGreen;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_GREEN);
+        _testGetSet->_expectedAttribute.SetDefaultBackground();
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // First pop:
+        cOptions = 0;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_RED);
+        _testGetSet->_expectedAttribute.SetDefaultBackground();
+        VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
+
+        // Second pop:
+        cOptions = 0;
+        _testGetSet->_expectedAttribute = {};
+        VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
+
+        Log::Comment(L"Test 4: Save and restore partial attributes");
+
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundGreen;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_GREEN);
+        _testGetSet->_expectedAttribute.SetDefaultBackground();
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_GREEN);
+        _testGetSet->_expectedAttribute.SetBold(true);
+        _testGetSet->_expectedAttribute.SetDefaultBackground();
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundBlue;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_GREEN);
+        _testGetSet->_expectedAttribute.SetIndexedBackground(BACKGROUND_BLUE >> 4);
+        _testGetSet->_expectedAttribute.SetBold(true);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // Push, specifying that we only want to save the background, the boldness, and double-underline-ness:
+        cOptions = 3;
+        rgStackOptions[0] = (size_t)DispatchTypes::SgrSaveRestoreStackOptions::Boldness;
+        rgStackOptions[1] = (size_t)DispatchTypes::SgrSaveRestoreStackOptions::SaveBackgroundColor;
+        rgStackOptions[2] = (size_t)DispatchTypes::SgrSaveRestoreStackOptions::DoublyUnderlined;
+        VERIFY_IS_TRUE(_pDispatch->PushGraphicsRendition({ rgStackOptions, cOptions }));
+
+        // Now change everything...
+        cOptions = 2;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundGreen;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::DoublyUnderlined;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_GREEN);
+        _testGetSet->_expectedAttribute.SetIndexedBackground(BACKGROUND_GREEN >> 4);
+        _testGetSet->_expectedAttribute.SetBold(true);
+        _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundRed;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_RED);
+        _testGetSet->_expectedAttribute.SetIndexedBackground(BACKGROUND_GREEN >> 4);
+        _testGetSet->_expectedAttribute.SetBold(true);
+        _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        rgOptions[0] = DispatchTypes::GraphicsOptions::NotBoldOrFaint;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_RED);
+        _testGetSet->_expectedAttribute.SetIndexedBackground(BACKGROUND_GREEN >> 4);
+        _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // And then restore...
+        cOptions = 0;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_RED);
+        _testGetSet->_expectedAttribute.SetIndexedBackground(BACKGROUND_BLUE >> 4);
+        _testGetSet->_expectedAttribute.SetBold(true);
+        VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
+    }
+
     TEST_METHOD(GraphicsPersistBrightnessTests)
     {
         Log::Comment(L"Starting test...");
 
         _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
 
-        DispatchTypes::GraphicsOptions rgOptions[16];
+        VTParameter rgOptions[16];
         size_t cOptions = 1;
 
         Log::Comment(L"Test 1: Basic brightness test");
@@ -1821,6 +1980,30 @@ public:
         _testGetSet->_privateWriteConsoleInputWResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch.get()->TertiaryDeviceAttributes());
+    }
+
+    TEST_METHOD(RequestTerminalParametersTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        Log::Comment(L"Test 1: Verify response for unsolicited permission.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch.get()->RequestTerminalParameters(DispatchTypes::ReportingPermission::Unsolicited));
+        _testGetSet->ValidateInputEvent(L"\x1b[2;1;1;128;128;1;0x");
+
+        Log::Comment(L"Test 2: Verify response for solicited permission.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch.get()->RequestTerminalParameters(DispatchTypes::ReportingPermission::Solicited));
+        _testGetSet->ValidateInputEvent(L"\x1b[3;1;1;128;128;1;0x");
+
+        Log::Comment(L"Test 3: Verify failure with invalid parameter.");
+        _testGetSet->PrepData();
+        VERIFY_IS_FALSE(_pDispatch.get()->RequestTerminalParameters((DispatchTypes::ReportingPermission)2));
+
+        Log::Comment(L"Test 4: Verify failure when WriteConsoleInput doesn't work.");
+        _testGetSet->PrepData();
+        _testGetSet->_privateWriteConsoleInputWResult = FALSE;
+        VERIFY_IS_FALSE(_pDispatch.get()->RequestTerminalParameters(DispatchTypes::ReportingPermission::Unsolicited));
     }
 
     TEST_METHOD(CursorKeysModeTest)
@@ -2094,7 +2277,7 @@ public:
 
         _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
 
-        DispatchTypes::GraphicsOptions rgOptions[16];
+        VTParameter rgOptions[16];
         size_t cOptions = 3;
 
         _testGetSet->_privateGetColorTableEntryResult = true;
@@ -2137,6 +2320,53 @@ public:
         rgOptions[2] = (DispatchTypes::GraphicsOptions)9; // Bright Red
         _testGetSet->_expectedAttribute.SetIndexedForeground256((BYTE)::XtermToWindowsIndex(9));
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
+    }
+
+    TEST_METHOD(XtermExtendedColorDefaultParameterTest)
+    {
+        Log::Comment(L"Starting test...");
+
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+
+        VTParameter rgOptions[16];
+
+        _testGetSet->_privateGetColorTableEntryResult = true;
+        _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+
+        Log::Comment(L"Test 1: Change Indexed Foreground with missing index parameter");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
+        _testGetSet->_expectedAttribute.SetIndexedForeground256(0);
+        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 2 }));
+
+        Log::Comment(L"Test 2: Change Indexed Background with default index parameter");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
+        rgOptions[2] = {};
+        _testGetSet->_expectedAttribute.SetIndexedBackground256(0);
+        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 3 }));
+
+        Log::Comment(L"Test 3: Change RGB Foreground with all RGB parameters missing");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 0));
+        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 2 }));
+
+        Log::Comment(L"Test 4: Change RGB Background with some missing RGB parameters");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgOptions[2] = 123;
+        _testGetSet->_expectedAttribute.SetBackground(RGB(123, 0, 0));
+        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 3 }));
+
+        Log::Comment(L"Test 5: Change RGB Foreground with some default RGB parameters");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgOptions[2] = {};
+        rgOptions[3] = {};
+        rgOptions[4] = 123;
+        _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 123));
+        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 5 }));
     }
 
     TEST_METHOD(SetColorTableValue)

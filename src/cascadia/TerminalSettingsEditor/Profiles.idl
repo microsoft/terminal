@@ -1,0 +1,113 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "EnumEntry.idl";
+import "MainPage.idl";
+
+#include "ViewModelHelpers.idl.h"
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Boolean CanDeleteProfile { get; };
+        Boolean IsBaseLayer;
+        Boolean UseDesktopBGImage;
+        Boolean UseParentProcessDirectory;
+        Boolean UseCustomStartingDirectory { get; };
+        Boolean BackgroundImageSettingsVisible { get; };
+
+        OBSERVABLE_PROJECTED_SETTING(String, Name);
+        OBSERVABLE_PROJECTED_SETTING(Guid, Guid);
+        OBSERVABLE_PROJECTED_SETTING(String, Source);
+        OBSERVABLE_PROJECTED_SETTING(Guid, ConnectionType);
+        OBSERVABLE_PROJECTED_SETTING(Boolean, Hidden);
+        OBSERVABLE_PROJECTED_SETTING(String, Icon);
+        OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.Settings.Model.CloseOnExitMode, CloseOnExit);
+        OBSERVABLE_PROJECTED_SETTING(String, TabTitle);
+        OBSERVABLE_PROJECTED_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, TabColor);
+        OBSERVABLE_PROJECTED_SETTING(Boolean, SuppressApplicationTitle);
+        OBSERVABLE_PROJECTED_SETTING(Boolean, UseAcrylic);
+        OBSERVABLE_PROJECTED_SETTING(Double, AcrylicOpacity);
+        OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.TerminalControl.ScrollbarState, ScrollState);
+        OBSERVABLE_PROJECTED_SETTING(String, FontFace);
+        OBSERVABLE_PROJECTED_SETTING(Int32, FontSize);
+        OBSERVABLE_PROJECTED_SETTING(Windows.UI.Text.FontWeight, FontWeight);
+        OBSERVABLE_PROJECTED_SETTING(String, Padding);
+        OBSERVABLE_PROJECTED_SETTING(String, Commandline);
+        OBSERVABLE_PROJECTED_SETTING(String, StartingDirectory);
+        OBSERVABLE_PROJECTED_SETTING(String, BackgroundImagePath);
+        OBSERVABLE_PROJECTED_SETTING(Double, BackgroundImageOpacity);
+        OBSERVABLE_PROJECTED_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
+        OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.Settings.Model.ConvergedAlignment, BackgroundImageAlignment);
+        OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.TerminalControl.TextAntialiasingMode, AntialiasingMode);
+        OBSERVABLE_PROJECTED_SETTING(Boolean, RetroTerminalEffect);
+        OBSERVABLE_PROJECTED_SETTING(Boolean, ForceFullRepaintRendering);
+        OBSERVABLE_PROJECTED_SETTING(Boolean, SoftwareRendering);
+        OBSERVABLE_PROJECTED_SETTING(String, ColorSchemeName);
+        OBSERVABLE_PROJECTED_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Foreground);
+        OBSERVABLE_PROJECTED_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Background);
+        OBSERVABLE_PROJECTED_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, SelectionBackground);
+        OBSERVABLE_PROJECTED_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, CursorColor);
+        OBSERVABLE_PROJECTED_SETTING(Int32, HistorySize);
+        OBSERVABLE_PROJECTED_SETTING(Boolean, SnapOnInput);
+        OBSERVABLE_PROJECTED_SETTING(Boolean, AltGrAliasing);
+        OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.TerminalControl.CursorStyle, CursorShape);
+        OBSERVABLE_PROJECTED_SETTING(UInt32, CursorHeight);
+        OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.Settings.Model.BellStyle, BellStyle);
+    }
+
+    runtimeclass DeleteProfileEventArgs
+    {
+        Guid ProfileGuid { get; };
+    }
+
+    enum ProfilesPivots {
+        General = 0,
+        Appearance = 1,
+        Advanced = 2
+    };
+
+    runtimeclass ProfilePageNavigationState
+    {
+        Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes;
+        IHostedInWindow WindowRoot; // necessary to send the right HWND into the file picker dialogs.
+
+        ProfileViewModel Profile;
+        ProfilesPivots LastActivePivot;
+
+        event Windows.Foundation.TypedEventHandler<ProfilePageNavigationState, DeleteProfileEventArgs> DeleteProfile;
+    };
+
+    [default_interface] runtimeclass Profiles : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Profiles();
+        ProfilePageNavigationState State { get; };
+
+        IInspectable CurrentCursorShape;
+        Boolean IsVintageCursor { get; };
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CursorShapeList { get; };
+
+        IInspectable CurrentBackgroundImageStretchMode;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BackgroundImageStretchModeList { get; };
+
+        IInspectable CurrentAntiAliasingMode;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AntiAliasingModeList { get; };
+
+        IInspectable CurrentCloseOnExitMode;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CloseOnExitModeList { get; };
+
+        IInspectable CurrentBellStyle;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BellStyleList { get; };
+
+        IInspectable CurrentScrollState;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ScrollStateList { get; };
+
+        IInspectable CurrentFontWeight;
+        Boolean IsCustomFontWeight { get; };
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FontWeightList { get; };
+
+        Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };
+    }
+}

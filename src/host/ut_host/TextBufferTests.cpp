@@ -148,6 +148,7 @@ class TextBufferTests
 
     void WriteLinesToBuffer(const std::vector<std::wstring>& text, TextBuffer& buffer);
     TEST_METHOD(GetWordBoundaries);
+    TEST_METHOD(MoveByWord);
     TEST_METHOD(GetGlyphBoundaries);
 
     TEST_METHOD(GetTextRects);
@@ -198,15 +199,15 @@ void TextBufferTests::TestWrapFlag()
     ROW& Row = textBuffer._GetFirstRow();
 
     // no wrap by default
-    VERIFY_IS_FALSE(Row.GetCharRow().WasWrapForced());
+    VERIFY_IS_FALSE(Row.WasWrapForced());
 
     // try set wrap and check
-    Row.GetCharRow().SetWrapForced(true);
-    VERIFY_IS_TRUE(Row.GetCharRow().WasWrapForced());
+    Row.SetWrapForced(true);
+    VERIFY_IS_TRUE(Row.WasWrapForced());
 
     // try unset wrap and check
-    Row.GetCharRow().SetWrapForced(false);
-    VERIFY_IS_FALSE(Row.GetCharRow().WasWrapForced());
+    Row.SetWrapForced(false);
+    VERIFY_IS_FALSE(Row.WasWrapForced());
 }
 
 void TextBufferTests::TestWrapThroughWriteLine()
@@ -218,11 +219,11 @@ void TextBufferTests::TestWrapThroughWriteLine()
 
         if (expected)
         {
-            VERIFY_IS_TRUE(Row.GetCharRow().WasWrapForced());
+            VERIFY_IS_TRUE(Row.WasWrapForced());
         }
         else
         {
-            VERIFY_IS_FALSE(Row.GetCharRow().WasWrapForced());
+            VERIFY_IS_FALSE(Row.WasWrapForced());
         }
     };
 
@@ -288,15 +289,15 @@ void TextBufferTests::TestDoubleBytePadFlag()
     ROW& Row = textBuffer._GetFirstRow();
 
     // no padding by default
-    VERIFY_IS_FALSE(Row.GetCharRow().WasDoubleBytePadded());
+    VERIFY_IS_FALSE(Row.WasDoubleBytePadded());
 
     // try set and check
-    Row.GetCharRow().SetDoubleBytePadded(true);
-    VERIFY_IS_TRUE(Row.GetCharRow().WasDoubleBytePadded());
+    Row.SetDoubleBytePadded(true);
+    VERIFY_IS_TRUE(Row.WasDoubleBytePadded());
 
     // try unset and check
-    Row.GetCharRow().SetDoubleBytePadded(false);
-    VERIFY_IS_FALSE(Row.GetCharRow().WasDoubleBytePadded());
+    Row.SetDoubleBytePadded(false);
+    VERIFY_IS_FALSE(Row.WasDoubleBytePadded());
 }
 
 void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
@@ -567,24 +568,24 @@ void TextBufferTests::TestSetWrapOnCurrentRow()
     Log::Comment(L"Testing off to on");
 
     // turn wrap status off first
-    Row.GetCharRow().SetWrapForced(false);
+    Row.SetWrapForced(false);
 
     // trigger wrap
     textBuffer._SetWrapOnCurrentRow();
 
     // ensure this row was flipped
-    VERIFY_IS_TRUE(Row.GetCharRow().WasWrapForced());
+    VERIFY_IS_TRUE(Row.WasWrapForced());
 
     Log::Comment(L"Testing on stays on");
 
     // make sure wrap status is on
-    Row.GetCharRow().SetWrapForced(true);
+    Row.SetWrapForced(true);
 
     // trigger wrap
     textBuffer._SetWrapOnCurrentRow();
 
     // ensure row is still on
-    VERIFY_IS_TRUE(Row.GetCharRow().WasWrapForced());
+    VERIFY_IS_TRUE(Row.WasWrapForced());
 }
 
 void TextBufferTests::TestIncrementCircularBuffer()
@@ -2065,7 +2066,7 @@ void TextBufferTests::GetWordBoundaries()
         { { 79, 0 },    {{ 10, 0 },      { 5, 0 }} },
 
         // tests for second line of text
-        { {  0, 1 },     {{ 0, 1 },       { 0, 1 }} },
+        { {  0, 1 },     {{ 0, 1 },       { 5, 0 }} },
         { {  1, 1 },     {{ 0, 1 },       { 5, 0 }} },
         { {  2, 1 },     {{ 2, 1 },       { 2, 1 }} },
         { {  3, 1 },     {{ 2, 1 },       { 2, 1 }} },
@@ -2129,6 +2130,87 @@ void TextBufferTests::GetWordBoundaries()
         COORD result = _buffer->GetWordEnd(test.startPos, delimiters, accessibilityMode);
         const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
         VERIFY_ARE_EQUAL(expected, result);
+    }
+}
+
+void TextBufferTests::MoveByWord()
+{
+    COORD bufferSize{ 80, 9001 };
+    UINT cursorSize = 12;
+    TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+    // Setup: Write lines of text to the buffer
+    const std::vector<std::wstring> text = { L"word other",
+                                             L"  more   words" };
+    WriteLinesToBuffer(text, *_buffer);
+
+    // Test Data:
+    // - COORD - starting position
+    // - COORD - expected result (moving forwards)
+    // - COORD - expected result (moving backwards)
+    struct ExpectedResult
+    {
+        COORD moveForwards;
+        COORD moveBackwards;
+    };
+
+    struct Test
+    {
+        COORD startPos;
+        ExpectedResult expected;
+    };
+
+    // Set testData for GetWordStart tests
+    // clang-format off
+    std::vector<Test> testData = {
+        // tests for first line of text
+        { {  0, 0 },    {{  5, 0 },      { 0, 0 }} },
+        { {  1, 0 },    {{  5, 0 },      { 1, 0 }} },
+        { {  3, 0 },    {{  5, 0 },      { 3, 0 }} },
+        { {  4, 0 },    {{  5, 0 },      { 4, 0 }} },
+        { {  5, 0 },    {{  2, 1 },      { 0, 0 }} },
+        { {  6, 0 },    {{  2, 1 },      { 0, 0 }} },
+        { { 20, 0 },    {{  2, 1 },      { 0, 0 }} },
+        { { 79, 0 },    {{  2, 1 },      { 0, 0 }} },
+
+        // tests for second line of text
+        { {  0, 1 },     {{ 2, 1 },       { 0, 0 }} },
+        { {  1, 1 },     {{ 2, 1 },       { 0, 0 }} },
+        { {  2, 1 },     {{ 9, 1 },       { 5, 0 }} },
+        { {  3, 1 },     {{ 9, 1 },       { 5, 0 }} },
+        { {  5, 1 },     {{ 9, 1 },       { 5, 0 }} },
+        { {  6, 1 },     {{ 9, 1 },       { 5, 0 }} },
+        { {  7, 1 },     {{ 9, 1 },       { 5, 0 }} },
+        { {  9, 1 },     {{ 9, 1 },       { 2, 1 }} },
+        { { 10, 1 },     {{10, 1 },       { 2, 1 }} },
+        { { 20, 1 },     {{20, 1 },       { 2, 1 }} },
+        { { 79, 1 },     {{79, 1 },       { 2, 1 }} },
+    };
+    // clang-format on
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:movingForwards", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+
+    bool movingForwards;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"movingForwards", movingForwards), L"Get movingForwards variant");
+
+    const std::wstring_view delimiters = L" ";
+    const COORD lastCharPos = _buffer->GetLastNonSpaceCharacter();
+    for (const auto& test : testData)
+    {
+        Log::Comment(NoThrowString().Format(L"COORD (%hd, %hd)", test.startPos.X, test.startPos.Y));
+        auto pos{ test.startPos };
+        const auto result = movingForwards ?
+                                _buffer->MoveToNextWord(pos, delimiters, lastCharPos) :
+                                _buffer->MoveToPreviousWord(pos, delimiters);
+        const auto expected = movingForwards ? test.expected.moveForwards : test.expected.moveBackwards;
+        VERIFY_ARE_EQUAL(expected, pos);
+
+        // if we moved, result is true and pos != startPos.
+        // otherwise, result is false and pos == startPos.
+        VERIFY_ARE_EQUAL(result, pos != test.startPos);
     }
 }
 
@@ -2242,7 +2324,7 @@ void TextBufferTests::GetTextRects()
 
     COORD start{ 1, 0 };
     COORD end{ 7, 4 };
-    const auto result = _buffer->GetTextRects(start, end, blockSelection);
+    const auto result = _buffer->GetTextRects(start, end, blockSelection, false);
     VERIFY_ARE_EQUAL(expected.size(), result.size());
     for (size_t i = 0; i < expected.size(); ++i)
     {
@@ -2288,7 +2370,7 @@ void TextBufferTests::GetText()
         WriteLinesToBuffer(bufferText, *_buffer);
 
         // simulate a selection from origin to {4,4}
-        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 4 }, blockSelection);
+        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 4 }, blockSelection, false);
 
         std::wstring result = L"";
         const auto textData = _buffer->GetText(includeCRLF, trimTrailingWhitespace, textRects).text;
@@ -2389,56 +2471,107 @@ void TextBufferTests::GetText()
         // |_____|
 
         // simulate a selection from origin to {4,5}
-        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 5 });
+        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 5 }, blockSelection, false);
 
         std::wstring result = L"";
-        const auto textData = _buffer->GetText(includeCRLF, trimTrailingWhitespace, textRects).text;
+
+        const auto formatWrappedRows = blockSelection;
+        const auto textData = _buffer->GetText(includeCRLF, trimTrailingWhitespace, textRects, nullptr, formatWrappedRows).text;
         for (auto& text : textData)
         {
             result += text;
         }
 
         std::wstring expectedText = L"";
-        if (includeCRLF)
+        if (formatWrappedRows)
         {
-            if (trimTrailingWhitespace)
+            if (includeCRLF)
             {
-                Log::Comment(L"Standard Copy to Clipboard");
-                expectedText += L"12345";
-                expectedText += L"67\r\n";
-                expectedText += L"  345\r\n";
-                expectedText += L"123  \r\n";
+                if (trimTrailingWhitespace)
+                {
+                    Log::Comment(L"UNDEFINED");
+                    expectedText += L"12345\r\n";
+                    expectedText += L"67\r\n";
+                    expectedText += L"  345\r\n";
+                    expectedText += L"123\r\n";
+                    expectedText += L"\r\n";
+                }
+                else
+                {
+                    Log::Comment(L"Copy block selection to Clipboard");
+                    expectedText += L"12345\r\n";
+                    expectedText += L"67   \r\n";
+                    expectedText += L"  345\r\n";
+                    expectedText += L"123  \r\n";
+                    expectedText += L"     \r\n";
+                    expectedText += L"     ";
+                }
             }
             else
             {
-                Log::Comment(L"UI Automation");
-                expectedText += L"12345";
-                expectedText += L"67   \r\n";
-                expectedText += L"  345\r\n";
-                expectedText += L"123  ";
-                expectedText += L"     \r\n";
-                expectedText += L"     ";
+                if (trimTrailingWhitespace)
+                {
+                    Log::Comment(L"UNDEFINED");
+                    expectedText += L"12345";
+                    expectedText += L"67";
+                    expectedText += L"  345";
+                    expectedText += L"123";
+                }
+                else
+                {
+                    Log::Comment(L"UNDEFINED");
+                    expectedText += L"12345";
+                    expectedText += L"67   ";
+                    expectedText += L"  345";
+                    expectedText += L"123  ";
+                    expectedText += L"     ";
+                    expectedText += L"     ";
+                }
             }
         }
         else
         {
-            if (trimTrailingWhitespace)
+            if (includeCRLF)
             {
-                Log::Comment(L"UNDEFINED");
-                expectedText += L"12345";
-                expectedText += L"67";
-                expectedText += L"  345";
-                expectedText += L"123  ";
+                if (trimTrailingWhitespace)
+                {
+                    Log::Comment(L"Standard Copy to Clipboard");
+                    expectedText += L"12345";
+                    expectedText += L"67\r\n";
+                    expectedText += L"  345\r\n";
+                    expectedText += L"123  \r\n";
+                }
+                else
+                {
+                    Log::Comment(L"UI Automation");
+                    expectedText += L"12345";
+                    expectedText += L"67   \r\n";
+                    expectedText += L"  345\r\n";
+                    expectedText += L"123  ";
+                    expectedText += L"     \r\n";
+                    expectedText += L"     ";
+                }
             }
             else
             {
-                Log::Comment(L"Shift+Copy to Clipboard");
-                expectedText += L"12345";
-                expectedText += L"67   ";
-                expectedText += L"  345";
-                expectedText += L"123  ";
-                expectedText += L"     ";
-                expectedText += L"     ";
+                if (trimTrailingWhitespace)
+                {
+                    Log::Comment(L"UNDEFINED");
+                    expectedText += L"12345";
+                    expectedText += L"67";
+                    expectedText += L"  345";
+                    expectedText += L"123  ";
+                }
+                else
+                {
+                    Log::Comment(L"Shift+Copy to Clipboard");
+                    expectedText += L"12345";
+                    expectedText += L"67   ";
+                    expectedText += L"  345";
+                    expectedText += L"123  ";
+                    expectedText += L"     ";
+                    expectedText += L"     ";
+                }
             }
         }
 
@@ -2464,7 +2597,7 @@ void TextBufferTests::HyperlinkTrim()
 
     // Set a hyperlink id in the first row and add a hyperlink to our map
     const COORD pos{ 70, 0 };
-    const auto id = _buffer->GetHyperlinkId(customId);
+    const auto id = _buffer->GetHyperlinkId(url, customId);
     TextAttribute newAttr{ 0x7f };
     newAttr.SetHyperlinkId(id);
     _buffer->GetRowByOffset(pos.Y).GetAttrRow().SetAttrToEnd(pos.X, newAttr);
@@ -2472,7 +2605,7 @@ void TextBufferTests::HyperlinkTrim()
 
     // Set a different hyperlink id somewhere else in the buffer
     const COORD otherPos{ 70, 5 };
-    const auto otherId = _buffer->GetHyperlinkId(otherCustomId);
+    const auto otherId = _buffer->GetHyperlinkId(otherUrl, otherCustomId);
     newAttr.SetHyperlinkId(otherId);
     _buffer->GetRowByOffset(otherPos.Y).GetAttrRow().SetAttrToEnd(otherPos.X, newAttr);
     _buffer->AddHyperlinkToMap(otherUrl, otherId);
@@ -2480,14 +2613,17 @@ void TextBufferTests::HyperlinkTrim()
     // Increment the circular buffer
     _buffer->IncrementCircularBuffer();
 
+    const auto finalCustomId = fmt::format(L"{}%{}", customId, std::hash<std::wstring_view>{}(url));
+    const auto finalOtherCustomId = fmt::format(L"{}%{}", otherCustomId, std::hash<std::wstring_view>{}(otherUrl));
+
     // The hyperlink reference that was only in the first row should be deleted from the map
     VERIFY_ARE_EQUAL(_buffer->_hyperlinkMap.find(id), _buffer->_hyperlinkMap.end());
     // Since there was a custom id, that should be deleted as well
-    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap.find(customId), _buffer->_hyperlinkCustomIdMap.end());
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap.find(finalCustomId), _buffer->_hyperlinkCustomIdMap.end());
 
     // The other hyperlink reference should not be deleted
     VERIFY_ARE_EQUAL(_buffer->_hyperlinkMap[otherId], otherUrl);
-    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap[otherCustomId], otherId);
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap[finalOtherCustomId], otherId);
 }
 
 // This tests that when we increment the circular buffer, non-obsolete hyperlink references
@@ -2505,7 +2641,7 @@ void TextBufferTests::NoHyperlinkTrim()
 
     // Set a hyperlink id in the first row and add a hyperlink to our map
     const COORD pos{ 70, 0 };
-    const auto id = _buffer->GetHyperlinkId(customId);
+    const auto id = _buffer->GetHyperlinkId(url, customId);
     TextAttribute newAttr{ 0x7f };
     newAttr.SetHyperlinkId(id);
     _buffer->GetRowByOffset(pos.Y).GetAttrRow().SetAttrToEnd(pos.X, newAttr);
@@ -2518,7 +2654,9 @@ void TextBufferTests::NoHyperlinkTrim()
     // Increment the circular buffer
     _buffer->IncrementCircularBuffer();
 
+    const auto finalCustomId = fmt::format(L"{}%{}", customId, std::hash<std::wstring_view>{}(url));
+
     // The hyperlink reference should not be deleted from the map since it is still present in the buffer
     VERIFY_ARE_EQUAL(_buffer->GetHyperlinkUriFromId(id), url);
-    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap[customId], id);
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap[finalCustomId], id);
 }

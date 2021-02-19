@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 
-#include "..\inc\conint.h"
+#include "../inc/conint.h"
 
 using namespace Microsoft::Console::Internal;
 
@@ -28,4 +28,10 @@ void EdpPolicy::AuditClipboard(const std::wstring_view /*destinationName*/) noex
 [[nodiscard]] HRESULT Theming::TrySetDarkMode(HWND /*hwnd*/) noexcept
 {
     return S_FALSE;
+}
+
+[[nodiscard]] HRESULT DefaultApp::CheckDefaultAppPolicy(bool& isEnabled) noexcept
+{
+    isEnabled = false;
+    return S_OK;
 }
