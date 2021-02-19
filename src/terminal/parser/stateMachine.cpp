@@ -576,6 +576,8 @@ void StateMachine::_ActionClear()
     _oscString.clear();
     _oscParameter = 0;
 
+    _dcsStringHandler = nullptr;
+
     _engine->ActionClear();
 }
 
@@ -664,16 +666,36 @@ void StateMachine::_ActionSs3Dispatch(const wchar_t wch)
 }
 
 // Routine Description:
-// - Triggers the DcsPassThrough action to indicate that the listener should handle a DCS data string character.
+// - Triggers the DcsDispatch action to indicate that the listener should handle a control sequence.
+//   The returned handler function will be used to process the subsequent data string characters.
 // Arguments:
 // - wch - Character to dispatch.
 // Return Value:
 // - <none>
-void StateMachine::_ActionDcsPassThrough(const wchar_t wch)
+void StateMachine::_ActionDcsDispatch(const wchar_t wch)
 {
-    _trace.TraceOnAction(L"DcsPassThrough");
-    _trace.TraceOnExecute(wch);
-    // TODO:GH#7316: Send the DCS passthrough sequence to the engine
+    _trace.TraceOnAction(L"DcsDispatch");
+
+    _dcsStringHandler = _engine->ActionDcsDispatch(_identifier.Finalize(wch),
+                                                   { _parameters.data(), _parameters.size() });
+
+    // If the returned handler is null, the sequence is not supported.
+    const bool success = _dcsStringHandler != nullptr;
+
+    // Trace the result.
+    _trace.DispatchSequenceTrace(success);
+
+    if (success)
+    {
+        // If successful, enter the pass through state.
+        _EnterDcsPassThrough();
+    }
+    else
+    {
+        // Otherwise ignore remaining chars and log telemetry on failed cases
+        _EnterDcsIgnore();
+        TermTelemetry::Instance().LogFailed(wch);
+    }
 }
 
 // Routine Description:
@@ -1505,7 +1527,7 @@ void StateMachine::_EventVt52Param(const wchar_t wch)
 //   3. Begin to ignore all remaining characters when an invalid character is detected (DcsIgnore)
 //   4. Store parameter data
 //   5. Collect Intermediate characters
-//   6. Pass through everything else
+//   6. Dispatch the Final character in preparation for parsing the data string
 //  DCS sequences are structurally almost the same as CSI sequences, just with an
 //      extra data string. It's safe to reuse CSI functions for
 //      determining if a character is a parameter, delimiter, or invalid.
@@ -1540,8 +1562,7 @@ void StateMachine::_EventDcsEntry(const wchar_t wch)
     }
     else
     {
-        _ActionDcsPassThrough(wch);
-        _EnterDcsPassThrough();
+        _ActionDcsDispatch(wch);
     }
 }
 
@@ -1566,8 +1587,7 @@ void StateMachine::_EventDcsIgnore() noexcept
 //   2. Ignore Delete characters
 //   3. Collect intermediate data.
 //   4. Begin to ignore all remaining intermediates when an invalid character is detected (DcsIgnore)
-//   5. Enter DcsPassThrough if we see DCS pass through indicator
-//   6. Pass through everything else.
+//   5. Dispatch the Final character in preparation for parsing the data string
 // Arguments:
 // - wch - Character that triggered the event
 // Return Value:
@@ -1593,8 +1613,7 @@ void StateMachine::_EventDcsIntermediate(const wchar_t wch)
     }
     else
     {
-        _ActionDcsPassThrough(wch);
-        _EnterDcsPassThrough();
+        _ActionDcsDispatch(wch);
     }
 }
 
@@ -1606,7 +1625,7 @@ void StateMachine::_EventDcsIntermediate(const wchar_t wch)
 //   3. Collect DCS parameter data
 //   4. Enter DcsIntermediate if we see an intermediate
 //   5. Begin to ignore all remaining parameters when an invalid character is detected (DcsIgnore)
-//   6. Pass through everything else.
+//   6. Dispatch the Final character in preparation for parsing the data string
 // Arguments:
 // - wch - Character that triggered the event
 // Return Value:
@@ -1637,8 +1656,7 @@ void StateMachine::_EventDcsParam(const wchar_t wch)
     }
     else
     {
-        _ActionDcsPassThrough(wch);
-        _EnterDcsPassThrough();
+        _ActionDcsDispatch(wch);
     }
 }
 
@@ -1657,7 +1675,10 @@ void StateMachine::_EventDcsPassThrough(const wchar_t wch)
     _trace.TraceOnEvent(L"DcsPassThrough");
     if (_isC0Code(wch) || _isDcsPassThroughValid(wch))
     {
-        _ActionDcsPassThrough(wch);
+        if (!_dcsStringHandler(wch))
+        {
+            _EnterDcsIgnore();
+        }
     }
     else if (_isEscape(wch))
     {
@@ -1710,7 +1731,9 @@ void StateMachine::_EventVariableLengthStringTermination(const wchar_t wch)
         }
         else if (_state == VTStates::DcsTermination)
         {
-            // TODO:GH#7316: The Dcs sequence has successfully terminated. This is where we'd be dispatching the DCS command.
+            // The ESC signals the end of the data string.
+            _dcsStringHandler(AsciiChars::ESC);
+            _dcsStringHandler = nullptr;
         }
         else if (_state == VTStates::SosPmApcTermination)
         {

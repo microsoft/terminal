@@ -67,7 +67,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ActionOscPut(const wchar_t wch);
         void _ActionOscDispatch(const wchar_t wch);
         void _ActionSs3Dispatch(const wchar_t wch);
-        void _ActionDcsPassThrough(const wchar_t wch);
+        void _ActionDcsDispatch(const wchar_t wch);
 
         void _ActionClear();
         void _ActionIgnore() noexcept;
@@ -158,6 +158,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         std::wstring _oscString;
         size_t _oscParameter;
+
+        IStateMachineEngine::StringHandler _dcsStringHandler;
 
         std::optional<std::wstring> _cachedSequence;
 

@@ -96,6 +96,11 @@ public:
         }
     }
 
+    IStateMachineEngine::StringHandler ActionDcsDispatch(const VTID /*id*/, const VTParameters /*parameters*/) override
+    {
+        return nullptr;
+    }
+
     // This will only be populated if ActionCsiDispatch is called.
     std::vector<size_t> csiParams;
 
