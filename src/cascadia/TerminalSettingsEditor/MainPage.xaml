@@ -78,6 +78,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <muxc:NavigationViewItemHeader x:Uid="Nav_Profiles"/>
     
             <muxc:NavigationViewItem x:Uid="Nav_ProfileDefaults"
+                                     x:Name="BaseLayerMenuItem"
                                      Tag="GlobalProfile_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE81E;"/>

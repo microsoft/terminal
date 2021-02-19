@@ -374,6 +374,13 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     resultPtr->_ResolveDefaultProfile();
     resultPtr->_UpdateActiveProfiles();
 
+    // tag these profiles as in-box
+    for (const auto& profile : resultPtr->AllProfiles())
+    {
+        const auto& profileImpl{ winrt::get_self<implementation::Profile>(profile) };
+        profileImpl->Origin(OriginTag::InBox);
+    }
+
     return *resultPtr;
 }
 
@@ -590,6 +597,8 @@ void CascadiaSettings::_ParseAndLayerFragmentFiles(const std::unordered_set<std:
                         // (we add a new inheritance layer)
                         auto childImpl{ matchingProfile->CreateChild() };
                         childImpl->LayerJson(profileStub);
+                        childImpl->Origin(OriginTag::Fragment);
+                        childImpl->Source(source);
 
                         // replace parent in _profiles with child
                         _allProfiles.SetAt(_FindMatchingProfileIndex(matchingProfile->ToJson()).value(), *childImpl);
@@ -606,6 +615,7 @@ void CascadiaSettings::_ParseAndLayerFragmentFiles(const std::unordered_set<std:
                         // We don't make modifications to the user's settings file yet, that will happen when
                         // _AppendDynamicProfilesToUserSettings() is called later
                         newProfile->Source(source);
+                        newProfile->Origin(OriginTag::Fragment);
                         _allProfiles.Append(*newProfile);
                     }
                 }

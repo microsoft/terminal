@@ -829,27 +829,24 @@
   <data name="ColorScheme_RenameErrorTip.Title" xml:space="preserve">
     <value>This color scheme name is already in use.</value>
   </data>
-  <data name="SettingContainer_OverrideIntro" xml:space="preserve">
-    <value>This overrides the value in {}.</value>
-    <comment>"{}" is the object being overridden. Generally, it will be the name of another profile.</comment>
-  </data>
-  <data name="SettingContainer_ResetButtonHelpText" xml:space="preserve">
-    <value>Reset</value>
-  </data>
-  <data name="SettingContainer_OverrideTarget" xml:space="preserve">
-    <value>a lower layer</value>
-    <comment>This is the object of "SettingContainer_OverrideIntro".</comment>
-  </data>
   <data name="Globals_FocusFollowMouse.Header" xml:space="preserve">
     <value>Automatically focus pane on mouse hover</value>
   </data>
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>Pane animations</value>
   </data>
+  <data name="SettingContainer_OverrideMessageBaseLayer" xml:space="preserve">
+    <value>Reset to base layer value.</value>
+    <comment>"base layer" should match Nav_ProfileDefaults.Content's text</comment>
+  </data>
   <data name="ColorScheme_TerminalColorsHeader.Text" xml:space="preserve">
     <value>Terminal colors</value>
   </data>
   <data name="ColorScheme_SystemColorsHeader.Text" xml:space="preserve">
     <value>System colors</value>
+  </data>
+  <data name="SettingContainer_OverrideMessageFragmentExtension" xml:space="preserve">
+    <value>Reset to value from: {}</value>
+    <comment>{} is replaced by the name of another profile or generator.</comment>
   </data>
 </root>
