@@ -265,6 +265,22 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
         success = _dispatch->LockingShiftRight(3);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::LS3R);
         break;
+    case EscActionCodes::DECDHL_DoubleHeightLineTop:
+        _dispatch->SetLineRendition(LineRendition::DoubleHeightTop);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDHL);
+        break;
+    case EscActionCodes::DECDHL_DoubleHeightLineBottom:
+        _dispatch->SetLineRendition(LineRendition::DoubleHeightBottom);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDHL);
+        break;
+    case EscActionCodes::DECSWL_SingleWidthLine:
+        _dispatch->SetLineRendition(LineRendition::SingleWidth);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSWL);
+        break;
+    case EscActionCodes::DECDWL_DoubleWidthLine:
+        _dispatch->SetLineRendition(LineRendition::DoubleWidth);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDWL);
+        break;
     case EscActionCodes::DECALN_ScreenAlignmentPattern:
         success = _dispatch->ScreenAlignmentPattern();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECALN);
@@ -589,6 +605,19 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         success = _dispatch->SoftReset();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTR);
         break;
+
+    case CsiActionCodes::XT_PushSgr:
+    case CsiActionCodes::XT_PushSgrAlias:
+        success = _dispatch->PushGraphicsRendition(parameters);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::XTPUSHSGR);
+        break;
+
+    case CsiActionCodes::XT_PopSgr:
+    case CsiActionCodes::XT_PopSgrAlias:
+        success = _dispatch->PopGraphicsRendition();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::XTPOPSGR);
+        break;
+
     default:
         // If no functions to call, overall dispatch was a failure.
         success = false;

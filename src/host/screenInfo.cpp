@@ -2223,6 +2223,9 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     auto fillData = OutputCellIterator{ fillAttributes, fillLength };
     Write(fillData, fillPosition, false);
 
+    // Also reset the line rendition for the erased rows.
+    _textBuffer->ResetLineRenditionRange(_viewport.Top(), _viewport.BottomExclusive());
+
     return S_OK;
 }
 
@@ -2395,7 +2398,9 @@ void SCREEN_INFORMATION::ClearTextData()
 // - word boundary positions
 std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(const COORD position) const
 {
-    COORD clampedPosition = position;
+    // The position argument is in screen coordinates, but we need the
+    // equivalent buffer position, taking line rendition into account.
+    COORD clampedPosition = _textBuffer->ScreenToBufferPosition(position);
     GetBufferSize().Clamp(clampedPosition);
 
     COORD start{ clampedPosition };
@@ -2464,6 +2469,12 @@ std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(const COORD position
             }
         }
     }
+
+    // The calculated range is in buffer coordinates, but the caller is
+    // expecting screen offsets, so we have to convert these back again.
+    start = _textBuffer->BufferToScreenPosition(start);
+    end = _textBuffer->BufferToScreenPosition(end);
+
     return { start, end };
 }
 
@@ -2541,6 +2552,8 @@ void SCREEN_INFORMATION::InitializeCursorRowAttributes()
         auto fillAttributes = GetAttributes();
         fillAttributes.SetStandardErase();
         row.GetAttrRow().SetAttrToEnd(0, fillAttributes);
+        // The row should also be single width to start with.
+        row.SetLineRendition(LineRendition::SingleWidth);
     }
 }
 

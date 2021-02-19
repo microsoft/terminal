@@ -174,6 +174,29 @@ void ColorScheme::SetColorTableEntry(uint8_t index, const winrt::Windows::UI::Co
 }
 
 // Method Description:
+// - Validates a given color scheme
+// - A color scheme is valid if it has a name and defines all the colors
+// Arguments:
+// - The color scheme to validate
+// Return Value:
+// - true if the scheme is valid, false otherwise
+bool ColorScheme::ValidateColorScheme(const Json::Value& scheme)
+{
+    for (const auto& key : TableColors)
+    {
+        if (!scheme.isMember(JsonKey(key)))
+        {
+            return false;
+        }
+    }
+    if (!scheme.isMember(JsonKey(NameKey)))
+    {
+        return false;
+    }
+    return true;
+}
+
+// Method Description:
 // - Parse the name from the JSON representation of a ColorScheme.
 // Arguments:
 // - json: an object which should be a serialization of a ColorScheme object.

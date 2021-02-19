@@ -868,11 +868,31 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(4u, page->_mruTabs.Size());
 
         Log::Comment(L"give alphabetical names to all switch tab actions");
-        RunOnUIThread([&page]() {
+        TestOnUIThread([&page]() {
             page->_GetTerminalTabImpl(page->_tabs.GetAt(0))->Title(L"a");
+        });
+        TestOnUIThread([&page]() {
             page->_GetTerminalTabImpl(page->_tabs.GetAt(1))->Title(L"b");
+        });
+        TestOnUIThread([&page]() {
             page->_GetTerminalTabImpl(page->_tabs.GetAt(2))->Title(L"c");
+        });
+        TestOnUIThread([&page]() {
             page->_GetTerminalTabImpl(page->_tabs.GetAt(3))->Title(L"d");
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Sanity check the titles of our tabs are what we set them to.");
+
+            VERIFY_ARE_EQUAL(L"a", page->_tabs.GetAt(0).Title());
+            VERIFY_ARE_EQUAL(L"b", page->_tabs.GetAt(1).Title());
+            VERIFY_ARE_EQUAL(L"c", page->_tabs.GetAt(2).Title());
+            VERIFY_ARE_EQUAL(L"d", page->_tabs.GetAt(3).Title());
+
+            VERIFY_ARE_EQUAL(L"d", page->_mruTabs.GetAt(0).Title());
+            VERIFY_ARE_EQUAL(L"c", page->_mruTabs.GetAt(1).Title());
+            VERIFY_ARE_EQUAL(L"b", page->_mruTabs.GetAt(2).Title());
+            VERIFY_ARE_EQUAL(L"a", page->_mruTabs.GetAt(3).Title());
         });
 
         Log::Comment(L"Change the tab switch order to MRU switching");
@@ -897,18 +917,30 @@ namespace TerminalAppLocalTests
         Log::Comment(L"Switch to the next MRU tab, which is the third tab");
         RunOnUIThread([&page]() {
             page->_SelectNextTab(true);
+            // In the course of a single tick, the Command Palette will:
+            // * open
+            // * select the proper tab from the mru's list
+            // * raise an event for _filteredActionsView().SelectionChanged to
+            //   immediately preview the new tab
+            // * raise a _SwitchToTabRequestedHandlers event
+            // * then dismiss itself, because we can't fake holing down an
+            //   anchor key in the tests
+        });
+
+        TestOnUIThread([&page]() {
+            VERIFY_ARE_EQUAL(L"c", page->_mruTabs.GetAt(0).Title());
+            VERIFY_ARE_EQUAL(L"d", page->_mruTabs.GetAt(1).Title());
+            VERIFY_ARE_EQUAL(L"b", page->_mruTabs.GetAt(2).Title());
+            VERIFY_ARE_EQUAL(L"a", page->_mruTabs.GetAt(3).Title());
         });
 
         const auto palette = winrt::get_self<winrt::TerminalApp::implementation::CommandPalette>(page->CommandPalette());
 
-        VERIFY_ARE_EQUAL(1u, palette->_switcherStartIdx, L"Verify the index is 1 as we went right");
         VERIFY_ARE_EQUAL(winrt::TerminalApp::implementation::CommandPaletteMode::TabSwitchMode, palette->_currentMode, L"Verify we are in the tab switcher mode");
-
-        Log::Comment(L"Verify command palette preserves MRU order of tabs");
-        VERIFY_ARE_EQUAL(4u, palette->_filteredActions.Size());
-        VERIFY_ARE_EQUAL(L"d", palette->_filteredActions.GetAt(0).Item().Name());
-        VERIFY_ARE_EQUAL(L"c", palette->_filteredActions.GetAt(1).Item().Name());
-        VERIFY_ARE_EQUAL(L"b", palette->_filteredActions.GetAt(2).Item().Name());
-        VERIFY_ARE_EQUAL(L"a", palette->_filteredActions.GetAt(3).Item().Name());
+        // At this point, the contents of the command palette's _mruTabs list is
+        // still the _old_ ordering (d, c, b, a). The ordering is only updated
+        // in TerminalPage::_SelectNextTab, but as we saw before, the palette
+        // will also dismiss itself immediately when that's called. So we can't
+        // really inspect the contents of the list in this test, unfortunately.
     }
 }

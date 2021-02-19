@@ -70,6 +70,9 @@ namespace Microsoft::Terminal::Core
         virtual bool SetWorkingDirectory(std::wstring_view uri) noexcept = 0;
         virtual std::wstring_view GetWorkingDirectory() noexcept = 0;
 
+        virtual bool PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) noexcept = 0;
+        virtual bool PopGraphicsRendition() noexcept = 0;
+
     protected:
         ITerminalApi() = default;
     };

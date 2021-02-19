@@ -39,7 +39,7 @@ namespace Microsoft::Console::VirtualTerminal
         void TraceTriggerCircling(const bool newFrame) const;
         void TraceInvalidateScroll(const til::point scroll) const;
         void TraceStartPaint(const bool quickReturn,
-                             const til::bitmap& invalidMap,
+                             const til::pmr::bitmap& invalidMap,
                              const til::rectangle lastViewport,
                              const til::point scrollDelta,
                              const bool cursorMoved,

@@ -12,7 +12,7 @@
   xmlns:desktop5="http://schemas.microsoft.com/appx/manifest/desktop/windows10/5"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
-  IgnorableNamespaces="uap mp rescap">
+  IgnorableNamespaces="uap mp rescap uap3">
 
   <Identity
     Name="WindowsTerminalDev"
@@ -69,6 +69,11 @@
             Enabled="false"
             DisplayName="ms-resource:AppNameDev" />
         </uap5:Extension>
+        <uap3:Extension Category="windows.appExtensionHost">
+              <uap3:AppExtensionHost>
+                <uap3:Name>com.microsoft.windows.terminal.settings</uap3:Name>
+              </uap3:AppExtensionHost>
+        </uap3:Extension>
 
         <com:Extension Category="windows.comServer">
             <com:ComServer>

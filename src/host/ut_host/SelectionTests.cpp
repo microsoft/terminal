@@ -333,7 +333,7 @@ class SelectionTests
 
         COORD startPos{ sTargetX, sTargetY };
         COORD endPos{ base::ClampAdd(sTargetX, sLength), sTargetY };
-        const auto selectionRects = screenInfo.GetTextBuffer().GetTextRects(startPos, endPos);
+        const auto selectionRects = screenInfo.GetTextBuffer().GetTextRects(startPos, endPos, false, false);
 
         VERIFY_ARE_EQUAL(static_cast<size_t>(1), selectionRects.size());
         srSelection = selectionRects.at(0);

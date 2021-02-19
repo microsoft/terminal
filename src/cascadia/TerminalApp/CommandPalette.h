@@ -75,8 +75,7 @@ namespace winrt::TerminalApp::implementation
                                 Windows::UI::Xaml::RoutedEventArgs const& args);
         void _previewKeyDownHandler(Windows::Foundation::IInspectable const& sender,
                                     Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
-        void _keyDownHandler(Windows::Foundation::IInspectable const& sender,
-                             Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+
         void _keyUpHandler(Windows::Foundation::IInspectable const& sender,
                            Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
 
