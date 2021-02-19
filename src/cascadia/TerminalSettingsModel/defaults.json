@@ -287,6 +287,8 @@
         { "command": "openSettings", "keys": "ctrl+," },
         { "command": { "action": "openSettings", "target": "defaultsFile" }, "keys": "ctrl+alt+," },
         { "command": "find", "keys": "ctrl+shift+f" },
+        { "command": { "action": "findMatch", "direction": "next" } },
+        { "command": { "action": "findMatch", "direction": "prev" } },
         { "command": "toggleShaderEffects" },
         { "command": "openTabColorPicker" },
         { "command": "renameTab" },

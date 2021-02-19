@@ -135,8 +135,7 @@ namespace winrt::TerminalApp::implementation
         }
         CATCH_LOG();
 
-        _tabRow.PointerMoved({ this, &TerminalPage::_RestorePointerCursorHandler });
-
+        _tabRow.PointerMoved({ get_weak(), &TerminalPage::_RestorePointerCursorHandler });
         _tabView.CanReorderTabs(!isElevated);
         _tabView.CanDragTabs(!isElevated);
 
@@ -261,7 +260,11 @@ namespace winrt::TerminalApp::implementation
 
         // Store cursor, so we can restore it, e.g., after mouse vanishing
         // (we'll need to adapt this logic once we make cursor context aware)
-        _defaultPointerCursor = CoreWindow::GetForCurrentThread().PointerCursor();
+        try
+        {
+            _defaultPointerCursor = CoreWindow::GetForCurrentThread().PointerCursor();
+        }
+        CATCH_LOG();
     }
 
     // Method Description:
@@ -1128,6 +1131,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->TabSearch({ this, &TerminalPage::_HandleOpenTabSearch });
         _actionDispatch->MoveTab({ this, &TerminalPage::_HandleMoveTab });
         _actionDispatch->BreakIntoDebugger({ this, &TerminalPage::_HandleBreakIntoDebugger });
+        _actionDispatch->FindMatch({ this, &TerminalPage::_HandleFindMatch });
         _actionDispatch->TogglePaneReadOnly({ this, &TerminalPage::_HandleTogglePaneReadOnly });
     }
 
@@ -1386,8 +1390,8 @@ namespace winrt::TerminalApp::implementation
         // Add an event handler for when the terminal wants to set a progress indicator on the taskbar
         term.SetTaskbarProgress({ this, &TerminalPage::_SetTaskbarProgressHandler });
 
-        term.HidePointerCursor({ this, &TerminalPage::_HidePointerCursorHandler });
-        term.RestorePointerCursor({ this, &TerminalPage::_RestorePointerCursorHandler });
+        term.HidePointerCursor({ get_weak(), &TerminalPage::_HidePointerCursorHandler });
+        term.RestorePointerCursor({ get_weak(), &TerminalPage::_RestorePointerCursorHandler });
 
         // Bind Tab events to the TermControl and the Tab's Pane
         hostingTab.Initialize(term);
@@ -3195,8 +3199,15 @@ namespace winrt::TerminalApp::implementation
     {
         if (_shouldMouseVanish && !_isMouseHidden)
         {
-            CoreWindow::GetForCurrentThread().PointerCursor(nullptr);
-            _isMouseHidden = true;
+            if (auto window{ CoreWindow::GetForCurrentThread() })
+            {
+                try
+                {
+                    window.PointerCursor(nullptr);
+                    _isMouseHidden = true;
+                }
+                CATCH_LOG();
+            }
         }
     }
 
@@ -3208,8 +3219,15 @@ namespace winrt::TerminalApp::implementation
     {
         if (_isMouseHidden)
         {
-            CoreWindow::GetForCurrentThread().PointerCursor(_defaultPointerCursor);
-            _isMouseHidden = false;
+            if (auto window{ CoreWindow::GetForCurrentThread() })
+            {
+                try
+                {
+                    window.PointerCursor(_defaultPointerCursor);
+                    _isMouseHidden = false;
+                }
+                CATCH_LOG();
+            }
         }
     }
 
