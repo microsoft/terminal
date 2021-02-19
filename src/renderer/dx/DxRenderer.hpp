@@ -26,6 +26,7 @@
 
 #include "CustomTextLayout.h"
 #include "CustomTextRenderer.h"
+#include "DxFontRenderData.h"
 
 #include "../../types/inc/Viewport.hpp"
 
@@ -73,7 +74,7 @@ namespace Microsoft::Console::Render
 
         // IRenderEngine Members
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
-        [[nodiscard]] HRESULT InvalidateCursor(const COORD* const pcoordCursor) noexcept override;
+        [[nodiscard]] HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept override;
         [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
         [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
@@ -155,20 +156,7 @@ namespace Microsoft::Console::Render
         bool _isEnabled;
         bool _isPainting;
 
-        struct LineMetrics
-        {
-            float gridlineWidth;
-            float underlineOffset;
-            float underlineOffset2;
-            float underlineWidth;
-            float strikethroughOffset;
-            float strikethroughWidth;
-        };
-
-        LineMetrics _lineMetrics;
         til::size _displaySizePixels;
-        til::size _glyphCell;
-        ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
 
         D2D1_COLOR_F _defaultForegroundColor;
         D2D1_COLOR_F _defaultBackgroundColor;
@@ -198,16 +186,13 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID2D1Factory1> _d2dFactory;
 
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
-        ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _dwriteTextFormat;
-        ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _dwriteTextFormatItalic;
-        ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _dwriteFontFace;
-        ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _dwriteFontFaceItalic;
-        ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
         ::Microsoft::WRL::ComPtr<CustomTextLayout> _customLayout;
         ::Microsoft::WRL::ComPtr<CustomTextRenderer> _customRenderer;
         ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _strokeStyle;
         ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _dashStrokeStyle;
         ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _hyperlinkStrokeStyle;
+
+        std::unique_ptr<DxFontRenderData> _fontRenderData;
 
         D2D1_STROKE_STYLE_PROPERTIES _strokeStyleProperties;
         D2D1_STROKE_STYLE_PROPERTIES _dashStrokeStyleProperties;
@@ -302,33 +287,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _CopyFrontToBack() noexcept;
 
         [[nodiscard]] HRESULT _EnableDisplayAccess(const bool outputEnabled) noexcept;
-
-        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _ResolveFontFaceWithFallback(std::wstring& familyName,
-                                                                                              DWRITE_FONT_WEIGHT& weight,
-                                                                                              DWRITE_FONT_STRETCH& stretch,
-                                                                                              DWRITE_FONT_STYLE& style,
-                                                                                              std::wstring& localeName) const;
-
-        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _FindFontFace(std::wstring& familyName,
-                                                                               DWRITE_FONT_WEIGHT& weight,
-                                                                               DWRITE_FONT_STRETCH& stretch,
-                                                                               DWRITE_FONT_STYLE& style,
-                                                                               std::wstring& localeName) const;
-
-        [[nodiscard]] std::wstring _GetLocaleName() const;
-
-        [[nodiscard]] std::wstring _GetFontFamilyName(gsl::not_null<IDWriteFontFamily*> const fontFamily,
-                                                      std::wstring& localeName) const;
-
-        [[nodiscard]] HRESULT _GetProposedFont(const FontInfoDesired& desired,
-                                               FontInfo& actual,
-                                               const int dpi,
-                                               ::Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
-                                               ::Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormatItalic,
-                                               ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
-                                               ::Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace,
-                                               ::Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFaceItalic,
-                                               LineMetrics& lineMetrics) const noexcept;
 
         [[nodiscard]] til::size _GetClientSize() const;
 

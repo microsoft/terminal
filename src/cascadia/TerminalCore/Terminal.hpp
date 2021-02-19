@@ -6,6 +6,7 @@
 #include <conattrs.hpp>
 
 #include "../../buffer/out/textBuffer.hpp"
+#include "../../types/inc/sgrStack.hpp"
 #include "../../renderer/inc/BlinkingState.hpp"
 #include "../../terminal/parser/StateMachine.hpp"
 #include "../../terminal/input/terminalInput.hpp"
@@ -124,6 +125,10 @@ public:
     bool SetTaskbarProgress(const size_t state, const size_t progress) noexcept override;
     bool SetWorkingDirectory(std::wstring_view uri) noexcept override;
     std::wstring_view GetWorkingDirectory() noexcept override;
+
+    bool PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) noexcept override;
+    bool PopGraphicsRendition() noexcept override;
+
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -346,6 +351,8 @@ private:
     std::pair<COORD, COORD> _ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const;
     COORD _ConvertToBufferCell(const COORD viewportPos) const;
 #pragma endregion
+
+    Microsoft::Console::VirtualTerminal::SgrStack _sgrStack;
 
 #ifdef UNIT_TESTING
     friend class TerminalCoreUnitTests::TerminalBufferTests;

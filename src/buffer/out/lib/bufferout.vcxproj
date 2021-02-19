@@ -38,6 +38,7 @@
     <ClInclude Include="..\cursor.h" />
     <ClInclude Include="..\DbcsAttribute.hpp" />
     <ClInclude Include="..\ICharRow.hpp" />
+    <ClInclude Include="..\LineRendition.hpp" />
     <ClInclude Include="..\OutputCell.hpp" />
     <ClInclude Include="..\OutputCellIterator.hpp" />
     <ClInclude Include="..\OutputCellRect.hpp" />

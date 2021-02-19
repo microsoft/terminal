@@ -64,6 +64,13 @@ namespace Microsoft.Terminal.Settings.Model
         Backward
     };
 
+    enum FindMatchDirection
+    {
+        None = 0,
+        Next,
+        Previous
+    };
+
     enum CommandPaletteLaunchMode
     {
         Action = 0,
@@ -203,5 +210,11 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs
     {
         CommandPaletteLaunchMode LaunchMode { get; };
+    };
+
+    [default_interface] runtimeclass FindMatchArgs : IActionArgs
+    {
+        FindMatchArgs(FindMatchDirection direction);
+        FindMatchDirection Direction { get; };
     };
 }

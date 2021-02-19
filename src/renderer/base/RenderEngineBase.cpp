@@ -41,6 +41,18 @@ HRESULT RenderEngineBase::PrepareRenderInfo(const RenderFrameInfo& /*info*/) noe
     return S_FALSE;
 }
 
+HRESULT RenderEngineBase::ResetLineTransform() noexcept
+{
+    return S_FALSE;
+}
+
+HRESULT RenderEngineBase::PrepareLineTransform(const LineRendition /*lineRendition*/,
+                                               const size_t /*targetRow*/,
+                                               const size_t /*viewportLeft*/) noexcept
+{
+    return S_FALSE;
+}
+
 // Method Description:
 // - By default, no one should need continuous redraw. It ruins performance
 //   in terms of CPU, memory, and battery life to just paint forever.

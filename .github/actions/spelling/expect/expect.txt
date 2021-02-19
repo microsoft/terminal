@@ -521,6 +521,8 @@ DECAUPSS
 DECAWM
 DECCKM
 DECCOLM
+DECDHL
+DECDWL
 DECEKBD
 DECID
 DECKPAM
@@ -557,6 +559,7 @@ DECSR
 decstandar
 DECSTBM
 DECSTR
+DECSWL
 DECTCEM
 Dedupe
 deduplicated
@@ -2825,6 +2828,7 @@ Xes
 XES
 xff
 XFile
+XFORM
 XManifest
 XMath
 XMFLOAT
@@ -2843,6 +2847,8 @@ XSubstantial
 xtended
 xterm
 XTest
+XTPUSHSGR
+XTPOPSGR
 xunit
 xutr
 xvalue

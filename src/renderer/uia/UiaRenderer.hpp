@@ -43,7 +43,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
 
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
-        [[nodiscard]] HRESULT InvalidateCursor(const COORD* const pcoordCursor) noexcept override;
+        [[nodiscard]] HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept override;
         [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
         [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
@@ -86,6 +86,6 @@ namespace Microsoft::Console::Render
         Microsoft::Console::Types::IUiaEventDispatcher* _dispatcher;
 
         std::vector<SMALL_RECT> _prevSelection;
-        til::point _prevCursorPos;
+        SMALL_RECT _prevCursorRegion;
     };
 }

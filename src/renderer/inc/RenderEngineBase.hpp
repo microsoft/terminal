@@ -40,6 +40,11 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
 
+        [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
+        [[nodiscard]] HRESULT PrepareLineTransform(const LineRendition lineRendition,
+                                                   const size_t targetRow,
+                                                   const size_t viewportLeft) noexcept override;
+
         [[nodiscard]] virtual bool RequiresContinuousRedraw() noexcept override;
 
         void WaitUntilCanRender() noexcept override;
