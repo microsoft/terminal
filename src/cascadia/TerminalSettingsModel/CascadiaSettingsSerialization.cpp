@@ -597,6 +597,7 @@ void CascadiaSettings::_ParseAndLayerFragmentFiles(const std::unordered_set<std:
                         // (we add a new inheritance layer)
                         auto childImpl{ matchingProfile->CreateChild() };
                         childImpl->LayerJson(profileStub);
+                        childImpl->Origin(OriginTag::Generated);
 
                         // replace parent in _profiles with child
                         _allProfiles.SetAt(_FindMatchingProfileIndex(matchingProfile->ToJson()).value(), *childImpl);
@@ -613,6 +614,7 @@ void CascadiaSettings::_ParseAndLayerFragmentFiles(const std::unordered_set<std:
                         // We don't make modifications to the user's settings file yet, that will happen when
                         // _AppendDynamicProfilesToUserSettings() is called later
                         newProfile->Source(source);
+                        newProfile->Origin(OriginTag::Generated);
                         _allProfiles.Append(*newProfile);
                     }
                 }
