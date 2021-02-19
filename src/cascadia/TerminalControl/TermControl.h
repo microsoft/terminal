@@ -9,6 +9,7 @@
 #include "OpenHyperlinkEventArgs.g.h"
 #include "NoticeEventArgs.g.h"
 #include "KeySentEventArgs.g.h"
+#include "CharSentEventArgs.g.h"
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
@@ -99,27 +100,46 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const hstring _message;
     };
 
-     struct KeySentEventArgs :
+    struct KeySentEventArgs :
         public KeySentEventArgsT<KeySentEventArgs>
-     {
-     public:
-         KeySentEventArgs(const WORD vkey, const WORD scanCode, const DWORD modifiers, const bool keyDown) :
-             _vkey(vkey),
-             _scanCode(scanCode),
-             _modifiers(modifiers),
-             _keyDown(keyDown) {}
+    {
+    public:
+        KeySentEventArgs(const WORD vkey, const WORD scanCode, const DWORD modifiers, const bool keyDown) :
+            _vkey(vkey),
+            _scanCode(scanCode),
+            _modifiers(modifiers),
+            _keyDown(keyDown) {}
 
-         WORD VKey() { return _vkey; };
-         WORD ScanCode() { return _scanCode; };
-         DWORD Modifiers() { return _modifiers; };
-         bool KeyDown() { return _keyDown; };
+        WORD VKey() { return _vkey; };
+        WORD ScanCode() { return _scanCode; };
+        DWORD Modifiers() { return _modifiers; };
+        bool KeyDown() { return _keyDown; };
 
-     private:
-         const WORD _vkey;
-         const WORD _scanCode;
-         const DWORD _modifiers;
-         const bool _keyDown;
-     };
+    private:
+        const WORD _vkey;
+        const WORD _scanCode;
+        const DWORD _modifiers;
+        const bool _keyDown;
+    };
+
+    struct CharSentEventArgs :
+        public CharSentEventArgsT<CharSentEventArgs>
+    {
+    public:
+        CharSentEventArgs(const wchar_t character, const WORD scanCode, const DWORD modifiers) :
+            _character(character),
+            _scanCode(scanCode),
+            _modifiers(modifiers) {}
+
+        wchar_t Character() { return _character; };
+        WORD ScanCode() { return _scanCode; };
+        DWORD Modifiers() { return _modifiers; };
+
+    private:
+        const wchar_t _character;
+        const WORD _scanCode;
+        const DWORD _modifiers;
+    };
 
     struct TermControl : TermControlT<TermControl>
     {
@@ -193,6 +213,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void ToggleReadOnly();
 
         bool TrySendKeyEvent(const WORD vkey, const WORD scanCode, const DWORD modifiers, const bool keyDown);
+        bool TrySendChar(const wchar_t character, const WORD scanCode, const DWORD modifiers);
 
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
@@ -206,6 +227,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControl, IInspectable);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControl, TerminalControl::NoticeEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(KeySent, _keySentHandlers, TerminalControl::TermControl, TerminalControl::KeySentEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CharSent, _charSentHandlers, TerminalControl::TermControl, TerminalControl::CharSentEventArgs);
 
         TYPED_EVENT(WarningBell, IInspectable, IInspectable);
         TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControl, IInspectable);

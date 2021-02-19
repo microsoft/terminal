@@ -2117,6 +2117,22 @@ void Pane::BroadcastKey(const winrt::Microsoft::Terminal::TerminalControl::TermC
     }
 }
 
+void Pane::BroadcastChar(const winrt::Microsoft::Terminal::TerminalControl::TermControl& sourceControl, const wchar_t character, const WORD scanCode, const DWORD modifiers)
+{
+    if (_IsLeaf())
+    {
+        if (_control != sourceControl)
+        {
+            _control.TrySendChar(character, scanCode, modifiers);
+        }
+    }
+    else
+    {
+        _firstChild->BroadcastChar(sourceControl, character, scanCode, modifiers);
+        _secondChild->BroadcastChar(sourceControl, character, scanCode, modifiers);
+    }
+}
+
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 DEFINE_EVENT(Pane, LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 DEFINE_EVENT(Pane, PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);

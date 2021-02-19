@@ -412,7 +412,6 @@ namespace winrt::TerminalApp::implementation
             ++_nextPaneId;
         }
         _activePane = first;
-        _AttachEventHandlersToControl(control);
 
         // Add a event handlers to the new panes' GotFocus event. When the pane
         // gains focus, we'll mark it as the new active pane.
@@ -635,6 +634,16 @@ namespace winrt::TerminalApp::implementation
                 if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::TerminalControl::TermControl>() })
                 {
                     tab->_rootPane->BroadcastKey(termControl, e.VKey(), e.ScanCode(), e.Modifiers(), e.KeyDown());
+                }
+            }
+        });
+
+        control.CharSent([weakThis](auto&& sender, auto&& e) {
+            if (const auto tab{ weakThis.get() })
+            {
+                if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::TerminalControl::TermControl>() })
+                {
+                    tab->_rootPane->BroadcastChar(termControl, e.Character(), e.ScanCode(), e.Modifiers());
                 }
             }
         });

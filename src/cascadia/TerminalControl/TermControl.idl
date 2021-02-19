@@ -67,6 +67,13 @@ namespace Microsoft.Terminal.TerminalControl
         Boolean KeyDown { get; };
     }
 
+    runtimeclass CharSentEventArgs
+    {
+        Char Character { get; };
+        UInt16 ScanCode { get; };
+        UInt32 Modifiers { get; };
+    }
+
     [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl, IDirectKeyListener, IMouseWheelListener
     {
         TermControl(Microsoft.Terminal.TerminalControl.IControlSettings settings, Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
@@ -88,6 +95,7 @@ namespace Microsoft.Terminal.TerminalControl
         event Windows.Foundation.TypedEventHandler<Object, Object> HidePointerCursor;
         event Windows.Foundation.TypedEventHandler<Object, Object> RestorePointerCursor;
         event Windows.Foundation.TypedEventHandler<TermControl, KeySentEventArgs> KeySent;
+        event Windows.Foundation.TypedEventHandler<TermControl, CharSentEventArgs> CharSent;
 
         event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         // This is an event handler forwarder for the underlying connection.
@@ -119,6 +127,7 @@ namespace Microsoft.Terminal.TerminalControl
         void ToggleShaderEffects();
         void SendInput(String input);
         Boolean TrySendKeyEvent(UInt16 vkey, UInt16 scanCode, UInt32 modifiers, Boolean keyDown);
+        Boolean TrySendChar(Char character, UInt16 scanCode, UInt32 modifiers);
 
         void TaskbarProgressChanged();
         UInt64 TaskbarState { get; };

@@ -889,8 +889,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             modifiers |= ControlKeyStates::EnhancedKey;
         }
-        const bool handled = _terminal->SendCharEvent(ch, scanCode, modifiers);
+
+        const bool handled = TrySendChar(ch, scanCode, modifiers.Value());
+        auto charSentArgs = winrt::make<CharSentEventArgs>(ch, scanCode, modifiers.Value());
+        _charSentHandlers(*this, charSentArgs);
         e.Handled(handled);
+    }
+
+    // Method Description:
+    // - Sends character to terminal
+    bool TermControl::TrySendChar(const wchar_t character, const WORD scanCode, const DWORD modifiers)
+    {
+        ControlKeyStates keyStates{ modifiers };
+        return _terminal->SendCharEvent(character, scanCode, keyStates);
     }
 
     // Method Description:
@@ -1121,9 +1132,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
     // - keyDown: If true, the key was pressed, otherwise the key was released.
     bool TermControl::TrySendKeyEvent(const WORD vkey,
-                                       const WORD scanCode,
-                                       const DWORD modifiers,
-                                       const bool keyDown)
+                                      const WORD scanCode,
+                                      const DWORD modifiers,
+                                      const bool keyDown)
     {
         // When there is a selection active, escape should clear it and NOT flow through
         // to the terminal. With any other keypress, it should clear the selection AND
@@ -3384,5 +3395,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControl, IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControl, TerminalControl::NoticeEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, KeySent, _keySentHandlers, TerminalControl::TermControl, TerminalControl::KeySentEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, CharSent, _charSentHandlers, TerminalControl::TermControl, TerminalControl::CharSentEventArgs);
     // clang-format on
 }
