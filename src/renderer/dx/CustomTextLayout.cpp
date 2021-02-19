@@ -183,11 +183,11 @@ CATCH_RETURN()
             RETURN_IF_FAILED(hr);
             _SetCurrentRun(pos);
             _SplitCurrentRun(pos);
-            pos += uiLengthRead;
+            pos += std::max(uiLengthRead, 1u);
             while (uiLengthRead > 0)
             {
                 auto& run = _FetchNextRun(uiLengthRead);
-                run.isTextSimple = (bool)isTextSimple;
+                run.isTextSimple = isTextSimple;
             }
         }
     }
@@ -234,7 +234,7 @@ CATCH_RETURN()
             }
         }
 
-        for (auto &range : complexRanges)
+        for (auto& range : complexRanges)
         {
             // Call each of the analyzers in sequence, recording their results.
             RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeLineBreakpoints(this, range.first, range.second, this));
@@ -373,7 +373,7 @@ CATCH_RETURN()
                 &_glyphDesignUnitAdvances.at(glyphStart),
                 run.isSideways));
 
-            for (size_t i = glyphStart; i < glyphStart + textLength; i++)
+            for (UINT32 i = glyphStart; i < glyphStart + textLength; i++)
             {
                 _glyphAdvances.at(i) = (float)_glyphDesignUnitAdvances.at(i) / designUnitsPerEm * _formatInUse->GetFontSize() * run.fontScale;
             }
