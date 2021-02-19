@@ -37,6 +37,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ColorScheme(hstring name, COLORREF defaultFg, COLORREF defaultBg, COLORREF cursorColor);
         com_ptr<ColorScheme> Copy() const;
 
+        hstring ToString()
+        {
+            return Name();
+        }
+
         static com_ptr<ColorScheme> FromJson(const Json::Value& json);
         bool ShouldBeLayered(const Json::Value& json) const;
         void LayerJson(const Json::Value& json);
