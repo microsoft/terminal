@@ -999,11 +999,7 @@ namespace winrt::TerminalApp::implementation
                                  WI_IsFlagSet(rShiftState, CoreVirtualKeyStates::Down) };
 
         auto target{ SettingsTarget::SettingsUI };
-        if (shiftPressed && altPressed)
-        {
-            target = SettingsTarget::AllFiles;
-        }
-        else if (shiftPressed)
+        if (shiftPressed)
         {
             target = SettingsTarget::SettingsFile;
         }
