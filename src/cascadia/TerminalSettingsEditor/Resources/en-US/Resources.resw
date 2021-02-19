@@ -822,5 +822,6 @@
   </data>
   <data name="SettingContainer_OverrideMessageBaseLayer" xml:space="preserve">
     <value>Reset to base layer value</value>
+    <comment>"base layer" should match Nav_ProfileDefaults.Content's text</comment>
   </data>
 </root>

@@ -5,7 +5,6 @@
 #include "SettingContainer.h"
 #include "SettingContainer.g.cpp"
 #include "LibraryResources.h"
-#include "../TerminalSettingsModel/LegacyProfileGeneratorNamespaces.h"
 
 using namespace winrt::Windows::UI::Xaml;
 
@@ -153,22 +152,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     // We want to be smart about showing the override system.
                     // Don't just show it if the user explicitly set the setting.
                     // If the tooltip is empty, we'll hide the entire override system.
-                    hstring tooltip;
+                    hstring tooltip{};
 
                     const auto& settingSrc{ SettingOverrideSource() };
-                    if (!settingSrc)
+                    if (const auto& profile{ settingSrc.try_as<Model::Profile>() })
                     {
-                        // no source; we're using the system-default value
-                        tooltip = L"";
-                    }
-                    else if (const auto& profile{ settingSrc.try_as<Model::Profile>() })
-                    {
-                        tooltip = _GenerateOverrideSystem(profile);
-                    }
-                    else
-                    {
-                        // unknown source
-                        tooltip = L"";
+                        tooltip = _GenerateOverrideMessage(profile);
                     }
 
                     Controls::ToolTipService::SetToolTip(button, box_value(tooltip));
@@ -189,19 +178,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - profile: the profile that defines the setting (aka SettingOverrideSource)
     // Return Value:
     // - text specifying where the setting was defined. If empty, we don't want to show the system.
-    hstring SettingContainer::_GenerateOverrideSystem(const Model::Profile& profile)
+    hstring SettingContainer::_GenerateOverrideMessage(const Model::Profile& profile)
     {
         const auto originTag{ profile.Origin() };
         if (originTag == Model::OriginTag::InBox)
         {
             // in-box profile
-            return L"";
+            return {};
         }
         else if (originTag == Model::OriginTag::Generated)
         {
             // from a dynamic profile generator
             // TODO #1690: add special handling for proto-extensions here
-            return L"";
+            return {};
         }
         else
         {

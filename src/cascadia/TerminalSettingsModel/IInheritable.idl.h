@@ -3,12 +3,14 @@
 
 #pragma once
 
+#define _BASE_INHERITABLE_SETTING(Type, Name) \
+    Type Name                                 \
+    {                                         \
+        get;                                  \
+        set;                                  \
+    };                                        \
+    Boolean Has##Name { get; };               \
+    void Clear##Name()
+
 #define INHERITABLE_SETTING(Type, Name) \
-    Type Name                         \
-    {                                 \
-        get;                          \
-        set;                          \
-    };                                \
-    Boolean Has##Name { get; };       \
-    void Clear##Name();               \
-    Microsoft.Terminal.Settings.Model.Profile Name##OverrideSource { get; }
+    _BASE_INHERITABLE_SETTING(Type, Name)
