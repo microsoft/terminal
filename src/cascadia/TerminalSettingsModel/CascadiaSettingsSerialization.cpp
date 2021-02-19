@@ -482,10 +482,15 @@ void CascadiaSettings::_LoadFragmentExtensions()
             // so for now we will just take the folder path and access the files that way
             auto path = winrt::to_string(foundFolder.Path());
             path.append(FragmentsSubDirectory);
-            const auto jsonFiles = _AccumulateJsonFilesInDirectory(til::u8u16(path));
 
-            // Provide the package name as the source
-            _ParseAndLayerFragmentFiles(jsonFiles, ext.Package().Id().FamilyName().c_str());
+            // If the directory exists, use the fragments in it
+            if (std::filesystem::exists(path))
+            {
+                const auto jsonFiles = _AccumulateJsonFilesInDirectory(til::u8u16(path));
+
+                // Provide the package name as the source
+                _ParseAndLayerFragmentFiles(jsonFiles, ext.Package().Id().FamilyName().c_str());
+            }
         }
     }
 }
