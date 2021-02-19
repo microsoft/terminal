@@ -830,7 +830,7 @@
   <data name="ColorScheme_SystemColorsHeader.Text" xml:space="preserve">
     <value>System colors</value>
   </data>
-  <data name="SettingContainer_OverrideMessageProtoExtension" xml:space="preserve">
+  <data name="SettingContainer_OverrideMessageFragmentExtension" xml:space="preserve">
     <value>Reset to value from: {}</value>
     <comment>{} is replaced by the name of another profile or generator.</comment>
   </data>

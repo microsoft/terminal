@@ -5,7 +5,6 @@
 #include "SettingContainer.h"
 #include "SettingContainer.g.cpp"
 #include "LibraryResources.h"
-#include "../TerminalSettingsModel/LegacyProfileGeneratorNamespaces.h"
 
 using namespace winrt::Windows::UI::Xaml;
 
@@ -189,19 +188,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (originTag == Model::OriginTag::Generated)
         {
-            const auto profileSource{ profile.Source() };
-            if (profileSource == WslGeneratorNamespace ||
-                profileSource == AzureGeneratorNamespace ||
-                profileSource == PowershellCoreGeneratorNamespace)
-            {
-                // from a dynamic profile generator
-                return {};
-            }
-            else
-            {
-                // proto-extensions
-                return hstring{ fmt::format(std::wstring_view(RS_(L"SettingContainer_OverrideMessageProtoExtension")), profileSource) };
-            }
+            // from a dynamic profile generator
+            return {};
+        }
+        else if (originTag == Model::OriginTag::Fragment)
+        {
+            // from a fragment extension
+            return hstring{ fmt::format(std::wstring_view(RS_(L"SettingContainer_OverrideMessageFragmentExtension")), profile.Source()) };
         }
         else
         {
