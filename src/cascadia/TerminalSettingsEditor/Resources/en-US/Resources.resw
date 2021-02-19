@@ -831,4 +831,10 @@
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>Pane animations</value>
   </data>
+  <data name="ColorScheme_TerminalColorsHeader.Text" xml:space="preserve">
+    <value>Terminal colors</value>
+  </data>
+  <data name="ColorScheme_SystemColorsHeader.Text" xml:space="preserve">
+    <value>System colors</value>
+  </data>
 </root>

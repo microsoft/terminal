@@ -22,6 +22,7 @@ activatable
 ACTIVEBORDER
 ACTIVECAPTION
 ADDALIAS
+ADDB
 ADDREF
 addressof
 ADDSTRING
@@ -520,6 +521,8 @@ DECAUPSS
 DECAWM
 DECCKM
 DECCOLM
+DECDHL
+DECDWL
 DECEKBD
 DECID
 DECKPAM
@@ -556,6 +559,7 @@ DECSR
 decstandar
 DECSTBM
 DECSTR
+DECSWL
 DECTCEM
 Dedupe
 deduplicated
@@ -1636,6 +1640,7 @@ ONECOREWINDOWS
 onehalf
 ONLCR
 Oo
+openconsoleproxy
 openbash
 opencode
 opencon
@@ -2823,6 +2828,7 @@ Xes
 XES
 xff
 XFile
+XFORM
 XManifest
 XMath
 XMFLOAT
@@ -2841,6 +2847,8 @@ XSubstantial
 xtended
 xterm
 XTest
+XTPUSHSGR
+XTPOPSGR
 xunit
 xutr
 xvalue

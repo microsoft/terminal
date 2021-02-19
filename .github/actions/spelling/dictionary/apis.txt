@@ -23,6 +23,7 @@ Hashtable
 HIGHCONTRASTON
 HIGHCONTRASTW
 href
+IApp
 IAppearance
 IAsync
 IBind
@@ -37,8 +38,10 @@ IExplorer
 IInheritable
 IMap
 IObject
+IPackage
 IPeasant
 IStorage
+IStringable
 ITab
 ITaskbar
 LCID
@@ -91,6 +94,8 @@ TBPF
 THEMECHANGED
 tmp
 tolower
+TTask
+TVal
 tx
 UPDATEINIFILE
 userenv

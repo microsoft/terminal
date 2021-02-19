@@ -318,7 +318,7 @@ const bool RenderData::IsGridLineDrawingAllowed() noexcept
 // - Retrieves the title information to be displayed in the frame/edge of the window
 // Return Value:
 // - String with title information
-const std::wstring RenderData::GetConsoleTitle() const noexcept
+const std::wstring_view RenderData::GetConsoleTitle() const noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetTitleAndPrefix();

@@ -215,7 +215,7 @@ void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
     SetSelectionEnd(realCoordEnd, SelectionExpansionMode::Cell);
 }
 
-const std::wstring Terminal::GetConsoleTitle() const noexcept
+const std::wstring_view Terminal::GetConsoleTitle() const noexcept
 try
 {
     if (_title.has_value())

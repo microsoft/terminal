@@ -431,3 +431,11 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CommandPaletteLa
         pair_type{ "commandLine", ValueType::CommandLine },
     };
 };
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FindMatchDirection)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "next", ValueType::Next },
+        pair_type{ "prev", ValueType::Previous },
+    };
+};

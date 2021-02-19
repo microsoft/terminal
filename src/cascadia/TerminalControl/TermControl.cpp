@@ -225,6 +225,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    void TermControl::SearchMatch(const bool goForward)
+    {
+        if (!_searchBox)
+        {
+            CreateSearchBoxControl();
+        }
+        else
+        {
+            _Search(_searchBox->TextBox().Text(), goForward, false);
+        }
+    }
+
     // Method Description:
     // - Search text in text buffer. This is triggered if the user click
     //   search button or press enter.
@@ -234,7 +246,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - caseSensitive: boolean that represents if the current search is case sensitive
     // Return Value:
     // - <none>
-    void TermControl::_Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive)
+    void TermControl::_Search(const winrt::hstring& text,
+                              const bool goForward,
+                              const bool caseSensitive)
     {
         if (text.size() == 0 || _closing)
         {
@@ -267,7 +281,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - RoutedEventArgs: not used
     // Return Value:
     // - <none>
-    void TermControl::_CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/, RoutedEventArgs const& /*args*/)
+    void TermControl::_CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                             RoutedEventArgs const& /*args*/)
     {
         _searchBox->Visibility(Visibility::Collapsed);
 
@@ -1098,10 +1113,26 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // modifier key. We'll wait for a real keystroke to dismiss the
         // GH #7395 - don't dismiss selection when taking PrintScreen
         // selection.
-        if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey) && vkey != VK_SNAPSHOT)
+        // GH#8522, GH#3758 - Only dismiss the selection on key _down_. If we
+        // dismiss on key up, then there's chance that we'll immediately dismiss
+        // a selection created by an action bound to a keydown.
+        if (_terminal->IsSelectionActive() &&
+            !KeyEvent::IsModifierKey(vkey) &&
+            vkey != VK_SNAPSHOT &&
+            keyDown)
         {
-            _terminal->ClearSelection();
-            _renderer->TriggerSelection();
+            const CoreWindow window = CoreWindow::GetForCurrentThread();
+            const auto leftWinKeyState = window.GetKeyState(VirtualKey::LeftWindows);
+            const auto rightWinKeyState = window.GetKeyState(VirtualKey::RightWindows);
+            const auto isLeftWinKeyDown = WI_IsFlagSet(leftWinKeyState, CoreVirtualKeyStates::Down);
+            const auto isRightWinKeyDown = WI_IsFlagSet(rightWinKeyState, CoreVirtualKeyStates::Down);
+
+            // GH#8791 - don't dismiss selection if Windows key was also pressed as a key-combination.
+            if (!isLeftWinKeyDown && !isRightWinKeyDown)
+            {
+                _terminal->ClearSelection();
+                _renderer->TriggerSelection();
+            }
 
             if (vkey == VK_ESCAPE)
             {
@@ -1366,7 +1397,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (!_focused && _settings.FocusFollowMouse())
         {
-            Focus(FocusState::Pointer);
+            _FocusFollowMouseRequestedHandlers(*this, nullptr);
         }
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
@@ -1425,48 +1456,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
             }
 
-            if (terminalPosition != _lastHoveredCell)
-            {
-                const auto uri = _terminal->GetHyperlinkAtPosition(terminalPosition);
-                if (!uri.empty())
-                {
-                    // Update the tooltip with the URI
-                    HoveredUri().Text(uri);
-
-                    // Set the border thickness so it covers the entire cell
-                    const auto charSizeInPixels = CharacterDimensions();
-                    const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
-                    const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
-                    const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
-                    HyperlinkTooltipBorder().BorderThickness(newThickness);
-
-                    // Compute the location of the top left corner of the cell in DIPS
-                    const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
-                    const til::point startPos{ terminalPosition.X, terminalPosition.Y };
-                    const til::size fontSize{ _actualFont.GetSize() };
-                    const til::point posInPixels{ startPos * fontSize };
-                    const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
-                    const til::point locationInDIPs{ posInDIPs + marginsInDips };
-
-                    // Move the border to the top left corner of the cell
-                    OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
-                    OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
-                }
-                _lastHoveredCell = terminalPosition;
-
-                const auto newId = _terminal->GetHyperlinkIdAtPosition(terminalPosition);
-                const auto newInterval = _terminal->GetHyperlinkIntervalFromPosition(terminalPosition);
-                // If the hyperlink ID changed or the interval changed, trigger a redraw all
-                // (so this will happen both when we move onto a link and when we move off a link)
-                if (newId != _lastHoveredId || (newInterval != _lastHoveredInterval))
-                {
-                    _lastHoveredId = newId;
-                    _lastHoveredInterval = newInterval;
-                    _renderEngine->UpdateHyperlinkHoveredId(newId);
-                    _renderer->UpdateLastHoveredInterval(newInterval);
-                    _renderer->TriggerRedrawAll();
-                }
-            }
+            _UpdateHoveredCell(terminalPosition);
         }
         else if (_focused && ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
         {
@@ -2881,7 +2871,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
     ControlKeyStates TermControl::_GetPressedModifierKeys() const
     {
-        CoreWindow window = CoreWindow::GetForCurrentThread();
+        const CoreWindow window = CoreWindow::GetForCurrentThread();
         // DONT USE
         //      != CoreVirtualKeyStates::None
         // OR
@@ -3291,6 +3281,74 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));
             control->_raiseNoticeHandlers(*control, std::move(noticeArgs));
         }
+    }
+
+    // Method description:
+    // - Updates last hovered cell, renders / removes rendering of hyper-link if required
+    // Arguments:
+    // - terminalPosition: The terminal position of the pointer
+    void TermControl::_UpdateHoveredCell(const std::optional<COORD>& terminalPosition)
+    {
+        if (terminalPosition == _lastHoveredCell)
+        {
+            return;
+        }
+
+        _lastHoveredCell = terminalPosition;
+
+        if (terminalPosition.has_value())
+        {
+            const auto uri = _terminal->GetHyperlinkAtPosition(*terminalPosition);
+            if (!uri.empty())
+            {
+                // Update the tooltip with the URI
+                HoveredUri().Text(uri);
+
+                // Set the border thickness so it covers the entire cell
+                const auto charSizeInPixels = CharacterDimensions();
+                const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
+                const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
+                const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
+                HyperlinkTooltipBorder().BorderThickness(newThickness);
+
+                // Compute the location of the top left corner of the cell in DIPS
+                const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
+                const til::point startPos{ terminalPosition->X, terminalPosition->Y };
+                const til::size fontSize{ _actualFont.GetSize() };
+                const til::point posInPixels{ startPos * fontSize };
+                const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
+                const til::point locationInDIPs{ posInDIPs + marginsInDips };
+
+                // Move the border to the top left corner of the cell
+                OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
+                OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
+            }
+        }
+
+        const uint16_t newId = terminalPosition.has_value() ? _terminal->GetHyperlinkIdAtPosition(*terminalPosition) : 0u;
+        const auto newInterval = terminalPosition.has_value() ? _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition) : std::nullopt;
+
+        // If the hyperlink ID changed or the interval changed, trigger a redraw all
+        // (so this will happen both when we move onto a link and when we move off a link)
+        if (newId != _lastHoveredId || (newInterval != _lastHoveredInterval))
+        {
+            _lastHoveredId = newId;
+            _lastHoveredInterval = newInterval;
+            _renderEngine->UpdateHyperlinkHoveredId(newId);
+            _renderer->UpdateLastHoveredInterval(newInterval);
+            _renderer->TriggerRedrawAll();
+        }
+    }
+
+    // Method Description:
+    // - Handle a mouse exited event, specifically clearing last hovered cell
+    // and removing selection from hyper link if exists
+    // Arguments:
+    // - sender: not used
+    // - args: event data
+    void TermControl::_PointerExitedHandler(Windows::Foundation::IInspectable const& /*sender*/, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
+    {
+        _UpdateHoveredCell(std::nullopt);
     }
 
     // -------------------------------- WinRT Events ---------------------------------

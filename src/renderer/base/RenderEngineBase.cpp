@@ -13,7 +13,7 @@ RenderEngineBase::RenderEngineBase() :
 {
 }
 
-HRESULT RenderEngineBase::InvalidateTitle(const std::wstring& proposedTitle) noexcept
+HRESULT RenderEngineBase::InvalidateTitle(const std::wstring_view proposedTitle) noexcept
 {
     if (proposedTitle != _lastFrameTitle)
     {
@@ -23,7 +23,7 @@ HRESULT RenderEngineBase::InvalidateTitle(const std::wstring& proposedTitle) noe
     return S_OK;
 }
 
-HRESULT RenderEngineBase::UpdateTitle(const std::wstring& newTitle) noexcept
+HRESULT RenderEngineBase::UpdateTitle(const std::wstring_view newTitle) noexcept
 {
     HRESULT hr = S_FALSE;
     if (newTitle != _lastFrameTitle)
@@ -37,6 +37,18 @@ HRESULT RenderEngineBase::UpdateTitle(const std::wstring& newTitle) noexcept
 }
 
 HRESULT RenderEngineBase::PrepareRenderInfo(const RenderFrameInfo& /*info*/) noexcept
+{
+    return S_FALSE;
+}
+
+HRESULT RenderEngineBase::ResetLineTransform() noexcept
+{
+    return S_FALSE;
+}
+
+HRESULT RenderEngineBase::PrepareLineTransform(const LineRendition /*lineRendition*/,
+                                               const size_t /*targetRow*/,
+                                               const size_t /*viewportLeft*/) noexcept
 {
     return S_FALSE;
 }
