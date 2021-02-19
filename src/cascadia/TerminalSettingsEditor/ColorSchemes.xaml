@@ -71,37 +71,8 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                     <Button.Flyout>
                         <Flyout>
-                            <ColorPicker Tag="{x:Bind Index, Mode=OneWay}"
+                            <ColorPicker Tag="{x:Bind Tag, Mode=OneWay}"
                                          Color="{x:Bind Color, Mode=OneWay}"
-                                         ColorChanged="ColorPickerChanged"/>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-            </DataTemplate>
-
-            <DataTemplate x:Key="ColorTemplate" x:DataType="Color">
-                <Button x:Name="ColorButton"
-                        Background="{Binding Color, ElementName=ColorPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}"
-                        Style="{StaticResource ColorButtonStyle}">
-                    <Button.Resources>
-                        <!-- Resources to colorize hover/pressed states based on the color of the button -->
-                        <ResourceDictionary>
-                            <ResourceDictionary.ThemeDictionaries>
-                                <ResourceDictionary x:Key="Light">
-                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{Binding Color, ElementName=ColorPicker, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
-                                </ResourceDictionary>
-                                <ResourceDictionary x:Key="Dark">
-                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{Binding Color, ElementName=ColorPicker, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
-                                </ResourceDictionary>
-                                <!-- No High contrast dictionary, let's just leave that unchanged. -->
-                            </ResourceDictionary.ThemeDictionaries>
-                        </ResourceDictionary>
-                    </Button.Resources>
-
-                    <Button.Flyout>
-                        <Flyout>
-                            <ColorPicker x:Name="ColorPicker"
-                                         Color="{x:Bind Mode=OneWay}"
                                          ColorChanged="ColorPickerChanged"/>
                         </Flyout>
                     </Button.Flyout>
@@ -271,8 +242,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                                    Grid.Row="0"
                                    Grid.Column="0"/>
                         <ContentControl x:Name="ForegroundButton"
-                                        ContentTemplate="{StaticResource ColorTemplate}"
-                                        Content="{x:Bind CurrentColorScheme.Foreground, Mode=TwoWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Content="{x:Bind CurrentForegroundColor, Mode=TwoWay}"
                                         Style="{StaticResource ColorControlStyle}"
                                         Grid.Row="0"
                                         Grid.Column="1"/>
@@ -283,8 +254,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                                    Grid.Row="1"
                                    Grid.Column="0"/>
                         <ContentControl x:Name="BackgroundButton"
-                                        ContentTemplate="{StaticResource ColorTemplate}"
-                                        Content="{x:Bind CurrentColorScheme.Background, Mode=TwoWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Content="{x:Bind CurrentBackgroundColor, Mode=TwoWay}"
                                         Style="{StaticResource ColorControlStyle}"
                                         Grid.Row="1"
                                         Grid.Column="1"/>
@@ -295,8 +266,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                                    Grid.Row="2"
                                    Grid.Column="0"/>
                         <ContentControl x:Name="CursorColorButton"
-                                        ContentTemplate="{StaticResource ColorTemplate}"
-                                        Content="{x:Bind CurrentColorScheme.CursorColor, Mode=TwoWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Content="{x:Bind CurrentCursorColor, Mode=TwoWay}"
                                         Style="{StaticResource ColorControlStyle}"
                                         Grid.Row="2"
                                         Grid.Column="1"/>
@@ -307,8 +278,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                                    Grid.Row="3"
                                    Grid.Column="0"/>
                         <ContentControl x:Name="SelectionBackgroundButton"
-                                        ContentTemplate="{StaticResource ColorTemplate}"
-                                        Content="{x:Bind CurrentColorScheme.SelectionBackground, Mode=TwoWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Content="{x:Bind CurrentSelectionBackgroundColor, Mode=TwoWay}"
                                         Style="{StaticResource ColorControlStyle}"
                                         Grid.Row="3"
                                         Grid.Column="1"/>

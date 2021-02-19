@@ -23,6 +23,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // The first 8 entries of the color table are non-bright colors, whereas the rest are bright.
     static constexpr uint8_t ColorTableDivider{ 8 };
 
+    static constexpr std::wstring_view ForegroundColorTag{ L"Foreground" };
+    static constexpr std::wstring_view BackgroundColorTag{ L"Background" };
+    static constexpr std::wstring_view CursorColorTag{ L"CursorColor" };
+    static constexpr std::wstring_view SelectionBackgroundColorTag{ L"SelectionBackground" };
+
     static const std::array<hstring, 16> TableColorNames = {
         RS_(L"ColorScheme_Black/Header"),
         RS_(L"ColorScheme_Red/Header"),
@@ -60,18 +65,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _CurrentBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
     {
         InitializeComponent();
-
-        ToolTipService::SetToolTip(ForegroundButton(), box_value(RS_(L"ColorScheme_Foreground/Text")));
-        Automation::AutomationProperties::SetName(ForegroundButton(), RS_(L"ColorScheme_Foreground/Text"));
-
-        ToolTipService::SetToolTip(BackgroundButton(), box_value(RS_(L"ColorScheme_Background/Text")));
-        Automation::AutomationProperties::SetName(BackgroundButton(), RS_(L"ColorScheme_Background/Text"));
-
-        ToolTipService::SetToolTip(CursorColorButton(), box_value(RS_(L"ColorScheme_CursorColor/Text")));
-        Automation::AutomationProperties::SetName(CursorColorButton(), RS_(L"ColorScheme_CursorColor/Text"));
-
-        ToolTipService::SetToolTip(SelectionBackgroundButton(), box_value(RS_(L"ColorScheme_SelectionBackground/Text")));
-        Automation::AutomationProperties::SetName(SelectionBackgroundButton(), RS_(L"ColorScheme_SelectionBackground/Text"));
 
         Automation::AutomationProperties::SetName(ColorSchemeComboBox(), RS_(L"ColorScheme_Name/Header"));
         Automation::AutomationProperties::SetFullDescription(ColorSchemeComboBox(), RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
@@ -111,6 +104,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _CurrentBrightColorTable.Append(entry);
             }
         }
+        _CurrentForegroundColor = winrt::make<ColorTableEntry>(ForegroundColorTag, Windows::UI::Color{ 0, 0, 0, 0 });
+        _CurrentBackgroundColor = winrt::make<ColorTableEntry>(BackgroundColorTag, Windows::UI::Color{ 0, 0, 0, 0 });
+        _CurrentCursorColor = winrt::make<ColorTableEntry>(CursorColorTag, Windows::UI::Color{ 0, 0, 0, 0 });
+        _CurrentSelectionBackgroundColor = winrt::make<ColorTableEntry>(SelectionBackgroundColorTag, Windows::UI::Color{ 0, 0, 0, 0 });
 
         // Try to look up the scheme that was navigated to. If we find it, immediately select it.
         const std::wstring lastNameFromNav{ _State.LastSelectedScheme() };
@@ -226,15 +223,40 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (const auto& tag{ picker.Tag() })
             {
-                const auto index{ winrt::unbox_value<uint8_t>(tag) };
-                CurrentColorScheme().SetColorTableEntry(index, args.NewColor());
-                if (index < ColorTableDivider)
+                if (const auto index{ tag.try_as<uint8_t>() })
                 {
-                    _CurrentNonBrightColorTable.GetAt(index).Color(args.NewColor());
+                    CurrentColorScheme().SetColorTableEntry(*index, args.NewColor());
+                    if (index < ColorTableDivider)
+                    {
+                        _CurrentNonBrightColorTable.GetAt(*index).Color(args.NewColor());
+                    }
+                    else
+                    {
+                        _CurrentBrightColorTable.GetAt(*index - ColorTableDivider).Color(args.NewColor());
+                    }
                 }
-                else
+                else if (const auto stringTag{ tag.try_as<hstring>() })
                 {
-                    _CurrentBrightColorTable.GetAt(index - ColorTableDivider).Color(args.NewColor());
+                    if (stringTag == ForegroundColorTag)
+                    {
+                        CurrentColorScheme().Foreground(args.NewColor());
+                        _CurrentForegroundColor.Color(args.NewColor());
+                    }
+                    else if (stringTag == BackgroundColorTag)
+                    {
+                        CurrentColorScheme().Background(args.NewColor());
+                        _CurrentBackgroundColor.Color(args.NewColor());
+                    }
+                    else if (stringTag == CursorColorTag)
+                    {
+                        CurrentColorScheme().CursorColor(args.NewColor());
+                        _CurrentCursorColor.Color(args.NewColor());
+                    }
+                    else if (stringTag == SelectionBackgroundColorTag)
+                    {
+                        CurrentColorScheme().SelectionBackground(args.NewColor());
+                        _CurrentSelectionBackgroundColor.Color(args.NewColor());
+                    }
                 }
             }
         }
@@ -384,12 +406,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _CurrentBrightColorTable.GetAt(i - ColorTableDivider).Color(colorScheme.Table()[i]);
             }
         }
+        _CurrentForegroundColor.Color(colorScheme.Foreground());
+        _CurrentBackgroundColor.Color(colorScheme.Background());
+        _CurrentCursorColor.Color(colorScheme.CursorColor());
+        _CurrentSelectionBackgroundColor.Color(colorScheme.SelectionBackground());
     }
 
     ColorTableEntry::ColorTableEntry(uint8_t index, Windows::UI::Color color)
     {
         Name(TableColorNames[index]);
-        Index(winrt::box_value<uint8_t>(index));
+        Tag(winrt::box_value<uint8_t>(index));
+        Color(color);
+    }
+
+    ColorTableEntry::ColorTableEntry(std::wstring_view tag, Windows::UI::Color color)
+    {
+        Name(LocalizedNameForEnumName(L"ColorScheme_", tag, L"Text"));
+        Tag(winrt::box_value(tag));
         Color(color);
     }
 }
