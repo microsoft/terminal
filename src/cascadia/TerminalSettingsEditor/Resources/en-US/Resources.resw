@@ -821,7 +821,7 @@
     <value>When checked, the terminal will the focus pane on mouse hover.</value>
   </data>
   <data name="SettingContainer_OverrideMessageBaseLayer" xml:space="preserve">
-    <value>Reset to base layer value</value>
+    <value>Reset to base layer value.</value>
     <comment>"base layer" should match Nav_ProfileDefaults.Content's text</comment>
   </data>
   <data name="ColorScheme_TerminalColorsHeader.Text" xml:space="preserve">
@@ -829,5 +829,9 @@
   </data>
   <data name="ColorScheme_SystemColorsHeader.Text" xml:space="preserve">
     <value>System colors</value>
+  </data>
+  <data name="SettingContainer_OverrideMessageProtoExtension" xml:space="preserve">
+    <value>Reset to value from: {}</value>
+    <comment>{} is replaced by the name of another profile or generator.</comment>
   </data>
 </root>
