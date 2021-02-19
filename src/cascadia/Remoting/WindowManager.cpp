@@ -5,7 +5,7 @@
 #include "WindowManager.h"
 #include "MonarchFactory.h"
 #include "CommandlineArgs.h"
-#include "WindowingBehavior.h"
+#include "../inc/WindowingBehavior.h"
 #include "FindTargetWindowArgs.h"
 
 #include "WindowManager.g.cpp"

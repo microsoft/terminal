@@ -14,11 +14,8 @@ Author:
 --*/
 
 #pragma once
-#include <deque>
 #include <string>
 #include <string_view>
-#include <memory>
-#include "IInputEvent.hpp"
 
 enum class CodepointWidth : BYTE
 {
@@ -36,13 +33,6 @@ enum class CodepointWidth : BYTE
 
 [[nodiscard]] size_t GetALengthFromW(const UINT codepage,
                                      const std::wstring_view source);
-
-std::deque<std::unique_ptr<KeyEvent>> CharToKeyEvents(const wchar_t wch, const unsigned int codepage);
-
-std::deque<std::unique_ptr<KeyEvent>> SynthesizeKeyboardEvents(const wchar_t wch,
-                                                               const short keyState);
-
-std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(const wchar_t wch, const unsigned int codepage);
 
 CodepointWidth GetQuickCharWidth(const wchar_t wch) noexcept;
 

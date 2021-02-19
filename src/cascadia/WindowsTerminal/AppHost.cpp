@@ -530,6 +530,7 @@ bool AppHost::HasWindow()
 void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*sender*/,
                                    Remoting::CommandlineArgs args)
 {
+    _window->SummonWindow();
     _logic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory());
 }
 
@@ -575,7 +576,7 @@ GUID AppHost::_CurrentDesktopGuid()
     GUID currentDesktopGuid{ 0 };
     try
     {
-        auto manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
+        const auto manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
         if (manager)
         {
             LOG_IF_FAILED(manager->GetWindowDesktopId(_window->GetHandle(), &currentDesktopGuid));

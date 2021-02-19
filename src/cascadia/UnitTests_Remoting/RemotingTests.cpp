@@ -83,6 +83,7 @@ namespace RemotingUnitTests
         TEST_METHOD(MostRecentWindowDifferentDesktops);
         TEST_METHOD(MostRecentWindowMoveDesktops);
         TEST_METHOD(GetMostRecentAnyDesktop);
+        TEST_METHOD(MostRecentIsDead);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -121,7 +122,7 @@ namespace RemotingUnitTests
         if (arguments.size() > 0)
         {
             const auto index = std::stoi(arguments.at(0).c_str());
-            args.ResultTargetWindow(index);
+            args.ResultTargetWindow(index >= 0 ? index : -1);
         }
     }
 
@@ -610,7 +611,7 @@ namespace RemotingUnitTests
 
     // TODO:projects/5
     //
-    // In order to test WindowingBehaviorUseExistingSameDesktop, we'll have to
+    // In order to test WindowingBehaviorUseExisting, we'll have to
     // create our own IVirtualDesktopManager implementation that can be subbed
     // in for testing. We can't _actually_ create HWNDs as a part of the test
     // and move them to different desktops. Instead, we'll have to create a stub
@@ -620,8 +621,8 @@ namespace RemotingUnitTests
     {
         Log::Comment(L"Make windows on the same desktop. Validate the contents of _mruPeasants are as expected.");
 
-        const winrt::guid guid1{ ::Microsoft::Console::Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
-        const winrt::guid guid2{ ::Microsoft::Console::Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
+        const winrt::guid guid1{ Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
+        const winrt::guid guid2{ Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
 
         const auto monarch0PID = 12345u;
         com_ptr<Remoting::implementation::Monarch> m0;
@@ -657,10 +658,9 @@ namespace RemotingUnitTests
                                                          winrt::clock().now() };
             p2->ActivateWindow(activatedArgs);
         }
-        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants.size());
-        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants[guid1].size());
-        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[guid1][0].PeasantID());
-        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[guid1][1].PeasantID());
+        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[0].PeasantID());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[1].PeasantID());
 
         {
             Log::Comment(L"Activate the first peasant, first desktop");
@@ -669,18 +669,17 @@ namespace RemotingUnitTests
                                                          winrt::clock().now() };
             p1->ActivateWindow(activatedArgs);
         }
-        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants.size());
-        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants[guid1].size());
-        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[guid1][0].PeasantID());
-        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[guid1][1].PeasantID());
+        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[0].PeasantID());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[1].PeasantID());
     }
 
     void RemotingTests::MostRecentWindowDifferentDesktops()
     {
         Log::Comment(L"Make windows on different desktops. Validate the contents of _mruPeasants are as expected.");
 
-        const winrt::guid guid1{ ::Microsoft::Console::Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
-        const winrt::guid guid2{ ::Microsoft::Console::Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
+        const winrt::guid guid1{ Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
+        const winrt::guid guid2{ Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
 
         const auto monarch0PID = 12345u;
         com_ptr<Remoting::implementation::Monarch> m0;
@@ -717,10 +716,8 @@ namespace RemotingUnitTests
             p2->ActivateWindow(activatedArgs);
         }
         VERIFY_ARE_EQUAL(2u, m0->_mruPeasants.size());
-        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants[guid1].size());
-        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants[guid2].size());
-        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[guid1][0].PeasantID());
-        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[guid2][0].PeasantID());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[0].PeasantID());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[1].PeasantID());
 
         Log::Comment(L"Add a third peasant");
         const auto peasant3PID = 45678u;
@@ -735,12 +732,10 @@ namespace RemotingUnitTests
                                                          winrt::clock().now() };
             p3->ActivateWindow(activatedArgs);
         }
-        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants.size());
-        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants[guid1].size());
-        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants[guid2].size());
-        VERIFY_ARE_EQUAL(p3->GetID(), m0->_mruPeasants[guid1][0].PeasantID());
-        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[guid1][1].PeasantID());
-        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[guid2][0].PeasantID());
+        VERIFY_ARE_EQUAL(3u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(p3->GetID(), m0->_mruPeasants[0].PeasantID());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[1].PeasantID());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[2].PeasantID());
 
         {
             Log::Comment(L"Activate the first peasant, first desktop");
@@ -749,20 +744,19 @@ namespace RemotingUnitTests
                                                          winrt::clock().now() };
             p1->ActivateWindow(activatedArgs);
         }
-        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants.size());
-        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants[guid1].size());
-        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants[guid2].size());
-        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[guid1][0].PeasantID());
-        VERIFY_ARE_EQUAL(p3->GetID(), m0->_mruPeasants[guid1][1].PeasantID());
-        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[guid2][0].PeasantID());
+        VERIFY_ARE_EQUAL(3u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[0].PeasantID());
+        VERIFY_ARE_EQUAL(p3->GetID(), m0->_mruPeasants[1].PeasantID());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[2].PeasantID());
     }
 
     void RemotingTests::MostRecentWindowMoveDesktops()
     {
-        Log::Comment(L"Make windows on different desktops. Move one to another desktop. Validate the contents of _mruPeasants are as expected.");
+        Log::Comment(L"Make windows on different desktops. Move one to another "
+                     L"desktop. Validate the contents of _mruPeasants are as expected.");
 
-        const winrt::guid guid1{ ::Microsoft::Console::Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
-        const winrt::guid guid2{ ::Microsoft::Console::Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
+        const winrt::guid guid1{ Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
+        const winrt::guid guid2{ Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
 
         const auto monarch0PID = 12345u;
         com_ptr<Remoting::implementation::Monarch> m0;
@@ -799,10 +793,8 @@ namespace RemotingUnitTests
             p2->ActivateWindow(activatedArgs);
         }
         VERIFY_ARE_EQUAL(2u, m0->_mruPeasants.size());
-        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants[guid1].size());
-        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants[guid2].size());
-        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[guid1][0].PeasantID());
-        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[guid2][0].PeasantID());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[0].PeasantID());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[1].PeasantID());
 
         Log::Comment(L"Add a third peasant");
         const auto peasant3PID = 45678u;
@@ -817,12 +809,10 @@ namespace RemotingUnitTests
                                                          winrt::clock().now() };
             p3->ActivateWindow(activatedArgs);
         }
-        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants.size());
-        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants[guid1].size());
-        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants[guid2].size());
-        VERIFY_ARE_EQUAL(p3->GetID(), m0->_mruPeasants[guid1][0].PeasantID());
-        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[guid1][1].PeasantID());
-        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[guid2][0].PeasantID());
+        VERIFY_ARE_EQUAL(3u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(p3->GetID(), m0->_mruPeasants[0].PeasantID());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[1].PeasantID());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[2].PeasantID());
 
         {
             Log::Comment(L"Activate the first peasant, second desktop");
@@ -831,12 +821,10 @@ namespace RemotingUnitTests
                                                          winrt::clock().now() };
             p1->ActivateWindow(activatedArgs);
         }
-        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants.size());
-        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants[guid1].size());
-        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants[guid2].size());
-        VERIFY_ARE_EQUAL(p3->GetID(), m0->_mruPeasants[guid1][0].PeasantID());
-        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[guid2][0].PeasantID());
-        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[guid2][1].PeasantID());
+        VERIFY_ARE_EQUAL(3u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[0].PeasantID());
+        VERIFY_ARE_EQUAL(p3->GetID(), m0->_mruPeasants[1].PeasantID());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[2].PeasantID());
 
         {
             Log::Comment(L"Activate the third peasant, second desktop");
@@ -845,18 +833,10 @@ namespace RemotingUnitTests
                                                          winrt::clock().now() };
             p3->ActivateWindow(activatedArgs);
         }
-        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants.size());
-        VERIFY_ARE_EQUAL(0u, m0->_mruPeasants[guid1].size());
-        VERIFY_ARE_EQUAL(3u, m0->_mruPeasants[guid2].size());
-        VERIFY_ARE_EQUAL(p3->GetID(), m0->_mruPeasants[guid2][0].PeasantID());
-
-        // Because the vector is internally a heap, we actually can't be sure
-        // what the ordering of the subsequent elements will be. We can check
-        // the order consistently for 2 elements. For three+, all but the first
-        // element will be in an indeterminate order.
-        //
-        // VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[guid2][1].PeasantID());
-        // VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[guid2][2].PeasantID());
+        VERIFY_ARE_EQUAL(3u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(p3->GetID(), m0->_mruPeasants[0].PeasantID());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[1].PeasantID());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[2].PeasantID());
 
         {
             Log::Comment(L"Activate the second peasant, first desktop");
@@ -865,20 +845,19 @@ namespace RemotingUnitTests
                                                          winrt::clock().now() };
             p2->ActivateWindow(activatedArgs);
         }
-        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants.size());
-        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants[guid1].size());
-        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants[guid2].size());
-        VERIFY_ARE_EQUAL(p3->GetID(), m0->_mruPeasants[guid2][0].PeasantID());
-        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[guid2][1].PeasantID());
-        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[guid1][0].PeasantID());
+        VERIFY_ARE_EQUAL(3u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[0].PeasantID());
+        VERIFY_ARE_EQUAL(p3->GetID(), m0->_mruPeasants[1].PeasantID());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[2].PeasantID());
     }
 
     void RemotingTests::GetMostRecentAnyDesktop()
     {
-        Log::Comment(L"Make windows on different desktops. Confirm that getting the most recent of all windows works as expected.");
+        Log::Comment(L"Make windows on different desktops. Confirm that "
+                     L"getting the most recent of all windows works as expected.");
 
-        const winrt::guid guid1{ ::Microsoft::Console::Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
-        const winrt::guid guid2{ ::Microsoft::Console::Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
+        const winrt::guid guid1{ Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
+        const winrt::guid guid2{ Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
 
         const auto monarch0PID = 12345u;
         com_ptr<Remoting::implementation::Monarch> m0;
@@ -940,4 +919,63 @@ namespace RemotingUnitTests
         }
         VERIFY_ARE_EQUAL(p1->GetID(), m0->_getMostRecentPeasantID(false));
     }
+
+    void RemotingTests::MostRecentIsDead()
+    {
+        Log::Comment(L"Make two windows. Activate the first, then the second. "
+                     L"Kill the second. The most recent should be the _first_ window.");
+
+        const winrt::guid guid1{ Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
+        const winrt::guid guid2{ Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
+
+        const auto monarch0PID = 12345u;
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        VERIFY_IS_NOT_NULL(m0);
+        m0->FindTargetWindowRequested(&RemotingTests::_findTargetWindowHelper);
+
+        Log::Comment(L"Add a peasant");
+        const auto peasant1PID = 23456u;
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+        VERIFY_IS_NOT_NULL(p1);
+        m0->AddPeasant(*p1);
+
+        Log::Comment(L"Add a second peasant");
+        const auto peasant2PID = 34567u;
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+        VERIFY_IS_NOT_NULL(p2);
+        m0->AddPeasant(*p2);
+
+        {
+            Log::Comment(L"Activate the first peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p1->GetID(),
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p1->ActivateWindow(activatedArgs);
+        }
+        {
+            Log::Comment(L"Activate the second peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p2->GetID(),
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p2->ActivateWindow(activatedArgs);
+        }
+        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[0].PeasantID());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[1].PeasantID());
+
+        Log::Comment(L"Kill peasant 2");
+        RemotingTests::_killPeasant(m0, p2->GetID());
+        Log::Comment(L"Peasant 1 should be the new MRU peasant");
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_getMostRecentPeasantID(false));
+
+        Log::Comment(L"Peasant 2 should not be in the monarch at all anymore");
+        VERIFY_ARE_EQUAL(1u, m0->_peasants.size());
+        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(1u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[0].PeasantID());
+    }
+
 }

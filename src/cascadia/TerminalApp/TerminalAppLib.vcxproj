@@ -97,6 +97,10 @@
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="TerminalTabStatus.h">
+      <DependentUpon>TerminalTabStatus.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="TitlebarControl.h">
       <DependentUpon>TitlebarControl.xaml</DependentUpon>
     </ClInclude>
@@ -171,6 +175,10 @@
     </ClCompile>
     <ClCompile Include="TerminalPage.cpp">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="TerminalTabStatus.cpp">
+      <DependentUpon>TerminalTabStatus.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="TitlebarControl.cpp">
@@ -254,6 +262,9 @@
     <Midl Include="TerminalPage.idl">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="TerminalTabStatus.idl">
+      <SubType>Designer</SubType>
     </Midl>
     <Midl Include="TitlebarControl.idl">
       <DependentUpon>TitlebarControl.xaml</DependentUpon>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{E437B604-3E98-4F40-A927-E173E818EA4B}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>openconsoleproxy</RootNamespace>
+    <ProjectName>OpenConsoleProxy</ProjectName>
+    <TargetName>OpenConsoleProxy</TargetName>
+    <ConfigurationType>Utility</ConfigurationType>
+  </PropertyGroup>
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <ItemGroup>
+    <ClInclude Include="$(IntDir)\IConsoleHandoff.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="IConsoleHandoff.idl">
+      <!-- 
+        In Razzle, IDL files generate %FileName%.h
+        In Visual Studio, IDL files generate %FileName%_h.h
+        Visual Studio is easier to override than Razzle.
+        This has to be built in both the OS and outside, so we
+        override the easier-to-override side to a uniform name.
+      -->
+      <HeaderFileName>IConsoleHandoff.h</HeaderFileName>
+      <MinimumTargetSystem>NT100</MinimumTargetSystem>
+      <OutputDirectory>$(IntDir)</OutputDirectory>
+    </Midl>
+  </ItemGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
+</Project>

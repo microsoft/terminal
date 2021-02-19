@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include "AppLogic.h"
-#include "WindowingBehavior.h"
+#include "../inc/WindowingBehavior.h"
 #include "AppLogic.g.cpp"
 #include "FindTargetWindowResult.g.cpp"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
@@ -174,6 +174,9 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Returns the settings currently in use by the entire Terminal application.
+    // - IMPORTANT! This can throw! Make sure to try/catch this, so that the
+    //   LocalTests don't crash (because their Application::Current() won't be a
+    //   AppLogic)
     // Throws:
     // - HR E_INVALIDARG if the app isn't up and running.
     const CascadiaSettings AppLogic::CurrentAppSettings()
@@ -1197,9 +1200,9 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - 0: We should handle the args "in the current window".
     // - WindowingBehaviorUseNew: We should handle the args in a new window
-    // - WindowingBehaviorUseExistingSameDesktop: We should handle the args "in
+    // - WindowingBehaviorUseExisting: We should handle the args "in
     //   the current window ON THIS DESKTOP"
-    // - WindowingBehaviorUseExisting: We should handle the args "in the current
+    // - WindowingBehaviorUseAnyExisting: We should handle the args "in the current
     //   window ON ANY DESKTOP"
     // - anything else: We should handle the commandline in the window with the given ID.
     TerminalApp::FindTargetWindowResult AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
@@ -1222,10 +1225,10 @@ namespace winrt::TerminalApp::implementation
                 {
                 case WindowingMode::UseNew:
                     windowId = WindowingBehaviorUseNew;
-                case WindowingMode::UseExistingSameDesktop:
-                    windowId = WindowingBehaviorUseExistingSameDesktop;
                 case WindowingMode::UseExisting:
                     windowId = WindowingBehaviorUseExisting;
+                case WindowingMode::UseAnyExisting:
+                    windowId = WindowingBehaviorUseAnyExisting;
                 }
                 return winrt::make<FindTargetWindowResult>(windowId, L"");
             }
@@ -1260,7 +1263,7 @@ namespace winrt::TerminalApp::implementation
                 }
                 else if (parsedTarget == "last")
                 {
-                    return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseExistingSameDesktop, L"");
+                    return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseExisting, L"");
                 }
                 else
                 {

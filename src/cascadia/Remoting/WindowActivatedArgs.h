@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         bool operator()(const Remoting::WindowActivatedArgs& lhs, const Remoting::WindowActivatedArgs& rhs) const
         {
-            return lhs.ActivatedTime() < rhs.ActivatedTime();
+            return lhs.ActivatedTime() > rhs.ActivatedTime();
         }
     };
     struct WindowActivatedArgs : public WindowActivatedArgsT<WindowActivatedArgs>
@@ -46,6 +46,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                             winrt::guid desktopID,
                             winrt::Windows::Foundation::DateTime timestamp) :
             WindowActivatedArgs(peasantID, 0, desktopID, timestamp){};
+
+        WindowActivatedArgs(const Remoting::WindowActivatedArgs& other) :
+            _PeasantID{ other.PeasantID() },
+            _Hwnd{ other.Hwnd() },
+            _DesktopID{ other.DesktopID() },
+            _ActivatedTime{ other.ActivatedTime() } {};
     };
 }
 

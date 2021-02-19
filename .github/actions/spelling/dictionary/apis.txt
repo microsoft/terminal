@@ -9,6 +9,7 @@ COLORPROPERTY
 CXICON
 CYICON
 D2DERR_SHADER_COMPILE_FAILED
+dataobject
 DERR
 environstrings
 EXPCMDFLAGS
@@ -22,6 +23,7 @@ Hashtable
 HIGHCONTRASTON
 HIGHCONTRASTW
 href
+IApp
 IAppearance
 IAsync
 IBind
@@ -36,10 +38,12 @@ IExplorer
 IInheritable
 IMap
 IObject
+IPackage
 IPeasant
 IStorage
 ITab
 ITaskbar
+IVirtual
 LCID
 llabs
 llu

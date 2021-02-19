@@ -704,13 +704,18 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                                                buffer.GetViewport().ToInclusive();
         COORD delta{ 0 };
         {
-            if (currentViewport.Left > position.X)
+            // When evaluating the X offset, we must convert the buffer position to
+            // equivalent screen coordinates, taking line rendition into account.
+            const auto lineRendition = buffer.GetTextBuffer().GetLineRendition(position.Y);
+            const auto screenPosition = BufferToScreenLine({ position.X, position.Y, position.X, position.Y }, lineRendition);
+
+            if (currentViewport.Left > screenPosition.Left)
             {
-                delta.X = position.X - currentViewport.Left;
+                delta.X = screenPosition.Left - currentViewport.Left;
             }
-            else if (currentViewport.Right < position.X)
+            else if (currentViewport.Right < screenPosition.Right)
             {
-                delta.X = position.X - currentViewport.Right;
+                delta.X = screenPosition.Right - currentViewport.Right;
             }
 
             if (currentViewport.Top > position.Y)
@@ -1410,6 +1415,10 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
     {
         cursorPosition.X = 0;
     }
+    else
+    {
+        cursorPosition = textBuffer.ClampPositionWithinLine(cursorPosition);
+    }
 
     return AdjustCursorPosition(screenInfo, cursorPosition, FALSE, nullptr);
 }
@@ -1427,7 +1436,8 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
 
     const SMALL_RECT viewport = screenInfo.GetActiveBuffer().GetViewport().ToInclusive();
     const COORD oldCursorPosition = screenInfo.GetTextBuffer().GetCursor().GetPosition();
-    const COORD newCursorPosition = { oldCursorPosition.X, oldCursorPosition.Y - 1 };
+    COORD newCursorPosition = { oldCursorPosition.X, oldCursorPosition.Y - 1 };
+    newCursorPosition = screenInfo.GetTextBuffer().ClampPositionWithinLine(newCursorPosition);
 
     // If the cursor is at the top of the viewport, we don't want to shift the viewport up.
     // We want it to stay exactly where it is.
@@ -1660,33 +1670,21 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
         }
 
         // Get the appropriate title and length depending on the mode.
-        const wchar_t* pwszTitle;
-        size_t cchTitleLength;
-
-        if (isOriginal)
-        {
-            pwszTitle = gci.GetOriginalTitle().c_str();
-            cchTitleLength = gci.GetOriginalTitle().length();
-        }
-        else
-        {
-            pwszTitle = gci.GetTitle().c_str();
-            cchTitleLength = gci.GetTitle().length();
-        }
+        const std::wstring_view storedTitle = isOriginal ? gci.GetOriginalTitle() : gci.GetTitle();
 
         // Always report how much space we would need.
-        needed = cchTitleLength;
+        needed = storedTitle.size();
 
         // If we have a pointer to receive the data, then copy it out.
         if (title.has_value())
         {
-            HRESULT const hr = StringCchCopyNW(title->data(), title->size(), pwszTitle, cchTitleLength);
+            HRESULT const hr = StringCchCopyNW(title->data(), title->size(), storedTitle.data(), storedTitle.size());
 
             // Insufficient buffer is allowed. If we return a partial string, that's still OK by historical/compat standards.
             // Just say how much we managed to return.
             if (SUCCEEDED(hr) || STRSAFE_E_INSUFFICIENT_BUFFER == hr)
             {
-                written = std::min(title->size(), cchTitleLength);
+                written = std::min(title->size(), storedTitle.size());
             }
         }
         return S_OK;

@@ -36,8 +36,8 @@ namespace Microsoft.Terminal.Settings.Model
     enum WindowingMode
     {
         UseNew,
+        UseAnyExisting,
         UseExisting,
-        UseExistingSameDesktop,
     };
 
     [default_interface] runtimeclass GlobalAppSettings {
@@ -154,8 +154,12 @@ namespace Microsoft.Terminal.Settings.Model
         void ClearStartupActions();
         String StartupActions();
 
+        Boolean HasFocusFollowMouse();
+        void ClearFocusFollowMouse();
+        Boolean FocusFollowMouse;
+
         Boolean HasWindowingBehavior();
         void ClearWindowingBehavior();
-        WindowingMode WindowingBehavior();
+        WindowingMode WindowingBehavior;
     }
 }

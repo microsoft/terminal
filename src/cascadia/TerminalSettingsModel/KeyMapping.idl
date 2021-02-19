@@ -53,6 +53,7 @@ namespace Microsoft.Terminal.Settings.Model
         TabSearch,
         MoveTab,
         BreakIntoDebugger,
+        FindMatch,
         TogglePaneReadOnly
     };
 

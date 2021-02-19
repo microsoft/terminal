@@ -68,7 +68,7 @@ If `tabWidthMode` isn't set, the default experience will be `equal`. Justificati
 
 ### Accessibility
 
-This feature could impact accessibility if the tab title isn't stored within the metadata of the tab. If the tab width is the width of the icon, then the title isn't visible. The tab title will have to be accessibile by a screen reader.
+This feature could impact accessibility if the tab title isn't stored within the metadata of the tab. If the tab width is the width of the icon, then the title isn't visible. The tab title will have to be accessible by a screen reader.
 
 ### Security
 
