@@ -10,6 +10,7 @@
 #include <appmodel.h>
 #include <shlobj.h>
 #include <fmt/chrono.h>
+#include "DefaultProfileUtils.h"
 
 // defaults.h is a file containing the default json settings in a std::string_view
 #include "defaults.h"
@@ -36,12 +37,48 @@ static constexpr std::string_view ProfilesListKey{ "list" };
 static constexpr std::string_view LegacyKeybindingsKey{ "keybindings" };
 static constexpr std::string_view ActionsKey{ "actions" };
 static constexpr std::string_view SchemesKey{ "schemes" };
+static constexpr std::string_view NameKey{ "name" };
+static constexpr std::string_view UpdatesKey{ "updates" };
+static constexpr std::string_view GuidKey{ "guid" };
 
 static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSources" };
 
 static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 static constexpr std::string_view SettingsSchemaFragment{ "\n"
                                                           R"(    "$schema": "https://aka.ms/terminal-profiles-schema")" };
+
+static constexpr std::string_view jsonExtension{ ".json" };
+static constexpr std::string_view FragmentsSubDirectory{ "\\Fragments" };
+static constexpr std::wstring_view FragmentsPath{ L"\\Microsoft\\Windows Terminal\\Fragments" };
+
+static constexpr std::string_view AppExtensionHostName{ "com.microsoft.windows.terminal.settings" };
+
+// Function Description:
+// - Extracting the value from an async task (like talking to the app catalog) when we are on the
+//   UI thread causes C++/WinRT to complain quite loudly (and halt execution!)
+//   This templated function extracts the result from a task with chicanery.
+template<typename TTask>
+static auto _extractValueFromTaskWithoutMainThreadAwait(TTask&& task) -> decltype(task.get())
+{
+    using TVal = decltype(task.get());
+    std::optional<TVal> finalVal{};
+    std::condition_variable cv;
+    std::mutex mtx;
+
+    auto waitOnBackground = [&]() -> winrt::fire_and_forget {
+        co_await winrt::resume_background();
+        auto v{ co_await task };
+
+        std::unique_lock<std::mutex> lock{ mtx };
+        finalVal.emplace(std::move(v));
+        cv.notify_all();
+    };
+
+    std::unique_lock<std::mutex> lock{ mtx };
+    waitOnBackground();
+    cv.wait(lock, [&]() { return finalVal.has_value(); });
+    return *finalVal;
+}
 
 static std::tuple<size_t, size_t> _LineAndColumnFromPosition(const std::string_view string, ptrdiff_t position)
 {
@@ -136,6 +173,11 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
         // created by now, because we're going to check in there for any generators
         // that should be disabled (if the user had any settings.)
         resultPtr->_LoadDynamicProfiles();
+        try
+        {
+            resultPtr->_LoadFragmentExtensions();
+        }
+        CATCH_LOG();
 
         if (!fileHasData)
         {
@@ -384,6 +426,216 @@ void CascadiaSettings::_LoadDynamicProfiles()
 }
 
 // Method Description:
+// - Searches the local app data folder, global app data folder and app
+//   extensions for json stubs we should use to create new profiles,
+//   modify existing profiles or add new color schemes
+// - If the user settings has any namespaces in the "disabledProfileSources"
+//   property, we'll ensure that the corresponding folders do not get searched
+void CascadiaSettings::_LoadFragmentExtensions()
+{
+    // First, accumulate the namespaces the user wants to ignore
+    std::unordered_set<std::wstring> ignoredNamespaces;
+    const auto disabledProfileSources = CascadiaSettings::_GetDisabledProfileSourcesJsonObject(_userSettings);
+    if (disabledProfileSources.isArray())
+    {
+        for (const auto& json : disabledProfileSources)
+        {
+            ignoredNamespaces.emplace(JsonUtils::GetValue<std::wstring>(json));
+        }
+    }
+
+    // Search through the local app data folder
+    wil::unique_cotaskmem_string localAppDataFolder;
+    THROW_IF_FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &localAppDataFolder));
+    auto localAppDataFragments = std::wstring(localAppDataFolder.get()) + FragmentsPath.data();
+
+    if (std::filesystem::exists(localAppDataFragments))
+    {
+        _ApplyJsonStubsHelper(localAppDataFragments, ignoredNamespaces);
+    }
+
+    // Search through the program data folder
+    wil::unique_cotaskmem_string programDataFolder;
+    THROW_IF_FAILED(SHGetKnownFolderPath(FOLDERID_ProgramData, 0, nullptr, &programDataFolder));
+    auto programDataFragments = std::wstring(programDataFolder.get()) + FragmentsPath.data();
+    if (std::filesystem::exists(programDataFragments))
+    {
+        _ApplyJsonStubsHelper(programDataFragments, ignoredNamespaces);
+    }
+
+    // Search through app extensions
+    // Gets the catalog of extensions with the name "com.microsoft.windows.terminal.settings"
+    const auto catalog = Windows::ApplicationModel::AppExtensions::AppExtensionCatalog::Open(winrt::to_hstring(AppExtensionHostName));
+
+    auto extensions = _extractValueFromTaskWithoutMainThreadAwait(catalog.FindAllAsync());
+
+    for (const auto& ext : extensions)
+    {
+        // Only apply the stubs if the package name is not in ignored namespaces
+        if (ignoredNamespaces.find(ext.Package().Id().FamilyName().c_str()) == ignoredNamespaces.end())
+        {
+            // Likewise, getting the public folder from an extension is an async operation
+            // So we use another mutex and condition variable
+            auto foundFolder = _extractValueFromTaskWithoutMainThreadAwait(ext.GetPublicFolderAsync());
+
+            // the StorageFolder class has its own methods for obtaining the files within the folder
+            // however, all those methods are Async methods
+            // you may have noticed that we need to resort to clunky implementations for async operations
+            // (they are in _extractValueFromTaskWithoutMainThreadAwait)
+            // so for now we will just take the folder path and access the files that way
+            auto path = winrt::to_string(foundFolder.Path());
+            path.append(FragmentsSubDirectory);
+
+            // If the directory exists, use the fragments in it
+            if (std::filesystem::exists(path))
+            {
+                const auto jsonFiles = _AccumulateJsonFilesInDirectory(til::u8u16(path));
+
+                // Provide the package name as the source
+                _ParseAndLayerFragmentFiles(jsonFiles, ext.Package().Id().FamilyName().c_str());
+            }
+        }
+    }
+}
+
+// Method Description:
+// - Helper function to apply json stubs in the local app data folder and the global program data folder
+// Arguments:
+// - The directory to find json files in
+// - The set of ignored namespaces
+void CascadiaSettings::_ApplyJsonStubsHelper(const std::wstring_view directory, const std::unordered_set<std::wstring>& ignoredNamespaces)
+{
+    // The json files should be within subdirectories where the subdirectory name is the app name
+    for (const auto& fragmentExtFolder : std::filesystem::directory_iterator(directory))
+    {
+        // We only want the parent folder name as the source (not the full path)
+        const auto source = fragmentExtFolder.path().filename().wstring();
+
+        // Only apply the stubs if the parent folder name is not in ignored namespaces
+        // (also make sure this is a directory for sanity)
+        if (std::filesystem::is_directory(fragmentExtFolder) && ignoredNamespaces.find(source) == ignoredNamespaces.end())
+        {
+            const auto jsonFiles = _AccumulateJsonFilesInDirectory(fragmentExtFolder.path().c_str());
+            _ParseAndLayerFragmentFiles(jsonFiles, winrt::hstring{ source });
+        }
+    }
+}
+
+// Method Description:
+// - Finds all the json files within the given directory
+// Arguments:
+// - directory: the directory to search
+// Return Value:
+// - A set containing all the found file data
+std::unordered_set<std::string> CascadiaSettings::_AccumulateJsonFilesInDirectory(const std::wstring_view directory)
+{
+    std::unordered_set<std::string> jsonFiles;
+
+    for (const auto& fragmentExt : std::filesystem::directory_iterator(directory))
+    {
+        if (fragmentExt.path().extension() == jsonExtension)
+        {
+            wil::unique_hfile hFile{ CreateFileW(fragmentExt.path().c_str(),
+                                                 GENERIC_READ,
+                                                 FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                                 nullptr,
+                                                 OPEN_EXISTING,
+                                                 FILE_ATTRIBUTE_NORMAL,
+                                                 nullptr) };
+
+            if (!hFile)
+            {
+                LOG_LAST_ERROR();
+            }
+            else
+            {
+                const auto fileData = _ReadFile(hFile.get()).value();
+                jsonFiles.emplace(fileData);
+            }
+        }
+    }
+    return jsonFiles;
+}
+
+// Method Description:
+// - Given a set of json files, uses them to modify existing profiles,
+//   create new profiles, and create new color schemes
+// Arguments:
+// - files: the set of json files (each item in the set is the file data)
+// - source: the location the files came from
+void CascadiaSettings::_ParseAndLayerFragmentFiles(const std::unordered_set<std::string> files, const winrt::hstring source)
+{
+    for (const auto& file : files)
+    {
+        // A file could have many new profiles/many profiles it wants to modify/many new color schemes
+        // so we first parse the entire file into one json object
+        auto fullFile = _ParseUtf8JsonString(file.data());
+
+        if (fullFile.isMember(JsonKey(ProfilesKey)))
+        {
+            // Now we separately get each stub that modifies/adds a profile
+            // We intentionally don't use a const reference here because we modify
+            // the profile stub by giving it a guid so we can call _FindMatchingProfile
+            for (auto& profileStub : fullFile[JsonKey(ProfilesKey)])
+            {
+                if (profileStub.isMember(JsonKey(UpdatesKey)))
+                {
+                    // This stub is meant to be a modification to an existing profile,
+                    // try to find the matching profile
+                    profileStub[JsonKey(GuidKey)] = profileStub[JsonKey(UpdatesKey)];
+                    auto matchingProfile = _FindMatchingProfile(profileStub);
+                    if (matchingProfile)
+                    {
+                        // We found a matching profile, create a child of it and put the modifications there
+                        // (we add a new inheritance layer)
+                        auto childImpl{ matchingProfile->CreateChild() };
+                        childImpl->LayerJson(profileStub);
+
+                        // replace parent in _profiles with child
+                        _allProfiles.SetAt(_FindMatchingProfileIndex(matchingProfile->ToJson()).value(), *childImpl);
+                    }
+                }
+                else
+                {
+                    // This is a new profile, check that it meets our minimum requirements first
+                    // (it must have at least a name)
+                    if (profileStub.isMember(JsonKey(NameKey)))
+                    {
+                        auto newProfile = Profile::FromJson(profileStub);
+                        // Make sure to give the new profile a source, then we add it to our list of profiles
+                        // We don't make modifications to the user's settings file yet, that will happen when
+                        // _AppendDynamicProfilesToUserSettings() is called later
+                        newProfile->Source(source);
+                        _allProfiles.Append(*newProfile);
+                    }
+                }
+            }
+        }
+
+        if (fullFile.isMember(JsonKey(SchemesKey)))
+        {
+            // Now we separately get each stub that adds a color scheme
+            for (const auto& schemeStub : fullFile[JsonKey(SchemesKey)])
+            {
+                if (_FindMatchingColorScheme(schemeStub))
+                {
+                    // We do not allow modifications to existing color schemes
+                }
+                else
+                {
+                    // This is a new color scheme, add it only if it specifies _all_ the fields
+                    if (ColorScheme::ValidateColorScheme(schemeStub))
+                    {
+                        const auto newScheme = ColorScheme::FromJson(schemeStub);
+                        _globals->AddColorScheme(*newScheme);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Method Description:
 // - Attempts to read the given data as a string of JSON and parse that JSON
 //   into a Json::Value.
 // - Will ignore leading UTF-8 BOMs.
@@ -400,6 +652,33 @@ void CascadiaSettings::_LoadDynamicProfiles()
 // - <none>
 void CascadiaSettings::_ParseJsonString(std::string_view fileData, const bool isDefaultSettings)
 {
+    // Parse the json data into either our defaults or user settings. We'll keep
+    // these original json values around for later, in case we need to parse
+    // their raw contents again.
+    Json::Value& root = isDefaultSettings ? _defaultSettings : _userSettings;
+
+    root = _ParseUtf8JsonString(fileData);
+
+    // If this is the user settings, also store away the original settings
+    // string. We'll need to keep it around so we can modify it without
+    // re-serializing their settings.
+    if (!isDefaultSettings)
+    {
+        _userSettingsString = fileData;
+    }
+}
+
+// Method Description:
+// - Attempts to read the given data as a string of JSON and parse that JSON
+//   into a Json::Value
+// - Will ignore leading UTF-8 BOMs
+// Arguments:
+// - fileData: the string to parse as JSON data
+// Return value:
+// - the parsed json value
+Json::Value CascadiaSettings::_ParseUtf8JsonString(std::string_view fileData)
+{
+    Json::Value result;
     // Ignore UTF-8 BOM
     auto actualDataStart = fileData.data();
     const auto actualDataEnd = fileData.data() + fileData.size();
@@ -411,25 +690,14 @@ void CascadiaSettings::_ParseJsonString(std::string_view fileData, const bool is
     std::string errs; // This string will receive any error text from failing to parse.
     std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
 
-    // Parse the json data into either our defaults or user settings. We'll keep
-    // these original json values around for later, in case we need to parse
-    // their raw contents again.
-    Json::Value& root = isDefaultSettings ? _defaultSettings : _userSettings;
     // `parse` will return false if it fails.
-    if (!reader->parse(actualDataStart, actualDataEnd, &root, &errs))
+    if (!reader->parse(actualDataStart, actualDataEnd, &result, &errs))
     {
         // This will be caught by App::_TryLoadSettings, who will display
         // the text to the user.
         throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
     }
-
-    // If this is the user settings, also store away the original settings
-    // string. We'll need to keep it around so we can modify it without
-    // re-serializing their settings.
-    if (!isDefaultSettings)
-    {
-        _userSettingsString = fileData;
-    }
+    return result;
 }
 
 // Method Description:
@@ -535,6 +803,7 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
         // changes to re-create this profile.
         const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
         const auto diff = profileImpl->GenerateStub();
+
         auto profileSerialization = Json::writeString(wbuilder, diff);
 
         // Add the user's indent to the start of each line

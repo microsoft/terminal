@@ -41,6 +41,7 @@ IObject
 IPackage
 IPeasant
 IStorage
+IStringable
 ITab
 ITaskbar
 LCID
@@ -93,6 +94,8 @@ TBPF
 THEMECHANGED
 tmp
 tolower
+TTask
+TVal
 tx
 UPDATEINIFILE
 userenv
