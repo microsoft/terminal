@@ -194,7 +194,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (originTag == Model::OriginTag::Fragment)
         {
             // from a fragment extension
-            return hstring{ fmt::format(std::wstring_view(RS_(L"SettingContainer_OverrideMessageFragmentExtension")), profile.Source()) };
+            return hstring{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideMessageFragmentExtension") }, profile.Source()) };
         }
         else
         {
