@@ -47,6 +47,9 @@
     <ClInclude Include="FontWeightConverter.h">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="InvertedBooleanConverter.h">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="InvertedBooleanToVisibilityConverter.h">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
@@ -136,6 +139,9 @@
       <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="FontWeightConverter.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="InvertedBooleanConverter.cpp">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="InvertedBooleanToVisibilityConverter.cpp">
