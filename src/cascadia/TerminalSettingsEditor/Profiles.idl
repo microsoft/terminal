@@ -66,7 +66,8 @@ namespace Microsoft.Terminal.Settings.Editor
         Guid ProfileGuid { get; };
     }
 
-    enum ProfilesPivots {
+    enum ProfilesPivots
+    {
         General = 0,
         Appearance = 1,
         Advanced = 2
@@ -113,5 +114,8 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };
+
+        IInspectable CurrentFontFace;
+        Windows.Foundation.Collections.IObservableVector<String> FontList { get; };
     }
 }

@@ -7,6 +7,7 @@
 #include "EnumEntry.h"
 
 #include <LibraryResources.h>
+#include "dwrite.h"
 
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Xaml;
@@ -27,6 +28,8 @@ static const std::array<winrt::guid, 2> InBoxProfileGuids{
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    Windows::Foundation::Collections::IObservableVector<hstring> Profiles::_FontList{ nullptr };
+
     ProfileViewModel::ProfileViewModel(const Model::Profile& profile) :
         _profile{ profile }
     {
@@ -222,6 +225,106 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Automation::AutomationProperties::SetFullDescription(UseDesktopImageCheckBox(), unbox_value<hstring>(backgroundImgCheckboxTooltip));
 
         Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"Profile_DeleteButton/Text"));
+
+        if (!_FontList)
+        {
+            _UpdateFontList();
+        }
+    }
+
+    void Profiles::_UpdateFontList()
+    try
+    {
+        // initialize font list
+        _FontList = single_threaded_observable_vector<hstring>();
+
+        // get a DWriteFactory
+        ::IUnknown* unknownFactory;
+        THROW_IF_FAILED(DWriteCreateFactory(
+            DWRITE_FACTORY_TYPE_SHARED,
+            __uuidof(::IDWriteFactory),
+            &unknownFactory));
+
+        ::IDWriteFactory* dwriteFactory;
+        THROW_IF_FAILED(unknownFactory->QueryInterface(&dwriteFactory));
+
+        com_ptr<::IDWriteFactory> factory{};
+        factory.attach(dwriteFactory);
+
+        // get the font collection; subscribe to updates
+        com_ptr<::IDWriteFontCollection> fontCollection;
+        THROW_IF_FAILED(factory->GetSystemFontCollection(fontCollection.put(), TRUE));
+
+        for (UINT32 i = 0; i < fontCollection->GetFontFamilyCount(); ++i)
+        {
+            try
+            {
+                // get the font
+                com_ptr<::IDWriteFontFamily> fontFamily;
+                THROW_IF_FAILED(fontCollection->GetFontFamily(i, fontFamily.put()));
+
+                // get the font's localized names
+                com_ptr<::IDWriteLocalizedStrings> localizedFamilyNames;
+                THROW_IF_FAILED(fontFamily->GetFamilyNames(localizedFamilyNames.put()));
+
+                // use our current locale to find the correct name
+                BOOL exists{ FALSE };
+                UINT32 index;
+                HRESULT hr;
+                wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
+                if (GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH))
+                {
+                    hr = localizedFamilyNames->FindLocaleName(localeName, &index, &exists);
+                }
+                if (SUCCEEDED(hr) && !exists)
+                {
+                    hr = localizedFamilyNames->FindLocaleName(L"en-us", &index, &exists);
+                }
+                if (!exists)
+                {
+                    // failed to find the correct locale, using the first one
+                    index = 0;
+                }
+
+                // get the localized name
+                UINT32 nameLength;
+                THROW_IF_FAILED(localizedFamilyNames->GetStringLength(index, &nameLength));
+                wchar_t* localizedName = new (std::nothrow) wchar_t[nameLength + 1];
+                THROW_IF_FAILED(localizedFamilyNames->GetString(index, localizedName, nameLength + 1));
+
+                // add the font name to our list
+                _FontList.Append(localizedName);
+            }
+            catch (...)
+            {
+                LOG_CAUGHT_EXCEPTION();
+                continue;
+            }
+        }
+    }
+    CATCH_LOG();
+
+    IObservableVector<hstring> Profiles::FontList()
+    {
+        return _FontList;
+    }
+
+    IInspectable Profiles::CurrentFontFace() const
+    {
+        const auto profileFontFace{ State().Profile().FontFace() };
+        for (const auto& font : _FontList)
+        {
+            if (font == profileFontFace)
+            {
+                return box_value(font);
+            }
+        }
+        return box_value(L"Cascadia Mono");
+    }
+
+    void Profiles::CurrentFontFace(IInspectable const& val)
+    {
+        State().Profile().FontFace(unbox_value<hstring>(val));
     }
 
     void Profiles::OnNavigatedTo(const NavigationEventArgs& e)
@@ -299,6 +402,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (settingName == L"ColorSchemeName")
             {
                 _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
+            }
+            else if (settingName == L"FontFace")
+            {
+                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentFontFace" });
             }
             else if (settingName == L"BackgroundImageAlignment")
             {

@@ -234,8 +234,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                     HasSettingValue="{x:Bind State.Profile.HasFontFace, Mode=OneWay}"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearFontFace}"
                                                     SettingOverrideSource="{x:Bind State.Profile.FontFaceOverrideSource, Mode=OneWay}">
-                                <TextBox Text="{x:Bind State.Profile.FontFace, Mode=TwoWay}"
-                                         Style="{StaticResource TextBoxSettingStyle}"/>
+                                <ComboBox ItemsSource="{x:Bind FontList, Mode=OneWay}"
+                                          SelectedItem="{x:Bind CurrentFontFace, Mode=TwoWay}"
+                                          Style="{StaticResource ComboBoxSettingStyle}"/>
                             </local:SettingContainer>
 
                             <!--Font Size-->

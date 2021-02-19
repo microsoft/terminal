@@ -129,6 +129,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         Profiles();
 
+        // font face
+        Windows::Foundation::Collections::IObservableVector<hstring> FontList();
+        Windows::Foundation::IInspectable CurrentFontFace() const;
+        void CurrentFontFace(Windows::Foundation::IInspectable  const& val);
+
         void OnNavigatedTo(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
         void OnNavigatedFrom(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
@@ -165,11 +170,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         void _UpdateBIAlignmentControl(const int32_t val);
+        static void _UpdateFontList();
 
         Windows::Foundation::Collections::IMap<uint16_t, Microsoft::Terminal::Settings::Editor::EnumEntry> _FontWeightMap;
         Editor::EnumEntry _CustomFontWeight{ nullptr };
         std::array<Windows::UI::Xaml::Controls::Primitives::ToggleButton, 9> _BIAlignmentButtons;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
+
+        static Windows::Foundation::Collections::IObservableVector<hstring> _FontList;
+        hstring _CurrentFontFace;
     };
 };
 
