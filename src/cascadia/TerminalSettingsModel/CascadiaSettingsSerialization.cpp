@@ -53,6 +53,33 @@ static constexpr std::wstring_view FragmentsPath{ L"\\Microsoft\\Windows Termina
 
 static constexpr std::string_view AppExtensionHostName{ "com.microsoft.windows.terminal.settings" };
 
+// Function Description:
+// - Extracting the value from an async task (like talking to the app catalog) when we are on the
+//   UI thread causes C++/WinRT to complain quite loudly (and halt execution!)
+//   This templated function extracts the result from a task with chicanery.
+template<typename TTask>
+static auto _performPotentiallyDangerousMainThreadAwait(TTask&& task) -> decltype(task.get())
+{
+    using TVal = decltype(task.get());
+    std::optional<TVal> finalVal{};
+    std::condition_variable cv;
+    std::mutex mtx;
+
+    auto waitOnBackground = [&]() -> winrt::fire_and_forget {
+        co_await winrt::resume_background();
+        auto v{ co_await task };
+
+        std::unique_lock<std::mutex> lock{ mtx };
+        finalVal.emplace(std::move(v));
+        cv.notify_all();
+    };
+
+    std::unique_lock<std::mutex> lock{ mtx };
+    waitOnBackground();
+    cv.wait(lock, [&]() { return finalVal.has_value(); });
+    return *finalVal;
+}
+
 static std::tuple<size_t, size_t> _LineAndColumnFromPosition(const std::string_view string, ptrdiff_t position)
 {
     size_t line = 1, column = position + 1;
@@ -436,25 +463,7 @@ void CascadiaSettings::_LoadFragmentExtensions()
     // Gets the catalog of extensions with the name "com.microsoft.windows.terminal.settings"
     const auto catalog = Windows::ApplicationModel::AppExtensions::AppExtensionCatalog::Open(winrt::to_hstring(AppExtensionHostName));
 
-    // Extracting the list of extensions from the catalog is an async operation, but since
-    // we are on a UI thread - and so cannot call a blocking operation like .get() - we use
-    // a mutex and condition variable
-    std::condition_variable cv;
-    std::mutex mtx;
-    Windows::Foundation::Collections::IVectorView<Windows::ApplicationModel::AppExtensions::AppExtension> extensions;
-
-    auto findAllExtensions = [&]() -> winrt::fire_and_forget {
-        co_await resume_background();
-        const auto localExtensions = catalog.FindAllAsync().get();
-
-        std::unique_lock<std::mutex> lock{ mtx };
-        extensions = localExtensions;
-        cv.notify_all();
-    };
-
-    std::unique_lock<std::mutex> lock{ mtx };
-    findAllExtensions();
-    cv.wait(lock);
+    auto extensions = _performPotentiallyDangerousMainThreadAwait(catalog.FindAllAsync());
 
     for (const auto& ext : extensions)
     {
@@ -463,21 +472,7 @@ void CascadiaSettings::_LoadFragmentExtensions()
         {
             // Likewise, getting the public folder from an extension is an async operation
             // So we use another mutex and condition variable
-            std::condition_variable cv2;
-            std::mutex mtx2;
-            Windows::Storage::StorageFolder foundFolder{ nullptr };
-
-            auto findPublicFolder = [&]() -> winrt::fire_and_forget {
-                co_await resume_background();
-                const auto localFolder = ext.GetPublicFolderAsync().get();
-                std::unique_lock<std::mutex> lock{ mtx2 };
-                foundFolder = localFolder;
-                cv2.notify_all();
-            };
-
-            std::unique_lock<std::mutex> lock2{ mtx2 };
-            findPublicFolder();
-            cv2.wait(lock2);
+            auto foundFolder = _performPotentiallyDangerousMainThreadAwait(ext.GetPublicFolderAsync());
 
             // the StorageFolder class has its own methods for obtaining the files within the folder
             // however, all those methods are Async methods
