@@ -31,7 +31,7 @@ namespace Microsoft.Terminal.Settings.Model
         Vertical_Bottom = 0x20
     };
 
-    [default_interface] runtimeclass Profile {
+    [default_interface] runtimeclass Profile : Windows.Foundation.IStringable {
         Profile();
         Profile(Guid guid);
 

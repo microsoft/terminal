@@ -47,6 +47,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         Profile();
         Profile(guid guid);
+
+        hstring ToString()
+        {
+            return Name();
+        }
+
         static com_ptr<Profile> CloneInheritanceGraph(com_ptr<Profile> oldProfile, com_ptr<Profile> newProfile, std::unordered_map<void*, com_ptr<Profile>>& visited);
         static com_ptr<Profile> CopySettings(com_ptr<Profile> source);
 
