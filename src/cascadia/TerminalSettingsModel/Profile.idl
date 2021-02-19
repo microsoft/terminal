@@ -15,6 +15,8 @@ namespace Microsoft.Terminal.Settings.Model
     {
         Audible = 0x1,
         Visual = 0x2,
+        Window = 0x4,
+        Taskbar = 0x8,
         All = 0xffffffff
     };
 

@@ -378,9 +378,17 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
                 PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
             }
 
-            // raise the event with the bool value corresponding to the visual flag
-            _PaneRaiseBellHandlers(nullptr, WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual));
-            _control.InvertScreenColors();
+            if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual) ||
+                WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Window))
+            {
+                _control.InvertScreenColors();
+            }
+
+            const auto flashTaskbar = WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual) ||
+                                      WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Taskbar);
+
+            // raise the event with the bool value corresponding to the taskbar or visual flag
+            _PaneRaiseBellHandlers(nullptr, flashTaskbar);
         }
     }
 }
