@@ -93,6 +93,8 @@ TBPF
 THEMECHANGED
 tmp
 tolower
+TTask
+TVal
 tx
 UPDATEINIFILE
 userenv
