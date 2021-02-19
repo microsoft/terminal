@@ -274,7 +274,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                                         ContentTemplate="{StaticResource ColorTemplate}"
                                         Content="{x:Bind CurrentColorScheme.Foreground, Mode=TwoWay}"
                                         Style="{StaticResource ColorControlStyle}"
-                                        ToolTipService.ToolTip="{Binding ElementName=ForegroundHeader, Path=Text}"
                                         Grid.Row="0"
                                         Grid.Column="1"/>
 

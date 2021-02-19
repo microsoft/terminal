@@ -128,7 +128,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto colorLabelStyle{ Resources().Lookup(winrt::box_value(L"ColorLabelStyle")).as<Windows::UI::Xaml::Style>() };
         const auto colorControlStyle{ Resources().Lookup(winrt::box_value(L"ColorControlStyle")).as<Windows::UI::Xaml::Style>() };
         const auto colorTableEntryTemplate{ Resources().Lookup(winrt::box_value(L"ColorTableEntryTemplate")).as<DataTemplate>() };
-        auto setupColorControl = [colorTableEntryTemplate, colorControlStyle, colorTableGrid{ ColorTableGrid() }](hstring colorName, auto&& colorRef, uint32_t row, uint32_t col) {
+        auto setupColorControl = [colorTableEntryTemplate, colorControlStyle, colorTableGrid{ ColorTableGrid() }](const auto&& colorRef, const uint32_t& row, const uint32_t& col) {
             ContentControl colorControl{};
             colorControl.ContentTemplate(colorTableEntryTemplate);
             colorControl.Style(colorControlStyle);
@@ -153,10 +153,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             Grid::SetColumn(label, 0);
 
             // regular color
-            setupColorControl(TableColorNames[row], _CurrentNonBrightColorTable.GetAt(row), row, 1);
+            setupColorControl(_CurrentNonBrightColorTable.GetAt(row), row, 1);
 
             // bright color
-            setupColorControl(TableColorNames[row + ColorTableDivider], _CurrentBrightColorTable.GetAt(row), row, 2);
+            setupColorControl(_CurrentBrightColorTable.GetAt(row), row, 2);
         }
     }
 
