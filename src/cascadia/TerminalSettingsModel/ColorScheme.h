@@ -37,6 +37,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ColorScheme(hstring name, COLORREF defaultFg, COLORREF defaultBg, COLORREF cursorColor);
         com_ptr<ColorScheme> Copy() const;
 
+        hstring ToString()
+        {
+            return Name();
+        }
+
         static com_ptr<ColorScheme> FromJson(const Json::Value& json);
         bool ShouldBeLayered(const Json::Value& json) const;
         void LayerJson(const Json::Value& json);
@@ -47,6 +52,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         com_array<Windows::UI::Color> Table() const noexcept;
         void SetColorTableEntry(uint8_t index, const winrt::Windows::UI::Color& value) noexcept;
+
+        static bool ValidateColorScheme(const Json::Value& scheme);
 
         GETSET_PROPERTY(winrt::hstring, Name);
         GETSET_COLORPROPERTY(Foreground); // defined in constructor

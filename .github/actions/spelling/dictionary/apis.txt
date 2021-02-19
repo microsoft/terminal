@@ -41,6 +41,7 @@ IObject
 IPackage
 IPeasant
 IStorage
+IStringable
 ITab
 ITaskbar
 IVirtual
@@ -96,6 +97,8 @@ TBPF
 THEMECHANGED
 tmp
 tolower
+TTask
+TVal
 tx
 UPDATEINIFILE
 userenv
