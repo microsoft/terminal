@@ -1,0 +1,43 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Remoting
+{
+
+    runtimeclass CommandlineArgs
+    {
+        CommandlineArgs();
+        CommandlineArgs(String[] args, String cwd);
+
+        String[] Commandline { get; set; };
+        String CurrentDirectory();
+    };
+
+    runtimeclass WindowActivatedArgs
+    {
+        WindowActivatedArgs(UInt64 peasantID, Guid desktopID, Windows.Foundation.DateTime activatedTime);
+        UInt64 PeasantID { get; };
+        Guid DesktopID { get; };
+        Windows.Foundation.DateTime ActivatedTime { get; };
+    };
+
+    interface IPeasant
+    {
+        CommandlineArgs InitialArgs { get; };
+
+        void AssignID(UInt64 id);
+        UInt64 GetID();
+        UInt64 GetPID();
+        Boolean ExecuteCommandline(CommandlineArgs args);
+        void ActivateWindow(WindowActivatedArgs args);
+        WindowActivatedArgs GetLastActivatedArgs();
+
+        event Windows.Foundation.TypedEventHandler<Object, WindowActivatedArgs> WindowActivated;
+        event Windows.Foundation.TypedEventHandler<Object, CommandlineArgs> ExecuteCommandlineRequested;
+    };
+
+    [default_interface] runtimeclass Peasant : IPeasant
+    {
+        Peasant();
+    };
+}

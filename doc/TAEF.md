@@ -48,3 +48,17 @@ Invoke-OpenConsoleTests
 ```
 
 `Invoke-OpenConsoleTests` supports a number of options, which you can enumerate by running `Invoke-OpenConsoleTests -?`.
+
+
+### Debugging Tests
+
+If you want to debug a test, you can do so by using the TAEF /waitForDebugger flag, such as:
+
+	runut *Tests.dll /name:TextBufferTests::TestInsertCharacter /waitForDebugger
+
+Replace the test name with the one you want to debug.  Then, TAEF will begin executing the test and output something like this:
+
+	TAEF: Waiting for debugger - PID <some PID> @ IP <some IP address>
+
+You can then attach to that PID in your debugger of choice.  In Visual Studio, you can use Debug -> Attach To Process, or you could use WinDbg or whatever you want.
+Once the debugger attaches, the test will execute and your breakpoints will be hit.

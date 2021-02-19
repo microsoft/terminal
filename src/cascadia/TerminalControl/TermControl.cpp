@@ -11,6 +11,7 @@
 #include <WinUser.h>
 #include <LibraryResources.h>
 #include "../../types/inc/GlyphWidth.hpp"
+#include "../../types/inc/Utils.hpp"
 
 #include "TermControl.g.cpp"
 #include "TermControlAutomationPeer.h"
@@ -224,6 +225,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    void TermControl::SearchMatch(const bool goForward)
+    {
+        if (!_searchBox)
+        {
+            CreateSearchBoxControl();
+        }
+        else
+        {
+            _Search(_searchBox->TextBox().Text(), goForward, false);
+        }
+    }
+
     // Method Description:
     // - Search text in text buffer. This is triggered if the user click
     //   search button or press enter.
@@ -233,7 +246,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - caseSensitive: boolean that represents if the current search is case sensitive
     // Return Value:
     // - <none>
-    void TermControl::_Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive)
+    void TermControl::_Search(const winrt::hstring& text,
+                              const bool goForward,
+                              const bool caseSensitive)
     {
         if (text.size() == 0 || _closing)
         {
@@ -266,7 +281,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - RoutedEventArgs: not used
     // Return Value:
     // - <none>
-    void TermControl::_CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/, RoutedEventArgs const& /*args*/)
+    void TermControl::_CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                             RoutedEventArgs const& /*args*/)
     {
         _searchBox->Visibility(Visibility::Collapsed);
 
@@ -277,12 +293,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Method Description:
     // - Given new settings for this profile, applies the settings to the current terminal.
     // Arguments:
-    // - newSettings: New settings values for the profile in this terminal.
+    // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::UpdateSettings(IControlSettings newSettings)
+    winrt::fire_and_forget TermControl::UpdateSettings()
     {
-        _settings = newSettings;
         auto weakThis{ get_weak() };
 
         // Dispatch a call to the UI thread to apply the new settings to the
@@ -308,7 +323,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Update DxEngine settings under the lock
             _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
 
-            _renderEngine->SetRetroTerminalEffects(_settings.RetroTerminalEffect());
+            _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
+            _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
             _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
             _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
@@ -348,10 +364,27 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _SendInputToConnection(wstr);
     }
 
-    void TermControl::ToggleRetroEffect()
+    void TermControl::ToggleShaderEffects()
     {
         auto lock = _terminal->LockForWriting();
-        _renderEngine->SetRetroTerminalEffects(!_renderEngine->GetRetroTerminalEffects());
+        // Originally, this action could be used to enable the retro effects
+        // even when they're set to `false` in the settings. If the user didn't
+        // specify a custom pixel shader, manually enable the legacy retro
+        // effect first. This will ensure that a toggle off->on will still work,
+        // even if they currently have retro effect off.
+        if (_settings.PixelShaderPath().empty() && !_renderEngine->GetRetroTerminalEffect())
+        {
+            // SetRetroTerminalEffect to true will enable the effect. In this
+            // case, the shader effect will already be disabled (because neither
+            // a pixel shader nor the retro effects were originally requested).
+            // So we _don't_ want to toggle it again below, because that would
+            // toggle it back off.
+            _renderEngine->SetRetroTerminalEffect(true);
+        }
+        else
+        {
+            _renderEngine->ToggleShaderEffects();
+        }
     }
 
     // Method Description:
@@ -541,10 +574,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 solidColor.Color(newBgColor);
             }
-
-            // Set the default background as transparent to prevent the
-            // DX layer from overwriting the background image or acrylic effect
-            _settings.DefaultBackground(static_cast<COLORREF>(newBgColor.with_alpha(0)));
         }
     }
 
@@ -613,6 +642,45 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (auto control{ weakThis.get() })
         {
             _AttachDxgiSwapChainToXaml(chain.Get());
+        }
+    }
+
+    // Method Description:
+    // - Called when the renderer triggers a warning. It might do this when it
+    //   fails to find a shader file, or fails to compile a shader. We'll take
+    //   that renderer warning, and display a dialog to the user with and
+    //   appropriate error message. WE'll display the dialog with our
+    //   RaiseNotice event.
+    // Arguments:
+    // - hr: an  HRESULT describing the warning
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget TermControl::_RendererWarning(const HRESULT hr)
+    {
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_foreground(Dispatcher());
+
+        if (auto control{ weakThis.get() })
+        {
+            winrt::hstring message;
+            if (HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND) == hr ||
+                HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND) == hr)
+            {
+                message = { fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") },
+                                        _settings.PixelShaderPath()) };
+            }
+            else if (D2DERR_SHADER_COMPILE_FAILED == hr)
+            {
+                message = { fmt::format(std::wstring_view{ RS_(L"PixelShaderCompileFailed") }) };
+            }
+            else
+            {
+                message = { fmt::format(std::wstring_view{ RS_(L"UnexpectedRendererError") },
+                                        hr) };
+            }
+
+            auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(message));
+            control->_raiseNoticeHandlers(*control, std::move(noticeArgs));
         }
     }
 
@@ -695,7 +763,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             _terminal->CreateFromSettings(_settings, renderTarget);
 
-            dxEngine->SetRetroTerminalEffects(_settings.RetroTerminalEffect());
+            // IMPORTANT! Set this callback up sooner than later. If we do it
+            // after Enable, then it'll be possible to paint the frame once
+            // _before_ the warning handler is set up, and then warnings from
+            // the first paint will be ignored!
+            dxEngine->SetWarningCallback(std::bind(&TermControl::_RendererWarning, this, std::placeholders::_1));
+
+            dxEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
+            dxEngine->SetPixelShaderPath(_settings.PixelShaderPath());
             dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
             dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
@@ -805,6 +880,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        _HidePointerCursorHandlers(*this, nullptr);
+
         const auto ch = e.Character();
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
         auto modifiers = _GetPressedModifierKeys();
@@ -823,8 +900,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Whether the key was handled.
     bool TermControl::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
     {
+        // Short-circuit isReadOnly check to avoid warning dialog
+        if (_isReadOnly)
+        {
+            return false;
+        }
+
         const auto modifiers{ _GetPressedModifierKeys() };
         auto handled = false;
+
         if (vkey == VK_MENU && !down)
         {
             // Manually generate an Alt KeyUp event into the key bindings or terminal.
@@ -901,6 +985,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto modifiers = _GetPressedModifierKeys();
         const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
+
+        // Short-circuit isReadOnly check to avoid warning dialog
+        if (_isReadOnly)
+        {
+            e.Handled(!keyDown || _TryHandleKeyBinding(vkey, scanCode, modifiers));
+            return;
+        }
+
         if (e.KeyStatus().IsExtendedKey)
         {
             modifiers |= ControlKeyStates::EnhancedKey;
@@ -1021,10 +1113,26 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // modifier key. We'll wait for a real keystroke to dismiss the
         // GH #7395 - don't dismiss selection when taking PrintScreen
         // selection.
-        if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey) && vkey != VK_SNAPSHOT)
+        // GH#8522, GH#3758 - Only dismiss the selection on key _down_. If we
+        // dismiss on key up, then there's chance that we'll immediately dismiss
+        // a selection created by an action bound to a keydown.
+        if (_terminal->IsSelectionActive() &&
+            !KeyEvent::IsModifierKey(vkey) &&
+            vkey != VK_SNAPSHOT &&
+            keyDown)
         {
-            _terminal->ClearSelection();
-            _renderer->TriggerSelection();
+            const CoreWindow window = CoreWindow::GetForCurrentThread();
+            const auto leftWinKeyState = window.GetKeyState(VirtualKey::LeftWindows);
+            const auto rightWinKeyState = window.GetKeyState(VirtualKey::RightWindows);
+            const auto isLeftWinKeyDown = WI_IsFlagSet(leftWinKeyState, CoreVirtualKeyStates::Down);
+            const auto isRightWinKeyDown = WI_IsFlagSet(rightWinKeyState, CoreVirtualKeyStates::Down);
+
+            // GH#8791 - don't dismiss selection if Windows key was also pressed as a key-combination.
+            if (!isLeftWinKeyDown && !isRightWinKeyDown)
+            {
+                _terminal->ClearSelection();
+                _renderer->TriggerSelection();
+            }
 
             if (vkey == VK_ESCAPE)
             {
@@ -1149,6 +1257,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        _RestorePointerCursorHandlers(*this, nullptr);
+
         _CapturePointer(sender, args);
 
         const auto ptr = args.Pointer();
@@ -1224,7 +1334,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     _terminal->SetSelectionEnd(terminalPosition, mode);
                     _selectionNeedsToBeCopied = true;
                 }
-                else if (mode == ::Terminal::SelectionExpansionMode::Cell)
+                else if (mode == ::Terminal::SelectionExpansionMode::Cell && !shiftEnabled)
                 {
                     // Single Click: reset the selection and begin a new one
                     _terminal->ClearSelection();
@@ -1278,29 +1388,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        _RestorePointerCursorHandlers(*this, nullptr);
+
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
+        const auto cursorPosition = point.Position();
+        const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
-        if (!_focused)
+        if (!_focused && _settings.FocusFollowMouse())
         {
-            args.Handled(true);
-            return;
+            _FocusFollowMouseRequestedHandlers(*this, nullptr);
         }
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            if (_CanSendVTMouseInput())
+            // Short-circuit isReadOnly check to avoid warning dialog
+            if (_focused && !_isReadOnly && _CanSendVTMouseInput())
             {
                 _TrySendMouseEvent(point);
                 args.Handled(true);
                 return;
             }
 
-            if (point.Properties().IsLeftButtonPressed())
+            if (_focused && point.Properties().IsLeftButtonPressed())
             {
                 auto lock = _terminal->LockForWriting();
-
-                const auto cursorPosition = point.Position();
 
                 if (_singleClickTouchdownPos)
                 {
@@ -1343,51 +1455,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     _TryStopAutoScroll(ptr.PointerId());
                 }
             }
-            const auto terminalPos = _GetTerminalPosition(point.Position());
-            if (terminalPos != _lastHoveredCell)
-            {
-                const auto uri = _terminal->GetHyperlinkAtPosition(terminalPos);
-                if (!uri.empty())
-                {
-                    // Update the tooltip with the URI
-                    HoveredUri().Text(uri);
 
-                    // Set the border thickness so it covers the entire cell
-                    const auto charSizeInPixels = CharacterDimensions();
-                    const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
-                    const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
-                    const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
-                    HyperlinkTooltipBorder().BorderThickness(newThickness);
-
-                    // Compute the location of the top left corner of the cell in DIPS
-                    const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
-                    const til::point startPos{ terminalPos.X, terminalPos.Y };
-                    const til::size fontSize{ _actualFont.GetSize() };
-                    const til::point posInPixels{ startPos * fontSize };
-                    const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
-                    const til::point locationInDIPs{ posInDIPs + marginsInDips };
-
-                    // Move the border to the top left corner of the cell
-                    OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
-                    OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
-                }
-                _lastHoveredCell = terminalPos;
-
-                const auto newId = _terminal->GetHyperlinkIdAtPosition(terminalPos);
-                const auto newInterval = _terminal->GetHyperlinkIntervalFromPosition(terminalPos);
-                // If the hyperlink ID changed or the interval changed, trigger a redraw all
-                // (so this will happen both when we move onto a link and when we move off a link)
-                if (newId != _lastHoveredId || (newInterval != _lastHoveredInterval))
-                {
-                    _lastHoveredId = newId;
-                    _lastHoveredInterval = newInterval;
-                    _renderEngine->UpdateHyperlinkHoveredId(newId);
-                    _renderer->UpdateLastHoveredInterval(newInterval);
-                    _renderer->TriggerRedrawAll();
-                }
-            }
+            _UpdateHoveredCell(terminalPosition);
         }
-        else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
+        else if (_focused && ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
         {
             const auto contactRect = point.Properties().ContactRect();
             winrt::Windows::Foundation::Point newTouchPoint{ contactRect.X, contactRect.Y };
@@ -1443,7 +1514,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            if (_CanSendVTMouseInput())
+            // Short-circuit isReadOnly check to avoid warning dialog
+            if (!_isReadOnly && _CanSendVTMouseInput())
             {
                 _TrySendMouseEvent(point);
                 args.Handled(true);
@@ -1485,6 +1557,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        _RestorePointerCursorHandlers(*this, nullptr);
+
         const auto point = args.GetCurrentPoint(*this);
         const auto props = point.Properties();
         const TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(), props.IsMiddleButtonPressed(), props.IsRightButtonPressed() };
@@ -1516,7 +1590,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                     const int32_t delta,
                                     const TerminalInput::MouseButtonState state)
     {
-        if (_CanSendVTMouseInput())
+        // Short-circuit isReadOnly check to avoid warning dialog
+        if (!_isReadOnly && _CanSendVTMouseInput())
         {
             // Most mouse event handlers call
             //      _TrySendMouseEvent(point);
@@ -1916,6 +1991,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        _RestorePointerCursorHandlers(*this, nullptr);
+
         _focused = false;
 
         if (_uiaEngine.get())
@@ -1949,41 +2026,35 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_SendInputToConnection(const winrt::hstring& wstr)
     {
-        _connection.WriteInput(wstr);
+        if (_isReadOnly)
+        {
+            _RaiseReadOnlyWarning();
+        }
+        else
+        {
+            _connection.WriteInput(wstr);
+        }
     }
 
     void TermControl::_SendInputToConnection(std::wstring_view wstr)
     {
-        _connection.WriteInput(wstr);
+        if (_isReadOnly)
+        {
+            _RaiseReadOnlyWarning();
+        }
+        else
+        {
+            _connection.WriteInput(wstr);
+        }
     }
 
     // Method Description:
     // - Pre-process text pasted (presumably from the clipboard)
-    //   before sending it over the terminal's connection, converting
-    //   Windows-space \r\n line-endings to \r line-endings
+    //   before sending it over the terminal's connection.
     void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
     {
-        // Some notes on this implementation:
-        //
-        // - std::regex can do this in a single line, but is somewhat
-        //   overkill for a simple search/replace operation (and its
-        //   performance guarantees aren't exactly stellar)
-        // - The STL doesn't have a simple string search/replace method.
-        //   This fact is lamentable.
-        // - This line-ending conversion is intentionally fairly
-        //   conservative, to avoid stripping out lone \n characters
-        //   where they could conceivably be intentional.
-
-        std::wstring stripped{ wstr };
-
-        std::wstring::size_type pos = 0;
-
-        while ((pos = stripped.find(L"\r\n", pos)) != std::wstring::npos)
-        {
-            stripped.replace(pos, 2, L"\r");
-        }
-
-        _connection.WriteInput(stripped);
+        _terminal->WritePastedText(wstr);
+        _terminal->ClearSelection();
         _terminal->TrySnapOnInput();
     }
 
@@ -2364,6 +2435,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _settings.ProfileName();
     }
 
+    hstring TermControl::WorkingDirectory() const
+    {
+        hstring hstr{ _terminal->GetWorkingDirectory() };
+        return hstr;
+    }
+
     // Method Description:
     // - Given a copy-able selection, get the selected text from the buffer and send it to the
     //     Windows Clipboard (CascadiaWin32:main.cpp).
@@ -2469,6 +2546,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (!_closing.exchange(true))
         {
+            _RestorePointerCursorHandlers(*this, nullptr);
+
             // Stop accepting new output and state changes before we disconnect everything.
             _connection.TerminalOutput(_connectionOutputEventToken);
             _connectionStateChangedRevoker.revoke();
@@ -2482,6 +2561,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // don't really care to wait for the connection to be completely
             // closed. We can just do it whenever.
             _AsyncCloseConnection();
+
+            {
+                // GH#8734:
+                // We lock the terminal here to make sure it isn't still being
+                // used in the connection thread before we destroy the renderer.
+                // However, we must unlock it again prior to triggering the
+                // teardown, to avoid the render thread being deadlocked. The
+                // renderer may be waiting to acquire the terminal lock, while
+                // we're waiting for the renderer to finish.
+                auto lock = _terminal->LockForWriting();
+            }
 
             if (auto localRenderEngine{ std::exchange(_renderEngine, nullptr) })
             {
@@ -2781,7 +2871,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
     ControlKeyStates TermControl::_GetPressedModifierKeys() const
     {
-        CoreWindow window = CoreWindow::GetForCurrentThread();
+        const CoreWindow window = CoreWindow::GetForCurrentThread();
         // DONT USE
         //      != CoreVirtualKeyStates::None
         // OR
@@ -3162,6 +3252,103 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     const size_t TermControl::TaskbarProgress() const noexcept
     {
         return _terminal->GetTaskbarProgress();
+    }
+
+    // Method Description:
+    // - Checks whether the control is in a read-only mode (in this mode node input is sent to connection).
+    // Return Value:
+    // - True if the mode is read-only
+    bool TermControl::ReadOnly() const noexcept
+    {
+        return _isReadOnly;
+    }
+
+    // Method Description:
+    // - Toggles the read-only flag, raises event describing the value change
+    void TermControl::ToggleReadOnly()
+    {
+        _isReadOnly = !_isReadOnly;
+        _ReadOnlyChangedHandlers(*this, winrt::box_value(_isReadOnly));
+    }
+
+    winrt::fire_and_forget TermControl::_RaiseReadOnlyWarning()
+    {
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_foreground(Dispatcher());
+
+        if (auto control{ weakThis.get() })
+        {
+            auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));
+            control->_raiseNoticeHandlers(*control, std::move(noticeArgs));
+        }
+    }
+
+    // Method description:
+    // - Updates last hovered cell, renders / removes rendering of hyper-link if required
+    // Arguments:
+    // - terminalPosition: The terminal position of the pointer
+    void TermControl::_UpdateHoveredCell(const std::optional<COORD>& terminalPosition)
+    {
+        if (terminalPosition == _lastHoveredCell)
+        {
+            return;
+        }
+
+        _lastHoveredCell = terminalPosition;
+
+        if (terminalPosition.has_value())
+        {
+            const auto uri = _terminal->GetHyperlinkAtPosition(*terminalPosition);
+            if (!uri.empty())
+            {
+                // Update the tooltip with the URI
+                HoveredUri().Text(uri);
+
+                // Set the border thickness so it covers the entire cell
+                const auto charSizeInPixels = CharacterDimensions();
+                const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
+                const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
+                const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
+                HyperlinkTooltipBorder().BorderThickness(newThickness);
+
+                // Compute the location of the top left corner of the cell in DIPS
+                const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
+                const til::point startPos{ terminalPosition->X, terminalPosition->Y };
+                const til::size fontSize{ _actualFont.GetSize() };
+                const til::point posInPixels{ startPos * fontSize };
+                const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
+                const til::point locationInDIPs{ posInDIPs + marginsInDips };
+
+                // Move the border to the top left corner of the cell
+                OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
+                OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
+            }
+        }
+
+        const uint16_t newId = terminalPosition.has_value() ? _terminal->GetHyperlinkIdAtPosition(*terminalPosition) : 0u;
+        const auto newInterval = terminalPosition.has_value() ? _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition) : std::nullopt;
+
+        // If the hyperlink ID changed or the interval changed, trigger a redraw all
+        // (so this will happen both when we move onto a link and when we move off a link)
+        if (newId != _lastHoveredId || (newInterval != _lastHoveredInterval))
+        {
+            _lastHoveredId = newId;
+            _lastHoveredInterval = newInterval;
+            _renderEngine->UpdateHyperlinkHoveredId(newId);
+            _renderer->UpdateLastHoveredInterval(newInterval);
+            _renderer->TriggerRedrawAll();
+        }
+    }
+
+    // Method Description:
+    // - Handle a mouse exited event, specifically clearing last hovered cell
+    // and removing selection from hyper link if exists
+    // Arguments:
+    // - sender: not used
+    // - args: event data
+    void TermControl::_PointerExitedHandler(Windows::Foundation::IInspectable const& /*sender*/, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
+    {
+        _UpdateHoveredCell(std::nullopt);
     }
 
     // -------------------------------- WinRT Events ---------------------------------

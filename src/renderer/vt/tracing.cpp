@@ -145,7 +145,7 @@ void RenderTracing::TraceInvalidateScroll(const til::point scroll) const
 }
 
 void RenderTracing::TraceStartPaint(const bool quickReturn,
-                                    const til::bitmap& invalidMap,
+                                    const til::pmr::bitmap& invalidMap,
                                     const til::rectangle lastViewport,
                                     const til::point scrollDelt,
                                     const bool cursorMoved,

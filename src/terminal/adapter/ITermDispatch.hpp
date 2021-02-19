@@ -13,6 +13,7 @@ Abstract:
 */
 #pragma once
 #include "DispatchTypes.hpp"
+#include "../buffer/out/LineRendition.hpp"
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -78,6 +79,7 @@ public:
     virtual bool EnableButtonEventMouseMode(const bool enabled) = 0; // ?1002
     virtual bool EnableAnyEventMouseMode(const bool enabled) = 0; // ?1003
     virtual bool EnableAlternateScroll(const bool enabled) = 0; // ?1007
+    virtual bool EnableXtermBracketedPasteMode(const bool enabled) = 0; // ?2004
     virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD color) = 0; // OSCColorTable
     virtual bool SetDefaultForeground(const DWORD color) = 0; // OSCDefaultForeground
     virtual bool SetDefaultBackground(const DWORD color) = 0; // OSCDefaultBackground
@@ -87,6 +89,10 @@ public:
     virtual bool EraseCharacters(const size_t numChars) = 0; // ECH
 
     virtual bool SetGraphicsRendition(const VTParameters options) = 0; // SGR
+    virtual bool SetLineRendition(const LineRendition rendition) = 0; // DECSWL, DECDWL, DECDHL
+
+    virtual bool PushGraphicsRendition(const VTParameters options) = 0; // XTPUSHSGR
+    virtual bool PopGraphicsRendition() = 0; // XTPOPSGR
 
     virtual bool SetMode(const DispatchTypes::ModeParams param) = 0; // DECSET
 

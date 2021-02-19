@@ -23,6 +23,7 @@ namespace winrt::TerminalApp::implementation
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
 
         void UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs);
+        void SetKeyMap(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap);
 
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
@@ -34,6 +35,7 @@ namespace winrt::TerminalApp::implementation
 
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Title, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Icon, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(bool, ReadOnly, _PropertyChangedHandlers, false);
         GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewItem, TabViewItem, nullptr);
 
         OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::FrameworkElement, Content, _PropertyChangedHandlers, nullptr);
@@ -43,12 +45,18 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeOtherTabsMenuItem{};
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
+        Microsoft::Terminal::Settings::Model::KeyMapping _keymap{ nullptr };
+        winrt::hstring _keyChord{};
 
         virtual void _CreateContextMenu();
+        virtual winrt::hstring _CreateToolTipTitle();
+
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutSubItem _CreateCloseSubMenu();
         void _EnableCloseMenuItems();
         void _CloseTabsAfter();
         void _CloseOtherTabs();
+        winrt::fire_and_forget _UpdateSwitchToTabKeyChord();
+        void _UpdateToolTip();
 
         friend class ::TerminalAppLocalTests::TabTests;
     };

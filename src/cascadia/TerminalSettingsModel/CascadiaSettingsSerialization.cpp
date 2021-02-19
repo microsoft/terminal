@@ -110,13 +110,17 @@ static void _CatchRethrowSerializationExceptionWithLocationInfo(std::string_view
         try
         {
             jsonValueAsString = e.jsonValue.asString();
+            if (e.jsonValue.isString())
+            {
+                jsonValueAsString = fmt::format("\"{}\"", jsonValueAsString);
+            }
         }
         catch (...)
         {
             // discard: we're in the middle of error handling
         }
 
-        msg = fmt::format("  Have: \"{}\"\n  Expected: {}", jsonValueAsString, e.expectedType);
+        msg = fmt::format("  Have: {}\n  Expected: {}", jsonValueAsString, e.expectedType);
 
         auto [l, c] = _LineAndColumnFromPosition(settingsString, e.jsonValue.getOffsetStart());
         msg = fmt::format((e.key ? keyedHeader : basicHeader),
@@ -1343,9 +1347,13 @@ void CascadiaSettings::WriteSettingsToDisk() const
 Json::Value CascadiaSettings::ToJson() const
 {
     // top-level json object
-    // directly inject "globals" and "$schema" into here
+    // directly inject "globals", "$schema", and "disabledProfileSources" into here
     Json::Value json{ _globals->ToJson() };
     JsonUtils::SetValueForKey(json, SchemaKey, JsonKey(SchemaValue));
+    if (_userSettings.isMember(JsonKey(DisabledProfileSourcesKey)))
+    {
+        json[JsonKey(DisabledProfileSourcesKey)] = _userSettings[JsonKey(DisabledProfileSourcesKey)];
+    }
 
     // "profiles" will always be serialized as an object
     Json::Value profiles{ Json::ValueType::objectValue };

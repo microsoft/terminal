@@ -35,16 +35,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                          Header="{Binding ElementName=SettingsNav, Path=SelectedItem.Content, Mode=OneWay}"
                          Loaded="SettingsNav_Loaded"
                          ItemInvoked="SettingsNav_ItemInvoked"
-                         IsBackButtonVisible="Collapsed">
+                         IsBackButtonVisible="Collapsed"
+                         TabFocusNavigation="Cycle">
 
-        <muxc:NavigationView.HeaderTemplate>
-            <DataTemplate x:DataType="x:String">
-                <TextBlock Text="{x:Bind}"
-                           Margin="8,10,0,0"
-                           Style="{StaticResource TitleTextBlockStyle}"/>
-            </DataTemplate>
-        </muxc:NavigationView.HeaderTemplate>
-    
         <muxc:NavigationView.MenuItems>
     
             <muxc:NavigationViewItem x:Uid="Nav_Launch"
@@ -96,6 +89,7 @@ the MIT License. See LICENSE in the project root for license information. -->
         <muxc:NavigationView.PaneFooter>
             <!--The OpenJson item needs both Tapped and KeyDown handler-->
             <muxc:NavigationViewItem x:Uid="Nav_OpenJSON"
+                                     x:Name="OpenJsonNavItem"
                                      Tapped="OpenJsonTapped"
                                      KeyDown="OpenJsonKeyDown">
                 <muxc:NavigationViewItem.Icon>
@@ -120,18 +114,16 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <TextBlock x:Uid="Settings_UnsavedSettingsWarning"
                            Visibility="Collapsed"
                            Foreground="Goldenrod"
-                           FontSize="15"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Left"
                            TextAlignment="Left"
                            Margin="30,0,0,0"/>
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Right" Orientation="Horizontal" Margin="0,0,30,0">
                     <Button x:Uid="Settings_ResetSettingsButton"
-                            FontSize="15"
-                            ToolTipService.Placement="Mouse"
+                            x:Name="ResetButton"
                             Click="ResetButton_Click"/>
                     <Button x:Uid="Settings_SaveSettingsButton"
-                            FontSize="15"
+                            x:Name="SaveButton"
                             Style="{StaticResource AccentButtonStyle}"
                             Margin="10,0,0,0"
                             Click="SaveButton_Click"/>

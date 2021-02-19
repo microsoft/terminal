@@ -8,6 +8,7 @@ namespace Microsoft.Terminal.TerminalControl
         Vintage,
         Bar,
         Underscore,
+        DoubleUnderscore,
         FilledBox,
         EmptyBox
     };

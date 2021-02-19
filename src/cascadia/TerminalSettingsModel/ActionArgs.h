@@ -26,6 +26,7 @@
 #include "ScrollDownArgs.g.h"
 #include "MoveTabArgs.g.h"
 #include "ToggleCommandPaletteArgs.g.h"
+#include "FindMatchArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
@@ -379,6 +380,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
         SplitPaneArgs() = default;
+        SplitPaneArgs(SplitState style, double size, const Model::NewTerminalArgs& terminalArgs) :
+            _SplitStyle{ style },
+            _SplitSize{ size },
+            _TerminalArgs{ terminalArgs } {};
         SplitPaneArgs(SplitState style, const Model::NewTerminalArgs& terminalArgs) :
             _SplitStyle{ style },
             _TerminalArgs{ terminalArgs } {};
@@ -387,9 +392,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_PROPERTY(SplitState, SplitStyle, SplitState::Automatic);
         GETSET_PROPERTY(Model::NewTerminalArgs, TerminalArgs, nullptr);
         GETSET_PROPERTY(SplitType, SplitMode, SplitType::Manual);
+        GETSET_PROPERTY(double, SplitSize, .5);
 
         static constexpr std::string_view SplitKey{ "split" };
         static constexpr std::string_view SplitModeKey{ "splitMode" };
+        static constexpr std::string_view SplitSizeKey{ "size" };
 
     public:
         hstring GenerateName() const;
@@ -402,6 +409,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return otherAsUs->_SplitStyle == _SplitStyle &&
                        (otherAsUs->_TerminalArgs ? otherAsUs->_TerminalArgs.Equals(_TerminalArgs) :
                                                    otherAsUs->_TerminalArgs == _TerminalArgs) &&
+                       otherAsUs->_SplitSize == _SplitSize &&
                        otherAsUs->_SplitMode == _SplitMode;
             }
             return false;
@@ -413,6 +421,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             args->_TerminalArgs = NewTerminalArgs::FromJson(json);
             JsonUtils::GetValueForKey(json, SplitKey, args->_SplitStyle);
             JsonUtils::GetValueForKey(json, SplitModeKey, args->_SplitMode);
+            JsonUtils::GetValueForKey(json, SplitSizeKey, args->_SplitSize);
+            if (args->_SplitSize >= 1 || args->_SplitSize <= 0)
+            {
+                return { nullptr, { SettingsLoadWarnings::InvalidSplitSize } };
+            }
             return { *args, {} };
         }
         IActionArgs Copy() const
@@ -421,6 +434,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_SplitStyle = _SplitStyle;
             copy->_TerminalArgs = _TerminalArgs.Copy();
             copy->_SplitMode = _SplitMode;
+            copy->_SplitSize = _SplitSize;
             return *copy;
         }
     };
@@ -428,6 +442,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct OpenSettingsArgs : public OpenSettingsArgsT<OpenSettingsArgs>
     {
         OpenSettingsArgs() = default;
+        OpenSettingsArgs(const SettingsTarget& target) :
+            _Target{ target } {}
         GETSET_PROPERTY(SettingsTarget, Target, SettingsTarget::SettingsFile);
 
         static constexpr std::string_view TargetKey{ "target" };
@@ -823,6 +839,50 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return *copy;
         }
     };
+
+    struct FindMatchArgs : public FindMatchArgsT<FindMatchArgs>
+    {
+        FindMatchArgs() = default;
+        FindMatchArgs(FindMatchDirection direction) :
+            _Direction{ direction } {};
+        GETSET_PROPERTY(FindMatchDirection, Direction, FindMatchDirection::None);
+
+        static constexpr std::string_view DirectionKey{ "direction" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<FindMatchArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Direction == _Direction;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<FindMatchArgs>();
+            JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
+            if (args->_Direction == FindMatchDirection::None)
+            {
+                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
+            }
+            else
+            {
+                return { *args, {} };
+            }
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<FindMatchArgs>() };
+            copy->_Direction = _Direction;
+            return *copy;
+        }
+    };
+
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
@@ -837,4 +897,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(CloseOtherTabsArgs);
     BASIC_FACTORY(CloseTabsAfterArgs);
     BASIC_FACTORY(MoveTabArgs);
+    BASIC_FACTORY(OpenSettingsArgs);
+    BASIC_FACTORY(FindMatchArgs);
 }

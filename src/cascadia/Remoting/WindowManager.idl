@@ -1,0 +1,15 @@
+import "Peasant.idl";
+import "Monarch.idl";
+
+
+namespace Microsoft.Terminal.Remoting
+{
+    [default_interface] runtimeclass WindowManager
+    {
+        WindowManager();
+        void ProposeCommandline(CommandlineArgs args);
+        Boolean ShouldCreateWindow { get; };
+        IPeasant CurrentWindow();
+        event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
+    };
+}

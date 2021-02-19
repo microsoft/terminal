@@ -34,16 +34,23 @@ namespace Microsoft::Console::Render
         RenderEngineBase& operator=(RenderEngineBase&&) = default;
 
     public:
-        [[nodiscard]] HRESULT InvalidateTitle(const std::wstring& proposedTitle) noexcept override;
+        [[nodiscard]] HRESULT InvalidateTitle(const std::wstring_view proposedTitle) noexcept override;
 
-        [[nodiscard]] HRESULT UpdateTitle(const std::wstring& newTitle) noexcept override;
+        [[nodiscard]] HRESULT UpdateTitle(const std::wstring_view newTitle) noexcept override;
 
         [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
+
+        [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
+        [[nodiscard]] HRESULT PrepareLineTransform(const LineRendition lineRendition,
+                                                   const size_t targetRow,
+                                                   const size_t viewportLeft) noexcept override;
+
+        [[nodiscard]] virtual bool RequiresContinuousRedraw() noexcept override;
 
         void WaitUntilCanRender() noexcept override;
 
     protected:
-        [[nodiscard]] virtual HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept = 0;
+        [[nodiscard]] virtual HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept = 0;
 
         bool _titleChanged;
         std::wstring _lastFrameTitle;

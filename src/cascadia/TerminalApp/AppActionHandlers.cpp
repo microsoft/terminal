@@ -122,7 +122,11 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SplitPaneArgs>())
         {
-            _SplitPane(realArgs.SplitStyle(), realArgs.SplitMode(), realArgs.TerminalArgs());
+            _SplitPane(realArgs.SplitStyle(),
+                       realArgs.SplitMode(),
+                       // This is safe, we're already filtering so the value is (0, 1)
+                       ::base::saturated_cast<float>(realArgs.SplitSize()),
+                       realArgs.TerminalArgs());
             args.Handled(true);
         }
     }
@@ -130,24 +134,32 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleTogglePaneZoom(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {
-        if (auto focusedTab = _GetFocusedTab())
+        if (const auto activeTab{ _GetFocusedTabImpl() })
         {
-            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
+            // Don't do anything if there's only one pane. It's already zoomed.
+            if (activeTab->GetLeafPaneCount() > 1)
             {
-                // Don't do anything if there's only one pane. It's already zoomed.
-                if (activeTab && activeTab->GetLeafPaneCount() > 1)
-                {
-                    // First thing's first, remove the current content from the UI
-                    // tree. This is important, because we might be leaving zoom, and if
-                    // a pane is zoomed, then it's currently in the UI tree, and should
-                    // be removed before it's re-added in Pane::Restore
-                    _tabContent.Children().Clear();
+                // First thing's first, remove the current content from the UI
+                // tree. This is important, because we might be leaving zoom, and if
+                // a pane is zoomed, then it's currently in the UI tree, and should
+                // be removed before it's re-added in Pane::Restore
+                _tabContent.Children().Clear();
 
-                    // Togging the zoom on the tab will cause the tab to inform us of
-                    // the new root Content for this tab.
-                    activeTab->ToggleZoom();
-                }
+                // Togging the zoom on the tab will cause the tab to inform us of
+                // the new root Content for this tab.
+                activeTab->ToggleZoom();
             }
+        }
+
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleTogglePaneReadOnly(const IInspectable& /*sender*/,
+                                                 const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            activeTab->TogglePaneReadOnly();
         }
 
         args.Handled(true);
@@ -181,6 +193,18 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleFindMatch(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<FindMatchArgs>())
+        {
+            if (const auto& control{ _GetActiveControl() })
+            {
+                control.SearchMatch(realArgs.Direction() == FindMatchDirection::Next);
+                args.Handled(true);
+            }
+        }
+    }
     void TerminalPage::_HandleOpenSettings(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {
@@ -295,11 +319,11 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
-    void TerminalPage::_HandleToggleRetroEffect(const IInspectable& /*sender*/,
-                                                const ActionEventArgs& args)
+    void TerminalPage::_HandleToggleShaderEffects(const IInspectable& /*sender*/,
+                                                  const ActionEventArgs& args)
     {
         const auto termControl = _GetActiveControl();
-        termControl.ToggleRetroEffect();
+        termControl.ToggleShaderEffects();
         args.Handled(true);
     }
 
@@ -343,19 +367,16 @@ namespace winrt::TerminalApp::implementation
         args.Handled(false);
         if (const auto& realArgs = args.ActionArgs().try_as<SetColorSchemeArgs>())
         {
-            if (auto focusedTab = _GetFocusedTab())
+            if (const auto activeTab{ _GetFocusedTabImpl() })
             {
-                if (auto activeTab = _GetTerminalTabImpl(focusedTab))
+                if (auto activeControl = activeTab->GetActiveTerminalControl())
                 {
-                    if (auto activeControl = activeTab->GetActiveTerminalControl())
+                    if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
                     {
-                        if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
-                        {
-                            auto controlSettings = activeControl.Settings().as<TerminalSettings>();
-                            controlSettings->ApplyColorScheme(scheme);
-                            activeControl.UpdateSettings(*controlSettings);
-                            args.Handled(true);
-                        }
+                        auto controlSettings = activeControl.Settings().as<TerminalSettings>();
+                        controlSettings->ApplyColorScheme(scheme);
+                        activeControl.UpdateSettings();
+                        args.Handled(true);
                     }
                 }
             }
@@ -372,18 +393,15 @@ namespace winrt::TerminalApp::implementation
             tabColor = realArgs.TabColor();
         }
 
-        if (auto focusedTab = _GetFocusedTab())
+        if (const auto activeTab{ _GetFocusedTabImpl() })
         {
-            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
+            if (tabColor)
             {
-                if (tabColor)
-                {
-                    activeTab->SetRuntimeTabColor(tabColor.Value());
-                }
-                else
-                {
-                    activeTab->ResetRuntimeTabColor();
-                }
+                activeTab->SetRuntimeTabColor(tabColor.Value());
+            }
+            else
+            {
+                activeTab->ResetRuntimeTabColor();
             }
         }
         args.Handled(true);
@@ -392,12 +410,9 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleOpenTabColorPicker(const IInspectable& /*sender*/,
                                                  const ActionEventArgs& args)
     {
-        if (auto focusedTab = _GetFocusedTab())
+        if (const auto activeTab{ _GetFocusedTabImpl() })
         {
-            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
-            {
-                activeTab->ActivateColorPicker();
-            }
+            activeTab->ActivateColorPicker();
         }
         args.Handled(true);
     }
@@ -412,18 +427,15 @@ namespace winrt::TerminalApp::implementation
             title = realArgs.Title();
         }
 
-        if (auto focusedTab = _GetFocusedTab())
+        if (const auto activeTab{ _GetFocusedTabImpl() })
         {
-            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
+            if (title.has_value())
             {
-                if (title.has_value())
-                {
-                    activeTab->SetTabText(title.value());
-                }
-                else
-                {
-                    activeTab->ResetTabText();
-                }
+                activeTab->SetTabText(title.value());
+            }
+            else
+            {
+                activeTab->ResetTabText();
             }
         }
         args.Handled(true);
@@ -432,12 +444,9 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleOpenTabRenamer(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {
-        if (auto focusedTab = _GetFocusedTab())
+        if (const auto activeTab{ _GetFocusedTabImpl() })
         {
-            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
-            {
-                activeTab->ActivateTabRenamer();
-            }
+            activeTab->ActivateTabRenamer();
         }
         args.Handled(true);
     }
@@ -453,7 +462,7 @@ namespace winrt::TerminalApp::implementation
             if (_startupActions.Size() != 0)
             {
                 actionArgs.Handled(true);
-                _ProcessStartupActions(actions, false);
+                ProcessStartupActions(actions, false);
             }
         }
     }
@@ -479,17 +488,19 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            // Remove tabs after the current one
-            while (_tabs.Size() > index + 1)
+            // Since _RemoveTab is asynchronous, create a snapshot of the  tabs we want to remove
+            std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
+            if (index > 0)
             {
-                _RemoveTabViewItemByIndex(_tabs.Size() - 1);
+                std::copy(begin(_tabs), begin(_tabs) + index, std::back_inserter(tabsToRemove));
             }
 
-            // Remove all of them leading up to the selected tab
-            while (_tabs.Size() > 1)
+            if (index + 1 < _tabs.Size())
             {
-                _RemoveTabViewItemByIndex(0);
+                std::copy(begin(_tabs) + index + 1, end(_tabs), std::back_inserter(tabsToRemove));
             }
+
+            _RemoveTabs(tabsToRemove);
 
             actionArgs.Handled(true);
         }
@@ -516,11 +527,10 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            // Remove tabs after the current one
-            while (_tabs.Size() > index + 1)
-            {
-                _RemoveTabViewItemByIndex(_tabs.Size() - 1);
-            }
+            // Since _RemoveTab is asynchronous, create a snapshot of the  tabs we want to remove
+            std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
+            std::copy(begin(_tabs) + index + 1, end(_tabs), std::back_inserter(tabsToRemove));
+            _RemoveTabs(tabsToRemove);
 
             // TODO:GH#7182 For whatever reason, if you run this action
             // when the tab that's currently focused is _before_ the `index`
@@ -535,13 +545,8 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleOpenTabSearch(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {
-        // Tab search is always in-order.
-        CommandPalette().SetTabs(_tabs, true);
-
-        auto opt = _GetFocusedTabIndex();
-        uint32_t startIdx = opt.value_or(0);
-
-        CommandPalette().EnableTabSwitcherMode(true, startIdx);
+        CommandPalette().SetTabs(_tabs, _mruTabs);
+        CommandPalette().EnableTabSearchMode();
         CommandPalette().Visibility(Visibility::Visible);
 
         args.Handled(true);

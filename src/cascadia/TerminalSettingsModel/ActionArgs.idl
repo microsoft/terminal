@@ -64,6 +64,13 @@ namespace Microsoft.Terminal.Settings.Model
         Backward
     };
 
+    enum FindMatchDirection
+    {
+        None = 0,
+        Next,
+        Previous
+    };
+
     enum CommandPaletteLaunchMode
     {
         Action = 0,
@@ -135,16 +142,19 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
+        SplitPaneArgs(SplitState split, Double size, NewTerminalArgs terminalArgs);
         SplitPaneArgs(SplitState split, NewTerminalArgs terminalArgs);
         SplitPaneArgs(SplitType splitMode);
 
         SplitState SplitStyle { get; };
         NewTerminalArgs TerminalArgs { get; };
         SplitType SplitMode { get; };
+        Double SplitSize { get; };
     };
 
     [default_interface] runtimeclass OpenSettingsArgs : IActionArgs
     {
+        OpenSettingsArgs(SettingsTarget target);
         SettingsTarget Target { get; };
     };
 
@@ -200,5 +210,11 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs
     {
         CommandPaletteLaunchMode LaunchMode { get; };
+    };
+
+    [default_interface] runtimeclass FindMatchArgs : IActionArgs
+    {
+        FindMatchArgs(FindMatchDirection direction);
+        FindMatchDirection Direction { get; };
     };
 }

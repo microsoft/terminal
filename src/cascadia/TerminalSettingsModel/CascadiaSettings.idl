@@ -39,6 +39,7 @@ namespace Microsoft.Terminal.Settings.Model
         Profile CreateNewProfile();
         Profile FindProfile(Guid profileGuid);
         ColorScheme GetColorSchemeForProfile(Guid profileGuid);
+        void UpdateColorSchemeReferences(String oldName, String newName);
 
         Guid GetProfileForArgs(NewTerminalArgs newTerminalArgs);
     }

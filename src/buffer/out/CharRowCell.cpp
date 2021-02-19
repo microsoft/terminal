@@ -8,18 +8,6 @@
 // default glyph value, used for resetting the character data portion of a cell
 static constexpr wchar_t DefaultValue = UNICODE_SPACE;
 
-CharRowCell::CharRowCell() noexcept :
-    _wch{ DefaultValue },
-    _attr{}
-{
-}
-
-CharRowCell::CharRowCell(const wchar_t wch, const DbcsAttribute attr) noexcept :
-    _wch{ wch },
-    _attr{ attr }
-{
-}
-
 // Routine Description:
 // - "erases" the glyph. really sets it back to the default "empty" value
 void CharRowCell::EraseChars() noexcept

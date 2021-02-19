@@ -5,14 +5,14 @@ parameters:
   testSuite: ''
   # If a Pipeline runs this template more than once, this parameter should be unique per build flavor to differentiate the
   # the different test runs:
-  helixType: 'test/devtest' 
+  helixType: 'test/devtest'
   artifactName: 'drop'
   maxParallel: 4
   rerunPassesRequiredToAvoidFailure: 5
   taefQuery: ''
   # if 'useBuildOutputFromBuildId' is set, we will default to using a build from this pipeline:
   useBuildOutputFromPipeline: $(System.DefinitionId)
-  matrix: 
+  matrix:
     # Release_x86:
     #   buildPlatform: 'x86'
     #   buildConfiguration: 'release'
@@ -39,13 +39,13 @@ jobs:
     taefPath: $(Build.SourcesDirectory)\build\Helix\packages\taef.redist.wlk.10.57.200731005-develop\build\Binaries\$(buildPlatform)
     helixCommonArgs: '/binaryLogger:$(Build.SourcesDirectory)/${{parameters.name}}.$(buildPlatform).$(buildConfiguration).binlog /p:HelixBuild=$(Build.BuildId).$(buildPlatform).$(buildConfiguration) /p:Platform=$(buildPlatform) /p:Configuration=$(buildConfiguration) /p:HelixType=${{parameters.helixType}} /p:TestSuite=${{parameters.testSuite}} /p:ProjFilesPath=$(Build.ArtifactStagingDirectory) /p:rerunPassesRequiredToAvoidFailure=${{parameters.rerunPassesRequiredToAvoidFailure}}'
 
-      
+
   steps:
   - task: CmdLine@1
     displayName: 'Display build machine environment variables'
     inputs:
       filename: 'set'
-      
+
   - task: NuGetToolInstaller@0
     displayName: 'Use NuGet 5.2.0'
     inputs:
@@ -59,23 +59,23 @@ jobs:
       nugetConfigPath: nuget.config
       restoreDirectory: packages
 
-  - task: DownloadBuildArtifacts@0 
+  - task: DownloadBuildArtifacts@0
     condition:
       and(succeeded(),eq(variables['useBuildOutputFromBuildId'],''))
-    inputs: 
-      artifactName: ${{ parameters.artifactName }} 
+    inputs:
+      artifactName: ${{ parameters.artifactName }}
       downloadPath: '$(artifactsDir)'
 
-  - task: DownloadBuildArtifacts@0 
+  - task: DownloadBuildArtifacts@0
     condition:
       and(succeeded(),ne(variables['useBuildOutputFromBuildId'],''))
-    inputs: 
+    inputs:
       buildType: specific
       buildVersionToDownload: specific
       project: $(System.TeamProjectId)
       pipeline: ${{ parameters.useBuildOutputFromPipeline }}
       buildId: $(useBuildOutputFromBuildId)
-      artifactName: ${{ parameters.artifactName }} 
+      artifactName: ${{ parameters.artifactName }}
       downloadPath: '$(artifactsDir)'
 
   - task: CmdLine@1
@@ -90,7 +90,7 @@ jobs:
       targetType: filePath
       filePath: build\Helix\PrepareHelixPayload.ps1
       arguments: -Platform '$(buildPlatform)' -Configuration '$(buildConfiguration)' -ArtifactName '${{ parameters.artifactName }}'
-      
+
   - task: CmdLine@1
     displayName: 'Display Helix payload contents'
     inputs:
@@ -104,7 +104,16 @@ jobs:
       outputProjFileName: 'RunTestsInHelix-TerminalAppLocalTests.proj'
       testSuite: '${{ parameters.testSuite }}'
       taefQuery: ${{ parameters.taefQuery }}
-      
+
+  - template: helix-createprojfile-steps.yml
+    parameters:
+      condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
+      testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\SettingsModel.LocalTests.dll'
+      outputProjFileName: 'RunTestsInHelix-SettingsModelLocalTests.proj'
+      testSuite: '${{ parameters.testSuite }}'
+      taefQuery: ${{ parameters.taefQuery }}
+
+
   - template: helix-createprojfile-steps.yml
     parameters:
       condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
@@ -118,7 +127,7 @@ jobs:
     inputs:
       PathtoPublish: $(Build.ArtifactStagingDirectory)
       artifactName: ${{ parameters.artifactName }}
-      
+
   - task: DotNetCoreCLI@2
     displayName: 'Run tests in Helix (open queues)'
     env:

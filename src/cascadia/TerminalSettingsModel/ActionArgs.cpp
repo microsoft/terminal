@@ -23,6 +23,7 @@
 #include "CloseOtherTabsArgs.g.cpp"
 #include "CloseTabsAfterArgs.g.cpp"
 #include "MoveTabArgs.g.cpp"
+#include "FindMatchArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
 
 #include <LibraryResources.h>
@@ -231,8 +232,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring SplitPaneArgs::GenerateName() const
     {
         // The string will be similar to the following:
-        // * "Duplicate pane[, split: <direction>][, new terminal arguments...]"
-        // * "Split pane[, split: <direction>][, new terminal arguments...]"
+        // * "Duplicate pane[, split: <direction>][, size: <size>%][, new terminal arguments...]"
+        // * "Split pane[, split: <direction>][, size: <size>%][, new terminal arguments...]"
         //
         // Direction will only be added to the string if the split direction is
         // not "auto".
@@ -262,6 +263,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             break;
         }
 
+        if (_SplitSize != .5f)
+        {
+            ss << L"size: " << (_SplitSize * 100) << L"%, ";
+        }
+
         winrt::hstring newTerminalArgsStr;
         if (_TerminalArgs)
         {
@@ -287,6 +293,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"OpenDefaultSettingsCommandKey");
         case SettingsTarget::AllFiles:
             return RS_(L"OpenBothSettingsFilesCommandKey");
+        case SettingsTarget::SettingsUI:
+            return RS_(L"OpenSettingsUICommandKey");
         default:
             return RS_(L"OpenSettingsCommandKey");
         }
@@ -423,5 +431,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"ToggleCommandPaletteCommandLineModeCommandKey");
         }
         return RS_(L"ToggleCommandPaletteCommandKey");
+    }
+
+    winrt::hstring FindMatchArgs::GenerateName() const
+    {
+        switch (_Direction)
+        {
+        case FindMatchDirection::Next:
+            return winrt::hstring{ RS_(L"FindNextCommandKey") };
+        case FindMatchDirection::Previous:
+            return winrt::hstring{ RS_(L"FindPrevCommandKey") };
+        }
+        return L"";
     }
 }
