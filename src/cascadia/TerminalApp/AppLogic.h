@@ -39,6 +39,7 @@ namespace winrt::TerminalApp::implementation
         bool AlwaysOnTop() const;
 
         Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);
+        bool CenterOnLaunch();
         TerminalApp::InitialPosition GetInitialPosition(int64_t defaultInitialX, int64_t defaultInitialY);
         winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme();
         Microsoft::Terminal::Settings::Model::LaunchMode GetLaunchMode();

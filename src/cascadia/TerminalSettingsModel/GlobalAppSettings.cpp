@@ -23,6 +23,7 @@ static constexpr std::string_view AlwaysShowTabsKey{ "alwaysShowTabs" };
 static constexpr std::string_view InitialRowsKey{ "initialRows" };
 static constexpr std::string_view InitialColsKey{ "initialCols" };
 static constexpr std::string_view InitialPositionKey{ "initialPosition" };
+static constexpr std::string_view CenterOnLaunchKey{ "centerOnLaunch" };
 static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTitlebar" };
 static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view TabWidthModeKey{ "tabWidthMode" };
@@ -107,6 +108,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_WarnAboutLargePaste = _WarnAboutLargePaste;
     globals->_WarnAboutMultiLinePaste = _WarnAboutMultiLinePaste;
     globals->_InitialPosition = _InitialPosition;
+    globals->_CenterOnLaunch = _CenterOnLaunch;
     globals->_LaunchMode = _LaunchMode;
     globals->_SnapToGridOnResize = _SnapToGridOnResize;
     globals->_ForceFullRepaintRendering = _ForceFullRepaintRendering;
@@ -264,6 +266,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, InitialPositionKey, _InitialPosition);
 
+    JsonUtils::GetValueForKey(json, CenterOnLaunchKey, _CenterOnLaunch);
+
     JsonUtils::GetValueForKey(json, ShowTitleInTitlebarKey, _ShowTitleInTitlebar);
 
     JsonUtils::GetValueForKey(json, ShowTabsInTitlebarKey, _ShowTabsInTitlebar);
@@ -387,6 +391,7 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, InitialRowsKey,                 _InitialRows);
     JsonUtils::SetValueForKey(json, InitialColsKey,                 _InitialCols);
     JsonUtils::SetValueForKey(json, InitialPositionKey,             _InitialPosition);
+    JsonUtils::SetValueForKey(json, CenterOnLaunchKey,              _CenterOnLaunch);
     JsonUtils::SetValueForKey(json, ShowTitleInTitlebarKey,         _ShowTitleInTitlebar);
     JsonUtils::SetValueForKey(json, ShowTabsInTitlebarKey,          _ShowTabsInTitlebar);
     JsonUtils::SetValueForKey(json, WordDelimitersKey,              _WordDelimiters);

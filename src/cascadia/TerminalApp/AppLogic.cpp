@@ -664,6 +664,16 @@ namespace winrt::TerminalApp::implementation
         };
     }
 
+    bool AppLogic::CenterOnLaunch()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+        return _settings.GlobalSettings().CenterOnLaunch();
+    }
+
     winrt::Windows::UI::Xaml::ElementTheme AppLogic::GetRequestedTheme()
     {
         if (!_loadedInitialSettings)
