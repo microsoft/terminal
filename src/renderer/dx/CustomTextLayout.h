@@ -178,10 +178,6 @@ namespace Microsoft::Console::Render
         UINT32 _runIndex;
 
         // Glyph shaping results
-
-        // Whether the entire text is determined to be simple and does not require full script shaping.
-        bool _isEntireTextSimple;
-
         std::vector<DWRITE_GLYPH_OFFSET> _glyphOffsets;
 
         // Clusters are complicated. They're in respect to each individual run.

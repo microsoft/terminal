@@ -27,8 +27,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<DxFontRenderData*> const fontRe
     _runs{},
     _breakpoints{},
     _runIndex{ 0 },
-    _width{ gsl::narrow_cast<size_t>(fontRenderData->GlyphCell().width()) },
-    _isEntireTextSimple{ false }
+    _width{ gsl::narrow_cast<size_t>(fontRenderData->GlyphCell().width()) }
 {
     _localeName.resize(gsl::narrow_cast<size_t>(fontRenderData->DefaultTextFormat()->GetLocaleNameLength()) + 1); // +1 for null
     THROW_IF_FAILED(fontRenderData->DefaultTextFormat()->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
@@ -46,7 +45,6 @@ try
     _runs.clear();
     _breakpoints.clear();
     _runIndex = 0;
-    _isEntireTextSimple = false;
     _textClusterColumns.clear();
     _text.clear();
     _glyphScaleCorrections.clear();
@@ -192,8 +190,6 @@ CATCH_RETURN()
                 run.isTextSimple = (bool)isTextSimple;
             }
         }
-
-        _isEntireTextSimple = isTextSimple && _runs.size() == 1;
     }
     CATCH_RETURN();
     return S_OK;
@@ -229,11 +225,6 @@ CATCH_RETURN()
 
         RETURN_IF_FAILED(_AnalyzeTextComplexity());
 
-        if (!_isEntireTextSimple)
-        {
-            RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeLineBreakpoints(this, 0, textLength, this));
-        }
-
         std::vector<std::pair<UINT32, UINT32>> complexRanges;
         for (auto& run : _runs)
         {
@@ -246,6 +237,7 @@ CATCH_RETURN()
         for (auto &range : complexRanges)
         {
             // Call each of the analyzers in sequence, recording their results.
+            RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeLineBreakpoints(this, range.first, range.second, this));
             RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeBidi(this, range.first, range.second, this));
             RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeScript(this, range.first, range.second, this));
             RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeNumberSubstitution(this, range.first, range.second, this));
@@ -493,12 +485,6 @@ CATCH_RETURN()
 {
     try
     {
-        // For simple text, there is no need to correct runs.
-        if (_isEntireTextSimple)
-        {
-            return S_OK;
-        }
-
         // Correct each run separately. This is needed whenever script, locale,
         // or reading direction changes.
         for (UINT32 runIndex = 0; runIndex < _runs.size(); ++runIndex)
@@ -636,6 +622,11 @@ try
     if (run.textLength == 0)
     {
         return S_FALSE; // Nothing to do..
+    }
+
+    if (run.isTextSimple)
+    {
+        return S_OK; // No need to correct run.
     }
 
     // We're going to walk through and check for advances that don't match the space that we expect to give out.
