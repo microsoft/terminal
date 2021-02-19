@@ -76,6 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(Model::GlobalAppSettings, bool, WarnAboutLargePaste, true);
         GETSET_SETTING(Model::GlobalAppSettings, bool, WarnAboutMultiLinePaste, true);
         GETSET_SETTING(Model::GlobalAppSettings, Model::LaunchPosition, InitialPosition, nullptr, nullptr);
+        GETSET_SETTING(Model::GlobalAppSettings, bool, CenterOnLaunch, false);
         GETSET_SETTING(Model::GlobalAppSettings, Model::LaunchMode, LaunchMode, LaunchMode::DefaultMode);
         GETSET_SETTING(Model::GlobalAppSettings, bool, SnapToGridOnResize, true);
         GETSET_SETTING(Model::GlobalAppSettings, bool, ForceFullRepaintRendering, false);

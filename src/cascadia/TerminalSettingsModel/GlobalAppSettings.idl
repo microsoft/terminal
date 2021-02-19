@@ -60,6 +60,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, WarnAboutLargePaste);
         INHERITABLE_SETTING(Boolean, WarnAboutMultiLinePaste);
         INHERITABLE_SETTING(LaunchPosition, InitialPosition);
+        INHERITABLE_SETTING(Boolean, CenterOnLaunch);
         INHERITABLE_SETTING(LaunchMode, LaunchMode);
         INHERITABLE_SETTING(Boolean, SnapToGridOnResize);
         INHERITABLE_SETTING(Boolean, ForceFullRepaintRendering);

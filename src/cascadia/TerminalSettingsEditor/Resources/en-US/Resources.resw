@@ -830,10 +830,10 @@
     <value>This color scheme name is already in use.</value>
   </data>
   <data name="Globals_FocusFollowMouse.Header" xml:space="preserve">
-    <value>Enable Focus Follow Mouse mode</value>
+    <value>Automatically focus pane on mouse hover</value>
   </data>
-  <data name="Globals_FocusFollowMouse.HelpText" xml:space="preserve">
-    <value>When checked, the terminal will the focus pane on mouse hover.</value>
+  <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
+    <value>Pane animations</value>
   </data>
   <data name="SettingContainer_OverrideMessageBaseLayer" xml:space="preserve">
     <value>Reset to base layer value.</value>

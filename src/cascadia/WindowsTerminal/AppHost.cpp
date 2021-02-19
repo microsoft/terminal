@@ -316,6 +316,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
 
     // Acquire the actual initial position
     auto initialPos = _logic.GetInitialPosition(proposedRect.left, proposedRect.top);
+    const auto centerOnLaunch = _logic.CenterOnLaunch();
     proposedRect.left = static_cast<long>(initialPos.X);
     proposedRect.top = static_cast<long>(initialPos.Y);
 
@@ -375,10 +376,27 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
     adjustedWidth = islandWidth + nonClientSize.cx;
     adjustedHeight = islandHeight + nonClientSize.cy;
 
-    const COORD origin{ gsl::narrow<short>(proposedRect.left),
-                        gsl::narrow<short>(proposedRect.top) };
     const COORD dimensions{ Utils::ClampToShortMax(adjustedWidth, 1),
                             Utils::ClampToShortMax(adjustedHeight, 1) };
+
+    if (centerOnLaunch)
+    {
+        // Find nearest monitor for the position that we've actually settled on
+        HMONITOR hMonNearest = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
+        MONITORINFO nearestMonitorInfo;
+        nearestMonitorInfo.cbSize = sizeof(MONITORINFO);
+        // Get monitor dimensions:
+        GetMonitorInfo(hMonNearest, &nearestMonitorInfo);
+        const COORD desktopDimensions{ gsl::narrow<short>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
+                                       gsl::narrow<short>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
+        // Move our proposed location into the center of that specific monitor.
+        proposedRect.left = nearestMonitorInfo.rcWork.left +
+                            ((desktopDimensions.X / 2) - (dimensions.X / 2));
+        proposedRect.top = nearestMonitorInfo.rcWork.top +
+                           ((desktopDimensions.Y / 2) - (dimensions.Y / 2));
+    }
+    const COORD origin{ gsl::narrow<short>(proposedRect.left),
+                        gsl::narrow<short>(proposedRect.top) };
 
     const auto newPos = Viewport::FromDimensions(origin, dimensions);
     bool succeeded = SetWindowPos(hwnd,
