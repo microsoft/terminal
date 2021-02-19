@@ -5,7 +5,6 @@ namespace Microsoft.Terminal.Settings.Model
 {
     [default_interface] runtimeclass ColorScheme : Windows.Foundation.IStringable {
         ColorScheme(String name);
-        String ToString();
 
         String Name;
 

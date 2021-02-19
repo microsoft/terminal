@@ -7,6 +7,5 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         String EnumName { get; };
         IInspectable EnumValue { get; };
-        String ToString();
     }
 }

@@ -35,8 +35,6 @@ namespace Microsoft.Terminal.Settings.Model
         Profile();
         Profile(Guid guid);
 
-        String ToString();
-
         Boolean HasName();
         void ClearName();
         String Name;
