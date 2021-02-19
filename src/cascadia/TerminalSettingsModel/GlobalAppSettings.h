@@ -88,6 +88,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(bool, DisableAnimations, false);
         GETSET_SETTING(hstring, StartupActions, L"");
         GETSET_SETTING(bool, FocusFollowMouse, false);
+        GETSET_SETTING(Model::WindowingMode, WindowingBehavior, Model::WindowingMode::UseNew);
 
     private:
         guid _defaultProfile;

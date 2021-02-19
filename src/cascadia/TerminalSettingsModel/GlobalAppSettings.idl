@@ -33,6 +33,13 @@ namespace Microsoft.Terminal.Settings.Model
         Disabled,
     };
 
+    enum WindowingMode
+    {
+        UseNew,
+        UseAnyExisting,
+        UseExisting,
+    };
+
     [default_interface] runtimeclass GlobalAppSettings {
         Guid DefaultProfile;
         Boolean HasUnparsedDefaultProfile();
@@ -150,5 +157,9 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean HasFocusFollowMouse();
         void ClearFocusFollowMouse();
         Boolean FocusFollowMouse;
+
+        Boolean HasWindowingBehavior();
+        void ClearWindowingBehavior();
+        WindowingMode WindowingBehavior;
     }
 }

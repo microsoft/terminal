@@ -18,17 +18,40 @@ Abstract:
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {
+    struct CompareWindowActivatedArgs
+    {
+        bool operator()(const Remoting::WindowActivatedArgs& lhs, const Remoting::WindowActivatedArgs& rhs) const
+        {
+            return lhs.ActivatedTime() > rhs.ActivatedTime();
+        }
+    };
     struct WindowActivatedArgs : public WindowActivatedArgsT<WindowActivatedArgs>
     {
         GETSET_PROPERTY(uint64_t, PeasantID, 0);
         GETSET_PROPERTY(winrt::guid, DesktopID, {});
         GETSET_PROPERTY(winrt::Windows::Foundation::DateTime, ActivatedTime, {});
+        GETSET_PROPERTY(uint64_t, Hwnd, 0);
 
     public:
-        WindowActivatedArgs(uint64_t peasantID, winrt::guid desktopID, winrt::Windows::Foundation::DateTime timestamp) :
+        WindowActivatedArgs(uint64_t peasantID,
+                            uint64_t hwnd,
+                            winrt::guid desktopID,
+                            winrt::Windows::Foundation::DateTime timestamp) :
             _PeasantID{ peasantID },
+            _Hwnd{ hwnd },
             _DesktopID{ desktopID },
             _ActivatedTime{ timestamp } {};
+
+        WindowActivatedArgs(uint64_t peasantID,
+                            winrt::guid desktopID,
+                            winrt::Windows::Foundation::DateTime timestamp) :
+            WindowActivatedArgs(peasantID, 0, desktopID, timestamp){};
+
+        WindowActivatedArgs(const Remoting::WindowActivatedArgs& other) :
+            _PeasantID{ other.PeasantID() },
+            _Hwnd{ other.Hwnd() },
+            _DesktopID{ other.DesktopID() },
+            _ActivatedTime{ other.ActivatedTime() } {};
     };
 }
 

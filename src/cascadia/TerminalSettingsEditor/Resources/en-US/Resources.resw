@@ -232,6 +232,21 @@
   <data name="Globals_LaunchModeMaximized.Content" xml:space="preserve">
     <value>Maximized</value>
   </data>
+  <data name="Globals_WindowingBehavior.Header" xml:space="preserve">
+    <value>New instance behavior</value>
+  </data>
+  <data name="Globals_WindowingBehavior.HelpText" xml:space="preserve">
+    <value>Controls how new terminal instances attach to existing windows.</value>
+  </data>
+  <data name="Globals_WindowingBehaviorUseNew.Content" xml:space="preserve">
+    <value>Create a new window</value>
+  </data>
+  <data name="Globals_WindowingBehaviorUseAnyExisting.Content" xml:space="preserve">
+    <value>Attach to the most recently used window</value>
+  </data>
+  <data name="Globals_WindowingBehaviorUseExisting.Content" xml:space="preserve">
+    <value>Attach to the most recently used window on this desktop</value>
+  </data>
   <data name="Globals_RenderingDisclaimer.Text" xml:space="preserve">
     <value>These settings may be useful for troubleshooting an issue, however they will impact your performance.</value>
   </data>
