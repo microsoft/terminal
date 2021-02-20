@@ -375,7 +375,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SplitType)
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SettingsTarget)
 {
-    JSON_MAPPINGS(4) = {
+    JSON_MAPPINGS(3) = {
         pair_type{ "settingsFile", ValueType::SettingsFile },
         pair_type{ "defaultsFile", ValueType::DefaultsFile },
         pair_type{ "allFiles", ValueType::AllFiles }
