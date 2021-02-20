@@ -121,6 +121,10 @@
     <value>Match Case</value>
     <comment>The tooltip text for the case sensitivity button on the search box control.</comment>
   </data>
+  <data name="SearchBox_Regex.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Treat the search text as a regular expression</value>
+    <comment>The tooltip text for the regex button on the search box control.</comment>
+  </data>
   <data name="SearchBox_Close.ToolTipService.ToolTip" xml:space="preserve">
     <value>Close</value>
     <comment>The tooltip text for the close button on the search box control.</comment>
@@ -148,6 +152,10 @@
   <data name="SearchBox_CaseSensitivity.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Case Sensitivity</value>
     <comment>The name of the case sensitivity button on the search box control for accessibility.</comment>
+  </data>
+  <data name="SearchBox_Regex.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Regex</value>
+    <comment>The name of the regex button on the search box control for accessibility.</comment>
   </data>
   <data name="SearchBox_SearchForwards.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Search Forward</value>

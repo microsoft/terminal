@@ -44,6 +44,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         bool _GoForward();
         bool _CaseSensitive();
+        bool _IsRegex();
         void _KeyDownHandler(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _CharacterHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
     };

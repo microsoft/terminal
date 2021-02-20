@@ -233,7 +233,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
         else
         {
-            _Search(_searchBox->TextBox().Text(), goForward, false);
+            _Search(_searchBox->TextBox().Text(), goForward, false, false);
         }
     }
 
@@ -248,7 +248,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_Search(const winrt::hstring& text,
                               const bool goForward,
-                              const bool caseSensitive)
+                              const bool caseSensitive,
+                              const bool regex)
     {
         if (text.size() == 0 || _closing)
         {
@@ -263,7 +264,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                     Search::Sensitivity::CaseSensitive :
                                                     Search::Sensitivity::CaseInsensitive;
 
-        Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
+        Search search(*GetUiaData(), text.c_str(), direction, sensitivity, regex);
         auto lock = _terminal->LockForWriting();
         if (search.FindNext())
         {

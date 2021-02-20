@@ -43,13 +43,15 @@ public:
     Search(Microsoft::Console::Types::IUiaData& uiaData,
            const std::wstring& str,
            const Direction dir,
-           const Sensitivity sensitivity);
+           const Sensitivity sensitivity,
+           bool regex = false);
 
     Search(Microsoft::Console::Types::IUiaData& uiaData,
            const std::wstring& str,
            const Direction dir,
            const Sensitivity sensitivity,
-           const COORD anchor);
+           const COORD anchor,
+           bool regex = false);
 
     bool FindNext();
     void Select() const;
@@ -79,6 +81,8 @@ private:
     const std::vector<std::vector<wchar_t>> _needle;
     const Direction _direction;
     const Sensitivity _sensitivity;
+    const bool _regex;
+    const std::wstring _inputString;
     Microsoft::Console::Types::IUiaData& _uiaData;
 
 #ifdef UNIT_TESTING

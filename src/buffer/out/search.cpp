@@ -25,11 +25,14 @@ using namespace Microsoft::Console::Types;
 Search::Search(IUiaData& uiaData,
                const std::wstring& str,
                const Direction direction,
-               const Sensitivity sensitivity) :
+               const Sensitivity sensitivity,
+               bool regex) :
     _direction(direction),
     _sensitivity(sensitivity),
     _needle(s_CreateNeedleFromString(str)),
     _uiaData(uiaData),
+    _regex(regex),
+    _inputString(str),
     _coordAnchor(s_GetInitialAnchor(uiaData, direction))
 {
     _coordNext = _coordAnchor;
@@ -50,11 +53,14 @@ Search::Search(IUiaData& uiaData,
                const std::wstring& str,
                const Direction direction,
                const Sensitivity sensitivity,
-               const COORD anchor) :
+               const COORD anchor,
+               bool regex) :
     _direction(direction),
     _sensitivity(sensitivity),
     _needle(s_CreateNeedleFromString(str)),
     _coordAnchor(anchor),
+    _regex(regex),
+    _inputString(str),
     _uiaData(uiaData)
 {
     _coordNext = _coordAnchor;
@@ -75,20 +81,55 @@ bool Search::FindNext()
         return false;
     }
 
-    do
+    if (_regex)
     {
-        if (_FindNeedleInHaystackAt(_coordNext, _coordSelStart, _coordSelEnd))
+        std::wstring concatAll;
+        auto begin = _coordNext;
+        const auto end = til::point(_uiaData.GetTextBufferEndPosition());
+        std::wsmatch match;
+
+        // to deal with text that spans multiple lines, we will first concatenate
+        // all the text into one string and find the regex in that string
+        while (_coordNext != end)
         {
-            _UpdateNextPosition();
-            _reachedEnd = _coordNext == _coordAnchor;
-            return true;
-        }
-        else
-        {
+            concatAll += *_uiaData.GetTextBuffer().GetTextDataAt(_coordNext);
             _UpdateNextPosition();
         }
 
-    } while (_coordNext != _coordAnchor);
+        if (std::regex_search(concatAll, match, std::wregex(_inputString)))
+        {
+            const auto pos = match.position();
+            for (auto i = 0; i < pos; ++i)
+            {
+                _IncrementCoord(begin);
+            }
+            _coordSelStart = begin;
+            const auto len = match.length();
+            for (auto i = 0; i < len; ++i)
+            {
+                _IncrementCoord(begin);
+            }
+            _coordSelEnd = begin;
+            return true;
+        }
+    }
+    else
+    {
+        do
+        {
+            if (_FindNeedleInHaystackAt(_coordNext, _coordSelStart, _coordSelEnd))
+            {
+                _UpdateNextPosition();
+                _reachedEnd = _coordNext == _coordAnchor;
+                return true;
+            }
+            else
+            {
+                _UpdateNextPosition();
+            }
+
+        } while (_coordNext != _coordAnchor);
+    }
 
     return false;
 }
