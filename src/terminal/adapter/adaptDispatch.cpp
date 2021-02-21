@@ -2440,6 +2440,33 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view /*string*/) noexcept
     return false;
 }
 
+// Method Description:
+// - DECDLD - Downloads one or more characters of a dynamically redefinable
+//   character set (DRCS) with a specified pixel pattern. The pixel array is
+//   transmitted in sixel format via the returned StringHandler function.
+// Arguments:
+// - fontNumber - The buffer number into which the font will be loaded.
+// - startChar - The first character in the set that will be replaced.
+// - eraseControl - Which characters to erase before loading the new data.
+// - cellMatrix - The character cell width (sometimes also height in legacy formats).
+// - fontSet - The screen size for which the font is designed.
+// - fontUsage - Whether it is a text font or a full-cell font.
+// - cellHeight - The character cell height (if not defined by cellMatrix).
+// - charsetSize - Whether the character set is 94 or 96 characters.
+// Return Value:
+// - a function to receive the pixel data or nullptr if parameters are invalid
+ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const size_t /*fontNumber*/,
+                                                         const VTParameter /*startChar*/,
+                                                         const DispatchTypes::DrcsEraseControl /*eraseControl*/,
+                                                         const DispatchTypes::DrcsCellMatrix /*cellMatrix*/,
+                                                         const DispatchTypes::DrcsFontSet /*fontSet*/,
+                                                         const DispatchTypes::DrcsFontUsage /*fontUsage*/,
+                                                         const VTParameter /*cellHeight*/,
+                                                         const DispatchTypes::DrcsCharsetSize /*charsetSize*/) noexcept
+{
+    return nullptr;
+}
+
 // Routine Description:
 // - Determines whether we should pass any sequence that manipulates
 //   TerminalInput's input generator through the PTY. It encapsulates
