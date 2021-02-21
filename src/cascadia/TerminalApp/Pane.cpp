@@ -2105,7 +2105,7 @@ void Pane::BroadcastKey(const winrt::Microsoft::Terminal::TerminalControl::TermC
 {
     if (_IsLeaf())
     {
-        if (_control != sourceControl)
+        if (_control != sourceControl && !_control.ReadOnly())
         {
             _control.TrySendKeyEvent(vkey, scanCode, modifiers, keyDown);
         }
@@ -2121,7 +2121,7 @@ void Pane::BroadcastChar(const winrt::Microsoft::Terminal::TerminalControl::Term
 {
     if (_IsLeaf())
     {
-        if (_control != sourceControl)
+        if (_control != sourceControl && !_control.ReadOnly())
         {
             _control.TrySendChar(character, scanCode, modifiers);
         }
