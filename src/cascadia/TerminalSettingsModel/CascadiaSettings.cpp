@@ -874,10 +874,18 @@ winrt::Microsoft::Terminal::Settings::Model::ColorScheme CascadiaSettings::GetCo
 // - <none>
 void CascadiaSettings::UpdateColorSchemeReferences(const hstring oldName, const hstring newName)
 {
+    // update profiles.defaults, if necessary
+    if (_userDefaultProfileSettings &&
+        _userDefaultProfileSettings->HasColorSchemeName() &&
+        _userDefaultProfileSettings->ColorSchemeName() == oldName)
+    {
+        _userDefaultProfileSettings->ColorSchemeName(newName);
+    }
+
     // update all profiles referencing this color scheme
     for (const auto& profile : _allProfiles)
     {
-        if (profile.ColorSchemeName() == oldName)
+        if (profile.HasColorSchemeName() && profile.ColorSchemeName() == oldName)
         {
             profile.ColorSchemeName(newName);
         }

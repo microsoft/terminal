@@ -185,6 +185,10 @@ void AppCommandlineArgs::_buildParser()
     maximized->excludes(fullscreen);
     focus->excludes(fullscreen);
 
+    _app.add_option<std::optional<int>, int>("-w,--window",
+                                             _windowTarget,
+                                             RS_A(L"CmdWindowTargetArgDesc"));
+
     // Subcommands
     _buildNewTabParser();
     _buildSplitPaneParser();
@@ -531,6 +535,7 @@ void AppCommandlineArgs::_resetStateToDefault()
     // DON'T clear _launchMode here! This will get called once for every
     // subcommand, so we don't want `wt -F new-tab ; split-pane` clearing out
     // the "global" fullscreen flag (-F).
+    // Same with _windowTarget.
 }
 
 // Function Description:
@@ -848,4 +853,17 @@ void AppCommandlineArgs::FullResetState()
     _startupActions.clear();
     _exitMessage = "";
     _shouldExitEarly = false;
+
+    _windowTarget = std::nullopt;
+}
+
+std::optional<int> AppCommandlineArgs::GetTargetWindow() const noexcept
+{
+    // If the user provides _any_ negative number, then treat it as -1, for "use a new window".
+    if (_windowTarget.has_value() && *_windowTarget < 0)
+    {
+        return { -1 };
+    }
+
+    return _windowTarget;
 }

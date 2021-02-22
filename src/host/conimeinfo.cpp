@@ -422,6 +422,10 @@ void ConsoleImeInfo::_WriteUndeterminedChars(const std::wstring_view text,
     // screen buffer and viewport positioning.
     // Each conversion area write will adjust these to set up any subsequent calls to go onto the next line.
     auto pos = screenInfo.GetTextBuffer().GetCursor().GetPosition();
+    // Convert the cursor buffer position to the equivalent screen
+    // coordinates, taking line rendition into account.
+    pos = screenInfo.GetTextBuffer().BufferToScreenPosition(pos);
+
     const auto view = screenInfo.GetViewport();
     // Set cursor position relative to viewport
 

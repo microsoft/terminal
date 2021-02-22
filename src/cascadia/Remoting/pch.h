@@ -7,10 +7,16 @@
 
 #pragma once
 
+// Block minwindef.h min/max macros to prevent <algorithm> conflict
+#define NOMINMAX
+
 #define WIN32_LEAN_AND_MEAN
 #define NOMCX
 #define NOHELP
 #define NOCOMM
+
+#include <unknwn.h>
+#include <ShObjIdl.h>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #define BLOCK_TIL
@@ -25,8 +31,6 @@
 
 #include <wil/cppwinrt.h>
 
-#include <unknwn.h>
-
 #include <hstring.h>
 
 #include <winrt/Windows.ApplicationModel.h>
@@ -38,7 +42,7 @@
 // Including TraceLogging essentials for the binary
 #include <TraceLoggingProvider.h>
 #include <winmeta.h>
-TRACELOGGING_DECLARE_PROVIDER(g_hSettingsModelProvider);
+TRACELOGGING_DECLARE_PROVIDER(g_hRemotingProvider);
 #include <telemetry/ProjectTelemetry.h>
 #include <TraceLoggingActivity.h>
 

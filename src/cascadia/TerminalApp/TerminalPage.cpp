@@ -135,6 +135,7 @@ namespace winrt::TerminalApp::implementation
         }
         CATCH_LOG();
 
+        _tabRow.PointerMoved({ get_weak(), &TerminalPage::_RestorePointerCursorHandler });
         _tabView.CanReorderTabs(!isElevated);
         _tabView.CanDragTabs(!isElevated);
 
@@ -259,7 +260,11 @@ namespace winrt::TerminalApp::implementation
 
         // Store cursor, so we can restore it, e.g., after mouse vanishing
         // (we'll need to adapt this logic once we make cursor context aware)
-        _defaultPointerCursor = CoreWindow::GetForCurrentThread().PointerCursor();
+        try
+        {
+            _defaultPointerCursor = CoreWindow::GetForCurrentThread().PointerCursor();
+        }
+        CATCH_LOG();
     }
 
     // Method Description:
@@ -352,10 +357,14 @@ namespace winrt::TerminalApp::implementation
     //   other side of the co_await.
     // - initial: if true, we're parsing these args during startup, and we
     //   should fire an Initialized event.
+    // - cwd: If not empty, we should try switching to this provided directory
+    //   while processing these actions. This will allow something like `wt -w 0
+    //   nt -d .` from inside another directory to work as expected.
     // Return Value:
     // - <none>
     winrt::fire_and_forget TerminalPage::ProcessStartupActions(Windows::Foundation::Collections::IVector<ActionAndArgs> actions,
-                                                               const bool initial)
+                                                               const bool initial,
+                                                               const winrt::hstring cwd)
     {
         // If there are no actions left, do nothing.
         if (actions.Size() == 0)
@@ -366,6 +375,30 @@ namespace winrt::TerminalApp::implementation
 
         // Handle it on a subsequent pass of the UI thread.
         co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
+
+        // If the caller provided a CWD, switch to that directory, then switch
+        // back once we're done. This looks weird though, because we have to set
+        // up the scope_exit _first_. We'll release the scope_exit if we don't
+        // actually need it.
+        std::wstring originalCwd{ wil::GetCurrentDirectoryW<std::wstring>() };
+        auto restoreCwd = wil::scope_exit([&originalCwd]() {
+            // ignore errors, we'll just power on through. We'd rather do
+            // something rather than fail silently if the directory doesn't
+            // actually exist.
+            LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectory(originalCwd.c_str()));
+        });
+        if (cwd.empty())
+        {
+            restoreCwd.release();
+        }
+        else
+        {
+            // ignore errors, we'll just power on through. We'd rather do
+            // something rather than fail silently if the directory doesn't
+            // actually exist.
+            LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectory(cwd.c_str()));
+        }
+
         if (auto page{ weakThis.get() })
         {
             for (const auto& action : actions)
@@ -441,6 +474,17 @@ namespace winrt::TerminalApp::implementation
         if (auto presenter{ _dialogPresenter.get() })
         {
             co_return co_await presenter.ShowDialog(FindName(L"CloseAllDialog").try_as<WUX::Controls::ContentDialog>());
+        }
+        co_return ContentDialogResult::None;
+    }
+
+    // Method Description:
+    // - Displays a dialog for warnings found while closing the terminal tab marked as read-only
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseReadOnlyDialog()
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            co_return co_await presenter.ShowDialog(FindName(L"CloseReadOnlyDialog").try_as<WUX::Controls::ContentDialog>());
         }
         co_return ContentDialogResult::None;
     }
@@ -747,7 +791,9 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        TermControl term{ settings, connection };
+        // Give term control a child of the settings so that any overrides go in the child
+        // This way, when we do a settings reload we just update the parent and the overrides remain
+        TermControl term{ *(winrt::get_self<TerminalSettings>(settings)->CreateChild()), connection };
 
         auto newTabImpl = winrt::make_self<TerminalTab>(profileGuid, term);
 
@@ -815,6 +861,19 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        newTabImpl->TabRenamerDeactivated([weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+            if (const auto page{ weakThis.get() })
+            {
+                if (!page->_newTabButton.Flyout().IsOpen())
+                {
+                    if (const auto tab{ page->_GetFocusedTab() })
+                    {
+                        tab.Focus(FocusState::Programmatic);
+                    }
+                }
+            }
+        });
+
         if (debugConnection) // this will only be set if global debugging is on and tap is active
         {
             TermControl newControl{ settings, debugConnection };
@@ -868,9 +927,28 @@ namespace winrt::TerminalApp::implementation
             envMap.Insert(L"WT_PROFILE_ID", guidWString);
             envMap.Insert(L"WSLENV", L"WT_PROFILE_ID");
 
+            // Update the path to be relative to whatever our CWD is.
+            //
+            // Refer to the examples in
+            // https://en.cppreference.com/w/cpp/filesystem/path/append
+            //
+            // We need to do this here, to ensure we tell the ConptyConnection
+            // the correct starting path. If we're being invoked from another
+            // terminal instance (e.g. wt -w 0 -d .), then we have switched our
+            // CWD to the provided path. We should treat the StartingDirectory
+            // as relative to the current CWD.
+            //
+            // The connection must be informed of the current CWD on
+            // construction, because the connection might not spawn the child
+            // process until later, on another thread, after we've already
+            // restored the CWD to it's original value.
+            std::wstring cwdString{ wil::GetCurrentDirectoryW<std::wstring>() };
+            std::filesystem::path cwd{ cwdString };
+            cwd /= settings.StartingDirectory().c_str();
+
             auto conhostConn = TerminalConnection::ConptyConnection(
                 settings.Commandline(),
-                settings.StartingDirectory(),
+                winrt::hstring{ cwd.c_str() },
                 settings.StartingTitle(),
                 envMap.GetView(),
                 settings.InitialRows(),
@@ -1053,6 +1131,9 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->TabSearch({ this, &TerminalPage::_HandleOpenTabSearch });
         _actionDispatch->MoveTab({ this, &TerminalPage::_HandleMoveTab });
         _actionDispatch->BreakIntoDebugger({ this, &TerminalPage::_HandleBreakIntoDebugger });
+        _actionDispatch->FindMatch({ this, &TerminalPage::_HandleFindMatch });
+        _actionDispatch->TogglePaneReadOnly({ this, &TerminalPage::_HandleTogglePaneReadOnly });
+        _actionDispatch->NewWindow({ this, &TerminalPage::_HandleNewWindow });
     }
 
     // Method Description:
@@ -1065,8 +1146,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto newTabTitle = tab.Title();
 
-        if (_settings.GlobalSettings().ShowTitleInTitlebar() &&
-            tab.FocusState() != FocusState::Unfocused)
+        if (_settings.GlobalSettings().ShowTitleInTitlebar() && tab == _GetFocusedTab())
         {
             _titleChangeHandlers(*this, newTabTitle);
         }
@@ -1163,7 +1243,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Look for the index of the input tabView in the tabs vector,
-    //   and call _RemoveTabViewItemByIndex
+    //   and call _RemoveTab
     // Arguments:
     // - tabViewItem: the TabViewItem in the TabView that is being removed.
     void TerminalPage::_RemoveTabViewItem(const MUX::Controls::TabViewItem& tabViewItem)
@@ -1172,16 +1252,35 @@ namespace winrt::TerminalApp::implementation
         if (_tabView.TabItems().IndexOf(tabViewItem, tabIndexFromControl))
         {
             // If IndexOf returns true, we've actually got an index
-            _RemoveTabViewItemByIndex(tabIndexFromControl);
+            auto tab{ _tabs.GetAt(tabIndexFromControl) };
+            _RemoveTab(tab);
         }
     }
 
     // Method Description:
     // - Removes the tab (both TerminalControl and XAML)
     // Arguments:
-    // - tabIndex: the index of the tab to be removed
-    void TerminalPage::_RemoveTabViewItemByIndex(uint32_t tabIndex)
+    // - tab: the tab to remove
+    winrt::Windows::Foundation::IAsyncAction TerminalPage::_RemoveTab(winrt::TerminalApp::TabBase tab)
     {
+        if (tab.ReadOnly())
+        {
+            ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
+
+            // The primary action is canceling the removal
+            if (warningResult == ContentDialogResult::Primary)
+            {
+                co_return;
+            }
+        }
+
+        uint32_t tabIndex{};
+        if (!_tabs.IndexOf(tab, tabIndex))
+        {
+            // The tab is already removed
+            co_return;
+        }
+
         // We use _removing flag to suppress _OnTabSelectionChanged events
         // that might get triggered while removing
         _removing = true;
@@ -1191,11 +1290,10 @@ namespace winrt::TerminalApp::implementation
 
         // Removing the tab from the collection should destroy its control and disconnect its connection,
         // but it doesn't always do so. The UI tree may still be holding the control and preventing its destruction.
-        auto tab{ _tabs.GetAt(tabIndex) };
         tab.Shutdown();
 
-        uint32_t mruIndex;
-        if (_mruTabs.IndexOf(_tabs.GetAt(tabIndex), mruIndex))
+        uint32_t mruIndex{};
+        if (_mruTabs.IndexOf(tab, mruIndex))
         {
             _mruTabs.RemoveAt(mruIndex);
         }
@@ -1264,6 +1362,8 @@ namespace winrt::TerminalApp::implementation
             _rearrangeFrom = std::nullopt;
             _rearrangeTo = std::nullopt;
         }
+
+        co_return;
     }
 
     // Method Description:
@@ -1291,8 +1391,8 @@ namespace winrt::TerminalApp::implementation
         // Add an event handler for when the terminal wants to set a progress indicator on the taskbar
         term.SetTaskbarProgress({ this, &TerminalPage::_SetTaskbarProgressHandler });
 
-        term.HidePointerCursor({ this, &TerminalPage::_HidePointerCursorHandler });
-        term.RestorePointerCursor({ this, &TerminalPage::_RestorePointerCursorHandler });
+        term.HidePointerCursor({ get_weak(), &TerminalPage::_HidePointerCursorHandler });
+        term.RestorePointerCursor({ get_weak(), &TerminalPage::_RestorePointerCursorHandler });
 
         // Bind Tab events to the TermControl and the Tab's Pane
         hostingTab.Initialize(term);
@@ -1539,7 +1639,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
-            _RemoveTabViewItemByIndex(*index);
+            auto tab{ _tabs.GetAt(*index) };
+            _RemoveTab(tab);
         }
     }
 
@@ -1547,18 +1648,45 @@ namespace winrt::TerminalApp::implementation
     // - Close the currently focused pane. If the pane is the last pane in the
     //   tab, the tab will also be closed. This will happen when we handle the
     //   tab's Closed event.
-    void TerminalPage::_CloseFocusedPane()
+    winrt::fire_and_forget TerminalPage::_CloseFocusedPane()
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
             _UnZoomIfNeeded();
-            terminalTab->ClosePane();
+
+            auto pane = terminalTab->GetActivePane();
+
+            if (const auto pane{ terminalTab->GetActivePane() })
+            {
+                if (const auto control{ pane->GetTerminalControl() })
+                {
+                    if (control.ReadOnly())
+                    {
+                        ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
+
+                        // The primary action is canceling the action
+                        if (warningResult == ContentDialogResult::Primary)
+                        {
+                            co_return;
+                        }
+
+                        // Clean read-only mode to prevent additional prompt if closing the pane triggers closing of a hosting tab
+                        if (control.ReadOnly())
+                        {
+                            control.ToggleReadOnly();
+                        }
+                    }
+
+                    pane->Close();
+                }
+            }
         }
         else if (auto index{ _GetFocusedTabIndex() })
         {
-            if (_tabs.GetAt(*index).try_as<TerminalApp::SettingsTab>())
+            const auto tab{ _tabs.GetAt(*index) };
+            if (tab.try_as<TerminalApp::SettingsTab>())
             {
-                _RemoveTabViewItemByIndex(*index);
+                _RemoveTab(tab);
             }
         }
     }
@@ -1580,17 +1708,21 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        _CloseAllTabs();
+        // Since _RemoveTab is asynchronous, create a snapshot of the  tabs we want to remove
+        std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
+        std::copy(begin(_tabs), end(_tabs), std::back_inserter(tabsToRemove));
+        _RemoveTabs(tabsToRemove);
     }
 
     // Method Description:
-    // - Remove all the tabs opened and the terminal will terminate
-    //   on its own when the last tab is closed.
-    void TerminalPage::_CloseAllTabs()
+    // - Closes provided tabs one by one
+    // Arguments:
+    // - tabs - tabs to remove
+    winrt::fire_and_forget TerminalPage::_RemoveTabs(const std::vector<winrt::TerminalApp::TabBase> tabs)
     {
-        while (_tabs.Size() != 0)
+        for (auto& tab : tabs)
         {
-            _RemoveTabViewItemByIndex(0);
+            co_await _RemoveTab(tab);
         }
     }
 
@@ -2017,7 +2149,7 @@ namespace winrt::TerminalApp::implementation
         try
         {
             auto parsed = winrt::Windows::Foundation::Uri(eventArgs.Uri().c_str());
-            if (parsed.SchemeName() == L"http" || parsed.SchemeName() == L"https")
+            if (_IsUriSupported(parsed))
             {
                 ShellExecute(nullptr, L"open", eventArgs.Uri().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
             }
@@ -2052,6 +2184,37 @@ namespace winrt::TerminalApp::implementation
             // Show the dialog
             presenter.ShowDialog(unopenedUriDialog);
         }
+    }
+
+    // Method Description:
+    // - Determines if the given URI is currently supported
+    // Arguments:
+    // - The parsed URI
+    // Return value:
+    // - True if we support it, false otherwise
+    bool TerminalPage::_IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri)
+    {
+        if (parsedUri.SchemeName() == L"http" || parsedUri.SchemeName() == L"https")
+        {
+            return true;
+        }
+        if (parsedUri.SchemeName() == L"file")
+        {
+            const auto host = parsedUri.Host();
+            // If no hostname was provided or if the hostname was "localhost", Host() will return an empty string
+            // and we allow it
+            if (host == L"")
+            {
+                return true;
+            }
+            // TODO: by the OSC 8 spec, if a hostname (other than localhost) is provided, we _should_ be
+            // comparing that value against what is returned by GetComputerNameExW and making sure they match.
+            // However, ShellExecute does not seem to be happy with file URIs of the form
+            //          file://{hostname}/path/to/file.ext
+            // and so while we could do the hostname matching, we do not know how to actually open the URI
+            // if its given in that form. So for now we ignore all hostnames other than localhost
+        }
+        return false;
     }
 
     void TerminalPage::_ControlNoticeRaisedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::TerminalControl::NoticeEventArgs eventArgs)
@@ -2252,7 +2415,10 @@ namespace winrt::TerminalApp::implementation
                 tab.TabViewItem().StartBringIntoView();
 
                 // Raise an event that our title changed
-                _titleChangeHandlers(*this, tab.Title());
+                if (_settings.GlobalSettings().ShowTitleInTitlebar())
+                {
+                    _titleChangeHandlers(*this, tab.Title());
+                }
             }
             CATCH_LOG();
         }
@@ -3065,8 +3231,15 @@ namespace winrt::TerminalApp::implementation
     {
         if (_shouldMouseVanish && !_isMouseHidden)
         {
-            CoreWindow::GetForCurrentThread().PointerCursor(nullptr);
-            _isMouseHidden = true;
+            if (auto window{ CoreWindow::GetForCurrentThread() })
+            {
+                try
+                {
+                    window.PointerCursor(nullptr);
+                    _isMouseHidden = true;
+                }
+                CATCH_LOG();
+            }
         }
     }
 
@@ -3078,8 +3251,15 @@ namespace winrt::TerminalApp::implementation
     {
         if (_isMouseHidden)
         {
-            CoreWindow::GetForCurrentThread().PointerCursor(_defaultPointerCursor);
-            _isMouseHidden = false;
+            if (auto window{ CoreWindow::GetForCurrentThread() })
+            {
+                try
+                {
+                    window.PointerCursor(_defaultPointerCursor);
+                    _isMouseHidden = false;
+                }
+                CATCH_LOG();
+            }
         }
     }
 

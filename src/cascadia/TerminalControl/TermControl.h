@@ -102,7 +102,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
-        winrt::fire_and_forget UpdateSettings(IControlSettings newSettings);
+        winrt::fire_and_forget UpdateSettings();
 
         hstring Title();
         hstring GetProfileName() const;
@@ -132,6 +132,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         winrt::fire_and_forget _RendererWarning(const HRESULT hr);
 
         void CreateSearchBoxControl();
+
+        void SearchMatch(const bool goForward);
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
@@ -164,6 +166,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const size_t TaskbarState() const noexcept;
         const size_t TaskbarProgress() const noexcept;
 
+        bool ReadOnly() const noexcept;
+        void ToggleReadOnly();
+
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
@@ -182,6 +187,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TYPED_EVENT(TabColorChanged, IInspectable, IInspectable);
         TYPED_EVENT(HidePointerCursor, IInspectable, IInspectable);
         TYPED_EVENT(RestorePointerCursor, IInspectable, IInspectable);
+        TYPED_EVENT(ReadOnlyChanged, IInspectable, IInspectable);
+        TYPED_EVENT(FocusFollowMouseRequested, IInspectable, IInspectable);
         // clang-format on
 
     private:
@@ -240,7 +247,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
 
         // Track the last cell we hovered over (used in pointerMovedHandler)
-        COORD _lastHoveredCell;
+        std::optional<COORD> _lastHoveredCell;
         // Track the last hyperlink ID we hovered over
         uint16_t _lastHoveredId;
 
@@ -263,6 +270,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
+        bool _isReadOnly{ false };
+
         void _ApplyUISettings();
         void _UpdateSystemParameterSettings() noexcept;
         void _InitializeBackgroundBrush();
@@ -277,6 +286,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _PointerPressedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _PointerMovedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _PointerReleasedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
+        void _PointerExitedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _MouseWheelHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs const& e);
         void _GotFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
@@ -335,8 +345,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _CompositionCompleted(winrt::hstring text);
         void _CurrentCursorPositionHandler(const IInspectable& sender, const CursorPositionEventArgs& eventArgs);
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
-
         winrt::fire_and_forget _AsyncCloseConnection();
+
+        winrt::fire_and_forget _RaiseReadOnlyWarning();
+
+        void _UpdateHoveredCell(const std::optional<COORD>& terminalPosition);
     };
 }
 

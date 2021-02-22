@@ -21,9 +21,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         uint64_t GetPID();
 
         bool ExecuteCommandline(const winrt::Microsoft::Terminal::Remoting::CommandlineArgs& args);
+        void ActivateWindow(const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args);
+
+        winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs GetLastActivatedArgs();
 
         winrt::Microsoft::Terminal::Remoting::CommandlineArgs InitialArgs();
-        TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs);
         TYPED_EVENT(ExecuteCommandlineRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::CommandlineArgs);
 
     private:
@@ -33,6 +36,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         uint64_t _id{ 0 };
 
         winrt::Microsoft::Terminal::Remoting::CommandlineArgs _initialArgs{ nullptr };
+        winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs _lastActivatedArgs{ nullptr };
 
         friend class RemotingUnitTests::RemotingTests;
     };

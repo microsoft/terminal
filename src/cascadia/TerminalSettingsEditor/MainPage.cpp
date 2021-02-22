@@ -51,6 +51,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProfilesList();
 
         _colorSchemesNavState = winrt::make<ColorSchemesPageNavigationState>(_settingsClone);
+
+        Automation::AutomationProperties::SetHelpText(SaveButton(), RS_(L"Settings_SaveSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetHelpText(ResetButton(), RS_(L"Settings_ResetSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetHelpText(OpenJsonNavItem(), RS_(L"Nav_OpenJSON/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
     }
 
     // Method Description:
@@ -273,6 +277,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    // Method Description:
+    // - updates the content frame to present a view of the profile page
+    // - NOTE: this does not update the selected item.
+    // Arguments:
+    // - profile - the profile object we are getting a view of
     void MainPage::_Navigate(const Editor::ProfileViewModel& profile)
     {
         _lastProfilesNavState = winrt::make<ProfilePageNavigationState>(profile,

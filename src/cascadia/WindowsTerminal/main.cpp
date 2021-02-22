@@ -126,7 +126,11 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     AppHost host;
     if (!host.HasWindow())
     {
-        return 0;
+        // If we were told to not have a window, exit early. Make sure to use
+        // ExitProcess to die here. If you try just `return 0`, then
+        // the XAML app host will crash during teardown. ExitProcess avoids
+        // that.
+        ExitProcess(0);
     }
 
     // Initialize the xaml content. This must be called AFTER the

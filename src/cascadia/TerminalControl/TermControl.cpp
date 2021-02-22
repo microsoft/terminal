@@ -11,6 +11,7 @@
 #include <WinUser.h>
 #include <LibraryResources.h>
 #include "../../types/inc/GlyphWidth.hpp"
+#include "../../types/inc/Utils.hpp"
 
 #include "TermControl.g.cpp"
 #include "TermControlAutomationPeer.h"
@@ -224,6 +225,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    void TermControl::SearchMatch(const bool goForward)
+    {
+        if (!_searchBox)
+        {
+            CreateSearchBoxControl();
+        }
+        else
+        {
+            _Search(_searchBox->TextBox().Text(), goForward, false);
+        }
+    }
+
     // Method Description:
     // - Search text in text buffer. This is triggered if the user click
     //   search button or press enter.
@@ -233,7 +246,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - caseSensitive: boolean that represents if the current search is case sensitive
     // Return Value:
     // - <none>
-    void TermControl::_Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive)
+    void TermControl::_Search(const winrt::hstring& text,
+                              const bool goForward,
+                              const bool caseSensitive)
     {
         if (text.size() == 0 || _closing)
         {
@@ -266,7 +281,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - RoutedEventArgs: not used
     // Return Value:
     // - <none>
-    void TermControl::_CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/, RoutedEventArgs const& /*args*/)
+    void TermControl::_CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                             RoutedEventArgs const& /*args*/)
     {
         _searchBox->Visibility(Visibility::Collapsed);
 
@@ -277,12 +293,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Method Description:
     // - Given new settings for this profile, applies the settings to the current terminal.
     // Arguments:
-    // - newSettings: New settings values for the profile in this terminal.
+    // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::UpdateSettings(IControlSettings newSettings)
+    winrt::fire_and_forget TermControl::UpdateSettings()
     {
-        _settings = newSettings;
         auto weakThis{ get_weak() };
 
         // Dispatch a call to the UI thread to apply the new settings to the
@@ -559,10 +574,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 solidColor.Color(newBgColor);
             }
-
-            // Set the default background as transparent to prevent the
-            // DX layer from overwriting the background image or acrylic effect
-            _settings.DefaultBackground(static_cast<COLORREF>(newBgColor.with_alpha(0)));
         }
     }
 
@@ -889,8 +900,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Whether the key was handled.
     bool TermControl::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
     {
+        // Short-circuit isReadOnly check to avoid warning dialog
+        if (_isReadOnly)
+        {
+            return false;
+        }
+
         const auto modifiers{ _GetPressedModifierKeys() };
         auto handled = false;
+
         if (vkey == VK_MENU && !down)
         {
             // Manually generate an Alt KeyUp event into the key bindings or terminal.
@@ -967,6 +985,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto modifiers = _GetPressedModifierKeys();
         const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
+
+        // Short-circuit isReadOnly check to avoid warning dialog
+        if (_isReadOnly)
+        {
+            e.Handled(!keyDown || _TryHandleKeyBinding(vkey, scanCode, modifiers));
+            return;
+        }
+
         if (e.KeyStatus().IsExtendedKey)
         {
             modifiers |= ControlKeyStates::EnhancedKey;
@@ -1087,10 +1113,26 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // modifier key. We'll wait for a real keystroke to dismiss the
         // GH #7395 - don't dismiss selection when taking PrintScreen
         // selection.
-        if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey) && vkey != VK_SNAPSHOT)
+        // GH#8522, GH#3758 - Only dismiss the selection on key _down_. If we
+        // dismiss on key up, then there's chance that we'll immediately dismiss
+        // a selection created by an action bound to a keydown.
+        if (_terminal->IsSelectionActive() &&
+            !KeyEvent::IsModifierKey(vkey) &&
+            vkey != VK_SNAPSHOT &&
+            keyDown)
         {
-            _terminal->ClearSelection();
-            _renderer->TriggerSelection();
+            const CoreWindow window = CoreWindow::GetForCurrentThread();
+            const auto leftWinKeyState = window.GetKeyState(VirtualKey::LeftWindows);
+            const auto rightWinKeyState = window.GetKeyState(VirtualKey::RightWindows);
+            const auto isLeftWinKeyDown = WI_IsFlagSet(leftWinKeyState, CoreVirtualKeyStates::Down);
+            const auto isRightWinKeyDown = WI_IsFlagSet(rightWinKeyState, CoreVirtualKeyStates::Down);
+
+            // GH#8791 - don't dismiss selection if Windows key was also pressed as a key-combination.
+            if (!isLeftWinKeyDown && !isRightWinKeyDown)
+            {
+                _terminal->ClearSelection();
+                _renderer->TriggerSelection();
+            }
 
             if (vkey == VK_ESCAPE)
             {
@@ -1353,22 +1395,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto cursorPosition = point.Position();
         const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
-        if (!_focused && (_terminal->GetHyperlinkAtPosition(terminalPosition).empty()))
+        if (!_focused && _settings.FocusFollowMouse())
         {
-            args.Handled(true);
-            return;
+            _FocusFollowMouseRequestedHandlers(*this, nullptr);
         }
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            if (_CanSendVTMouseInput())
+            // Short-circuit isReadOnly check to avoid warning dialog
+            if (_focused && !_isReadOnly && _CanSendVTMouseInput())
             {
                 _TrySendMouseEvent(point);
                 args.Handled(true);
                 return;
             }
 
-            if (point.Properties().IsLeftButtonPressed())
+            if (_focused && point.Properties().IsLeftButtonPressed())
             {
                 auto lock = _terminal->LockForWriting();
 
@@ -1414,50 +1456,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
             }
 
-            if (terminalPosition != _lastHoveredCell)
-            {
-                const auto uri = _terminal->GetHyperlinkAtPosition(terminalPosition);
-                if (!uri.empty())
-                {
-                    // Update the tooltip with the URI
-                    HoveredUri().Text(uri);
-
-                    // Set the border thickness so it covers the entire cell
-                    const auto charSizeInPixels = CharacterDimensions();
-                    const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
-                    const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
-                    const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
-                    HyperlinkTooltipBorder().BorderThickness(newThickness);
-
-                    // Compute the location of the top left corner of the cell in DIPS
-                    const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
-                    const til::point startPos{ terminalPosition.X, terminalPosition.Y };
-                    const til::size fontSize{ _actualFont.GetSize() };
-                    const til::point posInPixels{ startPos * fontSize };
-                    const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
-                    const til::point locationInDIPs{ posInDIPs + marginsInDips };
-
-                    // Move the border to the top left corner of the cell
-                    OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
-                    OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
-                }
-                _lastHoveredCell = terminalPosition;
-
-                const auto newId = _terminal->GetHyperlinkIdAtPosition(terminalPosition);
-                const auto newInterval = _terminal->GetHyperlinkIntervalFromPosition(terminalPosition);
-                // If the hyperlink ID changed or the interval changed, trigger a redraw all
-                // (so this will happen both when we move onto a link and when we move off a link)
-                if (newId != _lastHoveredId || (newInterval != _lastHoveredInterval))
-                {
-                    _lastHoveredId = newId;
-                    _lastHoveredInterval = newInterval;
-                    _renderEngine->UpdateHyperlinkHoveredId(newId);
-                    _renderer->UpdateLastHoveredInterval(newInterval);
-                    _renderer->TriggerRedrawAll();
-                }
-            }
+            _UpdateHoveredCell(terminalPosition);
         }
-        else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
+        else if (_focused && ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
         {
             const auto contactRect = point.Properties().ContactRect();
             winrt::Windows::Foundation::Point newTouchPoint{ contactRect.X, contactRect.Y };
@@ -1513,7 +1514,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            if (_CanSendVTMouseInput())
+            // Short-circuit isReadOnly check to avoid warning dialog
+            if (!_isReadOnly && _CanSendVTMouseInput())
             {
                 _TrySendMouseEvent(point);
                 args.Handled(true);
@@ -1588,7 +1590,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                     const int32_t delta,
                                     const TerminalInput::MouseButtonState state)
     {
-        if (_CanSendVTMouseInput())
+        // Short-circuit isReadOnly check to avoid warning dialog
+        if (!_isReadOnly && _CanSendVTMouseInput())
         {
             // Most mouse event handlers call
             //      _TrySendMouseEvent(point);
@@ -2023,73 +2026,34 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_SendInputToConnection(const winrt::hstring& wstr)
     {
-        _connection.WriteInput(wstr);
+        if (_isReadOnly)
+        {
+            _RaiseReadOnlyWarning();
+        }
+        else
+        {
+            _connection.WriteInput(wstr);
+        }
     }
 
     void TermControl::_SendInputToConnection(std::wstring_view wstr)
     {
-        _connection.WriteInput(wstr);
+        if (_isReadOnly)
+        {
+            _RaiseReadOnlyWarning();
+        }
+        else
+        {
+            _connection.WriteInput(wstr);
+        }
     }
 
     // Method Description:
     // - Pre-process text pasted (presumably from the clipboard)
-    //   before sending it over the terminal's connection, converting
-    //   Windows-space \r\n line-endings to \r line-endings
-    // - Also converts \n line-endings to \r line-endings
+    //   before sending it over the terminal's connection.
     void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
     {
-        // Some notes on this implementation:
-        //
-        // - std::regex can do this in a single line, but is somewhat
-        //   overkill for a simple search/replace operation (and its
-        //   performance guarantees aren't exactly stellar)
-        // - The STL doesn't have a simple string search/replace method.
-        //   This fact is lamentable.
-        // - We search for \n, and when we find it we copy the string up to
-        //   the \n (but not including it). Then, we check the if the
-        //   previous character is \r, if its not, then we had a lone \n
-        //   and so we append our own \r
-
-        std::wstring stripped;
-        stripped.reserve(wstr.length());
-
-        std::wstring::size_type pos = 0;
-        std::wstring::size_type begin = 0;
-
-        while ((pos = wstr.find(L"\n", pos)) != std::wstring::npos)
-        {
-            // copy up to but not including the \n
-            stripped.append(wstr.cbegin() + begin, wstr.cbegin() + pos);
-            if (!(pos > 0 && (wstr.at(pos - 1) == L'\r')))
-            {
-                // there was no \r before the \n we did not copy,
-                // so append our own \r (this effectively replaces the \n
-                // with a \r)
-                stripped.push_back(L'\r');
-            }
-            ++pos;
-            begin = pos;
-        }
-
-        // If we entered the while loop even once, begin would be non-zero
-        // (because we set begin = pos right after incrementing pos)
-        // So, if begin is still zero at this point it means we never found a newline
-        // and we can just write the original string
-        if (begin == 0)
-        {
-            _connection.WriteInput(wstr);
-        }
-        else
-        {
-            // copy over the part after the last \n
-            stripped.append(wstr.cbegin() + begin, wstr.cend());
-
-            // we may have removed some characters, so we may not need as much space
-            // as we reserved earlier
-            stripped.shrink_to_fit();
-            _connection.WriteInput(stripped);
-        }
-
+        _terminal->WritePastedText(wstr);
         _terminal->ClearSelection();
         _terminal->TrySnapOnInput();
     }
@@ -2907,7 +2871,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
     ControlKeyStates TermControl::_GetPressedModifierKeys() const
     {
-        CoreWindow window = CoreWindow::GetForCurrentThread();
+        const CoreWindow window = CoreWindow::GetForCurrentThread();
         // DONT USE
         //      != CoreVirtualKeyStates::None
         // OR
@@ -3288,6 +3252,103 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     const size_t TermControl::TaskbarProgress() const noexcept
     {
         return _terminal->GetTaskbarProgress();
+    }
+
+    // Method Description:
+    // - Checks whether the control is in a read-only mode (in this mode node input is sent to connection).
+    // Return Value:
+    // - True if the mode is read-only
+    bool TermControl::ReadOnly() const noexcept
+    {
+        return _isReadOnly;
+    }
+
+    // Method Description:
+    // - Toggles the read-only flag, raises event describing the value change
+    void TermControl::ToggleReadOnly()
+    {
+        _isReadOnly = !_isReadOnly;
+        _ReadOnlyChangedHandlers(*this, winrt::box_value(_isReadOnly));
+    }
+
+    winrt::fire_and_forget TermControl::_RaiseReadOnlyWarning()
+    {
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_foreground(Dispatcher());
+
+        if (auto control{ weakThis.get() })
+        {
+            auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));
+            control->_raiseNoticeHandlers(*control, std::move(noticeArgs));
+        }
+    }
+
+    // Method description:
+    // - Updates last hovered cell, renders / removes rendering of hyper-link if required
+    // Arguments:
+    // - terminalPosition: The terminal position of the pointer
+    void TermControl::_UpdateHoveredCell(const std::optional<COORD>& terminalPosition)
+    {
+        if (terminalPosition == _lastHoveredCell)
+        {
+            return;
+        }
+
+        _lastHoveredCell = terminalPosition;
+
+        if (terminalPosition.has_value())
+        {
+            const auto uri = _terminal->GetHyperlinkAtPosition(*terminalPosition);
+            if (!uri.empty())
+            {
+                // Update the tooltip with the URI
+                HoveredUri().Text(uri);
+
+                // Set the border thickness so it covers the entire cell
+                const auto charSizeInPixels = CharacterDimensions();
+                const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
+                const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
+                const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
+                HyperlinkTooltipBorder().BorderThickness(newThickness);
+
+                // Compute the location of the top left corner of the cell in DIPS
+                const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
+                const til::point startPos{ terminalPosition->X, terminalPosition->Y };
+                const til::size fontSize{ _actualFont.GetSize() };
+                const til::point posInPixels{ startPos * fontSize };
+                const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
+                const til::point locationInDIPs{ posInDIPs + marginsInDips };
+
+                // Move the border to the top left corner of the cell
+                OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
+                OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
+            }
+        }
+
+        const uint16_t newId = terminalPosition.has_value() ? _terminal->GetHyperlinkIdAtPosition(*terminalPosition) : 0u;
+        const auto newInterval = terminalPosition.has_value() ? _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition) : std::nullopt;
+
+        // If the hyperlink ID changed or the interval changed, trigger a redraw all
+        // (so this will happen both when we move onto a link and when we move off a link)
+        if (newId != _lastHoveredId || (newInterval != _lastHoveredInterval))
+        {
+            _lastHoveredId = newId;
+            _lastHoveredInterval = newInterval;
+            _renderEngine->UpdateHyperlinkHoveredId(newId);
+            _renderer->UpdateLastHoveredInterval(newInterval);
+            _renderer->TriggerRedrawAll();
+        }
+    }
+
+    // Method Description:
+    // - Handle a mouse exited event, specifically clearing last hovered cell
+    // and removing selection from hyper link if exists
+    // Arguments:
+    // - sender: not used
+    // - args: event data
+    void TermControl::_PointerExitedHandler(Windows::Foundation::IInspectable const& /*sender*/, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
+    {
+        _UpdateHoveredCell(std::nullopt);
     }
 
     // -------------------------------- WinRT Events ---------------------------------

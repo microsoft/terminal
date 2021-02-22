@@ -23,6 +23,7 @@ static constexpr std::string_view AlwaysShowTabsKey{ "alwaysShowTabs" };
 static constexpr std::string_view InitialRowsKey{ "initialRows" };
 static constexpr std::string_view InitialColsKey{ "initialCols" };
 static constexpr std::string_view InitialPositionKey{ "initialPosition" };
+static constexpr std::string_view CenterOnLaunchKey{ "centerOnLaunch" };
 static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTitlebar" };
 static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view TabWidthModeKey{ "tabWidthMode" };
@@ -42,6 +43,8 @@ static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" 
 static constexpr std::string_view TabSwitcherModeKey{ "tabSwitcherMode" };
 static constexpr std::string_view DisableAnimationsKey{ "disableAnimations" };
 static constexpr std::string_view StartupActionsKey{ "startupActions" };
+static constexpr std::string_view FocusFollowMouseKey{ "focusFollowMouse" };
+static constexpr std::string_view WindowingBehaviorKey{ "windowingBehavior" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
@@ -107,6 +110,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_WarnAboutLargePaste = _WarnAboutLargePaste;
     globals->_WarnAboutMultiLinePaste = _WarnAboutMultiLinePaste;
     globals->_InitialPosition = _InitialPosition;
+    globals->_CenterOnLaunch = _CenterOnLaunch;
     globals->_LaunchMode = _LaunchMode;
     globals->_SnapToGridOnResize = _SnapToGridOnResize;
     globals->_ForceFullRepaintRendering = _ForceFullRepaintRendering;
@@ -118,6 +122,8 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_TabSwitcherMode = _TabSwitcherMode;
     globals->_DisableAnimations = _DisableAnimations;
     globals->_StartupActions = _StartupActions;
+    globals->_FocusFollowMouse = _FocusFollowMouse;
+    globals->_WindowingBehavior = _WindowingBehavior;
 
     globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
     globals->_validDefaultProfile = _validDefaultProfile;
@@ -262,6 +268,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, InitialPositionKey, _InitialPosition);
 
+    JsonUtils::GetValueForKey(json, CenterOnLaunchKey, _CenterOnLaunch);
+
     JsonUtils::GetValueForKey(json, ShowTitleInTitlebarKey, _ShowTitleInTitlebar);
 
     JsonUtils::GetValueForKey(json, ShowTabsInTitlebarKey, _ShowTabsInTitlebar);
@@ -307,6 +315,10 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, DisableAnimationsKey, _DisableAnimations);
 
     JsonUtils::GetValueForKey(json, StartupActionsKey, _StartupActions);
+
+    JsonUtils::GetValueForKey(json, FocusFollowMouseKey, _FocusFollowMouse);
+
+    JsonUtils::GetValueForKey(json, WindowingBehaviorKey, _WindowingBehavior);
 
     // This is a helper lambda to get the keybindings and commands out of both
     // and array of objects. We'll use this twice, once on the legacy
@@ -383,6 +395,7 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, InitialRowsKey,                 _InitialRows);
     JsonUtils::SetValueForKey(json, InitialColsKey,                 _InitialCols);
     JsonUtils::SetValueForKey(json, InitialPositionKey,             _InitialPosition);
+    JsonUtils::SetValueForKey(json, CenterOnLaunchKey,              _CenterOnLaunch);
     JsonUtils::SetValueForKey(json, ShowTitleInTitlebarKey,         _ShowTitleInTitlebar);
     JsonUtils::SetValueForKey(json, ShowTabsInTitlebarKey,          _ShowTabsInTitlebar);
     JsonUtils::SetValueForKey(json, WordDelimitersKey,              _WordDelimiters);
@@ -404,6 +417,8 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, TabSwitcherModeKey,             _TabSwitcherMode);
     JsonUtils::SetValueForKey(json, DisableAnimationsKey,           _DisableAnimations);
     JsonUtils::SetValueForKey(json, StartupActionsKey,              _StartupActions);
+    JsonUtils::SetValueForKey(json, FocusFollowMouseKey,            _FocusFollowMouse);
+    JsonUtils::SetValueForKey(json, WindowingBehaviorKey,           _WindowingBehavior);
     // clang-format on
 
     // TODO GH#8100: keymap needs to be serialized here

@@ -28,6 +28,7 @@
     "snapToGridOnResize": true,
     "disableAnimations": false,
     "startupActions": "",
+    "focusFollowMouse": false,
 
     "profiles":
     [
@@ -287,6 +288,8 @@
         { "command": "openSettings", "keys": "ctrl+," },
         { "command": { "action": "openSettings", "target": "defaultsFile" }, "keys": "ctrl+alt+," },
         { "command": "find", "keys": "ctrl+shift+f" },
+        { "command": { "action": "findMatch", "direction": "next" } },
+        { "command": { "action": "findMatch", "direction": "prev" } },
         { "command": "toggleShaderEffects" },
         { "command": "openTabColorPicker" },
         { "command": "renameTab" },
@@ -301,6 +304,7 @@
         { "command": { "action" : "moveTab", "direction": "forward" }},
         { "command": { "action" : "moveTab", "direction": "backward" }},
         { "command": "newTab", "keys": "ctrl+shift+t" },
+        { "command": "newWindow", "keys": "ctrl+shift+n" },
         { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+shift+1" },
         { "command": { "action": "newTab", "index": 1 }, "keys": "ctrl+shift+2" },
         { "command": { "action": "newTab", "index": 2 }, "keys": "ctrl+shift+3" },
@@ -337,6 +341,7 @@
         { "command": { "action": "moveFocus", "direction": "up" }, "keys": "alt+up" },
         { "command": { "action": "moveFocus", "direction": "previous" }, "keys": "ctrl+alt+left" },
         { "command": "togglePaneZoom" },
+        { "command": "toggleReadOnlyMode" },
 
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },

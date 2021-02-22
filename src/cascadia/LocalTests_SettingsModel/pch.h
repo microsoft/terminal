@@ -34,6 +34,7 @@ Author(s):
 #include <WexTestClass.h>
 #include <json.h>
 #include "consoletaeftemplates.hpp"
+#include "winrtTaefTemplates.hpp"
 
 #include <winrt/Windows.ApplicationModel.Resources.Core.h>
 #include "winrt/Windows.UI.Xaml.Markup.h"

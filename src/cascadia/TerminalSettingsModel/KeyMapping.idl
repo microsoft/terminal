@@ -13,7 +13,6 @@ namespace Microsoft.Terminal.Settings.Model
         OpenNewTabDropdown,
         DuplicateTab,
         NewTab,
-        NewWindow,
         CloseWindow,
         CloseTab,
         ClosePane,
@@ -52,7 +51,10 @@ namespace Microsoft.Terminal.Settings.Model
         CloseTabsAfter,
         TabSearch,
         MoveTab,
-        BreakIntoDebugger
+        BreakIntoDebugger,
+        TogglePaneReadOnly,
+        FindMatch,
+        NewWindow
     };
 
     [default_interface] runtimeclass ActionAndArgs {

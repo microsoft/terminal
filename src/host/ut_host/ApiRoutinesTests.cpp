@@ -207,10 +207,12 @@ class ApiRoutinesTests
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.SetTitle(L"Test window title.");
 
+        const auto title = gci.GetTitle();
+
         int const iBytesNeeded = WideCharToMultiByte(gci.OutputCP,
                                                      0,
-                                                     gci.GetTitle().c_str(),
-                                                     -1,
+                                                     title.data(),
+                                                     gsl::narrow_cast<int>(title.size()),
                                                      nullptr,
                                                      0,
                                                      nullptr,
@@ -221,8 +223,8 @@ class ApiRoutinesTests
 
         VERIFY_WIN32_BOOL_SUCCEEDED(WideCharToMultiByte(gci.OutputCP,
                                                         0,
-                                                        gci.GetTitle().c_str(),
-                                                        -1,
+                                                        title.data(),
+                                                        gsl::narrow_cast<int>(title.size()),
                                                         pszExpected.get(),
                                                         iBytesNeeded,
                                                         nullptr,
@@ -251,10 +253,13 @@ class ApiRoutinesTests
         VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleWImpl(gsl::span<wchar_t>(pwszTitle, ARRAYSIZE(pwszTitle)), cchWritten, cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
+
+        const auto title = gci.GetTitle();
+
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
-        VERIFY_ARE_EQUAL(gci.GetTitle().length(), cchWritten);
-        VERIFY_ARE_EQUAL(gci.GetTitle().length(), cchNeeded);
-        VERIFY_ARE_EQUAL(WEX::Common::String(gci.GetTitle().c_str()), WEX::Common::String(pwszTitle));
+        VERIFY_ARE_EQUAL(title.length(), cchWritten);
+        VERIFY_ARE_EQUAL(title.length(), cchNeeded);
+        VERIFY_ARE_EQUAL(WEX::Common::String(title.data(), gsl::narrow_cast<int>(title.size())), WEX::Common::String(pwszTitle));
     }
 
     TEST_METHOD(ApiGetConsoleOriginalTitleA)
@@ -262,10 +267,12 @@ class ApiRoutinesTests
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.SetOriginalTitle(L"Test original window title.");
 
+        const auto originalTitle = gci.GetOriginalTitle();
+
         int const iBytesNeeded = WideCharToMultiByte(gci.OutputCP,
                                                      0,
-                                                     gci.GetOriginalTitle().c_str(),
-                                                     -1,
+                                                     originalTitle.data(),
+                                                     gsl::narrow_cast<int>(originalTitle.size()),
                                                      nullptr,
                                                      0,
                                                      nullptr,
@@ -276,8 +283,8 @@ class ApiRoutinesTests
 
         VERIFY_WIN32_BOOL_SUCCEEDED(WideCharToMultiByte(gci.OutputCP,
                                                         0,
-                                                        gci.GetOriginalTitle().c_str(),
-                                                        -1,
+                                                        originalTitle.data(),
+                                                        gsl::narrow_cast<int>(originalTitle.size()),
                                                         pszExpected.get(),
                                                         iBytesNeeded,
                                                         nullptr,
@@ -306,10 +313,12 @@ class ApiRoutinesTests
         VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleWImpl(gsl::span<wchar_t>(pwszTitle, ARRAYSIZE(pwszTitle)), cchWritten, cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
+
+        const auto originalTitle = gci.GetOriginalTitle();
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
-        VERIFY_ARE_EQUAL(gci.GetOriginalTitle().length(), cchWritten);
-        VERIFY_ARE_EQUAL(gci.GetOriginalTitle().length(), cchNeeded);
-        VERIFY_ARE_EQUAL(WEX::Common::String(gci.GetOriginalTitle().c_str()), WEX::Common::String(pwszTitle));
+        VERIFY_ARE_EQUAL(originalTitle.length(), cchWritten);
+        VERIFY_ARE_EQUAL(originalTitle.length(), cchNeeded);
+        VERIFY_ARE_EQUAL(WEX::Common::String(originalTitle.data(), gsl::narrow_cast<int>(originalTitle.size())), WEX::Common::String(pwszTitle));
     }
 
     static void s_AdjustOutputWait(const bool fShouldBlock)

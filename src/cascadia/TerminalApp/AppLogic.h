@@ -29,7 +29,8 @@ namespace winrt::TerminalApp::implementation
         [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
 
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
-        int32_t ExecuteCommandline(array_view<const winrt::hstring> actions);
+        int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd);
+        int32_t FindTargetWindow(array_view<const winrt::hstring> actions);
         winrt::hstring ParseCommandlineMessage();
         bool ShouldExitEarly();
 
@@ -38,6 +39,7 @@ namespace winrt::TerminalApp::implementation
         bool AlwaysOnTop() const;
 
         Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);
+        bool CenterOnLaunch();
         TerminalApp::InitialPosition GetInitialPosition(int64_t defaultInitialX, int64_t defaultInitialY);
         winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme();
         Microsoft::Terminal::Settings::Model::LaunchMode GetLaunchMode();
