@@ -1220,6 +1220,11 @@ namespace winrt::TerminalApp::implementation
         const auto result = appArgs.ParseArgs(args);
         if (result == 0)
         {
+            if (!appArgs.GetExitMessage().empty())
+            {
+                return WindowingBehaviorUseNew;
+            }
+
             const auto parsedTarget = appArgs.GetTargetWindow();
             if (parsedTarget.has_value())
             {
