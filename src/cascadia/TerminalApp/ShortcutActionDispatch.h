@@ -27,7 +27,6 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(OpenNewTabDropdown,   TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(DuplicateTab,         TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(NewTab,               TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(NewWindow,            TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(CloseWindow,          TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(CloseTab,             TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(ClosePane,            TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
@@ -67,6 +66,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(BreakIntoDebugger,    TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(FindMatch,            TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(TogglePaneReadOnly,   TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
+        TYPED_EVENT(NewWindow,            TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         // clang-format on
 
     private:

@@ -41,6 +41,7 @@ IObject
 IPackage
 IPeasant
 IStorage
+IStringable
 ITab
 ITaskbar
 IVirtual
@@ -57,6 +58,7 @@ NCHITTEST
 NCLBUTTONDBLCLK
 NCRBUTTONDBLCLK
 NOAGGREGATION
+NOASYNC
 NOPROGRESS
 NOREDIRECTIONBITMAP
 ntprivapi
@@ -81,6 +83,7 @@ shobjidl
 SIZENS
 smoothstep
 GETDESKWALLPAPER
+SHELLEXECUTEINFOW
 snprintf
 spsc
 sregex
@@ -94,6 +97,8 @@ TBPF
 THEMECHANGED
 tmp
 tolower
+TTask
+TVal
 tx
 UPDATEINIFILE
 userenv

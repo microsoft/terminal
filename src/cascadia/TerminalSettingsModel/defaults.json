@@ -303,6 +303,7 @@
         { "command": { "action" : "moveTab", "direction": "forward" }},
         { "command": { "action" : "moveTab", "direction": "backward" }},
         { "command": "newTab", "keys": "ctrl+shift+t" },
+        { "command": "newWindow", "keys": "ctrl+shift+n" },
         { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+shift+1" },
         { "command": { "action": "newTab", "index": 1 }, "keys": "ctrl+shift+2" },
         { "command": { "action": "newTab", "index": 2 }, "keys": "ctrl+shift+3" },

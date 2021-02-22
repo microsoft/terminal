@@ -665,6 +665,16 @@ namespace winrt::TerminalApp::implementation
         };
     }
 
+    bool AppLogic::CenterOnLaunch()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+        return _settings.GlobalSettings().CenterOnLaunch();
+    }
+
     winrt::Windows::UI::Xaml::ElementTheme AppLogic::GetRequestedTheme()
     {
         if (!_loadedInitialSettings)
@@ -1208,10 +1218,22 @@ namespace winrt::TerminalApp::implementation
     TerminalApp::FindTargetWindowResult AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
     {
         // TODO:MG Add tests for this method. Localtests? probably.
+        return AppLogic::_doFindTargetWindow(args, _settings.GlobalSettings().WindowingBehavior());
+    }
+
+    // The main body of this function is a static helper, to facilitate unit-testing
+    TerminalApp::FindTargetWindowResult AppLogic::_doFindTargetWindow(array_view<const winrt::hstring> args,
+                                                                      const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior)
+    {
         ::TerminalApp::AppCommandlineArgs appArgs;
         const auto result = appArgs.ParseArgs(args);
         if (result == 0)
         {
+            if (!appArgs.GetExitMessage().empty())
+            {
+                return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew, L"");
+            }
+
             const std::string parsedTarget{ appArgs.GetTargetWindow() };
 
             // If the user did not provide any value on the commandline,
@@ -1219,7 +1241,6 @@ namespace winrt::TerminalApp::implementation
             // now.
             if (parsedTarget.empty())
             {
-                const auto windowingBehavior = _settings.GlobalSettings().WindowingBehavior();
                 int32_t windowId = WindowingBehaviorUseNew;
                 switch (windowingBehavior)
                 {
