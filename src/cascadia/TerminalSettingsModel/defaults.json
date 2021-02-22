@@ -7,7 +7,6 @@
     "initialRows": 30,
     "launchMode": "default",
     "alwaysOnTop": false,
-    "inputServiceWarning":true,
 
     // Selection
     "copyOnSelect": false,
