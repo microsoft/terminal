@@ -491,11 +491,15 @@ namespace winrt::TerminalApp::implementation
     void AppLogic::_OnLoaded(const IInspectable& /*sender*/,
                              const RoutedEventArgs& /*eventArgs*/)
     {
-        const auto keyboardServiceIsDisabled = !_IsKeyboardServiceEnabled();
-        if (keyboardServiceIsDisabled)
+        if (_settings.GlobalSettings().InputServiceWarning())
         {
-            _root->ShowKeyboardServiceWarning();
+            const auto keyboardServiceIsDisabled = !_IsKeyboardServiceEnabled();
+            if (keyboardServiceIsDisabled)
+            {
+                _root->ShowKeyboardServiceWarning();
+            }
         }
+
         if (FAILED(_settingsLoadedResult))
         {
             const winrt::hstring titleKey = USES_RESOURCE(L"InitialJsonParseErrorTitle");

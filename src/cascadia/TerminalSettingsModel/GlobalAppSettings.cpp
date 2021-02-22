@@ -29,6 +29,7 @@ static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view TabWidthModeKey{ "tabWidthMode" };
 static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
 static constexpr std::string_view WordDelimitersKey{ "wordDelimiters" };
+static constexpr std::string_view InputServiceWarningKey{ "inputServiceWarning" };
 static constexpr std::string_view CopyOnSelectKey{ "copyOnSelect" };
 static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
 static constexpr std::string_view WarnAboutLargePasteKey{ "largePasteWarning" };
@@ -103,6 +104,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_TabWidthMode = _TabWidthMode;
     globals->_ShowTabsInTitlebar = _ShowTabsInTitlebar;
     globals->_WordDelimiters = _WordDelimiters;
+    globals->_InputServiceWarning = _InputServiceWarning;
     globals->_CopyOnSelect = _CopyOnSelect;
     globals->_CopyFormatting = _CopyFormatting;
     globals->_WarnAboutLargePaste = _WarnAboutLargePaste;
@@ -276,6 +278,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, CopyOnSelectKey, _CopyOnSelect);
 
+    JsonUtils::GetValueForKey(json, InputServiceWarningKey, _InputServiceWarning);
+
     JsonUtils::GetValueForKey(json, CopyFormattingKey, _CopyFormatting);
 
     JsonUtils::GetValueForKey(json, WarnAboutLargePasteKey, _WarnAboutLargePaste);
@@ -395,6 +399,7 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, ShowTitleInTitlebarKey,         _ShowTitleInTitlebar);
     JsonUtils::SetValueForKey(json, ShowTabsInTitlebarKey,          _ShowTabsInTitlebar);
     JsonUtils::SetValueForKey(json, WordDelimitersKey,              _WordDelimiters);
+    JsonUtils::SetValueForKey(json, InputServiceWarningKey,         _InputServiceWarning);
     JsonUtils::SetValueForKey(json, CopyOnSelectKey,                _CopyOnSelect);
     JsonUtils::SetValueForKey(json, CopyFormattingKey,              _CopyFormatting);
     JsonUtils::SetValueForKey(json, WarnAboutLargePasteKey,         _WarnAboutLargePaste);

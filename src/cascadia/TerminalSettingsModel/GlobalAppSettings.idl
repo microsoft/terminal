@@ -56,6 +56,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, ShowTabsInTitlebar);
         INHERITABLE_SETTING(String, WordDelimiters);
         INHERITABLE_SETTING(Boolean, CopyOnSelect);
+        INHERITABLE_SETTING(Boolean, InputServiceWarning);
         INHERITABLE_SETTING(Microsoft.Terminal.TerminalControl.CopyFormat, CopyFormatting);
         INHERITABLE_SETTING(Boolean, WarnAboutLargePaste);
         INHERITABLE_SETTING(Boolean, WarnAboutMultiLinePaste);

@@ -64,6 +64,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_SETTING(TerminalApp::TerminalSettings, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
         GETSET_SETTING(TerminalApp::TerminalSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
         GETSET_SETTING(TerminalApp::TerminalSettings, bool, CopyOnSelect, false);
+        GETSET_SETTING(TerminalApp::TerminalSettings, bool, InputServiceWarning, true);
         GETSET_SETTING(TerminalApp::TerminalSettings, bool, FocusFollowMouse, false);
 
         GETSET_SETTING(TerminalApp::TerminalSettings, Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
