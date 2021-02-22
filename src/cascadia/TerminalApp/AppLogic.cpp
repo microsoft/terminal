@@ -1216,6 +1216,13 @@ namespace winrt::TerminalApp::implementation
     // - anything else: We should handle the commandline in the window with the given ID.
     int32_t AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
     {
+        return AppLogic::_doFindTargetWindow(args, _settings.GlobalSettings().WindowingBehavior());
+    }
+
+    // The main body of this function is a static helper, to facilitate unit-testing
+    int32_t AppLogic::_doFindTargetWindow(array_view<const winrt::hstring> args,
+                                          const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior)
+    {
         ::TerminalApp::AppCommandlineArgs appArgs;
         const auto result = appArgs.ParseArgs(args);
         if (result == 0)
@@ -1238,7 +1245,6 @@ namespace winrt::TerminalApp::implementation
                 // If the user did not provide any value on the commandline,
                 // then lookup our windowing behavior to determine what to do
                 // now.
-                const auto windowingBehavior = _settings.GlobalSettings().WindowingBehavior();
                 switch (windowingBehavior)
                 {
                 case WindowingMode::UseExisting:
