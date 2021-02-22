@@ -70,7 +70,12 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                         <!-- The block for the key chord is only visible
                                 when there's actual text set as the label. See
-                                CommandKeyChordVisibilityConverter for details. -->
+                                CommandKeyChordVisibilityConverter for details.
+                             We're setting the accessibility view on the
+                                border and text block to Raw because otherwise,
+                                Narrator will read out the key chord. Problem is,
+                                it already did that because it was the list item's
+                                "AcceleratorKey". It's redundant. -->
                         <Border
                                     Grid.Column="2"
                                     Visibility="{x:Bind Item.KeyChordText,
@@ -79,12 +84,14 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     Style="{ThemeResource KeyChordBorderStyle}"
                                     Padding="2,0,2,0"
                                     HorizontalAlignment="Right"
-                                    VerticalAlignment="Center">
+                                    VerticalAlignment="Center"
+                                    AutomationProperties.AccessibilityView="Raw">
 
                             <TextBlock
                                         Style="{ThemeResource KeyChordTextBlockStyle}"
                                         FontSize="12"
-                                        Text="{x:Bind Item.KeyChordText, Mode=OneWay}" />
+                                        Text="{x:Bind Item.KeyChordText, Mode=OneWay}"
+                                        AutomationProperties.AccessibilityView="Raw" />
                         </Border>
 
                         <!-- xE70E is ChevronUp. Rotated 90 degrees, it's _ChevronRight_ -->
