@@ -189,7 +189,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
-        _ApplyUISettings();
+        _ApplyUISettings(_settings);
     }
 
     // Method Description:
@@ -292,8 +292,70 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     // Method Description:
     // - Given new settings for this profile, applies the settings to the current terminal.
+    // - This method is separate from UpdateSettings because there is an apparent optimizer
+    //   issue that causes one of our hstring -> wstring_view conversions to result in garbage,
+    //   but only from a coroutine context. See GH#8723.
+    // - INVARIANT: This method must be called from the UI thread.
     // Arguments:
     // - <none>
+    // Return Value:
+    // - <none>
+    void TermControl::_UpdateSettingsOnUIThread()
+    {
+        if (_closing)
+        {
+            return;
+        }
+
+        auto lock = _terminal->LockForWriting();
+
+        // Update our control settings
+        _ApplyUISettings(_settings);
+
+        // Update the terminal core with its new Core settings
+        _terminal->UpdateSettings(_settings);
+
+        if (!_initializedTerminal)
+        {
+            // If we haven't initialized, there's no point in continuing.
+            // Initialization will handle the renderer settings.
+            return;
+        }
+
+        // Update DxEngine settings under the lock
+        _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
+
+        _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
+        _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
+        _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
+        _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+
+        switch (_settings.AntialiasingMode())
+        {
+        case TextAntialiasingMode::Cleartype:
+            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
+            break;
+        case TextAntialiasingMode::Aliased:
+            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
+            break;
+        case TextAntialiasingMode::Grayscale:
+        default:
+            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+            break;
+        }
+
+        // Refresh our font with the renderer
+        const auto actualFontOldSize = _actualFont.GetSize();
+        _UpdateFont();
+        const auto actualFontNewSize = _actualFont.GetSize();
+        if (actualFontNewSize != actualFontOldSize)
+        {
+            _RefreshSizeUnderLock();
+        }
+    }
+
+    // Method Description:
+    // - Given Settings having been updated, applies the settings to the current terminal.
     // Return Value:
     // - <none>
     winrt::fire_and_forget TermControl::UpdateSettings()
@@ -307,49 +369,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // If 'weakThis' is locked, then we can safely work with 'this'
         if (auto control{ weakThis.get() })
         {
-            if (_closing)
-            {
-                co_return;
-            }
-
-            // Update our control settings
-            _ApplyUISettings();
-
-            // Update the terminal core with its new Core settings
-            _terminal->UpdateSettings(_settings);
-
-            auto lock = _terminal->LockForWriting();
-
-            // Update DxEngine settings under the lock
-            _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
-
-            _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-            _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
-            _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
-            _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
-
-            switch (_settings.AntialiasingMode())
-            {
-            case TextAntialiasingMode::Cleartype:
-                _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
-                break;
-            case TextAntialiasingMode::Aliased:
-                _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
-                break;
-            case TextAntialiasingMode::Grayscale:
-            default:
-                _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
-                break;
-            }
-
-            // Refresh our font with the renderer
-            const auto actualFontOldSize = _actualFont.GetSize();
-            _UpdateFont();
-            const auto actualFontNewSize = _actualFont.GetSize();
-            if (actualFontNewSize != actualFontOldSize)
-            {
-                _RefreshSizeUnderLock();
-            }
+            _UpdateSettingsOnUIThread();
         }
     }
 
@@ -399,21 +419,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TermControl::_ApplyUISettings()
+    void TermControl::_ApplyUISettings(const IControlSettings& newSettings)
     {
         _InitializeBackgroundBrush();
 
-        COLORREF bg = _settings.DefaultBackground();
+        COLORREF bg = newSettings.DefaultBackground();
         _BackgroundColorChanged(bg);
 
         // Apply padding as swapChainPanel's margin
-        auto newMargin = _ParseThicknessFromPadding(_settings.Padding());
+        auto newMargin = _ParseThicknessFromPadding(newSettings.Padding());
         SwapChainPanel().Margin(newMargin);
 
         // Initialize our font information.
-        const auto fontFace = _settings.FontFace();
-        const short fontHeight = gsl::narrow_cast<short>(_settings.FontSize());
-        const auto fontWeight = _settings.FontWeight();
+        const auto fontFace = newSettings.FontFace();
+        const short fontHeight = gsl::narrow_cast<short>(newSettings.FontSize());
+        const auto fontWeight = newSettings.FontWeight();
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up
         // The other params here also largely don't matter.
@@ -425,12 +445,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // set TSF Foreground
         Media::SolidColorBrush foregroundBrush{};
-        foregroundBrush.Color(static_cast<til::color>(_settings.DefaultForeground()));
+        foregroundBrush.Color(static_cast<til::color>(newSettings.DefaultForeground()));
         TSFInputControl().Foreground(foregroundBrush);
         TSFInputControl().Margin(newMargin);
 
         // Apply settings for scrollbar
-        if (_settings.ScrollState() == ScrollbarState::Hidden)
+        if (newSettings.ScrollState() == ScrollbarState::Hidden)
         {
             // In the scenario where the user has turned off the OS setting to automatically hide scrollbars, the
             // Terminal scrollbar would still be visible; so, we need to set the control's visibility accordingly to

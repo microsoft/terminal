@@ -272,7 +272,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         bool _isReadOnly{ false };
 
-        void _ApplyUISettings();
+        void _ApplyUISettings(const IControlSettings&);
+        void _UpdateSettingsOnUIThread();
         void _UpdateSystemParameterSettings() noexcept;
         void _InitializeBackgroundBrush();
         winrt::fire_and_forget _BackgroundColorChanged(const COLORREF color);
