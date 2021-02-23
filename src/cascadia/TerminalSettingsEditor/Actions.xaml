@@ -36,9 +36,10 @@ the MIT License. See LICENSE in the project root for license information. -->
             <DataTemplate x:Key="GeneralItemTemplate" x:DataType="SettingsModel:Command">
 
                 <!-- This HorizontalContentAlignment="Stretch" is important
-                        to make sure it takes the entire width of the line -->
+                     to make sure it takes the entire width of the line -->
                 <ListViewItem HorizontalContentAlignment="Stretch"
-                              AutomationProperties.Name="{x:Bind Name, Mode=OneWay}">
+                              AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
+                              AutomationProperties.AcceleratorKey="{x:Bind KeyChordText, Mode=OneWay}">
 
                     <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" >
                         <Grid.ColumnDefinitions>
@@ -59,11 +60,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <!-- The block for the key chord is only visible
                                 when there's actual text set as the label. See
                                 CommandKeyChordVisibilityConverter for details.
-                             We're setting the accessibility view on the
-                                border and text block to Raw because otherwise,
-                                Narrator will read out the key chord. Problem is,
-                                it already did that because it was the list item's
-                                "AcceleratorKey". It's redundant. -->
+                             Inexplicably, we don't need to set the
+                                 AutomationProperties to Raw here, unlike in the
+                                 CommandPalette. We're not quite sure why.-->
                         <Border Grid.Column="2"
                                 Visibility="{x:Bind KeyChordText,
                                              Mode=OneWay,
@@ -71,8 +70,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                 Style="{ThemeResource KeyChordBorderStyle}"
                                 Padding="2,0,2,0"
                                 HorizontalAlignment="Right"
-                                VerticalAlignment="Center"
-                                AutomationProperties.AccessibilityView="Raw">
+                                VerticalAlignment="Center">
 
                             <TextBlock Style="{ThemeResource KeyChordTextBlockStyle}"
                                        FontSize="12"
