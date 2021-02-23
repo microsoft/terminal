@@ -160,7 +160,11 @@ the MIT License. See LICENSE in the project root for license information. -->
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <TextBlock x:Uid="Globals_KeybindingsDisclaimer"
                        Style="{StaticResource DisclaimerStyle}"/>
-            <HyperlinkButton x:Uid="Globals_KeybindingsLink"
+
+            <!-- The Nav_OpenJSON resource just so happens to have a .Content
+            and .Tooltip that are _exactly_ what we're looking for here. -->
+
+            <HyperlinkButton x:Uid="Nav_OpenJSON"
                              Click="_OpenSettingsClick" />
 
             <!-- Keybindings -->

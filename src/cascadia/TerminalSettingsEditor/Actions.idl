@@ -8,7 +8,7 @@ namespace Microsoft.Terminal.Settings.Editor
     runtimeclass ActionsPageNavigationState
     {
         Microsoft.Terminal.Settings.Model.CascadiaSettings Settings;
-        void RequestOpenJson();
+        void RequestOpenJson(Microsoft.Terminal.Settings.Model.SettingsTarget target);
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.SettingsTarget> OpenJson;
     };
 

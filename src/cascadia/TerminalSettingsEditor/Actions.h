@@ -15,9 +15,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ActionsPageNavigationState(const Model::CascadiaSettings& settings) :
             _Settings{ settings } {}
 
-        void RequestOpenJson()
+        void RequestOpenJson(const Model::SettingsTarget target)
         {
-            _OpenJsonHandlers(nullptr, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget::SettingsFile);
+            _OpenJsonHandlers(nullptr, target);
         }
 
         GETSET_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
