@@ -42,4 +42,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _filteredActions;
     }
 
+    void Actions::_OpenSettingsClick(const IInspectable& /*sender*/,
+                                     const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
+    {
+        _State.RequestOpenJson();
+    }
+
 }

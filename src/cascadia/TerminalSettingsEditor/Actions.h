@@ -15,7 +15,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ActionsPageNavigationState(const Model::CascadiaSettings& settings) :
             _Settings{ settings } {}
 
+        void RequestOpenJson()
+        {
+            _OpenJsonHandlers(nullptr, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget::SettingsFile);
+        }
+
         GETSET_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
+        TYPED_EVENT(OpenJson, Windows::Foundation::IInspectable, Model::SettingsTarget);
     };
 
     struct Actions : ActionsT<Actions>
@@ -30,7 +36,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_PROPERTY(Editor::ActionsPageNavigationState, State, nullptr);
 
     private:
+        friend struct ActionsT<Actions>; // for Xaml to bind events
         Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Model::Command> _filteredActions{ nullptr };
+
+        void _OpenSettingsClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
     };
 }
 

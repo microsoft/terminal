@@ -260,7 +260,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == actionsTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsPageNavigationState>(_settingsClone));
+            auto actionsState{ winrt::make<ActionsPageNavigationState>(_settingsClone) };
+            actionsState.OpenJson([weakThis = get_weak()](auto&&, auto&& arg) {
+                if (auto self{ weakThis.get() })
+                {
+                    self->_OpenJsonHandlers(nullptr, arg);
+                }
+            });
+            contentFrame().Navigate(xaml_typename<Editor::Actions>(), actionsState);
         }
         else if (clickedItemTag == globalProfileTag)
         {

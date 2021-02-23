@@ -192,16 +192,10 @@
   <data name="Globals_CopyOnSelect.Header" xml:space="preserve">
     <value>Automatically copy selection to clipboard</value>
   </data>
-  <data name="Globals_Keybindings.Header" xml:space="preserve">
-    <value>Keybindings</value>
-  </data>
-  <data name="Globals_Keybindings.HelpText" xml:space="preserve">
-    <value>A list of the currently bound keys.</value>
-  </data>
   <data name="Globals_KeybindingsDisclaimer.Text" xml:space="preserve">
     <value>This is a list of the currently bound keys. Currently, these can only be edited in the settings file directly.</value>
   </data>
-  <data name="Globals_KeybindingsLink.Text" xml:space="preserve">
+  <data name="Globals_KeybindingsLink.Content" xml:space="preserve">
     <value>Open JSON settings</value>
   </data>
   <data name="Globals_DefaultProfile.Header" xml:space="preserve">

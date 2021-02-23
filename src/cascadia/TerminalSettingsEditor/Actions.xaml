@@ -159,27 +159,31 @@ the MIT License. See LICENSE in the project root for license information. -->
     </Page.Resources>
 
     <ScrollViewer>
-        <StackPanel>
-            <StackPanel Style="{StaticResource SettingsStackStyle}">
+        <StackPanel Style="{StaticResource SettingsStackStyle}">
             <TextBlock x:Uid="Globals_KeybindingsDisclaimer"
                        Style="{StaticResource DisclaimerStyle}"/>
-            <TextBlock x:Uid="Globals_KeybindingsLink"/>
-                <!-- Keybindings -->
-                <local:SettingContainer x:Uid="Globals_Keybindings">
+            <HyperlinkButton x:Uid="Globals_KeybindingsLink"
+                             Click="_OpenSettingsClick" />
 
-                    <ListView HorizontalAlignment="Stretch"
-                              VerticalAlignment="Stretch"
-                              SelectionMode="Single"
-                              CanReorderItems="False"
-                              AllowDrop="False"
-                              ItemsSource="{x:Bind FilteredActions}"
-                              ItemTemplate="{StaticResource GeneralItemTemplate}">
-                    </ListView>
+            <!-- Keybindings -->
 
-                </local:SettingContainer>
+            <!-- NOTE: Globals_Keybindings.Header is not defined, because that
+            would result in the page having "Keybindings" displayed twice, which
+            looks quite redundant -->
+            <ContentPresenter x:Uid="Globals_Keybindings" Margin="0">
 
-            </StackPanel>
+                <ListView HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"
+                          SelectionMode="Single"
+                          CanReorderItems="False"
+                          AllowDrop="False"
+                          ItemsSource="{x:Bind FilteredActions}"
+                          ItemTemplate="{StaticResource GeneralItemTemplate}">
+                </ListView>
+
+            </ContentPresenter>
 
         </StackPanel>
+
     </ScrollViewer>
 </Page>
