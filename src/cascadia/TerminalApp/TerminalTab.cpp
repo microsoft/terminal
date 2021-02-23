@@ -359,6 +359,7 @@ namespace winrt::TerminalApp::implementation
 
             // Update the control to reflect the changed title
             _headerControl.Title(activeTitle);
+            Automation::AutomationProperties::SetName(tab->TabViewItem(), activeTitle);
             _UpdateToolTip();
         }
     }
