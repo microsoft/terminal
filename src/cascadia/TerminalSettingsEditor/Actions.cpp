@@ -19,15 +19,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _filteredActions = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Model::Command>();
 
-        for (const auto& [k, v] : _State.Settings().GlobalSettings().Commands())
-        {
-            _filteredActions.Append(v);
-        }
     }
 
     void Actions::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::ActionsPageNavigationState>();
+
+        for (const auto& [k, v] : _State.Settings().GlobalSettings().Commands())
+        {
+            _filteredActions.Append(v);
+        }
     }
 
     Collections::IObservableVector<Command> Actions::FilteredActions()

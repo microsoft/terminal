@@ -44,7 +44,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         command->_Name = _Name;
         command->_Action = _Action;
         command->_KeyChordText = _KeyChordText;
-        command->_Icon = _Icon;
+        command->_IconPath = _IconPath;
         command->_IterateOn = _IterateOn;
 
         command->_originalJson = _originalJson;
@@ -171,7 +171,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return nullptr;
         }
 
-        JsonUtils::GetValueForKey(json, IconKey, result->_Icon);
+        JsonUtils::GetValueForKey(json, IconKey, result->_IconPath);
 
         // If we're a nested command, we can ignore the current action.
         if (!nested)
