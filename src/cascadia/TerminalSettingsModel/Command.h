@@ -57,7 +57,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(Model::ActionAndArgs, Action, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, KeyChordText, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Icon, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, IconPath, _PropertyChangedHandlers);
 
         GETSET_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
 

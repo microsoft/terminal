@@ -35,6 +35,9 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
+    <ClInclude Include="Actions.h">
+      <DependentUpon>Actions.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="ColorToBrushConverter.h">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
@@ -99,6 +102,9 @@
   </ItemGroup>
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
+    <Page Include="Actions.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="CommonResources.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -129,6 +135,9 @@
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
+    <ClCompile Include="Actions.cpp">
+      <DependentUpon>Actions.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="ColorToBrushConverter.cpp">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
@@ -193,6 +202,10 @@
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
+    <Midl Include="Actions.idl">
+      <DependentUpon>Actions.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="Converters.idl" />
     <Midl Include="EnumEntry.idl" />
     <Midl Include="GlobalAppearance.idl">

@@ -39,44 +39,51 @@ the MIT License. See LICENSE in the project root for license information. -->
                          TabFocusNavigation="Cycle">
 
         <muxc:NavigationView.MenuItems>
-    
+
             <muxc:NavigationViewItem x:Uid="Nav_Launch"
                                      Tag="Launch_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE7B5;"/>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
-    
+
             <muxc:NavigationViewItem x:Uid="Nav_Interaction"
                                      Tag="Interaction_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE7C9;"/>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
-    
+
             <muxc:NavigationViewItem x:Uid="Nav_Appearance"
                                      Tag="GlobalAppearance_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE771;"/>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
-    
+
             <muxc:NavigationViewItem x:Uid="Nav_ColorSchemes"
                                      Tag="ColorSchemes_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE790;"/>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
-    
+
             <muxc:NavigationViewItem x:Uid="Nav_Rendering"
                                      Tag="Rendering_Nav" >
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE7F8;"/>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
-    
+
+            <muxc:NavigationViewItem x:Uid="Nav_Actions"
+                                     Tag="Actions_Nav" >
+                <muxc:NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE765;"/>
+                </muxc:NavigationViewItem.Icon>
+            </muxc:NavigationViewItem>
+
             <muxc:NavigationViewItemHeader x:Uid="Nav_Profiles"/>
-    
+
             <muxc:NavigationViewItem x:Uid="Nav_ProfileDefaults"
                                      x:Name="BaseLayerMenuItem"
                                      Tag="GlobalProfile_Nav">
@@ -84,9 +91,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <FontIcon Glyph="&#xE81E;"/>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
-    
+
         </muxc:NavigationView.MenuItems>
-        
+
         <muxc:NavigationView.PaneFooter>
             <!--The OpenJson item needs both Tapped and KeyDown handler-->
             <muxc:NavigationViewItem x:Uid="Nav_OpenJSON"
@@ -98,7 +105,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
         </muxc:NavigationView.PaneFooter>
-        
+
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"></RowDefinition>
