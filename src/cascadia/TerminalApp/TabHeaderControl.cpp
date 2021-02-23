@@ -65,7 +65,7 @@ namespace winrt::TerminalApp::implementation
             "TabRenamerOpened",
             TraceLoggingDescription("Event emitted when the tab renamer is opened"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     // Method Description:
@@ -93,7 +93,7 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingDescription("Event emitted when the tab renamer is closed"),
             TraceLoggingBoolean(_renameCancelled, "CancelledRename", "True if the user cancelled the rename, false if they committed."),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
         _CloseRenameBox();
         if (!_renameCancelled)
