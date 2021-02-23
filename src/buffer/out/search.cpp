@@ -83,34 +83,14 @@ bool Search::FindNext()
 
     if (_regex)
     {
-        std::wstring concatAll;
-        auto begin = _coordNext;
-        const auto end = til::point(_uiaData.GetTextBufferEndPosition());
-        std::wsmatch match;
-
-        // to deal with text that spans multiple lines, we will first concatenate
-        // all the text into one string and find the regex in that string
-        while (_coordNext != end)
+        if (_RegexHelper(_coordNext, _uiaData.GetTextBufferEndPosition()))
         {
-            concatAll += *_uiaData.GetTextBuffer().GetTextDataAt(_coordNext);
-            _UpdateNextPosition();
-        }
-
-        if (std::regex_search(concatAll, match, std::wregex(_inputString)))
-        {
-            const auto pos = match.position();
-            for (auto i = 0; i < pos; ++i)
-            {
-                _IncrementCoord(begin);
-            }
-            _coordSelStart = begin;
-            const auto len = match.length();
-            for (auto i = 0; i < len; ++i)
-            {
-                _IncrementCoord(begin);
-            }
-            _coordSelEnd = begin;
             return true;
+        }
+        else
+        {
+            // wrap around
+            return _RegexHelper(COORD{ 0 }, _coordNext);
         }
     }
     else
@@ -384,4 +364,40 @@ std::vector<std::vector<wchar_t>> Search::s_CreateNeedleFromString(const std::ws
         cells.emplace_back(chars);
     }
     return cells;
+}
+
+bool Search::_RegexHelper(COORD start, COORD end)
+{
+    if (_direction == Direction::Forward)
+    {
+        std::wstring concatAll;
+        auto begin = start;
+        std::wsmatch match;
+
+        // to deal with text that spans multiple lines, we will first concatenate
+        // all the text into one string and find the regex in that string
+        while (begin != end)
+        {
+            concatAll += *_uiaData.GetTextBuffer().GetTextDataAt(begin);
+            _IncrementCoord(begin);
+        }
+
+        if (std::regex_search(concatAll, match, std::wregex(_inputString)))
+        {
+            const auto pos = match.position();
+            for (auto i = 0; i < pos; ++i)
+            {
+                _IncrementCoord(start);
+            }
+            _coordSelStart = start;
+            const auto len = match.length();
+            for (auto i = 0; i < len; ++i)
+            {
+                _IncrementCoord(start);
+            }
+            _coordSelEnd = start;
+            return true;
+        }
+    }
+    return false;
 }

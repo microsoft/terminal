@@ -72,6 +72,8 @@ private:
 
     static std::vector<std::vector<wchar_t>> s_CreateNeedleFromString(const std::wstring& wstr);
 
+    bool _RegexHelper(COORD start, COORD end);
+
     bool _reachedEnd = false;
     COORD _coordNext = { 0 };
     COORD _coordSelStart = { 0 };
