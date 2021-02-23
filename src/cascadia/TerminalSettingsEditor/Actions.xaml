@@ -76,7 +76,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Dark">
-                    <Style x:Key="CommandPaletteBackground" TargetType="Grid">
+                    <Style x:Key="KeybindingsListStyle" TargetType="ListView">
                         <Setter Property="Background" Value="#333333" />
                     </Style>
                     <!-- TextBox colors !-->
@@ -120,7 +120,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </Style>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Light">
-                    <Style x:Key="CommandPaletteBackground" TargetType="Grid">
+                    <Style x:Key="KeybindingsListStyle" TargetType="ListView">
                         <Setter Property="Background" Value="#CCCCCC" />
                     </Style>
                     <!-- TextBox colors !-->
@@ -161,7 +161,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </Style>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="HighContrast">
-                    <Style x:Key="CommandPaletteBackground" TargetType="Grid">
+                    <Style x:Key="KeybindingsListStyle" TargetType="ListView">
                         <Setter Property="Background" Value="{ThemeResource SystemColorWindowColor}" />
                     </Style>
 
@@ -188,15 +188,14 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <!-- Keybindings -->
                 <local:SettingContainer x:Uid="Globals_Keybindings">
 
-                    <ListView
-                        x:Name="_filteredActionsView"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
-                        SelectionMode="Single"
-                        CanReorderItems="False"
-                        AllowDrop="False"
-                        ItemsSource="{x:Bind FilteredActions}"
-                        ItemTemplate="{StaticResource GeneralItemTemplate}">
+                    <ListView Style="{ThemeResource KeybindingsListStyle}"
+                              HorizontalAlignment="Stretch"
+                              VerticalAlignment="Stretch"
+                              SelectionMode="Single"
+                              CanReorderItems="False"
+                              AllowDrop="False"
+                              ItemsSource="{x:Bind FilteredActions}"
+                              ItemTemplate="{StaticResource GeneralItemTemplate}">
                     </ListView>
 
                 </local:SettingContainer>
