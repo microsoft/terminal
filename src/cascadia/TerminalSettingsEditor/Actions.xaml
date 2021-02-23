@@ -38,8 +38,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <!-- This HorizontalContentAlignment="Stretch" is important
                         to make sure it takes the entire width of the line -->
                 <ListViewItem HorizontalContentAlignment="Stretch"
-                              AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
-                              AutomationProperties.AcceleratorKey="{x:Bind KeyChordText, Mode=OneWay}">
+                              AutomationProperties.Name="{x:Bind Name, Mode=OneWay}">
 
                     <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" >
                         <Grid.ColumnDefinitions>
@@ -49,7 +48,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <!-- command label -->
                             <ColumnDefinition Width="*"/>
                             <!-- key chord -->
-                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="32"/>
                             <!-- gutter for scrollbar -->
                         </Grid.ColumnDefinitions>
 
@@ -77,8 +76,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                             <TextBlock Style="{ThemeResource KeyChordTextBlockStyle}"
                                        FontSize="12"
-                                       Text="{x:Bind KeyChordText, Mode=OneWay}"
-                                       AutomationProperties.AccessibilityView="Raw" />
+                                       Text="{x:Bind KeyChordText, Mode=OneWay}" />
                         </Border>
                     </Grid>
                 </ListViewItem>
@@ -174,10 +172,11 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                 <ListView HorizontalAlignment="Stretch"
                           VerticalAlignment="Stretch"
-                          SelectionMode="Single"
+                          SelectionMode="None"
+                          IsItemClickEnabled="False"
                           CanReorderItems="False"
                           AllowDrop="False"
-                          ItemsSource="{x:Bind FilteredActions}"
+                          ItemsSource="{x:Bind FilteredActions, Mode=OneWay}"
                           ItemTemplate="{StaticResource GeneralItemTemplate}">
                 </ListView>
 

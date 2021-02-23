@@ -193,7 +193,7 @@
     <value>Automatically copy selection to clipboard</value>
   </data>
   <data name="Globals_KeybindingsDisclaimer.Text" xml:space="preserve">
-    <value>This is a list of the currently bound keys. Currently, these can only be edited in the settings file directly.</value>
+    <value>This is a list of the currently bound keys. Currently, these can only be edited in the settings file.</value>
   </data>
   <data name="Globals_KeybindingsLink.Content" xml:space="preserve">
     <value>Open JSON settings</value>
@@ -351,7 +351,7 @@
     <value>Rendering</value>
   </data>
   <data name="Nav_Actions.Content" xml:space="preserve">
-    <value>Keybindings</value>
+    <value>Actions</value>
   </data>
   <data name="Profile_AcrylicOpacity.Header" xml:space="preserve">
     <value>Acrylic opacity</value>
