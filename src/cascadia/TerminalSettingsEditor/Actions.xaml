@@ -19,6 +19,20 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             <local:StringIsEmptyConverter x:Key="CommandKeyChordVisibilityConverter"/>
 
+            <!-- Template for actions. This is _heavily_ copied from the command
+            palette, with modifications:
+                * We don't need to use a HighlightedTextControl, because we're
+                  not filtering this list
+                * We don't need the chevron for nested commands
+                * We're not displaying the icon
+                * We're binding directly to a Command, not a FilteredCommand
+
+                If we wanted to reuse the command palette's list more directly,
+                that's theoretically possible, but then it would need to be
+                lifted out of TerminalApp and either moved into the
+                TerminalSettingsEditor or moved to it's own project consumed by
+                both TSE and TerminalApp.
+             -->
             <DataTemplate x:Key="GeneralItemTemplate" x:DataType="SettingsModel:Command">
 
                 <!-- This HorizontalContentAlignment="Stretch" is important
@@ -66,19 +80,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                                        Text="{x:Bind KeyChordText, Mode=OneWay}"
                                        AutomationProperties.AccessibilityView="Raw" />
                         </Border>
-
-
                     </Grid>
                 </ListViewItem>
             </DataTemplate>
 
-
-
+            <!-- These resources again, HEAVILY copied from the command palette -->
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Dark">
-                    <Style x:Key="KeybindingsListStyle" TargetType="ListView">
-                        <Setter Property="Background" Value="#333333" />
-                    </Style>
                     <!-- TextBox colors !-->
                     <SolidColorBrush x:Key="TextControlBackground" Color="#333333"/>
                     <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush" Color="#B5B5B5"/>
@@ -108,21 +116,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
 
-                    <!--  ParsedCommandLineText styles  -->
-                    <Style x:Key="ParsedCommandLineBorderStyle" TargetType="Border">
-                        <Setter Property="BorderThickness" Value="1" />
-                        <Setter Property="CornerRadius" Value="1" />
-                        <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
-                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                    </Style>
-                    <Style x:Key="ParsedCommandLineTextBlockStyle" TargetType="TextBlock">
-                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                    </Style>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Light">
-                    <Style x:Key="KeybindingsListStyle" TargetType="ListView">
-                        <Setter Property="Background" Value="#CCCCCC" />
-                    </Style>
                     <!-- TextBox colors !-->
                     <SolidColorBrush x:Key="TextControlBackground" Color="#CCCCCC"/>
                     <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush" Color="#636363"/>
@@ -149,29 +144,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
 
-                    <!--  ParsedCommandLineText styles  -->
-                    <Style x:Key="ParsedCommandLineBorderStyle" TargetType="Border">
-                        <Setter Property="BorderThickness" Value="1" />
-                        <Setter Property="CornerRadius" Value="1" />
-                        <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
-                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                    </Style>
-                    <Style x:Key="ParsedCommandLineTextBlockStyle" TargetType="TextBlock">
-                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                    </Style>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="HighContrast">
-                    <Style x:Key="KeybindingsListStyle" TargetType="ListView">
-                        <Setter Property="Background" Value="{ThemeResource SystemColorWindowColor}" />
-                    </Style>
 
                     <!--  KeyChordText styles (use XAML defaults for High Contrast theme) -->
                     <Style x:Key="KeyChordBorderStyle" TargetType="Border"/>
                     <Style x:Key="KeyChordTextBlockStyle" TargetType="TextBlock"/>
 
-                    <!--  ParsedCommandLineText styles (use XAML defaults for High Contrast theme) -->
-                    <Style x:Key="ParsedCommandLineBorderStyle" TargetType="Border"/>
-                    <Style x:Key="ParsedCommandLineTextBlockStyle" TargetType="TextBlock"/>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
 
@@ -188,8 +167,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <!-- Keybindings -->
                 <local:SettingContainer x:Uid="Globals_Keybindings">
 
-                    <ListView Style="{ThemeResource KeybindingsListStyle}"
-                              HorizontalAlignment="Stretch"
+                    <ListView HorizontalAlignment="Stretch"
                               VerticalAlignment="Stretch"
                               SelectionMode="Single"
                               CanReorderItems="False"
