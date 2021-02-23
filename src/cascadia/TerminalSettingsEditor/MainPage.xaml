@@ -78,8 +78,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <muxc:NavigationViewItem x:Uid="Nav_Actions"
                                      Tag="Actions_Nav" >
                 <muxc:NavigationViewItem.Icon>
-                  <!-- TODO -->
-                    <FontIcon Glyph="&#xE7F8;"/>
+                    <FontIcon Glyph="&#xE765;"/>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
