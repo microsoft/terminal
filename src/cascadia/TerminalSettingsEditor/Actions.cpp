@@ -18,16 +18,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
 
         _filteredActions = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Model::Command>();
-
     }
 
     void Actions::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::ActionsPageNavigationState>();
 
-        for (const auto& [k, v] : _State.Settings().GlobalSettings().Commands())
+        for (const auto& [k, command] : _State.Settings().GlobalSettings().Commands())
         {
-            _filteredActions.Append(v);
+            // Filter out nested commands, and commands that aren't bound to a
+            // key. This page is currently just for displaying the actions that
+            // _are_ bound to keys.
+            if (command.HasNestedCommands() || command.KeyChordText().empty())
+            {
+                continue;
+            }
+            _filteredActions.Append(command);
         }
     }
 
