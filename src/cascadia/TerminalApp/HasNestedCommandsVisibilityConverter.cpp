@@ -47,7 +47,7 @@ namespace winrt::TerminalApp::implementation
     {
         const auto paletteItem{ value.try_as<winrt::TerminalApp::ActionPaletteItem>() };
         const auto hasNestedCommands = paletteItem && paletteItem.Command().HasNestedCommands();
-        return winrt::box_value(hasNestedCommands ? RS_(L"CommandPalette_MoreOptionsHelpText") : L"");
+        return winrt::box_value(hasNestedCommands ? RS_(L"CommandPalette_MoreOptions/[using:Windows.UI.Xaml.Automation]AutomationProperties/HelpText") : L"");
     }
 
     // unused for one-way bindings
