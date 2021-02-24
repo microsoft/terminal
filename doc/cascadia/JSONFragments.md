@@ -34,7 +34,7 @@ The JSON file should be split up into 2 lists, one for profiles and one for sche
             "red": "#C50F1F",
             "white": "#CCCCCC",
             "yellow": "#C19C00",
-            "brightB1ack": "#767676",
+            "brightBlack": "#767676",
             "brightBlue": "#3B78FF",
             "brightCyan": "#61D6D6",
             "brightGreen": "#16C60C",
