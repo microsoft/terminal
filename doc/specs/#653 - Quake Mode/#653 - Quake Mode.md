@@ -104,7 +104,7 @@ allowing users to specify multiple global hotkeys:
 
 <hr>
 
-#### Proposal 1A
+##### Proposal 1A
 
 We stick all the `globalSummon`s in the actions array, like they're any other
 keybinding.
@@ -127,7 +127,7 @@ but into a global summon list that the window layer can get at easier.
   a totally different object
 * Not sure that having these available in the command palette really makes sense
 
-#### Proposal 1B
+##### Proposal 1B
 
 If we're going to need another data structure (separate from the `KeyMap`), then
 why have the `globalSummon` actions in `actions` at all? Instead, we could add a
@@ -153,7 +153,7 @@ top-level `globalHotkeys` array, with only global summon actions in it.
 * Difficult, but not impossible, to get these actions into other places in the
   UI that we want actions (unsure if this is even wanted)
 
-#### Proposal 1C
+##### Proposal 1C
 
 The previous proposal is qute verbose. We've already got these actions in their
 own setting. We could instead add a top-level `globalHotkeys` array, but with a
@@ -180,14 +180,16 @@ repeat ourselves:
 * **H**ard to get these actions into other places in the UI that we want actions
   (unsure if this is even wanted)
 
-#### Conclusion
+##### Conclusion
 
 From an engineering standpoint, I like 1C the best. It doesn't complicate the
 existing keybinding parsing. The cost of modifying the existing action arg
-parsing just for globalSummon actions shouldn't be too high. It's also the most
-ergonomic for users to add this fairly complex setting.
+parsing just for `globalSummon` actions shouldn't be too high. It's also the
+most ergonomic for users to add this fairly complex setting.
 
 <hr>
+
+#### Which window, and where?
 
 When looking at the list of requested scenarios, there are lots of different
 ways people would like to use the global summon action. Some want the most
@@ -201,13 +203,34 @@ keybinding.
 I believe that in order to accurately support all the variations that people
 might want, we'll need two properties in the `globalSummon` action. These
 properties will specify _which_ window we're summoning, and _where_ to summon
-the window.
+the window. To try and satisfy all these scenarios, I'm proposing the following
+two arguments to the `globalSummon` action:
 
-[TODO]: # todo
 ```json
-"monitor": "any"|"toCurrent"|"forCurrent"|int,
-"desktop": null|"toCurrent"|"onCurrentOnly"
+"monitor": "any"|"toCurrent"|"onCurrent"|int,
+"desktop": null|"toCurrent"|"onCurrent"
 ```
+
+The way these settings can be combined is in a table below. As an overview:
+
+* `monitor`: This controls the monitor that the window will be summoned from/to
+  - `"any"`/omitted: (_default_) Summon the MRU window, regardless of which
+    monitor it's currently on.
+  - `"toCurrent"`: Summon the MRU window TO the current monitor.
+  - `"onCurrent"`: Summon the MRU window ALREADY ON the current monitor.
+  - `int`: Summon the MRU window for the given monitor (as identified by the
+    "Identify" displays feature in the OS settings)
+
+* `desktop`: This controls how the terminal should interact with virtual desktops.
+  - `null`/omitted: (_default_) Leave the window on whatever desktop it's
+    already on - we'll switch to that desktop as we activate the window.
+    - **TODO: FOR DISCUSSION**: Should this just be `any` to match the above?
+        Read the rest of the doc and come back.
+  - `"toCurrent"`: Move the window to the current virtual desktop
+  - `"onCurrent"`: Only summon the window if it's already on the current virtual
+    desktop
+
+Together, these settings interact in the following ways:
 
 <table>
 
@@ -314,6 +337,52 @@ Else (one on this desktop & monitor N)
 
 </table>
 
+
+##### Stories, revisited
+
+With the above settings, let's re-examine the original user stories, and see how
+they fit into the above settings. (_Stories that are omitted aren't relevant to
+the discussion of these settings_)
+
+> When the `desktop` param is omitted below, that can be interpreted as "any
+> `desktop` value will make sense here"
+
+* **Story A** Press a hotkey anywhere to activate the single Terminal window
+  wherever it was
+  - This is `{ "monitor": "any", "desktop": null }`
+* **Story B** Press a hotkey anywhere to activate the single Terminal window _on
+  the current monitor_. If it wasn't previously on that monitor, move it there.
+  - This is `{ "monitor": "toCurrent" }`
+* **Story D** <kbd>Ctrl+1</kbd> to activate the terminal on monitor 1,
+  <kbd>Ctrl+2</kbd> to activate the terminal on monitor 2.
+  - This is `[ { "keys": "ctrl+1", monitor": 1 }, { "keys": "ctrl+2", monitor": 2 } ]`
+
+As some additional examples:
+
+```json
+// Go to the MRU window, wherever it is
+{ "keys": "win+1", "monitor":"any", "desktop": null },
+// Since "any" & null are the default values, just placing a single entry here
+// will bind the same behavior:
+{ "keys": "win+1" },
+
+// activate the MRU window, and move it to this desktop & this monitor
+{ "keys": "win+2", "monitor":"toCurrent", "desktop": "toCurrent" },
+
+// activate the MRU window on this desktop
+{ "keys": "win+3", "monitor":"any", "desktop": "onCurrent" },
+
+// Activate the MRU window on monitor 2 (from any desktop), and place it on the
+// current desktop. If there isn't one on monitor 2, make a new one.
+{ "keys": "win+4", "monitor": 2, "desktop": "toCurrent" },
+
+// Activate the MRU window on monitor 3 (ONLY THIS desktop), or make a new one.
+{ "keys": "win+5", "monitor": 3, "desktop": "onCurrent" },
+
+// Activate the MRU window on this monitor (from any desktop), and place it on
+// the current desktop. If there isn't one on this monitor, make a new one.
+{ "keys": "win+6", "monitor": "onCurrent", "desktop": "toCurrent" },
+```
 
 
 ### Proposal 1: <name of proposal>
