@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2021-02-23
-last updated: 2021-02-23
+last updated: 2021-02-24
 issue id: #653
 ---
 
@@ -27,17 +27,18 @@ background on Monarch and Peasant processes.
 
 ### Inspiration
 
-[comment]: # Are there existing precedents for this type of configuration? These may be in the Terminal, or in other applications
+For an example of the original Quake console in action, take a look at the
+following video (noisy video warning): [Quake 3 sample]. Additionally, plenty of
+existing terminal emulators support similar functionality:
 
-For an example of the original Quake console in action, take a look at the following video (noisy video warning): [Quake 3 sample].
-
-* guake implements this as... TODO
-* yakuake implements this by ... TODO
-
-Both these terminals are listed in #653 with descriptions of their specifics. I should include them here.
+* **Tilda** allows the user to specify different keys to summon the window on
+  different monitors.
+* **Guake** alternatively allows the user to either sumon the terminal window to
+  a specific monitor, or whichever monitor the mouse is on. Guake only allows
+  one single instance, so pressing the global hotkey always summons the same
+  instance.
 
 ### User Stories
-
 
 The original quake mode thread (#653) is absolutely _filled_ with variations on
 how users want to be able to summon their terminal windows. These include, but
@@ -57,25 +58,6 @@ are not limited to:
 * **Story G** Terminal doesn't appear in alt+tab view, press a hotkey to
   activate the single terminal window / the nearest terminal window (I'm not
   sure this is distinct from the above)
-* **Story H** Press a hotkey to activate the "nearest" terminal window.
-  - TODO: I'm not totally sure that anyone wants this one tbh.
-
-[TODO]: # todo ^
-
-
-### Future Considerations
-
-I don't believe there are any other related features that are planned that
-aren't already included in this spec.
-
-[TODO]: # Which is the "current" monitor? The one with the mouse or the one with the active window? Users disagree! Users want it configurable! Gah! Do we make it `onMonitor: onCurrent|onCurrentWindow|forCurent|<int>`
-
-
-#### Hide from alt-tab
-
-[TODO]: # TODO
-
-This is another request that's all over [#653]. It's unclear if this is the same as minimize to tray. I'm not sure that there's anyone who wants the terminal to `minimizeToTray`, but then _not_ hide from the alt+tab list.
 
 ## Solution Design
 
@@ -98,7 +80,15 @@ the OS. Whenever that hotkey is pressed, our window message loop will recieve a
 arguments for that hotkey. Then we'll use those arguments to control which
 window is invoked, where, and how the window behaves.
 
-Since `RegisterHotKey` can only be used to
+Since `RegisterHotKey` can only be used to register a hotkey _once_ with the OS,
+we'll need to make sure it's only ever set up by the Monarch process. We know
+that there will only ever be one Monarch for the Terminal at a time, so it's the
+perfect process to have the responsibility of managing the global hotkey.
+
+The Monarch will be responsible for calling `RegisterHotKey`, and processing the
+`WM_HOTKEY` messages. It will then dispatch method calls to the appropriate
+window to summon it. When a Monarch dies and a new process becomes the Monarch,
+the new Monarch will re-register for the hotkeys.
 
 #### Where in the settings?
 
@@ -425,23 +415,45 @@ the following property:
 
 ### Minimize to Tray
 
-[TODO]: # TODO: add samples of how it's implemented
-[TODO]: # TODO: Find a sample for hiding the window from the taskbar (when minimize to tray is active)
+Many users have requested that the terminal additionally supports minimizing the
+window "to the tray icon". This is a bit like when you close the Teams window,
+but Teams is actually still running in the system tray, or the "notification
+area".
 
-The tray icon could include a list of all the active windows. Maybe we'll have
-two items on the tray icon:
+![The Teams tray icon](tray-icon-000.png)
+
+_fig 1: an example of the Teams tray icon in the notification area_.
+
+When users want to be able to "minimize to the tray", they want:
+* The window to no longer appear on the taskbar
+* The window to no longer appear in the alt-tab order
+
+When minimized to the tray, it's almost as if there's no window for the Terminal
+at all. This can be combined with the global hotkey to quickly restore the window.
+
+The tray icon could be used for a variety of purposes. As a simple start, we
+could include the following three options:
 
 ```
 Focus Terminal
 ---
 Windows > Window 1 - <un-named window>
           Window 2 - "This-window-does-have-a-name"
+---
+Quit
 ```
 
 Just clicking on the icon would summon the recent terminal window. Right
-clicking would show the menu with "Focus Terminal" and "Windows" in it, and
-"Windows" would have nested entries for each Terminal window. Clicking those
-would summon them.
+clicking would show the menu with "Focus Terminal", "Windows" and "Quit" in it, and
+"Windows" would have nested entries for each Terminal window.
+
+* "Focus Terminal" would do just that - summon the most recent terminal window,
+  wherever it is.
+* "Windows" would have nested popups for each open Terminal window. Each of
+  these nested entries would display the name and ID of the window. Clicking
+  them would summon that window (wherever it may be)
+* "Quit" would be akin to quit in browsers - close all open windows
+  <sup>[[1]](#footnote-1)</sup>.
 
 The tray notification would be visible always when the user has
 `"minimizeToTray": true` set in their settings. If the user has that set to
@@ -451,6 +463,11 @@ true`. That will cause the tray icon to always be added to the system tray.
 There's not a combination of settings where the Terminal is "minimized to the
 tray", and there's _no tray icon visible_. We don't want to let users get into a
 state where the Terminal is running, but is totally hidden from their control.
+
+From a technical standpoint, the tray icon is managed similar to the global
+hotkey. The Monarch process is responsible for setting it up, and processing the
+messages. When a Monarch dies and a new process becomes the Monarch, then it
+will re-create the tray icon.
 
 ## UI/UX Design
 
@@ -489,6 +506,44 @@ able to use the win key themselves, but they should be aware that the OS has
 
 </td>
 </tr>
+<tr>
+<td><strong>Mixed elevation</strong></td>
+<td>
+
+Only one app at a time gets to register for global hotkeys. However, from the
+Terminal's perspective, unelevated and elevated windows will act like different
+apps. Each privilege level has its own Monarch. The two are unable to
+communicate across the elevation boundary.
+
+This means that if the user often runs terminals in both contexts, then only one
+will have the global hotkeys bound. The naïve implementation would have the
+first elevation level "win" the keybindings.
+
+A different option would be to have elevated windows not register global hotkeys
+_at all_. I don't believe that there's any sort of security implication for
+having a global hotkey for an elevated window.
+
+A third option would be to have some sort of `"whenElevated": bool?` property
+for global hotkeys. This would explicitly enable a given hotkey for unelevated
+vs elevated windows.
+* `"whenElevated": null`: behave as normal - the first context level to run wins
+* `"whenElevated": true`: only register the hotkey when running elevated
+* `"whenElevated": false`: only register the hotkey when running unelevated
+
+</td>
+</tr>
+<tr>
+<td><strong>OneCore / Windows 10X</strong></td>
+<td>
+
+I'm fairly certain that none of these APIs would work on Windows 10X at all.
+These features would have to initially be disabled in a pure UWP version of the
+Terminal, until we could find workarounds. Since the window layer is the one
+responsible for the management of the hotkeys and the tray icon, we're not too
+worried about this.
+
+</td>
+</tr>
 </table>
 
 If there are any other applications running that have already registered hotkeys
@@ -496,6 +551,13 @@ with `RegisterHotKey`, then it's possible that the Terminal's attempt to
 register that hotkey will fail. If that should happen, then we should display a
 warning dialog to the user indicating which hotkey will not work (because it's
 already used for something else).
+
+Which is the "current" monitor? The one with the mouse or the one with the
+active window? This isn't something that has an obvious answer. Guake implements
+this feature where the "current monitor" is the one with the mouse on it. At
+least for the first iterations of this action, that's what we'll use.
+
+`monitor: onCurrent|onCurrentWindow|toCurrent|<int>`
 
 
 ## Implementation plan
@@ -524,24 +586,43 @@ work would be needed:
     * [ ] Add support for the `alwaysShowTrayIcon` setting
 
 
+### Future Considerations
+
+I don't believe there are any other tracked requests that are planned that
+aren't already included in this spec.
+
+* While writing this spec, I wondered if anyone would want something like
+  `"window": "name" int` as an arg to the `globalSummon` action. This would let
+  the user say "I always want to summon the window named `name` / the window
+  with the given ID". If that window doesn't exist, make one. It's an
+  interesting idea, and would override the MRU selection based on current
+  desktop/monitor. This hasn't been explicitly requested, so I'm not diving into
+  it too deeply.
+* Should the tray icon's list of windows include window titles? Both the name
+  and title? Maybe something like `({name}|{id}): {title}`? I'd bet that most
+  people don't end up naming their windows.
+
 ## Resources
 
 Docs on adding a system tray item:
 * https://docs.microsoft.com/en-us/windows/win32/shell/notification-area
 * https://www.codeproject.com/Articles/18783/Example-of-a-SysTray-App-in-Win32
 
-[comment]: # Be sure to add links to references, resources, footnotes, etc.
-
-
-
+Docs regarding hiding a window from the taskbar:
+* https://docs.microsoft.com/en-us/previous-versions//bb776822(v=vs.85)?redirectedfrom=MSDN#managing-taskbar-buttons
 
 ### Footnotes
 
-<a name="footnote-1"><a>[1]:
-
+<a name="footnote-1"><a>[1]: Quitting the terminal is different than closing the
+windows one-by-one. Quiiting implies an atomic action, for closing all the
+windows. Once [#766] lands, this will give us a chance to persist the state of
+_all_ open windows. This will allow us to re-open with all the user's windows,
+not just the one that happened to be closed last.
 
 [#653]: https://github.com/microsoft/terminal/issues/653
+[#766]: https://github.com/microsoft/terminal/issues/766
 [#5727]: https://github.com/microsoft/terminal/issues/5727
+
 [Process Model 2.0 Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%235000%20-%20Process%20Model%202.0/%235000%20-%20Process%20Model%202.0.md
 [Quake 3 sample]: https://youtu.be/ZmR6HQbuHPA?t=27
 [`RegisterHotKey`]: https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerhotkey
