@@ -13,8 +13,14 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build OpenConsole.exe x64 Debug"
+        },
+        {
+            "name": "Build and debug terminal (x64, debug)",
+            "type": "cppvsdbg",
+            "request": "attach",
+            "processId": "${command:pickProcess}",
+            "preLaunchTask": "Build, Register, and Run Windows Terminal x64 Debug"
         }
     ]
 }
