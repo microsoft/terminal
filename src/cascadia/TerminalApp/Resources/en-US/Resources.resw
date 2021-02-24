@@ -451,7 +451,7 @@
   </data>
   <data name="CommandPalette_ParsedCommandLine" xml:space="preserve">
     <value>Executing command line will invoke the following commands:</value>
-	<comment>Will be followed by a list of strings describing parsed commands</comment>
+    <comment>Will be followed by a list of strings describing parsed commands</comment>
   </data>
   <data name="CommandPalette_FailedParsingCommandLine" xml:space="preserve">
     <value>Failed parsing command line:</value>
