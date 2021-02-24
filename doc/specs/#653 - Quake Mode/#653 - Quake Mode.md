@@ -38,7 +38,6 @@ Both these terminals are listed in #653 with descriptions of their specifics. I 
 
 ### User Stories
 
-[comment]: # List off the use cases where two users might want a feature to have different behavior based on user preference. Include links to issues that might be relevant.
 
 The original quake mode thread (#653) is absolutely _filled_ with variations on
 how users want to be able to summon their terminal windows. These include, but
@@ -60,6 +59,8 @@ are not limited to:
   sure this is distinct from the above)
 * **Story H** Press a hotkey to activate the "nearest" terminal window.
   - TODO: I'm not totally sure that anyone wants this one tbh.
+
+[TODO]: # todo ^
 
 
 ### Future Considerations
@@ -85,8 +86,6 @@ To implement this feature, we'll add the following settings:
 
 ### `globalSummon` Action
 
-[comment]: # Also, outline various different proposed designs for this setting. These won't all be winners, but may help during the decision making process. For each proposed design:
-
 The `globalSummon` action will be a keybinding the user can use to summon a
 Terminal window from anywhere in the OS. Various arguments to the action will
 specify which window is summoned, to where, and how the window should behave on
@@ -95,14 +94,18 @@ summon.
 From a technical perspective, the action will work by using the
 [`RegisterHotKey`] function. This API allows us to bind a particular hotkey with
 the OS. Whenever that hotkey is pressed, our window message loop will recieve a
-`WM_HOTKEY`.
+`WM_HOTKEY`. We'll use the payload of that window message to lookup the action
+arguments for that hotkey. Then we'll use those arguments to control which
+window is invoked, where, and how the window behaves.
+
+Since `RegisterHotKey` can only be used to
+
+#### Where in the settings?
 
 Since users may want to bind multiple keys to summon different windows, we'll
 need to allow the user to specify multiple keybindings simultaneously, each with
 their own set of args. The following are three proposals for different ways for
 allowing users to specify multiple global hotkeys:
-
-<hr>
 
 ##### Proposal 1A
 
@@ -187,8 +190,6 @@ existing keybinding parsing. The cost of modifying the existing action arg
 parsing just for `globalSummon` actions shouldn't be too high. It's also the
 most ergonomic for users to add this fairly complex setting.
 
-<hr>
-
 #### Which window, and where?
 
 When looking at the list of requested scenarios, there are lots of different
@@ -232,17 +233,23 @@ The way these settings can be combined is in a table below. As an overview:
 
 Together, these settings interact in the following ways:
 
+<!-- This table is formatted for viewing as rendered HTML. It's too complicated
+for pure markdown, sorry. -->
 <table>
-
 <tr>
 <td></td>
-<td><strong>Leave where it is</strong></td>
-<td><strong>Move to current desktop</strong></td>
-<td><strong>On current desktop only</strong></td>
+<th colspan=3><code>"desktop"</code></th>
 </tr>
-
+<!-- ----------------------------------------------------------------------- -->
 <tr>
-<td>Summon the MRU window</td>
+<th><code>"monitor"</code></th>
+<td><code>null</code><br><strong>Leave where it is</strong></td>
+<td><code>"toCurrent"</code><br><strong>Move to current desktop</strong></td>
+<td><code>"onCurrent"</code><br><strong>On current desktop only</strong></td>
+</tr>
+<!-- ----------------------------------------------------------------------- -->
+<tr>
+<td><code>"any"</code><br> Summon the MRU window</td>
 
 <td>Go to the desktop the window is on  (leave position alone)</td>
 <td>Move the window to this desktop (leave position alone)</td>
@@ -257,8 +264,7 @@ Else:
 </tr>
 <!-- ----------------------------------------------------------------------- -->
 <tr>
-<td>Summon the MRU window TO the current monitor</td>
-
+<td><code>"toCurrent"</code><br> Summon the MRU window TO the current monitor</td>
 <td>Go to the desktop the window is on, move to this monitor</td>
 <td>Move the window to this desktop, move to this monitor</td>
 <td>
@@ -272,8 +278,7 @@ Else:
 </tr>
 <!-- ----------------------------------------------------------------------- -->
 <tr>
-<td>Summon the MRU window for the current monitor</td>
-
+<td><code>"onCurrent"</code><br> Summon the MRU window for the current monitor</td>
 <td>
 
 If there is a window on this monitor on any desktop,
@@ -292,7 +297,8 @@ else
 </td>
 <td>
 
-If there isn't one on this desktop, (even if there is one on this monitor on another desktop),
+If there isn't one on this desktop, (even if there is one on this monitor on
+another desktop),
 * create a new one on this monitor
 
 Else if ( there is one on this desktop, not this monitor)
@@ -304,8 +310,7 @@ Else (one on this desktop & monitor)
 </tr>
 <!-- ----------------------------------------------------------------------- -->
 <tr>
-<td>Summon the MRU window for monitor N</td>
-
+<td><code>int</code><br> Summon the MRU window for monitor N</td>
 <td>
 
 If there is a window on monitor N on any desktop,
@@ -324,7 +329,8 @@ else
 </td>
 <td>
 
-If there isn't one on this desktop, (even if there is one on monitor N on another desktop),
+If there isn't one on this desktop, (even if there is one on monitor N on
+another desktop),
 * create a new one on monitor N
 
 Else if ( there is one on this desktop, not monitor N)
@@ -334,7 +340,6 @@ Else (one on this desktop & monitor N)
 * Activate the one on this desktop (don't move)
 </td>
 </tr>
-
 </table>
 
 
@@ -384,13 +389,39 @@ As some additional examples:
 { "keys": "win+6", "monitor": "onCurrent", "desktop": "toCurrent" },
 ```
 
+#### Other properties
 
-### Proposal 1: <name of proposal>
+Some users would like the terminal to just appear when the global hotkey is
+pressed. Others would like the true quake-like experience, where the terminal
+window "slides-in" from the top of the monitor. Furthermore, some users would
+like to configure the speed at which that dropdown happens. To support this
+functionality, the `globalSummon` action will support the following property:
 
-[comment]: # Describe the values for the properties, how it'll be exposed in both JSON and the Settings UI, and list pros and cons for this design. If there are technical details for this proposal, include them here.
+* `"dropdownDuration": float`
+  - When omitted, `0`, or a negative number: (_default_) No animation is used
+    when summoning the window. The summoned window is focused immediately where
+    it is.
+  - When a positive number is provided, the terminal will use that value as a
+    duration (in seconds) to slide the terminal into position when activated.
 
-* **Pros**:
-* **Cons**:
+We could have alternatively provided a `"dropdownSpeed"` setting, that provided
+a number of pixels per second. In my opinion, that would be harder for users to
+use correctly. I believe that it's easier for users to mentally picture "I'd
+like the dropdown to last 100ms" vs "My monitor is 1504px tall, so I need to set
+this to 15040 to make the window traverse the entire display in .1s"
+
+Some users might want to be able to use the global hotkey to hide the window
+when the window is already visible. This would let the hotkey act as a sort of
+global toggle for the Terminal window. Others might not like that behavior, and
+just want the action to always bring the Terminal into focus, and do nothing if
+the terminal is already focused. To facilitate both these use cases, we'll add
+the following property:
+
+* `"hideWhenVisible": bool`
+  - When `true`: (_default_) When this hotkey is pressed, and the terminal
+    window is currently active, minimize the window.
+  - When `false`: When this hotkey is pressed, and the terminal window is
+    currently active, do nothing.
 
 ### Minimize to Tray
 
@@ -421,14 +452,25 @@ There's not a combination of settings where the Terminal is "minimized to the
 tray", and there's _no tray icon visible_. We don't want to let users get into a
 state where the Terminal is running, but is totally hidden from their control.
 
-## Conclusion
-
-[comment]: # Of the above proposals, which should we decide on, and why?
-
-
 ## UI/UX Design
 
-[comment]: # How will different values of this setting affect the end user?
+To summarize, we're proposing the following set of settings:
+
+```jsonc
+{
+    "minimizeToTray": bool,
+    "alwaysShowTrayIcon": bool,
+    "globalHotkeys": [
+        {
+            "keys": KeyChord,
+            "dropdownDuration": float,
+            "hideWhenVisible": bool,
+            "monitor": "any"|"toCurrent"|"onCurrent"|int,
+            "desktop": null|"toCurrent"|"onCurrent"
+        }
+    ]
+}
+```
 
 ## Potential Issues
 
@@ -438,13 +480,48 @@ state where the Terminal is running, but is totally hidden from their control.
 <td><strong>Compatibility</strong></td>
 <td>
 
-[comment]: # Will the proposed change break existing code/behaviors? If so, how, and is the breaking change "worth it"?
+As part of this set of changes, we'll also be allowing the <kbd>Win</kbd> key in
+keybindings. Generally, the OS reserves the Windows key for its own shortcuts.
+For example, <kbd>Win+R</kbd> for the run dialog, <kbd>Win+A</kbd> for the
+Action Center, <kbd>Win+V</kbd> for the cloud clipboard, etc. Users will now be
+able to use the win key themselves, but they should be aware that the OS has
+"first dibs" on any hotkeys involving the Windows key.
 
 </td>
 </tr>
 </table>
 
-[comment]: # If there are any other potential issues, make sure to include them here.
+If there are any other applications running that have already registered hotkeys
+with `RegisterHotKey`, then it's possible that the Terminal's attempt to
+register that hotkey will fail. If that should happen, then we should display a
+warning dialog to the user indicating which hotkey will not work (because it's
+already used for something else).
+
+
+## Implementation plan
+
+Currently, in [`dev/migrie/f/653-QUAKE-MODE`], I have some sample rudimentary
+code to implement quake mode support. It allows for only a single global hotkey
+that summons the MRU window, without dropdown. That would be a good place for
+anyone starting to work on this feature. From there, I imagine the following
+work would be needed:
+
+* [ ] Change the `globalHotKey` to a list of `globalHotkeys`. `AppHost` would
+  need to be able to get _all_ of these hotkeys, and register all of them. Each
+  one would need to be assigned a unique ID, so `WM_HOTKEY` can identify which
+  hotkey was pressed.
+    - This could be committed without any other args to the `globalHotkeys`.
+      We'd assume the "default" behavior or summoning the MRU window, where it
+      is, no dropdown, to start with. From there, we'd add the remaining
+      properties:
+    * [ ] Add support for the `hideWhenVisible` property
+    * [ ] Add support for the `desktop` property to control how window summoning
+      interacts with virtual desktops
+    * [ ] Add support for the `monitor` which monitor the window appears on.
+    * [ ] Add support for the `dropdownDuration` property
+* [ ] Add the `minimizeToTray` setting, and implement it without any sort of flyout
+    * [ ] Add a list of windows to the right-click flyout on the tray icon
+    * [ ] Add support for the `alwaysShowTrayIcon` setting
 
 
 ## Resources
@@ -467,4 +544,5 @@ Docs on adding a system tray item:
 [#5727]: https://github.com/microsoft/terminal/issues/5727
 [Process Model 2.0 Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%235000%20-%20Process%20Model%202.0/%235000%20-%20Process%20Model%202.0.md
 [Quake 3 sample]: https://youtu.be/ZmR6HQbuHPA?t=27
-[`RegisterHotKey`]: # TODO
+[`RegisterHotKey`]: https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerhotkey
+[`dev/migrie/f/653-QUAKE-MODE`]: https://github.com/microsoft/terminal/tree/dev/migrie/f/653-QUAKE-MODE
