@@ -3262,7 +3262,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             co_await winrt::resume_foreground(Dispatcher());
 
             DispatcherTimer invertTimer;
-            invertTimer.Interval(UpdatePatternLocationsInterval);
+            invertTimer.Interval(std::chrono::milliseconds(2000));
             invertTimer.Tick({ get_weak(), &TermControl::_InvertTimerTick });
             invertTimer.Start();
             _invertTimer.emplace(std::move(invertTimer));
