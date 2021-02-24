@@ -41,6 +41,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -50,14 +51,27 @@ the MIT License. See LICENSE in the project root for license information. -->
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind State.Profile.IsBaseLayer}"/>
 
-        <Pivot x:Name="ProfilesPivot"
+        <muxc:NavigationView AlwaysShowHeader="False"
+                             PaneDisplayMode="Top"
+                             Grid.Row="1"
+                             SelectionChanged="Nav_SelectionChanged"
+                             IsBackButtonVisible="Collapsed"
+                             IsSettingsVisible="False">
+            <muxc:NavigationView.MenuItems>
+                <muxc:NavigationViewItem Content="General" Tag="General"/>
+                <muxc:NavigationViewItem Content="Appearance" Tag="Appearance"/>
+                <muxc:NavigationViewItem Content="Advanced" Tag="Advanced"/>
+            </muxc:NavigationView.MenuItems>
+        </muxc:NavigationView>
+
+        <!--<Pivot x:Name="ProfilesPivot"
                HorizontalAlignment="Left"
-               Grid.Row="1"
                SelectionChanged="Pivot_SelectionChanged"
-               Margin="1,0,0,0">
+               Margin="1,0,0,0"
+               Visibility="Collapsed">-->
             <!-- General Tab -->
-            <PivotItem x:Uid="Profile_General">
-                <ScrollViewer>
+            <!--<PivotItem x:Uid="Profile_General">-->
+                <ScrollViewer x:Name="GeneralContent" Visibility="Collapsed" Grid.Row="2" Margin="{StaticResource StandardIndentMargin}">
                     <StackPanel Style="{StaticResource PivotStackStyle}">
 
                         <!--Name-->
@@ -202,11 +216,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
-            </PivotItem>
+            <!--</PivotItem>-->
 
             <!-- Appearance Tab -->
-            <PivotItem x:Uid="Profile_Appearance">
-                <ScrollViewer>
+            <!--<PivotItem x:Uid="Profile_Appearance">-->
+        <ScrollViewer x:Name="AppearanceContent" Visibility="Collapsed" Grid.Row="2" Margin="{StaticResource StandardIndentMargin}">
                     <StackPanel>
                         <StackPanel Style="{StaticResource PivotStackStyle}">
                             <!--Grouping: Text-->
@@ -614,11 +628,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
-            </PivotItem>
+            <!--</PivotItem>-->
 
             <!-- Advanced Tab -->
-            <PivotItem x:Uid="Profile_Advanced">
-                <ScrollViewer>
+            <!--<PivotItem x:Uid="Profile_Advanced">-->
+        <ScrollViewer x:Name="AdvancedContent" Visibility="Collapsed" Grid.Row="2"  Margin="{StaticResource StandardIndentMargin}">
                     <StackPanel Style="{StaticResource PivotStackStyle}">
                         <!--Suppress Application Title-->
                         <local:SettingContainer x:Uid="Profile_SuppressApplicationTitle"
@@ -687,7 +701,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </local:SettingContainer>
                     </StackPanel>
                 </ScrollViewer>
-            </PivotItem>
-        </Pivot>
+            <!--</PivotItem>
+        </Pivot>-->
     </Grid>
 </Page>
