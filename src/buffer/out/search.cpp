@@ -362,6 +362,15 @@ std::vector<std::vector<wchar_t>> Search::s_CreateNeedleFromString(const std::ws
     return cells;
 }
 
+// Routine Description:
+// - Performs a regex search instead of a regular search within the given start and end coordinates
+// - The caller is responsible for making sure the start and end coordinates are correct with respect
+//   to the direction of the search (find previous or find next)
+// Arguments:
+// - start: the start coordinate
+// - end: the end coordinate
+// Return Value:
+// - true if we found a regex match, false otherwise
 bool Search::_RegexHelper(COORD start, COORD end)
 {
     std::wstring concatAll;
@@ -399,18 +408,21 @@ bool Search::_RegexHelper(COORD start, COORD end)
                 ++matches_begin;
             }
         }
+
         const auto pos = desired->position();
         for (auto i = 0; i < pos; ++i)
         {
             _IncrementCoord(start);
         }
         _coordSelStart = start;
+
         const auto len = desired->length();
         for (auto i = 0; i < (len - 1); ++i)
         {
             _IncrementCoord(start);
         }
         _coordSelEnd = start;
+
         return true;
     }
     return false;
