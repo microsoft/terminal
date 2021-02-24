@@ -83,15 +83,11 @@ bool Search::FindNext()
 
     if (_regex)
     {
-        if (_RegexHelper(_coordNext, _uiaData.GetTextBufferEndPosition()))
-        {
-            return true;
-        }
-        else
-        {
-            // wrap around
-            return _RegexHelper(COORD{ 0 }, _coordNext);
-        }
+        auto start = _direction == Direction::Forward ? _coordNext : COORD{ 0 };
+        auto end = _direction == Direction::Forward ? _uiaData.GetTextBufferEndPosition() : _coordNext;
+        auto wrapStart = _direction == Direction::Forward ? COORD{ 0 } : _coordNext;
+        auto wrapEnd = _direction == Direction::Forward ? _coordNext : _uiaData.GetTextBufferEndPosition();
+        return _RegexHelper(start, end) || _RegexHelper(wrapStart, wrapEnd);
     }
     else
     {
@@ -368,36 +364,54 @@ std::vector<std::vector<wchar_t>> Search::s_CreateNeedleFromString(const std::ws
 
 bool Search::_RegexHelper(COORD start, COORD end)
 {
-    if (_direction == Direction::Forward)
+    std::wstring concatAll;
+    auto begin = start;
+    std::wsmatch match;
+
+    // To deal with text that spans multiple lines, we will first concatenate
+    // all the text into one string and find the regex in that string
+    while (begin != end)
     {
-        std::wstring concatAll;
-        auto begin = start;
-        std::wsmatch match;
+        concatAll += *_uiaData.GetTextBuffer().GetTextDataAt(begin);
+        _IncrementCoord(begin);
+    }
 
-        // to deal with text that spans multiple lines, we will first concatenate
-        // all the text into one string and find the regex in that string
-        while (begin != end)
-        {
-            concatAll += *_uiaData.GetTextBuffer().GetTextDataAt(begin);
-            _IncrementCoord(begin);
-        }
+    // Create the regex object and iterator
+    std::wregex regexObj{ _inputString };
+    auto matches_begin = std::wsregex_iterator(concatAll.begin(), concatAll.end(), regexObj);
+    auto matches_end = std::wsregex_iterator();
 
-        if (std::regex_search(concatAll, match, std::wregex(_inputString)))
+    // If we found a match, get its position and length to update the selection coordinates
+    if (matches_begin != matches_end)
+    {
+        std::wsregex_iterator desired;
+        if (_direction == Direction::Forward)
         {
-            const auto pos = match.position();
-            for (auto i = 0; i < pos; ++i)
-            {
-                _IncrementCoord(start);
-            }
-            _coordSelStart = start;
-            const auto len = match.length();
-            for (auto i = 0; i < len; ++i)
-            {
-                _IncrementCoord(start);
-            }
-            _coordSelEnd = start;
-            return true;
+            desired = matches_begin;
         }
+        else
+        {
+            // Regex iterators are not bidirectional, so we cannot create a reverse iterator out of one
+            // So, if we want to find the previous match, we need to manually progress the iterator
+            while (matches_begin != matches_end)
+            {
+                desired = matches_begin;
+                ++matches_begin;
+            }
+        }
+        const auto pos = desired->position();
+        for (auto i = 0; i < pos; ++i)
+        {
+            _IncrementCoord(start);
+        }
+        _coordSelStart = start;
+        const auto len = desired->length();
+        for (auto i = 0; i < (len - 1); ++i)
+        {
+            _IncrementCoord(start);
+        }
+        _coordSelEnd = start;
+        return true;
     }
     return false;
 }
