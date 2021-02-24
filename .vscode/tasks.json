@@ -1,0 +1,26 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "process",
+			"label": "Build OpenConsole.exe x64 Debug",
+			"command": "pwsh.exe",
+			"args": [
+			  "-Command",
+			  "Import-Module ${workspaceFolder}\\tools\\OpenConsole.psm1;",
+			  "Set-MsBuildDevEnvironment;",
+			  "msbuild",
+			  "${workspaceFolder}\\OpenConsole.sln",
+			  "/p:Configuration=Debug",
+			  "/p:Platform=x64",
+			  "/t:Conhost\\Host_EXE"
+			],
+			"problemMatcher": ["$msCompile"],
+			"group": {
+			  "kind": "build",
+			  "isDefault": true
+			},
+			"dependsOn": "Enter dev environment"
+		}
+	]
+}
