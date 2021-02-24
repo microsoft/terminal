@@ -394,6 +394,7 @@ bool Search::_RegexHelper(COORD start, COORD end)
     if (matches_begin != matches_end)
     {
         std::wsregex_iterator desired;
+        size_t lenUpToThis = 0;
         if (_direction == Direction::Forward)
         {
             desired = matches_begin;
@@ -402,25 +403,61 @@ bool Search::_RegexHelper(COORD start, COORD end)
         {
             // Regex iterators are not bidirectional, so we cannot create a reverse iterator out of one
             // So, if we want to find the previous match, we need to manually progress the iterator
-            while (matches_begin != matches_end)
+            while (true)
             {
                 desired = matches_begin;
                 ++matches_begin;
+
+                if (matches_begin == matches_end)
+                {
+                    // If we have reached the end, then break
+                    // Note: this means 'desired' now points to the correct match, so we do not
+                    // want to update 'lenUpToThis' with its length
+                    break;
+                }
+                else
+                {
+                    // We have not reached the end, update the length up to this point accordingly
+                    for (const auto ch : desired->prefix().str())
+                    {
+                        lenUpToThis += IsGlyphFullWidth(ch) ? 2 : 1;
+                    }
+                    for (const auto ch : desired->str())
+                    {
+                        lenUpToThis += IsGlyphFullWidth(ch) ? 2 : 1;
+                    }
+                }
             }
         }
 
-        const auto pos = desired->position();
-        for (auto i = 0; i < pos; ++i)
+        // Increment the start coord according to the length up to this point
+        for (auto i = 0; i < lenUpToThis; ++i)
         {
             _IncrementCoord(start);
+        }
+
+        for (const auto ch : desired->prefix().str())
+        {
+            _IncrementCoord(start);
+            // If the glyph is full width, advance the coord again
+            if (IsGlyphFullWidth(ch))
+            {
+                _IncrementCoord(start);
+            }
         }
         _coordSelStart = start;
 
-        const auto len = desired->length();
-        for (auto i = 0; i < (len - 1); ++i)
+        for (const auto ch : desired->str())
         {
             _IncrementCoord(start);
+            // If the glyph is full width, advance the coord again
+            if (IsGlyphFullWidth(ch))
+            {
+                _IncrementCoord(start);
+            }
         }
+        // Decrement once for the off by one error before setting _coordSelEnd
+        _DecrementCoord(start);
         _coordSelEnd = start;
 
         return true;
