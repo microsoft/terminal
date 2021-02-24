@@ -49,7 +49,7 @@ The JSON file should be split up into 2 lists, one for profiles and one for sche
 
 The first item in the `"profiles"` list updates an existing profile, identifying the profile it wishes to update via the GUID provided to the `"updates"` field (details on how to obtain the GUID below). The second item in that list creates a new profile called "Cool Profile".
 
-In the `"schemes"` list, a new color scheme called "Postmordern Tango Light" is defined, and can be subsequently be referenced by the user in their settings file or in this JSON file itself (notice that "Cool Profile" uses this newly defined color scheme).
+In the `"schemes"` list, a new color scheme called "Postmodern Tango Light" is defined, and can be subsequently be referenced by the user in their settings file or in this JSON file itself (notice that "Cool Profile" uses this newly defined color scheme).
 
 Of course, if the developer only wishes to add/modify profiles without adding color schemes (and vice-versa), only the relevant list needs to be present and the other list can be omitted.
 
