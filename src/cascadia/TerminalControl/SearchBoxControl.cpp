@@ -54,8 +54,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Method Description:
     // - Check if the current search is a regex one
     // Return Value:
-    // - bool: whether the current search is case sensitive (case button is checked )
-    //   or not
+    // - bool: whether the current search is a regex one (regex button is checked)
     bool SearchBoxControl::_IsRegex()
     {
         return RegexButton().IsChecked().GetBoolean();
