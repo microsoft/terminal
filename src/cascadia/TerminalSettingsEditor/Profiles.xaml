@@ -236,7 +236,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                     SettingOverrideSource="{x:Bind State.Profile.FontFaceOverrideSource, Mode=OneWay}">
                                 <ComboBox ItemsSource="{x:Bind FontList, Mode=OneWay}"
                                           SelectedItem="{x:Bind CurrentFontFace, Mode=TwoWay}"
-                                          Style="{StaticResource ComboBoxSettingStyle}"/>
+                                          Style="{StaticResource ComboBoxSettingStyle}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="x:String">
+                                            <TextBlock Text="{x:Bind}" FontFamily="{x:Bind}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
                             </local:SettingContainer>
 
                             <!--Font Size-->

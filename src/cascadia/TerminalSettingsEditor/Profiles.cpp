@@ -8,6 +8,7 @@
 
 #include <LibraryResources.h>
 #include "dwrite.h"
+#include <dwrite_1.h>
 
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Xaml;
@@ -236,7 +237,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     try
     {
         // initialize font list
-        _FontList = single_threaded_observable_vector<hstring>();
+        std::vector<hstring> fontList;
 
         // get a DWriteFactory
         ::IUnknown* unknownFactory;
@@ -259,9 +260,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             try
             {
-                // get the font
+                // get the font family
                 com_ptr<::IDWriteFontFamily> fontFamily;
                 THROW_IF_FAILED(fontCollection->GetFontFamily(i, fontFamily.put()));
+
+                // get the standard version of that font
+                com_ptr<::IDWriteFont> font;
+                THROW_IF_FAILED(fontFamily->GetFirstMatchingFont(DWRITE_FONT_WEIGHT::DWRITE_FONT_WEIGHT_NORMAL,
+                                                                 DWRITE_FONT_STRETCH::DWRITE_FONT_STRETCH_NORMAL,
+                                                                 DWRITE_FONT_STYLE::DWRITE_FONT_STYLE_NORMAL,
+                                                                 font.put()));
+
+                // convert it to an IDWriteFont1 to check if it's a monospace font
+                com_ptr<::IDWriteFont1> font1;
+                font.as(font1);
+                if (!font1->IsMonospacedFont())
+                {
+                    // exclude non-monospace fonts from the list
+                    continue;
+                }
 
                 // get the font's localized names
                 com_ptr<::IDWriteLocalizedStrings> localizedFamilyNames;
@@ -293,7 +310,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 THROW_IF_FAILED(localizedFamilyNames->GetString(index, localizedName, nameLength + 1));
 
                 // add the font name to our list
-                _FontList.Append(localizedName);
+                fontList.emplace_back(std::move(localizedName));
             }
             catch (...)
             {
@@ -301,6 +318,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 continue;
             }
         }
+
+        // sort and export the list
+        std::sort(begin(fontList), end(fontList));
+        _FontList = single_threaded_observable_vector<hstring>(std::move(fontList));
     }
     CATCH_LOG();
 
