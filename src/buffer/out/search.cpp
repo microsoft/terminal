@@ -83,10 +83,10 @@ bool Search::FindNext()
 
     if (_regex)
     {
-        auto start = _direction == Direction::Forward ? _coordNext : COORD{ 0 };
-        auto end = _direction == Direction::Forward ? _uiaData.GetTextBufferEndPosition() : _coordNext;
-        auto wrapStart = _direction == Direction::Forward ? COORD{ 0 } : _coordNext;
-        auto wrapEnd = _direction == Direction::Forward ? _coordNext : _uiaData.GetTextBufferEndPosition();
+        const auto start = _direction == Direction::Forward ? _coordNext : COORD{ 0 };
+        const auto end = _direction == Direction::Forward ? _uiaData.GetTextBufferEndPosition() : _coordNext;
+        const auto wrapStart = _direction == Direction::Forward ? COORD{ 0 } : _coordNext;
+        const auto wrapEnd = _direction == Direction::Forward ? _coordNext : _uiaData.GetTextBufferEndPosition();
         return _RegexHelper(start, end) || _RegexHelper(wrapStart, wrapEnd);
     }
     else
