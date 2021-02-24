@@ -1,6 +1,9 @@
 #include "pch.h"
 #include "HasNestedCommandsVisibilityConverter.h"
 #include "HasNestedCommandsVisibilityConverter.g.cpp"
+#include "HasNestedCommandsHelpTextConverter.g.cpp"
+
+#include "LibraryResources.h"
 
 using namespace winrt::Windows;
 using namespace winrt::Windows::UI::Xaml;
@@ -33,6 +36,25 @@ namespace winrt::TerminalApp::implementation
                                                                                Windows::UI::Xaml::Interop::TypeName const& /* targetType */,
                                                                                Foundation::IInspectable const& /* parameter */,
                                                                                hstring const& /* language */)
+    {
+        throw hresult_not_implemented();
+    }
+
+    Foundation::IInspectable HasNestedCommandsHelpTextConverter::Convert(Foundation::IInspectable const& value,
+                                                                         Windows::UI::Xaml::Interop::TypeName const& /* targetType */,
+                                                                         Foundation::IInspectable const& /* parameter */,
+                                                                         hstring const& /* language */)
+    {
+        const auto paletteItem{ value.try_as<winrt::TerminalApp::ActionPaletteItem>() };
+        const auto hasNestedCommands = paletteItem && paletteItem.Command().HasNestedCommands();
+        return winrt::box_value(hasNestedCommands ? RS_(L"CommandPalette_MoreOptions/[using:Windows.UI.Xaml.Automation]AutomationProperties/HelpText") : L"");
+    }
+
+    // unused for one-way bindings
+    Foundation::IInspectable HasNestedCommandsHelpTextConverter::ConvertBack(Foundation::IInspectable const& /* value */,
+                                                                             Windows::UI::Xaml::Interop::TypeName const& /* targetType */,
+                                                                             Foundation::IInspectable const& /* parameter */,
+                                                                             hstring const& /* language */)
     {
         throw hresult_not_implemented();
     }

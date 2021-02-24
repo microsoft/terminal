@@ -16,4 +16,9 @@ namespace TerminalApp
         HasNestedCommandsVisibilityConverter();
     };
 
+    runtimeclass HasNestedCommandsHelpTextConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        HasNestedCommandsHelpTextConverter();
+    };
+
 }
