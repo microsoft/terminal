@@ -598,7 +598,6 @@ void CascadiaSettings::_ParseAndLayerFragmentFiles(const std::unordered_set<std:
                         auto childImpl{ matchingProfile->CreateChild() };
                         childImpl->LayerJson(profileStub);
                         childImpl->Origin(OriginTag::Fragment);
-                        childImpl->Source(source);
 
                         // replace parent in _profiles with child
                         _allProfiles.SetAt(_FindMatchingProfileIndex(matchingProfile->ToJson()).value(), *childImpl);
