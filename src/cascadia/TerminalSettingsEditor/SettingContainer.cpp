@@ -13,6 +13,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     DependencyProperty SettingContainer::_HeaderProperty{ nullptr };
     DependencyProperty SettingContainer::_HelpTextProperty{ nullptr };
     DependencyProperty SettingContainer::_HasSettingValueProperty{ nullptr };
+    DependencyProperty SettingContainer::_SettingOverrideSourceProperty{ nullptr };
 
     SettingContainer::SettingContainer()
     {
@@ -51,37 +52,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     xaml_typename<Editor::SettingContainer>(),
                     PropertyMetadata{ box_value(false), PropertyChangedCallback{ &SettingContainer::_OnHasSettingValueChanged } });
         }
+        if (!_SettingOverrideSourceProperty)
+        {
+            _SettingOverrideSourceProperty =
+                DependencyProperty::Register(
+                    L"SettingOverrideSource",
+                    xaml_typename<bool>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ nullptr });
+        }
     }
 
-    void SettingContainer::_OnHasSettingValueChanged(DependencyObject const& d, DependencyPropertyChangedEventArgs const& args)
+    void SettingContainer::_OnHasSettingValueChanged(DependencyObject const& d, DependencyPropertyChangedEventArgs const& /*args*/)
     {
+        // update visibility for override message and reset button
         const auto& obj{ d.try_as<Editor::SettingContainer>() };
-        const auto& newVal{ unbox_value<bool>(args.NewValue()) };
-
-        // update visibility for reset button
-        if (const auto& resetButton{ obj.GetTemplateChild(L"ResetButton") })
-        {
-            if (const auto& elem{ resetButton.try_as<UIElement>() })
-            {
-                elem.Visibility(newVal ? Visibility::Visible : Visibility::Collapsed);
-            }
-        }
-
-        // update visibility for override message
-        if (const auto& overrideMsg{ obj.GetTemplateChild(L"OverrideMessage") })
-        {
-            if (const auto& elem{ overrideMsg.try_as<UIElement>() })
-            {
-                elem.Visibility(newVal ? Visibility::Visible : Visibility::Collapsed);
-            }
-        }
+        get_self<SettingContainer>(obj)->_UpdateOverrideSystem();
     }
 
     void SettingContainer::OnApplyTemplate()
     {
-        // This message is only populated if `HasSettingValue` is true.
-        const auto& overrideMsg{ _GenerateOverrideMessageText() };
-
         if (const auto& child{ GetTemplateChild(L"ResetButton") })
         {
             if (const auto& button{ child.try_as<Controls::Button>() })
@@ -115,37 +105,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     }
                 });
 
-                // apply tooltip and name (automation property)
-                const auto& name{ RS_(L"SettingContainer_ResetButtonHelpText") };
-                Controls::ToolTipService::SetToolTip(child, box_value(name));
-                Automation::AutomationProperties::SetName(child, name);
-                Automation::AutomationProperties::SetHelpText(child, overrideMsg);
-
-                // initialize visibility for reset button
-                button.Visibility(HasSettingValue() ? Visibility::Visible : Visibility::Collapsed);
+                // apply name (automation property)
+                Automation::AutomationProperties::SetName(child, RS_(L"SettingContainer_OverrideMessageBaseLayer"));
             }
         }
 
-        if (const auto& child{ GetTemplateChild(L"OverrideMessage") })
-        {
-            if (const auto& tb{ child.try_as<Controls::TextBlock>() })
-            {
-                if (!overrideMsg.empty())
-                {
-                    // Create the override message
-                    // TODO GH#6800: the override target will be replaced with hyperlink/text directing the user to another profile.
-                    tb.Text(overrideMsg);
-
-                    // initialize visibility for reset button
-                    tb.Visibility(Visibility::Visible);
-                }
-                else
-                {
-                    // we have no message to render
-                    tb.Visibility(Visibility::Collapsed);
-                }
-            }
-        }
+        _UpdateOverrideSystem();
 
         if (const auto& content{ Content() })
         {
@@ -172,12 +137,72 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    hstring SettingContainer::_GenerateOverrideMessageText()
+    // Method Description:
+    // - Updates the override system visibility and text
+    // Arguments:
+    // - <none>
+    void SettingContainer::_UpdateOverrideSystem()
     {
-        if (HasSettingValue())
+        if (const auto& child{ GetTemplateChild(L"ResetButton") })
         {
-            return hstring{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideIntro") }, RS_(L"SettingContainer_OverrideTarget")) };
+            if (const auto& button{ child.try_as<Controls::Button>() })
+            {
+                if (HasSettingValue())
+                {
+                    // We want to be smart about showing the override system.
+                    // Don't just show it if the user explicitly set the setting.
+                    // If the tooltip is empty, we'll hide the entire override system.
+                    hstring tooltip{};
+
+                    const auto& settingSrc{ SettingOverrideSource() };
+                    if (const auto& profile{ settingSrc.try_as<Model::Profile>() })
+                    {
+                        tooltip = _GenerateOverrideMessage(profile);
+                    }
+
+                    Controls::ToolTipService::SetToolTip(button, box_value(tooltip));
+                    button.Visibility(tooltip.empty() ? Visibility::Collapsed : Visibility::Visible);
+                }
+                else
+                {
+                    // a value is not being overridden; hide the override system
+                    button.Visibility(Visibility::Collapsed);
+                }
+            }
         }
-        return {};
+    }
+
+    // Method Description:
+    // - Helper function for generating the override message
+    // Arguments:
+    // - profile: the profile that defines the setting (aka SettingOverrideSource)
+    // Return Value:
+    // - text specifying where the setting was defined. If empty, we don't want to show the system.
+    hstring SettingContainer::_GenerateOverrideMessage(const Model::Profile& profile)
+    {
+        const auto originTag{ profile.Origin() };
+        if (originTag == Model::OriginTag::InBox)
+        {
+            // in-box profile
+            return {};
+        }
+        else if (originTag == Model::OriginTag::Generated)
+        {
+            // from a dynamic profile generator
+            return {};
+        }
+        else if (originTag == Model::OriginTag::Fragment)
+        {
+            // from a fragment extension
+            return hstring{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideMessageFragmentExtension") }, profile.Source()) };
+        }
+        else
+        {
+            // base layer
+            // TODO GH#3818: When we add profile inheritance as a setting,
+            //               we'll need an extra conditional check to see if this
+            //               is the base layer or some other profile
+            return RS_(L"SettingContainer_OverrideMessageBaseLayer");
+        }
     }
 }

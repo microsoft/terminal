@@ -41,8 +41,10 @@ IObject
 IPackage
 IPeasant
 IStorage
+IStringable
 ITab
 ITaskbar
+IVirtual
 LCID
 llabs
 llu
@@ -56,6 +58,7 @@ NCHITTEST
 NCLBUTTONDBLCLK
 NCRBUTTONDBLCLK
 NOAGGREGATION
+NOASYNC
 NOPROGRESS
 NOREDIRECTIONBITMAP
 ntprivapi
@@ -80,6 +83,7 @@ shobjidl
 SIZENS
 smoothstep
 GETDESKWALLPAPER
+SHELLEXECUTEINFOW
 snprintf
 spsc
 sregex
