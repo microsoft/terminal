@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Build and debug conhost (x64, debug)",
+            "name": "Debug OpenConsole by Launching (x64, debug)",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\bin\\x64\\debug\\openconsole.exe",
@@ -13,14 +13,12 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
-            "preLaunchTask": "Build OpenConsole.exe x64 Debug"
         },
         {
-            "name": "Build and debug terminal (x64, debug)",
+            "name": "Debug Terminal by Attaching (You go build/register/launch it first.)",
             "type": "cppvsdbg",
             "request": "attach",
-            "processId": "${command:pickProcess}",
-            "preLaunchTask": "Build, Register, and Run Windows Terminal x64 Debug"
+            "processId": "${command:pickProcess}"
         }
     ]
 }
