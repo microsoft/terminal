@@ -50,6 +50,7 @@ namespace RemotingUnitTests
         DeadPeasant() = default;
         void AssignID(uint64_t /*id*/) { throw winrt::hresult_error{}; };
         uint64_t GetID() { throw winrt::hresult_error{}; };
+        winrt::hstring WindowName() { throw winrt::hresult_error{}; };
         uint64_t GetPID() { throw winrt::hresult_error{}; };
         bool ExecuteCommandline(const Remoting::CommandlineArgs& /*args*/) { throw winrt::hresult_error{}; }
         void ActivateWindow(const Remoting::WindowActivatedArgs& /*args*/) { throw winrt::hresult_error{}; }
@@ -84,6 +85,12 @@ namespace RemotingUnitTests
         TEST_METHOD(MostRecentWindowMoveDesktops);
         TEST_METHOD(GetMostRecentAnyDesktop);
         TEST_METHOD(MostRecentIsDead);
+
+        TEST_METHOD(GetPeasantsByName);
+        TEST_METHOD(AddNamedPeasantsToNewMonarch);
+        TEST_METHOD(LookupNamedPeasantWhenOthersDied);
+        TEST_METHOD(LookupNamedPeasantWhenItDied);
+        TEST_METHOD(GetMruPeasantAfterNameLookupForDeadPeasant);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -976,6 +983,212 @@ namespace RemotingUnitTests
         VERIFY_ARE_EQUAL(1u, m0->_mruPeasants.size());
         VERIFY_ARE_EQUAL(1u, m0->_mruPeasants.size());
         VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[0].PeasantID());
+    }
+
+    void RemotingTests::GetPeasantsByName()
+    {
+        const auto monarch0PID = 12345u;
+        const auto peasant1PID = 23456u;
+        const auto peasant2PID = 34567u;
+
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+
+        VERIFY_IS_NOT_NULL(m0);
+        VERIFY_IS_NOT_NULL(p1);
+        VERIFY_IS_NOT_NULL(p2);
+
+        p1->WindowName(L"one");
+        p2->WindowName(L"two");
+
+        VERIFY_ARE_EQUAL(0, p1->GetID());
+        VERIFY_ARE_EQUAL(0, p2->GetID());
+        VERIFY_ARE_EQUAL(L"one", p1->WindowName());
+        VERIFY_ARE_EQUAL(L"two", p2->WindowName());
+
+        m0->AddPeasant(*p1);
+        m0->AddPeasant(*p2);
+
+        VERIFY_ARE_EQUAL(1, p1->GetID());
+        VERIFY_ARE_EQUAL(2, p2->GetID());
+        VERIFY_ARE_EQUAL(L"one", p1->WindowName());
+        VERIFY_ARE_EQUAL(L"two", p2->WindowName());
+
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_lookupPeasantIdForName(L"one"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
+
+        Log::Comment(L"Rename p2");
+
+        p2->WindowName(L"foo");
+
+        VERIFY_ARE_EQUAL(0, m0->_lookupPeasantIdForName(L"two"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"foo"));
+    }
+
+    void RemotingTests::AddNamedPeasantsToNewMonarch()
+    {
+        const auto monarch0PID = 12345u;
+        const auto peasant1PID = 23456u;
+        const auto peasant2PID = 34567u;
+        const auto monarch3PID = 45678u;
+
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+
+        com_ptr<Remoting::implementation::Monarch> m3;
+        m3.attach(new Remoting::implementation::Monarch(monarch3PID));
+
+        VERIFY_IS_NOT_NULL(m0);
+        VERIFY_IS_NOT_NULL(p1);
+        VERIFY_IS_NOT_NULL(p2);
+        VERIFY_IS_NOT_NULL(m3);
+
+        p1->WindowName(L"one");
+        p2->WindowName(L"two");
+
+        VERIFY_ARE_EQUAL(0, p1->GetID());
+        VERIFY_ARE_EQUAL(0, p2->GetID());
+
+        m0->AddPeasant(*p1);
+        m0->AddPeasant(*p2);
+
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_lookupPeasantIdForName(L"one"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
+
+        VERIFY_ARE_EQUAL(1, p1->GetID());
+        VERIFY_ARE_EQUAL(2, p2->GetID());
+        VERIFY_ARE_EQUAL(L"one", p1->WindowName());
+        VERIFY_ARE_EQUAL(L"two", p2->WindowName());
+
+        Log::Comment(L"When the peasants go to a new monarch, make sure they have the same name");
+        m3->AddPeasant(*p1);
+        m3->AddPeasant(*p2);
+
+        VERIFY_ARE_EQUAL(1, p1->GetID());
+        VERIFY_ARE_EQUAL(2, p2->GetID());
+        VERIFY_ARE_EQUAL(L"one", p1->WindowName());
+        VERIFY_ARE_EQUAL(L"two", p2->WindowName());
+
+        VERIFY_ARE_EQUAL(p1->GetID(), m3->_lookupPeasantIdForName(L"one"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m3->_lookupPeasantIdForName(L"two"));
+    }
+
+    void RemotingTests::LookupNamedPeasantWhenOthersDied()
+    {
+        const auto monarch0PID = 12345u;
+        const auto peasant1PID = 23456u;
+        const auto peasant2PID = 34567u;
+
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+
+        VERIFY_IS_NOT_NULL(m0);
+        VERIFY_IS_NOT_NULL(p1);
+        VERIFY_IS_NOT_NULL(p2);
+        p1->WindowName(L"one");
+        p2->WindowName(L"two");
+
+        VERIFY_ARE_EQUAL(0, p1->GetID());
+        VERIFY_ARE_EQUAL(0, p2->GetID());
+
+        m0->AddPeasant(*p1);
+        m0->AddPeasant(*p2);
+
+        VERIFY_ARE_EQUAL(1, p1->GetID());
+        VERIFY_ARE_EQUAL(2, p2->GetID());
+
+        VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
+
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_lookupPeasantIdForName(L"one"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
+
+        Log::Comment(L"Kill peasant 1. Make sure that it gets removed from the monarch.");
+        RemotingTests::_killPeasant(m0, p1->GetID());
+
+        // By killing 1, then looking for "two", we happen to iterate over the
+        // corpse of 1 when looking for the peasant named "two". This causes us
+        // to remove 1 while looking for "two". Technically, we shouldn't be
+        // relying on any sort of ordering for an unordered_map iterator, but
+        // this one just so happens to work.
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
+
+        Log::Comment(L"Peasant 1 should have been pruned");
+        VERIFY_ARE_EQUAL(1u, m0->_peasants.size());
+    }
+
+    void RemotingTests::LookupNamedPeasantWhenItDied()
+    {
+        const auto monarch0PID = 12345u;
+        const auto peasant1PID = 23456u;
+        const auto peasant2PID = 34567u;
+
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+
+        VERIFY_IS_NOT_NULL(m0);
+        VERIFY_IS_NOT_NULL(p1);
+        VERIFY_IS_NOT_NULL(p2);
+        p1->WindowName(L"one");
+        p2->WindowName(L"two");
+
+        VERIFY_ARE_EQUAL(0, p1->GetID());
+        VERIFY_ARE_EQUAL(0, p2->GetID());
+
+        m0->AddPeasant(*p1);
+        m0->AddPeasant(*p2);
+
+        VERIFY_ARE_EQUAL(1, p1->GetID());
+        VERIFY_ARE_EQUAL(2, p2->GetID());
+
+        VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
+
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_lookupPeasantIdForName(L"one"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
+
+        Log::Comment(L"Kill peasant 1. Make sure that it gets removed from the monarch.");
+        RemotingTests::_killPeasant(m0, p1->GetID());
+
+        VERIFY_ARE_EQUAL(0, m0->_lookupPeasantIdForName(L"one"));
+
+        Log::Comment(L"Peasant 1 should have been pruned");
+        VERIFY_ARE_EQUAL(1u, m0->_peasants.size());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
+    }
+    void RemotingTests::GetMruPeasantAfterNameLookupForDeadPeasant()
+    {
+        // This test is trying to hit the catch in Monarch::_lookupPeasantIdForName.
+        //
+        // We need to:
+        // * add some peasants,
+        // * make one the mru, then make a named two the mru
+        // * then kill two
+        // * then try to get the mru peasant -> it should be one
+
+        VERIFY_ARE_EQUAL(true, false);
     }
 
 }

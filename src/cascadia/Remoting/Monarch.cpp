@@ -154,6 +154,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             return 0;
         }
 
+        std::vector<uint64_t> peasantsToErase{};
+        uint64_t result = 0;
         for (const auto& [id, p] : _peasants)
         {
             try
@@ -161,17 +163,38 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 auto otherName = p.WindowName();
                 if (otherName == name)
                 {
-                    return id;
+                    result = id;
+                    break;
                 }
             }
             catch (...)
             {
                 LOG_CAUGHT_EXCEPTION();
-                // Remove the peasant from the list of peasants
-                _peasants.erase(id);
+                // Normally, we'd just erase the peasant here. However, we can't
+                // erase from the map while we're iterating over it like this.
+                // Instead, pull a good ole Java and collect this id for removal
+                // later.
+                peasantsToErase.push_back(id);
+
+                // // Remove the peasant from the list of peasants
+                // _peasants.erase(id);
+                // // Remove the peasant from the list of MRU windows. They're dead.
+                // // They can't be the MRU anymore.
+                // _clearOldMruEntries(id);
             }
         }
-        return 0;
+
+        // Remove the dead peasants we came across while iterating.
+        for (const auto& id : peasantsToErase)
+        {
+            // Remove the peasant from the list of peasants
+            _peasants.erase(id);
+            // Remove the peasant from the list of MRU windows. They're dead.
+            // They can't be the MRU anymore.
+            _clearOldMruEntries(id);
+        }
+
+        return result;
     }
 
     // Method Description:
