@@ -1250,10 +1250,13 @@ namespace winrt::TerminalApp::implementation
                 {
                 case WindowingMode::UseNew:
                     windowId = WindowingBehaviorUseNew;
+                    break;
                 case WindowingMode::UseExisting:
                     windowId = WindowingBehaviorUseExisting;
+                    break;
                 case WindowingMode::UseAnyExisting:
                     windowId = WindowingBehaviorUseAnyExisting;
+                    break;
                 }
                 return winrt::make<FindTargetWindowResult>(windowId, L"");
             }
