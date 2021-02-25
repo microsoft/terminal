@@ -462,7 +462,6 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         }
     };
 
-
     template<typename T>
     void SetValueForKey(Json::Value& json, std::string_view key, const T& target);
 
@@ -760,7 +759,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         }
         return false;
     }
-        
+
     // GetValueForKey, forced return type, manual converter
     template<typename T, typename Converter>
     std::decay_t<T> GetValueForKey(const Json::Value& json, std::string_view key, Converter&& conv)

@@ -549,7 +549,8 @@ namespace
     class VariablePair
     {
     public:
-        VariablePair(std::wstring rawValueIn) : rawValue(std::move(rawValueIn))
+        VariablePair(std::wstring rawValueIn) :
+            rawValue(std::move(rawValueIn))
         {
         }
         VariablePair() = default;
@@ -618,7 +619,7 @@ namespace
                 // not including the terminating null character."
                 // However, my SystemDrive "C:" returns 3 and so without trimming we will end up with a stray NULL string terminator
                 // in the string.
-                value.erase(std::find_if(value.rbegin(), value.rend(), [](wchar_t ch) {return ch != L'\0'; }).base(), value.end());
+                value.erase(std::find_if(value.rbegin(), value.rend(), [](wchar_t ch) { return ch != L'\0'; }).base(), value.end());
                 return value;
             }
         }
@@ -632,7 +633,7 @@ StringMap Profile::EvaluatedEnvironmentVariables() const
     {
         return _EvaluatedEnvironmentVariables();
     }
-    catch(...)
+    catch (...)
     {
         return {};
     }

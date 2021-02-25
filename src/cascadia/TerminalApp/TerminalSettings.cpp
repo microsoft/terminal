@@ -110,7 +110,6 @@ namespace winrt::TerminalApp::implementation
         return { profileGuid, settings };
     }
 
-    
     // Method Description:
     // - Apply Profile settings, as well as any colors from our color scheme, if we have one.
     // Arguments:
