@@ -428,12 +428,12 @@ bool Search::_RegexHelper(COORD start, COORD end)
                     }
                 }
             }
-        }
 
-        // Increment the start coord according to the length up to this point
-        for (auto i = 0; i < lenUpToThis; ++i)
-        {
-            _IncrementCoord(start);
+            // Increment the start coord according to the length up to this point
+            for (auto i = 0; i < lenUpToThis; ++i)
+            {
+                _IncrementCoord(start);
+            }
         }
 
         for (const auto ch : desired->prefix().str())
