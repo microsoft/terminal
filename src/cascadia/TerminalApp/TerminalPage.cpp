@@ -1840,7 +1840,7 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            TermControl newControl{ controlSettings, controlConnection };
+            TermControl newControl{ *(winrt::get_self<TerminalSettings>(controlSettings)->CreateChild()), controlConnection };
 
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl, *focusedTab);
