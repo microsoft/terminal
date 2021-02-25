@@ -8,6 +8,8 @@ bitmaps
 BOMs
 CPLs
 CPRs
+cpptools
+cppvsdbg
 DACL
 DACLs
 diffs
@@ -16,6 +18,7 @@ dotnetfeed
 DTDs
 DWINRT
 enablewttlogging
+Intelli
 LKG
 mfcribbon
 microsoft
@@ -42,6 +45,7 @@ tdbuildteamid
 VCRT
 vcruntime
 visualstudio
+vscode
 VSTHRD
 wlk
 wslpath
