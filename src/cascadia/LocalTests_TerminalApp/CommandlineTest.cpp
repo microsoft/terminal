@@ -1597,56 +1597,127 @@ namespace TerminalAppLocalTests
             std::vector<winrt::hstring> args{ L"wt.exe" };
             auto result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseNew);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
 
             result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseExisting);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseExisting, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
 
             result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseAnyExisting);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseAnyExisting, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
         }
         {
             std::vector<winrt::hstring> args{ L"wt.exe", L"-w", L"-1" };
             auto result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseNew);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
 
             result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseExisting);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
 
             result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseAnyExisting);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
+        }
+        {
+            std::vector<winrt::hstring> args{ L"wt.exe", L"-w", L"new" };
+            auto result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseNew);
+            VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
+
+            result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseExisting);
+            VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
+
+            result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseAnyExisting);
+            VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
         }
         {
             std::vector<winrt::hstring> args{ L"wt.exe", L"-w", L"-12345" };
             auto result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseNew);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
 
             result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseExisting);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
 
             result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseAnyExisting);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
+        }
+        {
+            std::vector<winrt::hstring> args{ L"wt.exe", L"-w", L"12345" };
+            auto result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseNew);
+            VERIFY_ARE_EQUAL(12345, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
+
+            result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseExisting);
+            VERIFY_ARE_EQUAL(12345, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
+
+            result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseAnyExisting);
+            VERIFY_ARE_EQUAL(12345, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
         }
         {
             std::vector<winrt::hstring> args{ L"wt.exe", L"-w", L"0" };
             auto result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseNew);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseCurrent, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
 
             result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseExisting);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseCurrent, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
 
             result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseAnyExisting);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseCurrent, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
+        }
+        {
+            std::vector<winrt::hstring> args{ L"wt.exe", L"-w", L"last" };
+            auto result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseNew);
+            VERIFY_ARE_EQUAL(WindowingBehaviorUseExisting, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
+
+            result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseExisting);
+            VERIFY_ARE_EQUAL(WindowingBehaviorUseExisting, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
+
+            result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseAnyExisting);
+            VERIFY_ARE_EQUAL(WindowingBehaviorUseExisting, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
         }
         {
             std::vector<winrt::hstring> args{ L"wt.exe", L"new-tab" };
             auto result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseNew);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
 
             result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseExisting);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseExisting, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
 
             result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseAnyExisting);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseAnyExisting, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
+        }
+        {
+            std::vector<winrt::hstring> args{ L"wt.exe", L"-w", L"new-tab" };
+            auto result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseNew);
+            VERIFY_ARE_EQUAL(WindowingBehaviorUseName, result.WindowId());
+            VERIFY_ARE_EQUAL(L"new-tab", result.WindowName());
+
+            result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseExisting);
+            VERIFY_ARE_EQUAL(WindowingBehaviorUseName, result.WindowId());
+            VERIFY_ARE_EQUAL(L"new-tab", result.WindowName());
+
+            result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseAnyExisting);
+            VERIFY_ARE_EQUAL(WindowingBehaviorUseName, result.WindowId());
+            VERIFY_ARE_EQUAL(L"new-tab", result.WindowName());
         }
     }
 
@@ -1659,17 +1730,21 @@ namespace TerminalAppLocalTests
         auto testHelper = [](auto&& args) {
             auto result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseNew);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
 
             result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseExisting);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
 
             result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseAnyExisting);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
         };
 
         testHelper(std::vector<winrt::hstring>{ L"wt.exe", L"--help" });
         testHelper(std::vector<winrt::hstring>{ L"wt.exe", L"new-tab", L"--help" });
         testHelper(std::vector<winrt::hstring>{ L"wt.exe", L"-w", L"0", L"new-tab", L"--help" });
+        testHelper(std::vector<winrt::hstring>{ L"wt.exe", L"-w", L"foo", L"new-tab", L"--help" });
         testHelper(std::vector<winrt::hstring>{ L"wt.exe", L"new-tab", L";", L"--help" });
     }
 
@@ -1682,12 +1757,15 @@ namespace TerminalAppLocalTests
         auto testHelper = [](auto&& args) {
             auto result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseNew);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
 
             result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseExisting);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
 
             result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseAnyExisting);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
         };
 
         testHelper(std::vector<winrt::hstring>{ L"wt.exe", L"--version" });

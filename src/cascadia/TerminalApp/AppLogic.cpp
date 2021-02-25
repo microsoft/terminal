@@ -1221,7 +1221,12 @@ namespace winrt::TerminalApp::implementation
     // - anything else: We should handle the commandline in the window with the given ID.
     TerminalApp::FindTargetWindowResult AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
     {
-        // TODO:MG Add tests for this method. Localtests? probably.
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+
         return AppLogic::_doFindTargetWindow(args, _settings.GlobalSettings().WindowingBehavior());
     }
 
