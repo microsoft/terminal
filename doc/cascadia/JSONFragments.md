@@ -27,21 +27,21 @@ The JSON file should be split up into 2 lists, one for profiles and one for sche
             "name": "Postmodern Tango Light",
 
             "black": "#0C0C0C",
-            "blue": "#0037DA",
-            "cyan": "#3A96DD",
-            "green": "#13A10E",
-            "purple": "#881798",
             "red": "#C50F1F",
-            "white": "#CCCCCC",
+            "green": "#13A10E",
             "yellow": "#C19C00",
+            "blue": "#0037DA",
+            "purple": "#881798",
+            "cyan": "#3A96DD",            
+            "white": "#CCCCCC",
             "brightBlack": "#767676",
-            "brightBlue": "#3B78FF",
-            "brightCyan": "#61D6D6",
-            "brightGreen": "#16C60C",
-            "brightPurple": "#B4009E",
             "brightRed": "#E74856",
-            "brightWhite": "#F2F2F2",
-            "brightYellow": "#F9F1A5"
+            "brightGreen": "#16C60C",
+            "brightYellow": "#F9F1A5",
+            "brightBlue": "#3B78FF",
+            "brightPurple": "#B4009E",
+            "brightCyan": "#61D6D6",
+            "brightWhite": "#F2F2F2"
         }
     ]
 }
