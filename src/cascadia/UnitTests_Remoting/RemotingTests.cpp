@@ -1188,7 +1188,59 @@ namespace RemotingUnitTests
         // * then kill two
         // * then try to get the mru peasant -> it should be one
 
-        VERIFY_ARE_EQUAL(true, false);
+        const winrt::guid guid1{ Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
+        const auto monarch0PID = 12345u;
+        const auto peasant1PID = 23456u;
+        const auto peasant2PID = 34567u;
+
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+
+        VERIFY_IS_NOT_NULL(m0);
+        VERIFY_IS_NOT_NULL(p1);
+        VERIFY_IS_NOT_NULL(p2);
+        p1->WindowName(L"one");
+        p2->WindowName(L"two");
+
+        VERIFY_ARE_EQUAL(0, p1->GetID());
+        VERIFY_ARE_EQUAL(0, p2->GetID());
+
+        m0->AddPeasant(*p1);
+        m0->AddPeasant(*p2);
+
+        VERIFY_ARE_EQUAL(1, p1->GetID());
+        VERIFY_ARE_EQUAL(2, p2->GetID());
+
+        VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
+
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_lookupPeasantIdForName(L"one"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
+
+        {
+            Log::Comment(L"Activate the first peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p1->GetID(),
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p1->ActivateWindow(activatedArgs);
+        }
+        {
+            Log::Comment(L"Activate the second peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p2->GetID(),
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p2->ActivateWindow(activatedArgs);
+        }
+        Log::Comment(L"Kill peasant 2.");
+        RemotingTests::_killPeasant(m0, p2->GetID());
+
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_getMostRecentPeasantID(false));
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_getMostRecentPeasantID(true));
     }
 
 }
