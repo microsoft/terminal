@@ -120,4 +120,4 @@ In the second case, the installation is only for the current user. In this case,
 
 **C:\Users\<user>\AppData\Local\Microsoft\Windows Terminal\Fragments\\{app-name}**
 
-Note that both the ProgramData and LocalAppData folders are known folders that the installer should be able to access. If in either case, if the Windows Terminal\Fragments directory does not exist, the installer should create it.  
+Note that both the `ProgramData` and `LocalAppData` folders are known folders that the installer should be able to access. If in either case, if the `Windows Terminal\Fragments` directory does not exist, the installer should create it.  
