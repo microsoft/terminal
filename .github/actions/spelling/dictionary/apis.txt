@@ -41,7 +41,7 @@ IObject
 IPackage
 IPeasant
 IStorage
-IStream
+istream
 IStringable
 ITab
 ITaskbar
