@@ -60,7 +60,7 @@ The only profiles that can be modified through fragments are the default profile
 - The namespace GUID: { 2BDE4A90 - D05F - 401C - 9492 - E40884EAD1D8 } 
 - The name of the profile to be updated 
 
-As a sanity check, a profile called 'Ubuntu' will get the generated GUID: { 2C4DE342 - 38B7 - 51CF - B940 - 2309A097F518 } 
+As a sanity check, a profile called 'Ubuntu' will get the generated GUID: `{2C4DE342-38B7-51CF-B940-2309A097F518}` 
 
 ## Minimum requirements for settings added with fragments 
 
