@@ -114,7 +114,7 @@ For applications installed 'traditionally', there are 2 cases.
 
 The first is that the installation is for all the users on the system. In this case, the JSON files should be added to the folder:
 
-**C:\ProgramData\Microsoft\Windows Terminal\Fragments\\{app-name}**
+`C:\ProgramData\Microsoft\Windows Terminal\Fragments\{app-name}`
 
 In the second case, the installation is only for the current user. In this case, the JSON files should be added to the folder:
 
