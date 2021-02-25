@@ -42,11 +42,15 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <ResourceDictionary x:Key="Dark">
                             <!-- Define resources for Dark mode here -->
                             <SolidColorBrush x:Key="TabViewBackground" Color="#FF333333" />
+                            <SolidColorBrush x:Key="ReadOnlyPaneBorderColor" Color="#FFFF6F69" />
+                            <SolidColorBrush x:Key="BroadcastPaneBorderColor" Color="#FF96CEB4" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">
                             <!-- Define resources for Light mode here -->
                             <SolidColorBrush x:Key="TabViewBackground" Color="#FFCCCCCC" />
+                            <SolidColorBrush x:Key="ReadOnlyPaneBorderColor" Color="#FFFF6F69" />
+                            <SolidColorBrush x:Key="BroadcastPaneBorderColor" Color="#FF96CEB4" />
                         </ResourceDictionary>
 
                     </ResourceDictionary.ThemeDictionaries>

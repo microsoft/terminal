@@ -1184,6 +1184,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::ToggleInputBroadcast()
     {
         _tabStatus.IsInputBroadcastActive(!_tabStatus.IsInputBroadcastActive());
+        _rootPane->EnableBroadcast(_tabStatus.IsInputBroadcastActive());
     }
 
     // Method Description:

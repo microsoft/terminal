@@ -83,6 +83,7 @@ public:
 
     bool ContainsReadOnly() const;
 
+    void EnableBroadcast(bool enabled);
     void BroadcastKey(const winrt::Microsoft::Terminal::TerminalControl::TermControl& sourceControl, const WORD vkey, const WORD scanCode, const DWORD modifiers, const bool keyDown);
     void BroadcastChar(const winrt::Microsoft::Terminal::TerminalControl::TermControl& sourceControl, const wchar_t vkey, const WORD scanCode, const DWORD modifiers);
 
@@ -101,6 +102,8 @@ private:
     winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
+    static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_readOnlyBorderBrush;
+    static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_broadcastBorderBrush;
 
     std::shared_ptr<Pane> _firstChild{ nullptr };
     std::shared_ptr<Pane> _secondChild{ nullptr };
@@ -115,6 +118,7 @@ private:
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
     winrt::event_token _warningBellToken{ 0 };
+    winrt::event_token _readOnlyChangedToken{ 0 };
 
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
     winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
@@ -126,6 +130,7 @@ private:
     std::atomic<bool> _isClosing{ false };
 
     bool _zoomed{ false };
+    bool _broadcastEnabled{ false };
 
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
@@ -140,6 +145,7 @@ private:
     void _ApplySplitDefinitions();
     void _SetupEntranceAnimation();
     void _UpdateBorders();
+    winrt::Windows::UI::Xaml::Media::SolidColorBrush _ComputeBorderColor();
 
     bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
     bool _NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
@@ -155,6 +161,8 @@ private:
                                  winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
     void _ControlLostFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                   winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+
+    void _ControlReadOnlyChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& e);
 
     std::pair<float, float> _CalcChildrenSizes(const float fullSize) const;
     SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;
