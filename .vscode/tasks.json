@@ -3,49 +3,37 @@
 	"tasks": [
 		{
 			"type": "process",
-			"label": "Build OpenConsole.exe x64 Debug",
-			"command": "pwsh.exe",
+			"label": "Build Terminal/Console",
+			"command": "powershell.exe",
 			"args": [
 			  "-Command",
 			  "Import-Module ${workspaceFolder}\\tools\\OpenConsole.psm1;",
 			  "Set-MsBuildDevEnvironment;",
+			  "$project = switch(\"${input:buildProjectChoice}\"){OpenConsole{\"Conhost\\Host_EXE\"} Terminal{\"Terminal\\CascadiaPackage\"}};",
+			  "$target = switch(\"${input:buildModeChoice}\"){Build{\"\"} Rebuild{\":Rebuild\"} Clean{\":Clean\"}};",
+			  "$target = $project + $target;",
 			  "msbuild",
 			  "${workspaceFolder}\\OpenConsole.sln",
-			  "/p:Configuration=Debug",
-			  "/p:Platform=x64",
-			  "/t:Conhost\\Host_EXE"
+			  "/p:Configuration=${input:configChoice}",
+			  "/p:Platform=${input:platformChoice}",
+			  "/t:$target",
+			  "/verbosity:minimal"
 			],
 			"problemMatcher": ["$msCompile"],
 			"group": {
 			  "kind": "build",
 			  "isDefault": true
-			}
-		},
-		{
-			"type": "process",
-			"label": "Build Windows Terminal x64 Debug",
-			"command": "pwsh.exe",
-			"args": [
-			  "-Command",
-			  "Import-Module ${workspaceFolder}\\tools\\OpenConsole.psm1;",
-			  "Set-MsBuildDevEnvironment;",
-			  "msbuild",
-			  "${workspaceFolder}\\OpenConsole.sln",
-			  "/p:Configuration=Debug",
-			  "/p:Platform=x64",
-			  "/t:Terminal\\CascadiaPackage",
-			  "/p:AppxSymbolPackageEnabled=false"
-			],
-			"problemMatcher": ["$msCompile"],
-			"group": {
-			  "kind": "build",
-			  "isDefault": true
+			},
+			"runOptions": {
+				"reevaluateOnRerun": false,
+				"instanceLimit": 1,
+				"runOn": "default"
 			}
 		},
 		{
 			"type": "process",
 			"label": "Register Windows Terminal x64 Debug",
-			"command": "pwsh.exe",
+			"command": "powershell.exe",
 			"args": [
 			  "-Command",
 			  "Import-Module ${workspaceFolder}\\tools\\OpenConsole.psm1;",
@@ -64,47 +52,56 @@
 		},
 		{
 			"type": "process",
-			"label": "Run Windows Terminal x64 Debug",
+			"label": "Run Windows Terminal Dev",
 			"command": "wtd.exe",
 			"args": [
 			],
 			"problemMatcher": ["$msCompile"],
-		},
-		{
-			"type": "shell",
-			"label": "Build, Register, and Run Windows Terminal x64 Debug",
-			"command": "Write-Host Done!",
-			"problemMatcher": ["$msCompile"],
-			"group": {
-			  "kind": "build",
-			  "isDefault": true
-			},
-			"dependsOn": [
-				"Build Windows Terminal x64 Debug",
-				"Register Windows Terminal x64 Debug",
-				"Run Windows Terminal x64 Debug"
-			],
-			"dependsOrder": "sequence"
-		},
-		{
-			"type": "process",
-			"label": "Clean Windows Terminal x64 Debug",
-			"command": "pwsh.exe",
-			"args": [
-			  "-Command",
-			  "Import-Module ${workspaceFolder}\\tools\\OpenConsole.psm1;",
-			  "Set-MsBuildDevEnvironment;",
-			  "msbuild",
-			  "${workspaceFolder}\\OpenConsole.sln",
-			  "/p:Configuration=Debug",
-			  "/p:Platform=x64",
-			  "/t:Terminal\\CascadiaPackage:Clean"
-			],
-			"problemMatcher": ["$msCompile"],
-			"group": {
-			  "kind": "build",
-			  "isDefault": true
-			}
 		}
+	],
+	"inputs":[
+		{
+			"id": "platformChoice",
+			"type": "pickString",
+			"description": "Processor architecture choice",
+			"options":[
+				"x64",
+				"x86",
+				"arm64"
+			],
+			"default": "x64"
+		},
+		{
+			"id": "configChoice",
+			"type": "pickString",
+			"description": "Debug or release?",
+			"options":[
+				"Debug",
+				"Release"
+			],
+			"default": "Debug"
+		},
+		{
+			"id": "buildModeChoice",
+			"type": "pickString",
+			"description": "Build, rebuild, or clean?",
+			"options":[
+				"Build",
+				"Rebuild",
+				"Clean"
+			],
+			"default": "Build"
+		},
+		{
+			"id": "buildProjectChoice",
+			"type": "pickString",
+			"description": "OpenConsole or Terminal?",
+			"options":[
+				"OpenConsole",
+				"Terminal"
+			],
+			"default": "Terminal"
+		}
+
 	]
 }
