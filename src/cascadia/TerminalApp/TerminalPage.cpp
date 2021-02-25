@@ -882,7 +882,7 @@ namespace winrt::TerminalApp::implementation
 
         if (debugConnection) // this will only be set if global debugging is on and tap is active
         {
-            TermControl newControl{ settings, debugConnection };
+            TermControl newControl{ *(winrt::get_self<TerminalSettings>(settings)->CreateChild()), debugConnection };
             _RegisterTerminalEvents(newControl, *newTabImpl);
             // Split (auto) with the debug tap.
             newTabImpl->SplitPane(SplitState::Automatic, 0.5f, profileGuid, newControl);
@@ -1865,7 +1865,7 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            TermControl newControl{ controlSettings, controlConnection };
+            TermControl newControl{ *(winrt::get_self<TerminalSettings>(controlSettings)->CreateChild()), controlConnection };
 
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl, *focusedTab);
