@@ -658,7 +658,7 @@ namespace winrt::TerminalApp::implementation
                 settingsItem.Click({ this, &TerminalPage::_SettingsButtonOnClick });
                 newTabFlyout.Items().Append(settingsItem);
 
-                Microsoft::Terminal::Settings::Model::OpenSettingsArgs args{ SettingsTarget::SettingsFile };
+                Microsoft::Terminal::Settings::Model::OpenSettingsArgs args{ SettingsTarget::SettingsUI };
                 Microsoft::Terminal::Settings::Model::ActionAndArgs settingsAction{ ShortcutAction::OpenSettings, args };
                 const auto settingsKeyChord{ keyBindings.GetKeyBindingForActionWithArgs(settingsAction) };
                 if (settingsKeyChord)
