@@ -146,8 +146,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // get the localized name
                 UINT32 nameLength;
                 THROW_IF_FAILED(localizedFamilyNames->GetStringLength(index, &nameLength));
-                auto localizedName{ std::make_unique<wchar_t[]>(nameLength + 1) };
-                THROW_IF_FAILED(localizedFamilyNames->GetString(index, localizedName.get(), nameLength + 1));
+
+                std::wstring localizedName;
+                localizedName.resize(nameLength);
+                THROW_IF_FAILED(localizedFamilyNames->GetString(index, localizedName.data(), nameLength + 1));
 
                 // get the standard version of that font
                 com_ptr<IDWriteFont> font;
@@ -159,9 +161,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // add the font name to our list
                 if (font.as<IDWriteFont1>()->IsMonospacedFont())
                 {
-                    monospaceFontList.emplace_back(localizedName.get());
+                    monospaceFontList.emplace_back(localizedName);
                 }
-                fontList.emplace_back(std::move(localizedName.get()));
+                fontList.emplace_back(std::move(localizedName));
             }
             catch (...)
             {
