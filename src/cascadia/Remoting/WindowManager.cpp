@@ -127,18 +127,31 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             if (responseId > 0)
             {
                 givenID = ::base::saturated_cast<uint64_t>(responseId);
+
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "WindowManager_ProposeCommandline_AsMonarch",
+                                  TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
+                                  TraceLoggingUInt64(givenID.value(), "Id", "The ID we should assign our peasant"),
+                                  TraceLoggingWideString(givenName.c_str(), "Name", "The name we should assign this window"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
             }
             else if (responseId == WindowingBehaviorUseName)
             {
                 givenName = findWindowArgs->ResultTargetWindowName();
-            }
 
-            TraceLoggingWrite(g_hRemotingProvider,
-                              "WindowManager_ProposeCommandline_AsMonarch",
-                              TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
-                              TraceLoggingUInt64(givenID.value(), "Id", "The ID we should assign our peasant"),
-                              TraceLoggingWideString(givenName.c_str(), "Name", "The name we should assign this window"),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "WindowManager_ProposeCommandline_AsMonarch",
+                                  TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
+                                  TraceLoggingWideString(givenName.c_str(), "Name", "The name we should assign this window"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+            }
+            else
+            {
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "WindowManager_ProposeCommandline_AsMonarch",
+                                  TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+            }
         }
 
         if (_shouldCreateWindow)
