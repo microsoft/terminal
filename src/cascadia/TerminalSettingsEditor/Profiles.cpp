@@ -7,8 +7,6 @@
 #include "EnumEntry.h"
 
 #include <LibraryResources.h>
-#include "dwrite.h"
-#include <dwrite_1.h>
 
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Xaml;
@@ -104,17 +102,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         std::vector<hstring> monospaceFontList;
 
         // get a DWriteFactory
-        ::IUnknown* unknownFactory;
+        com_ptr<IDWriteFactory> factory;
         THROW_IF_FAILED(DWriteCreateFactory(
             DWRITE_FACTORY_TYPE_SHARED,
-            __uuidof(::IDWriteFactory),
-            &unknownFactory));
-
-        ::IDWriteFactory* dwriteFactory;
-        THROW_IF_FAILED(unknownFactory->QueryInterface(&dwriteFactory));
-
-        com_ptr<::IDWriteFactory> factory{};
-        factory.attach(dwriteFactory);
+            __uuidof(IDWriteFactory),
+            reinterpret_cast<::IUnknown**>(factory.put())));
 
         // get the font collection; subscribe to updates
         com_ptr<::IDWriteFontCollection> fontCollection;

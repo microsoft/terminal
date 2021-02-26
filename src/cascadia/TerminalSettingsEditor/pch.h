@@ -54,6 +54,8 @@
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
 
 #include "shobjidl_core.h"
+#include <dwrite.h>
+#include <dwrite_1.h>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
