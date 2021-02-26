@@ -29,34 +29,47 @@ static const std::array<winrt::guid, 2> InBoxProfileGuids{
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    Windows::Foundation::Collections::IObservableVector<hstring> Profiles::_FontList{ nullptr };
+    Windows::Foundation::Collections::IObservableVector<hstring> ProfileViewModel::_MonospaceFontList{ nullptr };
+    Windows::Foundation::Collections::IObservableVector<hstring> ProfileViewModel::_FontList{ nullptr };
 
     ProfileViewModel::ProfileViewModel(const Model::Profile& profile) :
-        _profile{ profile }
+        _profile{ profile },
+        _ShowAllFonts{ false }
     {
         // Add a property changed handler to our own property changed event.
-        // When the BackgroundImagePath changes, we _also_ need to change the
-        // value of UseDesktopBGImage.
-        //
-        // We need to do this so if someone manually types "desktopWallpaper"
-        // into the path TextBox, we properly update the checkbox and stored
-        // _lastBgImagePath. Without this, then we'll permanently hide the text
-        // box, prevent it from ever being changed again.
-        //
-        // We do the same for the starting directory path
+        // This propagates changes from the settings model to anybody listening to our
+        //  unique view model members.
         PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
             const auto viewModelProperty{ args.PropertyName() };
             if (viewModelProperty == L"BackgroundImagePath")
             {
+                // notify listener that all background image related values might have changed
+                //
+                // We need to do this so if someone manually types "desktopWallpaper"
+                // into the path TextBox, we properly update the checkbox and stored
+                // _lastBgImagePath. Without this, then we'll permanently hide the text
+                // box, prevent it from ever being changed again.
                 _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsVisible");
             }
             else if (viewModelProperty == L"IsBaseLayer")
             {
+                // we _always_ want to show the background image settings in base layer
                 _NotifyChanges(L"BackgroundImageSettingsVisible");
             }
             else if (viewModelProperty == L"StartingDirectory")
             {
+                // notify listener that all starting directory related values might have changed
+                // NOTE: this is similar to what is done with BackgroundImagePath above
                 _NotifyChanges(L"UseParentProcessDirectory", L"UseCustomStartingDirectory");
+            }
+            else if (viewModelProperty == L"FontFace")
+            {
+                // notify listener that all font face related values might have changed
+                if (!UsingMonospaceFont())
+                {
+                    _ShowAllFonts = true;
+                }
+                _NotifyChanges(L"ShowAllFonts", L"UsingMonospaceFont");
             }
         });
 
@@ -72,6 +85,150 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (!StartingDirectory().empty())
         {
             _lastStartingDirectoryPath = StartingDirectory();
+        }
+
+        // generate the font list, if we don't have one
+        if (!_FontList || !_MonospaceFontList)
+        {
+            UpdateFontList();
+        }
+    }
+
+    // Method Description:
+    // - Updates the lists of fonts and sorts them alphabetically
+    void ProfileViewModel::UpdateFontList() noexcept
+    try
+    {
+        // initialize font list
+        std::vector<hstring> fontList;
+        std::vector<hstring> monospaceFontList;
+
+        // get a DWriteFactory
+        ::IUnknown* unknownFactory;
+        THROW_IF_FAILED(DWriteCreateFactory(
+            DWRITE_FACTORY_TYPE_SHARED,
+            __uuidof(::IDWriteFactory),
+            &unknownFactory));
+
+        ::IDWriteFactory* dwriteFactory;
+        THROW_IF_FAILED(unknownFactory->QueryInterface(&dwriteFactory));
+
+        com_ptr<::IDWriteFactory> factory{};
+        factory.attach(dwriteFactory);
+
+        // get the font collection; subscribe to updates
+        com_ptr<::IDWriteFontCollection> fontCollection;
+        THROW_IF_FAILED(factory->GetSystemFontCollection(fontCollection.put(), TRUE));
+
+        for (UINT32 i = 0; i < fontCollection->GetFontFamilyCount(); ++i)
+        {
+            try
+            {
+                // get the font family
+                com_ptr<::IDWriteFontFamily> fontFamily;
+                THROW_IF_FAILED(fontCollection->GetFontFamily(i, fontFamily.put()));
+
+                // get the font's localized names
+                com_ptr<::IDWriteLocalizedStrings> localizedFamilyNames;
+                THROW_IF_FAILED(fontFamily->GetFamilyNames(localizedFamilyNames.put()));
+
+                // use our current locale to find the correct name
+                BOOL exists{ FALSE };
+                UINT32 index;
+                HRESULT hr;
+                wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
+                if (GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH))
+                {
+                    hr = localizedFamilyNames->FindLocaleName(localeName, &index, &exists);
+                }
+                if (SUCCEEDED(hr) && !exists)
+                {
+                    hr = localizedFamilyNames->FindLocaleName(L"en-us", &index, &exists);
+                }
+                if (!exists)
+                {
+                    // failed to find the correct locale, using the first one
+                    index = 0;
+                }
+
+                // get the localized name
+                UINT32 nameLength;
+                THROW_IF_FAILED(localizedFamilyNames->GetStringLength(index, &nameLength));
+                wchar_t* localizedName = new (std::nothrow) wchar_t[nameLength + 1];
+                THROW_IF_FAILED(localizedFamilyNames->GetString(index, localizedName, nameLength + 1));
+
+                // get the standard version of that font
+                com_ptr<::IDWriteFont> font;
+                THROW_IF_FAILED(fontFamily->GetFirstMatchingFont(DWRITE_FONT_WEIGHT::DWRITE_FONT_WEIGHT_NORMAL,
+                                                                 DWRITE_FONT_STRETCH::DWRITE_FONT_STRETCH_NORMAL,
+                                                                 DWRITE_FONT_STYLE::DWRITE_FONT_STYLE_NORMAL,
+                                                                 font.put()));
+
+                // add the font name to our list
+                if (font.as<IDWriteFont1>()->IsMonospacedFont())
+                {
+                    monospaceFontList.emplace_back(localizedName);
+                }
+                fontList.emplace_back(std::move(localizedName));
+            }
+            catch (...)
+            {
+                LOG_CAUGHT_EXCEPTION();
+                continue;
+            }
+        }
+
+        // sort and save the lists
+        std::sort(begin(fontList), end(fontList));
+        _FontList = single_threaded_observable_vector<hstring>(std::move(fontList));
+
+        std::sort(begin(monospaceFontList), end(monospaceFontList));
+        _MonospaceFontList = single_threaded_observable_vector<hstring>(std::move(monospaceFontList));
+    }
+    CATCH_LOG();
+
+    IObservableVector<hstring> ProfileViewModel::CompleteFontList() const noexcept
+    {
+        return _FontList;
+    }
+
+    IObservableVector<hstring> ProfileViewModel::MonospaceFontList() const noexcept
+    {
+        return _MonospaceFontList;
+    }
+
+    // Method Description:
+    // - Searches through our list of monospace fonts to determine if the settings model's current font face is a monospace font
+    // - NOTE: This is information stored from DWrite in _UpdateFontList()
+    bool ProfileViewModel::UsingMonospaceFont() const noexcept
+    {
+        bool result{ false };
+        const auto currentFont{ FontFace() };
+        for (const auto& font : _MonospaceFontList)
+        {
+            if (font == currentFont)
+            {
+                result = true;
+            }
+        }
+        return result;
+    }
+
+    // Method Description:
+    // - Determines whether we should show the list of all the fonts, or we should just show monospace fonts
+    bool ProfileViewModel::ShowAllFonts() const noexcept
+    {
+        // - _ShowAllFonts is directly bound to the checkbox. So this is the user set value.
+        // - If we are not using a monospace font, show all of the fonts so that the ComboBox is still properly bound
+        return _ShowAllFonts || !UsingMonospaceFont();
+    }
+
+    void ProfileViewModel::ShowAllFonts(const bool& value)
+    {
+        if (_ShowAllFonts != value)
+        {
+            _ShowAllFonts = value;
+            _NotifyChanges(L"ShowAllFonts");
         }
     }
 
@@ -226,131 +383,44 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Automation::AutomationProperties::SetFullDescription(UseDesktopImageCheckBox(), unbox_value<hstring>(backgroundImgCheckboxTooltip));
 
         Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"Profile_DeleteButton/Text"));
-
-        if (!_FontList)
-        {
-            _UpdateFontList();
-        }
-    }
-
-    void Profiles::_UpdateFontList()
-    try
-    {
-        // initialize font list
-        std::vector<hstring> fontList;
-
-        // get a DWriteFactory
-        ::IUnknown* unknownFactory;
-        THROW_IF_FAILED(DWriteCreateFactory(
-            DWRITE_FACTORY_TYPE_SHARED,
-            __uuidof(::IDWriteFactory),
-            &unknownFactory));
-
-        ::IDWriteFactory* dwriteFactory;
-        THROW_IF_FAILED(unknownFactory->QueryInterface(&dwriteFactory));
-
-        com_ptr<::IDWriteFactory> factory{};
-        factory.attach(dwriteFactory);
-
-        // get the font collection; subscribe to updates
-        com_ptr<::IDWriteFontCollection> fontCollection;
-        THROW_IF_FAILED(factory->GetSystemFontCollection(fontCollection.put(), TRUE));
-
-        for (UINT32 i = 0; i < fontCollection->GetFontFamilyCount(); ++i)
-        {
-            try
-            {
-                // get the font family
-                com_ptr<::IDWriteFontFamily> fontFamily;
-                THROW_IF_FAILED(fontCollection->GetFontFamily(i, fontFamily.put()));
-
-                // get the standard version of that font
-                com_ptr<::IDWriteFont> font;
-                THROW_IF_FAILED(fontFamily->GetFirstMatchingFont(DWRITE_FONT_WEIGHT::DWRITE_FONT_WEIGHT_NORMAL,
-                                                                 DWRITE_FONT_STRETCH::DWRITE_FONT_STRETCH_NORMAL,
-                                                                 DWRITE_FONT_STYLE::DWRITE_FONT_STYLE_NORMAL,
-                                                                 font.put()));
-
-                // convert it to an IDWriteFont1 to check if it's a monospace font
-                com_ptr<::IDWriteFont1> font1;
-                font.as(font1);
-                if (!font1->IsMonospacedFont())
-                {
-                    // exclude non-monospace fonts from the list
-                    continue;
-                }
-
-                // get the font's localized names
-                com_ptr<::IDWriteLocalizedStrings> localizedFamilyNames;
-                THROW_IF_FAILED(fontFamily->GetFamilyNames(localizedFamilyNames.put()));
-
-                // use our current locale to find the correct name
-                BOOL exists{ FALSE };
-                UINT32 index;
-                HRESULT hr;
-                wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
-                if (GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH))
-                {
-                    hr = localizedFamilyNames->FindLocaleName(localeName, &index, &exists);
-                }
-                if (SUCCEEDED(hr) && !exists)
-                {
-                    hr = localizedFamilyNames->FindLocaleName(L"en-us", &index, &exists);
-                }
-                if (!exists)
-                {
-                    // failed to find the correct locale, using the first one
-                    index = 0;
-                }
-
-                // get the localized name
-                UINT32 nameLength;
-                THROW_IF_FAILED(localizedFamilyNames->GetStringLength(index, &nameLength));
-                wchar_t* localizedName = new (std::nothrow) wchar_t[nameLength + 1];
-                THROW_IF_FAILED(localizedFamilyNames->GetString(index, localizedName, nameLength + 1));
-
-                // add the font name to our list
-                fontList.emplace_back(std::move(localizedName));
-            }
-            catch (...)
-            {
-                LOG_CAUGHT_EXCEPTION();
-                continue;
-            }
-        }
-
-        // sort and export the list
-        std::sort(begin(fontList), end(fontList));
-        _FontList = single_threaded_observable_vector<hstring>(std::move(fontList));
-    }
-    CATCH_LOG();
-
-    IObservableVector<hstring> Profiles::FontList()
-    {
-        return _FontList;
     }
 
     IInspectable Profiles::CurrentFontFace() const
     {
-        const auto profileFontFace{ State().Profile().FontFace() };
-        for (const auto& font : _FontList)
+        // look for the current font in our shown list of fonts
+        const auto& profileVM{ State().Profile() };
+        const auto profileFontFace{ profileVM.FontFace() };
+        const auto& currentFontList{ profileVM.ShowAllFonts() ? profileVM.CompleteFontList() : profileVM.MonospaceFontList() };
+        for (const auto font : currentFontList)
         {
             if (font == profileFontFace)
             {
                 return box_value(font);
             }
         }
+
+        // we couldn't find the desired font, set to "Cascadia Mono" since that ships by default
         return box_value(L"Cascadia Mono");
     }
 
-    void Profiles::CurrentFontFace(IInspectable const& val)
+    void Profiles::FontFace_SelectionChanged(IInspectable const& /*sender*/, SelectionChangedEventArgs const& e)
     {
-        State().Profile().FontFace(unbox_value<hstring>(val));
+        // NOTE: We need to hook up a selection changed event handler here instead of directly binding to the profile view model.
+        //       A two way binding to the view model causes an infinite loop because both combo boxes keep fighting over which one's right.
+        const auto selectedItem{ e.AddedItems().GetAt(0) };
+        const auto newFontFace{ unbox_value<hstring>(selectedItem) };
+        State().Profile().FontFace(newFontFace);
     }
 
     void Profiles::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::ProfilePageNavigationState>();
+
+        // generate the font list, if we don't have one
+        if (!_State.Profile().CompleteFontList() || !_State.Profile().MonospaceFontList())
+        {
+            ProfileViewModel::UpdateFontList();
+        }
 
         const auto& colorSchemeMap{ _State.Schemes() };
         for (const auto& pair : colorSchemeMap)
@@ -424,7 +494,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
             }
-            else if (settingName == L"FontFace")
+            else if (settingName == L"FontFace" || settingName == L"CurrentFontList")
             {
                 _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentFontFace" });
             }

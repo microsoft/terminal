@@ -14,10 +14,15 @@ namespace Microsoft.Terminal.Settings.Editor
 {
     runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
+        Windows.Foundation.Collections.IObservableVector<String> CompleteFontList { get; };
+        Windows.Foundation.Collections.IObservableVector<String> MonospaceFontList { get; };
+
         Boolean CanDeleteProfile { get; };
+        Boolean UsingMonospaceFont { get; };
         Boolean IsBaseLayer;
         Boolean UseDesktopBGImage;
         Boolean UseParentProcessDirectory;
+        Boolean ShowAllFonts;
         Boolean UseCustomStartingDirectory { get; };
         Boolean BackgroundImageSettingsVisible { get; };
 
@@ -115,7 +120,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };
 
-        IInspectable CurrentFontFace;
-        Windows.Foundation.Collections.IObservableVector<String> FontList { get; };
+        IInspectable CurrentFontFace { get; };
     }
 }
