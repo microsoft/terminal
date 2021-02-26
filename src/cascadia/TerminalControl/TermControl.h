@@ -152,9 +152,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TerminalConnection::ConnectionState ConnectionState() const;
         IControlSettings Settings() const;
 
-        IControlSettings UnfocusedAppearance() const;
-        void UnfocusedAppearance(IControlSettings unfocusedAppearance);
-
         static Windows::Foundation::Size GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi);
         static Windows::Foundation::Size GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,
                                                                const int32_t& fontSize,
@@ -195,6 +192,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TYPED_EVENT(FocusFollowMouseRequested, IInspectable, IInspectable);
         // clang-format on
 
+        GETSET_PROPERTY(IControlAppearance, UnfocusedAppearance);
+
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
         TerminalConnection::ITerminalConnection _connection;
@@ -212,7 +211,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
 
         IControlSettings _settings;
-        IControlSettings _unfocusedAppearance;
         bool _focused;
         std::atomic<bool> _closing;
 
