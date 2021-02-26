@@ -109,7 +109,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             reinterpret_cast<::IUnknown**>(factory.put())));
 
         // get the font collection; subscribe to updates
-        com_ptr<::IDWriteFontCollection> fontCollection;
+        com_ptr<IDWriteFontCollection> fontCollection;
         THROW_IF_FAILED(factory->GetSystemFontCollection(fontCollection.put(), TRUE));
 
         for (UINT32 i = 0; i < fontCollection->GetFontFamilyCount(); ++i)
@@ -117,11 +117,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             try
             {
                 // get the font family
-                com_ptr<::IDWriteFontFamily> fontFamily;
+                com_ptr<IDWriteFontFamily> fontFamily;
                 THROW_IF_FAILED(fontCollection->GetFontFamily(i, fontFamily.put()));
 
                 // get the font's localized names
-                com_ptr<::IDWriteLocalizedStrings> localizedFamilyNames;
+                com_ptr<IDWriteLocalizedStrings> localizedFamilyNames;
                 THROW_IF_FAILED(fontFamily->GetFamilyNames(localizedFamilyNames.put()));
 
                 // use our current locale to find the correct name
@@ -146,11 +146,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // get the localized name
                 UINT32 nameLength;
                 THROW_IF_FAILED(localizedFamilyNames->GetStringLength(index, &nameLength));
-                wchar_t* localizedName = new (std::nothrow) wchar_t[nameLength + 1];
-                THROW_IF_FAILED(localizedFamilyNames->GetString(index, localizedName, nameLength + 1));
+                auto localizedName{ std::make_unique<wchar_t[]>(nameLength + 1) };
+                THROW_IF_FAILED(localizedFamilyNames->GetString(index, localizedName.get(), nameLength + 1));
 
                 // get the standard version of that font
-                com_ptr<::IDWriteFont> font;
+                com_ptr<IDWriteFont> font;
                 THROW_IF_FAILED(fontFamily->GetFirstMatchingFont(DWRITE_FONT_WEIGHT::DWRITE_FONT_WEIGHT_NORMAL,
                                                                  DWRITE_FONT_STRETCH::DWRITE_FONT_STRETCH_NORMAL,
                                                                  DWRITE_FONT_STYLE::DWRITE_FONT_STYLE_NORMAL,
@@ -159,9 +159,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // add the font name to our list
                 if (font.as<IDWriteFont1>()->IsMonospacedFont())
                 {
-                    monospaceFontList.emplace_back(localizedName);
+                    monospaceFontList.emplace_back(localizedName.get());
                 }
-                fontList.emplace_back(std::move(localizedName));
+                fontList.emplace_back(std::move(localizedName.get()));
             }
             catch (...)
             {
