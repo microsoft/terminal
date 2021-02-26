@@ -12,6 +12,8 @@
 
 #include "AppCommandlineArgs.h"
 
+#define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+
 static constexpr uint32_t DefaultRowsToScroll{ 3 };
 static constexpr std::wstring_view TabletInputServiceKey{ L"TabletInputService" };
 // fwdecl unittest classes
@@ -275,52 +277,52 @@ namespace winrt::TerminalApp::implementation
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
-        void _HandleOpenNewTabDropdown(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleDuplicateTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleCloseTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleClosePane(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleScrollUp(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleScrollDown(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleNextTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandlePrevTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleSendInput(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleSplitPane(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleTogglePaneZoom(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleScrollUpPage(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleScrollDownPage(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleScrollToTop(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleScrollToBottom(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleOpenSettings(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandlePasteText(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleNewTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleSwitchToTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleResizePane(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleMoveFocus(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleCopyText(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleCloseWindow(const IInspectable&, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleAdjustFontSize(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleFind(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleResetFontSize(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleToggleShaderEffects(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleToggleFocusMode(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleToggleFullscreen(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleToggleAlwaysOnTop(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleSetColorScheme(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleSetTabColor(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleOpenTabColorPicker(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleRenameTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleOpenTabRenamer(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleExecuteCommandline(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleToggleCommandPalette(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleCloseOtherTabs(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleCloseTabsAfter(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleOpenTabSearch(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleMoveTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleBreakIntoDebugger(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleFindMatch(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleTogglePaneReadOnly(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleNewWindow(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-
+        DECLARE_ACTION_HANDLER(OpenNewTabDropdown);
+        DECLARE_ACTION_HANDLER(DuplicateTab);
+        DECLARE_ACTION_HANDLER(CloseTab);
+        DECLARE_ACTION_HANDLER(ClosePane);
+        DECLARE_ACTION_HANDLER(ScrollUp);
+        DECLARE_ACTION_HANDLER(ScrollDown);
+        DECLARE_ACTION_HANDLER(NextTab);
+        DECLARE_ACTION_HANDLER(PrevTab);
+        DECLARE_ACTION_HANDLER(SendInput);
+        DECLARE_ACTION_HANDLER(SplitPane);
+        DECLARE_ACTION_HANDLER(TogglePaneZoom);
+        DECLARE_ACTION_HANDLER(ScrollUpPage);
+        DECLARE_ACTION_HANDLER(ScrollDownPage);
+        DECLARE_ACTION_HANDLER(ScrollToTop);
+        DECLARE_ACTION_HANDLER(ScrollToBottom);
+        DECLARE_ACTION_HANDLER(OpenSettings);
+        DECLARE_ACTION_HANDLER(PasteText);
+        DECLARE_ACTION_HANDLER(NewTab);
+        DECLARE_ACTION_HANDLER(SwitchToTab);
+        DECLARE_ACTION_HANDLER(ResizePane);
+        DECLARE_ACTION_HANDLER(MoveFocus);
+        DECLARE_ACTION_HANDLER(CopyText);
+        DECLARE_ACTION_HANDLER(CloseWindow);
+        DECLARE_ACTION_HANDLER(AdjustFontSize);
+        DECLARE_ACTION_HANDLER(Find);
+        DECLARE_ACTION_HANDLER(ResetFontSize);
+        DECLARE_ACTION_HANDLER(ToggleShaderEffects);
+        DECLARE_ACTION_HANDLER(ToggleFocusMode);
+        DECLARE_ACTION_HANDLER(ToggleFullscreen);
+        DECLARE_ACTION_HANDLER(ToggleAlwaysOnTop);
+        DECLARE_ACTION_HANDLER(SetColorScheme);
+        DECLARE_ACTION_HANDLER(SetTabColor);
+        DECLARE_ACTION_HANDLER(OpenTabColorPicker);
+        DECLARE_ACTION_HANDLER(RenameTab);
+        DECLARE_ACTION_HANDLER(OpenTabRenamer);
+        DECLARE_ACTION_HANDLER(ExecuteCommandline);
+        DECLARE_ACTION_HANDLER(ToggleCommandPalette);
+        DECLARE_ACTION_HANDLER(CloseOtherTabs);
+        DECLARE_ACTION_HANDLER(CloseTabsAfter);
+        DECLARE_ACTION_HANDLER(TabSearch);
+        DECLARE_ACTION_HANDLER(MoveTab);
+        DECLARE_ACTION_HANDLER(BreakIntoDebugger);
+        DECLARE_ACTION_HANDLER(FindMatch);
+        DECLARE_ACTION_HANDLER(TogglePaneReadOnly);
+        DECLARE_ACTION_HANDLER(NewWindow);
+        DECLARE_ACTION_HANDLER(IdentifyWindows);
         // Make sure to hook new actions up in _RegisterActionCallbacks!
 #pragma endregion
 

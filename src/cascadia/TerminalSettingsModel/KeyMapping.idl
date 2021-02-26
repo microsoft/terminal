@@ -54,7 +54,8 @@ namespace Microsoft.Terminal.Settings.Model
         BreakIntoDebugger,
         TogglePaneReadOnly,
         FindMatch,
-        NewWindow
+        NewWindow,
+        IdentifyWindows
     };
 
     [default_interface] runtimeclass ActionAndArgs {

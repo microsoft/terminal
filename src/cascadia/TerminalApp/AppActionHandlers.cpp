@@ -544,8 +544,8 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleOpenTabSearch(const IInspectable& /*sender*/,
-                                            const ActionEventArgs& args)
+    void TerminalPage::_HandleTabSearch(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
     {
         CommandPalette().SetTabs(_tabs, _mruTabs);
         CommandPalette().EnableTabSearchMode();
@@ -668,4 +668,9 @@ namespace winrt::TerminalApp::implementation
         actionArgs.Handled(true);
     }
 
+    void TerminalPage::_HandleIdentifyWindows(const IInspectable& /*sender*/,
+                                              const ActionEventArgs& args)
+    {
+        args.Handled(false);
+    }
 }

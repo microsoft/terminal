@@ -32,6 +32,8 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::TerminalApp;
 using namespace ::Microsoft::Console;
 
+#define HOOKUP_ACTION(action) _actionDispatch->action({ this, &TerminalPage::_Handle##action });
+
 namespace winrt
 {
     namespace MUX = Microsoft::UI::Xaml;
@@ -1113,51 +1115,52 @@ namespace winrt::TerminalApp::implementation
         // Hook up the ShortcutActionDispatch object's events to our handlers.
         // They should all be hooked up here, regardless of whether or not
         // there's an actual keychord for them.
-        _actionDispatch->OpenNewTabDropdown({ this, &TerminalPage::_HandleOpenNewTabDropdown });
-        _actionDispatch->DuplicateTab({ this, &TerminalPage::_HandleDuplicateTab });
-        _actionDispatch->CloseTab({ this, &TerminalPage::_HandleCloseTab });
-        _actionDispatch->ClosePane({ this, &TerminalPage::_HandleClosePane });
-        _actionDispatch->CloseWindow({ this, &TerminalPage::_HandleCloseWindow });
-        _actionDispatch->ScrollUp({ this, &TerminalPage::_HandleScrollUp });
-        _actionDispatch->ScrollDown({ this, &TerminalPage::_HandleScrollDown });
-        _actionDispatch->NextTab({ this, &TerminalPage::_HandleNextTab });
-        _actionDispatch->PrevTab({ this, &TerminalPage::_HandlePrevTab });
-        _actionDispatch->SendInput({ this, &TerminalPage::_HandleSendInput });
-        _actionDispatch->SplitPane({ this, &TerminalPage::_HandleSplitPane });
-        _actionDispatch->TogglePaneZoom({ this, &TerminalPage::_HandleTogglePaneZoom });
-        _actionDispatch->ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });
-        _actionDispatch->ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
-        _actionDispatch->ScrollToTop({ this, &TerminalPage::_HandleScrollToTop });
-        _actionDispatch->ScrollToBottom({ this, &TerminalPage::_HandleScrollToBottom });
-        _actionDispatch->OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
-        _actionDispatch->PasteText({ this, &TerminalPage::_HandlePasteText });
-        _actionDispatch->NewTab({ this, &TerminalPage::_HandleNewTab });
-        _actionDispatch->SwitchToTab({ this, &TerminalPage::_HandleSwitchToTab });
-        _actionDispatch->ResizePane({ this, &TerminalPage::_HandleResizePane });
-        _actionDispatch->MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
-        _actionDispatch->CopyText({ this, &TerminalPage::_HandleCopyText });
-        _actionDispatch->AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
-        _actionDispatch->Find({ this, &TerminalPage::_HandleFind });
-        _actionDispatch->ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
-        _actionDispatch->ToggleShaderEffects({ this, &TerminalPage::_HandleToggleShaderEffects });
-        _actionDispatch->ToggleFocusMode({ this, &TerminalPage::_HandleToggleFocusMode });
-        _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
-        _actionDispatch->ToggleAlwaysOnTop({ this, &TerminalPage::_HandleToggleAlwaysOnTop });
-        _actionDispatch->ToggleCommandPalette({ this, &TerminalPage::_HandleToggleCommandPalette });
-        _actionDispatch->SetColorScheme({ this, &TerminalPage::_HandleSetColorScheme });
-        _actionDispatch->SetTabColor({ this, &TerminalPage::_HandleSetTabColor });
-        _actionDispatch->OpenTabColorPicker({ this, &TerminalPage::_HandleOpenTabColorPicker });
-        _actionDispatch->RenameTab({ this, &TerminalPage::_HandleRenameTab });
-        _actionDispatch->OpenTabRenamer({ this, &TerminalPage::_HandleOpenTabRenamer });
-        _actionDispatch->ExecuteCommandline({ this, &TerminalPage::_HandleExecuteCommandline });
-        _actionDispatch->CloseOtherTabs({ this, &TerminalPage::_HandleCloseOtherTabs });
-        _actionDispatch->CloseTabsAfter({ this, &TerminalPage::_HandleCloseTabsAfter });
-        _actionDispatch->TabSearch({ this, &TerminalPage::_HandleOpenTabSearch });
-        _actionDispatch->MoveTab({ this, &TerminalPage::_HandleMoveTab });
-        _actionDispatch->BreakIntoDebugger({ this, &TerminalPage::_HandleBreakIntoDebugger });
-        _actionDispatch->FindMatch({ this, &TerminalPage::_HandleFindMatch });
-        _actionDispatch->TogglePaneReadOnly({ this, &TerminalPage::_HandleTogglePaneReadOnly });
-        _actionDispatch->NewWindow({ this, &TerminalPage::_HandleNewWindow });
+        HOOKUP_ACTION(OpenNewTabDropdown);
+        HOOKUP_ACTION(DuplicateTab);
+        HOOKUP_ACTION(CloseTab);
+        HOOKUP_ACTION(ClosePane);
+        HOOKUP_ACTION(CloseWindow);
+        HOOKUP_ACTION(ScrollUp);
+        HOOKUP_ACTION(ScrollDown);
+        HOOKUP_ACTION(NextTab);
+        HOOKUP_ACTION(PrevTab);
+        HOOKUP_ACTION(SendInput);
+        HOOKUP_ACTION(SplitPane);
+        HOOKUP_ACTION(TogglePaneZoom);
+        HOOKUP_ACTION(ScrollUpPage);
+        HOOKUP_ACTION(ScrollDownPage);
+        HOOKUP_ACTION(ScrollToTop);
+        HOOKUP_ACTION(ScrollToBottom);
+        HOOKUP_ACTION(OpenSettings);
+        HOOKUP_ACTION(PasteText);
+        HOOKUP_ACTION(NewTab);
+        HOOKUP_ACTION(SwitchToTab);
+        HOOKUP_ACTION(ResizePane);
+        HOOKUP_ACTION(MoveFocus);
+        HOOKUP_ACTION(CopyText);
+        HOOKUP_ACTION(AdjustFontSize);
+        HOOKUP_ACTION(Find);
+        HOOKUP_ACTION(ResetFontSize);
+        HOOKUP_ACTION(ToggleShaderEffects);
+        HOOKUP_ACTION(ToggleFocusMode);
+        HOOKUP_ACTION(ToggleFullscreen);
+        HOOKUP_ACTION(ToggleAlwaysOnTop);
+        HOOKUP_ACTION(ToggleCommandPalette);
+        HOOKUP_ACTION(SetColorScheme);
+        HOOKUP_ACTION(SetTabColor);
+        HOOKUP_ACTION(OpenTabColorPicker);
+        HOOKUP_ACTION(RenameTab);
+        HOOKUP_ACTION(OpenTabRenamer);
+        HOOKUP_ACTION(ExecuteCommandline);
+        HOOKUP_ACTION(CloseOtherTabs);
+        HOOKUP_ACTION(CloseTabsAfter);
+        HOOKUP_ACTION(TabSearch);
+        HOOKUP_ACTION(MoveTab);
+        HOOKUP_ACTION(BreakIntoDebugger);
+        HOOKUP_ACTION(FindMatch);
+        HOOKUP_ACTION(TogglePaneReadOnly);
+        HOOKUP_ACTION(NewWindow);
+        HOOKUP_ACTION(IdentifyWindows);
     }
 
     // Method Description:
