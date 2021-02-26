@@ -3290,6 +3290,24 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    winrt::fire_and_forget TerminalPage::IdentifyWindow()
+    {
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_foreground(Dispatcher());
+        if (auto page{ weakThis.get() })
+        {
+            page->WindowIdToast().IsOpen(true);
+        }
+    }
+    winrt::hstring TerminalPage::WindowName()
+    {
+        return L"<unnamed-window>";
+    }
+    uint64_t TerminalPage::WindowId()
+    {
+        return 42;
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.

@@ -1368,6 +1368,14 @@ namespace winrt::TerminalApp::implementation
         return _root ? _root->AlwaysOnTop() : false;
     }
 
+    void AppLogic::IdentifyWindow()
+    {
+        if (_root)
+        {
+            _root->IdentifyWindow();
+        }
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.

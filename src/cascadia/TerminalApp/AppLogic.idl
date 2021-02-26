@@ -47,6 +47,7 @@ namespace TerminalApp
         Boolean FocusMode { get; };
         Boolean Fullscreen { get; };
         Boolean AlwaysOnTop { get; };
+        void IdentifyWindow();
 
         Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
         Boolean CenterOnLaunch { get; };
@@ -78,5 +79,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> RaiseVisualBell;
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
+        event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
     }
 }

@@ -122,7 +122,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             x:Name="CommandPalette"
             Grid.Row="1"
             Visibility="Collapsed"
-            PreviewKeyDown ="_KeyDownHandler"
+            PreviewKeyDown="_KeyDownHandler"
             VerticalAlignment="Stretch" />
 
         <mux:InfoBar x:Name="KeyboardWarningInfoBar"
@@ -132,5 +132,16 @@ the MIT License. See LICENSE in the project root for license information. -->
                      IsOpen="False"
                      Severity="Warning"
                      Message="{x:Bind KeyboardServiceDisabledText, Mode=OneWay}"/>
+
+        <!-- A TeachingTip with IsLightDismissEnabled="True" will immediately
+        dismiss itself if the window is unfocused. So despite the fact that we
+        actually want light dismiss, we can't just do it blindly.  -->
+        <mux:TeachingTip x:Name="WindowIdToast"
+                          Title="Window ID"
+                          Subtitle="Enter a new window name:">
+            <mux:TeachingTip.Content>
+                <TextBox />
+            </mux:TeachingTip.Content>
+        </mux:TeachingTip>
     </Grid>
 </Page>

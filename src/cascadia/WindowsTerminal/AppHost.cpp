@@ -194,6 +194,8 @@ void AppHost::_HandleCommandlineArgs()
         // commandline (in the future), it'll trigger this callback, that we'll
         // use to send the actions to the app.
         peasant.ExecuteCommandlineRequested({ this, &AppHost::_DispatchCommandline });
+
+        peasant.DisplayWindowIdRequested({ this, &AppHost::_DisplayWindowId });
     }
 }
 
@@ -244,6 +246,7 @@ void AppHost::Initialize()
     _logic.TitleChanged({ this, &AppHost::AppTitleChanged });
     _logic.LastTabClosed({ this, &AppHost::LastTabClosed });
     _logic.SetTaskbarProgress({ this, &AppHost::SetTaskbarProgress });
+    _logic.IdentifyWindowsRequested({ this, &AppHost::_IdentifyWindowsRequested });
 
     _window->UpdateTitle(_logic.Title());
 
@@ -602,4 +605,21 @@ GUID AppHost::_CurrentDesktopGuid()
     }
     CATCH_LOG();
     return currentDesktopGuid;
+}
+
+winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                          const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    co_await winrt::resume_background();
+
+    if (auto peasant{ _windowManager.CurrentWindow() })
+    {
+        peasant.RequestIdentifyWindows();
+    }
+}
+
+void AppHost::_DisplayWindowId(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                               const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    _logic.IdentifyWindow();
 }

@@ -22,6 +22,10 @@ namespace TerminalApp
         Boolean Fullscreen { get; };
         Boolean AlwaysOnTop { get; };
 
+        void IdentifyWindow();
+        String WindowName { get; };
+        UInt64 WindowId { get; };
+
         // We cannot use the default XAML APIs because we want to make sure
         // that there's only one application-global dialog visible at a time,
         // and because of GH#5224.
@@ -40,5 +44,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
+        event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
     }
 }

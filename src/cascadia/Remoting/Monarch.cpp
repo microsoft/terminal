@@ -75,6 +75,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             auto newPeasantsId = peasant.GetID();
             // Add an event listener to the peasant's WindowActivated event.
             peasant.WindowActivated({ this, &Monarch::_peasantWindowActivated });
+            peasant.IdentifyWindowsRequested({ this, &Monarch::_identifyWindows });
 
             _peasants[newPeasantsId] = peasant;
 
@@ -567,5 +568,28 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         auto result = winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(true);
         result->WindowName(targetWindowName);
         return *result;
+    }
+
+    void Monarch::_identifyWindows(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                   const winrt::Windows::Foundation::IInspectable& /*args*/)
+    {
+        // Notify all the peasants to display their ID.
+        for (const auto& [id, p] : _peasants)
+        {
+            try
+            {
+                p.DisplayWindowId();
+            }
+            catch (...)
+            {
+                LOG_CAUGHT_EXCEPTION();
+                // If this fails, we don't _really_ care. Just movoe on to the
+                // next one. Someone else will clean up the dead peasant.
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "Monarch_identifyWindows_Failed",
+                                  TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not identify"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+            }
+        }
     }
 }

@@ -117,4 +117,35 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return _lastActivatedArgs;
     }
 
+    void Peasant::DisplayWindowId()
+    {
+        // Not worried about try/catching this. The handler is in AppHost, which
+        // is in-proc for us.
+        _DisplayWindowIdRequestedHandlers(*this, nullptr);
+    }
+
+    void Peasant::RequestIdentifyWindows()
+    {
+        bool successfullyNotified = false;
+
+        try
+        {
+            // Try/catch this, because the other side of this event is handled
+            // by the monarch. The monarch might have died. If they have, this
+            // will throw an exception. Just eat it, the election thread will
+            // handle hooking up the new one.
+            _IdentifyWindowsRequestedHandlers(*this, nullptr);
+            successfullyNotified = true;
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+        }
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Peasant_RequestIdentifyWindows",
+                          TraceLoggingUInt64(GetID(), "peasantID", "Our ID"),
+                          TraceLoggingBoolean(successfullyNotified, "successfullyNotified", "true if we successfully notified the monarch"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+    }
+
 }

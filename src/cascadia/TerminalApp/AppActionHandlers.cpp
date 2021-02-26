@@ -671,6 +671,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleIdentifyWindows(const IInspectable& /*sender*/,
                                               const ActionEventArgs& args)
     {
-        args.Handled(false);
+        _IdentifyWindowsRequestedHandlers(*this, nullptr);
+        args.Handled(true);
     }
 }
