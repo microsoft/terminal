@@ -41,6 +41,7 @@ IObject
 IPackage
 IPeasant
 IStorage
+istream
 IStringable
 ITab
 ITaskbar
@@ -108,4 +109,9 @@ wpc
 wsregex
 XDocument
 XElement
+xlocmes
+xlocmon
+xlocnum
+xloctime
 XParse
+xstring
