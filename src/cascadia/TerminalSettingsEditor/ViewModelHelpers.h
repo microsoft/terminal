@@ -66,7 +66,7 @@ public:                                                   \
             _NotifyChanges(L"Has" #name, L#name);    \
         }                                            \
     }                                                \
-    auto name##OverrideSource() { return target.name##OverrideSource(); }
+    auto name##OverrideSource() { return target.name##OverrideSource().as<decltype(target)>(); }
 
 // Defines a setting that reflects another object's same-named
 // setting, but which cannot be erased.

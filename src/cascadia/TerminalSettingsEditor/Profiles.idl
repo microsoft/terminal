@@ -10,10 +10,6 @@ import "MainPage.idl";
     OBSERVABLE_PROJECTED_SETTING(Type, Name);            \
     Microsoft.Terminal.Settings.Model.Profile Name##OverrideSource { get; }
 
-#define OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Type, Name) \
-    OBSERVABLE_PROJECTED_SETTING(Type, Name);            \
-    Microsoft.Terminal.Settings.Model.IAppearanceConfig Name##OverrideSource { get; }
-
 namespace Microsoft.Terminal.Settings.Editor
 {
     runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -44,24 +40,24 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Padding);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Commandline);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, StartingDirectory);
-        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, BackgroundImagePath);
-        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Double, BackgroundImageOpacity);
-        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
-        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Settings.Model.ConvergedAlignment, BackgroundImageAlignment);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, BackgroundImagePath);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Double, BackgroundImageOpacity);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.ConvergedAlignment, BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.TerminalControl.TextAntialiasingMode, AntialiasingMode);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RetroTerminalEffect);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ForceFullRepaintRendering);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SoftwareRendering);
-        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, ColorSchemeName);
-        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Foreground);
-        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Background);
-        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, SelectionBackground);
-        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, CursorColor);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, ColorSchemeName);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Foreground);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Background);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, SelectionBackground);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, CursorColor);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Int32, HistorySize);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SnapOnInput);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AltGrAliasing);
-        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.TerminalControl.CursorStyle, CursorShape);
-        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(UInt32, CursorHeight);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.TerminalControl.CursorStyle, CursorShape);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(UInt32, CursorHeight);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.BellStyle, BellStyle);
     }
 
