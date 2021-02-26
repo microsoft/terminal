@@ -286,3 +286,48 @@ bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
 
     return success;
 }
+
+// Method Description:
+// - Saves the current text attributes to an internal stack.
+// Arguments:
+// - options: if not empty, specify which portions of the current text attributes should
+//   be saved. Options that are not supported are ignored. If no options are specified,
+//   all attributes are stored.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::PushGraphicsRendition(const VTParameters options)
+{
+    bool success = true;
+    TextAttribute currentAttributes;
+
+    success = _pConApi->PrivateGetTextAttributes(currentAttributes);
+
+    if (success)
+    {
+        _sgrStack.Push(currentAttributes, options);
+    }
+
+    return success;
+}
+
+// Method Description:
+// - Restores text attributes from the internal stack. If only portions of text attributes
+//   were saved, combines those with the current attributes.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::PopGraphicsRendition()
+{
+    bool success = true;
+    TextAttribute currentAttributes;
+
+    success = _pConApi->PrivateGetTextAttributes(currentAttributes);
+
+    if (success)
+    {
+        success = _pConApi->PrivateSetTextAttributes(_sgrStack.Pop(currentAttributes));
+    }
+
+    return success;
+}

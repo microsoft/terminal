@@ -115,6 +115,7 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
     profile->_PixelShaderPath = source->_PixelShaderPath;
     profile->_BackgroundImageAlignment = source->_BackgroundImageAlignment;
     profile->_ConnectionType = source->_ConnectionType;
+    profile->_Origin = source->_Origin;
 
     if (source->_UnfocusedAppearance.has_value())
     {

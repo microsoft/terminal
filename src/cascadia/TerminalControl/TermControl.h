@@ -134,6 +134,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void CreateSearchBoxControl();
 
+        void SearchMatch(const bool goForward);
+
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
         bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta, const bool leftButtonDown, const bool midButtonDown, const bool rightButtonDown);
@@ -190,6 +192,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TYPED_EVENT(HidePointerCursor, IInspectable, IInspectable);
         TYPED_EVENT(RestorePointerCursor, IInspectable, IInspectable);
         TYPED_EVENT(ReadOnlyChanged, IInspectable, IInspectable);
+        TYPED_EVENT(FocusFollowMouseRequested, IInspectable, IInspectable);
         // clang-format on
 
     private:
@@ -249,7 +252,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
 
         // Track the last cell we hovered over (used in pointerMovedHandler)
-        COORD _lastHoveredCell;
+        std::optional<COORD> _lastHoveredCell;
         // Track the last hyperlink ID we hovered over
         uint16_t _lastHoveredId;
 
@@ -276,7 +279,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _UpdateAppearanceFromUIThread(IControlAppearance newAppearance);
         bool _isReadOnly{ false };
 
-        void _ApplyUISettings();
+        void _ApplyUISettings(const IControlSettings&);
+        void _UpdateSettingsOnUIThread();
         void _UpdateSystemParameterSettings() noexcept;
         void _InitializeBackgroundBrush();
         winrt::fire_and_forget _BackgroundColorChanged(const COLORREF color);
@@ -290,6 +294,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _PointerPressedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _PointerMovedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _PointerReleasedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
+        void _PointerExitedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _MouseWheelHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs const& e);
         void _GotFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
@@ -348,10 +353,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _CompositionCompleted(winrt::hstring text);
         void _CurrentCursorPositionHandler(const IInspectable& sender, const CursorPositionEventArgs& eventArgs);
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
-
         winrt::fire_and_forget _AsyncCloseConnection();
 
         winrt::fire_and_forget _RaiseReadOnlyWarning();
+
+        void _UpdateHoveredCell(const std::optional<COORD>& terminalPosition);
     };
 }
 

@@ -21,6 +21,7 @@ ROW::ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute f
     _rowWidth{ rowWidth },
     _charRow{ rowWidth, this },
     _attrRow{ rowWidth, fillAttribute },
+    _lineRendition{ LineRendition::SingleWidth },
     _wrapForced{ false },
     _doubleBytePadded{ false },
     _pParent{ pParent }
@@ -35,6 +36,7 @@ ROW::ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute f
 // - <none>
 bool ROW::Reset(const TextAttribute Attr)
 {
+    _lineRendition = LineRendition::SingleWidth;
     _wrapForced = false;
     _doubleBytePadded = false;
     _charRow.Reset();

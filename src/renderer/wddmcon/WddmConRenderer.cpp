@@ -166,7 +166,7 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/) noexcept
+[[nodiscard]] HRESULT WddmConEngine::InvalidateCursor(const SMALL_RECT* const /*psrRegion*/) noexcept
 {
     return S_OK;
 }

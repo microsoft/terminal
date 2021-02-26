@@ -1,6 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+#include "IInheritable.idl.h"
+
+#define INHERITABLE_PROFILE_SETTING(Type, Name) \
+    _BASE_INHERITABLE_SETTING(Type, Name);      \
+    Microsoft.Terminal.Settings.Model.IAppearanceConfig Name##OverrideSource { get; }
+
 namespace Microsoft.Terminal.Settings.Model
 {
     [flags] enum ConvergedAlignment {
@@ -18,49 +24,19 @@ namespace Microsoft.Terminal.Settings.Model
     // [default_interface]
     interface IAppearanceConfig
     {
-        Boolean HasColorSchemeName();
-        void ClearColorSchemeName();
-        String ColorSchemeName;
+        INHERITABLE_PROFILE_SETTING(String, ColorSchemeName);
+        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Foreground);
+        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Background);
+        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, SelectionBackground);
+        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, CursorColor);
+        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.TerminalControl.CursorStyle, CursorShape);
+        INHERITABLE_PROFILE_SETTING(UInt32, CursorHeight);
 
-        Boolean HasForeground();
-        void ClearForeground();
-        Windows.Foundation.IReference<Windows.UI.Color> Foreground;
-
-        Boolean HasBackground();
-        void ClearBackground();
-        Windows.Foundation.IReference<Windows.UI.Color> Background;
-
-        Boolean HasSelectionBackground();
-        void ClearSelectionBackground();
-        Windows.Foundation.IReference<Windows.UI.Color> SelectionBackground;
-
-        Boolean HasCursorColor();
-        void ClearCursorColor();
-        Windows.Foundation.IReference<Windows.UI.Color> CursorColor;
-
-        Boolean HasCursorShape();
-        void ClearCursorShape();
-        Microsoft.Terminal.TerminalControl.CursorStyle CursorShape;
-
-        Boolean HasCursorHeight();
-        void ClearCursorHeight();
-        UInt32 CursorHeight;
-
-        Boolean HasBackgroundImagePath();
-        void ClearBackgroundImagePath();
-        String BackgroundImagePath;
+        INHERITABLE_PROFILE_SETTING(String, BackgroundImagePath);
         String ExpandedBackgroundImagePath { get; };
 
-        Boolean HasBackgroundImageOpacity();
-        void ClearBackgroundImageOpacity();
-        Double BackgroundImageOpacity;
-
-        Boolean HasBackgroundImageStretchMode();
-        void ClearBackgroundImageStretchMode();
-        Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;
-
-        Boolean HasBackgroundImageAlignment();
-        void ClearBackgroundImageAlignment();
-        ConvergedAlignment BackgroundImageAlignment;
+        INHERITABLE_PROFILE_SETTING(Double, BackgroundImageOpacity);
+        INHERITABLE_PROFILE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
+        INHERITABLE_PROFILE_SETTING(ConvergedAlignment, BackgroundImageAlignment);
     };
 }

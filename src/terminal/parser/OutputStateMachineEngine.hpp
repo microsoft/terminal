@@ -86,6 +86,10 @@ namespace Microsoft::Console::VirtualTerminal
             LS1R_LockingShift = VTID("~"),
             LS2R_LockingShift = VTID("}"),
             LS3R_LockingShift = VTID("|"),
+            DECDHL_DoubleHeightLineTop = VTID("#3"),
+            DECDHL_DoubleHeightLineBottom = VTID("#4"),
+            DECSWL_SingleWidthLine = VTID("#5"),
+            DECDWL_DoubleWidthLine = VTID("#6"),
             DECALN_ScreenAlignmentPattern = VTID("#8")
         };
 
@@ -131,7 +135,11 @@ namespace Microsoft::Console::VirtualTerminal
             DECREQTPARM_RequestTerminalParameters = VTID("x"),
             DECSCUSR_SetCursorStyle = VTID(" q"),
             DECSTR_SoftReset = VTID("!p"),
-            DECSCPP_SetColumnsPerPage = VTID("$|")
+            XT_PushSgrAlias = VTID("#p"),
+            XT_PopSgrAlias = VTID("#q"),
+            XT_PushSgr = VTID("#{"),
+            XT_PopSgr = VTID("#}"),
+            DECSCPP_SetColumnsPerPage = VTID("$|"),
         };
 
         enum Vt52ActionCodes : uint64_t

@@ -103,6 +103,8 @@ namespace Microsoft.Terminal.TerminalControl
 
         void CreateSearchBoxControl();
 
+        void SearchMatch(Boolean goForward);
+
         void AdjustFontSize(Int32 fontSizeDelta);
         void ResetFontSize();
 
@@ -121,5 +123,6 @@ namespace Microsoft.Terminal.TerminalControl
         Boolean ReadOnly { get; };
         void ToggleReadOnly();
         event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
     }
 }

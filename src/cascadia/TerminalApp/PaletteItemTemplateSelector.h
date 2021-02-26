@@ -16,6 +16,7 @@ namespace winrt::TerminalApp::implementation
         Windows::UI::Xaml::DataTemplate SelectTemplateCore(winrt::Windows::Foundation::IInspectable const&);
 
         GETSET_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, TabItemTemplate);
+        GETSET_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, NestedItemTemplate);
         GETSET_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, GeneralItemTemplate);
     };
 }
