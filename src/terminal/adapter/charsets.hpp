@@ -1051,5 +1051,11 @@ namespace Microsoft::Console::VirtualTerminal
         { L'\x7e', L'\u00fc' }, // Latin Small Letter U With Diaeresis
     };
 
+    // We're reserving 96 characters (U+EF20 to U+EF7F) from the Unicode
+    // Private Use Area for our dynamically redefinable characters sets.
+    static constexpr auto DRCS_BASE_CHAR = L'\uEF20';
+    static constexpr auto Drcs94 = CharSet<DRCS_BASE_CHAR, 95>{ { DRCS_BASE_CHAR, '\x20' } };
+    static constexpr auto Drcs96 = CharSet<DRCS_BASE_CHAR, 96>{};
+
 #pragma warning(pop)
 }
