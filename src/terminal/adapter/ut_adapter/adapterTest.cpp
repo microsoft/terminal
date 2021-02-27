@@ -567,6 +567,15 @@ public:
         return TRUE;
     }
 
+    bool PrivateUpdateSoftFont(const gsl::span<const uint16_t> /*bitPattern*/,
+                               const SIZE /*cellSize*/,
+                               const size_t /*centeringHint*/) noexcept override
+    {
+        Log::Comment(L"PrivateUpdateSoftFont MOCK called...");
+
+        return TRUE;
+    }
+
     void PrepData()
     {
         PrepData(CursorDirection::UP); // if called like this, the cursor direction doesn't matter.

@@ -65,6 +65,10 @@ namespace Microsoft::Console::Render
                                const FontInfoDesired& FontInfoDesired,
                                _Out_ FontInfo& FontInfo) override;
 
+        void UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                            const SIZE cellSize,
+                            const size_t centeringHint) override;
+
         [[nodiscard]] HRESULT GetProposedFont(const int iDpi,
                                               const FontInfoDesired& FontInfoDesired,
                                               _Out_ FontInfo& FontInfo) override;

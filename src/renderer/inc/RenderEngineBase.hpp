@@ -38,6 +38,10 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT UpdateTitle(const std::wstring_view newTitle) noexcept override;
 
+        [[nodiscard]] HRESULT UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                             const SIZE cellSize,
+                                             const size_t centeringHint) noexcept override;
+
         [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
 
         [[nodiscard]] HRESULT ResetLineTransform() noexcept override;

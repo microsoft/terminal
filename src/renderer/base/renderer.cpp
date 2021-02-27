@@ -527,6 +527,23 @@ void Renderer::TriggerFontChange(const int iDpi, const FontInfoDesired& FontInfo
 }
 
 // Routine Description:
+// - Called when the active soft font has been updated.
+// Arguments:
+// - bitPattern - An array of scanlines representing all the glyphs in the font.
+// - cellSize - The cell size for an individual glyph.
+// - centeringHint - The horizontal extent that glyphs are offset from center.
+// Return Value:
+// - <none>
+void Renderer::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern, const SIZE cellSize, const size_t centeringHint)
+{
+    for (const auto pEngine : _rgpEngines)
+    {
+        LOG_IF_FAILED(pEngine->UpdateSoftFont(bitPattern, cellSize, centeringHint));
+    }
+    TriggerRedrawAll();
+}
+
+// Routine Description:
 // - Get the information on what font we would be using if we decided to create a font with the given parameters
 // - This is for use with speculative calculations.
 // Arguments:
