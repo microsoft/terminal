@@ -18,6 +18,7 @@ Author(s):
 #include "DispatchCommon.hpp"
 #include "conGetSet.hpp"
 #include "adaptDefaults.hpp"
+#include "FontBuffer.hpp"
 #include "terminalOutput.hpp"
 #include "..\..\types\inc\sgrStack.hpp"
 
@@ -137,7 +138,7 @@ namespace Microsoft::Console::VirtualTerminal
                                    const DispatchTypes::DrcsFontSet fontSet,
                                    const DispatchTypes::DrcsFontUsage fontUsage,
                                    const VTParameter cellHeight,
-                                   const DispatchTypes::DrcsCharsetSize charsetSize) noexcept override; // DECDLD
+                                   const DispatchTypes::DrcsCharsetSize charsetSize) override; // DECDLD
 
     private:
         enum class ScrollDirection
@@ -196,6 +197,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<ConGetSet> _pConApi;
         std::unique_ptr<AdaptDefaults> _pDefaults;
         TerminalOutput _termOutput;
+        std::unique_ptr<FontBuffer> _fontBuffer;
         std::optional<unsigned int> _initialCodePage;
 
         // We have two instances of the saved cursor state, because we need
