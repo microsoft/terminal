@@ -12,7 +12,7 @@ using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 namespace TerminalCoreUnitTests
 {
-    class MockTermSettings : public winrt::implements<MockTermSettings, ICoreSettings>
+    class MockTermSettings : public winrt::implements<MockTermSettings, ICoreSettings, ICoreAppearance>
     {
     public:
         MockTermSettings(int32_t historySize, int32_t initialRows, int32_t initialCols) :
