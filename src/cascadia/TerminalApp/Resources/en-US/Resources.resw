@@ -562,4 +562,9 @@
   <data name="CommandPalette_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>More options</value>
   </data>
+  <data name="WindowIdPrefix" xml:space="preserve">
+    <value>Window: {}</value>
+    <comment>{} will be replaced with a number identifying this window</comment>
+
+  </data>
 </root>

@@ -10,7 +10,19 @@ namespace TerminalApp
         Windows.Foundation.IAsyncOperation<Windows.UI.Xaml.Controls.ContentDialogResult> ShowDialog(Windows.UI.Xaml.Controls.ContentDialog dialog);
     };
 
-    [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page
+    runtimeclass WindowIdConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        WindowIdConverter();
+    };
+
+
+    runtimeclass WindowNameConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        WindowNameConverter();
+    };
+
+
+    [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         TerminalPage();
 
@@ -23,8 +35,8 @@ namespace TerminalApp
         Boolean AlwaysOnTop { get; };
 
         void IdentifyWindow();
-        String WindowName { get; };
-        UInt64 WindowId { get; };
+        String WindowName;
+        UInt64 WindowId;
 
         // We cannot use the default XAML APIs because we want to make sure
         // that there's only one application-global dialog visible at a time,

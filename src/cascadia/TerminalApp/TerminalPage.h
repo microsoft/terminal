@@ -84,12 +84,17 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring KeyboardServiceDisabledText();
 
         winrt::fire_and_forget IdentifyWindow();
-        winrt::hstring WindowName();
-        uint64_t WindowId();
+
+        // winrt::hstring WindowName();
+        // uint64_t WindowId();
 
         winrt::fire_and_forget ProcessStartupActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions,
                                                      const bool initial,
                                                      const winrt::hstring cwd = L"");
+
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, WindowName, _PropertyChangedHandlers, L"foo");
+        OBSERVABLE_GETSET_PROPERTY(uint64_t, WindowId, _PropertyChangedHandlers, 42);
 
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);

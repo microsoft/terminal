@@ -10,6 +10,13 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
+    <Page.Resources>
+        <ResourceDictionary>
+            <local:WindowIdConverter x:Key="WindowIdConverter"/>
+            <local:WindowNameConverter x:Key="WindowNameConverter"/>
+        </ResourceDictionary>
+    </Page.Resources>
+
     <Grid x:Name="Root" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -134,14 +141,12 @@ the MIT License. See LICENSE in the project root for license information. -->
                      Message="{x:Bind KeyboardServiceDisabledText, Mode=OneWay}"/>
 
         <!-- A TeachingTip with IsLightDismissEnabled="True" will immediately
-        dismiss itself if the window is unfocused. So despite the fact that we
-        actually want light dismiss, we can't just do it blindly.  -->
+        dismiss itself if the window is unfocused (In Xaml Islands). This is
+        tracked by MUX#4382-->
         <mux:TeachingTip x:Name="WindowIdToast"
-                          Title="Window ID"
-                          Subtitle="Enter a new window name:">
-            <mux:TeachingTip.Content>
-                <TextBox />
-            </mux:TeachingTip.Content>
+                         IsLightDismissEnabled="True"
+                         Title="{x:Bind WindowId, Mode=OneWay, Converter={StaticResource WindowIdConverter}}"
+                         Subtitle="{x:Bind WindowName, Mode=OneWay, Converter={StaticResource WindowNameConverter}}">
         </mux:TeachingTip>
     </Grid>
 </Page>

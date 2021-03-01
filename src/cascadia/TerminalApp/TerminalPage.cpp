@@ -31,6 +31,7 @@ using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::TerminalApp;
 using namespace ::Microsoft::Console;
+using namespace std::chrono_literals;
 
 #define HOOKUP_ACTION(action) _actionDispatch->action({ this, &TerminalPage::_Handle##action });
 
@@ -3293,20 +3294,21 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::IdentifyWindow()
     {
         auto weakThis{ get_weak() };
+        // co_await 3s;
         co_await winrt::resume_foreground(Dispatcher());
         if (auto page{ weakThis.get() })
         {
             page->WindowIdToast().IsOpen(true);
         }
     }
-    winrt::hstring TerminalPage::WindowName()
-    {
-        return L"<unnamed-window>";
-    }
-    uint64_t TerminalPage::WindowId()
-    {
-        return 42;
-    }
+    // winrt::hstring TerminalPage::WindowName()
+    // {
+    //     return L"<unnamed-window>";
+    // }
+    // uint64_t TerminalPage::WindowId()
+    // {
+    //     return 42;
+    // }
 
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
