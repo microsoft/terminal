@@ -1376,6 +1376,28 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    winrt::hstring AppLogic::WindowName()
+    {
+        return _root ? _root->WindowName() : L"";
+    }
+    void AppLogic::WindowName(const winrt::hstring& name)
+    {
+        if (_root)
+        {
+            _root->WindowName(name);
+        }
+    }
+    uint64_t AppLogic::WindowId()
+    {
+        return _root ? _root->WindowId() : 0;
+    }
+    void AppLogic::WindowId(const uint64_t& id)
+    {
+        if (_root)
+        {
+            _root->WindowId(id);
+        }
+    }
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.

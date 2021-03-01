@@ -56,7 +56,12 @@ namespace winrt::TerminalApp::implementation
         bool FocusMode() const;
         bool Fullscreen() const;
         bool AlwaysOnTop() const;
+
         void IdentifyWindow();
+        winrt::hstring WindowName();
+        void WindowName(const winrt::hstring& name);
+        uint64_t WindowId();
+        void WindowId(const uint64_t& id);
 
         Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);
         bool CenterOnLaunch();

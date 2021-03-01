@@ -196,6 +196,9 @@ void AppHost::_HandleCommandlineArgs()
         peasant.ExecuteCommandlineRequested({ this, &AppHost::_DispatchCommandline });
 
         peasant.DisplayWindowIdRequested({ this, &AppHost::_DisplayWindowId });
+
+        _logic.WindowName(peasant.WindowName());
+        _logic.WindowId(peasant.GetID());
     }
 }
 
