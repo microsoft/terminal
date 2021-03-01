@@ -8,10 +8,9 @@
 #include "TerminalSettings.g.cpp"
 
 using namespace winrt::Microsoft::Terminal::TerminalControl;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace Microsoft::Console::Utils;
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     static std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment> ConvertConvergedAlignment(ConvergedAlignment alignment)
     {
@@ -50,7 +49,7 @@ namespace winrt::TerminalApp::implementation
         return { horizAlign, vertAlign };
     }
 
-    TerminalSettings::TerminalSettings(const CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings) :
+    TerminalSettings::TerminalSettings(const Model::CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings) :
         _KeyBindings{ keybindings }
     {
         const auto profile = appSettings.FindProfile(profileGuid);
@@ -76,11 +75,9 @@ namespace winrt::TerminalApp::implementation
     //     StartingDirectory) in this object to override the settings directly from
     //     the profile.
     // - keybindings: the keybinding handler
-    // Return Value:
-    // - the GUID of the created profile, and a fully initialized TerminalSettings object
-    std::tuple<guid, TerminalApp::TerminalSettings> TerminalSettings::BuildSettings(const CascadiaSettings& appSettings,
-                                                                                    const NewTerminalArgs& newTerminalArgs,
-                                                                                    const IKeyBindings& keybindings)
+    Model::TerminalSettings TerminalSettings::BuildSettings(const Model::CascadiaSettings& appSettings,
+                                                     const Model::NewTerminalArgs& newTerminalArgs,
+                                                     const IKeyBindings& keybindings)
     {
         const guid profileGuid = appSettings.GetProfileForArgs(newTerminalArgs);
         auto settings{ winrt::make<TerminalSettings>(appSettings, profileGuid, keybindings) };
@@ -106,7 +103,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        return { profileGuid, settings };
+        return settings;
     }
 
     // Method Description:
@@ -116,7 +113,7 @@ namespace winrt::TerminalApp::implementation
     // - schemes: a map of schemes to look for our color scheme in, if we have one.
     // Return Value:
     // - <none>
-    void TerminalSettings::_ApplyProfileSettings(const Profile& profile, const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes)
+    void TerminalSettings::_ApplyProfileSettings(const Model::Profile& profile, const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes)
     {
         // Fill in the Terminal Setting's CoreSettings from the profile
         _HistorySize = profile.HistorySize();
@@ -201,7 +198,7 @@ namespace winrt::TerminalApp::implementation
     // - globalSettings: the global property values we're applying.
     // Return Value:
     // - <none>
-    void TerminalSettings::_ApplyGlobalSettings(const GlobalAppSettings& globalSettings) noexcept
+    void TerminalSettings::_ApplyGlobalSettings(const Model::GlobalAppSettings& globalSettings) noexcept
     {
         _InitialRows = globalSettings.InitialRows();
         _InitialCols = globalSettings.InitialCols();
@@ -221,7 +218,7 @@ namespace winrt::TerminalApp::implementation
     // - scheme: the ColorScheme we are applying to the TerminalSettings object
     // Return Value:
     // - <none>
-    void TerminalSettings::ApplyColorScheme(const ColorScheme& scheme)
+    void TerminalSettings::ApplyColorScheme(const Model::ColorScheme& scheme)
     {
         _DefaultForeground = til::color{ scheme.Foreground() };
         _DefaultBackground = til::color{ scheme.Background() };
