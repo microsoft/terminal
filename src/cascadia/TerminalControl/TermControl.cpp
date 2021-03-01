@@ -3271,7 +3271,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     void TermControl::_InvertTimerTick(Windows::Foundation::IInspectable const& /* sender */,
-                                                         Windows::Foundation::IInspectable const& /* e */)
+                                       Windows::Foundation::IInspectable const& /* e */)
     {
         if (_invertTimer)
         {
