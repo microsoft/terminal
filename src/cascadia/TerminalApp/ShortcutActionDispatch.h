@@ -69,6 +69,7 @@ namespace winrt::TerminalApp::implementation
         DECLARE_ACTION(FindMatch);
         DECLARE_ACTION(TogglePaneReadOnly);
         DECLARE_ACTION(NewWindow);
+        DECLARE_ACTION(IdentifyWindow);
         DECLARE_ACTION(IdentifyWindows);
         // clang-format on
 

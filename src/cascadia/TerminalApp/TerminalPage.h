@@ -329,6 +329,7 @@ namespace winrt::TerminalApp::implementation
         DECLARE_ACTION_HANDLER(FindMatch);
         DECLARE_ACTION_HANDLER(TogglePaneReadOnly);
         DECLARE_ACTION_HANDLER(NewWindow);
+        DECLARE_ACTION_HANDLER(IdentifyWindow);
         DECLARE_ACTION_HANDLER(IdentifyWindows);
         // Make sure to hook new actions up in _RegisterActionCallbacks!
 #pragma endregion

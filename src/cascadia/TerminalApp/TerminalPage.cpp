@@ -1161,6 +1161,7 @@ namespace winrt::TerminalApp::implementation
         HOOKUP_ACTION(FindMatch);
         HOOKUP_ACTION(TogglePaneReadOnly);
         HOOKUP_ACTION(NewWindow);
+        HOOKUP_ACTION(IdentifyWindow);
         HOOKUP_ACTION(IdentifyWindows);
     }
 
@@ -3291,24 +3292,26 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Display the name and ID of this window in a TeachingTip. If the window
+    //   has no name, the name will be presented as "<unnamed-window>".
+    // - This can be invoked by either:
+    //   * An identifyWindow action, that displays the info only for the current
+    //     window
+    //   * An identifyWindows action, that displays the info for all windows.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     winrt::fire_and_forget TerminalPage::IdentifyWindow()
     {
         auto weakThis{ get_weak() };
-        // co_await 3s;
         co_await winrt::resume_foreground(Dispatcher());
         if (auto page{ weakThis.get() })
         {
             page->WindowIdToast().IsOpen(true);
         }
     }
-    // winrt::hstring TerminalPage::WindowName()
-    // {
-    //     return L"<unnamed-window>";
-    // }
-    // uint64_t TerminalPage::WindowId()
-    // {
-    //     return 42;
-    // }
 
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.

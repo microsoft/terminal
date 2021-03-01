@@ -671,7 +671,22 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleIdentifyWindows(const IInspectable& /*sender*/,
                                               const ActionEventArgs& args)
     {
+        // Raise a IdentifyWindowsRequested event. This will bubble up to the
+        // AppLogic, to the AppHost, to the Peasant, to the Monarch, then get
+        // distributed down to _all_ the Peasants, as to display info about the
+        // window in _every_ Peasant window.
+        //
+        // This action is also buggy right now, because TeachingTips behave
+        // weird in XAML Islands. See microsoft-ui-xaml#4382
         _IdentifyWindowsRequestedHandlers(*this, nullptr);
+        args.Handled(true);
+    }
+    void TerminalPage::_HandleIdentifyWindow(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        // Unlike _HandleIdentifyWindow**s**, this event just displays the
+        // window ID and name in the current window.
+        IdentifyWindow();
         args.Handled(true);
     }
 }

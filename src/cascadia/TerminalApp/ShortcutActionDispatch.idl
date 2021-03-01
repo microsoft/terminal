@@ -55,6 +55,7 @@ namespace TerminalApp
         ACTION_EVENT(FindMatch);
         ACTION_EVENT(TogglePaneReadOnly);
         ACTION_EVENT(NewWindow);
+        ACTION_EVENT(IdentifyWindow);
         ACTION_EVENT(IdentifyWindows);
 
     }

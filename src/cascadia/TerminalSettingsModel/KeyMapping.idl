@@ -55,6 +55,7 @@ namespace Microsoft.Terminal.Settings.Model
         TogglePaneReadOnly,
         FindMatch,
         NewWindow,
+        IdentifyWindow,
         IdentifyWindows
     };
 

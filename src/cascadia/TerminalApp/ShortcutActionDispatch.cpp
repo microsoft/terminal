@@ -89,6 +89,7 @@ namespace winrt::TerminalApp::implementation
             ACTION_CASE(FindMatch);
             ACTION_CASE(TogglePaneReadOnly);
             ACTION_CASE(NewWindow);
+            ACTION_CASE(IdentifyWindow);
             ACTION_CASE(IdentifyWindows);
         default:
             return false;
