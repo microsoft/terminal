@@ -135,6 +135,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
                 if (SUCCEEDED(hr) && !exists)
                 {
+                    // if we can't find the font for our locale, fallback to the en-us one
+                    // Source: https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-findlocalename
                     hr = localizedFamilyNames->FindLocaleName(L"en-us", &index, &exists);
                 }
                 if (!exists)
@@ -151,18 +153,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 localizedName.resize(nameLength);
                 THROW_IF_FAILED(localizedFamilyNames->GetString(index, localizedName.data(), nameLength + 1));
 
-                // get the standard version of that font
-                com_ptr<IDWriteFont> font;
-                THROW_IF_FAILED(fontFamily->GetFirstMatchingFont(DWRITE_FONT_WEIGHT::DWRITE_FONT_WEIGHT_NORMAL,
-                                                                 DWRITE_FONT_STRETCH::DWRITE_FONT_STRETCH_NORMAL,
-                                                                 DWRITE_FONT_STYLE::DWRITE_FONT_STYLE_NORMAL,
-                                                                 font.put()));
-
-                // add the font name to our list
-                if (font.as<IDWriteFont1>()->IsMonospacedFont())
+                // check if the font is monospaced
+                try
                 {
-                    monospaceFontList.emplace_back(localizedName);
+                    com_ptr<IDWriteFont> font;
+                    THROW_IF_FAILED(fontFamily->GetFirstMatchingFont(DWRITE_FONT_WEIGHT::DWRITE_FONT_WEIGHT_NORMAL,
+                                                                     DWRITE_FONT_STRETCH::DWRITE_FONT_STRETCH_NORMAL,
+                                                                     DWRITE_FONT_STYLE::DWRITE_FONT_STYLE_NORMAL,
+                                                                     font.put()));
+
+                    // add the font name to our list of monospace fonts
+                    const auto castedFont{ font.as<IDWriteFont1>() };
+                    if (castedFont && castedFont->IsMonospacedFont())
+                    {
+                        monospaceFontList.emplace_back(localizedName);
+                    }
                 }
+                CATCH_LOG();
+
+                // add the font name to our list of all fonts
                 fontList.emplace_back(std::move(localizedName));
             }
             catch (...)
