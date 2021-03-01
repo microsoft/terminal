@@ -27,8 +27,8 @@ static const std::array<winrt::guid, 2> InBoxProfileGuids{
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    Windows::Foundation::Collections::IObservableVector<hstring> ProfileViewModel::_MonospaceFontList{ nullptr };
-    Windows::Foundation::Collections::IObservableVector<hstring> ProfileViewModel::_FontList{ nullptr };
+    Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
+    Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
 
     ProfileViewModel::ProfileViewModel(const Model::Profile& profile) :
         _profile{ profile },
@@ -98,8 +98,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     try
     {
         // initialize font list
-        std::vector<hstring> fontList;
-        std::vector<hstring> monospaceFontList;
+        std::vector<Editor::Font> fontList;
+        std::vector<Editor::Font> monospaceFontList;
 
         // get a DWriteFactory
         com_ptr<IDWriteFactory> factory;
@@ -124,34 +124,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 com_ptr<IDWriteLocalizedStrings> localizedFamilyNames;
                 THROW_IF_FAILED(fontFamily->GetFamilyNames(localizedFamilyNames.put()));
 
-                // use our current locale to find the correct name
-                BOOL exists{ FALSE };
-                UINT32 index;
-                HRESULT hr;
-                wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
-                if (GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH))
-                {
-                    hr = localizedFamilyNames->FindLocaleName(localeName, &index, &exists);
-                }
-                if (SUCCEEDED(hr) && !exists)
-                {
-                    // if we can't find the font for our locale, fallback to the en-us one
-                    // Source: https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-findlocalename
-                    hr = localizedFamilyNames->FindLocaleName(L"en-us", &index, &exists);
-                }
-                if (!exists)
-                {
-                    // failed to find the correct locale, using the first one
-                    index = 0;
-                }
-
-                // get the localized name
-                UINT32 nameLength;
-                THROW_IF_FAILED(localizedFamilyNames->GetStringLength(index, &nameLength));
-
-                std::wstring localizedName;
-                localizedName.resize(nameLength);
-                THROW_IF_FAILED(localizedFamilyNames->GetString(index, localizedName.data(), nameLength + 1));
+                // construct a font entry for tracking
+                const auto fontEntry{ _GetFont(localizedFamilyNames) };
 
                 // check if the font is monospaced
                 try
@@ -166,13 +140,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     const auto castedFont{ font.as<IDWriteFont1>() };
                     if (castedFont && castedFont->IsMonospacedFont())
                     {
-                        monospaceFontList.emplace_back(localizedName);
+                        monospaceFontList.emplace_back(fontEntry);
                     }
                 }
                 CATCH_LOG();
 
                 // add the font name to our list of all fonts
-                fontList.emplace_back(std::move(localizedName));
+                fontList.emplace_back(std::move(fontEntry));
             }
             catch (...)
             {
@@ -183,19 +157,76 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // sort and save the lists
         std::sort(begin(fontList), end(fontList));
-        _FontList = single_threaded_observable_vector<hstring>(std::move(fontList));
+        _FontList = single_threaded_observable_vector<Editor::Font>(std::move(fontList));
 
         std::sort(begin(monospaceFontList), end(monospaceFontList));
-        _MonospaceFontList = single_threaded_observable_vector<hstring>(std::move(monospaceFontList));
+        _MonospaceFontList = single_threaded_observable_vector<Editor::Font>(std::move(monospaceFontList));
     }
     CATCH_LOG();
 
-    IObservableVector<hstring> ProfileViewModel::CompleteFontList() const noexcept
+    Editor::Font ProfileViewModel::_GetFont(com_ptr<IDWriteLocalizedStrings> localizedFamilyNames)
+    {
+        // used for the font's name as an identifier (i.e. textblock.fontfamily)
+        std::wstring nameID;
+        UINT32 nameIDIndex;
+
+        // used for the font's localized name
+        std::wstring localizedName;
+        UINT32 localizedNameIndex;
+
+        // use our current locale to find the localized name
+        BOOL exists{ FALSE };
+        HRESULT hr;
+        wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
+        if (GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH))
+        {
+            hr = localizedFamilyNames->FindLocaleName(localeName, &localizedNameIndex, &exists);
+        }
+        if (SUCCEEDED(hr) && !exists)
+        {
+            // if we can't find the font for our locale, fallback to the en-us one
+            // Source: https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-findlocalename
+            hr = localizedFamilyNames->FindLocaleName(L"en-us", &localizedNameIndex, &exists);
+        }
+        if (!exists)
+        {
+            // failed to find the correct locale, using the first one
+            localizedNameIndex = 0;
+        }
+
+        // get the localized name
+        UINT32 nameLength;
+        THROW_IF_FAILED(localizedFamilyNames->GetStringLength(localizedNameIndex, &nameLength));
+
+        localizedName.resize(nameLength);
+        THROW_IF_FAILED(localizedFamilyNames->GetString(localizedNameIndex, localizedName.data(), nameLength + 1));
+
+        // now get the nameID
+        hr = localizedFamilyNames->FindLocaleName(L"en-us", &nameIDIndex, &exists);
+        if (FAILED(hr) || !exists)
+        {
+            // failed to find it, using the first one
+            nameIDIndex = 0;
+        }
+
+        // get the nameID
+        THROW_IF_FAILED(localizedFamilyNames->GetStringLength(nameIDIndex, &nameLength));
+        nameID.resize(nameLength);
+        THROW_IF_FAILED(localizedFamilyNames->GetString(nameIDIndex, nameID.data(), nameLength + 1));
+
+        if (!nameID.empty() && !localizedName.empty())
+        {
+            return make<Font>(nameID, localizedName);
+        }
+        return nullptr;
+    }
+
+    IObservableVector<Editor::Font> ProfileViewModel::CompleteFontList() const noexcept
     {
         return _FontList;
     }
 
-    IObservableVector<hstring> ProfileViewModel::MonospaceFontList() const noexcept
+    IObservableVector<Editor::Font> ProfileViewModel::MonospaceFontList() const noexcept
     {
         return _MonospaceFontList;
     }
@@ -209,7 +240,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto currentFont{ FontFace() };
         for (const auto& font : _MonospaceFontList)
         {
-            if (font == currentFont)
+            if (font.LocalizedName() == currentFont)
             {
                 result = true;
             }
@@ -397,16 +428,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto& profileVM{ State().Profile() };
         const auto profileFontFace{ profileVM.FontFace() };
         const auto& currentFontList{ profileVM.ShowAllFonts() ? profileVM.CompleteFontList() : profileVM.MonospaceFontList() };
-        for (const auto font : currentFontList)
+        IInspectable fallbackFont;
+        for (const auto& font : currentFontList)
         {
-            if (font == profileFontFace)
+            if (font.LocalizedName() == profileFontFace)
             {
                 return box_value(font);
+            }
+            else if (font.LocalizedName() == L"Cascadia Mono")
+            {
+                fallbackFont = font;
             }
         }
 
         // we couldn't find the desired font, set to "Cascadia Mono" since that ships by default
-        return box_value(L"Cascadia Mono");
+        return fallbackFont;
     }
 
     void Profiles::FontFace_SelectionChanged(IInspectable const& /*sender*/, SelectionChangedEventArgs const& e)
@@ -414,8 +450,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // NOTE: We need to hook up a selection changed event handler here instead of directly binding to the profile view model.
         //       A two way binding to the view model causes an infinite loop because both combo boxes keep fighting over which one's right.
         const auto selectedItem{ e.AddedItems().GetAt(0) };
-        const auto newFontFace{ unbox_value<hstring>(selectedItem) };
-        State().Profile().FontFace(newFontFace);
+        const auto newFontFace{ unbox_value<Editor::Font>(selectedItem) };
+        State().Profile().FontFace(newFontFace.LocalizedName());
     }
 
     void Profiles::OnNavigatedTo(const NavigationEventArgs& e)

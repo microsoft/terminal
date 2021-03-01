@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "Font.g.h"
 #include "Profiles.g.h"
 #include "ProfilePageNavigationState.g.h"
 #include "DeleteProfileEventArgs.g.h"
@@ -12,6 +13,19 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    struct Font : FontT<Font>
+    {
+    public:
+        Font(std::wstring name, std::wstring localizedName) :
+            _Name{ name },
+            _LocalizedName{ localizedName } {};
+
+        hstring ToString() { return _LocalizedName; }
+
+        GETSET_PROPERTY(hstring, Name);
+        GETSET_PROPERTY(hstring, LocalizedName);
+    };
+
     struct ProfileViewModel : ProfileViewModelT<ProfileViewModel>, ViewModelHelper<ProfileViewModel>
     {
     public:
@@ -29,8 +43,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // font face
         static void UpdateFontList() noexcept;
-        Windows::Foundation::Collections::IObservableVector<hstring> CompleteFontList() const noexcept;
-        Windows::Foundation::Collections::IObservableVector<hstring> MonospaceFontList() const noexcept;
+        Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() const noexcept;
+        Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() const noexcept;
         bool UsingMonospaceFont() const noexcept;
         bool ShowAllFonts() const noexcept;
         void ShowAllFonts(const bool& value);
@@ -84,8 +98,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring _lastStartingDirectoryPath;
         bool _ShowAllFonts;
 
-        static Windows::Foundation::Collections::IObservableVector<hstring> _MonospaceFontList;
-        static Windows::Foundation::Collections::IObservableVector<hstring> _FontList;
+        static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
+        static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
+
+        static Editor::Font _GetFont(com_ptr<IDWriteLocalizedStrings> localizedFamilyNames);
     };
 
     struct DeleteProfileEventArgs :
