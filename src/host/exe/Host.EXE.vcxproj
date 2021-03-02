@@ -85,8 +85,6 @@
       <AdditionalIncludeDirectories>..;$(IntDir)..\OpenConsoleProxy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <ModuleDefinitionFile>
-      </ModuleDefinitionFile>
       <AllowIsolation>true</AllowIsolation>
     </Link>
   </ItemDefinitionGroup>
