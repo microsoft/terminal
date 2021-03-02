@@ -16,7 +16,7 @@ namespace TerminalApp
     {
         void FocusPane(UInt32 idNum);
         void FocusFirstChild();
-        Int32 GetLeafPaneCount();
+        UInt32 GetLeafPaneCount();
         IPane GetActivePane();
         IPane FindFirstLeaf();
         Boolean HasFocusedChild();
@@ -30,7 +30,7 @@ namespace TerminalApp
         void UpdateSettings(TerminalSettings settings, Guid profile);
 
         void ResizeContent(Windows.Foundation.Size newSize);
-        Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
+        Single CalcSnappedDimensionSingle(Boolean widthOrHeight, Single dimension);
         Windows.Foundation.Size GetMinSize();
 
         void Maximize(IPane paneToZoom);
@@ -39,7 +39,7 @@ namespace TerminalApp
         Windows.Foundation.IReference<Microsoft.Terminal.Settings.Model.SplitState> PreCalculateAutoSplit(IPane target, Windows.Foundation.Size parentSize);
         Windows.Foundation.IReference<Boolean> PreCalculateCanSplit(IPane target, Microsoft.Terminal.Settings.Model.SplitState splitType, Single splitSize, Windows.Foundation.Size availableSpace);
 
-        SnapSizeResult _CalcSnappedDimension(Boolean widthOrHeight, Single fullSize);
+        SnapSizeResult CalcSnappedDimension(Boolean widthOrHeight, Single fullSize);
 
         event Windows.Foundation.TypedEventHandler<IPane, IPane> PaneTypeChanged;
     }

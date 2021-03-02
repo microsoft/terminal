@@ -126,7 +126,7 @@ namespace winrt::TerminalApp::implementation
     //   that was last focused.
     TermControl TerminalTab::GetActiveTerminalControl() const
     {
-        return _rootPane.GetActivePane().try_as<TerminalApp::LeafPane>().GetTerminalControl();
+        return _rootPane.GetActivePane().try_as<TerminalApp::LeafPane>().TerminalControl();
     }
 
     // Method Description:
@@ -179,7 +179,7 @@ namespace winrt::TerminalApp::implementation
     //   focused, else the GUID of the profile of the last control to be focused
     std::optional<GUID> TerminalTab::GetFocusedProfile() const noexcept
     {
-        return _rootPane.GetActivePane().try_as<TerminalApp::LeafPane>().GetProfile();
+        return _rootPane.GetActivePane().try_as<TerminalApp::LeafPane>().Profile();
     }
 
     // Method Description:
@@ -409,7 +409,7 @@ namespace winrt::TerminalApp::implementation
     // - See Pane::CalcSnappedDimension
     float TerminalTab::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
-        return _rootPane.CalcSnappedDimension(widthOrHeight, dimension);
+        return _rootPane.CalcSnappedDimensionSingle(widthOrHeight, dimension);
     }
 
     // Method Description:
@@ -719,7 +719,7 @@ namespace winrt::TerminalApp::implementation
             // Root pane also belongs to the pane tree, so attach the usual events, as for
             // every other pane.
             _AttachEventHandlersToLeafPane(rootPaneAsLeaf);
-            _AttachEventHandlersToControl(rootPaneAsLeaf.GetTerminalControl());
+            _AttachEventHandlersToControl(rootPaneAsLeaf.TerminalControl());
         }
 
         // When the root pane is a leaf and gets split, it produces a new parent pane that contains
@@ -1073,14 +1073,7 @@ namespace winrt::TerminalApp::implementation
     SplitState TerminalTab::PreCalculateAutoSplit(winrt::Windows::Foundation::Size availableSpace) const
     {
         const auto res = _rootPane.PreCalculateAutoSplit(_rootPane.GetActivePane(), availableSpace);
-        if (res)
-        {
-            return res.Value();
-        }
-        else
-        {
-            return SplitState::Vertical;
-        }
+        return res ? res.Value() : SplitState::Vertical;
     }
 
     bool TerminalTab::PreCalculateCanSplit(SplitState splitType,

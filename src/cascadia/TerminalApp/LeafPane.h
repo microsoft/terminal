@@ -24,8 +24,8 @@ namespace winrt::TerminalApp::implementation
 
         IPane GetActivePane();
         IPane FindFirstLeaf();
-        winrt::Microsoft::Terminal::TerminalControl::TermControl GetTerminalControl();
-        GUID GetProfile();
+        winrt::Microsoft::Terminal::TerminalControl::TermControl TerminalControl();
+        GUID Profile();
         void FocusPane(uint32_t id);
         void FocusFirstChild();
         bool HasFocusedChild();
@@ -46,16 +46,10 @@ namespace winrt::TerminalApp::implementation
                                     const GUID& profile,
                                     const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
-        float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
+        float CalcSnappedDimensionSingle(const bool widthOrHeight, const float dimension) const;
         void Shutdown();
         void Close();
-        int GetLeafPaneCount() const noexcept;
-
-        uint16_t Id() noexcept;
-        void Id(uint16_t id) noexcept;
-
-        Borders2 Borders() noexcept;
-        void Borders(Borders2 borders) noexcept;
+        uint32_t GetLeafPaneCount() const noexcept;
 
         void Maximize(IPane paneToZoom);
         void Restore(IPane paneToUnZoom);
@@ -71,12 +65,12 @@ namespace winrt::TerminalApp::implementation
 
         void UpdateBorderWithClosedNeighbor(TerminalApp::LeafPane closedNeighbor, const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& neighborDirection);
 
-        SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
+        SnapSizeResult CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
         void BorderTappedHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                  winrt::Windows::UI::Xaml::Input::TappedRoutedEventArgs const& e);
 
-        void _UpdateBorders();
+        void UpdateBorders();
 
         DECLARE_EVENT(Closed, _ClosedHandlers, winrt::delegate<LeafPane>);
         DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<LeafPane>);
@@ -84,12 +78,13 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(PaneRaiseVisualBell, _PaneRaiseVisualBellHandlers, winrt::delegate<LeafPane>);
         TYPED_EVENT(PaneTypeChanged, IPane, IPane);
 
+        GETSET_PROPERTY(uint16_t, Id);
+        GETSET_PROPERTY(Borders2, Borders, Borders2::None);
+
     private:
         winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
         GUID _profile;
         bool _lastActive{ false };
-        uint16_t _id;
-        Borders2 _borders{ Borders2::None };
         bool _zoomed{ false };
 
         static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;

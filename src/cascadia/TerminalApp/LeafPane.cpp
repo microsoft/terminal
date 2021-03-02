@@ -18,7 +18,6 @@ using namespace winrt::Windows::UI::Xaml::Media;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
-using namespace winrt::TerminalApp;
 using namespace TerminalApp;
 
 namespace winrt::TerminalApp::implementation
@@ -90,12 +89,12 @@ namespace winrt::TerminalApp::implementation
     // - Gets the TermControl of this pane
     // Return Value:
     // - The TermControl of this LeafPane
-    TermControl LeafPane::GetTerminalControl()
+    TermControl LeafPane::TerminalControl()
     {
         return _control;
     }
 
-    GUID LeafPane::GetProfile()
+    GUID LeafPane::Profile()
     {
         return _profile;
     }
@@ -171,7 +170,7 @@ namespace winrt::TerminalApp::implementation
     // - The ID of the pane we want to focus
     void LeafPane::FocusPane(uint32_t id)
     {
-        if (_id == id)
+        if (_Id == id)
         {
             _control.Focus(FocusState::Programmatic);
         }
@@ -228,22 +227,22 @@ namespace winrt::TerminalApp::implementation
                                           const winrt::Microsoft::Terminal::TerminalControl::TermControl& control)
     {
         splitType = _convertAutomaticSplitState(splitType);
-        auto newNeighbour = TerminalApp::LeafPane(profile, control, false);
+        auto newNeighbour{ make<LeafPane>(profile, control, false) };
 
         // Update the border of this pane and set appropriate border for the new leaf pane.
         if (splitType == SplitState::Vertical)
         {
-            newNeighbour.Borders(_borders | Borders2::Left);
-            _borders = _borders | Borders2::Right;
+            newNeighbour.Borders(_Borders | Borders2::Left);
+            _Borders = _Borders | Borders2::Right;
         }
         else
         {
-            newNeighbour.Borders(_borders | Borders2::Top);
-            _borders = _borders | Borders2::Bottom;
+            newNeighbour.Borders(_Borders | Borders2::Top);
+            _Borders = _Borders | Borders2::Bottom;
         }
 
-        _UpdateBorders();
-        newNeighbour._UpdateBorders();
+        UpdateBorders();
+        newNeighbour.UpdateBorders();
 
         if (WasLastFocused())
         {
@@ -251,7 +250,7 @@ namespace winrt::TerminalApp::implementation
             newNeighbour.SetActive();
         }
 
-        const auto newParent = TerminalApp::ParentPane(*this, newNeighbour, splitType, 1.0f - splitSize);
+        const auto newParent{ make<ParentPane>(*this, newNeighbour, splitType, 1.0f - splitSize) };
 
         _PaneTypeChangedHandlers(nullptr, newParent);
 
@@ -269,9 +268,9 @@ namespace winrt::TerminalApp::implementation
     // - dimension: a dimension (width or height) to snap
     // Return Value:
     // - A value corresponding to the next closest snap size for this Pane, either upward or downward
-    float LeafPane::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
+    float LeafPane::CalcSnappedDimensionSingle(const bool widthOrHeight, const float dimension) const
     {
-        const auto [lower, higher] = _CalcSnappedDimension(widthOrHeight, dimension);
+        const auto [lower, higher] = CalcSnappedDimension(widthOrHeight, dimension);
         return dimension - lower < higher - dimension ? lower : higher;
     }
 
@@ -289,38 +288,9 @@ namespace winrt::TerminalApp::implementation
         _ClosedHandlers(*this);
     }
 
-    int LeafPane::GetLeafPaneCount() const noexcept
+    uint32_t LeafPane::GetLeafPaneCount() const noexcept
     {
         return 1;
-    }
-
-    // Method Description:
-    // - Retrieves the ID of this pane
-    // Return Value:
-    // - The ID of this pane
-    uint16_t LeafPane::Id() noexcept
-    {
-        return _id;
-    }
-
-    // Method Description:
-    // - Sets this pane's ID
-    // - Panes are given IDs upon creation by TerminalTab
-    // Arguments:
-    // - The number to set this pane's ID to
-    void LeafPane::Id(uint16_t id) noexcept
-    {
-        _id = id;
-    }
-
-    Borders2 LeafPane::Borders() noexcept
-    {
-        return _borders;
-    }
-
-    void LeafPane::Borders(Borders2 borders) noexcept
-    {
-        _borders = borders;
     }
 
     // Method Description:
@@ -331,13 +301,13 @@ namespace winrt::TerminalApp::implementation
     void LeafPane::Maximize(IPane paneToZoom)
     {
         _zoomed = (paneToZoom == *this);
-        _UpdateBorders();
+        UpdateBorders();
     }
 
     void LeafPane::Restore(IPane /*paneToUnzoom*/)
     {
         _zoomed = false;
-        _UpdateBorders();
+        UpdateBorders();
     }
 
     // Method Description:
@@ -353,10 +323,10 @@ namespace winrt::TerminalApp::implementation
         auto newWidth = controlSize.Width;
         auto newHeight = controlSize.Height;
 
-        newWidth += WI_IsFlagSet(_borders, Borders2::Left) ? PaneBorderSize : 0;
-        newWidth += WI_IsFlagSet(_borders, Borders2::Right) ? PaneBorderSize : 0;
-        newHeight += WI_IsFlagSet(_borders, Borders2::Top) ? PaneBorderSize : 0;
-        newHeight += WI_IsFlagSet(_borders, Borders2::Bottom) ? PaneBorderSize : 0;
+        newWidth += WI_IsFlagSet(_Borders, Borders2::Left) ? PaneBorderSize : 0;
+        newWidth += WI_IsFlagSet(_Borders, Borders2::Right) ? PaneBorderSize : 0;
+        newHeight += WI_IsFlagSet(_Borders, Borders2::Top) ? PaneBorderSize : 0;
+        newHeight += WI_IsFlagSet(_Borders, Borders2::Bottom) ? PaneBorderSize : 0;
 
         return { newWidth, newHeight };
     }
@@ -478,20 +448,20 @@ namespace winrt::TerminalApp::implementation
         switch (neighborDirection)
         {
         case ResizeDirection::Up:
-            WI_UpdateFlag(_borders, Borders2::Top, WI_IsFlagSet(closedNeighbor.Borders(), Borders2::Top));
+            WI_UpdateFlag(_Borders, Borders2::Top, WI_IsFlagSet(closedNeighbor.Borders(), Borders2::Top));
             break;
         case ResizeDirection::Down:
-            WI_UpdateFlag(_borders, Borders2::Bottom, WI_IsFlagSet(closedNeighbor.Borders(), Borders2::Bottom));
+            WI_UpdateFlag(_Borders, Borders2::Bottom, WI_IsFlagSet(closedNeighbor.Borders(), Borders2::Bottom));
             break;
         case ResizeDirection::Left:
-            WI_UpdateFlag(_borders, Borders2::Left, WI_IsFlagSet(closedNeighbor.Borders(), Borders2::Left));
+            WI_UpdateFlag(_Borders, Borders2::Left, WI_IsFlagSet(closedNeighbor.Borders(), Borders2::Left));
             break;
         case ResizeDirection::Right:
-            WI_UpdateFlag(_borders, Borders2::Right, WI_IsFlagSet(closedNeighbor.Borders(), Borders2::Right));
+            WI_UpdateFlag(_Borders, Borders2::Right, WI_IsFlagSet(closedNeighbor.Borders(), Borders2::Right));
             break;
         }
 
-        _UpdateBorders();
+        UpdateBorders();
     }
 
     // Method Description:
@@ -566,7 +536,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Sets the thickness of each side of our borders to match our _borders state.
-    void LeafPane::_UpdateBorders()
+    void LeafPane::UpdateBorders()
     {
         double top = 0, bottom = 0, left = 0, right = 0;
 
@@ -578,19 +548,19 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            if (WI_IsFlagSet(_borders, Borders2::Top))
+            if (WI_IsFlagSet(_Borders, Borders2::Top))
             {
                 top = PaneBorderSize;
             }
-            if (WI_IsFlagSet(_borders, Borders2::Bottom))
+            if (WI_IsFlagSet(_Borders, Borders2::Bottom))
             {
                 bottom = PaneBorderSize;
             }
-            if (WI_IsFlagSet(_borders, Borders2::Left))
+            if (WI_IsFlagSet(_Borders, Borders2::Left))
             {
                 left = PaneBorderSize;
             }
-            if (WI_IsFlagSet(_borders, Borders2::Right))
+            if (WI_IsFlagSet(_Borders, Borders2::Right))
             {
                 right = PaneBorderSize;
             }
@@ -649,7 +619,7 @@ namespace winrt::TerminalApp::implementation
     // - pair of floats, where first value is the size snapped downward (not greater then
     //   requested size) and second is the size snapped upward (not lower than requested size).
     //   If requested size is already snapped, then both returned values equal this value.
-    SnapSizeResult LeafPane::_CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
+    SnapSizeResult LeafPane::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
         const auto minSize = GetMinSize();
         const auto minDimension = widthOrHeight ? minSize.Width : minSize.Height;
@@ -662,13 +632,13 @@ namespace winrt::TerminalApp::implementation
         float lower = _control.SnapDimensionToGrid(widthOrHeight, dimension);
         if (widthOrHeight)
         {
-            lower += WI_IsFlagSet(_borders, Borders2::Left) ? PaneBorderSize : 0;
-            lower += WI_IsFlagSet(_borders, Borders2::Right) ? PaneBorderSize : 0;
+            lower += WI_IsFlagSet(_Borders, Borders2::Left) ? PaneBorderSize : 0;
+            lower += WI_IsFlagSet(_Borders, Borders2::Right) ? PaneBorderSize : 0;
         }
         else
         {
-            lower += WI_IsFlagSet(_borders, Borders2::Top) ? PaneBorderSize : 0;
-            lower += WI_IsFlagSet(_borders, Borders2::Bottom) ? PaneBorderSize : 0;
+            lower += WI_IsFlagSet(_Borders, Borders2::Top) ? PaneBorderSize : 0;
+            lower += WI_IsFlagSet(_Borders, Borders2::Bottom) ? PaneBorderSize : 0;
         }
 
         if (lower == dimension)

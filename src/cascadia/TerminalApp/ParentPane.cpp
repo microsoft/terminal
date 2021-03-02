@@ -15,7 +15,6 @@ using namespace winrt::Windows::UI::Xaml::Media;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
-using namespace winrt::TerminalApp;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -39,11 +38,11 @@ namespace winrt::TerminalApp::implementation
         _GetGridSetColOrRowFunc()(FirstChild_Root(), 0);
         _GetGridSetColOrRowFunc()(SecondChild_Root(), 1);
 
-        _firstLayoutRevoker = firstChild.GetTerminalControl().LayoutUpdated(winrt::auto_revoke, [&](auto /*s*/, auto /*e*/) {
+        _firstLayoutRevoker = firstChild.TerminalControl().LayoutUpdated(winrt::auto_revoke, [&](auto /*s*/, auto /*e*/) {
             _ChildrenLayoutUpdatedHelper(true);
         });
 
-        _secondLayoutRevoker = secondChild.GetTerminalControl().LayoutUpdated(winrt::auto_revoke, [&](auto /*s*/, auto /*e*/) {
+        _secondLayoutRevoker = secondChild.TerminalControl().LayoutUpdated(winrt::auto_revoke, [&](auto /*s*/, auto /*e*/) {
             _ChildrenLayoutUpdatedHelper(false);
         });
     }
@@ -309,13 +308,13 @@ namespace winrt::TerminalApp::implementation
     // - dimension: a dimension (width or height) to snap
     // Return Value:
     // - A value corresponding to the next closest snap size for this Pane, either upward or downward
-    float ParentPane::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
+    float ParentPane::CalcSnappedDimensionSingle(const bool widthOrHeight, const float dimension) const
     {
-        const auto [lower, higher] = _CalcSnappedDimension(widthOrHeight, dimension);
+        const auto [lower, higher] = CalcSnappedDimension(widthOrHeight, dimension);
         return dimension - lower < higher - dimension ? lower : higher;
     }
 
-    int ParentPane::GetLeafPaneCount() const noexcept
+    uint32_t ParentPane::GetLeafPaneCount() const noexcept
     {
         return _firstChild.GetLeafPaneCount() + _secondChild.GetLeafPaneCount();
     }
@@ -702,7 +701,7 @@ namespace winrt::TerminalApp::implementation
         auto setupAnimation = [=](const auto& size, const bool isFirstChild) {
             auto child = isFirstChild ? _firstChild : _secondChild;
             auto childGrid = child.GetRootElement();
-            auto control = child.try_as<TerminalApp::LeafPane>().GetTerminalControl();
+            auto control = child.try_as<TerminalApp::LeafPane>().TerminalControl();
             // Build up our animation:
             // * it'll take as long as our duration (200ms)
             // * it'll change the value of our property from 0 to secondSize
@@ -854,7 +853,7 @@ namespace winrt::TerminalApp::implementation
         const auto remainingFirstLeaf = remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>();
 
         Dispatcher().TryRunAsync(CoreDispatcherPriority::Normal, [=]() {
-            remainingFirstLeaf.GetTerminalControl().Focus(FocusState::Programmatic);
+            remainingFirstLeaf.TerminalControl().Focus(FocusState::Programmatic);
         });
 
         //if (setupEvent)
@@ -946,19 +945,11 @@ namespace winrt::TerminalApp::implementation
                 const auto remainingAsParent = remainingChild.try_as<TerminalApp::ParentPane>();
                 closeFirst ? SecondChild_Root().Content(remainingAsParent) : FirstChild_Root().Content(remainingAsParent);
             }
-            //_root.Children().Append(remainingChild->GetRootElement());
-            //if (_splitState == SplitState::Vertical)
-            //{
-            //    Controls::Grid::SetColumn(remainingChild->GetRootElement(), closeFirst ? 1 : 0);
-            //}
-            //else if (_splitState == SplitState::Horizontal)
-            //{
-            //    Controls::Grid::SetRow(remainingChild->GetRootElement(), closeFirst ? 1 : 0);
-            //}
 
             // Create the dummy grid. This grid will be the one we actually animate,
             // in the place of the closed pane.
             Controls::Grid dummyGrid;
+            // todo: put s_unfocusedBorderBrush in a common pane.h so both parent and leaf can access it
             //dummyGrid.Background(s_unfocusedBorderBrush);
 
             // It should be the size of the closed pane.
@@ -1117,9 +1108,6 @@ namespace winrt::TerminalApp::implementation
         (isFirstChild ? _firstChild : _secondChild) = newChild;
 
         isFirstChild ? FirstChild_Root().Content(newChild.try_as<FrameworkElement>()) : SecondChild_Root().Content(newChild.try_as<FrameworkElement>());
-        // todo: do we need this GetGridSetColOrRow call? we already did it once on initialization
-        // and adding it doesn't seem to do anything
-        //_GetGridSetColOrRowFunc()(isFirstChild ? FirstChild_Root() : SecondChild_Root(), isFirstChild ? 0 : 1);
 
         // Setup events appropriate for the new child
         _SetupChildEventHandlers(isFirstChild);
@@ -1215,15 +1203,15 @@ namespace winrt::TerminalApp::implementation
     // - pair of floats, where first value is the size snapped downward (not greater then
     //   requested size) and second is the size snapped upward (not lower than requested size).
     //   If requested size is already snapped, then both returned values equal this value.
-    SnapSizeResult ParentPane::_CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
+    SnapSizeResult ParentPane::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
         if (_splitState == (widthOrHeight ? SplitState::Horizontal : SplitState::Vertical))
         {
             // If we're resizing along separator axis, snap to the closest possibility
             // given by our children panes.
 
-            const auto firstSnapped = _firstChild._CalcSnappedDimension(widthOrHeight, dimension);
-            const auto secondSnapped = _secondChild._CalcSnappedDimension(widthOrHeight, dimension);
+            const auto firstSnapped = _firstChild.CalcSnappedDimension(widthOrHeight, dimension);
+            const auto secondSnapped = _secondChild.CalcSnappedDimension(widthOrHeight, dimension);
             return {
                 std::max(firstSnapped.lower, secondSnapped.lower),
                 std::min(firstSnapped.higher, secondSnapped.higher)
@@ -1270,11 +1258,11 @@ namespace winrt::TerminalApp::implementation
             {
                 if (sizeNode.nextFirstChild->isMinimumSize)
                 {
-                    sizeNode.nextFirstChild->size = _firstChild._CalcSnappedDimension(widthOrHeight, sizeNode.nextFirstChild->size + 1).higher;
+                    sizeNode.nextFirstChild->size = _firstChild.CalcSnappedDimension(widthOrHeight, sizeNode.nextFirstChild->size + 1).higher;
                 }
                 else
                 {
-                    const auto cellSize = firstChildAsLeaf.GetTerminalControl().CharacterDimensions();
+                    const auto cellSize = firstChildAsLeaf.TerminalControl().CharacterDimensions();
                     sizeNode.nextFirstChild->size += widthOrHeight ? cellSize.Width : cellSize.Height;
                 }
             }
@@ -1292,11 +1280,11 @@ namespace winrt::TerminalApp::implementation
             {
                 if (sizeNode.nextSecondChild->isMinimumSize)
                 {
-                    sizeNode.nextSecondChild->size = _secondChild._CalcSnappedDimension(widthOrHeight, sizeNode.nextSecondChild->size + 1).higher;
+                    sizeNode.nextSecondChild->size = _secondChild.CalcSnappedDimension(widthOrHeight, sizeNode.nextSecondChild->size + 1).higher;
                 }
                 else
                 {
-                    const auto cellSize = secondChildAsLeaf.GetTerminalControl().CharacterDimensions();
+                    const auto cellSize = secondChildAsLeaf.TerminalControl().CharacterDimensions();
                     sizeNode.nextSecondChild->size += widthOrHeight ? cellSize.Width : cellSize.Height;
                 }
             }
@@ -1356,11 +1344,11 @@ namespace winrt::TerminalApp::implementation
             {
                 if (sizeNode.nextFirstChild->isMinimumSize)
                 {
-                    sizeNode.nextFirstChild->size = _firstChild._CalcSnappedDimension(widthOrHeight, sizeNode.nextFirstChild->size + 1).higher;
+                    sizeNode.nextFirstChild->size = _firstChild.CalcSnappedDimension(widthOrHeight, sizeNode.nextFirstChild->size + 1).higher;
                 }
                 else
                 {
-                    const auto cellSize = firstChildAsLeaf.GetTerminalControl().CharacterDimensions();
+                    const auto cellSize = firstChildAsLeaf.TerminalControl().CharacterDimensions();
                     sizeNode.nextFirstChild->size += widthOrHeight ? cellSize.Width : cellSize.Height;
                 }
             }
@@ -1377,11 +1365,11 @@ namespace winrt::TerminalApp::implementation
             {
                 if (sizeNode.nextSecondChild->isMinimumSize)
                 {
-                    sizeNode.nextSecondChild->size = _secondChild._CalcSnappedDimension(widthOrHeight, sizeNode.nextSecondChild->size + 1).higher;
+                    sizeNode.nextSecondChild->size = _secondChild.CalcSnappedDimension(widthOrHeight, sizeNode.nextSecondChild->size + 1).higher;
                 }
                 else
                 {
-                    const auto cellSize = secondChildAsLeaf.GetTerminalControl().CharacterDimensions();
+                    const auto cellSize = secondChildAsLeaf.TerminalControl().CharacterDimensions();
                     sizeNode.nextSecondChild->size += widthOrHeight ? cellSize.Width : cellSize.Height;
                 }
             }

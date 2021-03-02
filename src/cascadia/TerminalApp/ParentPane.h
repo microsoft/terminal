@@ -34,8 +34,8 @@ namespace winrt::TerminalApp::implementation
         IPane GetActivePane() const;
         bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         bool NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
-        float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
-        int GetLeafPaneCount() const noexcept;
+        float CalcSnappedDimensionSingle(const bool widthOrHeight, const float dimension) const;
+        uint32_t GetLeafPaneCount() const noexcept;
         winrt::Windows::Foundation::Size GetMinSize() const;
 
         void Maximize(IPane paneToZoom);
@@ -51,7 +51,7 @@ namespace winrt::TerminalApp::implementation
         IPane FindFirstLeaf();
 
         void PropagateToLeavesOnEdge(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& edge, std::function<void(TerminalApp::LeafPane)> action);
-        SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
+        SnapSizeResult CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
         TYPED_EVENT(PaneTypeChanged, IPane, IPane);
 

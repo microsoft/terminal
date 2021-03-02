@@ -1638,7 +1638,7 @@ namespace winrt::TerminalApp::implementation
 
             if (const auto pane{ terminalTab->GetActivePane() })
             {
-                if (const auto control{ pane.GetTerminalControl() })
+                if (const auto control{ pane.TerminalControl() })
                 {
                     if (control.ReadOnly())
                     {
