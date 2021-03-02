@@ -244,7 +244,7 @@ namespace winrt::TerminalApp::implementation
         CommandPalette().RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
             if (CommandPalette().Visibility() == Visibility::Collapsed)
             {
-                _CommandPaletteClosed(nullptr, nullptr);
+                _FocusActiveControl(nullptr, nullptr);
             }
         });
         CommandPalette().DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
@@ -265,6 +265,14 @@ namespace winrt::TerminalApp::implementation
 
         _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
 
+        auto safeRefocus = [weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto page{ weakThis.get() })
+            {
+                page->_FocusActiveControl(nullptr, nullptr);
+            }
+        };
+
+        WindowIdToast().Closed(safeRefocus);
         // Setup mouse vanish attributes
         SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &_shouldMouseVanish, false);
 
@@ -2962,8 +2970,8 @@ namespace winrt::TerminalApp::implementation
         return {};
     }
 
-    void TerminalPage::_CommandPaletteClosed(const IInspectable& /*sender*/,
-                                             const RoutedEventArgs& /*eventArgs*/)
+    void TerminalPage::_FocusActiveControl(const IInspectable& /*sender*/,
+                                           const RoutedEventArgs& /*eventArgs*/)
     {
         // We don't want to set focus on the tab if fly-out is open as it will be closed
         // TODO GH#5400: consider checking we are not in the opening state, by hooking both Opening and Open events
