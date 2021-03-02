@@ -93,6 +93,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         Boolean Equals(NewTerminalArgs other);
         String GenerateName();
+        String ToCommandline();
     };
 
     [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
@@ -216,5 +217,11 @@ namespace Microsoft.Terminal.Settings.Model
     {
         FindMatchArgs(FindMatchDirection direction);
         FindMatchDirection Direction { get; };
+    };
+
+    [default_interface] runtimeclass NewWindowArgs : IActionArgs
+    {
+        NewWindowArgs(NewTerminalArgs terminalArgs);
+        NewTerminalArgs TerminalArgs { get; };
     };
 }

@@ -18,15 +18,24 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean CanDeleteCurrentScheme { get; };
         Boolean IsRenaming { get; };
 
-        Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme { get; };
-        Windows.Foundation.Collections.IObservableVector<ColorTableEntry> CurrentColorTable;
+        // Terminal Colors
+        Windows.Foundation.Collections.IVector<ColorTableEntry> CurrentNonBrightColorTable { get; };
+        Windows.Foundation.Collections.IVector<ColorTableEntry> CurrentBrightColorTable { get; };
+
+        // System Colors
+        ColorTableEntry CurrentForegroundColor;
+        ColorTableEntry CurrentBackgroundColor;
+        ColorTableEntry CurrentCursorColor;
+        ColorTableEntry CurrentSelectionBackgroundColor;
+
+
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };
     }
 
     [default_interface] runtimeclass ColorTableEntry : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         String Name { get; };
-        IInspectable Index;
+        IInspectable Tag;
         Windows.UI.Color Color;
     }
 }

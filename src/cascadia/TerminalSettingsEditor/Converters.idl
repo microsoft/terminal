@@ -14,6 +14,11 @@ namespace Microsoft.Terminal.Settings.Editor
         FontWeightConverter();
     };
 
+    runtimeclass InvertedBooleanConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        InvertedBooleanConverter();
+    };
+
     runtimeclass InvertedBooleanToVisibilityConverter : [default] Windows.UI.Xaml.Data.IValueConverter
     {
         InvertedBooleanToVisibilityConverter();
@@ -48,6 +53,7 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         StringIsNotDesktopConverter();
     };
+
     runtimeclass DesktopWallpaperToEmptyStringConverter : [default] Windows.UI.Xaml.Data.IValueConverter
     {
         DesktopWallpaperToEmptyStringConverter();
