@@ -1,5 +1,18 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
+
+Module Name:
+- AppearanceConfig
+
+Abstract:
+- The implementation of the AppearanceConfig winrt class. Provides settings related
+  to the appearance of the terminal, in both terminal control and terminal core.
+
+Author(s):
+- Pankaj Bhojwani - Nov 2020
+
+--*/
 
 #pragma once
 
