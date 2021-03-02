@@ -294,6 +294,8 @@ namespace winrt::TerminalApp::implementation
         void _HidePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
         void _RestorePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
 
+        void _WindowRenamerActionClick(const IInspectable& sender, const IInspectable& eventArgs);
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
         DECLARE_ACTION_HANDLER(OpenNewTabDropdown);

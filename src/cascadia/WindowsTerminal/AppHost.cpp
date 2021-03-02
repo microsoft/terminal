@@ -631,17 +631,21 @@ void AppHost::_DisplayWindowId(const winrt::Windows::Foundation::IInspectable& /
 winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
                                                        const winrt::TerminalApp::RenameWindowRequestedArgs args)
 {
-    winrt::apartment_context ui_thread; // Capture calling context.
+    // Capture calling context.
+    winrt::apartment_context ui_thread;
 
+    // Switch to the BG thread - anything x-proc must happen on a BG thread
     co_await winrt::resume_background();
 
     if (auto peasant{ _windowManager.CurrentWindow() })
     {
         Remoting::RenameRequestArgs requestArgs{ args.ProposedName() };
-        // peasant.RequestRename(args.ProposedName());
+
         peasant.RequestRename(requestArgs);
 
-        co_await ui_thread; // Switch back to calling context.
+        // Switch back to the UI thread. Setting the WindowName needs to happen
+        // on the UI thread, because it'll raise a PropertyChanged event
+        co_await ui_thread;
 
         if (requestArgs.Succeeded())
         {
@@ -653,13 +657,3 @@ winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Fou
         }
     }
 }
-
-// void AppHost::_RenameWindow(const winrt::hstring newName)
-// {
-//     _logic.Name(newName);
-// }
-
-// void AppHost::_FailToRenameWindow()
-// {
-//     _logic.RenameFailed();
-// }

@@ -273,6 +273,9 @@ namespace winrt::TerminalApp::implementation
         };
 
         WindowIdToast().Closed(safeRefocus);
+        RenameFailedToast().Closed(safeRefocus);
+        WindowRenamer().Closed(safeRefocus);
+
         // Setup mouse vanish attributes
         SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &_shouldMouseVanish, false);
 
@@ -3323,6 +3326,7 @@ namespace winrt::TerminalApp::implementation
             page->WindowIdToast().IsOpen(true);
         }
     }
+
     winrt::fire_and_forget TerminalPage::RenameFailed()
     {
         auto weakThis{ get_weak() };
@@ -3331,6 +3335,15 @@ namespace winrt::TerminalApp::implementation
         {
             page->RenameFailedToast().IsOpen(true);
         }
+    }
+
+    void TerminalPage::_WindowRenamerActionClick(const IInspectable& /*sender*/,
+                                                 const IInspectable& /*eventArgs*/)
+    {
+        auto newName = WindowRenamerTextBox().Text();
+        auto request = winrt::make_self<implementation::RenameWindowRequestedArgs>(newName);
+        WindowRenamer().IsOpen(false);
+        _RenameWindowRequestedHandlers(*this, *request);
     }
 
     // -------------------------------- WinRT Events ---------------------------------

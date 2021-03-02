@@ -150,16 +150,14 @@ the MIT License. See LICENSE in the project root for license information. -->
         </mux:TeachingTip>
 
         <mux:TeachingTip x:Name="RenameFailedToast"
-                         IsLightDismissEnabled="True"
-                         Title="Failed to rename window"
-                         Subtitle="Another window with that name already exists">
+                         x:Uid="RenameFailedToast"
+                         IsLightDismissEnabled="True">
         </mux:TeachingTip>
 
         <mux:TeachingTip x:Name="WindowRenamer"
+                         x:Uid="WindowRenamer"
                          Title="{x:Bind WindowId, Mode=OneWay, Converter={StaticResource WindowIdConverter}}"
-                         Subtitle="Enter a new name:"
-                         ActionButtonContent="Ok"
-                         CloseButtonContent="Cancel">
+                         ActionButtonClick="_WindowRenamerActionClick">
             <mux:TeachingTip.Content>
                 <TextBox x:Name="WindowRenamerTextBox"
                          Text="{x:Bind WindowName}">
