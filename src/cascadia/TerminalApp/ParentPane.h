@@ -1,5 +1,26 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+//
+// Module Name:
+// - ParentPane.h
+//
+// Abstract:
+// - Panes are an abstraction by which the terminal can display multiple terminal
+//   instances simultaneously in a single terminal window. While tabs allow for
+//   a single terminal window to have many terminal sessions running
+//   simultaneously within a single window, only one tab can be visible at a
+//   time. Panes, on the other hand, allow a user to have many different
+//   terminal sessions visible to the user within the context of a single window
+//   at the same time. This can enable greater productivity from the user, as
+//   they can see the output of one terminal window while working in another.
+// - See doc/cascadia/Panes.md for a detailed description.
+// - Panes can be one of 2 types, parent or leaf. A parent pane contains 2 other panes
+//   (each of which could itself be a parent or could be a leaf). A leaf pane contains
+//   a terminal control.
+//
+// Author(s):
+// - Mike Griese (zadjii-msft) 16-May-2019
+// - Pankaj Bhojwani February-2021
 
 #pragma once
 
