@@ -267,7 +267,7 @@ namespace winrt::TerminalApp::implementation
         }
         case ShortcutAction::ToggleInboundPty:
         {
-            _ToggleInboundPtyHandlers(*this, *eventArgs);
+            _ToggleInboundPtyHandlers(*this, eventArgs);
             break;
         }
         default:

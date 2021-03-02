@@ -753,9 +753,8 @@ int AppCommandlineArgs::ParseArgs(winrt::array_view<const winrt::hstring>& args)
     {
         if (arg == L"-Embedding")
         {
-            auto embeddingAction = winrt::make_self<implementation::ActionAndArgs>();
-            embeddingAction->Action(ShortcutAction::ToggleInboundPty);
-            _startupActions.push_back(*embeddingAction);
+            winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs embeddingAction(ShortcutAction::ToggleInboundPty, nullptr);
+            _startupActions.push_back(embeddingAction);
             return 0;
         }
     }

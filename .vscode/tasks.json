@@ -17,6 +17,7 @@
               "/p:Configuration=${input:configChoice}",
               "/p:Platform=${input:platformChoice}",
               "/t:$target",
+              "/m",
               "/verbosity:minimal"
             ],
             "problemMatcher": ["$msCompile"],

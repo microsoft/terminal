@@ -23,15 +23,9 @@ HRESULT _duplicateHandle(const HANDLE in, HANDLE& out)
 // Arguments:
 // - server - Console driver server handle
 // - inputEvent - Event already established that we signal when new input data is available in case the driver is waiting on us
-// - in - The input handle originally given to the inbox conhost on startup
-// - out - The output handle original given to the inbox conhost on startup
-// - argString - Argument string given to the original inbox conhost on startup
 // - msg - Portable attach message containing just enough descriptor payload to get us started in servicing it
 HRESULT CConsoleHandoff::EstablishHandoff(HANDLE server,
                                           HANDLE inputEvent,
-                                          HANDLE in,
-                                          HANDLE out,
-                                          wchar_t* argString,
                                           PCCONSOLE_PORTABLE_ATTACH_MSG msg)
 try
 {
@@ -56,16 +50,10 @@ try
     // Making our own duplicate copy ensures they hang around in our lifetime.
     RETURN_IF_FAILED(_duplicateHandle(server, server));
     RETURN_IF_FAILED(_duplicateHandle(inputEvent, inputEvent));
-    /*RETURN_IF_FAILED(_duplicateHandle(in, in));
-    RETURN_IF_FAILED(_duplicateHandle(out, out));*/
 
     // Build a console arguments structure that contains all information on how the
     // original console was started.
     ConsoleArguments consoleArgs;
-    //(argString, in, out);
-    UNREFERENCED_PARAMETER(in);
-    UNREFERENCED_PARAMETER(out);
-    UNREFERENCED_PARAMETER(argString);
 
     // Now perform the handoff.
     RETURN_IF_FAILED(ConsoleEstablishHandoff(server, &consoleArgs, inputEvent, &apiMsg));

@@ -15,19 +15,19 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dlldata.c">
+    <ClCompile Include="$(IntDir)\dlldata.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="IConsoleHandoff_i.c">
+    <ClCompile Include="$(IntDir)\IConsoleHandoff_i.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="IConsoleHandoff_p.c">
+    <ClCompile Include="$(IntDir)\IConsoleHandoff_p.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ITerminalHandoff_i.c">
+    <ClCompile Include="$(IntDir)\ITerminalHandoff_i.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ITerminalHandoff_p.c">
+    <ClCompile Include="$(IntDir)\ITerminalHandoff_p.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -35,13 +35,10 @@
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="IConsoleHandoff.h">
+    <ClInclude Include="$(IntDir)\IConsoleHandoff.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ConsoleComGuids.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ITerminalHandoff.h">
+    <ClInclude Include="$(IntDir)\ITerminalHandoff.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -52,10 +49,5 @@
     <Midl Include="ITerminalHandoff.idl">
       <Filter>Source Files</Filter>
     </Midl>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="OpenConsoleProxy.def">
-      <Filter>Source Files</Filter>
-    </None>
   </ItemGroup>
 </Project>

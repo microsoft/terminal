@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProjectGuid>{E437B604-3E98-4F40-A927-E173E818EA4B}</ProjectGuid>
+    <ProjectGuid>{71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>openconsoleproxy</RootNamespace>
     <ProjectName>OpenConsoleProxy</ProjectName>
@@ -41,17 +41,17 @@
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(WindowsTerminalBranding)'=='Release'">
     <ClCompile>
-      <PreprocessorDefinitions>PROXY_CLSID=3171DE52-6EFA-4AEF-8A9F-D02BD67E7A4F;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PROXY_CLSID_IS={0x3171DE52,0x6EFA,0x4AEF,{0x8A,0x9F,0xD0,0x2B,0xD6,0x7E,0x7A,0x4F}};%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(WindowsTerminalBranding)'=='Preview'">
     <ClCompile>
-      <PreprocessorDefinitions>PROXY_CLSID=1833E661-CC81-4DD0-87C6-C2F74BD39EFA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PROXY_CLSID_IS={0x1833E661,0xCC81,0x4DD0,{0x87,0xC6,0xC2,0xF7,0x4B,0xD3,0x9E,0xFA}};%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(WindowsTerminalBranding)'==''">
     <ClCompile>
-      <PreprocessorDefinitions>PROXY_CLSID=DEC4804D-56D1-4F73-9FBE-6828E7C85C56;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PROXY_CLSID_IS={0xDEC4804D,0x56D1,0x4F73,{0x9F,0xBE,0x68,0x28,0xE7,0xC8,0x5C,0x56}};%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
