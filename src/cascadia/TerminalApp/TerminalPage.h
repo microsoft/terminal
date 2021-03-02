@@ -331,6 +331,8 @@ namespace winrt::TerminalApp::implementation
         DECLARE_ACTION_HANDLER(NewWindow);
         DECLARE_ACTION_HANDLER(IdentifyWindow);
         DECLARE_ACTION_HANDLER(IdentifyWindows);
+        DECLARE_ACTION_HANDLER(RenameWindow);
+        DECLARE_ACTION_HANDLER(OpenWindowRenamer);
         // Make sure to hook new actions up in _RegisterActionCallbacks!
 #pragma endregion
 

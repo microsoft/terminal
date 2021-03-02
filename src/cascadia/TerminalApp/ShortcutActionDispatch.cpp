@@ -91,6 +91,8 @@ namespace winrt::TerminalApp::implementation
             ACTION_CASE(NewWindow);
             ACTION_CASE(IdentifyWindow);
             ACTION_CASE(IdentifyWindows);
+            ACTION_CASE(RenameWindow);
+            ACTION_CASE(OpenWindowRenamer);
         default:
             return false;
         }

@@ -148,5 +148,17 @@ the MIT License. See LICENSE in the project root for license information. -->
                          Title="{x:Bind WindowId, Mode=OneWay, Converter={StaticResource WindowIdConverter}}"
                          Subtitle="{x:Bind WindowName, Mode=OneWay, Converter={StaticResource WindowNameConverter}}">
         </mux:TeachingTip>
+
+        <mux:TeachingTip x:Name="WindowRenamer"
+                         Title="{x:Bind WindowId, Mode=OneWay, Converter={StaticResource WindowIdConverter}}"
+                         Subtitle="Enter a new name:"
+                         ActionButtonContent="Ok"
+                         CloseButtonContent="Cancel">
+            <mux:TeachingTip.Content>
+                <TextBox x:Name="WindowRenamerTextBox"
+                         Text="{x:Bind WindowName}">
+                </TextBox>
+            </mux:TeachingTip.Content>
+        </mux:TeachingTip>
     </Grid>
 </Page>

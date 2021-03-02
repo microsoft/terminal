@@ -71,6 +71,8 @@ namespace winrt::TerminalApp::implementation
         DECLARE_ACTION(NewWindow);
         DECLARE_ACTION(IdentifyWindow);
         DECLARE_ACTION(IdentifyWindows);
+        DECLARE_ACTION(RenameWindow);
+        DECLARE_ACTION(OpenWindowRenamer);
         // clang-format on
 
     private:

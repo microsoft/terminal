@@ -224,4 +224,9 @@ namespace Microsoft.Terminal.Settings.Model
         NewWindowArgs(NewTerminalArgs terminalArgs);
         NewTerminalArgs TerminalArgs { get; };
     };
+
+    [default_interface] runtimeclass RenameWindowArgs : IActionArgs
+    {
+        String Name { get; };
+    };
 }

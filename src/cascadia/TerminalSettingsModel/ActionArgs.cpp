@@ -26,6 +26,7 @@
 #include "FindMatchArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
 #include "NewWindowArgs.g.cpp"
+#include "RenameWindowArgs.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -509,5 +510,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring{
             fmt::format(L"{}, {}", RS_(L"NewWindowCommandKey"), newTerminalArgsStr)
         };
+    }
+
+    winrt::hstring RenameWindowArgs::GenerateName() const
+    {
+        // "Rename window to \"{_Name}\""
+        // "Clear window name"
+        if (!_Name.empty())
+        {
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"RenameWindowCommandKey")),
+                            _Name.c_str())
+            };
+        }
+        return RS_(L"ResetWindowNameCommandKey");
     }
 }

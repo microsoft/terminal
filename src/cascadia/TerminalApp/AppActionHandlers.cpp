@@ -689,4 +689,17 @@ namespace winrt::TerminalApp::implementation
         IdentifyWindow();
         args.Handled(true);
     }
+
+    void TerminalPage::_HandleRenameWindow(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        args.Handled(false);
+    }
+
+    void TerminalPage::_HandleOpenWindowRenamer(const IInspectable& /*sender*/,
+                                                const ActionEventArgs& args)
+    {
+        WindowRenamer().IsOpen(true);
+        args.Handled(true);
+    }
 }

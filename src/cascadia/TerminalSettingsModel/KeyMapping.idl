@@ -56,7 +56,9 @@ namespace Microsoft.Terminal.Settings.Model
         FindMatch,
         NewWindow,
         IdentifyWindow,
-        IdentifyWindows
+        IdentifyWindows,
+        RenameWindow,
+        OpenWindowRenamer
     };
 
     [default_interface] runtimeclass ActionAndArgs {

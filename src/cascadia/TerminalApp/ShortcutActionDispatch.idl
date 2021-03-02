@@ -57,6 +57,8 @@ namespace TerminalApp
         ACTION_EVENT(NewWindow);
         ACTION_EVENT(IdentifyWindow);
         ACTION_EVENT(IdentifyWindows);
+        ACTION_EVENT(RenameWindow);
+        ACTION_EVENT(OpenWindowRenamer);
 
     }
 }

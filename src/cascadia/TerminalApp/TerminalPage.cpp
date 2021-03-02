@@ -1163,6 +1163,8 @@ namespace winrt::TerminalApp::implementation
         HOOKUP_ACTION(NewWindow);
         HOOKUP_ACTION(IdentifyWindow);
         HOOKUP_ACTION(IdentifyWindows);
+        HOOKUP_ACTION(RenameWindow);
+        HOOKUP_ACTION(OpenWindowRenamer);
     }
 
     // Method Description:
