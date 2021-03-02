@@ -23,16 +23,6 @@
 #include <winrt/TerminalApp.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
-enum class Borders : int
-{
-    None = 0x0,
-    Top = 0x1,
-    Bottom = 0x2,
-    Left = 0x4,
-    Right = 0x8
-};
-DEFINE_ENUM_FLAG_OPERATORS(Borders);
-
 class Pane : public std::enable_shared_from_this<Pane>
 {
 public:

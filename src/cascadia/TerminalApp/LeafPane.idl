@@ -5,7 +5,7 @@ import "IPane.idl";
 
 namespace TerminalApp
 {
-    enum Borders2
+    enum BordersEnum
     {
         None = 0,
         Top = 1,
@@ -19,7 +19,7 @@ namespace TerminalApp
         LeafPane(Guid profile, Microsoft.Terminal.TerminalControl.TermControl con, Boolean active);
 
         UInt16 Id;
-        Borders2 Borders;
+        BordersEnum Borders;
         Microsoft.Terminal.TerminalControl.TermControl TerminalControl { get; };
         Guid Profile { get; };
 

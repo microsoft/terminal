@@ -232,13 +232,13 @@ namespace winrt::TerminalApp::implementation
         // Update the border of this pane and set appropriate border for the new leaf pane.
         if (splitType == SplitState::Vertical)
         {
-            newNeighbour.Borders(_Borders | Borders2::Left);
-            _Borders = _Borders | Borders2::Right;
+            newNeighbour.Borders(_Borders | BordersEnum::Left);
+            _Borders = _Borders | BordersEnum::Right;
         }
         else
         {
-            newNeighbour.Borders(_Borders | Borders2::Top);
-            _Borders = _Borders | Borders2::Bottom;
+            newNeighbour.Borders(_Borders | BordersEnum::Top);
+            _Borders = _Borders | BordersEnum::Bottom;
         }
 
         UpdateBorders();
@@ -323,10 +323,10 @@ namespace winrt::TerminalApp::implementation
         auto newWidth = controlSize.Width;
         auto newHeight = controlSize.Height;
 
-        newWidth += WI_IsFlagSet(_Borders, Borders2::Left) ? PaneBorderSize : 0;
-        newWidth += WI_IsFlagSet(_Borders, Borders2::Right) ? PaneBorderSize : 0;
-        newHeight += WI_IsFlagSet(_Borders, Borders2::Top) ? PaneBorderSize : 0;
-        newHeight += WI_IsFlagSet(_Borders, Borders2::Bottom) ? PaneBorderSize : 0;
+        newWidth += WI_IsFlagSet(_Borders, BordersEnum::Left) ? PaneBorderSize : 0;
+        newWidth += WI_IsFlagSet(_Borders, BordersEnum::Right) ? PaneBorderSize : 0;
+        newHeight += WI_IsFlagSet(_Borders, BordersEnum::Top) ? PaneBorderSize : 0;
+        newHeight += WI_IsFlagSet(_Borders, BordersEnum::Bottom) ? PaneBorderSize : 0;
 
         return { newWidth, newHeight };
     }
@@ -448,16 +448,16 @@ namespace winrt::TerminalApp::implementation
         switch (neighborDirection)
         {
         case ResizeDirection::Up:
-            WI_UpdateFlag(_Borders, Borders2::Top, WI_IsFlagSet(closedNeighbor.Borders(), Borders2::Top));
+            WI_UpdateFlag(_Borders, BordersEnum::Top, WI_IsFlagSet(closedNeighbor.Borders(), BordersEnum::Top));
             break;
         case ResizeDirection::Down:
-            WI_UpdateFlag(_Borders, Borders2::Bottom, WI_IsFlagSet(closedNeighbor.Borders(), Borders2::Bottom));
+            WI_UpdateFlag(_Borders, BordersEnum::Bottom, WI_IsFlagSet(closedNeighbor.Borders(), BordersEnum::Bottom));
             break;
         case ResizeDirection::Left:
-            WI_UpdateFlag(_Borders, Borders2::Left, WI_IsFlagSet(closedNeighbor.Borders(), Borders2::Left));
+            WI_UpdateFlag(_Borders, BordersEnum::Left, WI_IsFlagSet(closedNeighbor.Borders(), BordersEnum::Left));
             break;
         case ResizeDirection::Right:
-            WI_UpdateFlag(_Borders, Borders2::Right, WI_IsFlagSet(closedNeighbor.Borders(), Borders2::Right));
+            WI_UpdateFlag(_Borders, BordersEnum::Right, WI_IsFlagSet(closedNeighbor.Borders(), BordersEnum::Right));
             break;
         }
 
@@ -548,19 +548,19 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            if (WI_IsFlagSet(_Borders, Borders2::Top))
+            if (WI_IsFlagSet(_Borders, BordersEnum::Top))
             {
                 top = PaneBorderSize;
             }
-            if (WI_IsFlagSet(_Borders, Borders2::Bottom))
+            if (WI_IsFlagSet(_Borders, BordersEnum::Bottom))
             {
                 bottom = PaneBorderSize;
             }
-            if (WI_IsFlagSet(_Borders, Borders2::Left))
+            if (WI_IsFlagSet(_Borders, BordersEnum::Left))
             {
                 left = PaneBorderSize;
             }
-            if (WI_IsFlagSet(_Borders, Borders2::Right))
+            if (WI_IsFlagSet(_Borders, BordersEnum::Right))
             {
                 right = PaneBorderSize;
             }
@@ -632,13 +632,13 @@ namespace winrt::TerminalApp::implementation
         float lower = _control.SnapDimensionToGrid(widthOrHeight, dimension);
         if (widthOrHeight)
         {
-            lower += WI_IsFlagSet(_Borders, Borders2::Left) ? PaneBorderSize : 0;
-            lower += WI_IsFlagSet(_Borders, Borders2::Right) ? PaneBorderSize : 0;
+            lower += WI_IsFlagSet(_Borders, BordersEnum::Left) ? PaneBorderSize : 0;
+            lower += WI_IsFlagSet(_Borders, BordersEnum::Right) ? PaneBorderSize : 0;
         }
         else
         {
-            lower += WI_IsFlagSet(_Borders, Borders2::Top) ? PaneBorderSize : 0;
-            lower += WI_IsFlagSet(_Borders, Borders2::Bottom) ? PaneBorderSize : 0;
+            lower += WI_IsFlagSet(_Borders, BordersEnum::Top) ? PaneBorderSize : 0;
+            lower += WI_IsFlagSet(_Borders, BordersEnum::Bottom) ? PaneBorderSize : 0;
         }
 
         if (lower == dimension)

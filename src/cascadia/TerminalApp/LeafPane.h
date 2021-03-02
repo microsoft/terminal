@@ -10,7 +10,7 @@
 
 namespace winrt::TerminalApp::implementation
 {
-    DEFINE_ENUM_FLAG_OPERATORS(Borders2);
+    DEFINE_ENUM_FLAG_OPERATORS(BordersEnum);
 
     struct LeafPane : LeafPaneT<LeafPane>
     {
@@ -79,7 +79,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(PaneTypeChanged, IPane, IPane);
 
         GETSET_PROPERTY(uint16_t, Id);
-        GETSET_PROPERTY(Borders2, Borders, Borders2::None);
+        GETSET_PROPERTY(BordersEnum, Borders, BordersEnum::None);
 
     private:
         winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
