@@ -271,7 +271,9 @@ namespace winrt::TerminalApp::implementation
             }
         };
 
+        _windowIdToast = std::make_unique<Toast>(WindowIdToast());
         WindowIdToast().Closed(safeRefocus);
+
         // Setup mouse vanish attributes
         SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &_shouldMouseVanish, false);
 
@@ -3317,7 +3319,8 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(Dispatcher());
         if (auto page{ weakThis.get() })
         {
-            page->WindowIdToast().IsOpen(true);
+            // page->WindowIdToast().IsOpen(true);
+            page->_windowIdToast->Open();
         }
     }
 

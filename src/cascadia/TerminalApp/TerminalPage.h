@@ -11,6 +11,7 @@
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 
 #include "AppCommandlineArgs.h"
+#include "Toast.h"
 
 #define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
 
@@ -151,6 +152,8 @@ namespace winrt::TerminalApp::implementation
         StartupState _startupState{ StartupState::NotInitialized };
 
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> _startupActions;
+
+        std::shared_ptr<Toast> _windowIdToast{ nullptr };
 
         void _ShowAboutDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseWarningDialog();

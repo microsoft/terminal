@@ -147,6 +147,7 @@
     <ClInclude Include="AppLogic.h">
       <DependentUpon>AppLogic.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="Toast.h"/>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -235,6 +236,8 @@
       <DependentUpon>AppLogic.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="Toast.cpp" />
+
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
