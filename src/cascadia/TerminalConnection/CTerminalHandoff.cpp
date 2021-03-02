@@ -4,7 +4,7 @@
 
 // The callback function when a connection is received
 static NewHandoff _pfnHandoff = nullptr;
-// The registration ID of the class object for deregistration later
+// The registration ID of the class object for clean up later
 static DWORD g_cTerminalHandoffRegistration = 0;
 
 // Routine Description:
@@ -34,12 +34,12 @@ HRESULT CTerminalHandoff::s_StartListening(NewHandoff pfnHandoff)
 }
 
 // Routine Description:
-// - Stops listening for TerminalHandoff requests by deregistering
+// - Stops listening for TerminalHandoff requests by revoking the registration
 //   our class and interface with COM
 // Arguments:
 // - <none>
 // Return Value:
-// - S_OK, E_NOT_VALID_STATE (stop called when not started), or relevant COM deregistration error
+// - S_OK, E_NOT_VALID_STATE (stop called when not started), or relevant COM class revoke error
 HRESULT CTerminalHandoff::s_StopListening()
 {
     RETURN_HR_IF(E_NOT_VALID_STATE, _pfnHandoff == nullptr);

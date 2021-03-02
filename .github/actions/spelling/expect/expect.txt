@@ -432,6 +432,7 @@ cstring
 cstyle
 csv
 CSwitch
+CTerminal
 CText
 ctime
 ctl
