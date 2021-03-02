@@ -60,12 +60,6 @@ namespace winrt::TerminalApp::implementation
             _NewTabHandlers(*this, eventArgs);
             break;
         }
-
-        case ShortcutAction::NewWindow:
-        {
-            _NewWindowHandlers(*this, eventArgs);
-            break;
-        }
         case ShortcutAction::CloseWindow:
         {
             _CloseWindowHandlers(*this, eventArgs);
@@ -256,9 +250,19 @@ namespace winrt::TerminalApp::implementation
             _BreakIntoDebuggerHandlers(*this, eventArgs);
             break;
         }
+        case ShortcutAction::FindMatch:
+        {
+            _FindMatchHandlers(*this, eventArgs);
+            break;
+        }
         case ShortcutAction::TogglePaneReadOnly:
         {
             _TogglePaneReadOnlyHandlers(*this, eventArgs);
+            break;
+        }
+        case ShortcutAction::NewWindow:
+        {
+            _NewWindowHandlers(*this, eventArgs);
             break;
         }
         default:

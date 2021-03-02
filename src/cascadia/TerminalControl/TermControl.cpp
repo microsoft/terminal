@@ -189,7 +189,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
-        _ApplyUISettings();
+        _ApplyUISettings(_settings);
     }
 
     // Method Description:
@@ -225,6 +225,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    void TermControl::SearchMatch(const bool goForward)
+    {
+        if (!_searchBox)
+        {
+            CreateSearchBoxControl();
+        }
+        else
+        {
+            _Search(_searchBox->TextBox().Text(), goForward, false);
+        }
+    }
+
     // Method Description:
     // - Search text in text buffer. This is triggered if the user click
     //   search button or press enter.
@@ -234,7 +246,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - caseSensitive: boolean that represents if the current search is case sensitive
     // Return Value:
     // - <none>
-    void TermControl::_Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive)
+    void TermControl::_Search(const winrt::hstring& text,
+                              const bool goForward,
+                              const bool caseSensitive)
     {
         if (text.size() == 0 || _closing)
         {
@@ -267,7 +281,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - RoutedEventArgs: not used
     // Return Value:
     // - <none>
-    void TermControl::_CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/, RoutedEventArgs const& /*args*/)
+    void TermControl::_CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                             RoutedEventArgs const& /*args*/)
     {
         _searchBox->Visibility(Visibility::Collapsed);
 
@@ -277,8 +292,70 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     // Method Description:
     // - Given new settings for this profile, applies the settings to the current terminal.
+    // - This method is separate from UpdateSettings because there is an apparent optimizer
+    //   issue that causes one of our hstring -> wstring_view conversions to result in garbage,
+    //   but only from a coroutine context. See GH#8723.
+    // - INVARIANT: This method must be called from the UI thread.
     // Arguments:
     // - <none>
+    // Return Value:
+    // - <none>
+    void TermControl::_UpdateSettingsOnUIThread()
+    {
+        if (_closing)
+        {
+            return;
+        }
+
+        auto lock = _terminal->LockForWriting();
+
+        // Update our control settings
+        _ApplyUISettings(_settings);
+
+        // Update the terminal core with its new Core settings
+        _terminal->UpdateSettings(_settings);
+
+        if (!_initializedTerminal)
+        {
+            // If we haven't initialized, there's no point in continuing.
+            // Initialization will handle the renderer settings.
+            return;
+        }
+
+        // Update DxEngine settings under the lock
+        _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
+
+        _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
+        _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
+        _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
+        _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+
+        switch (_settings.AntialiasingMode())
+        {
+        case TextAntialiasingMode::Cleartype:
+            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
+            break;
+        case TextAntialiasingMode::Aliased:
+            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
+            break;
+        case TextAntialiasingMode::Grayscale:
+        default:
+            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+            break;
+        }
+
+        // Refresh our font with the renderer
+        const auto actualFontOldSize = _actualFont.GetSize();
+        _UpdateFont();
+        const auto actualFontNewSize = _actualFont.GetSize();
+        if (actualFontNewSize != actualFontOldSize)
+        {
+            _RefreshSizeUnderLock();
+        }
+    }
+
+    // Method Description:
+    // - Given Settings having been updated, applies the settings to the current terminal.
     // Return Value:
     // - <none>
     winrt::fire_and_forget TermControl::UpdateSettings()
@@ -292,49 +369,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // If 'weakThis' is locked, then we can safely work with 'this'
         if (auto control{ weakThis.get() })
         {
-            if (_closing)
-            {
-                co_return;
-            }
-
-            // Update our control settings
-            _ApplyUISettings();
-
-            // Update the terminal core with its new Core settings
-            _terminal->UpdateSettings(_settings);
-
-            auto lock = _terminal->LockForWriting();
-
-            // Update DxEngine settings under the lock
-            _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
-
-            _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-            _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
-            _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
-            _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
-
-            switch (_settings.AntialiasingMode())
-            {
-            case TextAntialiasingMode::Cleartype:
-                _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
-                break;
-            case TextAntialiasingMode::Aliased:
-                _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
-                break;
-            case TextAntialiasingMode::Grayscale:
-            default:
-                _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
-                break;
-            }
-
-            // Refresh our font with the renderer
-            const auto actualFontOldSize = _actualFont.GetSize();
-            _UpdateFont();
-            const auto actualFontNewSize = _actualFont.GetSize();
-            if (actualFontNewSize != actualFontOldSize)
-            {
-                _RefreshSizeUnderLock();
-            }
+            _UpdateSettingsOnUIThread();
         }
     }
 
@@ -384,21 +419,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TermControl::_ApplyUISettings()
+    void TermControl::_ApplyUISettings(const IControlSettings& newSettings)
     {
         _InitializeBackgroundBrush();
 
-        COLORREF bg = _settings.DefaultBackground();
+        COLORREF bg = newSettings.DefaultBackground();
         _BackgroundColorChanged(bg);
 
         // Apply padding as swapChainPanel's margin
-        auto newMargin = _ParseThicknessFromPadding(_settings.Padding());
+        auto newMargin = _ParseThicknessFromPadding(newSettings.Padding());
         SwapChainPanel().Margin(newMargin);
 
         // Initialize our font information.
-        const auto fontFace = _settings.FontFace();
-        const short fontHeight = gsl::narrow_cast<short>(_settings.FontSize());
-        const auto fontWeight = _settings.FontWeight();
+        const auto fontFace = newSettings.FontFace();
+        const short fontHeight = gsl::narrow_cast<short>(newSettings.FontSize());
+        const auto fontWeight = newSettings.FontWeight();
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up
         // The other params here also largely don't matter.
@@ -410,12 +445,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // set TSF Foreground
         Media::SolidColorBrush foregroundBrush{};
-        foregroundBrush.Color(static_cast<til::color>(_settings.DefaultForeground()));
+        foregroundBrush.Color(static_cast<til::color>(newSettings.DefaultForeground()));
         TSFInputControl().Foreground(foregroundBrush);
         TSFInputControl().Margin(newMargin);
 
         // Apply settings for scrollbar
-        if (_settings.ScrollState() == ScrollbarState::Hidden)
+        if (newSettings.ScrollState() == ScrollbarState::Hidden)
         {
             // In the scenario where the user has turned off the OS setting to automatically hide scrollbars, the
             // Terminal scrollbar would still be visible; so, we need to set the control's visibility accordingly to
@@ -1098,7 +1133,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // modifier key. We'll wait for a real keystroke to dismiss the
         // GH #7395 - don't dismiss selection when taking PrintScreen
         // selection.
-        if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey) && vkey != VK_SNAPSHOT)
+        // GH#8522, GH#3758 - Only dismiss the selection on key _down_. If we
+        // dismiss on key up, then there's chance that we'll immediately dismiss
+        // a selection created by an action bound to a keydown.
+        if (_terminal->IsSelectionActive() &&
+            !KeyEvent::IsModifierKey(vkey) &&
+            vkey != VK_SNAPSHOT &&
+            keyDown)
         {
             const CoreWindow window = CoreWindow::GetForCurrentThread();
             const auto leftWinKeyState = window.GetKeyState(VirtualKey::LeftWindows);
@@ -1376,7 +1417,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (!_focused && _settings.FocusFollowMouse())
         {
-            Focus(FocusState::Pointer);
+            _FocusFollowMouseRequestedHandlers(*this, nullptr);
         }
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)

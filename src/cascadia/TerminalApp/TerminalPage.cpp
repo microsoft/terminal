@@ -93,21 +93,27 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::SetSettings(CascadiaSettings settings, bool needRefreshUI)
     {
         _settings = settings;
-        if (needRefreshUI)
-        {
-            _RefreshUIForSettingsReload();
-        }
-
-        // Upon settings update we reload the system settings for scrolling as well.
-        // TODO: consider reloading this value periodically.
-        _systemRowsToScroll = _ReadSystemRowsToScroll();
 
         auto weakThis{ get_weak() };
         co_await winrt::resume_foreground(Dispatcher());
         if (auto page{ weakThis.get() })
         {
+            // Make sure to _UpdateCommandsForPalette before
+            // _RefreshUIForSettingsReload. _UpdateCommandsForPalette will make
+            // sure the KeyChordText of Commands is updated, which needs to
+            // happen before the Settings UI is reloaded and tries to re-read
+            // those values.
             _UpdateCommandsForPalette();
             CommandPalette().SetKeyMap(_settings.KeyMap());
+
+            if (needRefreshUI)
+            {
+                _RefreshUIForSettingsReload();
+            }
+
+            // Upon settings update we reload the system settings for scrolling as well.
+            // TODO: consider reloading this value periodically.
+            _systemRowsToScroll = _ReadSystemRowsToScroll();
         }
     }
 
@@ -135,8 +141,7 @@ namespace winrt::TerminalApp::implementation
         }
         CATCH_LOG();
 
-        _tabRow.PointerMoved({ this, &TerminalPage::_RestorePointerCursorHandler });
-
+        _tabRow.PointerMoved({ get_weak(), &TerminalPage::_RestorePointerCursorHandler });
         _tabView.CanReorderTabs(!isElevated);
         _tabView.CanDragTabs(!isElevated);
 
@@ -261,7 +266,11 @@ namespace winrt::TerminalApp::implementation
 
         // Store cursor, so we can restore it, e.g., after mouse vanishing
         // (we'll need to adapt this logic once we make cursor context aware)
-        _defaultPointerCursor = CoreWindow::GetForCurrentThread().PointerCursor();
+        try
+        {
+            _defaultPointerCursor = CoreWindow::GetForCurrentThread().PointerCursor();
+        }
+        CATCH_LOG();
     }
 
     // Method Description:
@@ -649,7 +658,7 @@ namespace winrt::TerminalApp::implementation
                 settingsItem.Click({ this, &TerminalPage::_SettingsButtonOnClick });
                 newTabFlyout.Items().Append(settingsItem);
 
-                Microsoft::Terminal::Settings::Model::OpenSettingsArgs args{ SettingsTarget::SettingsFile };
+                Microsoft::Terminal::Settings::Model::OpenSettingsArgs args{ SettingsTarget::SettingsUI };
                 Microsoft::Terminal::Settings::Model::ActionAndArgs settingsAction{ ShortcutAction::OpenSettings, args };
                 const auto settingsKeyChord{ keyBindings.GetKeyBindingForActionWithArgs(settingsAction) };
                 if (settingsKeyChord)
@@ -873,7 +882,7 @@ namespace winrt::TerminalApp::implementation
 
         if (debugConnection) // this will only be set if global debugging is on and tap is active
         {
-            TermControl newControl{ settings, debugConnection };
+            TermControl newControl{ *(winrt::get_self<TerminalSettings>(settings)->CreateChild()), debugConnection };
             _RegisterTerminalEvents(newControl, *newTabImpl);
             // Split (auto) with the debug tap.
             newTabImpl->SplitPane(SplitState::Automatic, 0.5f, profileGuid, newControl);
@@ -980,12 +989,30 @@ namespace winrt::TerminalApp::implementation
                                               const RoutedEventArgs&)
     {
         const CoreWindow window = CoreWindow::GetForCurrentThread();
-        const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
-        const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
-        const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
-                                WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
-        const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
+        // check alt state
+        const auto rAltState{ window.GetKeyState(VirtualKey::RightMenu) };
+        const auto lAltState{ window.GetKeyState(VirtualKey::LeftMenu) };
+        const bool altPressed{ WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
+                               WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down) };
+
+        // check shift state
+        const auto shiftState{ window.GetKeyState(VirtualKey::Shift) };
+        const auto lShiftState{ window.GetKeyState(VirtualKey::LeftShift) };
+        const auto rShiftState{ window.GetKeyState(VirtualKey::RightShift) };
+        const auto shiftPressed{ WI_IsFlagSet(shiftState, CoreVirtualKeyStates::Down) ||
+                                 WI_IsFlagSet(lShiftState, CoreVirtualKeyStates::Down) ||
+                                 WI_IsFlagSet(rShiftState, CoreVirtualKeyStates::Down) };
+
+        auto target{ SettingsTarget::SettingsUI };
+        if (shiftPressed)
+        {
+            target = SettingsTarget::SettingsFile;
+        }
+        else if (altPressed)
+        {
+            target = SettingsTarget::DefaultsFile;
+        }
         _LaunchSettings(target);
     }
 
@@ -1128,7 +1155,9 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->TabSearch({ this, &TerminalPage::_HandleOpenTabSearch });
         _actionDispatch->MoveTab({ this, &TerminalPage::_HandleMoveTab });
         _actionDispatch->BreakIntoDebugger({ this, &TerminalPage::_HandleBreakIntoDebugger });
+        _actionDispatch->FindMatch({ this, &TerminalPage::_HandleFindMatch });
         _actionDispatch->TogglePaneReadOnly({ this, &TerminalPage::_HandleTogglePaneReadOnly });
+        _actionDispatch->NewWindow({ this, &TerminalPage::_HandleNewWindow });
     }
 
     // Method Description:
@@ -1386,8 +1415,8 @@ namespace winrt::TerminalApp::implementation
         // Add an event handler for when the terminal wants to set a progress indicator on the taskbar
         term.SetTaskbarProgress({ this, &TerminalPage::_SetTaskbarProgressHandler });
 
-        term.HidePointerCursor({ this, &TerminalPage::_HidePointerCursorHandler });
-        term.RestorePointerCursor({ this, &TerminalPage::_RestorePointerCursorHandler });
+        term.HidePointerCursor({ get_weak(), &TerminalPage::_HidePointerCursorHandler });
+        term.RestorePointerCursor({ get_weak(), &TerminalPage::_RestorePointerCursorHandler });
 
         // Bind Tab events to the TermControl and the Tab's Pane
         hostingTab.Initialize(term);
@@ -1836,7 +1865,7 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            TermControl newControl{ controlSettings, controlConnection };
+            TermControl newControl{ *(winrt::get_self<TerminalSettings>(controlSettings)->CreateChild()), controlConnection };
 
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl, *focusedTab);
@@ -2144,7 +2173,7 @@ namespace winrt::TerminalApp::implementation
         try
         {
             auto parsed = winrt::Windows::Foundation::Uri(eventArgs.Uri().c_str());
-            if (parsed.SchemeName() == L"http" || parsed.SchemeName() == L"https")
+            if (_IsUriSupported(parsed))
             {
                 ShellExecute(nullptr, L"open", eventArgs.Uri().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
             }
@@ -2179,6 +2208,37 @@ namespace winrt::TerminalApp::implementation
             // Show the dialog
             presenter.ShowDialog(unopenedUriDialog);
         }
+    }
+
+    // Method Description:
+    // - Determines if the given URI is currently supported
+    // Arguments:
+    // - The parsed URI
+    // Return value:
+    // - True if we support it, false otherwise
+    bool TerminalPage::_IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri)
+    {
+        if (parsedUri.SchemeName() == L"http" || parsedUri.SchemeName() == L"https")
+        {
+            return true;
+        }
+        if (parsedUri.SchemeName() == L"file")
+        {
+            const auto host = parsedUri.Host();
+            // If no hostname was provided or if the hostname was "localhost", Host() will return an empty string
+            // and we allow it
+            if (host == L"")
+            {
+                return true;
+            }
+            // TODO: by the OSC 8 spec, if a hostname (other than localhost) is provided, we _should_ be
+            // comparing that value against what is returned by GetComputerNameExW and making sure they match.
+            // However, ShellExecute does not seem to be happy with file URIs of the form
+            //          file://{hostname}/path/to/file.ext
+            // and so while we could do the hostname matching, we do not know how to actually open the URI
+            // if its given in that form. So for now we ignore all hostnames other than localhost
+        }
+        return false;
     }
 
     void TerminalPage::_ControlNoticeRaisedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::TerminalControl::NoticeEventArgs eventArgs)
@@ -3195,8 +3255,15 @@ namespace winrt::TerminalApp::implementation
     {
         if (_shouldMouseVanish && !_isMouseHidden)
         {
-            CoreWindow::GetForCurrentThread().PointerCursor(nullptr);
-            _isMouseHidden = true;
+            if (auto window{ CoreWindow::GetForCurrentThread() })
+            {
+                try
+                {
+                    window.PointerCursor(nullptr);
+                    _isMouseHidden = true;
+                }
+                CATCH_LOG();
+            }
         }
     }
 
@@ -3208,8 +3275,15 @@ namespace winrt::TerminalApp::implementation
     {
         if (_isMouseHidden)
         {
-            CoreWindow::GetForCurrentThread().PointerCursor(_defaultPointerCursor);
-            _isMouseHidden = false;
+            if (auto window{ CoreWindow::GetForCurrentThread() })
+            {
+                try
+                {
+                    window.PointerCursor(_defaultPointerCursor);
+                    _isMouseHidden = false;
+                }
+                CATCH_LOG();
+            }
         }
     }
 

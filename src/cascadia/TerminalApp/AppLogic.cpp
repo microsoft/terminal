@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "AppLogic.h"
+#include "../inc/WindowingBehavior.h"
 #include "AppLogic.g.cpp"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
@@ -172,6 +173,9 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Returns the settings currently in use by the entire Terminal application.
+    // - IMPORTANT! This can throw! Make sure to try/catch this, so that the
+    //   LocalTests don't crash (because their Application::Current() won't be a
+    //   AppLogic)
     // Throws:
     // - HR E_INVALIDARG if the app isn't up and running.
     const CascadiaSettings AppLogic::CurrentAppSettings()
@@ -487,11 +491,15 @@ namespace winrt::TerminalApp::implementation
     void AppLogic::_OnLoaded(const IInspectable& /*sender*/,
                              const RoutedEventArgs& /*eventArgs*/)
     {
-        const auto keyboardServiceIsDisabled = !_IsKeyboardServiceEnabled();
-        if (keyboardServiceIsDisabled)
+        if (_settings.GlobalSettings().InputServiceWarning())
         {
-            _root->ShowKeyboardServiceWarning();
+            const auto keyboardServiceIsDisabled = !_IsKeyboardServiceEnabled();
+            if (keyboardServiceIsDisabled)
+            {
+                _root->ShowKeyboardServiceWarning();
+            }
         }
+
         if (FAILED(_settingsLoadedResult))
         {
             const winrt::hstring titleKey = USES_RESOURCE(L"InitialJsonParseErrorTitle");
@@ -658,6 +666,16 @@ namespace winrt::TerminalApp::implementation
             initialPosition.X ? initialPosition.X.Value() : defaultInitialX,
             initialPosition.Y ? initialPosition.Y.Value() : defaultInitialY
         };
+    }
+
+    bool AppLogic::CenterOnLaunch()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+        return _settings.GlobalSettings().CenterOnLaunch();
     }
 
     winrt::Windows::UI::Xaml::ElementTheme AppLogic::GetRequestedTheme()
@@ -1194,27 +1212,54 @@ namespace winrt::TerminalApp::implementation
     // - args: an array of strings to process as a commandline. These args can contain spaces
     // Return Value:
     // - 0: We should handle the args "in the current window".
-    // - -1: We should handle the args in a new window
+    // - WindowingBehaviorUseNew: We should handle the args in a new window
+    // - WindowingBehaviorUseExisting: We should handle the args "in
+    //   the current window ON THIS DESKTOP"
+    // - WindowingBehaviorUseAnyExisting: We should handle the args "in the current
+    //   window ON ANY DESKTOP"
     // - anything else: We should handle the commandline in the window with the given ID.
     int32_t AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
+    {
+        return AppLogic::_doFindTargetWindow(args, _settings.GlobalSettings().WindowingBehavior());
+    }
+
+    // The main body of this function is a static helper, to facilitate unit-testing
+    int32_t AppLogic::_doFindTargetWindow(array_view<const winrt::hstring> args,
+                                          const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior)
     {
         ::TerminalApp::AppCommandlineArgs appArgs;
         const auto result = appArgs.ParseArgs(args);
         if (result == 0)
         {
-            return appArgs.GetTargetWindow();
+            if (!appArgs.GetExitMessage().empty())
+            {
+                return WindowingBehaviorUseNew;
+            }
 
-            // TODO:projects/5
-            //
-            // In the future, we'll want to use the windowingBehavior setting to
-            // determine what happens when a window ID wasn't manually provided.
-            //
-            // Maybe that'd be a special return value out of here, to tell the
-            // monarch to do something special:
-            //
-            // -1 -> create a new window
-            // -2 -> find the mru, this desktop
-            // -3 -> MRU, any desktop (is this not just 0?)
+            const auto parsedTarget = appArgs.GetTargetWindow();
+            if (parsedTarget.has_value())
+            {
+                // parsedTarget might be -1, if the user explicitly requested -1
+                // (or any other negative number) on the commandline. So the set
+                // of possible values here is {-1, 0, ℤ+}
+                return *parsedTarget;
+            }
+            else
+            {
+                // If the user did not provide any value on the commandline,
+                // then lookup our windowing behavior to determine what to do
+                // now.
+                switch (windowingBehavior)
+                {
+                case WindowingMode::UseExisting:
+                    return WindowingBehaviorUseExisting;
+                case WindowingMode::UseAnyExisting:
+                    return WindowingBehaviorUseAnyExisting;
+                case WindowingMode::UseNew:
+                default:
+                    return WindowingBehaviorUseNew;
+                }
+            }
         }
 
         // Any unsuccessful parse will be a new window. That new window will try
@@ -1228,7 +1273,7 @@ namespace winrt::TerminalApp::implementation
         // create a new window. Then, in that new window, we'll try to  set the
         // StartupActions, which will again fail, returning the correct error
         // message.
-        return -1;
+        return WindowingBehaviorUseNew;
     }
 
     // Method Description:

@@ -16,7 +16,9 @@ namespace Microsoft.Terminal.Remoting
     runtimeclass WindowActivatedArgs
     {
         WindowActivatedArgs(UInt64 peasantID, Guid desktopID, Windows.Foundation.DateTime activatedTime);
+        WindowActivatedArgs(UInt64 peasantID, UInt64 hwnd, Guid desktopID, Windows.Foundation.DateTime activatedTime);
         UInt64 PeasantID { get; };
+        UInt64 Hwnd { get; };
         Guid DesktopID { get; };
         Windows.Foundation.DateTime ActivatedTime { get; };
     };

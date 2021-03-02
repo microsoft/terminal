@@ -133,6 +133,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void CreateSearchBoxControl();
 
+        void SearchMatch(const bool goForward);
+
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
         bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta, const bool leftButtonDown, const bool midButtonDown, const bool rightButtonDown);
@@ -186,6 +188,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TYPED_EVENT(HidePointerCursor, IInspectable, IInspectable);
         TYPED_EVENT(RestorePointerCursor, IInspectable, IInspectable);
         TYPED_EVENT(ReadOnlyChanged, IInspectable, IInspectable);
+        TYPED_EVENT(FocusFollowMouseRequested, IInspectable, IInspectable);
         // clang-format on
 
     private:
@@ -269,7 +272,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         bool _isReadOnly{ false };
 
-        void _ApplyUISettings();
+        void _ApplyUISettings(const IControlSettings&);
+        void _UpdateSettingsOnUIThread();
         void _UpdateSystemParameterSettings() noexcept;
         void _InitializeBackgroundBrush();
         winrt::fire_and_forget _BackgroundColorChanged(const COLORREF color);
@@ -342,7 +346,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _CompositionCompleted(winrt::hstring text);
         void _CurrentCursorPositionHandler(const IInspectable& sender, const CursorPositionEventArgs& eventArgs);
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
-
         winrt::fire_and_forget _AsyncCloseConnection();
 
         winrt::fire_and_forget _RaiseReadOnlyWarning();
