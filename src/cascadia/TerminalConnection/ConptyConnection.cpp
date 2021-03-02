@@ -195,17 +195,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                        const uint64_t hIn,
                                        const uint64_t hOut) :
         _initialRows{ 25 },
-        _initialCols{ 80},
+        _initialCols{ 80 },
         _commandline{ L"" },
-        _startingDirectory{ L""},
+        _startingDirectory{ L"" },
         _startingTitle{ L"" },
-        _environment{ nullptr},
+        _environment{ nullptr },
         _guid{},
         _u8State{},
         _u16Str{},
         _buffer{},
         _inPipe{ (HANDLE)hIn },
-        _outPipe{(HANDLE)hOut}
+        _outPipe{ (HANDLE)hOut }
     {
         hSig; // TODO: this needs to be packed into the hpcon
         if (_guid == guid{})
@@ -502,7 +502,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         THROW_IF_FAILED(CTerminalHandoff::s_StopListening());
     }
-    
+
     // Function Description:
     // - This function will be called (by C++/WinRT) after the final outstanding reference to
     //   any given connection instance is released.

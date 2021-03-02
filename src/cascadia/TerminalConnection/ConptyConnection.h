@@ -45,11 +45,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         static winrt::event_token NewConnection(NewConnectionHandler const& handler);
         static void NewConnection(winrt::event_token const& token);
-        
+
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
 
     private:
-
         HRESULT _LaunchAttachedClient() noexcept;
         void _indicateExitWithStatus(unsigned int status) noexcept;
         void _ClientTerminated() noexcept;

@@ -209,7 +209,6 @@ int CALLBACK wWinMain(
     _comServerExitEvent.create();
     auto& module = OutOfProcModuleWithRegistrationFlag<REGCLS_SINGLEUSE>::Create(&_releaseNotifier);
 
-
     // Register Trace provider by GUID
     TraceLoggingRegister(g_ConhostLauncherProvider);
 

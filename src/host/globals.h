@@ -71,7 +71,7 @@ public:
     ApiRoutines api;
 
     bool handoffTarget = false;
-    
+
     std::optional<CLSID> handoffConsoleClsid;
     std::optional<CLSID> handoffTerminalClsid;
 

@@ -3022,7 +3022,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_OnInboundPtyChanged(const IInspectable& /*sender*/,
-                                           const IInspectable& /*eventArgs*/)
+                                            const IInspectable& /*eventArgs*/)
     {
         if (InboundPty())
         {
@@ -3039,7 +3039,7 @@ namespace winrt::TerminalApp::implementation
         // TODO: this should probably use a more reasonable profile than nullptr.
         _OpenNewTab(nullptr, connection);
     }
-    
+
     // Method Description:
     // - Updates all tabs with their current index in _tabs.
     // Arguments:

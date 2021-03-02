@@ -20,7 +20,7 @@ HRESULT CTerminalHandoff::s_StartListening(NewHandoff pfnHandoff)
 
     // We could probably hold this in a static...
     auto classFactory = Make<SimpleClassFactory<CTerminalHandoff>>();
-    
+
     RETURN_IF_NULL_ALLOC(classFactory);
 
     ComPtr<IUnknown> unk;
@@ -82,4 +82,3 @@ HRESULT CTerminalHandoff::EstablishHandoff(HANDLE in, HANDLE out, HANDLE signal)
     // Call registered handler from when we started listening.
     return _pfnHandoff(in, out, signal);
 }
-
