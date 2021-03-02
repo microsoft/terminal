@@ -25,7 +25,7 @@ namespace winrt::TerminalApp::implementation
         TerminalTab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
         // Called after construction to perform the necessary setup, which relies on weak_ptr
-        void Initialize(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+        void Initialize();
 
         winrt::Microsoft::Terminal::TerminalControl::TermControl GetActiveTerminalControl() const;
         std::optional<GUID> GetFocusedProfile() const noexcept;
@@ -93,7 +93,7 @@ namespace winrt::TerminalApp::implementation
 
     private:
         IPane _rootPane;
-        std::optional<TerminalApp::LeafPane> _zoomedPane;
+        TerminalApp::LeafPane _zoomedPane;
         winrt::hstring _lastIconPath{};
         winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
         std::optional<winrt::Windows::UI::Color> _themeTabColor{};
@@ -129,7 +129,7 @@ namespace winrt::TerminalApp::implementation
 
         void _RefreshVisualState();
 
-        void _BindEventHandlers(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control) noexcept;
+        void _BindEventHandlers() noexcept;
 
         void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
         void _AttachEventHandlersToLeafPane(TerminalApp::LeafPane pane);

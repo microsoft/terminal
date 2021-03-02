@@ -25,12 +25,13 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalTab::TerminalTab(const GUID& profile, const TermControl& control)
+    TerminalTab::TerminalTab(const GUID& profile, const TermControl& control) :
+        _zoomedPane(nullptr)
     {
-        _rootPane = TerminalApp::LeafPane(profile, control, true);
+        _rootPane = make<LeafPane>(profile, control, true);
         const auto rootPaneAsLeaf = _rootPane.try_as<TerminalApp::LeafPane>();
 
-        _rootPane.try_as<TerminalApp::LeafPane>().Id(_nextPaneId);
+        rootPaneAsLeaf.Id(_nextPaneId);
         _mruPanes.insert(_mruPanes.begin(), _nextPaneId);
         ++_nextPaneId;
 
@@ -135,9 +136,9 @@ namespace winrt::TerminalApp::implementation
     // - control: reference to the TermControl object to bind event to
     // Return Value:
     // - <none>
-    void TerminalTab::Initialize(const TermControl& control)
+    void TerminalTab::Initialize()
     {
-        _BindEventHandlers(control);
+        _BindEventHandlers();
     }
 
     // Method Description:
@@ -188,14 +189,13 @@ namespace winrt::TerminalApp::implementation
     // - control: reference to the TermControl object to bind event to
     // Return Value:
     // - <none>
-    void TerminalTab::_BindEventHandlers(const TermControl& /*control*/) noexcept
+    void TerminalTab::_BindEventHandlers() noexcept
     {
         // This function gets called even when SplitPane is invoked (so potentially much after the initial construction
         // of the tab), so just in case remove the root pane event handlers before attaching them again so we don't have the
         // tab reacting to the same event twice
         _RemoveRootPaneEventHandlers();
         _SetupRootPaneEventHandlers();
-        // todo: remove TermControl parameter from this function
     }
 
     // Method Description:
@@ -1122,16 +1122,16 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::EnterZoom()
     {
         _zoomedPane = _rootPane.GetActivePane().try_as<TerminalApp::LeafPane>();
-        _rootPane.Maximize(_zoomedPane.value());
+        _rootPane.Maximize(_zoomedPane);
 
         // Update the tab header to show the magnifying glass
         _tabStatus.IsPaneZoomed(true);
-        Content(_zoomedPane.value());
+        Content(_zoomedPane);
     }
     void TerminalTab::ExitZoom()
     {
-        _rootPane.Restore(_zoomedPane.value());
-        _zoomedPane = std::nullopt;
+        _rootPane.Restore(_zoomedPane);
+        _zoomedPane = nullptr;
         // Update the tab header to hide the magnifying glass
         _tabStatus.IsPaneZoomed(false);
         if (const auto rootAsLeaf = _rootPane.try_as<TerminalApp::LeafPane>())
@@ -1146,7 +1146,7 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalTab::IsZoomed()
     {
-        return _zoomedPane != std::nullopt;
+        return _zoomedPane != nullptr;
     }
 
     // Method Description:

@@ -74,15 +74,14 @@ namespace winrt::TerminalApp::implementation
     //   _was_ the last pane to be focused
     // Return Value:
     // - nullptr if no children were marked `_lastActive`, else returns the last active child
-    IPane ParentPane::GetActivePane()
+    IPane ParentPane::GetActivePane() const
     {
-        auto first = _firstChild.GetActivePane();
+        const auto first = _firstChild.GetActivePane();
         if (first != nullptr)
         {
             return first;
         }
-        auto second = _secondChild.GetActivePane();
-        return second;
+        return _secondChild.GetActivePane();
     }
 
     // Method Description:

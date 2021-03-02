@@ -14,8 +14,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
     <Grid x:Name="Root">
         <Border x:Name="GridBorder"
-                Tapped="BorderTappedHandler">
-        </Border>
+                Tapped="BorderTappedHandler"/>
     </Grid>
 
 </UserControl>
