@@ -1398,6 +1398,14 @@ namespace winrt::TerminalApp::implementation
             _root->WindowId(id);
         }
     }
+
+    void AppLogic::RenameFailed()
+    {
+        if (_root)
+        {
+            _root->RenameFailed();
+        }
+    }
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.

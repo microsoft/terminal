@@ -16,6 +16,7 @@
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
+#include "RenameWindowRequestedArgs.g.cpp"
 
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
@@ -3312,6 +3313,15 @@ namespace winrt::TerminalApp::implementation
         if (auto page{ weakThis.get() })
         {
             page->WindowIdToast().IsOpen(true);
+        }
+    }
+    winrt::fire_and_forget TerminalPage::RenameFailed()
+    {
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_foreground(Dispatcher());
+        if (auto page{ weakThis.get() })
+        {
+            page->RenameFailedToast().IsOpen(true);
         }
     }
 

@@ -250,6 +250,7 @@ void AppHost::Initialize()
     _logic.LastTabClosed({ this, &AppHost::LastTabClosed });
     _logic.SetTaskbarProgress({ this, &AppHost::SetTaskbarProgress });
     _logic.IdentifyWindowsRequested({ this, &AppHost::_IdentifyWindowsRequested });
+    _logic.RenameWindowRequested({ this, &AppHost::_RenameWindowRequested });
 
     _window->UpdateTitle(_logic.Title());
 
@@ -610,8 +611,8 @@ GUID AppHost::_CurrentDesktopGuid()
     return currentDesktopGuid;
 }
 
-winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                                          const winrt::Windows::Foundation::IInspectable& /*args*/)
+winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
+                                                          const winrt::Windows::Foundation::IInspectable /*args*/)
 {
     co_await winrt::resume_background();
 
@@ -626,3 +627,39 @@ void AppHost::_DisplayWindowId(const winrt::Windows::Foundation::IInspectable& /
 {
     _logic.IdentifyWindow();
 }
+
+winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
+                                                       const winrt::TerminalApp::RenameWindowRequestedArgs args)
+{
+    winrt::apartment_context ui_thread; // Capture calling context.
+
+    co_await winrt::resume_background();
+
+    if (auto peasant{ _windowManager.CurrentWindow() })
+    {
+        Remoting::RenameRequestArgs requestArgs{ args.ProposedName() };
+        // peasant.RequestRename(args.ProposedName());
+        peasant.RequestRename(requestArgs);
+
+        co_await ui_thread; // Switch back to calling context.
+
+        if (requestArgs.Succeeded())
+        {
+            _logic.WindowName(args.ProposedName());
+        }
+        else
+        {
+            _logic.RenameFailed();
+        }
+    }
+}
+
+// void AppHost::_RenameWindow(const winrt::hstring newName)
+// {
+//     _logic.Name(newName);
+// }
+
+// void AppHost::_FailToRenameWindow()
+// {
+//     _logic.RenameFailed();
+// }

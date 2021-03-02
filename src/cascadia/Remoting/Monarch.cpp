@@ -76,6 +76,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // Add an event listener to the peasant's WindowActivated event.
             peasant.WindowActivated({ this, &Monarch::_peasantWindowActivated });
             peasant.IdentifyWindowsRequested({ this, &Monarch::_identifyWindows });
+            peasant.RenameRequested({ this, &Monarch::_renameRequested });
 
             _peasants[newPeasantsId] = peasant;
 
@@ -583,13 +584,51 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             catch (...)
             {
                 LOG_CAUGHT_EXCEPTION();
-                // If this fails, we don't _really_ care. Just movoe on to the
+                // If this fails, we don't _really_ care. Just move on to the
                 // next one. Someone else will clean up the dead peasant.
                 TraceLoggingWrite(g_hRemotingProvider,
                                   "Monarch_identifyWindows_Failed",
                                   TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not identify"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
             }
+        }
+    }
+    void Monarch::_renameRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                   const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args)
+    {
+        bool successfullyRenamed = false;
+
+        try
+        {
+            args.Succeeded(false);
+            auto name{ args.NewName() };
+            // Try to find a peasant that currently has this name
+            auto id = _lookupPeasantIdForName(name);
+            if (auto p{ _getPeasant(id) })
+            {
+                // If there is one, then oh no! The requestor is not allowed to
+                // be renamed.
+            }
+            else
+            {
+                args.Succeeded(true);
+                successfullyRenamed = true;
+            }
+
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_renameRequested",
+                              TraceLoggingWideString(name.c_str(), "name", "The newly proposed name"),
+                              TraceLoggingInt64(successfullyRenamed, "successfullyRenamed", "true if the peasant is allowed to rename themselves to that name."),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+            // If this fails, we don't _really_ care. The peasant died, but
+            // they're the only one who cares about the result.
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_renameRequested_Failed",
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
         }
     }
 }

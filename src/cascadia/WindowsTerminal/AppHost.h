@@ -51,9 +51,15 @@ private:
 
     void _FindTargetWindow(const winrt::Windows::Foundation::IInspectable& sender,
                            const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
-    winrt::fire_and_forget _IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable& sender,
-                                                     const winrt::Windows::Foundation::IInspectable& args);
+    winrt::fire_and_forget _IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable sender,
+                                                     const winrt::Windows::Foundation::IInspectable args);
     void _DisplayWindowId(const winrt::Windows::Foundation::IInspectable& sender,
                           const winrt::Windows::Foundation::IInspectable& args);
+    winrt::fire_and_forget _RenameWindowRequested(const winrt::Windows::Foundation::IInspectable sender,
+                                                  const winrt::TerminalApp::RenameWindowRequestedArgs args);
+
+    // void _RenameWindow(const winrt::hstring newName);
+    // void _FailToRenameWindow();
+
     GUID _CurrentDesktopGuid();
 };

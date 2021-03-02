@@ -77,6 +77,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void _identifyWindows(const winrt::Windows::Foundation::IInspectable& sender,
                               const winrt::Windows::Foundation::IInspectable& args);
 
+        void _renameRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                              const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args);
+
         friend class RemotingUnitTests::RemotingTests;
     };
 }

@@ -11,6 +11,7 @@
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 
 #include "AppCommandlineArgs.h"
+#include "RenameWindowRequestedArgs.g.h"
 
 #define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
 
@@ -36,6 +37,15 @@ namespace winrt::TerminalApp::implementation
     {
         ScrollUp = 0,
         ScrollDown = 1
+    };
+
+    struct RenameWindowRequestedArgs : RenameWindowRequestedArgsT<RenameWindowRequestedArgs>
+    {
+        GETSET_PROPERTY(winrt::hstring, ProposedName, L"");
+
+    public:
+        RenameWindowRequestedArgs(const winrt::hstring& name) :
+            _ProposedName{ name } {};
     };
 
     struct TerminalPage : TerminalPageT<TerminalPage>
@@ -84,6 +94,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring KeyboardServiceDisabledText();
 
         winrt::fire_and_forget IdentifyWindow();
+        winrt::fire_and_forget RenameFailed();
 
         winrt::fire_and_forget ProcessStartupActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions,
                                                      const bool initial,
@@ -104,6 +115,7 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTaskbarProgress, _setTaskbarProgressHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(Initialized, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(IdentifyWindowsRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable);
+        TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs);
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
@@ -343,7 +355,5 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct TerminalPage : TerminalPageT<TerminalPage, implementation::TerminalPage>
-    {
-    };
+    BASIC_FACTORY(TerminalPage);
 }

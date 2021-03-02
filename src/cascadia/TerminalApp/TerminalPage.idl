@@ -5,6 +5,11 @@ namespace TerminalApp
 {
     delegate void LastTabClosedEventArgs();
 
+    [default_interface] runtimeclass RenameWindowRequestedArgs
+    {
+        String ProposedName { get; };
+    };
+
     interface IDialogPresenter
     {
         Windows.Foundation.IAsyncOperation<Windows.UI.Xaml.Controls.ContentDialogResult> ShowDialog(Windows.UI.Xaml.Controls.ContentDialog dialog);
@@ -37,6 +42,7 @@ namespace TerminalApp
         void IdentifyWindow();
         String WindowName;
         UInt64 WindowId;
+        void RenameFailed();
 
         // We cannot use the default XAML APIs because we want to make sure
         // that there's only one application-global dialog visible at a time,
@@ -57,5 +63,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
         event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
+        event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
     }
 }
