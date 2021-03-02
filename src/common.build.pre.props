@@ -77,9 +77,6 @@
   </PropertyGroup>
 
   <ItemDefinitionGroup>
-    <Midl>
-      <AdditionalOptions>/target NT100 /out $(IntDir) %(AdditionalOptions)</AdditionalOptions>
-    </Midl>
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
