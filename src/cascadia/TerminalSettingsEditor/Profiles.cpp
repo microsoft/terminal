@@ -166,7 +166,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Editor::Font ProfileViewModel::_GetFont(com_ptr<IDWriteLocalizedStrings> localizedFamilyNames)
     {
-        // used for the font's name as an identifier (i.e. textblock.fontfamily)
+        // used for the font's name as an identifier (i.e. text block's font family property)
         std::wstring nameID;
         UINT32 nameIDIndex;
 
