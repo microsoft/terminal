@@ -12,7 +12,7 @@
         </Style>
     </Flyout.FlyoutPresenterStyle>
     <StackPanel Orientation="Horizontal">
-        <StackPanel>
+        <StackPanel XYFocusKeyboardNavigation="Enabled">
             <VariableSizedWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="4" HorizontalAlignment="Center" Margin="0, 3, 0, 0">
                 <VariableSizedWrapGrid.Resources>
                     <Style TargetType="Rectangle">
@@ -129,7 +129,7 @@
             </Grid.RowDefinitions>
             <ColorPicker x:Name="customColorPicker"
                      IsMoreButtonVisible="True"
-                     IsColorSliderVisible="False"
+                     IsColorSliderVisible="True"
                      IsColorChannelTextInputVisible="True"
                      IsHexInputVisible="True"
                      IsAlphaEnabled="False"

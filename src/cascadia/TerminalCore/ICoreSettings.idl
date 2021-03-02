@@ -8,6 +8,7 @@ namespace Microsoft.Terminal.TerminalControl
         Vintage,
         Bar,
         Underscore,
+        DoubleUnderscore,
         FilledBox,
         EmptyBox
     };
@@ -17,7 +18,6 @@ namespace Microsoft.Terminal.TerminalControl
         UInt32 DefaultForeground;
         UInt32 DefaultBackground;
         UInt32 GetColorTableEntry(Int32 index);
-        void SetColorTableEntry(Int32 index, UInt32 value);
         // TODO:MSFT:20642297 - define a sentinel for Infinite Scrollback
         Int32 HistorySize;
         Int32 InitialRows;
@@ -36,6 +36,7 @@ namespace Microsoft.Terminal.TerminalControl
         Boolean ForceVTInput;
 
         Windows.Foundation.IReference<UInt32> TabColor;
+        Windows.Foundation.IReference<UInt32> StartingTabColor;
     };
 
 }

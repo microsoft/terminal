@@ -3,10 +3,6 @@
 
 #include "pch.h"
 
-// We have to define GSL here, not PCH
-// because TelnetConnection has a conflicting GSL implementation.
-#include <gsl/gsl>
-
 #include "ConptyConnection.h"
 
 #include <windows.h>
@@ -89,7 +85,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::wstring cmdline{ wil::ExpandEnvironmentStringsW<std::wstring>(_commandline.c_str()) }; // mutable copy -- required for CreateProcessW
 
         Utils::EnvironmentVariableMapW environment;
-        auto zeroEnvMap = wil::scope_exit([&] {
+        auto zeroEnvMap = wil::scope_exit([&]() noexcept {
             // Can't zero the keys, but at least we can zero the values.
             for (auto& [name, value] : environment)
             {
@@ -506,4 +502,24 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         THROW_IF_FAILED(CTerminalHandoff::s_StopListening());
     }
+    
+    // Function Description:
+    // - This function will be called (by C++/WinRT) after the final outstanding reference to
+    //   any given connection instance is released.
+    //   When a client application exits, its termination will wait for the output thread to
+    //   run down. However, because our teardown is somewhat complex, our last reference may
+    //   be owned by the very output thread that the client wait threadpool is blocked on.
+    //   During destruction, we'll try to release any outstanding handles--including the one
+    //   we have to the threadpool wait. As you might imagine, this takes us right to deadlock
+    //   city.
+    //   Deferring the final destruction of the connection to a background thread that can't
+    //   be awaiting our destruction breaks the deadlock.
+    // Arguments:
+    // - connection: the final living reference to an outgoing connection
+    winrt::fire_and_forget ConptyConnection::final_release(std::unique_ptr<ConptyConnection> connection)
+    {
+        co_await winrt::resume_background(); // move to background
+        connection.reset(); // explicitly destruct
+    }
+
 }

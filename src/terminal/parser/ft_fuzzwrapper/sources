@@ -56,3 +56,4 @@ TARGETLIBS = \
     $(TARGETLIBS) \
     $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecore.lib \
     $(OBJ_PATH)\..\lib\$(O)\ConTermParser.lib \
+    $(OBJ_PATH)\..\..\..\types\lib\$(O)\ConTypes.lib \

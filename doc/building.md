@@ -67,12 +67,12 @@ To update the version of a given package, use the following snippet
 
 where:
 - `$PackageName` is the name of the package, e.g. Microsoft.UI.Xaml
-- `$OldVersionNumber` is the version number currently used, e.g. 2.5.0-prerelease.200609001
-- `$NewVersionNumber` is the version number you want to migrate to, e.g. 2.4.200117003-prerelease
+- `$OldVersionNumber` is the version number currently used, e.g. 2.4.0-prerelease.200506002
+- `$NewVersionNumber` is the version number you want to migrate to, e.g. 2.5.0-prerelease.200812002
 
 Example usage:
 
-`git grep -z -l Microsoft.UI.Xaml | xargs -0 sed -i -e 's/2.5.0-prerelease.200609001/2.4.200117003-prerelease/g'`
+`git grep -z -l Microsoft.UI.Xaml | xargs -0 sed -i -e 's/2.4.0-prerelease.200506002/2.5.0-prerelease.200812002/g'`
 
 ## Using .nupkg files instead of downloaded Nuget packages
 If you want to use .nupkg files instead of the downloaded Nuget package, you can do this with the following steps:

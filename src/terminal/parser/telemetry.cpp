@@ -227,6 +227,7 @@ void TermTelemetry::WriteFinalTraceLog() const
                                       TraceLoggingUInt32(_uiTimesUsed[DA], "DA"),
                                       TraceLoggingUInt32(_uiTimesUsed[DA2], "DA2"),
                                       TraceLoggingUInt32(_uiTimesUsed[DA3], "DA3"),
+                                      TraceLoggingUInt32(_uiTimesUsed[DECREQTPARM], "DECREQTPARM"),
                                       TraceLoggingUInt32(_uiTimesUsed[VPA], "VPA"),
                                       TraceLoggingUInt32(_uiTimesUsed[HPR], "HPR"),
                                       TraceLoggingUInt32(_uiTimesUsed[VPR], "VPR"),
@@ -272,7 +273,12 @@ void TermTelemetry::WriteFinalTraceLog() const
                                       TraceLoggingUInt32(_uiTimesUsed[OSCBG], "OscBackgroundColor"),
                                       TraceLoggingUInt32(_uiTimesUsed[OSCSCB], "OscSetClipboard"),
                                       TraceLoggingUInt32(_uiTimesUsed[REP], "REP"),
+                                      TraceLoggingUInt32(_uiTimesUsed[DECSWL], "DECSWL"),
+                                      TraceLoggingUInt32(_uiTimesUsed[DECDWL], "DECDWL"),
+                                      TraceLoggingUInt32(_uiTimesUsed[DECDHL], "DECDHL"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECALN], "DECALN"),
+                                      TraceLoggingUInt32(_uiTimesUsed[XTPUSHSGR], "XTPUSHSGR"),
+                                      TraceLoggingUInt32(_uiTimesUsed[XTPOPSGR], "XTPOPSGR"),
                                       TraceLoggingUInt32Array(_uiTimesFailed, ARRAYSIZE(_uiTimesFailed), "Failed"),
                                       TraceLoggingUInt32(_uiTimesFailedOutsideRange, "FailedOutsideRange"));
         }

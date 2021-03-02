@@ -10,6 +10,8 @@
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
+    <ClCompile Include="AttrRowTests.cpp" />
+    <ClCompile Include="ReflowTests.cpp" />
     <ClCompile Include="TextColorTests.cpp" />
     <ClCompile Include="TextAttributeTests.cpp" />
     <ClCompile Include="UnicodeStorageTests.cpp" />
@@ -18,6 +20,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\types\lib\types.vcxproj">
+      <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\lib\bufferout.vcxproj">
       <Project>{0cf235bd-2da0-407e-90ee-c467e8bbc714}</Project>
     </ProjectReference>

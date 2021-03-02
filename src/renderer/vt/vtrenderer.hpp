@@ -49,7 +49,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept = 0;
         [[nodiscard]] HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept override;
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
-        [[nodiscard]] HRESULT InvalidateCursor(const COORD* const pcoordCursor) noexcept override;
+        [[nodiscard]] HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
         [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept override;
         [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
@@ -85,7 +85,7 @@ namespace Microsoft::Console::Render
                                               _Out_ FontInfo& Font,
                                               const int iDpi) noexcept override;
 
-        std::vector<til::rectangle> GetDirtyArea() override;
+        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
 
@@ -113,12 +113,14 @@ namespace Microsoft::Console::Render
         std::string _buffer;
 
         std::string _formatBuffer;
+        std::string _conversionBuffer;
 
         TextAttribute _lastTextAttributes;
 
         Microsoft::Console::Types::Viewport _lastViewport;
 
-        til::bitmap _invalidMap;
+        std::pmr::unsynchronized_pool_resource _pool;
+        til::pmr::bitmap _invalidMap;
 
         COORD _lastText;
         til::point _scrollDelta;
@@ -196,6 +198,9 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _SetCrossedOut(const bool isCrossedOut) noexcept;
         [[nodiscard]] HRESULT _SetReverseVideo(const bool isReversed) noexcept;
 
+        [[nodiscard]] HRESULT _SetHyperlink(const std::wstring_view& uri, const std::wstring_view& customId, const uint16_t& numberId) noexcept;
+        [[nodiscard]] HRESULT _EndHyperlink() noexcept;
+
         [[nodiscard]] HRESULT _RequestCursor() noexcept;
 
         [[nodiscard]] HRESULT _RequestWin32Input() noexcept;
@@ -219,7 +224,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _WriteTerminalUtf8(const std::wstring_view str) noexcept;
         [[nodiscard]] HRESULT _WriteTerminalAscii(const std::wstring_view str) noexcept;
 
-        [[nodiscard]] virtual HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept override;
+        [[nodiscard]] virtual HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept override;
 
         /////////////////////////// Unit Testing Helpers ///////////////////////////
 #ifdef UNIT_TESTING

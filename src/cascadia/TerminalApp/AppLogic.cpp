@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "AppLogic.h"
+#include "../inc/WindowingBehavior.h"
 #include "AppLogic.g.cpp"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
@@ -16,6 +17,7 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::TerminalApp;
 
 namespace winrt
@@ -39,7 +41,11 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWar
     USES_RESOURCE(L"TooManyKeysForChord"),
     USES_RESOURCE(L"MissingRequiredParameter"),
     USES_RESOURCE(L"LegacyGlobalsProperty"),
-    USES_RESOURCE(L"FailedToParseCommandJson")
+    USES_RESOURCE(L"FailedToParseCommandJson"),
+    USES_RESOURCE(L"FailedToWriteToSettings"),
+    USES_RESOURCE(L"InvalidColorSchemeInCmd"),
+    USES_RESOURCE(L"InvalidSplitSize"),
+    USES_RESOURCE(L"FailedToParseStartupActions")
 };
 static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
@@ -76,7 +82,7 @@ static winrt::hstring _GetMessageText(uint32_t index, std::array<std::wstring_vi
 // - warning: the SettingsLoadWarnings value to get the localized text for.
 // Return Value:
 // - localized text for the given warning
-static winrt::hstring _GetWarningText(::TerminalApp::SettingsLoadWarnings warning)
+static winrt::hstring _GetWarningText(SettingsLoadWarnings warning)
 {
     return _GetMessageText(static_cast<uint32_t>(warning), settingsLoadWarningsLabels);
 }
@@ -89,7 +95,7 @@ static winrt::hstring _GetWarningText(::TerminalApp::SettingsLoadWarnings warnin
 // - error: the SettingsLoadErrors value to get the localized text for.
 // Return Value:
 // - localized text for the given error
-static winrt::hstring _GetErrorText(::TerminalApp::SettingsLoadErrors error)
+static winrt::hstring _GetErrorText(SettingsLoadErrors error)
 {
     return _GetMessageText(static_cast<uint32_t>(error), settingsLoadErrorsLabels);
 }
@@ -165,6 +171,20 @@ namespace winrt::TerminalApp::implementation
         return nullptr;
     }
 
+    // Method Description:
+    // - Returns the settings currently in use by the entire Terminal application.
+    // - IMPORTANT! This can throw! Make sure to try/catch this, so that the
+    //   LocalTests don't crash (because their Application::Current() won't be a
+    //   AppLogic)
+    // Throws:
+    // - HR E_INVALIDARG if the app isn't up and running.
+    const CascadiaSettings AppLogic::CurrentAppSettings()
+    {
+        auto appLogic{ ::winrt::TerminalApp::implementation::AppLogic::Current() };
+        THROW_HR_IF_NULL(E_INVALIDARG, appLogic);
+        return appLogic->GetSettings();
+    }
+
     AppLogic::AppLogic() :
         _dialogLock{},
         _loadedInitialSettings{ false },
@@ -181,6 +201,13 @@ namespace winrt::TerminalApp::implementation
         // SetTitleBarContent
         _isElevated = _isUserAdmin();
         _root = winrt::make_self<TerminalPage>();
+    }
+
+    // Method Description:
+    // - Implements the IInitializeWithWindow interface from shobjidl_core.
+    HRESULT AppLogic::Initialize(HWND hwnd)
+    {
+        return _root->Initialize(hwnd);
     }
 
     // Method Description:
@@ -238,7 +265,15 @@ namespace winrt::TerminalApp::implementation
         // so this setting is overridden to false no matter what the preference is.
         if (_isUwp)
         {
-            _settings->GlobalSettings().ShowTabsInTitlebar(false);
+            _settings.GlobalSettings().ShowTabsInTitlebar(false);
+        }
+
+        // Pay attention, that even if some command line arguments were parsed (like launch mode),
+        // we will not use the startup actions from settings.
+        // While this simplifies the logic, we might want to reconsider this behavior in the future.
+        if (!_hasCommandLineArguments && _hasSettingsStartupActions)
+        {
+            _root->SetStartupActions(_settingsAppArgs.GetStartupActions());
         }
 
         _root->SetSettings(_settings, false);
@@ -253,17 +288,21 @@ namespace winrt::TerminalApp::implementation
             {
                 _root->ToggleFullscreen();
             }
+            else if (launchMode == LaunchMode::FocusMode || launchMode == LaunchMode::MaximizedFocusMode)
+            {
+                _root->ToggleFocusMode();
+            }
         });
         _root->Create();
 
-        _ApplyTheme(_settings->GlobalSettings().Theme());
+        _ApplyTheme(_settings.GlobalSettings().Theme());
         _ApplyStartupTaskStateChange();
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
             "AppCreated",
             TraceLoggingDescription("Event emitted when the application is started"),
-            TraceLoggingBool(_settings->GlobalSettings().ShowTabsInTitlebar(), "TabsInTitlebar"),
+            TraceLoggingBool(_settings.GlobalSettings().ShowTabsInTitlebar(), "TabsInTitlebar"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
@@ -310,7 +349,7 @@ namespace winrt::TerminalApp::implementation
         // details here, but it does have the desired effect.
         // It's not enough to set the theme on the dialog alone.
         auto themingLambda{ [this](const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&) {
-            auto theme{ _settings->GlobalSettings().Theme() };
+            auto theme{ _settings.GlobalSettings().Theme() };
             auto element{ sender.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
             while (element)
             {
@@ -400,8 +439,7 @@ namespace winrt::TerminalApp::implementation
         // Make sure the lines of text wrap
         warningsTextBlock.TextWrapping(TextWrapping::Wrap);
 
-        const auto& warnings = _settings->GetWarnings();
-        for (const auto& warning : warnings)
+        for (const auto& warning : _warnings)
         {
             // Try looking up the warning message key for each warning.
             const auto warningText = _GetWarningText(warning);
@@ -453,6 +491,15 @@ namespace winrt::TerminalApp::implementation
     void AppLogic::_OnLoaded(const IInspectable& /*sender*/,
                              const RoutedEventArgs& /*eventArgs*/)
     {
+        if (_settings.GlobalSettings().InputServiceWarning())
+        {
+            const auto keyboardServiceIsDisabled = !_IsKeyboardServiceEnabled();
+            if (keyboardServiceIsDisabled)
+            {
+                _root->ShowKeyboardServiceWarning();
+            }
+        }
+
         if (FAILED(_settingsLoadedResult))
         {
             const winrt::hstring titleKey = USES_RESOURCE(L"InitialJsonParseErrorTitle");
@@ -463,6 +510,51 @@ namespace winrt::TerminalApp::implementation
         {
             _ShowLoadWarningsDialog();
         }
+    }
+
+    // Method Description:
+    // - Helper for determining if the "Touch Keyboard and Handwriting Panel
+    //   Service" is enabled. If it isn't, we want to be able to display a
+    //   warning to the user, because they won't be able to type in the
+    //   Terminal.
+    // Return Value:
+    // - true if the service is enabled, or if we fail to query the service. We
+    //   return true in that case, to be less noisy (though, that is unexpected)
+    bool AppLogic::_IsKeyboardServiceEnabled()
+    {
+        if (IsUwp())
+        {
+            return true;
+        }
+
+        // If at any point we fail to open the service manager, the service,
+        // etc, then just quick return true to disable the dialog. We'd rather
+        // not be noisy with this dialog if we failed for some reason.
+
+        // Open the service manager. This will return 0 if it failed.
+        wil::unique_schandle hManager{ OpenSCManager(nullptr, nullptr, 0) };
+
+        if (LOG_LAST_ERROR_IF(!hManager.is_valid()))
+        {
+            return true;
+        }
+
+        // Get a handle to the keyboard service
+        wil::unique_schandle hService{ OpenService(hManager.get(), TabletInputServiceKey.data(), SERVICE_QUERY_STATUS) };
+        if (LOG_LAST_ERROR_IF(!hService.is_valid()))
+        {
+            return true;
+        }
+
+        // Get the current state of the service
+        SERVICE_STATUS status{ 0 };
+        if (!LOG_IF_WIN32_BOOL_FALSE(QueryServiceStatus(hService.get(), &status)))
+        {
+            return true;
+        }
+
+        const auto state = status.dwCurrentState;
+        return (state == SERVICE_RUNNING || state == SERVICE_START_PENDING);
     }
 
     // Method Description:
@@ -483,7 +575,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Use the default profile to determine how big of a window we need.
-        const auto [_, settings] = _settings->BuildSettings(nullptr);
+        const auto [_, settings] = TerminalSettings::BuildSettings(_settings, nullptr, nullptr);
 
         auto proposedSize = TermControl::GetProposedDimensions(settings, dpi);
 
@@ -492,7 +584,7 @@ namespace winrt::TerminalApp::implementation
         // GH#2061 - If the global setting "Always show tab bar" is
         // set or if "Show tabs in title bar" is set, then we'll need to add
         // the height of the tab bar here.
-        if (_settings->GlobalSettings().ShowTabsInTitlebar())
+        if (_settings.GlobalSettings().ShowTabsInTitlebar())
         {
             // If we're showing the tabs in the titlebar, we need to use a
             // TitlebarControl here to calculate how much space to reserve.
@@ -506,7 +598,7 @@ namespace winrt::TerminalApp::implementation
             titlebar.Measure({ SHRT_MAX, SHRT_MAX });
             proposedSize.Height += (titlebar.DesiredSize().Height) * scale;
         }
-        else if (_settings->GlobalSettings().AlwaysShowTabs())
+        else if (_settings.GlobalSettings().AlwaysShowTabs())
         {
             // Otherwise, let's use a TabRowControl to calculate how much extra
             // space we'll need.
@@ -516,10 +608,10 @@ namespace winrt::TerminalApp::implementation
             auto tabControl = TabRowControl();
             tabControl.Measure({ SHRT_MAX, SHRT_MAX });
 
-            // For whatever reason, there's about 6px of unaccounted-for space
-            // in the application. I couldn't tell you where these 6px are
+            // For whatever reason, there's about 10px of unaccounted-for space
+            // in the application. I couldn't tell you where these 10px are
             // coming from, but they need to be included in this math.
-            proposedSize.Width += (tabControl.DesiredSize().Height + 6) * scale;
+            proposedSize.Height += (tabControl.DesiredSize().Height + 10) * scale;
         }
 
         return proposedSize;
@@ -544,7 +636,7 @@ namespace winrt::TerminalApp::implementation
 
         // GH#4620/#5801 - If the user passed --maximized or --fullscreen on the
         // commandline, then use that to override the value from the settings.
-        const auto valueFromSettings = _settings->GlobalSettings().LaunchMode();
+        const auto valueFromSettings = _settings.GlobalSettings().LaunchMode();
         const auto valueFromCommandlineArgs = _appArgs.GetLaunchMode();
         return valueFromCommandlineArgs.has_value() ?
                    valueFromCommandlineArgs.value() :
@@ -569,11 +661,21 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        const auto initialPosition{ _settings->GlobalSettings().InitialPosition() };
+        const auto initialPosition{ _settings.GlobalSettings().InitialPosition() };
         return {
             initialPosition.X ? initialPosition.X.Value() : defaultInitialX,
             initialPosition.Y ? initialPosition.Y.Value() : defaultInitialY
         };
+    }
+
+    bool AppLogic::CenterOnLaunch()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+        return _settings.GlobalSettings().CenterOnLaunch();
     }
 
     winrt::Windows::UI::Xaml::ElementTheme AppLogic::GetRequestedTheme()
@@ -584,7 +686,7 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        return _settings->GlobalSettings().Theme();
+        return _settings.GlobalSettings().Theme();
     }
 
     bool AppLogic::GetShowTabsInTitlebar()
@@ -595,7 +697,18 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        return _settings->GlobalSettings().ShowTabsInTitlebar();
+        return _settings.GlobalSettings().ShowTabsInTitlebar();
+    }
+
+    bool AppLogic::GetInitialAlwaysOnTop()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+
+        return _settings.GlobalSettings().AlwaysOnTop();
     }
 
     // Method Description:
@@ -616,26 +729,53 @@ namespace winrt::TerminalApp::implementation
         try
         {
             auto newSettings = _isUwp ? CascadiaSettings::LoadUniversal() : CascadiaSettings::LoadAll();
-            _settings = std::move(newSettings);
-            const auto& warnings = _settings->GetWarnings();
-            hr = warnings.size() == 0 ? S_OK : S_FALSE;
+            _settings = newSettings;
+
+            if (_settings.GetLoadingError())
+            {
+                _settingsLoadExceptionText = _GetErrorText(_settings.GetLoadingError().Value());
+                return E_INVALIDARG;
+            }
+            else if (!_settings.GetSerializationErrorMessage().empty())
+            {
+                _settingsLoadExceptionText = _settings.GetSerializationErrorMessage();
+                return E_INVALIDARG;
+            }
+
+            _warnings.clear();
+            for (uint32_t i = 0; i < _settings.Warnings().Size(); i++)
+            {
+                _warnings.push_back(_settings.Warnings().GetAt(i));
+            }
+
+            _hasSettingsStartupActions = false;
+            const auto startupActions = _settings.GlobalSettings().StartupActions();
+            if (!startupActions.empty())
+            {
+                _settingsAppArgs.FullResetState();
+
+                ExecuteCommandlineArgs args{ _settings.GlobalSettings().StartupActions() };
+                auto result = _settingsAppArgs.ParseArgs(args);
+                if (result == 0)
+                {
+                    _hasSettingsStartupActions = true;
+
+                    // Validation also injects new-tab command if implicit new-tab was provided.
+                    _settingsAppArgs.ValidateStartupCommands();
+                }
+                else
+                {
+                    _warnings.push_back(SettingsLoadWarnings::FailedToParseStartupActions);
+                }
+            }
+
+            hr = _warnings.empty() ? S_OK : S_FALSE;
         }
         catch (const winrt::hresult_error& e)
         {
             hr = e.code();
             _settingsLoadExceptionText = e.message();
             LOG_HR(hr);
-        }
-        catch (const ::TerminalApp::SettingsException& ex)
-        {
-            hr = E_INVALIDARG;
-            _settingsLoadExceptionText = _GetErrorText(ex.Error());
-        }
-        catch (const ::TerminalApp::SettingsTypedDeserializationException& e)
-        {
-            hr = E_INVALIDARG;
-            std::string_view what{ e.what() };
-            _settingsLoadExceptionText = til::u8u16(what);
         }
         catch (...)
         {
@@ -693,6 +833,8 @@ namespace winrt::TerminalApp::implementation
 
         // Register for directory change notification.
         _RegisterSettingsChange();
+
+        Jumplist::UpdateJumplist(_settings);
     }
 
     // Method Description:
@@ -705,7 +847,7 @@ namespace winrt::TerminalApp::implementation
     void AppLogic::_RegisterSettingsChange()
     {
         // Get the containing folder.
-        const auto settingsPath{ CascadiaSettings::GetSettingsPath() };
+        const std::filesystem::path settingsPath{ std::wstring_view{ CascadiaSettings::SettingsPath() } };
         const auto folder = settingsPath.parent_path();
 
         _reader.create(folder.c_str(),
@@ -717,7 +859,8 @@ namespace winrt::TerminalApp::implementation
                            // editors, who will write a temp file, then rename it to be the
                            // actual file you wrote. So listen for that too.
                            if (!(event == wil::FolderChangeEvent::Modified ||
-                                 event == wil::FolderChangeEvent::RenameNewName))
+                                 event == wil::FolderChangeEvent::RenameNewName ||
+                                 event == wil::FolderChangeEvent::Removed))
                            {
                                return;
                            }
@@ -771,7 +914,7 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(_root->Dispatcher());
 
         // Refresh the UI theme
-        _ApplyTheme(_settings->GlobalSettings().Theme());
+        _ApplyTheme(_settings.GlobalSettings().Theme());
     }
 
     fire_and_forget AppLogic::_ApplyStartupTaskStateChange()
@@ -790,7 +933,7 @@ namespace winrt::TerminalApp::implementation
         if (auto page{ weakThis.get() })
         {
             StartupTaskState state;
-            bool tryEnableStartupTask = _settings->GlobalSettings().StartOnUserLogin();
+            bool tryEnableStartupTask = _settings.GlobalSettings().StartOnUserLogin();
             StartupTask task = co_await StartupTask::GetAsync(StartupTaskName);
 
             state = task.State();
@@ -851,11 +994,13 @@ namespace winrt::TerminalApp::implementation
 
         _RefreshThemeRoutine();
         _ApplyStartupTaskStateChange();
+
+        Jumplist::UpdateJumplist(_settings);
     }
 
     // Method Description:
     // - Returns a pointer to the global shared settings.
-    [[nodiscard]] std::shared_ptr<::TerminalApp::CascadiaSettings> AppLogic::GetSettings() const noexcept
+    [[nodiscard]] CascadiaSettings AppLogic::GetSettings() const noexcept
     {
         return _settings;
     }
@@ -970,6 +1115,32 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Gets the taskbar state value from the last active control
+    // Return Value:
+    // - The taskbar state of the last active control
+    size_t AppLogic::GetLastActiveControlTaskbarState()
+    {
+        if (_root)
+        {
+            return _root->GetLastActiveControlTaskbarState();
+        }
+        return {};
+    }
+
+    // Method Description:
+    // - Gets the taskbar progress value from the last active control
+    // Return Value:
+    // - The taskbar progress of the last active control
+    size_t AppLogic::GetLastActiveControlTaskbarProgress()
+    {
+        if (_root)
+        {
+            return _root->GetLastActiveControlTaskbarProgress();
+        }
+        return {};
+    }
+
+    // Method Description:
     // - Sets the initial commandline to process on startup, and attempts to
     //   parse it. Commands will be parsed into a list of ShortcutActions that
     //   will be processed on TerminalPage::Create().
@@ -988,11 +1159,121 @@ namespace winrt::TerminalApp::implementation
         const auto result = _appArgs.ParseArgs(args);
         if (result == 0)
         {
+            // If the size of the arguments list is 1,
+            // then it contains only the executable name and no other arguments.
+            _hasCommandLineArguments = args.size() > 1;
             _appArgs.ValidateStartupCommands();
             _root->SetStartupActions(_appArgs.GetStartupActions());
         }
 
         return result;
+    }
+
+    // Method Description:
+    // - Parse the provided commandline arguments into actions, and try to
+    //   perform them immediately.
+    // - This function returns 0, unless a there was a non-zero result from
+    //   trying to parse one of the commands provided. In that case, no commands
+    //   after the failing command will be parsed, and the non-zero code
+    //   returned.
+    // - If a non-empty cwd is provided, the entire terminal exe will switch to
+    //   that CWD while we handle these actions, then return to the original
+    //   CWD.
+    // Arguments:
+    // - args: an array of strings to process as a commandline. These args can contain spaces
+    // - cwd: The directory to use as the CWD while performing these actions.
+    // Return Value:
+    // - the result of the first command who's parsing returned a non-zero code,
+    //   or 0. (see AppLogic::_ParseArgs)
+    int32_t AppLogic::ExecuteCommandline(array_view<const winrt::hstring> args,
+                                         const winrt::hstring& cwd)
+    {
+        ::TerminalApp::AppCommandlineArgs appArgs;
+        auto result = appArgs.ParseArgs(args);
+        if (result == 0)
+        {
+            auto actions = winrt::single_threaded_vector<ActionAndArgs>(std::move(appArgs.GetStartupActions()));
+
+            _root->ProcessStartupActions(actions, false, cwd);
+        }
+        // Return the result of parsing with commandline, though it may or may not be used.
+        return result;
+    }
+
+    // Method Description:
+    // - Parse the given commandline args in an attempt to find the specified
+    //   window. The rest of the args are ignored for now (they'll be handled
+    //   whenever the commandline gets to the window it was intended for).
+    // - Note that this function will only ever be called by the monarch. A
+    //   return value of `0` in this case does not mean "run the commandline in
+    //   _this_ process", rather it means "run the commandline in the current
+    //   process", whoever that may be.
+    // Arguments:
+    // - args: an array of strings to process as a commandline. These args can contain spaces
+    // Return Value:
+    // - 0: We should handle the args "in the current window".
+    // - WindowingBehaviorUseNew: We should handle the args in a new window
+    // - WindowingBehaviorUseExisting: We should handle the args "in
+    //   the current window ON THIS DESKTOP"
+    // - WindowingBehaviorUseAnyExisting: We should handle the args "in the current
+    //   window ON ANY DESKTOP"
+    // - anything else: We should handle the commandline in the window with the given ID.
+    int32_t AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
+    {
+        return AppLogic::_doFindTargetWindow(args, _settings.GlobalSettings().WindowingBehavior());
+    }
+
+    // The main body of this function is a static helper, to facilitate unit-testing
+    int32_t AppLogic::_doFindTargetWindow(array_view<const winrt::hstring> args,
+                                          const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior)
+    {
+        ::TerminalApp::AppCommandlineArgs appArgs;
+        const auto result = appArgs.ParseArgs(args);
+        if (result == 0)
+        {
+            if (!appArgs.GetExitMessage().empty())
+            {
+                return WindowingBehaviorUseNew;
+            }
+
+            const auto parsedTarget = appArgs.GetTargetWindow();
+            if (parsedTarget.has_value())
+            {
+                // parsedTarget might be -1, if the user explicitly requested -1
+                // (or any other negative number) on the commandline. So the set
+                // of possible values here is {-1, 0, ℤ+}
+                return *parsedTarget;
+            }
+            else
+            {
+                // If the user did not provide any value on the commandline,
+                // then lookup our windowing behavior to determine what to do
+                // now.
+                switch (windowingBehavior)
+                {
+                case WindowingMode::UseExisting:
+                    return WindowingBehaviorUseExisting;
+                case WindowingMode::UseAnyExisting:
+                    return WindowingBehaviorUseAnyExisting;
+                case WindowingMode::UseNew:
+                default:
+                    return WindowingBehaviorUseNew;
+                }
+            }
+        }
+
+        // Any unsuccessful parse will be a new window. That new window will try
+        // to handle the commandline itself, and find that the commandline
+        // failed to parse. When that happens, the new window will display the
+        // message box.
+        //
+        // This will also work for the case where the user specifies an invalid
+        // commandline in conjunction with `-w 0`. This function will determine
+        // that the commandline has a  parse error, and indicate that we should
+        // create a new window. Then, in that new window, we'll try to  set the
+        // StartupActions, which will again fail, returning the correct error
+        // message.
+        return WindowingBehaviorUseNew;
     }
 
     // Method Description:
@@ -1024,65 +1305,6 @@ namespace winrt::TerminalApp::implementation
     bool AppLogic::ShouldExitEarly()
     {
         return _appArgs.ShouldExitEarly();
-    }
-
-    winrt::hstring AppLogic::ApplicationDisplayName() const
-    {
-        try
-        {
-            const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
-            return package.DisplayName();
-        }
-        CATCH_LOG();
-
-        return RS_(L"ApplicationDisplayNameUnpackaged");
-    }
-
-    winrt::hstring AppLogic::ApplicationVersion() const
-    {
-        try
-        {
-            const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
-            const auto version{ package.Id().Version() };
-            winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u.%u", version.Major, version.Minor, version.Build, version.Revision) };
-            return formatted;
-        }
-        CATCH_LOG();
-
-        // Try to get the version the old-fashioned way
-        try
-        {
-            struct LocalizationInfo
-            {
-                WORD language, codepage;
-            };
-            // Use the current module instance handle for TerminalApp.dll, nullptr for WindowsTerminal.exe
-            auto filename{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
-            auto size{ GetFileVersionInfoSizeExW(0, filename.c_str(), nullptr) };
-            THROW_LAST_ERROR_IF(size == 0);
-            auto versionBuffer{ std::make_unique<std::byte[]>(size) };
-            THROW_IF_WIN32_BOOL_FALSE(GetFileVersionInfoExW(0, filename.c_str(), 0, size, versionBuffer.get()));
-
-            // Get the list of Version localizations
-            LocalizationInfo* pVarLocalization{ nullptr };
-            UINT varLen{ 0 };
-            THROW_IF_WIN32_BOOL_FALSE(VerQueryValueW(versionBuffer.get(), L"\\VarFileInfo\\Translation", reinterpret_cast<void**>(&pVarLocalization), &varLen));
-            THROW_HR_IF(E_UNEXPECTED, varLen < sizeof(*pVarLocalization)); // there must be at least one translation
-
-            // Get the product version from the localized version compartment
-            // We're using String/ProductVersion here because our build pipeline puts more rich information in it (like the branch name)
-            // than in the unlocalized numeric version fields.
-            WCHAR* pProductVersion{ nullptr };
-            UINT versionLen{ 0 };
-            const auto localizedVersionName{ wil::str_printf<std::wstring>(L"\\StringFileInfo\\%04x%04x\\ProductVersion",
-                                                                           pVarLocalization->language ? pVarLocalization->language : 0x0409, // well-known en-US LCID
-                                                                           pVarLocalization->codepage) };
-            THROW_IF_WIN32_BOOL_FALSE(VerQueryValueW(versionBuffer.get(), localizedVersionName.c_str(), reinterpret_cast<void**>(&pProductVersion), &versionLen));
-            return { pProductVersion };
-        }
-        CATCH_LOG();
-
-        return RS_(L"ApplicationVersionUnknown");
     }
 
     bool AppLogic::FocusMode() const

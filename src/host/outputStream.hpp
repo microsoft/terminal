@@ -14,9 +14,9 @@ Author:
 
 #pragma once
 
-#include "..\terminal\adapter\adaptDefaults.hpp"
-#include "..\types\inc\IInputEvent.hpp"
-#include "..\inc\conattrs.hpp"
+#include "../terminal/adapter/adaptDefaults.hpp"
+#include "../types/inc/IInputEvent.hpp"
+#include "../inc/conattrs.hpp"
 #include "IIoProvider.hpp"
 
 class SCREEN_INFORMATION;
@@ -42,7 +42,7 @@ private:
     NTSTATUS _ntstatus;
 };
 
-#include "..\terminal\adapter\conGetSet.hpp"
+#include "../terminal/adapter/conGetSet.hpp"
 
 // The ConhostInternalGetSet is for the Conhost process to call the entrypoints for its own Get/Set APIs.
 // Normally, these APIs are accessible from the outside of the conhost process (like by the process being "hosted") through
@@ -64,6 +64,10 @@ public:
 
     bool PrivateGetTextAttributes(TextAttribute& attrs) const override;
     bool PrivateSetTextAttributes(const TextAttribute& attrs) override;
+
+    bool PrivateSetCurrentLineRendition(const LineRendition lineRendition) override;
+    bool PrivateResetLineRenditionRange(const size_t startRow, const size_t endRow) override;
+    SHORT PrivateGetLineWidth(const size_t row) const override;
 
     bool PrivateWriteConsoleInputW(std::deque<std::unique_ptr<IInputEvent>>& events,
                                    size_t& eventsWritten) override;
@@ -104,9 +108,7 @@ public:
     bool PrivateEnableAlternateScroll(const bool enabled) override;
     bool PrivateEraseAll() override;
 
-    bool PrivatePrependConsoleInput(std::deque<std::unique_ptr<IInputEvent>>& events,
-                                    size_t& eventsWritten) override;
-
+    bool GetUserDefaultCursorStyle(CursorType& style) override;
     bool SetCursorStyle(CursorType const style) override;
     bool SetCursorColor(COLORREF const color) override;
 
@@ -144,6 +146,9 @@ public:
                              const bool standardFillAttrs) noexcept override;
 
     bool PrivateIsVtInputEnabled() const override;
+
+    bool PrivateAddHyperlink(const std::wstring_view uri, const std::wstring_view params) const override;
+    bool PrivateEndHyperlink() const override;
 
 private:
     Microsoft::Console::IIoProvider& _io;

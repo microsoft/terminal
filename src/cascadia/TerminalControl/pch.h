@@ -8,6 +8,9 @@
 #pragma once
 
 #define WIN32_LEAN_AND_MEAN
+#define NOMCX
+#define NOHELP
+#define NOCOMM
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #define BLOCK_TIL
@@ -36,6 +39,7 @@
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Windows.UI.Xaml.Data.h>
+#include <winrt/Windows.Ui.Xaml.Documents.h>
 #include <winrt/Windows.UI.Xaml.Media.h>
 #include <winrt/Windows.UI.Xaml.Media.Imaging.h>
 #include <winrt/Windows.UI.Xaml.Input.h>

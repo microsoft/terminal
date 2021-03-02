@@ -198,9 +198,14 @@ using namespace Microsoft::Console::Types;
     // If both the FG and BG should be the defaults, emit a SGR reset.
     if (fg.IsDefault() && bg.IsDefault() && !(lastFg.IsDefault() && lastBg.IsDefault()))
     {
-        // SGR Reset will clear all attributes.
+        // SGR Reset will clear all attributes (except hyperlink ID) - which means
+        // we cannot reset _lastTextAttributes by simply doing
+        // _lastTextAttributes = {};
+        // because we want to retain the last hyperlink ID
         RETURN_IF_FAILED(_SetGraphicsDefault());
-        _lastTextAttributes = {};
+        _lastTextAttributes.SetDefaultBackground();
+        _lastTextAttributes.SetDefaultForeground();
+        _lastTextAttributes.SetDefaultMetaAttrs();
         lastFg = {};
         lastBg = {};
     }
@@ -269,9 +274,14 @@ using namespace Microsoft::Console::Types;
     // We can't reset FG and BG to default individually.
     if ((fg.IsDefault() && !lastFg.IsDefault()) || (bg.IsDefault() && !lastBg.IsDefault()))
     {
-        // SGR Reset will clear all attributes.
+        // SGR Reset will clear all attributes (except hyperlink ID) - which means
+        // we cannot reset _lastTextAttributes by simply doing
+        // _lastTextAttributes = {};
+        // because we want to retain the last hyperlink ID
         RETURN_IF_FAILED(_SetGraphicsDefault());
-        _lastTextAttributes = {};
+        _lastTextAttributes.SetDefaultBackground();
+        _lastTextAttributes.SetDefaultForeground();
+        _lastTextAttributes.SetDefaultMetaAttrs();
         lastFg = {};
         lastBg = {};
     }
@@ -588,7 +598,7 @@ using namespace Microsoft::Console::Types;
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT VtEngine::_DoUpdateTitle(const std::wstring& /*newTitle*/) noexcept
+[[nodiscard]] HRESULT VtEngine::_DoUpdateTitle(const std::wstring_view /*newTitle*/) noexcept
 {
     return S_OK;
 }

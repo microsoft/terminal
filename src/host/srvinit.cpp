@@ -15,16 +15,18 @@
 
 #include "../types/inc/GlyphWidth.hpp"
 
-#include "..\server\Entrypoints.h"
-#include "..\server\IoSorter.h"
+#include "../server/Entrypoints.h"
+#include "../server/IoSorter.h"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
-#include "..\interactivity\base\ApiDetector.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../interactivity/base/ApiDetector.hpp"
 
 #include "renderData.hpp"
 #include "../renderer/base/renderer.hpp"
 
-#include "..\host\dll\ITerminalHandoff_h.h"
+#include "ITerminalHandoff.h"
+#include "../inc/conint.h"
+#include "../propslib/DelegationConfig.hpp"
 
 #pragma hdrstop
 
@@ -39,7 +41,7 @@ try
 {
     Globals& Globals = ServiceLocator::LocateGlobals();
 
-    Globals.pDeviceComm = new DeviceComm(Server);
+    Globals.pDeviceComm = new ConDrvDeviceComm(Server);
 
     Globals.launchArgs = *args;
 
@@ -50,24 +52,26 @@ try
 
     FontInfoBase::s_SetFontDefaultList(Globals.pFontDefaultList);
 
-    std::vector<DelegationConfig::DelegationConsole> consoles;
-    RETURN_IF_FAILED(DelegationConfig::s_GetAvailableConsoles(consoles));
-
-    // TODO: This is looked up twice in the middle hop console.
-    IID delegationClsid;
-    if (SUCCEEDED(DelegationConfig::s_GetConsole(delegationClsid)))
+    // Check if this conhost is allowed to delegate its activities to another.
+    // If so, look up the registered default console handler.
+    bool isEnabled = false;
+    if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy(isEnabled) && isEnabled))
     {
-        Globals.handoffConsoleClsid = delegationClsid;
-    }
-    if (SUCCEEDED(DelegationConfig::s_GetTerminal(delegationClsid)))
-    {
-        Globals.handoffTerminalClsid = delegationClsid;
+        IID delegationClsid;
+        if (SUCCEEDED(DelegationConfig::s_GetConsole(delegationClsid)))
+        {
+            Globals.handoffConsoleClsid = delegationClsid;
+        }
+        if (SUCCEEDED(DelegationConfig::s_GetTerminal(delegationClsid)))
+        {
+            Globals.handoffTerminalClsid = delegationClsid;
+        }
     }
 
     // Removed allocation of scroll buffer here.
     return S_OK;
 }
-CATCH_RETURN();
+CATCH_RETURN()
 
 static bool s_IsOnDesktop()
 {
@@ -192,10 +196,6 @@ static bool s_IsOnDesktop()
         {
             // Fallback to per-monitor aware V1 if the API isn't available.
             LOG_IF_FAILED(pHighDpiApi->SetProcessPerMonitorDpiAwareness());
-
-            // Allow child dialogs (i.e. Properties and Find) to scale automatically based on DPI if we're currently DPI aware.
-            // Note that we don't need to do this if we're PMv2.
-            pHighDpiApi->EnablePerMonitorDialogScaling();
         }
     }
 

@@ -13,13 +13,6 @@ namespace TerminalApp
         Int64 Y;
     };
 
-    enum LaunchMode
-    {
-        DefaultMode,
-        MaximizedMode,
-        FullscreenMode,
-    };
-
     [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
     {
         AppLogic();
@@ -36,6 +29,7 @@ namespace TerminalApp
         Boolean IsElevated();
 
         Int32 SetStartupCommandline(String[] commands);
+        Int32 ExecuteCommandline(String[] commands, String cwd);
         String ParseCommandlineMessage { get; };
         Boolean ShouldExitEarly { get; };
 
@@ -44,22 +38,26 @@ namespace TerminalApp
 
         String Title { get; };
 
-        String ApplicationDisplayName { get; };
-        String ApplicationVersion { get; };
-
         Boolean FocusMode { get; };
         Boolean Fullscreen { get; };
         Boolean AlwaysOnTop { get; };
 
         Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
+        Boolean CenterOnLaunch { get; };
 
         InitialPosition GetInitialPosition(Int64 defaultInitialX, Int64 defaultInitialY);
         Windows.UI.Xaml.ElementTheme GetRequestedTheme();
-        LaunchMode GetLaunchMode();
+        Microsoft.Terminal.Settings.Model.LaunchMode GetLaunchMode();
         Boolean GetShowTabsInTitlebar();
+        Boolean GetInitialAlwaysOnTop();
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
         void WindowCloseButtonClicked();
+
+        UInt64 GetLastActiveControlTaskbarState();
+        UInt64 GetLastActiveControlTaskbarProgress();
+
+        Int32 FindTargetWindow(String[] args);
 
         // See IDialogPresenter and TerminalPage's DialogPresenter for more
         // information.
@@ -72,5 +70,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> RaiseVisualBell;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
     }
 }

@@ -8,13 +8,13 @@
 #include "../types/inc/User32Utils.hpp"
 #include "resource.h"
 
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
-
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
+using namespace winrt::Microsoft::Terminal;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
@@ -24,17 +24,30 @@ static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 
 AppHost::AppHost() noexcept :
     _app{},
+    _windowManager{},
     _logic{ nullptr }, // don't make one, we're going to take a ref on app's
     _window{ nullptr }
 {
     _logic = _app.Logic(); // get a ref to app's logic
 
-    _useNonClientArea = _logic.GetShowTabsInTitlebar();
+    // Inform the WindowManager that it can use us to find the target window for
+    // a set of commandline args. This needs to be done before
+    // _HandleCommandlineArgs, because WE might end up being the monarch. That
+    // would mean we'd need to be responsible for looking that up.
+    _windowManager.FindTargetWindowRequested({ this, &AppHost::_FindTargetWindow });
 
     // If there were commandline args to our process, try and process them here.
-    // Do this before AppLogic::Create, otherwise this will have no effect
+    // Do this before AppLogic::Create, otherwise this will have no effect.
+    //
+    // This will send our commandline to the Monarch, to ask if we should make a
+    // new window or not. If not, exit immediately.
     _HandleCommandlineArgs();
+    if (!_shouldCreateWindow)
+    {
+        return;
+    }
 
+    _useNonClientArea = _logic.GetShowTabsInTitlebar();
     if (_useNonClientArea)
     {
         _window = std::make_unique<NonClientIslandWindow>(_logic.GetRequestedTheme());
@@ -57,13 +70,15 @@ AppHost::AppHost() noexcept :
                                                 std::placeholders::_1,
                                                 std::placeholders::_2));
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
-    _window->SetAlwaysOnTop(_logic.AlwaysOnTop());
+    _window->WindowActivated({ this, &AppHost::_WindowActivated });
+    _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
 }
 
 AppHost::~AppHost()
 {
     // destruction order is important for proper teardown here
+
     _window = nullptr;
     _app.Close();
     _app = nullptr;
@@ -79,8 +94,51 @@ bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, cons
 }
 
 // Method Description:
+// - Event handler to update the taskbar progress indicator
+// - Upon receiving the event, we ask the underlying logic for the taskbar state/progress values
+//   of the last active control
+// Arguments:
+// - sender: not used
+// - args: not used
+void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    if (_logic)
+    {
+        const auto state = gsl::narrow_cast<size_t>(_logic.GetLastActiveControlTaskbarState());
+        const auto progress = gsl::narrow_cast<size_t>(_logic.GetLastActiveControlTaskbarProgress());
+        _window->SetTaskbarProgress(state, progress);
+    }
+}
+
+void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
+{
+    if (auto commandline{ GetCommandLineW() })
+    {
+        int argc = 0;
+
+        // Get the argv, and turn them into a hstring array to pass to the app.
+        wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
+        if (argv)
+        {
+            for (auto& elem : wil::make_range(argv.get(), argc))
+            {
+                args.emplace_back(elem);
+            }
+        }
+    }
+    if (args.empty())
+    {
+        args.emplace_back(L"wt.exe");
+    }
+}
+
+// Method Description:
 // - Retrieve any commandline args passed on the commandline, and pass them to
-//   the app logic for processing.
+//   the WindowManager, to ask if we should become a window process.
+// - If we should create a window, then pass the arguments to the app logic for
+//   processing.
+// - If we shouldn't become a window, set _shouldCreateWindow to false and exit
+//   immediately.
 // - If the logic determined there's an error while processing that commandline,
 //   display a message box to the user with the text of the error, and exit.
 //    * We display a message box because we're a Win32 application (not a
@@ -93,21 +151,24 @@ bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, cons
 // - <none>
 void AppHost::_HandleCommandlineArgs()
 {
-    if (auto commandline{ GetCommandLineW() })
+    std::vector<winrt::hstring> args;
+    _buildArgsFromCommandline(args);
+    std::wstring cwd{ wil::GetCurrentDirectoryW<std::wstring>() };
+
+    Remoting::CommandlineArgs eventArgs{ { args }, { cwd } };
+    _windowManager.ProposeCommandline(eventArgs);
+
+    _shouldCreateWindow = _windowManager.ShouldCreateWindow();
+    if (!_shouldCreateWindow)
     {
-        int argc = 0;
+        return;
+    }
 
-        // Get the argv, and turn them into a hstring array to pass to the app.
-        wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
-        if (argv)
+    if (auto peasant{ _windowManager.CurrentWindow() })
+    {
+        if (auto args{ peasant.InitialArgs() })
         {
-            std::vector<winrt::hstring> args;
-            for (auto& elem : wil::make_range(argv.get(), argc))
-            {
-                args.emplace_back(elem);
-            }
-
-            const auto result = _logic.SetStartupCommandline({ args });
+            const auto result = _logic.SetStartupCommandline(args.Commandline());
             const auto message = _logic.ParseCommandlineMessage();
             if (!message.empty())
             {
@@ -127,6 +188,12 @@ void AppHost::_HandleCommandlineArgs()
                 }
             }
         }
+
+        // After handling the initial args, hookup the callback for handling
+        // future commandline invocations. When our peasant is told to execute a
+        // commandline (in the future), it'll trigger this callback, that we'll
+        // use to send the actions to the app.
+        peasant.ExecuteCommandlineRequested({ this, &AppHost::_DispatchCommandline });
     }
 }
 
@@ -144,6 +211,11 @@ void AppHost::_HandleCommandlineArgs()
 void AppHost::Initialize()
 {
     _window->Initialize();
+
+    if (auto withWindow{ _logic.try_as<IInitializeWithWindow>() })
+    {
+        withWindow->Initialize(_window->GetHandle());
+    }
 
     if (_useNonClientArea)
     {
@@ -165,11 +237,13 @@ void AppHost::Initialize()
     _logic.FullscreenChanged({ this, &AppHost::_FullscreenChanged });
     _logic.FocusModeChanged({ this, &AppHost::_FocusModeChanged });
     _logic.AlwaysOnTopChanged({ this, &AppHost::_AlwaysOnTopChanged });
+    _logic.RaiseVisualBell({ this, &AppHost::_RaiseVisualBell });
 
     _logic.Create();
 
     _logic.TitleChanged({ this, &AppHost::AppTitleChanged });
     _logic.LastTabClosed({ this, &AppHost::LastTabClosed });
+    _logic.SetTaskbarProgress({ this, &AppHost::SetTaskbarProgress });
 
     _window->UpdateTitle(_logic.Title());
 
@@ -236,12 +310,13 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
 // - launchMode: A LaunchMode enum reference that indicates the launch mode
 // Return Value:
 // - None
-void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::TerminalApp::LaunchMode& launchMode)
+void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode& launchMode)
 {
     launchMode = _logic.GetLaunchMode();
 
     // Acquire the actual initial position
     auto initialPos = _logic.GetInitialPosition(proposedRect.left, proposedRect.top);
+    const auto centerOnLaunch = _logic.CenterOnLaunch();
     proposedRect.left = static_cast<long>(initialPos.X);
     proposedRect.top = static_cast<long>(initialPos.Y);
 
@@ -301,10 +376,27 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
     adjustedWidth = islandWidth + nonClientSize.cx;
     adjustedHeight = islandHeight + nonClientSize.cy;
 
-    const COORD origin{ gsl::narrow<short>(proposedRect.left),
-                        gsl::narrow<short>(proposedRect.top) };
     const COORD dimensions{ Utils::ClampToShortMax(adjustedWidth, 1),
                             Utils::ClampToShortMax(adjustedHeight, 1) };
+
+    if (centerOnLaunch)
+    {
+        // Find nearest monitor for the position that we've actually settled on
+        HMONITOR hMonNearest = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
+        MONITORINFO nearestMonitorInfo;
+        nearestMonitorInfo.cbSize = sizeof(MONITORINFO);
+        // Get monitor dimensions:
+        GetMonitorInfo(hMonNearest, &nearestMonitorInfo);
+        const COORD desktopDimensions{ gsl::narrow<short>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
+                                       gsl::narrow<short>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
+        // Move our proposed location into the center of that specific monitor.
+        proposedRect.left = nearestMonitorInfo.rcWork.left +
+                            ((desktopDimensions.X / 2) - (dimensions.X / 2));
+        proposedRect.top = nearestMonitorInfo.rcWork.top +
+                           ((desktopDimensions.Y / 2) - (dimensions.Y / 2));
+    }
+    const COORD origin{ gsl::narrow<short>(proposedRect.left),
+                        gsl::narrow<short>(proposedRect.top) };
 
     const auto newPos = Viewport::FromDimensions(origin, dimensions);
     bool succeeded = SetWindowPos(hwnd,
@@ -378,6 +470,17 @@ void AppHost::_AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable
     _window->SetAlwaysOnTop(_logic.AlwaysOnTop());
 }
 
+// Method Description
+// - Called when the app wants to flash the taskbar, indicating to the user that
+//   something needs their attention
+// Arguments
+// - <unused>
+void AppHost::_RaiseVisualBell(const winrt::Windows::Foundation::IInspectable&,
+                               const winrt::Windows::Foundation::IInspectable&)
+{
+    _window->FlashTaskbar();
+}
+
 // Method Description:
 // - Called when the IslandWindow has received a WM_MOUSEWHEEL message. This can
 //   happen on some laptops, where their trackpads won't scroll inactive windows
@@ -425,4 +528,77 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
             }
         }
     }
+}
+
+bool AppHost::HasWindow()
+{
+    return _shouldCreateWindow;
+}
+
+// Method Description:
+// - Event handler for the Peasant::ExecuteCommandlineRequested event. Take the
+//   provided commandline args, and attempt to parse them and perform the
+//   actions immediately. The parsing is performed by AppLogic.
+// - This is invoked when another wt.exe instance runs something like `wt -w 1
+//   new-tab`, and the Monarch delegates the commandline to this instance.
+// Arguments:
+// - args: the bundle of a commandline and working directory to use for this invocation.
+// Return Value:
+// - <none>
+void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*sender*/,
+                                   Remoting::CommandlineArgs args)
+{
+    _window->SummonWindow();
+    _logic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory());
+}
+
+// Method Description:
+// - Event handler for the WindowManager::FindTargetWindowRequested event. The
+//   manager will ask us how to figure out what the target window is for a set
+//   of commandline arguments. We'll take those arguments, and ask AppLogic to
+//   parse them for us. We'll then set ResultTargetWindow in the given args, so
+//   the sender can use that result.
+// Arguments:
+// - args: the bundle of a commandline and working directory to find the correct target window for.
+// Return Value:
+// - <none>
+void AppHost::_FindTargetWindow(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                const Remoting::FindTargetWindowArgs& args)
+{
+    const auto targetWindow = _logic.FindTargetWindow(args.Args().Commandline());
+    args.ResultTargetWindow(targetWindow);
+}
+
+winrt::fire_and_forget AppHost::_WindowActivated()
+{
+    co_await winrt::resume_background();
+
+    if (auto peasant{ _windowManager.CurrentWindow() })
+    {
+        const auto currentDesktopGuid{ _CurrentDesktopGuid() };
+
+        // TODO: projects/5 - in the future, we'll want to actually get the
+        // desktop GUID in IslandWindow, and bubble that up here, then down to
+        // the Peasant. For now, we're just leaving space for it.
+        Remoting::WindowActivatedArgs args{ peasant.GetID(),
+                                            (uint64_t)_window->GetHandle(),
+                                            currentDesktopGuid,
+                                            winrt::clock().now() };
+        peasant.ActivateWindow(args);
+    }
+}
+
+GUID AppHost::_CurrentDesktopGuid()
+{
+    GUID currentDesktopGuid{ 0 };
+    try
+    {
+        const auto manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
+        if (manager)
+        {
+            LOG_IF_FAILED(manager->GetWindowDesktopId(_window->GetHandle(), &currentDesktopGuid));
+        }
+    }
+    CATCH_LOG();
+    return currentDesktopGuid;
 }

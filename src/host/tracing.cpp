@@ -210,13 +210,13 @@ void Tracing::s_TraceApi(const CONSOLE_SCREENBUFFERINFO_MSG* const a)
     static_assert(sizeof(UINT32) == sizeof(*a->ColorTable), "a->ColorTable");
 }
 
-void Tracing::s_TraceApi(const CONSOLE_MODE_MSG* const a, const std::wstring& handleType)
+void Tracing::s_TraceApi(const CONSOLE_MODE_MSG* const a, const std::wstring_view handleType)
 {
     TraceLoggingWrite(
         g_hConhostV2EventTraceProvider,
         "API_GetConsoleMode",
         TraceLoggingHexUInt32(a->Mode, "Mode"),
-        TraceLoggingWideString(handleType.c_str(), "Handle type"),
+        TraceLoggingCountedWideString(handleType.data(), gsl::narrow_cast<ULONG>(handleType.size()), "Handle type"),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
         TraceLoggingKeyword(TraceKeywords::API));
 }

@@ -8,6 +8,9 @@
 #pragma once
 
 #define WIN32_LEAN_AND_MEAN
+#define NOMCX
+#define NOHELP
+#define NOCOMM
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #define BLOCK_TIL
@@ -37,11 +40,13 @@
 #include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Windows.UI.Xaml.Data.h>
 #include <winrt/Windows.ui.xaml.media.h>
+#include <winrt/Windows.UI.Xaml.Media.Animation.h>
 #include <winrt/Windows.ui.xaml.input.h>
 #include <winrt/Windows.UI.Xaml.Hosting.h>
 #include "winrt/Windows.UI.Xaml.Markup.h"
 #include "winrt/Windows.UI.Xaml.Documents.h"
 #include "winrt/Windows.UI.Xaml.Automation.h"
+#include "winrt/Windows.UI.ViewManagement.h"
 #include <winrt/Windows.ApplicationModel.h>
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
 
@@ -58,15 +63,17 @@
 #include <TraceLoggingProvider.h>
 #include <winmeta.h>
 TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
-#include <telemetry\ProjectTelemetry.h>
+#include <telemetry/ProjectTelemetry.h>
 #include <TraceLoggingActivity.h>
 
-// JsonCpp
-#include <json.h>
-
 #include <shellapi.h>
+#include <shobjidl_core.h>
 
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
+#include <winrt/Microsoft.Terminal.Settings.Editor.h>
+#include <winrt/Microsoft.Terminal.Settings.Model.h>
+
 #include <winrt/Windows.UI.Popups.h>
 
 #include <CLI11/CLI11.hpp>

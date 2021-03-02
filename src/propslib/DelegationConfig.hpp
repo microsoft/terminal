@@ -6,7 +6,7 @@ Module Name:
 - DelegationConfig.hpp
 
 Abstract:
-- This module is used for looking up delegation handlers for the launch of the defualt console hosting environment
+- This module is used for looking up delegation handlers for the launch of the default console hosting environment
 
 Author(s):
 - Michael Niksa (MiNiksa) 31-Aug-2020

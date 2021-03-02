@@ -18,7 +18,6 @@
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="AzureConnection.cpp" />
     <ClCompile Include="init.cpp" />
-    <ClCompile Include="TelnetConnection.cpp" />
     <ClCompile Include="CTerminalHandoff.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -26,7 +25,6 @@
     <ClInclude Include="EchoConnection.h" />
     <ClInclude Include="AzureConnection.h" />
     <ClInclude Include="AzureClientID.h" />
-    <ClInclude Include="TelnetConnection.h" />
     <ClInclude Include="CTerminalHandoff.h" />
   </ItemGroup>
   <ItemGroup>
@@ -34,7 +32,6 @@
     <Midl Include="EchoConnection.idl" />
     <Midl Include="AzureConnection.idl" />
     <Midl Include="ConptyConnection.idl" />
-    <Midl Include="TelnetConnection.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

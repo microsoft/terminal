@@ -18,6 +18,8 @@
 #include "til/spsc.h"
 #include "til/coalesce.h"
 #include "til/replace.h"
+#include "til/visualize_control_codes.h"
+#include "til/pmr.h"
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {

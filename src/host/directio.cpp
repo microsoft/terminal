@@ -18,7 +18,7 @@
 #include "../types/inc/GlyphWidth.hpp"
 #include "../types/inc/viewport.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -532,41 +532,6 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         return _WriteConsoleInputWImplHelper(context, events, written, append);
     }
     CATCH_RETURN();
-}
-
-// Function Description:
-// - Writes the input records to the beginning of the input buffer. This is used
-//      by VT sequences that need a response immediately written back to the
-//      input.
-// Arguments:
-// - pInputBuffer - the input buffer to write to
-// - events - the events to written
-// - eventsWritten - on output, the number of events written
-// Return Value:
-// - HRESULT indicating success or failure
-[[nodiscard]] HRESULT DoSrvPrivatePrependConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
-                                                      _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
-                                                      _Out_ size_t& eventsWritten)
-{
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    eventsWritten = 0;
-
-    try
-    {
-        // add partial byte event if necessary
-        if (pInputBuffer->IsWritePartialByteSequenceAvailable())
-        {
-            events.push_front(pInputBuffer->FetchWritePartialByteSequence(false));
-        }
-    }
-    CATCH_RETURN();
-
-    // add to InputBuffer
-    eventsWritten = pInputBuffer->Prepend(events);
-
-    return S_OK;
 }
 
 // Function Description:
