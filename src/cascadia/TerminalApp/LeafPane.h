@@ -23,8 +23,7 @@
 // - Pankaj Bhojwani February-2021
 
 #pragma once
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include <winrt/TerminalApp.h>
+
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 #include "LeafPane.g.h"
