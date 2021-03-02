@@ -119,63 +119,83 @@
   </resheader>
   <data name="ColorScheme_Background.Text" xml:space="preserve">
     <value>Background</value>
+    <comment>The background color for text displayed on the screen. Users can select a color to use in this context.</comment>
   </data>
   <data name="ColorScheme_Black.Header" xml:space="preserve">
     <value>Black</value>
+    <comment>The color for "black" text displayed on the screen. Users can select a color to use in this context.</comment>
   </data>
   <data name="ColorScheme_Blue.Header" xml:space="preserve">
     <value>Blue</value>
+    <comment>The color for "blue" text displayed on the screen. Users can select a color to use in this context.</comment>
   </data>
   <data name="ColorScheme_BrightBlack.Header" xml:space="preserve">
     <value>Bright black</value>
+    <comment>The color for "bright black" text displayed on the screen. Users can select a color to use in this context.</comment>
   </data>
   <data name="ColorScheme_BrightBlue.Header" xml:space="preserve">
     <value>Bright blue</value>
+    <comment>The color for "bright blue" text displayed on the screen. Users can select a color to use in this context.</comment>
   </data>
   <data name="ColorScheme_BrightCyan.Header" xml:space="preserve">
     <value>Bright cyan</value>
+    <comment>The color for "bright cyan"  text displayed on the screen. Users can select a color to use in this context.</comment>
   </data>
   <data name="ColorScheme_BrightGreen.Header" xml:space="preserve">
     <value>Bright green</value>
+    <comment>The color for "bright green" text displayed on the screen. Users can select a color to use in this context.</comment>
   </data>
   <data name="ColorScheme_BrightPurple.Header" xml:space="preserve">
     <value>Bright purple</value>
+    <comment>The color for "bright purple" text displayed on the screen. Users can select a color to use in this context.</comment>
   </data>
   <data name="ColorScheme_BrightRed.Header" xml:space="preserve">
     <value>Bright red</value>
+    <comment>The color for "bright red" text displayed on the screen. Users can select a color to use in this context.</comment>
   </data>
   <data name="ColorScheme_BrightWhite.Header" xml:space="preserve">
     <value>Bright white</value>
+    <comment>The color for "bright white" text displayed on the screen. Users can select a color to use in this context.</comment>
   </data>
   <data name="ColorScheme_BrightYellow.Header" xml:space="preserve">
     <value>Bright yellow</value>
+    <comment>The color for "bright yellow" text displayed on the screen. Users can select a color to use in this context.</comment>
   </data>
   <data name="ColorScheme_CursorColor.Text" xml:space="preserve">
     <value>Cursor color</value>
+    <comment>The color of the cursor displayed on the screen. Users can select a color to use in this context.</comment>
   </data>
   <data name="ColorScheme_Cyan.Header" xml:space="preserve">
     <value>Cyan</value>
+    <comment>The color for "cyan" text displayed on the screen. Users can select a color to use in this context.</comment>
   </data>
   <data name="ColorScheme_Foreground.Text" xml:space="preserve">
     <value>Foreground</value>
+    <comment>The foreground color for text displayed on the screen. Users can select a color to use in this context.</comment>
   </data>
   <data name="ColorScheme_Green.Header" xml:space="preserve">
     <value>Green</value>
+    <comment>The color for "green" text displayed on the screen. Users can select a color to use in this context.</comment>
   </data>
   <data name="ColorScheme_Purple.Header" xml:space="preserve">
     <value>Purple</value>
+    <comment>The color for "purple" text displayed on the screen. Users can select a color to use in this context.</comment>
   </data>
   <data name="ColorScheme_SelectionBackground.Text" xml:space="preserve">
     <value>Selection background</value>
+    <comment>The background color for selected text displayed on the screen. Users can select a color to use in this context.</comment>
   </data>
   <data name="ColorScheme_Red.Header" xml:space="preserve">
     <value>Red</value>
+    <comment>The color for "red" text displayed on the screen. Users can select a color to use in this context.</comment>
   </data>
   <data name="ColorScheme_White.Header" xml:space="preserve">
     <value>White</value>
+    <comment>The color for "white" text displayed on the screen. Users can select a color to use in this context.</comment>
   </data>
   <data name="ColorScheme_Yellow.Header" xml:space="preserve">
     <value>Yellow</value>
+    <comment>The color for "yellow" text displayed on the screen. Users can select a color to use in this context.</comment>
   </data>
   <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
     <value>Always show tabs</value>
@@ -722,15 +742,19 @@
   </data>
   <data name="ColorScheme_AddNewButton.Text" xml:space="preserve">
     <value>Add new</value>
+    <comment>Button label that creates a new color scheme.</comment>
   </data>
   <data name="ColorScheme_DeleteButton.Text" xml:space="preserve">
     <value>Delete color scheme</value>
+    <comment>Button label that deletes the selected color scheme.</comment>
   </data>
   <data name="ColorScheme_Name.Header" xml:space="preserve">
     <value>Name</value>
+    <comment>The name of the color scheme. Used as a label on the name control.</comment>
   </data>
   <data name="ColorScheme_Name.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>The name of the color scheme.</value>
+    <comment>Supplementary text (tooltip) for the control used to select a color scheme that is under view.</comment>
   </data>
   <data name="Profile_DeleteButton.Text" xml:space="preserve">
     <value>Delete profile</value>
@@ -771,12 +795,15 @@
   </data>
   <data name="ColorScheme_DeleteButtonDisclaimerInBox" xml:space="preserve">
     <value>This color scheme cannot be deleted or renamed because it is included by default.</value>
+    <comment>Disclaimer presented next to the delete button when it is disabled.</comment>
   </data>
   <data name="ColorScheme_DeleteConfirmationButton.Content" xml:space="preserve">
     <value>Yes, delete color scheme</value>
+    <comment>Button label for positive confirmation of deleting a color scheme (presented with "ColorScheme_DeleteConfirmationMessage")</comment>
   </data>
   <data name="ColorScheme_DeleteConfirmationMessage.Text" xml:space="preserve">
     <value>Are you sure you want to delete this color scheme?</value>
+    <comment>A confirmation message displayed when the user intends to delete a color scheme.</comment>
   </data>
   <data name="RenameAccept.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Accept rename</value>
@@ -831,9 +858,11 @@
   </data>
   <data name="ColorScheme_RenameErrorTip.Subtitle" xml:space="preserve">
     <value>Please choose a different name.</value>
+    <comment>An error message that appears when the user attempts to rename a color scheme to something invalid. This appears as the subtitle and provides guidance to fix the issue.</comment>
   </data>
   <data name="ColorScheme_RenameErrorTip.Title" xml:space="preserve">
     <value>This color scheme name is already in use.</value>
+    <comment>An error message that appears when the user attempts to rename a color scheme to something invalid. This appears as the title, and explains the issue.</comment>
   </data>
   <data name="Globals_FocusFollowMouse.Header" xml:space="preserve">
     <value>Automatically focus pane on mouse hover</value>
