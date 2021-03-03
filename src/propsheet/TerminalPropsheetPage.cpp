@@ -181,6 +181,21 @@ bool InitTerminalDialog(const HWND hDlg) noexcept
 
     CheckDlgButton(hDlg, IDD_DISABLE_SCROLLFORWARD, gpStateInfo->TerminalScrolling);
 
+    HWND hTermCombo = GetDlgItem(hDlg, IDD_TERMINAL_COMBO_DEFTERM);
+    ComboBox_ResetContent(hTermCombo);
+    ComboBox_AddString(hTermCombo, TEXT("Term1"));
+    ComboBox_AddString(hTermCombo, TEXT("Term2"));
+    ComboBox_AddString(hTermCombo, TEXT("Term3"));
+    ComboBox_SetCurSel(hTermCombo, 0);
+    ComboBox_Enable(hTermCombo, TRUE);
+
+    HWND hConCombo = GetDlgItem(hDlg, IDD_TERMINAL_COMBO_DEFCON);
+    ComboBox_ResetContent(hConCombo);
+    ComboBox_AddString(hConCombo, TEXT("Con1"));
+    ComboBox_AddString(hConCombo, TEXT("Con2"));
+    ComboBox_SetCurSel(hConCombo, 0);
+    ComboBox_Enable(hConCombo, TRUE);
+
     return true;
 }
 
@@ -341,10 +356,56 @@ bool TerminalDlgCommand(const HWND hDlg, const WORD item, const WORD command) no
         break;
     }
     case IDD_DISABLE_SCROLLFORWARD:
+    {
         gpStateInfo->TerminalScrolling = IsDlgButtonChecked(hDlg, IDD_DISABLE_SCROLLFORWARD);
         UpdateApplyButton(hDlg);
         handled = true;
         break;
+    }
+    case IDD_TERMINAL_COMBO_DEFTERM:
+    {
+        if (CBN_SELCHANGE == command)
+        {
+            HWND hCombo = GetDlgItem(hDlg, IDD_TERMINAL_COMBO_DEFTERM);
+            wchar_t buf[50];
+            DWORD comboItem = ComboBox_GetCurSel(hCombo);
+            if (CB_ERR != comboItem)
+            {
+                if (ComboBox_GetLBTextLen(hCombo, comboItem) < ARRAYSIZE(buf))
+                {
+                    ComboBox_GetLBText(hCombo, comboItem, buf);
+                    MessageBox(hDlg, (LPCWSTR)buf, TEXT("Terminal Selected"), MB_OK);
+                }
+                else
+                {
+                    MessageBox(hDlg, (LPCWSTR)L"Terminal item too big.", TEXT("Terminal Selection Error"), MB_OK);
+                }
+            }
+        }
+        break;
+    }
+    case IDD_TERMINAL_COMBO_DEFCON:
+    {
+        if (CBN_SELCHANGE == command)
+        {
+            HWND hCombo = GetDlgItem(hDlg, IDD_TERMINAL_COMBO_DEFCON);
+            wchar_t buf[50];
+            DWORD comboItem = ComboBox_GetCurSel(hCombo);
+            if (CB_ERR != comboItem)
+            {
+                if (ComboBox_GetLBTextLen(hCombo, comboItem) < ARRAYSIZE(buf))
+                {
+                    ComboBox_GetLBText(hCombo, comboItem, buf);
+                    MessageBox(hDlg, (LPCWSTR)buf, TEXT("Console Selected"), MB_OK);
+                }
+                else
+                {
+                    MessageBox(hDlg, (LPCWSTR)L"Console item too big.", TEXT("Console Selection Error"), MB_OK);
+                }
+            }
+        }
+        break;
+    }
     }
 
     return handled;

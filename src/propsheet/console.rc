@@ -534,6 +534,22 @@ END
 #define T_SCROLL_W 100
 #define T_SCROLL_H 40
 
+// default application group box
+#define T_DEFAPP_X T_CCOLOR_X
+#define T_DEFAPP_Y T_SCROLL_Y
+#define T_DEFAPP_W T_CCOLOR_W
+#define T_DEFAPP_H 54
+
+#define T_DEFTERM_X (T_DEFAPP_X+P_1)
+#define T_DEFTERM_Y (T_DEFAPP_Y+P_2)
+#define T_DEFTERM_W (T_DEFAPP_W-P_4-P_4)
+#define T_DEFTERM_H 25
+
+#define T_DEFCON_X T_DEFTERM_X
+#define T_DEFCON_Y (T_DEFTERM_Y+P_4+P_4+P_0+P_0)
+#define T_DEFCON_W T_DEFTERM_W
+#define T_DEFCON_H T_DEFTERM_H
+
 #define UPDOWN_STYLES (UDS_AUTOBUDDY | UDS_SETBUDDYINT | UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_ALIGNRIGHT)
 DID_TERMINAL DIALOG  0, 0, 245, 226
 CAPTION " Terminal "
@@ -619,6 +635,12 @@ BEGIN
 
     GROUPBOX        "Terminal Scrolling", -1, T_SCROLL_X, T_SCROLL_Y, T_SCROLL_W, T_SCROLL_H
     AUTOCHECKBOX    "Disable Scroll-Forward", IDD_DISABLE_SCROLLFORWARD, T_SCROLL_X+P_1, T_SCROLL_Y+P_2, T_SCROLL_W-P_4-P_4, 10
+
+    GROUPBOX        "Default Launch Application", -1, T_DEFAPP_X, T_DEFAPP_Y, T_DEFAPP_W, T_DEFAPP_H
+    LTEXT           "Terminal Window", -1, T_DEFTERM_X, T_DEFTERM_Y, T_DEFTERM_W, T_DEFTERM_H
+    COMBOBOX        IDD_TERMINAL_COMBO_DEFTERM, T_DEFTERM_X+P_1, T_DEFTERM_Y+P_2, T_DEFTERM_W-P_4-P_4, 10, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP 
+    LTEXT           "Console Engine", -1, T_DEFCON_X, T_DEFCON_Y, T_DEFCON_W, T_DEFCON_H
+    COMBOBOX        IDD_TERMINAL_COMBO_DEFCON, T_DEFCON_X+P_1, T_DEFCON_Y+P_2, T_DEFCON_W-P_4-P_4, 10, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
     CONTROL         "Find out more about <A HREF=""https://go.microsoft.com/fwlink/?linkid=2028595"">experimental terminal settings</A>",
                     IDD_HELP_TERMINAL, "SysLink", WS_TABSTOP, 10, 225, 200, 10

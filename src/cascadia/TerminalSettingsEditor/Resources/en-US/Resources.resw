@@ -201,6 +201,18 @@
   <data name="Globals_DefaultProfile.HelpText" xml:space="preserve">
     <value>Profile that opens when clicking the '+' icon or by typing the new tab key binding.</value>
   </data>
+  <data name="Globals_DefaultTerminal.Header" xml:space="preserve">
+    <value>Default terminal</value>
+  </data>
+  <data name="Globals_DefaultTerminal.HelpText" xml:space="preserve">
+    <value>The terminal application that launches when a command-line application is run without an existing session, like from the Start Menu or Run dialog.</value>
+  </data>
+  <data name="Globals_DefaultConsole.Header" xml:space="preserve">
+    <value>Default console (PTY)</value>
+  </data>
+  <data name="Globals_DefaultConsole.HelpText" xml:space="preserve">
+    <value>The console engine and pseudoconsole version that will be used to power the default terminal application.</value>
+  </data>
   <data name="Globals_ForceFullRepaint.Header" xml:space="preserve">
     <value>Redraw entire screen when display updates</value>
   </data>

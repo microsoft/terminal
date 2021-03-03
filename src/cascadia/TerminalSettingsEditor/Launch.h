@@ -28,6 +28,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         IInspectable CurrentDefaultProfile();
         void CurrentDefaultProfile(const IInspectable& value);
 
+        Windows::Foundation::Collections::IObservableVector<IInspectable> DefaultTerminals();
+        IInspectable CurrentDefaultTerminal();
+        void CurrentDefaultTerminal(const IInspectable& value);
+
+        Windows::Foundation::Collections::IObservableVector<IInspectable> DefaultConsoles();
+        IInspectable CurrentDefaultConsole();
+        void CurrentDefaultConsole(const IInspectable& value);
+
         GETSET_PROPERTY(Editor::LaunchPageNavigationState, State, nullptr);
 
         GETSET_BINDABLE_ENUM_SETTING(LaunchMode, Model::LaunchMode, State().Settings().GlobalSettings, LaunchMode);
