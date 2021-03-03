@@ -119,7 +119,7 @@
   </resheader>
   <data name="ColorScheme_Background.Text" xml:space="preserve">
     <value>Background</value>
-    <comment>The background color for text displayed on the screen. Users can select a color to use in this context.</comment>
+    <comment>This is the header for a control that lets the user select the background color for text displayed on the screen.</comment>
   </data>
   <data name="ColorScheme_Black.Header" xml:space="preserve">
     <value>Black</value>
@@ -303,7 +303,7 @@
   </data>
   <data name="Globals_ShowTitleInTitlebar.HelpText" xml:space="preserve">
     <value>When unchecked, the title bar will be 'Windows Terminal'.</value>
-    <comment>A description for what the "show title in titlebar" setting does. Presented near "Globals_ShowTitleInTitlebar.Header".</comment>
+    <comment>A description for what the "show title in titlebar" setting does. Presented near "Globals_ShowTitleInTitlebar.Header".{Locked="Windows"}</comment>
   </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
     <value>Snap window resizing to character grid</value>
@@ -431,7 +431,7 @@
   </data>
   <data name="Profile_AltGrAliasing.Header" xml:space="preserve">
     <value>AltGr aliasing</value>
-    <comment>Header for a control to toggle whether the app treats ctrl+alt as the AltGr (also known as the Alt Graph) modifier key found on keyboards. </comment>
+    <comment>Header for a control to toggle whether the app treats ctrl+alt as the AltGr (also known as the Alt Graph) modifier key found on keyboards. {Locked="AltGr"}</comment>
   </data>
   <data name="Profile_AltGrAliasing.HelpText" xml:space="preserve">
     <value>By default Windows treats Ctrl+Alt as an alias for AltGr. When unchecked, this behavior will be disabled.</value>
@@ -451,7 +451,7 @@
   </data>
   <data name="Profile_AntialiasingModeClearType.Content" xml:space="preserve">
     <value>ClearType</value>
-    <comment>An option to choose from for the "text antialiasing" setting. When selected, the app's text renderer uses a "ClearType" antialiasing technique. "ClearType" is a proper noun.</comment>
+    <comment>An option to choose from for the "text antialiasing" setting. When selected, the app's text renderer uses a "ClearType" antialiasing technique. {Locked="ClearType"}</comment>
   </data>
   <data name="Profile_AntialiasingModeGrayscale.Content" xml:space="preserve">
     <value>Grayscale</value>
