@@ -199,48 +199,55 @@
   </data>
   <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
     <value>Always show tabs</value>
+    <comment>Header for a control to toggle if the app should always show the tabs (similar to a website browser).</comment>
   </data>
   <data name="Globals_AlwaysShowTabs.HelpText" xml:space="preserve">
     <value>When unchecked, the tab bar will appear when a new tab is created.</value>
-  </data>
-  <data name="Globals_CopyFormatting.Content" xml:space="preserve">
-    <value>Copy formatting</value>
-  </data>
-  <data name="Globals_CopyFormatting.HelpText" xml:space="preserve">
-    <value>When checked, the color and font formatting of selected text is also copied to your clipboard. When unchecked, only plain text is copied to your clipboard.</value>
+    <comment>A desciption for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header".</comment>
   </data>
   <data name="Globals_CopyOnSelect.Header" xml:space="preserve">
     <value>Automatically copy selection to clipboard</value>
+    <comment>Header for a control to toggle whether selected text should be copied to the clipboard automatically, or not.</comment>
   </data>
   <data name="Globals_KeybindingsDisclaimer.Text" xml:space="preserve">
     <value>Below are the currently bound keys, which can be modified by editing the JSON settings file.</value>
+    <comment>A disclaimer located at the top of the actions page that presents the list of keybindings.</comment>
   </data>
   <data name="Globals_DefaultProfile.Header" xml:space="preserve">
     <value>Default profile</value>
+    <comment>Header for a control to select your default profile from the list of profiles you've created.</comment>
   </data>
   <data name="Globals_DefaultProfile.HelpText" xml:space="preserve">
     <value>Profile that opens when clicking the '+' icon or by typing the new tab key binding.</value>
+    <comment>A description for what the default profile is and when it's used.</comment>
   </data>
   <data name="Globals_ForceFullRepaint.Header" xml:space="preserve">
     <value>Redraw entire screen when display updates</value>
+    <comment>Header for a control to toggle the "force full repaint" setting. When enabled, the app renders new content between screen frames.</comment>
   </data>
   <data name="Globals_ForceFullRepaint.HelpText" xml:space="preserve">
     <value>When unchecked, the terminal will render only the updates to the screen between frames.</value>
+    <comment>A description for what the "force full repaint" setting does. Presented near "Globals_ForceFullRepaint.Header".</comment>
   </data>
   <data name="Globals_InitialCols.Header" xml:space="preserve">
     <value>Columns</value>
+    <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
   </data>
   <data name="Globals_InitialCols.HelpText" xml:space="preserve">
     <value>The number of columns displayed in the window upon first load. Measured in characters.</value>
+    <comment>A desciption for what the "columns" setting does. Presented near "Globals_InitialCols.Header".</comment>
   </data>
   <data name="Globals_InitialRows.Header" xml:space="preserve">
     <value>Rows</value>
+    <comment>Header for a control to choose the number of rows in the terminal's text grid.</comment>
   </data>
   <data name="Globals_InitialRows.HelpText" xml:space="preserve">
     <value>The number of rows displayed in the window upon first load. Measured in characters.</value>
+    <comment>A desciption for what the "rows" setting does. Presented near "Globals_InitialRows.Header".</comment>
   </data>
   <data name="Globals_LaunchMode.Header" xml:space="preserve">
     <value>Launch mode</value>
+    <comment>Header for a control to select what mode to launch the terminal in.</comment>
   </data>
   <data name="Globals_LaunchMode.HelpText" xml:space="preserve">
     <value>How the terminal will appear on launch. Focus will hide the tabs and title bar.</value>
@@ -248,103 +255,135 @@
   </data>
   <data name="Globals_LaunchModeDefault.Content" xml:space="preserve">
     <value>Default</value>
+    <comment>An option to choose from for the "launch mode" setting. Default option.</comment>
   </data>
   <data name="Globals_LaunchModeFullscreen.Content" xml:space="preserve">
     <value>Full screen</value>
+    <comment>An option to choose from for the "launch mode" setting. Opens the app in a full screen state.</comment>
   </data>
   <data name="Globals_LaunchModeMaximized.Content" xml:space="preserve">
     <value>Maximized</value>
+    <comment>An option to choose from for the "launch mode" setting. Opens the app maximized (covers the whole screen).</comment>
   </data>
   <data name="Globals_WindowingBehavior.Header" xml:space="preserve">
     <value>New instance behavior</value>
+    <comment>Header for a control to select how new app instances are handled.</comment>
   </data>
   <data name="Globals_WindowingBehavior.HelpText" xml:space="preserve">
     <value>Controls how new terminal instances attach to existing windows.</value>
+    <comment>A desciption for what the "windowing behavior" setting does. Presented near "Globals_WindowingBehavior.Header".</comment>
   </data>
   <data name="Globals_WindowingBehaviorUseNew.Content" xml:space="preserve">
     <value>Create a new window</value>
+    <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances create a new window.</comment>
   </data>
   <data name="Globals_WindowingBehaviorUseAnyExisting.Content" xml:space="preserve">
     <value>Attach to the most recently used window</value>
+    <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window.</comment>
   </data>
   <data name="Globals_WindowingBehaviorUseExisting.Content" xml:space="preserve">
     <value>Attach to the most recently used window on this desktop</value>
+    <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
   </data>
   <data name="Globals_RenderingDisclaimer.Text" xml:space="preserve">
     <value>These settings may be useful for troubleshooting an issue, however they will impact your performance.</value>
+    <comment>A disclaimer presented at the top of a page.</comment>
   </data>
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>Hide the title bar (requires relaunch)</value>
+    <comment>Header for a control to toggle whether the title bar should be shown or not. Changing this setting requires the user to relaunch the app.</comment>
   </data>
   <data name="Globals_ShowTitlebar.HelpText" xml:space="preserve">
     <value>When unchecked, the title bar will appear above the tabs.</value>
+    <comment>A desciption for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
   </data>
   <data name="Globals_ShowTitleInTitlebar.Header" xml:space="preserve">
     <value>Use active terminal title as application title</value>
+    <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
   </data>
   <data name="Globals_ShowTitleInTitlebar.HelpText" xml:space="preserve">
     <value>When unchecked, the title bar will be 'Windows Terminal'.</value>
+    <comment>A desciption for what the "show title in titlebar" setting does. Presented near "Globals_ShowTitleInTitlebar.Header".</comment>
   </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
     <value>Snap window resizing to character grid</value>
+    <comment>Header for a control to toggle whether the terminal snaps the window to the character grid when resizing, or not.</comment>
   </data>
   <data name="Globals_SnapToGridOnResize.HelpText" xml:space="preserve">
     <value>When unchecked, the window will resize smoothly.</value>
+    <comment>A desciption for what the "snap to grid on resize" setting does. Presented near "Globals_SnapToGridOnResize.Header".</comment>
   </data>
   <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
     <value>Use software rendering</value>
+    <comment>Header for a control to toggle whether the terminal should use software to render content instead of the hardware.</comment>
   </data>
   <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
     <value>When checked, the terminal will use the software renderer (a.k.a. WARP) instead of the hardware one.</value>
+    <comment>A desciption for what the "software rendering" setting does. Presented near "Globals_SoftwareRendering.Header".</comment>
   </data>
   <data name="Globals_StartOnUserLogin.Header" xml:space="preserve">
     <value>Launch on machine startup</value>
+    <comment>Header for a control to toggle whether the app should launch when the user's machine starts up, or not.</comment>
   </data>
   <data name="Globals_StartOnUserLogin.HelpText" xml:space="preserve">
     <value>When checked, this enables the launch of Windows Terminal at machine startup.</value>
+    <comment>A desciption for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header".</comment>
   </data>
   <data name="Globals_AlwaysOnTop.Header" xml:space="preserve">
     <value>Always on top</value>
+    <comment>Header for a control to toggle if the app will always be presented on top of other windows, or is treated normally (when disabled).</comment>
   </data>
   <data name="Globals_AlwaysOnTop.HelpText" xml:space="preserve">
     <value>Windows Terminal will always be the topmost window on the desktop.</value>
+    <comment>A desciption for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Tab width mode</value>
+    <comment>Header for a control to choose how wide the tabs are.</comment>
   </data>
   <data name="Globals_TabWidthMode.HelpText" xml:space="preserve">
     <value>Compact will shrink unfocused tabs to the size of the icon.</value>
-    <comment>'Compact' must match the value for &lt;Globals_TabWidthModeCompact.Content&gt;.</comment>
+    <comment>A desciption for what the "tab width mode" setting does. Presented near "Globals_TabWidthMode.Header". 'Compact' must match the value for &lt;Globals_TabWidthModeCompact.Content&gt;.</comment>
   </data>
   <data name="Globals_TabWidthModeCompact.Content" xml:space="preserve">
     <value>Compact</value>
+    <comment>An option to choose from for the "tab width mode" setting. When selected, unselected tabs collapse to show only their icon. The selected tab adjusts to display the content within the tab.</comment>
   </data>
   <data name="Globals_TabWidthModeEqual.Content" xml:space="preserve">
     <value>Equal</value>
+    <comment>An option to choose from for the "tab width mode" setting. When selected, each tab has the same width.</comment>
   </data>
   <data name="Globals_TabWidthModeTitleLength.Content" xml:space="preserve">
     <value>Title length</value>
+    <comment>An option to choose from for the "tab width mode" setting. When selected, each tab adjusts its width to the content within the tab.</comment>
   </data>
   <data name="Globals_Theme.Header" xml:space="preserve">
     <value>Theme</value>
+    <comment>Header for a control to choose the theme colors used in the app.</comment>
   </data>
   <data name="Globals_Theme.HelpText" xml:space="preserve">
     <value>Sets the theme of the application.</value>
+    <comment>A desciption for what the "theme" setting does. Presented near "Globals_Theme.Header".</comment>
   </data>
   <data name="Globals_ThemeDark.Content" xml:space="preserve">
     <value>Dark</value>
+    <comment>An option to choose from for the "tab width mode" setting. When selected, the app is in dark theme and darker colors are used throughout the app.</comment>
   </data>
   <data name="Globals_ThemeSystem.Content" xml:space="preserve">
     <value>Use Windows theme</value>
+    <comment>An option to choose from for the "tab width mode" setting. When selected, the app uses the theme selected in the Windows operating system.</comment>
   </data>
   <data name="Globals_ThemeLight.Content" xml:space="preserve">
     <value>Light</value>
+    <comment>An option to choose from for the "tab width mode" setting. When selected, the app is in light theme and lighter colors are used throughout the app.</comment>
   </data>
   <data name="Globals_WordDelimiters.Header" xml:space="preserve">
     <value>Word delimiters</value>
+    <comment>Header for a control to determine what delimiters to use to identify separate words during word selection.</comment>
   </data>
   <data name="Globals_WordDelimiters.HelpText" xml:space="preserve">
     <value>Symbols used to define boundaries between words.</value>
+    <comment>A desciption for what the "word delimiters" setting does. Presented near "Globals_WordDelimiters.Header".</comment>
   </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>Appearance</value>
@@ -664,9 +703,11 @@
   </data>
   <data name="Globals_LaunchModeFocus.Content" xml:space="preserve">
     <value>Focus</value>
+    <comment>An option to choose from for the "launch mode" setting. Focus mode is a mode designed to help you focus.</comment>
   </data>
   <data name="Globals_LaunchModeMaximizedFocus.Content" xml:space="preserve">
     <value>Maximized focus</value>
+    <comment>An option to choose from for the "launch mode" setting. Opens the app maximized and in focus mode.</comment>
   </data>
   <data name="Profile_BellStyle.Header" xml:space="preserve">
     <value>Bell notification style</value>
@@ -683,6 +724,7 @@
   </data>
   <data name="Globals_DisableAnimations.Header" xml:space="preserve">
     <value>Disable pane animations</value>
+    <comment>Header for a control to toggle animations on panes. "Enabled" value disables the animations.</comment>
   </data>
   <data name="Profile_FontWeightBlack.Content" xml:space="preserve">
     <value>Black</value>
@@ -733,6 +775,7 @@
   </data>
   <data name="Globals_LaunchSize.Text" xml:space="preserve">
     <value>Launch size</value>
+    <comment>Header for a group of settings that control the size of the app. Presented near "Globals_InitialCols" and "Globals_InitialRows".</comment>
   </data>
   <data name="Profile_BellStyleAll.Content" xml:space="preserve">
     <value>All</value>
@@ -825,36 +868,47 @@
   </data>
   <data name="Globals_TabSwitcherMode.Header" xml:space="preserve">
     <value>Tab switcher interface style</value>
+    <comment>Header for a control to choose how the tab switcher operates.</comment>
   </data>
   <data name="Globals_TabSwitcherMode.HelpText" xml:space="preserve">
     <value>Defines the terminal behavior when switching tabs with the keyboard.</value>
+    <comment>A description for what the "tab switcher mode" setting does. Presented near "Globals_TabSwitcherMode.Header".</comment>
   </data>
   <data name="Globals_TabSwitcherModeMru.Content" xml:space="preserve">
     <value>Separate window, in most recently used order</value>
+    <comment>An option to choose from for the "tab switcher mode" setting. The tab switcher overlay is shown in most recently used order.</comment>
   </data>
   <data name="Globals_TabSwitcherModeInOrder.Content" xml:space="preserve">
     <value>Separate window, in tab strip order</value>
+    <comment>An option to choose from for the "tab switcher mode" setting. The tab switcher overlay is shown in the order of the tabs at the top of the app.</comment>
   </data>
   <data name="Globals_TabSwitcherModeDisabled.Content" xml:space="preserve">
     <value>Traditional navigation, no separate window</value>
+    <comment>An option to choose from for the "tab switcher mode" setting. The tab switcher overlay is hidden and does not appear in a separate window.</comment>
   </data>
   <data name="Globals_CopyFormat.Header" xml:space="preserve">
     <value>Text format when copying</value>
+    <comment>Header for a control to select the format of copied text.</comment>
   </data>
   <data name="Globals_CopyFormat.HelpText" xml:space="preserve">
     <value>Defines the type of formatting in which selected text is copied to your clipboard.</value>
+    <comment>A desciption for what the "copy formatting" setting does. Presented near "Globals_CopyFormat.Header".</comment>
   </data>
   <data name="Globals_CopyFormatNone.Content" xml:space="preserve">
     <value>Plain text only</value>
+    <comment>An option to choose from for the "copy formatting" setting. Store only plain text data.</comment>
   </data>
   <data name="Globals_CopyFormatHtml.Content" xml:space="preserve">
     <value>HTML</value>
+    <comment>An option to choose from for the "copy formatting" setting. Store only HTML data.</comment>
   </data>
   <data name="Globals_CopyFormatRtf.Content" xml:space="preserve">
     <value>RTF</value>
+    <comment>An option to choose from for the "copy formatting" setting. Store only RTF data.</comment>
   </data>
   <data name="Globals_CopyFormatAll.Content" xml:space="preserve">
     <value>Both HTML and RTF</value>
+    <comment>An option to choose from for the "copy formatting" setting. Store both HTML and RTF data.</comment>
   </data>
   <data name="ColorScheme_RenameErrorTip.Subtitle" xml:space="preserve">
     <value>Please choose a different name.</value>
@@ -866,9 +920,11 @@
   </data>
   <data name="Globals_FocusFollowMouse.Header" xml:space="preserve">
     <value>Automatically focus pane on mouse hover</value>
+    <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
   </data>
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>Pane animations</value>
+    <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
   </data>
   <data name="SettingContainer_OverrideMessageBaseLayer" xml:space="preserve">
     <value>Reset to base layer value.</value>
