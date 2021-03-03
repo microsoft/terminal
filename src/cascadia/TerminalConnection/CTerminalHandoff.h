@@ -28,7 +28,7 @@ struct __declspec(uuid(__CLSID_CTerminalHandoff))
     static HRESULT s_StopListening() noexcept;
 };
 
-// Disable warnings from the CoCreateableClass macro as the value it provides for
+// Disable warnings from the CoCreatableClass macro as the value it provides for
 // automatic COM class registration is of much greater value than the nits from
 // the static analysis warnings.
 #pragma warning(push)
