@@ -7,8 +7,8 @@
 #include <ShlObj.h>
 
 // TODO GH#6112: Localize these strings
-static constexpr std::wstring_view VerbDisplayName{ L"Open in Windows Terminal" };
-static constexpr std::wstring_view VerbDevBuildDisplayName{ L"Open in Windows Terminal (Dev Build)" };
+static constexpr std::wstring_view VerbDisplayName{ L"Open Windows Terminal here" };
+static constexpr std::wstring_view VerbDevBuildDisplayName{ L"Open Windows Terminal here (Dev Build)" };
 static constexpr std::wstring_view VerbName{ L"WindowsTerminalOpenHere" };
 
 // This code is aggressively copied from
