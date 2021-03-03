@@ -103,7 +103,15 @@ HRESULT OpenTerminalHere::GetState(IShellItemArray* /*psiItemArray*/,
     // We however don't need to bother with any of that, so we'll just return
     // ECS_ENABLED.
 
-    *pCmdState = ECS_ENABLED;
+    // Show the verb only when shift key is down
+    if ((GetKeyState(VK_SHIFT) & 0x8000) != 0)
+    {
+        *pCmdState = ECS_ENABLED;
+    }
+    else
+    {
+        *pCmdState = ECS_HIDDEN;
+    }
     return S_OK;
 }
 
