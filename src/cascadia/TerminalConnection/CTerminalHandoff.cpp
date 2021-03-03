@@ -14,7 +14,8 @@ static DWORD g_cTerminalHandoffRegistration = 0;
 // - pfnHandoff - Function to callback when a handoff is received
 // Return Value:
 // - S_OK, E_NOT_VALID_STATE (start called when already started) or relevant COM registration error.
-HRESULT CTerminalHandoff::s_StartListening(NewHandoff pfnHandoff)
+HRESULT CTerminalHandoff::s_StartListening(NewHandoff pfnHandoff) noexcept
+try
 {
     RETURN_HR_IF(E_NOT_VALID_STATE, _pfnHandoff != nullptr);
 
@@ -32,6 +33,7 @@ HRESULT CTerminalHandoff::s_StartListening(NewHandoff pfnHandoff)
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Stops listening for TerminalHandoff requests by revoking the registration
@@ -40,7 +42,7 @@ HRESULT CTerminalHandoff::s_StartListening(NewHandoff pfnHandoff)
 // - <none>
 // Return Value:
 // - S_OK, E_NOT_VALID_STATE (stop called when not started), or relevant COM class revoke error
-HRESULT CTerminalHandoff::s_StopListening()
+HRESULT CTerminalHandoff::s_StopListening() noexcept
 {
     RETURN_HR_IF(E_NOT_VALID_STATE, _pfnHandoff == nullptr);
 
@@ -63,13 +65,13 @@ HRESULT CTerminalHandoff::s_StopListening()
 // - out - Where to place the duplicated value
 // Return Value:
 // - S_OK or Win32 error from `::DuplicateHandle`
-HRESULT _duplicateHandle(const HANDLE in, HANDLE& out)
+HRESULT _duplicateHandle(const HANDLE in, HANDLE& out) noexcept
 {
     RETURN_IF_WIN32_BOOL_FALSE(::DuplicateHandle(GetCurrentProcess(), in, GetCurrentProcess(), &out, 0, FALSE, DUPLICATE_SAME_ACCESS));
     return S_OK;
 }
 
-HRESULT CTerminalHandoff::EstablishHandoff(HANDLE in, HANDLE out, HANDLE signal)
+HRESULT CTerminalHandoff::EstablishHandoff(HANDLE in, HANDLE out, HANDLE signal) noexcept
 {
     // Duplicate the handles from what we received.
     // The contract with COM specifies that any HANDLEs we receive from the caller belong
