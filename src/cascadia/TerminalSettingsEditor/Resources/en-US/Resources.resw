@@ -387,27 +387,35 @@
   </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>Appearance</value>
+    <comment>Header for the "appearance" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>
   </data>
   <data name="Nav_ColorSchemes.Content" xml:space="preserve">
     <value>Color schemes</value>
+    <comment>Header for the "color schemes" menu item. This navigates to a page that lets you see and modify schemes of colors that can be used by the terminal.</comment>
   </data>
   <data name="Nav_Interaction.Content" xml:space="preserve">
     <value>Interaction</value>
+    <comment>Header for the "interaction" menu item. This navigates to a page that lets you see and modify settings related to the user's mouse and touch interactions with the app.</comment>
   </data>
   <data name="Nav_Launch.Content" xml:space="preserve">
     <value>Startup</value>
+    <comment>Header for the "startup" menu item. This navigates to a page that lets you see and modify settings related to the app's launch experience (i.e. screen position, mode, etc.)</comment>
   </data>
   <data name="Nav_OpenJSON.Content" xml:space="preserve">
     <value>Open JSON file</value>
+    <comment>Header for a menu item. This opens the JSON file that is used to log the app's settings.</comment>
   </data>
   <data name="Nav_ProfileDefaults.Content" xml:space="preserve">
     <value>Base layer</value>
+    <comment>Header for the "base layer" menu item. This navigates to a page that lets you see and modify settings that affect profiles. The base layer is the lowest layer of profile settings that all other profile settings are based on. If a profile doesn't define a setting, base layer is responsible for figuring out what that setting is supposed to be.</comment>
   </data>
   <data name="Nav_Rendering.Content" xml:space="preserve">
     <value>Rendering</value>
+    <comment>Header for the "rendering" menu item. This navigates to a page that lets you see and modify settings related to the app's rendering of text in the terminal.</comment>
   </data>
   <data name="Nav_Actions.Content" xml:space="preserve">
     <value>Actions</value>
+    <comment>Header for the "actions" menu item. This navigates to a page that lets you see and modify commands, key bindings, and actions that can be done in the app.</comment>
   </data>
   <data name="Profile_AcrylicOpacity.Header" xml:space="preserve">
     <value>Acrylic opacity</value>
@@ -697,9 +705,11 @@
   </data>
   <data name="Nav_AddNewProfile.Content" xml:space="preserve">
     <value>Add new</value>
+    <comment>Header for the "add new" menu item. This creates a new profile and navigates to that page.</comment>
   </data>
   <data name="Nav_Profiles.Content" xml:space="preserve">
     <value>Profiles</value>
+    <comment>Header for the "profiles" menu items. This acts as a divider to introduce profile-related menu items.</comment>
   </data>
   <data name="Globals_LaunchModeFocus.Content" xml:space="preserve">
     <value>Focus</value>
