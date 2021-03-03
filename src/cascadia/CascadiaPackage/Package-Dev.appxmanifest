@@ -92,7 +92,7 @@
                 Description="Terminal host built from microsoft/terminal open source repository"
                 PublicFolder="Public">
                 <uap3:Properties>
-                    <Clsid>{E7B98685-0CC0-45D6-8F4C-B7C863C03DE2}</Clsid>
+                    <Clsid>{051F34EE-C1FD-4B19-AF75-9BA54648434C}</Clsid>
                 </uap3:Properties>
             </uap3:AppExtension>
         </uap3:Extension>
