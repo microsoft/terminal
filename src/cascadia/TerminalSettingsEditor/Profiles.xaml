@@ -17,6 +17,19 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <ResourceDictionary Source="CommonResources.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <!-- Define resources for Dark mode here -->
+                    <SolidColorBrush x:Key="NavigationViewTopPaneBackground" Color="Transparent" />
+                </ResourceDictionary>
+
+                <ResourceDictionary x:Key="Light">
+                    <!-- Define resources for Light mode here -->
+                    <SolidColorBrush x:Key="NavigationViewTopPaneBackground" Color="Transparent" />
+                </ResourceDictionary>
+
+            </ResourceDictionary.ThemeDictionaries>
+
             <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
                 <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
             </DataTemplate>
@@ -51,8 +64,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind State.Profile.IsBaseLayer}"/>
 
-        <muxc:NavigationView AlwaysShowHeader="False"
-                             PaneDisplayMode="Top"
+        <muxc:NavigationView PaneDisplayMode="Top"
                              Grid.Row="1"
                              SelectionChanged="Nav_SelectionChanged"
                              IsBackButtonVisible="Collapsed"
