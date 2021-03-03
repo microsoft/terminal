@@ -20,12 +20,22 @@ struct __declspec(uuid(__CLSID_CTerminalHandoff))
 #pragma region ITerminalHandoff
     STDMETHODIMP EstablishHandoff(HANDLE in,
                                   HANDLE out,
-                                  HANDLE signal);
+                                  HANDLE signal) noexcept override;
 
 #pragma endregion
 
-    static HRESULT s_StartListening(NewHandoff pfnHandoff);
-    static HRESULT s_StopListening();
+    static HRESULT s_StartListening(NewHandoff pfnHandoff) noexcept;
+    static HRESULT s_StopListening() noexcept;
 };
 
+// Disable warnings from the CoCreatableClass macro as the value it provides for
+// automatic COM class registration is of much greater value than the nits from
+// the static analysis warnings.
+#pragma warning(push)
+
+#pragma warning(disable : 26477) // Macro uses 0/NULL over nullptr.
+#pragma warning(disable : 26476) // Macro uses naked union over variant.
+
 CoCreatableClass(CTerminalHandoff);
+
+#pragma warning(pop)

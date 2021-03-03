@@ -16,8 +16,9 @@
               "${workspaceFolder}\\OpenConsole.sln",
               "/p:Configuration=${input:configChoice}",
               "/p:Platform=${input:platformChoice}",
+              "/p:AppxSymbolPackageEnabled=false", // This takes a long time, so false if we don't really need it.
               "/t:$target",
-              "/m",
+              "/m", // Parallel builds
               "/verbosity:minimal"
             ],
             "problemMatcher": ["$msCompile"],
