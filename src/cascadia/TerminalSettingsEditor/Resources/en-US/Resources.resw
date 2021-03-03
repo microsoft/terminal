@@ -203,7 +203,7 @@
   </data>
   <data name="Globals_AlwaysShowTabs.HelpText" xml:space="preserve">
     <value>When unchecked, the tab bar will appear when a new tab is created.</value>
-    <comment>A desciption for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header".</comment>
+    <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header".</comment>
   </data>
   <data name="Globals_CopyOnSelect.Header" xml:space="preserve">
     <value>Automatically copy selection to clipboard</value>
@@ -235,7 +235,7 @@
   </data>
   <data name="Globals_InitialCols.HelpText" xml:space="preserve">
     <value>The number of columns displayed in the window upon first load. Measured in characters.</value>
-    <comment>A desciption for what the "columns" setting does. Presented near "Globals_InitialCols.Header".</comment>
+    <comment>A description for what the "columns" setting does. Presented near "Globals_InitialCols.Header".</comment>
   </data>
   <data name="Globals_InitialRows.Header" xml:space="preserve">
     <value>Rows</value>
@@ -243,7 +243,7 @@
   </data>
   <data name="Globals_InitialRows.HelpText" xml:space="preserve">
     <value>The number of rows displayed in the window upon first load. Measured in characters.</value>
-    <comment>A desciption for what the "rows" setting does. Presented near "Globals_InitialRows.Header".</comment>
+    <comment>A description for what the "rows" setting does. Presented near "Globals_InitialRows.Header".</comment>
   </data>
   <data name="Globals_LaunchMode.Header" xml:space="preserve">
     <value>Launch mode</value>
@@ -271,7 +271,7 @@
   </data>
   <data name="Globals_WindowingBehavior.HelpText" xml:space="preserve">
     <value>Controls how new terminal instances attach to existing windows.</value>
-    <comment>A desciption for what the "windowing behavior" setting does. Presented near "Globals_WindowingBehavior.Header".</comment>
+    <comment>A description for what the "windowing behavior" setting does. Presented near "Globals_WindowingBehavior.Header".</comment>
   </data>
   <data name="Globals_WindowingBehaviorUseNew.Content" xml:space="preserve">
     <value>Create a new window</value>
@@ -295,7 +295,7 @@
   </data>
   <data name="Globals_ShowTitlebar.HelpText" xml:space="preserve">
     <value>When unchecked, the title bar will appear above the tabs.</value>
-    <comment>A desciption for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
+    <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
   </data>
   <data name="Globals_ShowTitleInTitlebar.Header" xml:space="preserve">
     <value>Use active terminal title as application title</value>
@@ -303,7 +303,7 @@
   </data>
   <data name="Globals_ShowTitleInTitlebar.HelpText" xml:space="preserve">
     <value>When unchecked, the title bar will be 'Windows Terminal'.</value>
-    <comment>A desciption for what the "show title in titlebar" setting does. Presented near "Globals_ShowTitleInTitlebar.Header".</comment>
+    <comment>A description for what the "show title in titlebar" setting does. Presented near "Globals_ShowTitleInTitlebar.Header".</comment>
   </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
     <value>Snap window resizing to character grid</value>
@@ -311,7 +311,7 @@
   </data>
   <data name="Globals_SnapToGridOnResize.HelpText" xml:space="preserve">
     <value>When unchecked, the window will resize smoothly.</value>
-    <comment>A desciption for what the "snap to grid on resize" setting does. Presented near "Globals_SnapToGridOnResize.Header".</comment>
+    <comment>A description for what the "snap to grid on resize" setting does. Presented near "Globals_SnapToGridOnResize.Header".</comment>
   </data>
   <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
     <value>Use software rendering</value>
@@ -319,7 +319,7 @@
   </data>
   <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
     <value>When checked, the terminal will use the software renderer (a.k.a. WARP) instead of the hardware one.</value>
-    <comment>A desciption for what the "software rendering" setting does. Presented near "Globals_SoftwareRendering.Header".</comment>
+    <comment>A description for what the "software rendering" setting does. Presented near "Globals_SoftwareRendering.Header".</comment>
   </data>
   <data name="Globals_StartOnUserLogin.Header" xml:space="preserve">
     <value>Launch on machine startup</value>
@@ -327,7 +327,7 @@
   </data>
   <data name="Globals_StartOnUserLogin.HelpText" xml:space="preserve">
     <value>When checked, this enables the launch of Windows Terminal at machine startup.</value>
-    <comment>A desciption for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header".</comment>
+    <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header".</comment>
   </data>
   <data name="Globals_AlwaysOnTop.Header" xml:space="preserve">
     <value>Always on top</value>
@@ -335,7 +335,7 @@
   </data>
   <data name="Globals_AlwaysOnTop.HelpText" xml:space="preserve">
     <value>Windows Terminal will always be the topmost window on the desktop.</value>
-    <comment>A desciption for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
+    <comment>A description for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Tab width mode</value>
@@ -343,7 +343,7 @@
   </data>
   <data name="Globals_TabWidthMode.HelpText" xml:space="preserve">
     <value>Compact will shrink unfocused tabs to the size of the icon.</value>
-    <comment>A desciption for what the "tab width mode" setting does. Presented near "Globals_TabWidthMode.Header". 'Compact' must match the value for &lt;Globals_TabWidthModeCompact.Content&gt;.</comment>
+    <comment>A description for what the "tab width mode" setting does. Presented near "Globals_TabWidthMode.Header". 'Compact' must match the value for &lt;Globals_TabWidthModeCompact.Content&gt;.</comment>
   </data>
   <data name="Globals_TabWidthModeCompact.Content" xml:space="preserve">
     <value>Compact</value>
@@ -363,7 +363,7 @@
   </data>
   <data name="Globals_Theme.HelpText" xml:space="preserve">
     <value>Sets the theme of the application.</value>
-    <comment>A desciption for what the "theme" setting does. Presented near "Globals_Theme.Header".</comment>
+    <comment>A description for what the "theme" setting does. Presented near "Globals_Theme.Header".</comment>
   </data>
   <data name="Globals_ThemeDark.Content" xml:space="preserve">
     <value>Dark</value>
@@ -383,7 +383,7 @@
   </data>
   <data name="Globals_WordDelimiters.HelpText" xml:space="preserve">
     <value>Symbols used to define boundaries between words.</value>
-    <comment>A desciption for what the "word delimiters" setting does. Presented near "Globals_WordDelimiters.Header".</comment>
+    <comment>A description for what the "word delimiters" setting does. Presented near "Globals_WordDelimiters.Header".</comment>
   </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>Appearance</value>
@@ -727,7 +727,7 @@
   </data>
   <data name="Profile_StartingDirectoryUseParentCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>If checked, this profile will spawn in the directory from which Windows Terminal was launched.</value>
-    <comment>A description for what the supplementary "use parant process directory" setting does. Presented near "Profile_StartingDirectoryUseParentCheckbox".</comment>
+    <comment>A description for what the supplementary "use parent process directory" setting does. Presented near "Profile_StartingDirectoryUseParentCheckbox".</comment>
   </data>
   <data name="Profile_SuppressApplicationTitle.Header" xml:space="preserve">
     <value>Suppress title changes</value>
@@ -999,7 +999,7 @@
   </data>
   <data name="Globals_CopyFormat.HelpText" xml:space="preserve">
     <value>Defines the type of formatting in which selected text is copied to your clipboard.</value>
-    <comment>A desciption for what the "copy formatting" setting does. Presented near "Globals_CopyFormat.Header".</comment>
+    <comment>A description for what the "copy formatting" setting does. Presented near "Globals_CopyFormat.Header".</comment>
   </data>
   <data name="Globals_CopyFormatNone.Content" xml:space="preserve">
     <value>Plain text only</value>
