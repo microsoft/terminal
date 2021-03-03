@@ -15,13 +15,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         AddProfilePageNavigationState(const Model::CascadiaSettings& settings) :
             _Settings{ settings } {}
 
-        void RequestOpenJson(const Model::SettingsTarget target)
+        void RequestAddNew()
         {
-            _OpenJsonHandlers(nullptr, target);
+            _AddNewHandlers(nullptr, nullptr);
         }
 
         GETSET_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
-        TYPED_EVENT(OpenJson, Windows::Foundation::IInspectable, Model::SettingsTarget);
+        TYPED_EVENT(AddNew, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable);
     };
 
     struct AddProfile : AddProfileT<AddProfile>
@@ -31,15 +31,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
-        Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Model::Command> FilteredActions();
-
         GETSET_PROPERTY(Editor::AddProfilePageNavigationState, State, nullptr);
 
     private:
         friend struct AddProfileT<AddProfile>; // for Xaml to bind events
-        Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Model::Command> _filteredActions{ nullptr };
 
-        void _OpenSettingsClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+        void _AddNewClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+        void _DuplicateClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
     };
 }
 

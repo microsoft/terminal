@@ -117,6 +117,15 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AddProfile_AddNewButton.Text" xml:space="preserve">
+    <value>Create new</value>
+  </data>
+  <data name="AddProfile_Duplicate.Header" xml:space="preserve">
+    <value>Duplicate a profile</value>
+  </data>
+  <data name="AddProfile_DuplicateButton.Text" xml:space="preserve">
+    <value>Duplicate</value>
+  </data>
   <data name="ColorScheme_Background.Text" xml:space="preserve">
     <value>Background</value>
   </data>
@@ -349,9 +358,6 @@
   </data>
   <data name="Nav_Actions.Content" xml:space="preserve">
     <value>Actions</value>
-  </data>
-  <data name="Nav_AddProfile.Content" xml:space="preserve">
-    <value>Add new profile</value>
   </data>
   <data name="Profile_AcrylicOpacity.Header" xml:space="preserve">
     <value>Acrylic opacity</value>
@@ -640,7 +646,7 @@
     <comment>{Locked="⚠"}</comment>
   </data>
   <data name="Nav_AddNewProfile.Content" xml:space="preserve">
-    <value>Add new</value>
+    <value>Add new profile</value>
   </data>
   <data name="Nav_Profiles.Content" xml:space="preserve">
     <value>Profiles</value>

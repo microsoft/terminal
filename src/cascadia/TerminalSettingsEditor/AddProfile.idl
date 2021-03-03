@@ -8,15 +8,13 @@ namespace Microsoft.Terminal.Settings.Editor
     runtimeclass AddProfilePageNavigationState
     {
         Microsoft.Terminal.Settings.Model.CascadiaSettings Settings;
-        void RequestOpenJson(Microsoft.Terminal.Settings.Model.SettingsTarget target);
-        event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.SettingsTarget> OpenJson;
+        void RequestAddNew();
+        event Windows.Foundation.TypedEventHandler<Object, Object> AddNew;
     };
 
     [default_interface] runtimeclass AddProfile : Windows.UI.Xaml.Controls.Page
     {
         AddProfile();
         AddProfilePageNavigationState State { get; };
-
-        IObservableVector<Microsoft.Terminal.Settings.Model.Command> FilteredActions { get; };
     }
 }

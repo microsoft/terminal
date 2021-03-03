@@ -224,19 +224,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             if (const auto navString = clickedItemContainer.Tag().try_as<hstring>())
             {
-                //if (navString == addProfileTag)
-                //{
-                //    // "AddProfile" needs to create a new profile before we can navigate to it
-                //    //uint32_t insertIndex;
-                //    //SettingsNav().MenuItems().IndexOf(clickedItemContainer, insertIndex);
-                //    //_CreateAndNavigateToNewProfile(insertIndex);
-                //    _Navigate(*navString);
-                //}
-                //else
-                //{
-                //    // Otherwise, navigate to the page
-                //    _Navigate(*navString);
-                //}
                 _Navigate(*navString);
             }
             else if (const auto profile = clickedItemContainer.Tag().try_as<Editor::ProfileViewModel>())
@@ -294,10 +281,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (clickedItemTag == addProfileTag)
         {
             auto actionsState{ winrt::make<AddProfilePageNavigationState>(_settingsClone) };
-            actionsState.OpenJson([weakThis = get_weak()](auto&&, auto&& arg) {
+            actionsState.AddNew([weakThis = get_weak()](auto&&, auto&&) {
                 if (auto self{ weakThis.get() })
                 {
-                    self->_OpenJsonHandlers(nullptr, arg);
+                    const auto insertIndex = self->SettingsNav().MenuItems().Size() - 1;
+                    self->_CreateAndNavigateToNewProfile(insertIndex);
                 }
             });
             contentFrame().Navigate(xaml_typename<Editor::AddProfile>(), actionsState);
@@ -369,7 +357,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         MUX::Controls::NavigationViewItem addProfileItem;
         addProfileItem.Content(box_value(RS_(L"Nav_AddNewProfile/Content")));
         addProfileItem.Tag(box_value(addProfileTag));
-        addProfileItem.SelectsOnInvoked(false);
 
         FontIcon icon;
         // This is the "Add" symbol
