@@ -320,6 +320,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                     Visibility="{x:Bind IsVintageCursor, Mode=OneWay}">
                                 <muxc:NumberBox Value="{x:Bind State.Profile.CursorHeight, Mode=TwoWay}"
                                                 Style="{StaticResource NumberBoxSettingStyle}"
+                                                Minimum="1"
+                                                Maximum="100"
                                                 SmallChange="1"
                                                 LargeChange="10"/>
                             </local:SettingContainer>
