@@ -11,6 +11,7 @@
 #include "Profiles.h"
 #include "GlobalAppearance.h"
 #include "ColorSchemes.h"
+#include "AddProfile.h"
 #include "..\types\inc\utils.hpp"
 
 #include <LibraryResources.h>
@@ -223,18 +224,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             if (const auto navString = clickedItemContainer.Tag().try_as<hstring>())
             {
-                if (navString == addProfileTag)
-                {
-                    // "AddProfile" needs to create a new profile before we can navigate to it
-                    uint32_t insertIndex;
-                    SettingsNav().MenuItems().IndexOf(clickedItemContainer, insertIndex);
-                    _CreateAndNavigateToNewProfile(insertIndex);
-                }
-                else
-                {
-                    // Otherwise, navigate to the page
-                    _Navigate(*navString);
-                }
+                //if (navString == addProfileTag)
+                //{
+                //    // "AddProfile" needs to create a new profile before we can navigate to it
+                //    //uint32_t insertIndex;
+                //    //SettingsNav().MenuItems().IndexOf(clickedItemContainer, insertIndex);
+                //    //_CreateAndNavigateToNewProfile(insertIndex);
+                //    _Navigate(*navString);
+                //}
+                //else
+                //{
+                //    // Otherwise, navigate to the page
+                //    _Navigate(*navString);
+                //}
+                _Navigate(*navString);
             }
             else if (const auto profile = clickedItemContainer.Tag().try_as<Editor::ProfileViewModel>())
             {
@@ -287,6 +290,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (clickedItemTag == globalAppearanceTag)
         {
             contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<GlobalAppearancePageNavigationState>(_settingsClone.GlobalSettings()));
+        }
+        else if (clickedItemTag == addProfileTag)
+        {
+            auto actionsState{ winrt::make<AddProfilePageNavigationState>(_settingsClone) };
+            actionsState.OpenJson([weakThis = get_weak()](auto&&, auto&& arg) {
+                if (auto self{ weakThis.get() })
+                {
+                    self->_OpenJsonHandlers(nullptr, arg);
+                }
+            });
+            contentFrame().Navigate(xaml_typename<Editor::AddProfile>(), actionsState);
         }
     }
 

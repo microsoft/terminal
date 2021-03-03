@@ -350,6 +350,9 @@
   <data name="Nav_Actions.Content" xml:space="preserve">
     <value>Actions</value>
   </data>
+  <data name="Nav_AddProfile.Content" xml:space="preserve">
+    <value>Add new profile</value>
+  </data>
   <data name="Profile_AcrylicOpacity.Header" xml:space="preserve">
     <value>Acrylic opacity</value>
   </data>
