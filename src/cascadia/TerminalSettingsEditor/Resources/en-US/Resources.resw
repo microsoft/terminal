@@ -438,8 +438,8 @@
     <comment>A description for what the "AltGr aliasing" setting does. Presented near "Profile_AltGrAliasing.Header".</comment>
   </data>
   <data name="Profile_AntialiasingMode.Header" xml:space="preserve">
-    <value>Text antialiasing (requires relaunch)</value>
-    <comment>Header for a control to select the graphical anti-aliasing format of text. Modifying this setting requires the user to relaunch the app.</comment>
+    <value>Text antialiasing</value>
+    <comment>Header for a control to select the graphical anti-aliasing format of text.</comment>
   </data>
   <data name="Profile_AntialiasingMode.HelpText" xml:space="preserve">
     <value>Controls how text is antialiased in the renderer.</value>
@@ -799,7 +799,7 @@
   </data>
   <data name="Profile_BellStyle.HelpText" xml:space="preserve">
     <value>Controls what happens when the application emits a BEL character.</value>
-    <comment>A description for what the "bell style" setting does. Presented near "Profile_BellStyle".</comment>
+    <comment>A description for what the "bell style" setting does. Presented near "Profile_BellStyle".{Locked="BEL"}</comment>
   </data>
   <data name="Profile_BellStyleAudible.Content" xml:space="preserve">
     <value>Audible</value>
