@@ -19,6 +19,8 @@ Revision History:
 
 #include "precomp.h"
 
+#include "conint.h"
+
 #pragma hdrstop
 
 UINT gnCurrentPage;
@@ -94,9 +96,16 @@ void SaveConsoleSettingsIfNeeded(const HWND hwnd)
             gpStateInfo->FaceName[0] = TEXT('\0');
         }
 
+        if (g_defAppEnabled)
+        {
+            LOG_IF_FAILED(DelegationConfig::s_SetTerminal(g_selectedTerminal));
+            LOG_IF_FAILED(DelegationConfig::s_SetConsole(g_selectedConsole));
+        }
+
         if (gpStateInfo->LinkTitle != nullptr)
         {
             SetGlobalRegistryValues();
+
             if (!NT_SUCCESS(ShortcutSerialization::s_SetLinkValues(gpStateInfo,
                                                                    g_fEastAsianSystem,
                                                                    g_fForceV2,
@@ -610,6 +619,18 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
 
     // since we just triggered font enumeration, recreate our font handles to adapt for DPI
     RecreateFontHandles(hWnd);
+
+    //
+    // Find the available default consoles/terminals
+    //
+
+    if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy(g_defAppEnabled)) && g_defAppEnabled)
+    {
+        LOG_IF_FAILED(DelegationConfig::s_GetAvailableTerminals(g_availableTerminals));
+        LOG_IF_FAILED(DelegationConfig::s_GetTerminal(g_selectedTerminal));
+        LOG_IF_FAILED(DelegationConfig::s_GetAvailableConsoles(g_availableConsoles));
+        LOG_IF_FAILED(DelegationConfig::s_GetTerminal(g_selectedConsole));
+    }
 
     //
     // Get the current page number

@@ -33,7 +33,14 @@ HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
 {
     vec.clear();
 
-    auto coinit = wil::CoInitializeEx(COINIT_MULTITHREADED);
+    T useInbox;
+    useInbox.clsid = { 0 };
+    useInbox.name = L"Windows Console Host";
+    useInbox.author = L"Microsoft Corporation";
+
+    vec.push_back(useInbox);
+
+    auto coinit = wil::CoInitializeEx(COINIT_APARTMENTTHREADED);
 
     ComPtr<IAppExtensionCatalogStatics> catalogStatics;
     RETURN_IF_FAILED(Windows::Foundation::GetActivationFactory(HStringReference(RuntimeClass_Windows_ApplicationModel_AppExtensions_AppExtensionCatalog).Get(), &catalogStatics));
@@ -149,23 +156,25 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT DelegationConfig::s_SetConsole(const DelegationConsole& console) noexcept
+[[nodiscard]] HRESULT DelegationConfig::s_SetConsole(const IID& iid) noexcept
 {
-    return s_Set(DELEGATION_CONSOLE_KEY_NAME, console.clsid);
+    return s_Set(DELEGATION_CONSOLE_KEY_NAME, iid);
 }
 
-[[nodiscard]] HRESULT DelegationConfig::s_SetTerminal(const DelegationTerminal& terminal) noexcept
+[[nodiscard]] HRESULT DelegationConfig::s_SetTerminal(const IID& iid) noexcept
 {
-    return s_Set(DELEGATION_TERMINAL_KEY_NAME, terminal.clsid);
+    return s_Set(DELEGATION_TERMINAL_KEY_NAME, iid);
 }
 
 [[nodiscard]] HRESULT DelegationConfig::s_GetConsole(IID& iid) noexcept
 {
+    iid = {0};
     return s_Get(DELEGATION_CONSOLE_KEY_NAME, iid);
 }
 
 [[nodiscard]] HRESULT DelegationConfig::s_GetTerminal(IID& iid) noexcept
 {
+    iid = {0};
     return s_Get(DELEGATION_TERMINAL_KEY_NAME, iid);
 }
 
@@ -192,7 +201,7 @@ CATCH_RETURN()
         RETURN_NTSTATUS(result);
     }
 
-    auto buffer = std::make_unique<wchar_t[]>(bytesNeeded / sizeof(wchar_t));
+    auto buffer = std::make_unique<wchar_t[]>(bytesNeeded / sizeof(wchar_t) + 1);
 
     DWORD bytesUsed = 0;
 
@@ -202,6 +211,7 @@ CATCH_RETURN()
                                                                   REG_SZ,
                                                                   reinterpret_cast<BYTE*>(buffer.get()),
                                                                   &bytesUsed));
+
 
     RETURN_IF_FAILED(IIDFromString(buffer.get(), &iid));
 
@@ -222,7 +232,7 @@ try
     wil::unique_cotaskmem_string str;
     RETURN_IF_FAILED(StringFromCLSID(clsid, &str));
 
-    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_SetValue(startupKey.get(), value, REG_SZ, reinterpret_cast<BYTE*>(str.get()), gsl::narrow<DWORD>(wcslen(str.get() + 1) * sizeof(wchar_t))));
+    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_SetValue(startupKey.get(), value, REG_SZ, reinterpret_cast<BYTE*>(str.get()), gsl::narrow<DWORD>(wcslen(str.get()) * sizeof(wchar_t))));
 
     return S_OK;
 }

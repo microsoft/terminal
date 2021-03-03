@@ -59,3 +59,10 @@ COLORREF g_fakeCursorColor = RGB(242, 242, 242); // Default bright white
 
 HWND g_hTerminalDlg = static_cast<HWND>(INVALID_HANDLE_VALUE);
 HWND g_hOptionsDlg = static_cast<HWND>(INVALID_HANDLE_VALUE);
+
+bool g_defAppEnabled = false;
+std::vector<DelegationConfig::DelegationConsole> g_availableConsoles;
+std::vector<DelegationConfig::DelegationTerminal> g_availableTerminals;
+CLSID g_selectedConsole;
+CLSID g_selectedTerminal;
+

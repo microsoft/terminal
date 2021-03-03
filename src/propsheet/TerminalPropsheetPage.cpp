@@ -6,6 +6,7 @@
 #include "OptionsPage.h" // For InitializeCursorSize
 #include "ColorControl.h"
 #include <functional>
+#include "../propslib/DelegationConfig.hpp"
 
 // From conattrs.h
 const COLORREF INVALID_COLOR = 0xffffffff;
@@ -85,6 +86,36 @@ void _UpdateTextAndScroll(const HWND hDlg,
 {
     UpdateItem(hDlg, textItem, value);
     SendDlgItemMessage(hDlg, scrollItem, UDM_SETPOS, 0, MAKELONG(value, 0));
+}
+
+template<typename T>
+void _PrepDefAppCombo(const HWND hDlg,
+                      const int dlgItem,
+                      const std::vector<T>& list,
+                      const IID selected,
+                      const bool enabled)
+{
+    HWND hCombo = GetDlgItem(hDlg, dlgItem);
+    ComboBox_ResetContent(hCombo);
+
+    DWORD selectedIndex = 0;
+    for (DWORD i = 0; i < gsl::narrow<DWORD>(list.size()); ++i)
+    {
+        auto& item = list[i];
+        ComboBox_AddString(hCombo, item.name.c_str());
+        ComboBox_SetItemData(hCombo, i, &item.clsid);
+        if (selected == item.clsid)
+        {
+            selectedIndex = i;
+        }
+    }
+
+    ComboBox_SetCurSel(hCombo, selectedIndex);
+
+    if (enabled)
+    {
+        ComboBox_Enable(hCombo, TRUE);
+    }
 }
 
 bool InitTerminalDialog(const HWND hDlg) noexcept
@@ -181,20 +212,17 @@ bool InitTerminalDialog(const HWND hDlg) noexcept
 
     CheckDlgButton(hDlg, IDD_DISABLE_SCROLLFORWARD, gpStateInfo->TerminalScrolling);
 
-    HWND hTermCombo = GetDlgItem(hDlg, IDD_TERMINAL_COMBO_DEFTERM);
-    ComboBox_ResetContent(hTermCombo);
-    ComboBox_AddString(hTermCombo, TEXT("Term1"));
-    ComboBox_AddString(hTermCombo, TEXT("Term2"));
-    ComboBox_AddString(hTermCombo, TEXT("Term3"));
-    ComboBox_SetCurSel(hTermCombo, 0);
-    ComboBox_Enable(hTermCombo, TRUE);
+    _PrepDefAppCombo(hDlg, 
+                     IDD_TERMINAL_COMBO_DEFTERM,
+                     g_availableTerminals,
+                     g_selectedTerminal,
+                     g_defAppEnabled);
 
-    HWND hConCombo = GetDlgItem(hDlg, IDD_TERMINAL_COMBO_DEFCON);
-    ComboBox_ResetContent(hConCombo);
-    ComboBox_AddString(hConCombo, TEXT("Con1"));
-    ComboBox_AddString(hConCombo, TEXT("Con2"));
-    ComboBox_SetCurSel(hConCombo, 0);
-    ComboBox_Enable(hConCombo, TRUE);
+    _PrepDefAppCombo(hDlg,
+                     IDD_TERMINAL_COMBO_DEFCON,
+                     g_availableConsoles,
+                     g_selectedConsole,
+                     g_defAppEnabled);
 
     return true;
 }
@@ -367,19 +395,11 @@ bool TerminalDlgCommand(const HWND hDlg, const WORD item, const WORD command) no
         if (CBN_SELCHANGE == command)
         {
             HWND hCombo = GetDlgItem(hDlg, IDD_TERMINAL_COMBO_DEFTERM);
-            wchar_t buf[50];
             DWORD comboItem = ComboBox_GetCurSel(hCombo);
             if (CB_ERR != comboItem)
             {
-                if (ComboBox_GetLBTextLen(hCombo, comboItem) < ARRAYSIZE(buf))
-                {
-                    ComboBox_GetLBText(hCombo, comboItem, buf);
-                    MessageBox(hDlg, (LPCWSTR)buf, TEXT("Terminal Selected"), MB_OK);
-                }
-                else
-                {
-                    MessageBox(hDlg, (LPCWSTR)L"Terminal item too big.", TEXT("Terminal Selection Error"), MB_OK);
-                }
+                auto pClsid = reinterpret_cast<const CLSID* const>(ComboBox_GetItemData(hCombo, comboItem));
+                g_selectedTerminal = *pClsid;
             }
         }
         break;
@@ -389,19 +409,11 @@ bool TerminalDlgCommand(const HWND hDlg, const WORD item, const WORD command) no
         if (CBN_SELCHANGE == command)
         {
             HWND hCombo = GetDlgItem(hDlg, IDD_TERMINAL_COMBO_DEFCON);
-            wchar_t buf[50];
             DWORD comboItem = ComboBox_GetCurSel(hCombo);
             if (CB_ERR != comboItem)
             {
-                if (ComboBox_GetLBTextLen(hCombo, comboItem) < ARRAYSIZE(buf))
-                {
-                    ComboBox_GetLBText(hCombo, comboItem, buf);
-                    MessageBox(hDlg, (LPCWSTR)buf, TEXT("Console Selected"), MB_OK);
-                }
-                else
-                {
-                    MessageBox(hDlg, (LPCWSTR)L"Console item too big.", TEXT("Console Selection Error"), MB_OK);
-                }
+                auto pClsid = reinterpret_cast<const CLSID* const>(ComboBox_GetItemData(hCombo, comboItem));
+                g_selectedConsole = *pClsid;
             }
         }
         break;

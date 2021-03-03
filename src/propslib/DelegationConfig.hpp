@@ -36,8 +36,8 @@ public:
     [[nodiscard]] static HRESULT s_GetAvailableConsoles(std::vector<DelegationConsole>& consoles) noexcept;
     [[nodiscard]] static HRESULT s_GetAvailableTerminals(std::vector<DelegationTerminal>& terminals) noexcept;
 
-    [[nodiscard]] static HRESULT s_SetConsole(const DelegationConsole& console) noexcept;
-    [[nodiscard]] static HRESULT s_SetTerminal(const DelegationTerminal& terminal) noexcept;
+    [[nodiscard]] static HRESULT s_SetConsole(const IID& iid) noexcept;
+    [[nodiscard]] static HRESULT s_SetTerminal(const IID& iid) noexcept;
 
     [[nodiscard]] static HRESULT s_GetConsole(IID& iid) noexcept;
     [[nodiscard]] static HRESULT s_GetTerminal(IID& iid) noexcept;

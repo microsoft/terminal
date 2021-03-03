@@ -14,6 +14,7 @@
 
 #pragma once
 #include "font.h"
+#include "../propslib/DelegationConfig.hpp"
 
 extern HINSTANCE ghInstance;
 extern PCONSOLE_STATE_INFO gpStateInfo;
@@ -54,3 +55,9 @@ extern COLORREF g_fakeCursorColor;
 
 extern HWND g_hTerminalDlg;
 extern HWND g_hOptionsDlg;
+
+extern bool g_defAppEnabled;
+extern std::vector<DelegationConfig::DelegationConsole> g_availableConsoles;
+extern std::vector<DelegationConfig::DelegationTerminal> g_availableTerminals;
+extern CLSID g_selectedConsole;
+extern CLSID g_selectedTerminal;
