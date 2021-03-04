@@ -33,7 +33,7 @@ HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
 {
     vec.clear();
 
-    T useInbox;
+    T useInbox = { 0 };
     useInbox.clsid = { 0 };
     useInbox.name = L"Windows Console Host";
     useInbox.author = L"Microsoft Corporation";
@@ -72,17 +72,24 @@ HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
         HString publisherId;
         RETURN_IF_FAILED(extensionPackageId->get_PublisherId(publisherId.GetAddressOf()));
 
-        // PackageId.Name
         HString name;
         RETURN_IF_FAILED(extensionPackageId->get_Name(name.GetAddressOf()));
-
         extensionMetadata.name = std::wstring{ name.GetRawBuffer(nullptr) };
 
-        // PackageId.Version
         HString publisher;
         RETURN_IF_FAILED(extensionPackageId->get_Publisher(publisher.GetAddressOf()));
-
         extensionMetadata.author = std::wstring{ publisher.GetRawBuffer(nullptr) };
+
+        HString pfn;
+        RETURN_IF_FAILED(extensionPackageId->get_FamilyName(pfn.GetAddressOf()));
+        extensionMetadata.pfn = std::wstring{ pfn.GetRawBuffer(nullptr) };
+
+        PackageVersion version;
+        RETURN_IF_FAILED(extensionPackageId->get_Version(&version));
+        extensionMetadata.version.major = version.Major;
+        extensionMetadata.version.minor = version.Minor;
+        extensionMetadata.version.build = version.Build;
+        extensionMetadata.version.revision = version.Revision;
 
         // Fetch the custom properties XML out of the extension information
         ComPtr<IAsyncOperation<IPropertySet*>> propertiesOperation;
@@ -156,23 +163,89 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT DelegationConfig::s_SetConsole(const IID& iid) noexcept
+[[nodiscard]] HRESULT DelegationConfig::s_GetAvailablePackages(std::vector<DelegationPackage>& packages, DelegationPackage& defPackage) noexcept
+try
+{
+    packages.clear();
+
+    std::vector<DelegationConsole> consoles;
+    RETURN_IF_FAILED(s_GetAvailableConsoles(consoles));
+
+    std::vector<DelegationTerminal> terminals;
+    RETURN_IF_FAILED(s_GetAvailableTerminals(terminals));
+
+    // TODO: I hate this algorithm (it's bad performance), but I couldn't
+    // find an AppModel interface that would let me look up all the extensions
+    // in one package.
+    for (auto& term : terminals)
+    {
+        for (auto& con : consoles)
+        {
+            if (term.IsFromSamePackage(con))
+            {
+                DelegationPackage pkg;
+                pkg.terminal = term;
+                pkg.console = con;
+                packages.push_back(pkg);
+                break;
+            }
+        }
+    }
+
+    // We should find at least one package.
+    RETURN_HR_IF(E_FAIL, packages.empty());
+
+    // We also find the default here while we have the list of available ones so
+    // we can return the opaque structure instead of the raw IID.
+    IID defCon;
+    RETURN_IF_FAILED(s_GetDefaultConsoleId(defCon));
+    IID defTerm;
+    RETURN_IF_FAILED(s_GetDefaultTerminalId(defTerm));
+
+    // The default one is the 0th one because that's supposed to be the inbox conhost one.
+    DelegationPackage chosenPackage = packages.at(0);
+
+    // Search through and find a package that matches. If we failed to match because
+    // it's torn across multiple or something not in the catalog, we'll offer the inbox conhost one.
+    for (auto& pkg : packages)
+    {
+        if (pkg.console.clsid == defCon && pkg.terminal.clsid == defTerm)
+        {
+            chosenPackage = pkg;
+            break;
+        }
+    }
+
+    defPackage = chosenPackage;
+
+    return S_OK;
+}
+CATCH_RETURN()
+
+[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultConsoleById(const IID& iid) noexcept
 {
     return s_Set(DELEGATION_CONSOLE_KEY_NAME, iid);
 }
 
-[[nodiscard]] HRESULT DelegationConfig::s_SetTerminal(const IID& iid) noexcept
+[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultTerminalById(const IID& iid) noexcept
 {
     return s_Set(DELEGATION_TERMINAL_KEY_NAME, iid);
 }
 
-[[nodiscard]] HRESULT DelegationConfig::s_GetConsole(IID& iid) noexcept
+[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultByPackage(const DelegationPackage& package) noexcept
+{
+    RETURN_IF_FAILED(s_SetDefaultConsoleById(package.console.clsid));
+    RETURN_IF_FAILED(s_SetDefaultTerminalById(package.terminal.clsid));
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT DelegationConfig::s_GetDefaultConsoleId(IID& iid) noexcept
 {
     iid = {0};
     return s_Get(DELEGATION_CONSOLE_KEY_NAME, iid);
 }
 
-[[nodiscard]] HRESULT DelegationConfig::s_GetTerminal(IID& iid) noexcept
+[[nodiscard]] HRESULT DelegationConfig::s_GetDefaultTerminalId(IID& iid) noexcept
 {
     iid = {0};
     return s_Get(DELEGATION_TERMINAL_KEY_NAME, iid);

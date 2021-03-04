@@ -88,11 +88,10 @@ void _UpdateTextAndScroll(const HWND hDlg,
     SendDlgItemMessage(hDlg, scrollItem, UDM_SETPOS, 0, MAKELONG(value, 0));
 }
 
-template<typename T>
 void _PrepDefAppCombo(const HWND hDlg,
                       const int dlgItem,
-                      const std::vector<T>& list,
-                      const IID selected,
+                      const std::vector<DelegationConfig::DelegationPackage>& list,
+                      const DelegationConfig::DelegationPackage& selected,
                       const bool enabled)
 {
     HWND hCombo = GetDlgItem(hDlg, dlgItem);
@@ -102,9 +101,9 @@ void _PrepDefAppCombo(const HWND hDlg,
     for (DWORD i = 0; i < gsl::narrow<DWORD>(list.size()); ++i)
     {
         auto& item = list[i];
-        ComboBox_AddString(hCombo, item.name.c_str());
-        ComboBox_SetItemData(hCombo, i, &item.clsid);
-        if (selected == item.clsid)
+        ComboBox_AddString(hCombo, item.terminal.name.c_str());
+        ComboBox_SetItemData(hCombo, i, &item);
+        if (selected == item)
         {
             selectedIndex = i;
         }
@@ -214,14 +213,8 @@ bool InitTerminalDialog(const HWND hDlg) noexcept
 
     _PrepDefAppCombo(hDlg, 
                      IDD_TERMINAL_COMBO_DEFTERM,
-                     g_availableTerminals,
-                     g_selectedTerminal,
-                     g_defAppEnabled);
-
-    _PrepDefAppCombo(hDlg,
-                     IDD_TERMINAL_COMBO_DEFCON,
-                     g_availableConsoles,
-                     g_selectedConsole,
+                     g_availablePackages,
+                     g_selectedPackage,
                      g_defAppEnabled);
 
     return true;
@@ -398,22 +391,8 @@ bool TerminalDlgCommand(const HWND hDlg, const WORD item, const WORD command) no
             DWORD comboItem = ComboBox_GetCurSel(hCombo);
             if (CB_ERR != comboItem)
             {
-                auto pClsid = reinterpret_cast<const CLSID* const>(ComboBox_GetItemData(hCombo, comboItem));
-                g_selectedTerminal = *pClsid;
-            }
-        }
-        break;
-    }
-    case IDD_TERMINAL_COMBO_DEFCON:
-    {
-        if (CBN_SELCHANGE == command)
-        {
-            HWND hCombo = GetDlgItem(hDlg, IDD_TERMINAL_COMBO_DEFCON);
-            DWORD comboItem = ComboBox_GetCurSel(hCombo);
-            if (CB_ERR != comboItem)
-            {
-                auto pClsid = reinterpret_cast<const CLSID* const>(ComboBox_GetItemData(hCombo, comboItem));
-                g_selectedConsole = *pClsid;
+                auto pPackage = reinterpret_cast<const DelegationConfig::DelegationPackage* const>(ComboBox_GetItemData(hCombo, comboItem));
+                g_selectedPackage = *pPackage;
             }
         }
         break;

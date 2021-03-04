@@ -98,8 +98,7 @@ void SaveConsoleSettingsIfNeeded(const HWND hwnd)
 
         if (g_defAppEnabled)
         {
-            LOG_IF_FAILED(DelegationConfig::s_SetTerminal(g_selectedTerminal));
-            LOG_IF_FAILED(DelegationConfig::s_SetConsole(g_selectedConsole));
+            LOG_IF_FAILED(DelegationConfig::s_SetDefaultByPackage(g_selectedPackage));
         }
 
         if (gpStateInfo->LinkTitle != nullptr)
@@ -621,15 +620,12 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
     RecreateFontHandles(hWnd);
 
     //
-    // Find the available default consoles/terminals
+    // Find the available default console/terminal packages
     //
 
     if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy(g_defAppEnabled)) && g_defAppEnabled)
     {
-        LOG_IF_FAILED(DelegationConfig::s_GetAvailableTerminals(g_availableTerminals));
-        LOG_IF_FAILED(DelegationConfig::s_GetTerminal(g_selectedTerminal));
-        LOG_IF_FAILED(DelegationConfig::s_GetAvailableConsoles(g_availableConsoles));
-        LOG_IF_FAILED(DelegationConfig::s_GetTerminal(g_selectedConsole));
+        LOG_IF_FAILED(DelegationConfig::s_GetAvailablePackages(g_availablePackages, g_selectedPackage));
     }
 
     //

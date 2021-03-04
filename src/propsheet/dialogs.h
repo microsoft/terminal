@@ -165,7 +165,6 @@ Revision History:
 #define IDD_TERMINAL_CURSOR_BLUE            631
 #define IDD_HELP_TERMINAL                   632
 #define IDD_TERMINAL_COMBO_DEFTERM          640
-#define IDD_TERMINAL_COMBO_DEFCON           641
 
 #define BM_TRUETYPE_ICON            1000
 

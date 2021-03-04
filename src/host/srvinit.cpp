@@ -58,11 +58,11 @@ try
     if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy(isEnabled) && isEnabled))
     {
         IID delegationClsid;
-        if (SUCCEEDED(DelegationConfig::s_GetConsole(delegationClsid)))
+        if (SUCCEEDED(DelegationConfig::s_GetDefaultConsoleId(delegationClsid)))
         {
             Globals.handoffConsoleClsid = delegationClsid;
         }
-        if (SUCCEEDED(DelegationConfig::s_GetTerminal(delegationClsid)))
+        if (SUCCEEDED(DelegationConfig::s_GetDefaultTerminalId(delegationClsid)))
         {
             Globals.handoffTerminalClsid = delegationClsid;
         }
@@ -322,11 +322,11 @@ try
     g.handoffTarget = true;
 
     IID delegationClsid;
-    if (SUCCEEDED(DelegationConfig::s_GetConsole(delegationClsid)))
+    if (SUCCEEDED(DelegationConfig::s_GetDefaultConsoleId(delegationClsid)))
     {
         g.handoffConsoleClsid = delegationClsid;
     }
-    if (SUCCEEDED(DelegationConfig::s_GetTerminal(delegationClsid)))
+    if (SUCCEEDED(DelegationConfig::s_GetDefaultTerminalId(delegationClsid)))
     {
         g.handoffTerminalClsid = delegationClsid;
     }
