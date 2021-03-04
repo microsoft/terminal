@@ -21,7 +21,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         ConptyConnection(const uint64_t hSig,
                          const uint64_t hIn,
-                         const uint64_t hOut);
+                         const uint64_t hOut,
+                         const uint64_t hClientProcess);
 
         ConptyConnection(
             const hstring& cmdline,
@@ -53,7 +54,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void _indicateExitWithStatus(unsigned int status) noexcept;
         void _ClientTerminated() noexcept;
 
-        static HRESULT NewHandoff(HANDLE in, HANDLE out, HANDLE signal) noexcept;
+        static HRESULT NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE process) noexcept;
 
         uint32_t _initialRows{};
         uint32_t _initialCols{};

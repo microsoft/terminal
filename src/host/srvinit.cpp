@@ -360,13 +360,17 @@ try
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(outPipeTheirSide.addressof(), outPipeOurSide.addressof(), nullptr, 0));
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(outPipeTheirSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
+    wil::unique_handle clientProcess{ OpenProcess(PROCESS_QUERY_INFORMATION | SYNCHRONIZE, TRUE, static_cast<DWORD>(connectMessage->Descriptor.Process)) };
+    RETURN_LAST_ERROR_IF_NULL(clientProcess.get());
+
     ::Microsoft::WRL::ComPtr<ITerminalHandoff> handoff;
 
     RETURN_IF_FAILED(CoCreateInstance(g.handoffTerminalClsid.value(), nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&handoff)));
 
     RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeTheirSide.get(),
                                                   outPipeTheirSide.get(),
-                                                  signalPipeTheirSide.get()));
+                                                  signalPipeTheirSide.get(),
+                                                  clientProcess.get()));
 
     inPipeTheirSide.release();
     outPipeTheirSide.release();

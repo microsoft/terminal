@@ -193,7 +193,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     ConptyConnection::ConptyConnection(const uint64_t hSig,
                                        const uint64_t hIn,
-                                       const uint64_t hOut) :
+                                       const uint64_t hOut,
+                                       const uint64_t hClientProcess) :
         _initialRows{ 25 },
         _initialCols{ 80 },
         _commandline{ L"" },
@@ -212,6 +213,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             _guid = Utils::CreateGuid();
         }
+        _piClient.hProcess = reinterpret_cast<HANDLE>(hClientProcess);
     }
 
     ConptyConnection::ConptyConnection(const hstring& commandline,
@@ -483,10 +485,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     winrt::event_token ConptyConnection::NewConnection(NewConnectionHandler const& handler) { return _newConnectionHandlers.add(handler); };
     void ConptyConnection::NewConnection(winrt::event_token const& token) { _newConnectionHandlers.remove(token); };
 
-    HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal) noexcept
+    HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE process) noexcept
     try
     {
-        auto conn = winrt::make<ConptyConnection>((uint64_t)signal, (uint64_t)in, (uint64_t)out);
+        auto conn = winrt::make<ConptyConnection>((uint64_t)signal, (uint64_t)in, (uint64_t)out, (uint64_t)process);
         _newConnectionHandlers(conn);
 
         return S_OK;

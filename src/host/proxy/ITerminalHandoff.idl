@@ -10,6 +10,7 @@ import "ocidl.idl";
 ] interface ITerminalHandoff : IUnknown
 {
     HRESULT EstablishPtyHandoff([in, system_handle(sh_pipe)] HANDLE in,
-                               [in, system_handle(sh_pipe)] HANDLE out,
-                               [in, system_handle(sh_pipe)] HANDLE signal);
+                                [in, system_handle(sh_pipe)] HANDLE out,
+                                [in, system_handle(sh_pipe)] HANDLE signal,
+                                [in, system_handle(sh_process)] HANDLE client);
 };

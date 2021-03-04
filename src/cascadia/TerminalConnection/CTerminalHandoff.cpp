@@ -71,7 +71,7 @@ HRESULT _duplicateHandle(const HANDLE in, HANDLE& out) noexcept
     return S_OK;
 }
 
-HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE signal) noexcept
+HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE process) noexcept
 {
     // Duplicate the handles from what we received.
     // The contract with COM specifies that any HANDLEs we receive from the caller belong
@@ -80,7 +80,8 @@ HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE sign
     RETURN_IF_FAILED(_duplicateHandle(in, in));
     RETURN_IF_FAILED(_duplicateHandle(out, out));
     RETURN_IF_FAILED(_duplicateHandle(signal, signal));
+    RETURN_IF_FAILED(_duplicateHandle(process, process));
 
     // Call registered handler from when we started listening.
-    return _pfnHandoff(in, out, signal);
+    return _pfnHandoff(in, out, signal, process);
 }

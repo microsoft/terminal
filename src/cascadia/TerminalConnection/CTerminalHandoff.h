@@ -12,7 +12,7 @@
 
 using namespace Microsoft::WRL;
 
-typedef HRESULT (*NewHandoff)(HANDLE, HANDLE, HANDLE);
+typedef HRESULT (*NewHandoff)(HANDLE, HANDLE, HANDLE, HANDLE);
 
 struct __declspec(uuid(__CLSID_CTerminalHandoff))
     CTerminalHandoff : public RuntimeClass<RuntimeClassFlags<ClassicCom>, ITerminalHandoff>
@@ -20,7 +20,8 @@ struct __declspec(uuid(__CLSID_CTerminalHandoff))
 #pragma region ITerminalHandoff
     STDMETHODIMP EstablishPtyHandoff(HANDLE in,
                                      HANDLE out,
-                                     HANDLE signal) noexcept override;
+                                     HANDLE signal,
+                                     HANDLE process) noexcept override;
 
 #pragma endregion
 
