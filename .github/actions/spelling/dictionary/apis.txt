@@ -93,6 +93,7 @@ sregex
 STDCPP
 strchr
 STDMETHOD
+Stubless
 Subheader
 Subpage
 UPDATEINIFILE
