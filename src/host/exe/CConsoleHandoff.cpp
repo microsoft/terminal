@@ -41,8 +41,8 @@ try
     CONSOLE_API_MSG apiMsg{};
     apiMsg.Descriptor.Identifier.HighPart = msg->IdHighPart;
     apiMsg.Descriptor.Identifier.LowPart = msg->IdLowPart;
-    apiMsg.Descriptor.Process = msg->Process;
-    apiMsg.Descriptor.Object = msg->Object;
+    apiMsg.Descriptor.Process = static_cast<decltype(apiMsg.Descriptor.Process)>(msg->Process);
+    apiMsg.Descriptor.Object = static_cast<decltype(apiMsg.Descriptor.Process)>(msg->Object);
     apiMsg.Descriptor.Function = msg->Function;
     apiMsg.Descriptor.InputSize = msg->InputSize;
     apiMsg.Descriptor.OutputSize = msg->OutputSize;
