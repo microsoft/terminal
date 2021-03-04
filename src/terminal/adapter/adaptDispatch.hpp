@@ -19,6 +19,7 @@ Author(s):
 #include "conGetSet.hpp"
 #include "adaptDefaults.hpp"
 #include "terminalOutput.hpp"
+#include "..\..\types\inc\sgrStack.hpp"
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -56,6 +57,9 @@ namespace Microsoft::Console::VirtualTerminal
         bool InsertCharacter(const size_t count) override; // ICH
         bool DeleteCharacter(const size_t count) override; // DCH
         bool SetGraphicsRendition(const VTParameters options) override; // SGR
+        bool SetLineRendition(const LineRendition rendition) override; // DECSWL, DECDWL, DECDHL
+        bool PushGraphicsRendition(const VTParameters options) override; // XTPUSHSGR
+        bool PopGraphicsRendition() override; // XTPOPSGR
         bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override; // DSR, DSR-OS, DSR-CPR
         bool DeviceAttributes() override; // DA1
         bool SecondaryDeviceAttributes() override; // DA2
@@ -67,8 +71,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool InsertLine(const size_t distance) override; // IL
         bool DeleteLine(const size_t distance) override; // DL
         bool SetColumns(const size_t columns) override; // DECCOLM
-        bool SetPrivateMode(const DispatchTypes::PrivateModeParams param) override; // DECSET
-        bool ResetPrivateMode(const DispatchTypes::PrivateModeParams param) override; // DECRST
+        bool SetMode(const DispatchTypes::ModeParams param) override; // DECSET
+        bool ResetMode(const DispatchTypes::ModeParams param) override; // DECRST
         bool SetCursorKeysMode(const bool applicationMode) override; // DECCKM
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
         bool EnableWin32InputMode(const bool win32InputMode) override; // win32-input-mode
@@ -106,6 +110,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool EnableButtonEventMouseMode(const bool enabled) override; // ?1002
         bool EnableAnyEventMouseMode(const bool enabled) override; // ?1003
         bool EnableAlternateScroll(const bool enabled) override; // ?1007
+        bool EnableXtermBracketedPasteMode(const bool enabled) noexcept override; // ?2004
         bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
         bool SetCursorColor(const COLORREF cursorColor) override;
 
@@ -122,6 +127,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) override;
         bool EndHyperlink() override;
+
+        bool DoConEmuAction(const std::wstring_view string) noexcept override;
 
     private:
         enum class ScrollDirection
@@ -164,7 +171,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _CursorPositionReport() const;
 
         bool _WriteResponse(const std::wstring_view reply) const;
-        bool _PrivateModeParamsHelper(const DispatchTypes::PrivateModeParams param, const bool enable);
+        bool _ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable);
         bool _DoDECCOLMHelper(const size_t columns);
 
         bool _ClearSingleTabStop();
@@ -195,6 +202,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool _isOriginModeRelative;
 
         bool _isDECCOLMAllowed;
+
+        SgrStack _sgrStack;
 
         size_t _SetRgbColorsHelper(const VTParameters options,
                                    TextAttribute& attr,

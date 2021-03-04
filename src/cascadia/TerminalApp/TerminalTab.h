@@ -7,6 +7,9 @@
 #include "TabBase.h"
 #include "TerminalTab.g.h"
 
+static constexpr double HeaderRenameBoxWidthDefault{ 165 };
+static constexpr double HeaderRenameBoxWidthTitleLength{ std::numeric_limits<double>::infinity() };
+
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
 {
@@ -30,18 +33,26 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget Scroll(const int delta);
 
-        bool CanSplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType);
-        void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType, const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+        void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                       const float splitSize,
+                       const GUID& profile,
+                       winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
         winrt::fire_and_forget UpdateIcon(const winrt::hstring iconPath);
+        winrt::fire_and_forget HideIcon(const bool hide);
+
+        winrt::fire_and_forget ShowBellIndicator(const bool show);
+        winrt::fire_and_forget ActivateBellIndicatorTimer();
 
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
         winrt::Microsoft::Terminal::Settings::Model::SplitState PreCalculateAutoSplit(winrt::Windows::Foundation::Size rootSize) const;
-        bool PreCalculateCanSplit(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType, winrt::Windows::Foundation::Size availableSpace) const;
+        bool PreCalculateCanSplit(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                                  const float splitSize,
+                                  winrt::Windows::Foundation::Size availableSpace) const;
 
         void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
-        void ResizePane(const winrt::Microsoft::Terminal::Settings::Model::Direction& direction);
-        void NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::Direction& direction);
+        void ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
+        void NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
 
         void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile);
         winrt::fire_and_forget UpdateTitle();
@@ -66,9 +77,19 @@ namespace winrt::TerminalApp::implementation
 
         int GetLeafPaneCount() const noexcept;
 
+        void TogglePaneReadOnly();
+        std::shared_ptr<Pane> GetActivePane() const;
+
+        winrt::TerminalApp::TerminalTabStatus TabStatus()
+        {
+            return _tabStatus;
+        }
+
         DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
         DECLARE_EVENT(ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
         DECLARE_EVENT(ColorCleared, _colorCleared, winrt::delegate<>);
+        DECLARE_EVENT(TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
+        FORWARDED_TYPED_EVENT(TabRenamerDeactivated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, (&_headerControl), RenameEnded);
 
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };
@@ -80,8 +101,14 @@ namespace winrt::TerminalApp::implementation
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeOtherTabsMenuItem{};
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
+        winrt::TerminalApp::TabHeaderControl _headerControl{};
+        winrt::TerminalApp::TerminalTabStatus _tabStatus{};
+
+        std::vector<uint16_t> _mruPanes;
+        uint16_t _nextPaneId{ 0 };
 
         bool _receivedKeyDown{ false };
+        bool _iconHidden{ false };
 
         winrt::hstring _runtimeTabText{};
         bool _inRename{ false };
@@ -89,9 +116,15 @@ namespace winrt::TerminalApp::implementation
 
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
 
+        std::optional<Windows::UI::Xaml::DispatcherTimer> _bellIndicatorTimer;
+        void _BellIndicatorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
+
         void _MakeTabViewItem();
 
+        winrt::fire_and_forget _UpdateHeaderControlMaxWidth();
+
         void _CreateContextMenu() override;
+        virtual winrt::hstring _CreateToolTipTitle() override;
 
         void _RefreshVisualState();
 
@@ -103,12 +136,12 @@ namespace winrt::TerminalApp::implementation
         void _UpdateActivePane(std::shared_ptr<Pane> pane);
 
         winrt::hstring _GetActiveTitle() const;
-        void _UpdateTabHeader();
-        void _ConstructTabRenameBox(const winrt::hstring& tabText);
 
         void _RecalculateAndApplyTabColor();
         void _ApplyTabColor(const winrt::Windows::UI::Color& color);
         void _ClearTabBackgroundColor();
+
+        void _RecalculateAndApplyReadOnly();
 
         friend class ::TerminalAppLocalTests::TabTests;
     };

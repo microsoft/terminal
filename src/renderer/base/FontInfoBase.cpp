@@ -5,7 +5,7 @@
 
 #include <cwchar>
 
-#include "..\inc\FontInfoBase.hpp"
+#include "../inc/FontInfoBase.hpp"
 
 bool operator==(const FontInfoBase& a, const FontInfoBase& b)
 {

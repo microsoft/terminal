@@ -5,7 +5,7 @@
 
 #include "ActionAndArgs.g.h"
 #include "TerminalWarnings.h"
-#include "..\inc\cppwinrt_utils.h"
+#include "../inc/cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -23,8 +23,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         hstring GenerateName() const;
 
-        GETSET_PROPERTY(ShortcutAction, Action, ShortcutAction::Invalid);
-        GETSET_PROPERTY(IActionArgs, Args, nullptr);
+        WINRT_PROPERTY(ShortcutAction, Action, ShortcutAction::Invalid);
+        WINRT_PROPERTY(IActionArgs, Args, nullptr);
     };
 }
 

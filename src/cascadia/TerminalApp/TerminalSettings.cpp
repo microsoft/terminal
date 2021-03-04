@@ -3,14 +3,53 @@
 
 #include "pch.h"
 #include "TerminalSettings.h"
+#include "../../types/inc/colorTable.hpp"
 
 #include "TerminalSettings.g.cpp"
 
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace Microsoft::Console::Utils;
 
 namespace winrt::TerminalApp::implementation
 {
+    static std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment> ConvertConvergedAlignment(ConvergedAlignment alignment)
+    {
+        // extract horizontal alignment
+        Windows::UI::Xaml::HorizontalAlignment horizAlign;
+        switch (alignment & static_cast<ConvergedAlignment>(0x0F))
+        {
+        case ConvergedAlignment::Horizontal_Left:
+            horizAlign = Windows::UI::Xaml::HorizontalAlignment::Left;
+            break;
+        case ConvergedAlignment::Horizontal_Right:
+            horizAlign = Windows::UI::Xaml::HorizontalAlignment::Right;
+            break;
+        case ConvergedAlignment::Horizontal_Center:
+        default:
+            horizAlign = Windows::UI::Xaml::HorizontalAlignment::Center;
+            break;
+        }
+
+        // extract vertical alignment
+        Windows::UI::Xaml::VerticalAlignment vertAlign;
+        switch (alignment & static_cast<ConvergedAlignment>(0xF0))
+        {
+        case ConvergedAlignment::Vertical_Top:
+            vertAlign = Windows::UI::Xaml::VerticalAlignment::Top;
+            break;
+        case ConvergedAlignment::Vertical_Bottom:
+            vertAlign = Windows::UI::Xaml::VerticalAlignment::Bottom;
+            break;
+        case ConvergedAlignment::Vertical_Center:
+        default:
+            vertAlign = Windows::UI::Xaml::VerticalAlignment::Center;
+            break;
+        }
+
+        return { horizAlign, vertAlign };
+    }
+
     TerminalSettings::TerminalSettings(const CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings) :
         _KeyBindings{ keybindings }
     {
@@ -60,6 +99,10 @@ namespace winrt::TerminalApp::implementation
             if (!newTerminalArgs.TabTitle().empty())
             {
                 settings.StartingTitle(newTerminalArgs.TabTitle());
+            }
+            if (newTerminalArgs.TabColor())
+            {
+                settings.StartingTabColor(static_cast<uint32_t>(til::color(newTerminalArgs.TabColor().Value())));
             }
         }
 
@@ -138,11 +181,10 @@ namespace winrt::TerminalApp::implementation
 
         _BackgroundImageOpacity = profile.BackgroundImageOpacity();
         _BackgroundImageStretchMode = profile.BackgroundImageStretchMode();
-
-        _BackgroundImageHorizontalAlignment = profile.BackgroundImageHorizontalAlignment();
-        _BackgroundImageVerticalAlignment = profile.BackgroundImageVerticalAlignment();
+        std::tie(_BackgroundImageHorizontalAlignment, _BackgroundImageVerticalAlignment) = ConvertConvergedAlignment(profile.BackgroundImageAlignment());
 
         _RetroTerminalEffect = profile.RetroTerminalEffect();
+        _PixelShaderPath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(profile.PixelShaderPath().c_str()) };
 
         _AntialiasingMode = profile.AntialiasingMode();
 
@@ -166,6 +208,7 @@ namespace winrt::TerminalApp::implementation
 
         _WordDelimiters = globalSettings.WordDelimiters();
         _CopyOnSelect = globalSettings.CopyOnSelect();
+        _FocusFollowMouse = globalSettings.FocusFollowMouse();
         _ForceFullRepaintRendering = globalSettings.ForceFullRepaintRendering();
         _SoftwareRendering = globalSettings.SoftwareRendering();
         _ForceVTInput = globalSettings.ForceVTInput();
@@ -186,13 +229,57 @@ namespace winrt::TerminalApp::implementation
         _CursorColor = til::color{ scheme.CursorColor() };
 
         const auto table = scheme.Table();
-        std::transform(table.cbegin(), table.cend(), _colorTable.begin(), [](auto&& color) {
+        std::array<uint32_t, COLOR_TABLE_SIZE> colorTable{};
+        std::transform(table.cbegin(), table.cend(), colorTable.begin(), [](auto&& color) {
             return static_cast<uint32_t>(til::color{ color });
         });
+        ColorTable(colorTable);
     }
 
-    uint32_t TerminalSettings::GetColorTableEntry(int32_t index) const noexcept
+    uint32_t TerminalSettings::GetColorTableEntry(int32_t index) noexcept
     {
-        return _colorTable.at(index);
+        return ColorTable().at(index);
+    }
+
+    void TerminalSettings::ColorTable(std::array<uint32_t, 16> colors)
+    {
+        _ColorTable = colors;
+    }
+
+    std::array<uint32_t, COLOR_TABLE_SIZE> TerminalSettings::ColorTable()
+    {
+        auto span = _getColorTableImpl();
+        std::array<uint32_t, COLOR_TABLE_SIZE> colorTable{};
+        if (span.size() > 0)
+        {
+            std::transform(span.begin(), span.end(), colorTable.begin(), [](auto&& color) {
+                return static_cast<uint32_t>(til::color{ color });
+            });
+        }
+        else
+        {
+            const auto campbellSpan = CampbellColorTable();
+            std::transform(campbellSpan.begin(), campbellSpan.end(), colorTable.begin(), [](auto&& color) {
+                return static_cast<uint32_t>(til::color{ color });
+            });
+        }
+        return colorTable;
+    }
+
+    gsl::span<uint32_t> TerminalSettings::_getColorTableImpl()
+    {
+        if (_ColorTable.has_value())
+        {
+            return gsl::make_span(*_ColorTable);
+        }
+        for (auto&& parent : _parents)
+        {
+            auto parentSpan = parent->_getColorTableImpl();
+            if (parentSpan.size() > 0)
+            {
+                return parentSpan;
+            }
+        }
+        return {};
     }
 }

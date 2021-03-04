@@ -29,6 +29,7 @@ namespace TerminalApp
         Boolean IsElevated();
 
         Int32 SetStartupCommandline(String[] commands);
+        Int32 ExecuteCommandline(String[] commands, String cwd);
         String ParseCommandlineMessage { get; };
         Boolean ShouldExitEarly { get; };
 
@@ -42,6 +43,7 @@ namespace TerminalApp
         Boolean AlwaysOnTop { get; };
 
         Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
+        Boolean CenterOnLaunch { get; };
 
         InitialPosition GetInitialPosition(Int64 defaultInitialX, Int64 defaultInitialY);
         Windows.UI.Xaml.ElementTheme GetRequestedTheme();
@@ -51,6 +53,11 @@ namespace TerminalApp
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
         void WindowCloseButtonClicked();
+
+        UInt64 GetLastActiveControlTaskbarState();
+        UInt64 GetLastActiveControlTaskbarProgress();
+
+        Int32 FindTargetWindow(String[] args);
 
         // See IDialogPresenter and TerminalPage's DialogPresenter for more
         // information.
@@ -63,5 +70,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> RaiseVisualBell;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
     }
 }

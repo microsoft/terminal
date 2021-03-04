@@ -6,7 +6,7 @@
 #include "dbcs.h"
 #include "misc.h"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 // Routine Description:
 // - Constructs direct read data class to hold context across sessions

@@ -13,12 +13,12 @@ Author:
 
 #pragma once
 
-#include <wil\common.h>
-#include <wil\resource.h>
+#include <wil/common.h>
+#include <wil/resource.h>
 
 #ifndef ALTNUMPAD_BIT
 // from winconp.h
-#define ALTNUMPAD_BIT 0x04000000 // AltNumpad OEM char (copied from ntuser\inc\kbd.h)
+#define ALTNUMPAD_BIT 0x04000000 // AltNumpad OEM char (copied from ntuser/inc/kbd.h)
 #endif
 
 #include <wtypes.h>
@@ -297,7 +297,7 @@ public:
     void SetActiveModifierKeys(const DWORD activeModifierKeys) noexcept;
     void DeactivateModifierKey(const ModifierKeyState modifierKey) noexcept;
     void ActivateModifierKey(const ModifierKeyState modifierKey) noexcept;
-    bool DoActiveModifierKeysMatch(const std::unordered_set<ModifierKeyState>& consoleModifiers) const;
+    bool DoActiveModifierKeysMatch(const std::unordered_set<ModifierKeyState>& consoleModifiers) const noexcept;
     bool IsCommandLineEditingKey() const noexcept;
     bool IsPopupKey() const noexcept;
 

@@ -11,6 +11,8 @@ namespace Microsoft.Terminal.Settings.Model
         CascadiaSettings(String json);
         CascadiaSettings Copy();
 
+        void WriteSettingsToDisk();
+
         static CascadiaSettings LoadDefaults();
         static CascadiaSettings LoadAll();
         static CascadiaSettings LoadUniversal();
@@ -23,6 +25,8 @@ namespace Microsoft.Terminal.Settings.Model
 
         GlobalAppSettings GlobalSettings { get; };
 
+        Profile ProfileDefaults { get; };
+
         Windows.Foundation.Collections.IObservableVector<Profile> AllProfiles { get; };
         Windows.Foundation.Collections.IObservableVector<Profile> ActiveProfiles { get; };
 
@@ -32,8 +36,10 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.IReference<SettingsLoadErrors> GetLoadingError { get; };
         String GetSerializationErrorMessage { get; };
 
+        Profile CreateNewProfile();
         Profile FindProfile(Guid profileGuid);
         ColorScheme GetColorSchemeForProfile(Guid profileGuid);
+        void UpdateColorSchemeReferences(String oldName, String newName);
 
         Guid GetProfileForArgs(NewTerminalArgs newTerminalArgs);
     }

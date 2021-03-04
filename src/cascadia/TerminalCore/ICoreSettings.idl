@@ -8,6 +8,7 @@ namespace Microsoft.Terminal.TerminalControl
         Vintage,
         Bar,
         Underscore,
+        DoubleUnderscore,
         FilledBox,
         EmptyBox
     };
@@ -35,6 +36,7 @@ namespace Microsoft.Terminal.TerminalControl
         Boolean ForceVTInput;
 
         Windows.Foundation.IReference<UInt32> TabColor;
+        Windows.Foundation.IReference<UInt32> StartingTabColor;
     };
 
 }

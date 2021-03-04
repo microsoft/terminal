@@ -27,11 +27,30 @@
       "type": "string"
     },
     "BellStyle": {
-      "enum": [
-        "none",
-        "audible"
-      ],
-      "type": "string"
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "audible",
+              "visual"
+            ]
+          }
+        },
+        {
+          "type": "string",
+          "enum": [
+            "audible",
+            "visual",
+            "all",
+            "none"
+          ]
+        }
+      ]
     },
     "ProfileGuid": {
       "default": "{}",
@@ -57,8 +76,11 @@
         "copy",
         "duplicateTab",
         "find",
+        "findMatch",
         "moveFocus",
+        "moveTab",
         "newTab",
+        "newWindow",
         "nextTab",
         "openNewTabDropdown",
         "openSettings",
@@ -73,6 +95,8 @@
         "scrollDownPage",
         "scrollUp",
         "scrollUpPage",
+        "scrollToBottom",
+        "scrollToTop",
         "sendInput",
         "setColorScheme",
         "setTabColor",
@@ -83,18 +107,43 @@
         "toggleFocusMode",
         "toggleFullscreen",
         "togglePaneZoom",
-        "toggleRetroEffect",
+        "toggleReadOnlyMode",
+        "toggleShaderEffects",
         "wt",
         "unbound"
       ],
       "type": "string"
     },
-    "Direction": {
+    "FocusDirection": {
+      "enum": [
+        "left",
+        "right",
+        "up",
+        "down",
+        "previous"
+      ],
+      "type": "string"
+    },
+    "ResizeDirection": {
       "enum": [
         "left",
         "right",
         "up",
         "down"
+      ],
+      "type": "string"
+    },
+    "MoveTabDirection": {
+      "enum": [
+        "forward",
+        "backward"
+      ],
+      "type": "string"
+    },
+    "FindMatchDirection": {
+      "enum": [
+        "next",
+        "prev"
       ],
       "type": "string"
     },
@@ -140,6 +189,13 @@
       ],
       "type": "string"
     },
+    "CommandPaletteLaunchMode": {
+      "enum": [
+        "action",
+        "commandLine"
+      ],
+      "type": "string"
+    },
     "NewTerminalArgs": {
       "properties": {
         "commandline": {
@@ -161,6 +217,11 @@
         "index": {
           "type": "integer",
           "description": "The index of the profile in the new tab dropdown (starting at 0)"
+        },
+        "tabColor": {
+          "$ref": "#/definitions/Color",
+          "default": null,
+          "description": "If provided, will set the tab's color to the given value"
         }
       },
       "type": "object"
@@ -259,9 +320,9 @@
           "properties": {
             "action": { "type": "string", "pattern": "moveFocus" },
             "direction": {
-              "$ref": "#/definitions/Direction",
+              "$ref": "#/definitions/FocusDirection",
               "default": "left",
-              "description": "The direction to move focus in, between panes"
+              "description": "The direction to move focus in, between panes. Direction can be 'previous' to move to the most recently used pane."
             }
           }
         }
@@ -276,9 +337,9 @@
           "properties": {
             "action": { "type": "string", "pattern": "resizePane" },
             "direction": {
-              "$ref": "#/definitions/Direction",
+              "$ref": "#/definitions/ResizeDirection",
               "default": "left",
-              "description": "The direction to move the pane separator in"
+              "description": "The direction to move the pane separator in."
             }
           }
         }
@@ -293,10 +354,7 @@
         },
         {
           "properties": {
-            "action": {
-              "type": "string",
-              "pattern": "sendInput"
-            },
+            "action": { "type": "string", "pattern": "sendInput" },
             "input": {
               "type": "string",
               "default": "",
@@ -323,6 +381,13 @@
             "splitMode": {
               "default": "duplicate",
               "description": "Control how the pane splits. Only accepts \"duplicate\" which will duplicate the focused pane's profile into a new pane."
+            },
+            "size": {
+              "default": 0.5,
+              "description": "Specify how large the new pane should be, as a fraction of the current pane's size. 1.0 would be 'all of the current pane', and 0.0 is 'None of the parent'. Accepts floating point values from 0-1 (default 0.5).",
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
             }
           }
         }
@@ -336,10 +401,7 @@
         },
         {
           "properties": {
-            "action": {
-              "type": "string",
-              "pattern": "openSettings"
-            },
+            "action": { "type": "string", "pattern": "openSettings" },
             "target": {
               "type": "string",
               "default": "settingsFile",
@@ -414,9 +476,9 @@
             "index": {
               "oneOf": [
                 { "type": "integer" },
-                { "type": null }
+                { "type": "null" }
               ],
-              "default": "",
+              "default": null,
               "description": "Close the tabs other than the one at this index. If no index is provided, use the focused tab's index."
             }
           }
@@ -433,9 +495,9 @@
             "index": {
               "oneOf": [
                 { "type": "integer" },
-                { "type": null }
+                { "type": "null" }
               ],
-              "default": "",
+              "default": null,
               "description": "Close the tabs following the tab at this index. If no index is provided, use the focused tab's index."
             }
           }
@@ -474,6 +536,67 @@
         }
       ]
     },
+    "MoveTabAction": {
+      "description": "Arguments for moving a tab",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "moveTab" },
+            "direction": {
+              "$ref": "#/definitions/MoveTabDirection",
+              "description": "The direction to move the tab"
+            }
+          }
+        }
+      ],
+      "required": [ "direction" ]
+    },
+    "CommandPaletteAction": {
+      "description": "Arguments for a commandPalette action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "commandPalette" },
+            "launchMode": {
+              "$ref": "#/definitions/CommandPaletteLaunchMode",
+              "default": "action",
+              "description": "Toggle command palette in either action or command line mode. If no value is provided, the palette will launch in action mode."
+            }
+          }
+        }
+      ]
+    },
+    "FindMatchAction": {
+      "description": "Arguments corresponding to a Find Match Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "findMatch" },
+            "direction": {
+              "$ref": "#/definitions/FindMatchDirection",
+              "default": "prev",
+              "description": "The direction to search in. \"prev\" will search upwards in the buffer, and \"next\" will search downwards."
+            }
+          }
+        }
+      ],
+      "required": [ "direction" ]
+    },
+    "NewWindowAction": {
+      "description": "Arguments corresponding to a New Window Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        { "$ref": "#/definitions/NewTerminalArgs" },
+        {
+          "properties": {
+            "action": { "type":"string", "pattern": "newWindow" }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -497,6 +620,9 @@
               { "$ref": "#/definitions/CloseTabsAfterAction" },
               { "$ref": "#/definitions/ScrollUpAction" },
               { "$ref": "#/definitions/ScrollDownAction" },
+              { "$ref": "#/definitions/MoveTabAction" },
+              { "$ref": "#/definitions/FindMatchAction" },
+              { "$ref": "#/definitions/NewWindowAction" },
               { "type": "null" }
             ]
         },
@@ -544,9 +670,24 @@
           "description": "When set to true, tabs are always displayed. When set to false and \"showTabsInTitlebar\" is set to false, tabs only appear after opening a new tab.",
           "type": "boolean"
         },
+        "centerOnLaunch": {
+          "default": false,
+          "description": "When set to `true`, the terminal window will auto-center itself on the display it opens on. The terminal will use the \"initialPosition\" to determine which display to open on.",
+          "type": "boolean"
+        },
+        "inputServiceWarning": {
+          "default": true,
+          "description": "Warning if 'Touch Keyboard and Handwriting Panel Service' is disabled.",
+          "type": "boolean"
+        },
         "copyOnSelect": {
           "default": false,
           "description": "When set to true, a selection is immediately copied to your clipboard upon creation. When set to false, the selection persists and awaits further action.",
+          "type": "boolean"
+        },
+        "focusFollowMouse": {
+          "default": false,
+          "description": "When set to true, the terminal will focus the pane on mouse hover.",
           "type": "boolean"
         },
         "copyFormatting": {
@@ -571,6 +712,10 @@
         },
         "defaultProfile": {
           "description": "Sets the default profile. Opens by clicking the \"+\" icon or typing the key binding assigned to \"newTab\".",
+          "type": "string"
+        },
+        "startupActions": {
+          "description": "Sets the list of actions to apply if no command line is provided. Uses the same format as command line arguments",
           "type": "string"
         },
         "disabledProfileSources": {
@@ -625,7 +770,7 @@
         },
         "rowsToScroll": {
           "default": "system",
-          "description": "This parameter once allowed you to override the systemwide \"choose how many lines to scroll at one time\" setting. It no longer does so.",
+          "description": "This parameter once allowed you to override the systemwide \"choose how many lines to scroll at one time\" setting. It no longer does so. However, you can customize the number of lines to scroll in \"scrollUp\" and \"scrollDown\" bindings.",
           "maximum": 999,
           "minimum": 0,
           "type": [ "integer", "string" ],
@@ -694,7 +839,7 @@
               "enum": [
                 "mru",
                 "inOrder",
-                "disabled",
+                "disabled"
               ],
               "type": "string"
             }
@@ -702,7 +847,7 @@
           "deprecated": true
         },
         "tabSwitcherMode": {
-          "default": true,
+          "default": "inOrder",
           "description": "When set to \"true\" or \"mru\", the \"nextTab\" and \"prevTab\" commands will use the tab switcher UI, with most-recently-used ordering. When set to \"inOrder\", these actions will switch tabs in their current ordering. Set to \"false\" to disable the tab switcher.",
           "oneOf": [
             {
@@ -712,11 +857,21 @@
               "enum": [
                 "mru",
                 "inOrder",
-                "disabled",
+                "disabled"
               ],
               "type": "string"
             }
           ]
+        },
+        "windowingBehavior": {
+          "default": "useNew",
+          "description": "Controls how new terminal instances attach to existing windows. \"useNew\" will always create a new window. \"useExisting\" will create new tabs in the most recently used window on this virtual desktop, and \"useAnyExisting\" will create tabs in the most recent window on any desktop.",
+          "enum": [
+            "useNew",
+            "useExisting",
+            "useAnyExisting"
+          ],
+          "type": "string"
         }
       },
       "required": [
@@ -753,7 +908,17 @@
         },
         "backgroundImage": {
           "description": "Sets the file location of the image to draw over the window background.",
-          "type": ["string", "null"]
+          "oneOf": [
+            {
+              "type": ["string", null]
+            },
+            {
+              "enum": [
+                "desktopWallpaper"
+              ]
+            }
+          ],
+          "type": [ "string", "null" ]
         },
         "backgroundImageAlignment": {
           "default": "center",
@@ -791,7 +956,7 @@
         },
         "bellStyle": {
           "default": "audible",
-          "description": "Controls what happens when the application emits a BEL character. When set to \"audible\", the Terminal will play a sound. When set to \"none\", nothing will happen.",
+          "description": "Controls what happens when the application emits a BEL character. When set to \"all\", the Terminal will play a sound and flash the taskbar icon. An array of specific behaviors can also be used. Supported array values include `audible` and `visual`. When set to \"none\", nothing will happen.",
           "$ref": "#/definitions/BellStyle"
         },
         "closeOnExit": {
@@ -836,9 +1001,10 @@
         },
         "cursorShape": {
           "default": "bar",
-          "description": "Sets the shape of the cursor. Possible values:\n -\"bar\" ( ┃, default )\n -\"emptyBox\" ( ▯ )\n -\"filledBox\" ( █ )\n -\"underscore\" ( ▁ )\n -\"vintage\" ( ▃ )",
+          "description": "Sets the shape of the cursor. Possible values:\n -\"bar\" ( ┃, default )\n -\"doubleUnderscore\" ( ‗ )\n -\"emptyBox\" ( ▯ )\n -\"filledBox\" ( █ )\n -\"underscore\" ( ▁ )\n -\"vintage\" ( ▃ )",
           "enum": [
             "bar",
+            "doubleUnderscore",
             "emptyBox",
             "filledBox",
             "underscore",
@@ -849,6 +1015,10 @@
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
+        },
+        "experimental.pixelShaderPath": {
+          "description": "Use to set a path to a pixel shader to use with the Terminal. Overrides `experimental.retroTerminalEffect`. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "string"
         },
         "fontFace": {
           "default": "Cascadia Mono",
@@ -863,7 +1033,7 @@
         },
         "fontWeight": {
           "default": "normal",
-          "description": "Sets the weight (lightness or heaviness of the strokes) for the given font. Possible values:\n -\"thin\"\n -\"extra-light\"\n -\"light\"\n -\"semi-light\"\n -\"normal\" (default)\n -\"medium\"\n -\"semi-bold\"\n -\"bold\"\n -\"extra-bold\"\n -\"black\"\n -\"extra-black\" or the corresponding numeric representation of OpenType font weight.",
+          "description": "Sets the weight (lightness or heaviness of the strokes) for the given font. Possible values:\n -\"thin\"\n -\"extra-light\"\n -\"light\"\n -\"semi-light\"\n -\"normal\" (default)\n -\"medium\"\n -\"semi-bold\"\n -\"bold\"\n -\"extra-bold\"\n -\"black\"\n -\"extra-black\"\n or the corresponding numeric representation of OpenType font weight.",
           "oneOf": [
             {
               "enum": [

@@ -21,6 +21,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\ApiDetector.cpp" />
+    <ClCompile Include="..\EventSynthesis.cpp" />
     <ClCompile Include="..\InteractivityFactory.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -39,6 +40,7 @@
     <ClInclude Include="..\..\inc\IWindowMetrics.hpp" />
     <ClInclude Include="..\..\inc\Module.hpp" />
     <ClInclude Include="..\..\inc\VtApiRedirection.hpp" />
+    <ClInclude Include="..\..\inc\EventSynthesis.hpp" />
     <ClInclude Include="..\ApiDetector.hpp" />
     <ClInclude Include="..\InteractivityFactory.hpp" />
     <ClInclude Include="..\precomp.h" />

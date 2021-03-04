@@ -178,4 +178,26 @@
   <data name="HowToOpenRun.Text" xml:space="preserve">
     <value>Ctrl+Click to follow link</value>
   </data>
+  <data name="NoticeFontNotFound" xml:space="preserve">
+    <value>Unable to find the selected font "{0}".
+
+"{1}" has been selected instead.
+
+Please either install the missing font or choose another one.</value>
+    <comment>0 and 1 are names of fonts provided by the user and system respectively.</comment>
+  </data>
+  <data name="PixelShaderNotFound" xml:space="preserve">
+    <value>Unable to find the provided shader "{0}".</value>
+    <comment>{0} is a file name</comment>
+  </data>
+  <data name="PixelShaderCompileFailed" xml:space="preserve">
+    <value>Unable to compile the specified pixel shader.</value>
+  </data>
+  <data name="UnexpectedRendererError" xml:space="preserve">
+    <value>Renderer encountered an unexpected error: {0}</value>
+    <comment>{0} is an error code.</comment>
+  </data>
+  <data name="TermControlReadOnly" xml:space="preserve">
+    <value>Read-only mode is enabled.</value>
+  </data>
 </root>

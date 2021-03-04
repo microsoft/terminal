@@ -432,10 +432,9 @@ bool AdaptDispatch::_InsertDeleteHelper(const size_t count, const bool isInsert)
 
     const auto cursor = csbiex.dwCursorPosition;
     // Rectangle to cut out of the existing buffer. This is inclusive.
-    // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
     SMALL_RECT srScroll;
     srScroll.Left = cursor.X;
-    srScroll.Right = SHORT_MAX;
+    srScroll.Right = _pConApi->PrivateGetLineWidth(cursor.Y) - 1;
     srScroll.Top = cursor.Y;
     srScroll.Bottom = srScroll.Top;
 
@@ -534,7 +533,7 @@ bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& c
     case DispatchTypes::EraseType::ToEnd:
     case DispatchTypes::EraseType::All:
         // Remember the .X value is 1 farther than the right most column in the buffer. Therefore no +1.
-        nLength = csbiex.dwSize.X - coordStartPosition.X;
+        nLength = _pConApi->PrivateGetLineWidth(lineId) - coordStartPosition.X;
         break;
     }
 
@@ -622,6 +621,23 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 
     if (success)
     {
+        // When erasing the display, every line that is erased in full should be
+        // reset to single width. When erasing to the end, this could include
+        // the current line, if the cursor is in the first column. When erasing
+        // from the beginning, though, the current line would never be included,
+        // because the cursor could never be in the rightmost column (assuming
+        // the line is double width).
+        if (eraseType == DispatchTypes::EraseType::FromBeginning)
+        {
+            const auto endRow = csbiex.dwCursorPosition.Y;
+            _pConApi->PrivateResetLineRenditionRange(csbiex.srWindow.Top, endRow);
+        }
+        if (eraseType == DispatchTypes::EraseType::ToEnd)
+        {
+            const auto startRow = csbiex.dwCursorPosition.Y + (csbiex.dwCursorPosition.X > 0 ? 1 : 0);
+            _pConApi->PrivateResetLineRenditionRange(startRow, csbiex.srWindow.Bottom);
+        }
+
         // What we need to erase is grouped into 3 types:
         // 1. Lines before cursor
         // 2. Cursor Line
@@ -695,6 +711,18 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
     }
 
     return success;
+}
+
+// Routine Description:
+// - DECSWL/DECDWL/DECDHL - Sets the line rendition attribute for the current line.
+// Arguments:
+// - rendition - Determines whether the line will be rendered as single width, double
+//   width, or as one half of a double height line.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
+{
+    return _pConApi->PrivateSetCurrentLineRendition(rendition);
 }
 
 // Routine Description:
@@ -1044,62 +1072,62 @@ bool AdaptDispatch::_DoDECCOLMHelper(const size_t columns)
 // - enable - True for set, false for unset.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModeParams param, const bool enable)
+bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable)
 {
     bool success = false;
     switch (param)
     {
-    case DispatchTypes::PrivateModeParams::DECCKM_CursorKeysMode:
+    case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
         // set - Enable Application Mode, reset - Normal mode
         success = SetCursorKeysMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::DECANM_AnsiMode:
+    case DispatchTypes::ModeParams::DECANM_AnsiMode:
         success = SetAnsiMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
+    case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
         success = _DoDECCOLMHelper(enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
         break;
-    case DispatchTypes::PrivateModeParams::DECSCNM_ScreenMode:
+    case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
         success = SetScreenMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::DECOM_OriginMode:
+    case DispatchTypes::ModeParams::DECOM_OriginMode:
         // The cursor is also moved to the new home position when the origin mode is set or reset.
         success = SetOriginMode(enable) && CursorPosition(1, 1);
         break;
-    case DispatchTypes::PrivateModeParams::DECAWM_AutoWrapMode:
+    case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
         success = SetAutoWrapMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
+    case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
         success = EnableCursorBlinking(enable);
         break;
-    case DispatchTypes::PrivateModeParams::DECTCEM_TextCursorEnableMode:
+    case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
         success = CursorVisibility(enable);
         break;
-    case DispatchTypes::PrivateModeParams::XTERM_EnableDECCOLMSupport:
+    case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
         success = EnableDECCOLMSupport(enable);
         break;
-    case DispatchTypes::PrivateModeParams::VT200_MOUSE_MODE:
+    case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
         success = EnableVT200MouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::BUTTON_EVENT_MOUSE_MODE:
+    case DispatchTypes::ModeParams::BUTTON_EVENT_MOUSE_MODE:
         success = EnableButtonEventMouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::ANY_EVENT_MOUSE_MODE:
+    case DispatchTypes::ModeParams::ANY_EVENT_MOUSE_MODE:
         success = EnableAnyEventMouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::UTF8_EXTENDED_MODE:
+    case DispatchTypes::ModeParams::UTF8_EXTENDED_MODE:
         success = EnableUTF8ExtendedMouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::SGR_EXTENDED_MODE:
+    case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
         success = EnableSGRExtendedMouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::ALTERNATE_SCROLL:
+    case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
         success = EnableAlternateScroll(enable);
         break;
-    case DispatchTypes::PrivateModeParams::ASB_AlternateScreenBuffer:
+    case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
         success = enable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
         break;
-    case DispatchTypes::PrivateModeParams::W32IM_Win32InputMode:
+    case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         success = EnableWin32InputMode(enable);
         break;
     default:
@@ -1116,9 +1144,9 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
 // - param - mode parameter to set
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetPrivateMode(const DispatchTypes::PrivateModeParams param)
+bool AdaptDispatch::SetMode(const DispatchTypes::ModeParams param)
 {
-    return _PrivateModeParamsHelper(param, true);
+    return _ModeParamsHelper(param, true);
 }
 
 // Routine Description:
@@ -1127,9 +1155,9 @@ bool AdaptDispatch::SetPrivateMode(const DispatchTypes::PrivateModeParams param)
 // - param - mode parameter to reset
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::ResetPrivateMode(const DispatchTypes::PrivateModeParams param)
+bool AdaptDispatch::ResetMode(const DispatchTypes::ModeParams param)
 {
-    return _PrivateModeParamsHelper(param, false);
+    return _ModeParamsHelper(param, false);
 }
 
 // - DECKPAM, DECKPNM - Sets the keypad input mode to either Application mode or Numeric mode (true, false respectively)
@@ -1931,6 +1959,8 @@ bool AdaptDispatch::ScreenAlignmentPattern()
         auto fillPosition = COORD{ 0, csbiex.srWindow.Top };
         const auto fillLength = (csbiex.srWindow.Bottom - csbiex.srWindow.Top) * csbiex.dwSize.X;
         success = _pConApi->PrivateFillRegion(fillPosition, fillLength, L'E', false);
+        // Reset the line rendition for all of these rows.
+        success = success && _pConApi->PrivateResetLineRenditionRange(csbiex.srWindow.Top, csbiex.srWindow.Bottom);
         // Reset the meta/extended attributes (but leave the colors unchanged).
         TextAttribute attr;
         if (_pConApi->PrivateGetTextAttributes(attr))
@@ -1995,6 +2025,8 @@ bool AdaptDispatch::_EraseScrollback()
             const COORD coordBelowStartPosition = { 0, height };
             // Again we need to use the default attributes, hence standardFillAttrs is false.
             success = _pConApi->PrivateFillRegion(coordBelowStartPosition, totalAreaBelow, L' ', false);
+            // Also reset the line rendition for all of the cleared rows.
+            success = success && _pConApi->PrivateResetLineRenditionRange(height, csbiex.dwSize.Y);
 
             if (success)
             {
@@ -2163,6 +2195,17 @@ bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
     }
 
     return success;
+}
+
+//Routine Description:
+// Enable "bracketed paste mode".
+//Arguments:
+// - enabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::EnableXtermBracketedPasteMode(const bool /*enabled*/) noexcept
+{
+    return NoOp();
 }
 
 //Routine Description:
@@ -2381,6 +2424,16 @@ bool AdaptDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring
 bool AdaptDispatch::EndHyperlink()
 {
     return _pConApi->PrivateEndHyperlink();
+}
+
+// Method Description:
+// - Ascribes to the ITermDispatch interface
+// - Not actually used in conhost
+// Return Value:
+// - false (so that the command gets flushed to terminal)
+bool AdaptDispatch::DoConEmuAction(const std::wstring_view /*string*/) noexcept
+{
+    return false;
 }
 
 // Routine Description:

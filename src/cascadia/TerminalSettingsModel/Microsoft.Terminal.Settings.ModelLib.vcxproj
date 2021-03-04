@@ -16,6 +16,9 @@
 
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
+    <ClInclude Include="IconPathConverter.h">
+      <DependentUpon>IconPathConverter.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="ActionArgs.h">
       <DependentUpon>ActionArgs.idl</DependentUpon>
@@ -50,6 +53,9 @@
     <ClInclude Include="Profile.h">
       <DependentUpon>Profile.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="EnumMappings.h">
+      <DependentUpon>EnumMappings.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="SettingsTypes.h" />
     <ClInclude Include="TerminalSettingsSerializationHelpers.h" />
     <ClInclude Include="TerminalWarnings.h">
@@ -59,6 +65,9 @@
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
+    <ClCompile Include="IconPathConverter.cpp">
+      <DependentUpon>IconPathConverter.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="init.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -99,6 +108,9 @@
     <ClCompile Include="Profile.cpp">
       <DependentUpon>Profile.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="EnumMappings.cpp">
+      <DependentUpon>EnumMappings.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="WslDistroGenerator.cpp" />
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
     you want to use jsoncpp -->
@@ -114,8 +126,10 @@
     <Midl Include="ColorScheme.idl" />
     <Midl Include="Command.idl" />
     <Midl Include="GlobalAppSettings.idl" />
+    <Midl Include="IconPathConverter.idl" />
     <Midl Include="KeyMapping.idl" />
     <Midl Include="Profile.idl" />
+    <Midl Include="EnumMappings.idl" />
     <Midl Include="TerminalWarnings.idl" />
     <Midl Include="KeyChordSerialization.idl" />
   </ItemGroup>
@@ -177,12 +191,12 @@
   <!-- ========================= Globals ======================== -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets'))" />
   </Target>
   <!-- This target will take our defaults.json and stamp it into a .h file that
   we can include in the code directly. This way, we don't need to worry about

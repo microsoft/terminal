@@ -109,63 +109,70 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // Make sure to call this so we get WM_POINTER messages.
     EnableMouseInPointer(true);
 
-    auto mainLoop = []() {
-        // !!! LOAD BEARING !!!
-        // We must initialize the main thread as a single-threaded apartment before
-        // constructing any Xaml objects. Failing to do so will cause some issues
-        // in accessibility somewhere down the line when a UIAutomation object will
-        // be queried on the wrong thread at the wrong time.
-        // We used to initialize as STA only _after_ initializing the application
-        // host, which loaded the settings. The settings needed to be loaded in MTA
-        // because we were using the Windows.Storage APIs. Since we're no longer
-        // doing that, we can safely init as STA before any WinRT dispatches.
-        winrt::init_apartment(winrt::apartment_type::single_threaded);
+    // !!! LOAD BEARING !!!
+    // We must initialize the main thread as a single-threaded apartment before
+    // constructing any Xaml objects. Failing to do so will cause some issues
+    // in accessibility somewhere down the line when a UIAutomation object will
+    // be queried on the wrong thread at the wrong time.
+    // We used to initialize as STA only _after_ initializing the application
+    // host, which loaded the settings. The settings needed to be loaded in MTA
+    // because we were using the Windows.Storage APIs. Since we're no longer
+    // doing that, we can safely init as STA before any WinRT dispatches.
+    winrt::init_apartment(winrt::apartment_type::single_threaded);
 
-        // Create the AppHost object, which will create both the window and the
-        // Terminal App. This MUST BE constructed before the Xaml manager as TermApp
-        // provides an implementation of Windows.UI.Xaml.Application.
-        AppHost host;
+    // Create the AppHost object, which will create both the window and the
+    // Terminal App. This MUST BE constructed before the Xaml manager as TermApp
+    // provides an implementation of Windows.UI.Xaml.Application.
+    AppHost host;
+    if (!host.HasWindow())
+    {
+        // If we were told to not have a window, exit early. Make sure to use
+        // ExitProcess to die here. If you try just `return 0`, then
+        // the XAML app host will crash during teardown. ExitProcess avoids
+        // that.
+        ExitProcess(0);
+    }
 
-        // Initialize the xaml content. This must be called AFTER the
-        // WindowsXamlManager is initialized.
-        host.Initialize();
+    // Initialize the xaml content. This must be called AFTER the
+    // WindowsXamlManager is initialized.
+    host.Initialize();
 
-        MSG message;
+    MSG message;
 
-        while (GetMessage(&message, nullptr, 0, 0))
+    while (GetMessage(&message, nullptr, 0, 0))
+    {
+        // GH#638 (Pressing F7 brings up both the history AND a caret browsing message)
+        // The Xaml input stack doesn't allow an application to suppress the "caret browsing"
+        // dialog experience triggered when you press F7. Official recommendation from the Xaml
+        // team is to catch F7 before we hand it off.
+        // AppLogic contains an ad-hoc implementation of event bubbling for a runtime classes
+        // implementing a custom IF7Listener interface.
+        // If the recipient of IF7Listener::OnF7Pressed suggests that the F7 press has, in fact,
+        // been handled we can discard the message before we even translate it.
+        if (_messageIsF7Keypress(message))
         {
             if (host.OnDirectKeyEvent(VK_F7, LOBYTE(HIWORD(message.lParam)), true))
             {
-                if (host.OnDirectKeyEvent(VK_F7, true))
-                {
-                    // The application consumed the F7. Don't let Xaml get it.
-                    continue;
-                }
+                // The application consumed the F7. Don't let Xaml get it.
+                continue;
             }
+        }
 
-            // GH#6421 - System XAML will never send an Alt KeyUp event. So, similar
-            // to how we'll steal the F7 KeyDown above, we'll steal the Alt KeyUp
-            // here, and plumb it through.
-            if (_messageIsAltKeyup(message))
+        // GH#6421 - System XAML will never send an Alt KeyUp event. So, similar
+        // to how we'll steal the F7 KeyDown above, we'll steal the Alt KeyUp
+        // here, and plumb it through.
+        if (_messageIsAltKeyup(message))
+        {
+            // Let's pass <Alt> to the application
+            if (host.OnDirectKeyEvent(VK_MENU, LOBYTE(HIWORD(message.lParam)), false))
             {
-                // Let's pass <Alt> to the application
-                if (host.OnDirectKeyEvent(VK_MENU, LOBYTE(HIWORD(message.lParam)), false))
-                {
-                    // Let's pass <Alt> to the application
-                    if (host.OnDirectKeyEvent(VK_MENU, false))
-                    {
-                        // The application consumed the Alt. Don't let Xaml get it.
-                        continue;
-                    }
-                }
-
-                TranslateMessage(&message);
-                DispatchMessage(&message);
+                // The application consumed the Alt. Don't let Xaml get it.
+                continue;
             }
-        };
+        }
 
-        std::thread t{ mainLoop };
-        mainLoop();
-
-        return 0;
+        TranslateMessage(&message);
+        DispatchMessage(&message);
     }
+    return 0;
+}

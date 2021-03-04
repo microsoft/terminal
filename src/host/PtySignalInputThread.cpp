@@ -7,8 +7,8 @@
 
 #include "output.h"
 #include "handle.h"
-#include "..\interactivity\inc\ServiceLocator.hpp"
-#include "..\terminal\adapter\DispatchCommon.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../terminal/adapter/DispatchCommon.hpp"
 
 #define PTY_SIGNAL_RESIZE_WINDOW 8u
 

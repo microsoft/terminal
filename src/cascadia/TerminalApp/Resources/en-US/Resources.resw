@@ -245,6 +245,18 @@
     <value>Failed to expand a command with "iterateOn" set. This command will be ignored.</value>
     <comment>{Locked="\"iterateOn\""} </comment>
   </data>
+  <data name="InvalidColorSchemeInCmd" xml:space="preserve">
+    <value>Found a command with an invalid "colorScheme". This command will be ignored. Make sure that when setting a "colorScheme", the value matches the "name" of a color scheme in the "schemes" list.</value>
+    <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
+  </data>
+  <data name="InvalidSplitSize" xml:space="preserve">
+    <value>Found a "splitPane" command with an invalid "size". This command will be ignored. Make sure the size is between 0 and 1, exclusive.</value>
+    <comment>{Locked="\"splitPane\"","\"size\""}</comment>
+  </data>
+  <data name="FailedToParseStartupActions" xml:space="preserve">
+    <value>Failed to parse "startupActions".</value>
+    <comment>{Locked="\"startupActions\""}</comment>
+  </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>An optional command, with arguments, to be spawned in the new tab or pane</value>
   </data>
@@ -263,6 +275,9 @@
   </data>
   <data name="CmdFocusTabTargetArgDesc" xml:space="preserve">
     <value>Move focus the tab at the given index</value>
+  </data>
+  <data name="CmdSplitPaneSizeArgDesc" xml:space="preserve">
+    <value>Specify the size as a percentage of the parent pane. Valid values are between (0,1), exclusive.</value>
   </data>
   <data name="CmdNewTabDesc" xml:space="preserve">
     <value>Create a new tab</value>
@@ -295,6 +310,9 @@
     <value>Open the terminal with the provided title instead of the profile's set "title"</value>
     <comment>{Locked="\"title\""}</comment>
   </data>
+  <data name="CmdTabColorArgDesc" xml:space="preserve">
+    <value>Open the tab with the specified color, in #rrggbb format</value>
+  </data>
   <data name="CmdVersionDesc" xml:space="preserve">
     <value>Display the application version</value>
   </data>
@@ -304,8 +322,21 @@
   <data name="CmdFullscreenDesc" xml:space="preserve">
     <value>Launch the window in fullscreen mode</value>
   </data>
+  <data name="CmdMoveFocusDesc" xml:space="preserve">
+    <value>Move focus to the adjacent pane in the specified direction</value>
+  </data>
+  <data name="CmdMFDesc" xml:space="preserve">
+    <value>An alias for the "move-focus" subcommand.</value>
+    <comment>{Locked="\"move-focus\""}</comment>
+  </data>
+  <data name="CmdMoveFocusDirectionArgDesc" xml:space="preserve">
+    <value>The direction to move focus in</value>
+  </data>
   <data name="CmdFocusDesc" xml:space="preserve">
     <value>Launch the window in focus mode</value>
+  </data>
+  <data name="CmdWindowTargetArgDesc" xml:space="preserve">
+    <value>Specify a terminal window to run the given commandline in. "0" always refers to the current window. </value>
   </data>
   <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Press the button to open a new terminal tab with your default profile. Open the flyout to select which profile you want to open.</value>
@@ -376,6 +407,18 @@
   <data name="CloseAllDialog.Title" xml:space="preserve">
     <value>Do you want to close all tabs?</value>
   </data>
+  <data name="CloseReadOnlyDialog.CloseButtonText" xml:space="preserve">
+    <value>Close anyway</value>
+  </data>
+  <data name="CloseReadOnlyDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Title" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Content" xml:space="preserve">
+    <value>You are about to close a read-only terminal. Do you wish to continue?</value>
+  </data>
   <data name="LargePasteDialog.CloseButtonText" xml:space="preserve">
     <value>Cancel</value>
   </data>
@@ -391,7 +434,7 @@
   <data name="MultiLinePasteDialog.CloseButtonText" xml:space="preserve">
     <value>Cancel</value>
   </data>
-  <data name="MultiLinePasteDialog.Content" xml:space="preserve">
+  <data name="MultiLineWarningText.Text" xml:space="preserve">
     <value>You are about to paste text that contains multiple lines. If you paste this text into your shell, it may result in the unexpected execution of commands. Do you wish to continue?</value>
   </data>
   <data name="MultiLinePasteDialog.PrimaryButtonText" xml:space="preserve">
@@ -405,6 +448,13 @@
   </data>
   <data name="CommandPalette_NoMatchesText.Text" xml:space="preserve">
     <value>No matching commands</value>
+  </data>
+  <data name="CommandPalette_ParsedCommandLine" xml:space="preserve">
+    <value>Executing command line will invoke the following commands:</value>
+    <comment>Will be followed by a list of strings describing parsed commands</comment>
+  </data>
+  <data name="CommandPalette_FailedParsingCommandLine" xml:space="preserve">
+    <value>Failed parsing command line:</value>
   </data>
   <data name="CommandPaletteControlName" xml:space="preserve">
     <value>Command Palette</value>
@@ -479,6 +529,9 @@
   <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
     <value>Cancel</value>
   </data>
+  <data name="SettingsTab" xml:space="preserve">
+    <value>Settings</value>
+  </data>
   <data name="FailedToWriteToSettings" xml:space="preserve">
     <value>We could not write to your settings file. Check the permissions on that file to ensure that the read-only flag is not set and that write access is granted.</value>
   </data>
@@ -487,5 +540,26 @@
   </data>
   <data name="ParentCommandBackButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Back</value>
+  </data>
+  <data name="ControlNoticeDialog.PrimaryButtonText" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="NoticeDebug" xml:space="preserve">
+    <value>Debug</value>
+  </data>
+  <data name="NoticeError" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="NoticeInfo" xml:space="preserve">
+    <value>Information</value>
+  </data>
+  <data name="NoticeWarning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="ClipboardTextHeader.Text" xml:space="preserve">
+    <value>Clipboard contents (preview):</value>
+  </data>
+  <data name="CommandPalette_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>More options</value>
   </data>
 </root>

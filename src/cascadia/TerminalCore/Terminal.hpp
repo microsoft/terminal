@@ -6,6 +6,7 @@
 #include <conattrs.hpp>
 
 #include "../../buffer/out/textBuffer.hpp"
+#include "../../types/inc/sgrStack.hpp"
 #include "../../renderer/inc/BlinkingState.hpp"
 #include "../../terminal/parser/StateMachine.hpp"
 #include "../../terminal/input/terminalInput.hpp"
@@ -66,6 +67,9 @@ public:
     // Write goes through the parser
     void Write(std::wstring_view stringView);
 
+    // WritePastedText goes directly to the connection
+    void WritePastedText(std::wstring_view stringView);
+
     [[nodiscard]] std::shared_lock<std::shared_mutex> LockForReading();
     [[nodiscard]] std::unique_lock<std::shared_mutex> LockForWriting();
 
@@ -108,6 +112,8 @@ public:
     bool EnableButtonEventMouseMode(const bool enabled) noexcept override;
     bool EnableAnyEventMouseMode(const bool enabled) noexcept override;
     bool EnableAlternateScrollMode(const bool enabled) noexcept override;
+    bool EnableXtermBracketedPasteMode(const bool enabled) noexcept override;
+    bool IsXtermBracketedPasteModeEnabled() const noexcept override;
 
     bool IsVtInputEnabled() const noexcept override;
 
@@ -115,6 +121,14 @@ public:
 
     bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept override;
     bool EndHyperlink() noexcept override;
+
+    bool SetTaskbarProgress(const size_t state, const size_t progress) noexcept override;
+    bool SetWorkingDirectory(std::wstring_view uri) noexcept override;
+    std::wstring_view GetWorkingDirectory() noexcept override;
+
+    bool PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) noexcept override;
+    bool PopGraphicsRendition() noexcept override;
+
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -173,7 +187,7 @@ public:
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
     const COORD GetSelectionAnchor() const noexcept override;
     const COORD GetSelectionEnd() const noexcept override;
-    const std::wstring GetConsoleTitle() const noexcept override;
+    const std::wstring_view GetConsoleTitle() const noexcept override;
     void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute) override;
 #pragma endregion
 
@@ -185,6 +199,7 @@ public:
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
     void SetBackgroundCallback(std::function<void(const COLORREF)> pfn) noexcept;
+    void TaskbarProgressChangedCallback(std::function<void()> pfn) noexcept;
 
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
@@ -195,6 +210,9 @@ public:
     const std::optional<til::color> GetTabColor() const noexcept;
 
     Microsoft::Console::Render::BlinkingState& GetBlinkingState() const noexcept;
+
+    const size_t GetTaskbarState() const noexcept;
+    const size_t GetTaskbarProgress() const noexcept;
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
@@ -221,6 +239,7 @@ private:
     std::function<void(const COLORREF)> _pfnBackgroundColorChanged;
     std::function<void()> _pfnCursorPositionChanged;
     std::function<void(const std::optional<til::color>)> _pfnTabColorChanged;
+    std::function<void()> _pfnTaskbarProgressChanged;
 
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::TerminalInput> _terminalInput;
@@ -228,6 +247,7 @@ private:
     std::optional<std::wstring> _title;
     std::wstring _startingTitle;
     std::optional<til::color> _tabColor;
+    std::optional<til::color> _startingTabColor;
 
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
     COLORREF _defaultFg;
@@ -239,9 +259,14 @@ private:
     bool _snapOnInput;
     bool _altGrAliasing;
     bool _suppressApplicationTitle;
+    bool _bracketedPasteMode;
+
+    size_t _taskbarState;
+    size_t _taskbarProgress;
 
     size_t _hyperlinkPatternId;
 
+    std::wstring _workingDirectory;
 #pragma region Text Selection
     // a selection is represented as a range between two COORDs (start and end)
     // the pivot is the COORD that remains selected when you extend a selection in any direction
@@ -326,6 +351,8 @@ private:
     std::pair<COORD, COORD> _ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const;
     COORD _ConvertToBufferCell(const COORD viewportPos) const;
 #pragma endregion
+
+    Microsoft::Console::VirtualTerminal::SgrStack _sgrStack;
 
 #ifdef UNIT_TESTING
     friend class TerminalCoreUnitTests::TerminalBufferTests;

@@ -29,6 +29,7 @@ Author(s):
 // fwdecl unittest classes
 namespace SettingsModelLocalTests
 {
+    class SerializationTests;
     class DeserializationTests;
     class ProfileTests;
     class ColorSchemeTests;
@@ -74,14 +75,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static com_ptr<CascadiaSettings> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);
 
+        void WriteSettingsToDisk() const;
+        Json::Value ToJson() const;
+
         static hstring SettingsPath();
         static hstring DefaultSettingsPath();
+        Model::Profile ProfileDefaults() const;
 
         static winrt::hstring ApplicationDisplayName();
         static winrt::hstring ApplicationVersion();
 
+        Model::Profile CreateNewProfile();
         Model::Profile FindProfile(guid profileGuid) const noexcept;
         Model::ColorScheme GetColorSchemeForProfile(const guid profileGuid) const;
+        void UpdateColorSchemeReferences(const hstring oldName, const hstring newName);
 
         Windows::Foundation::Collections::IVectorView<SettingsLoadWarnings> Warnings();
         void ClearWarnings();
@@ -110,6 +117,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::com_ptr<implementation::Profile> _FindMatchingProfile(const Json::Value& profileJson);
         std::optional<uint32_t> _FindMatchingProfileIndex(const Json::Value& profileJson);
         void _LayerOrCreateColorScheme(const Json::Value& schemeJson);
+        Json::Value _ParseUtf8JsonString(std::string_view fileData);
+
         winrt::com_ptr<implementation::ColorScheme> _FindMatchingColorScheme(const Json::Value& schemeJson);
         void _ParseJsonString(std::string_view fileData, const bool isDefaultSettings);
         static const Json::Value& _GetProfilesJsonObject(const Json::Value& json);
@@ -122,9 +131,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _ApplyDefaultsFromUserSettings();
 
         void _LoadDynamicProfiles();
+        void _LoadFragmentExtensions();
+        void _ApplyJsonStubsHelper(const std::wstring_view directory, const std::unordered_set<std::wstring>& ignoredNamespaces);
+        std::unordered_set<std::string> _AccumulateJsonFilesInDirectory(const std::wstring_view directory);
+        void _ParseAndLayerFragmentFiles(const std::unordered_set<std::string> files, const winrt::hstring source);
 
         static bool _IsPackaged();
-        static void _WriteSettings(const std::string_view content);
+        static void _WriteSettings(std::string_view content, const hstring filepath);
         static std::optional<std::string> _ReadUserSettings();
         static std::optional<std::string> _ReadFile(HANDLE hFile);
 
@@ -133,7 +146,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _ValidateSettings();
         void _ValidateProfilesExist();
-        void _ValidateProfilesHaveGuid();
         void _ValidateDefaultProfileExists();
         void _ValidateNoDuplicateProfiles();
         void _ResolveDefaultProfile();
@@ -142,8 +154,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _ValidateAllSchemesExist();
         void _ValidateMediaResources();
         void _ValidateKeybindings();
+        void _ValidateColorSchemesInCommands();
         void _ValidateNoGlobalsKey();
 
+        bool _HasInvalidColorScheme(const Model::Command& command);
+
+        friend class SettingsModelLocalTests::SerializationTests;
         friend class SettingsModelLocalTests::DeserializationTests;
         friend class SettingsModelLocalTests::ProfileTests;
         friend class SettingsModelLocalTests::ColorSchemeTests;

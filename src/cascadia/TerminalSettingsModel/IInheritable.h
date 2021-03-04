@@ -41,6 +41,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return child;
         }
 
+        void ClearParents()
+        {
+            _parents.clear();
+        }
+
         void InsertParent(com_ptr<T> parent)
         {
             _parents.push_back(parent);
@@ -72,28 +77,41 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     // This is like std::optional, but we can use it in inheritance to determine whether the user explicitly cleared it
     template<typename T>
-    struct NullableSetting
-    {
-        std::optional<T> setting{ std::nullopt };
-        bool set{ false };
-    };
+    using NullableSetting = std::optional<std::optional<T>>;
 }
 
 // Use this macro to quickly implement both getters and the setter for an
-// inheritable setting property. This is similar to the GETSET_PROPERTY macro, except...
+// inheritable setting property. This is similar to the WINRT_PROPERTY macro, except...
 // - Has(): checks if the user explicitly set a value for this setting
+// - SourceGetter(): return the object that provides the resolved value
 // - Getter(): return the resolved value
 // - Setter(): set the value directly
 // - Clear(): clear the user set value
 // - the setting is saved as an optional, where nullopt means
 //   that we must inherit the value from our parent
-#define GETSET_SETTING(type, name, ...)                                     \
+#define INHERITABLE_SETTING(projectedType, type, name, ...)                 \
 public:                                                                     \
     /* Returns true if the user explicitly set the value, false otherwise*/ \
     bool Has##name() const                                                  \
     {                                                                       \
         return _##name.has_value();                                         \
-    };                                                                      \
+    }                                                                       \
+                                                                            \
+    projectedType name##OverrideSource()                                    \
+    {                                                                       \
+        /*user set value was not set*/                                      \
+        /*iterate through parents to find one with a value*/                \
+        for (auto& parent : _parents)                                       \
+        {                                                                   \
+            if (auto source{ parent->_get##name##OverrideSourceImpl() })    \
+            {                                                               \
+                return source;                                              \
+            }                                                               \
+        }                                                                   \
+                                                                            \
+        /*no value was found*/                                              \
+        return nullptr;                                                     \
+    }                                                                       \
                                                                             \
     /* Returns the resolved value for this setting */                       \
     /* fallback: user set value --> inherited value --> system set value */ \
@@ -101,19 +119,19 @@ public:                                                                     \
     {                                                                       \
         const auto val{ _get##name##Impl() };                               \
         return val ? *val : type{ __VA_ARGS__ };                            \
-    };                                                                      \
+    }                                                                       \
                                                                             \
     /* Overwrite the user set value */                                      \
     void name(const type& value)                                            \
     {                                                                       \
         _##name = value;                                                    \
-    };                                                                      \
+    }                                                                       \
                                                                             \
     /* Clear the user set value */                                          \
     void Clear##name()                                                      \
     {                                                                       \
         _##name = std::nullopt;                                             \
-    };                                                                      \
+    }                                                                       \
                                                                             \
 private:                                                                    \
     std::optional<type> _##name{ std::nullopt };                            \
@@ -137,62 +155,99 @@ private:                                                                    \
                                                                             \
         /*no value was found*/                                              \
         return std::nullopt;                                                \
-    };
+    }                                                                       \
+    projectedType _get##name##OverrideSourceImpl() const                    \
+    {                                                                       \
+        /*we have a value*/                                                 \
+        if (_##name)                                                        \
+        {                                                                   \
+            return *this;                                                   \
+        }                                                                   \
+                                                                            \
+        /*user set value was not set*/                                      \
+        /*iterate through parents to find one with a value*/                \
+        for (auto& parent : _parents)                                       \
+        {                                                                   \
+            if (auto source{ parent->_get##name##OverrideSourceImpl() })    \
+            {                                                               \
+                return source;                                              \
+            }                                                               \
+        }                                                                   \
+                                                                            \
+        /*no value was found*/                                              \
+        return nullptr;                                                     \
+    }
 
 // This macro is similar to the one above, but is reserved for optional settings
 // like Profile.Foreground (where null is interpreted
 // as an acceptable value, rather than "inherit")
 // "type" is exposed as an IReference
-#define GETSET_NULLABLE_SETTING(type, name, ...)                            \
+#define INHERITABLE_NULLABLE_SETTING(projectedType, type, name, ...)        \
 public:                                                                     \
     /* Returns true if the user explicitly set the value, false otherwise*/ \
     bool Has##name() const                                                  \
     {                                                                       \
-        return _##name.set;                                                 \
-    };                                                                      \
+        return _##name.has_value();                                         \
+    }                                                                       \
+                                                                            \
+    projectedType name##OverrideSource()                                    \
+    {                                                                       \
+        /*user set value was not set*/                                      \
+        /*iterate through parents to find one with a value*/                \
+        for (auto parent : _parents)                                        \
+        {                                                                   \
+            if (auto source{ parent->_get##name##OverrideSourceImpl() })    \
+            {                                                               \
+                return source;                                              \
+            }                                                               \
+        }                                                                   \
+                                                                            \
+        /*no source was found*/                                             \
+        return nullptr;                                                     \
+    }                                                                       \
                                                                             \
     /* Returns the resolved value for this setting */                       \
     /* fallback: user set value --> inherited value --> system set value */ \
     winrt::Windows::Foundation::IReference<type> name() const               \
     {                                                                       \
         const auto val{ _get##name##Impl() };                               \
-        if (val.set)                                                        \
+        if (val)                                                            \
         {                                                                   \
-            if (val.setting)                                                \
+            if (*val)                                                       \
             {                                                               \
-                return *val.setting;                                        \
+                return **val;                                               \
             }                                                               \
             return nullptr;                                                 \
         }                                                                   \
         return winrt::Windows::Foundation::IReference<type>{ __VA_ARGS__ }; \
-    };                                                                      \
+    }                                                                       \
                                                                             \
     /* Overwrite the user set value */                                      \
     void name(const winrt::Windows::Foundation::IReference<type>& value)    \
     {                                                                       \
         if (value) /*set value is different*/                               \
         {                                                                   \
-            _##name.setting = value.Value();                                \
+            _##name = std::optional<type>{ value.Value() };                 \
         }                                                                   \
         else                                                                \
         {                                                                   \
-            _##name.setting = std::nullopt;                                 \
+            /* note we're setting the _inner_ value */                      \
+            _##name = std::optional<type>{ std::nullopt };                  \
         }                                                                   \
-        _##name.set = true;                                                 \
-    };                                                                      \
+    }                                                                       \
                                                                             \
     /* Clear the user set value */                                          \
     void Clear##name()                                                      \
     {                                                                       \
-        _##name.set = false;                                                \
-    };                                                                      \
+        _##name = std::nullopt;                                             \
+    }                                                                       \
                                                                             \
 private:                                                                    \
     NullableSetting<type> _##name{};                                        \
     NullableSetting<type> _get##name##Impl() const                          \
     {                                                                       \
         /*return user set value*/                                           \
-        if (Has##name())                                                    \
+        if (_##name)                                                        \
         {                                                                   \
             return _##name;                                                 \
         }                                                                   \
@@ -201,12 +256,33 @@ private:                                                                    \
         /*iterate through parents to find a value*/                         \
         for (auto parent : _parents)                                        \
         {                                                                   \
-            auto val{ parent->_get##name##Impl() };                         \
-            if (val.set)                                                    \
+            if (auto val{ parent->_get##name##Impl() })                     \
             {                                                               \
                 return val;                                                 \
             }                                                               \
         }                                                                   \
+                                                                            \
         /*no value was found*/                                              \
-        return { std::nullopt, false };                                     \
-    };
+        return std::nullopt;                                                \
+    }                                                                       \
+    projectedType _get##name##OverrideSourceImpl() const                    \
+    {                                                                       \
+        /*we have a value*/                                                 \
+        if (_##name)                                                        \
+        {                                                                   \
+            return *this;                                                   \
+        }                                                                   \
+                                                                            \
+        /*user set value was not set*/                                      \
+        /*iterate through parents to find one with a value*/                \
+        for (auto& parent : _parents)                                       \
+        {                                                                   \
+            if (auto source{ parent->_get##name##OverrideSourceImpl() })    \
+            {                                                               \
+                return source;                                              \
+            }                                                               \
+        }                                                                   \
+                                                                            \
+        /*no value was found*/                                              \
+        return nullptr;                                                     \
+    }

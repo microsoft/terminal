@@ -43,7 +43,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
 
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
-        [[nodiscard]] HRESULT InvalidateCursor(const COORD* const pcoordCursor) noexcept override;
+        [[nodiscard]] HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept override;
         [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
         [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
@@ -69,12 +69,12 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, int const iDpi) noexcept override;
 
-        [[nodiscard]] std::vector<til::rectangle> GetDirtyArea() override;
+        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
 
     protected:
-        [[nodiscard]] HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept override;
+        [[nodiscard]] HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept override;
 
     private:
         bool _isEnabled;
@@ -86,6 +86,6 @@ namespace Microsoft::Console::Render
         Microsoft::Console::Types::IUiaEventDispatcher* _dispatcher;
 
         std::vector<SMALL_RECT> _prevSelection;
-        til::point _prevCursorPos;
+        SMALL_RECT _prevCursorRegion;
     };
 }

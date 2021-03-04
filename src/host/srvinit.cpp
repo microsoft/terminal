@@ -14,14 +14,17 @@
 
 #include "../types/inc/GlyphWidth.hpp"
 
-#include "..\server\Entrypoints.h"
-#include "..\server\IoSorter.h"
+#include "../server/Entrypoints.h"
+#include "../server/IoSorter.h"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
-#include "..\interactivity\base\ApiDetector.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../interactivity/base/ApiDetector.hpp"
 
 #include "renderData.hpp"
 #include "../renderer/base/renderer.hpp"
+
+#include "../inc/conint.h"
+#include "../propslib/DelegationConfig.hpp"
 
 #pragma hdrstop
 
@@ -32,27 +35,37 @@ const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
 const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
 [[nodiscard]] HRESULT ConsoleServerInitialization(_In_ HANDLE Server, const ConsoleArguments* const args)
+try
 {
     Globals& Globals = ServiceLocator::LocateGlobals();
 
-    try
+    Globals.pDeviceComm = new ConDrvDeviceComm(Server);
+
+    Globals.launchArgs = *args;
+
+    Globals.uiOEMCP = GetOEMCP();
+    Globals.uiWindowsCP = GetACP();
+
+    Globals.pFontDefaultList = new RenderFontDefaults();
+
+    FontInfoBase::s_SetFontDefaultList(Globals.pFontDefaultList);
+
+    // Check if this conhost is allowed to delegate its activities to another.
+    // If so, look up the registered default console handler.
+    bool isEnabled = false;
+    if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy(isEnabled) && isEnabled))
     {
-        Globals.pDeviceComm = new DeviceComm(Server);
-
-        Globals.launchArgs = *args;
-
-        Globals.uiOEMCP = GetOEMCP();
-        Globals.uiWindowsCP = GetACP();
-
-        Globals.pFontDefaultList = new RenderFontDefaults();
-
-        FontInfoBase::s_SetFontDefaultList(Globals.pFontDefaultList);
+        IID delegationClsid;
+        if (SUCCEEDED(DelegationConfig::s_GetConsole(delegationClsid)))
+        {
+            Globals.handoffConsoleClsid = delegationClsid;
+        }
     }
-    CATCH_RETURN();
 
     // Removed allocation of scroll buffer here.
     return S_OK;
 }
+CATCH_RETURN()
 
 static bool s_IsOnDesktop()
 {
@@ -177,10 +190,6 @@ static bool s_IsOnDesktop()
         {
             // Fallback to per-monitor aware V1 if the API isn't available.
             LOG_IF_FAILED(pHighDpiApi->SetProcessPerMonitorDpiAwareness());
-
-            // Allow child dialogs (i.e. Properties and Find) to scale automatically based on DPI if we're currently DPI aware.
-            // Note that we don't need to do this if we're PMv2.
-            pHighDpiApi->EnablePerMonitorDialogScaling();
         }
     }
 

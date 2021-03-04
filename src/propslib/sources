@@ -1,3 +1,5 @@
+ARM64X_EC_ENABLED=1
+
 !include ..\project.inc
 
 # -------------------------------------
@@ -40,10 +42,12 @@ PRECOMPILED_CXX         = 1
 PRECOMPILED_INCLUDE     = precomp.h
 
 SOURCES = \
+    DelegationConfig.cpp \
     ShortcutSerialization.cpp \
     RegistrySerialization.cpp \
     TrueTypeFontList.cpp \
 
 INCLUDES = \
+    $(ABI_INC_PATH)\; \
     $(INCLUDES); \
     ..\inc; \

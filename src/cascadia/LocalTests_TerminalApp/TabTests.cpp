@@ -8,6 +8,7 @@
 #include "../TerminalApp/TabRowControl.h"
 #include "../TerminalApp/ShortcutActionDispatch.h"
 #include "../TerminalApp/TerminalTab.h"
+#include "../TerminalApp/CommandPalette.h"
 #include "../CppWinrtTailored.h"
 
 using namespace Microsoft::Console;
@@ -82,6 +83,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(CloseZoomedPane);
 
         TEST_METHOD(NextMRUTab);
+        TEST_METHOD(VerifyCommandPaletteTabSwitcherOrder);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -484,7 +486,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(NoThrowString().Format(L"Duplicate the first pane"));
         result = RunOnUIThread([&page]() {
-            page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, nullptr);
+            page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, 0.5f, nullptr);
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
@@ -502,7 +504,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(NoThrowString().Format(L"Duplicate the pane, and don't crash"));
         result = RunOnUIThread([&page]() {
-            page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, nullptr);
+            page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, 0.5f, nullptr);
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
@@ -601,7 +603,7 @@ namespace TerminalAppLocalTests
             ActionEventArgs eventArgs{ args };
             // eventArgs.Args(args);
             page->_HandleSplitPane(nullptr, eventArgs);
-            auto firstTab = page->_GetTerminalTabImpl(0);
+            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
 
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_FALSE(firstTab->IsZoomed());
@@ -612,7 +614,7 @@ namespace TerminalAppLocalTests
         result = RunOnUIThread([&page]() {
             ActionEventArgs eventArgs{};
             page->_HandleTogglePaneZoom(nullptr, eventArgs);
-            auto firstTab = page->_GetTerminalTabImpl(0);
+            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_TRUE(firstTab->IsZoomed());
         });
@@ -622,7 +624,7 @@ namespace TerminalAppLocalTests
         result = RunOnUIThread([&page]() {
             ActionEventArgs eventArgs{};
             page->_HandleTogglePaneZoom(nullptr, eventArgs);
-            auto firstTab = page->_GetTerminalTabImpl(0);
+            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_FALSE(firstTab->IsZoomed());
         });
@@ -639,7 +641,7 @@ namespace TerminalAppLocalTests
             SplitPaneArgs args{ SplitType::Duplicate };
             ActionEventArgs eventArgs{ args };
             page->_HandleSplitPane(nullptr, eventArgs);
-            auto firstTab = page->_GetTerminalTabImpl(0);
+            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
 
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_FALSE(firstTab->IsZoomed());
@@ -653,7 +655,7 @@ namespace TerminalAppLocalTests
 
             page->_HandleTogglePaneZoom(nullptr, eventArgs);
 
-            auto firstTab = page->_GetTerminalTabImpl(0);
+            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_TRUE(firstTab->IsZoomed());
         });
@@ -662,12 +664,12 @@ namespace TerminalAppLocalTests
         Log::Comment(L"Move focus. This will cause us to un-zoom.");
         result = RunOnUIThread([&page]() {
             // Set up action
-            MoveFocusArgs args{ Direction::Left };
+            MoveFocusArgs args{ FocusDirection::Left };
             ActionEventArgs eventArgs{ args };
 
             page->_HandleMoveFocus(nullptr, eventArgs);
 
-            auto firstTab = page->_GetTerminalTabImpl(0);
+            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_FALSE(firstTab->IsZoomed());
         });
@@ -684,7 +686,7 @@ namespace TerminalAppLocalTests
             SplitPaneArgs args{ SplitType::Duplicate };
             ActionEventArgs eventArgs{ args };
             page->_HandleSplitPane(nullptr, eventArgs);
-            auto firstTab = page->_GetTerminalTabImpl(0);
+            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
 
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_FALSE(firstTab->IsZoomed());
@@ -698,7 +700,7 @@ namespace TerminalAppLocalTests
 
             page->_HandleTogglePaneZoom(nullptr, eventArgs);
 
-            auto firstTab = page->_GetTerminalTabImpl(0);
+            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_TRUE(firstTab->IsZoomed());
         });
@@ -711,7 +713,7 @@ namespace TerminalAppLocalTests
 
             page->_HandleClosePane(nullptr, eventArgs);
 
-            auto firstTab = page->_GetTerminalTabImpl(0);
+            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_IS_FALSE(firstTab->IsZoomed());
         });
         VERIFY_SUCCEEDED(result);
@@ -722,7 +724,7 @@ namespace TerminalAppLocalTests
         Log::Comment(L"Check to ensure there's only one pane left.");
 
         result = RunOnUIThread([&page]() {
-            auto firstTab = page->_GetTerminalTabImpl(0);
+            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(1, firstTab->GetLeafPaneCount());
             VERIFY_IS_FALSE(firstTab->IsZoomed());
         });
@@ -847,5 +849,98 @@ namespace TerminalAppLocalTests
             uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
             VERIFY_ARE_EQUAL(3u, focusedIndex, L"Verify the fourth tab is the focused one");
         });
+    }
+
+    void TabTests::VerifyCommandPaletteTabSwitcherOrder()
+    {
+        // This is a test for GH#8188 - we want to make sure that the order of tabs
+        // is preserved in the CommandPalette's TabSwitcher
+
+        auto page = _commonSetup();
+
+        Log::Comment(L"Create 3 additional tabs");
+        RunOnUIThread([&page]() {
+            NewTerminalArgs newTerminalArgs{ 1 };
+            page->_OpenNewTab(newTerminalArgs);
+            page->_OpenNewTab(newTerminalArgs);
+            page->_OpenNewTab(newTerminalArgs);
+        });
+        VERIFY_ARE_EQUAL(4u, page->_mruTabs.Size());
+
+        Log::Comment(L"give alphabetical names to all switch tab actions");
+        TestOnUIThread([&page]() {
+            page->_GetTerminalTabImpl(page->_tabs.GetAt(0))->Title(L"a");
+        });
+        TestOnUIThread([&page]() {
+            page->_GetTerminalTabImpl(page->_tabs.GetAt(1))->Title(L"b");
+        });
+        TestOnUIThread([&page]() {
+            page->_GetTerminalTabImpl(page->_tabs.GetAt(2))->Title(L"c");
+        });
+        TestOnUIThread([&page]() {
+            page->_GetTerminalTabImpl(page->_tabs.GetAt(3))->Title(L"d");
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Sanity check the titles of our tabs are what we set them to.");
+
+            VERIFY_ARE_EQUAL(L"a", page->_tabs.GetAt(0).Title());
+            VERIFY_ARE_EQUAL(L"b", page->_tabs.GetAt(1).Title());
+            VERIFY_ARE_EQUAL(L"c", page->_tabs.GetAt(2).Title());
+            VERIFY_ARE_EQUAL(L"d", page->_tabs.GetAt(3).Title());
+
+            VERIFY_ARE_EQUAL(L"d", page->_mruTabs.GetAt(0).Title());
+            VERIFY_ARE_EQUAL(L"c", page->_mruTabs.GetAt(1).Title());
+            VERIFY_ARE_EQUAL(L"b", page->_mruTabs.GetAt(2).Title());
+            VERIFY_ARE_EQUAL(L"a", page->_mruTabs.GetAt(3).Title());
+        });
+
+        Log::Comment(L"Change the tab switch order to MRU switching");
+        TestOnUIThread([&page]() {
+            page->_settings.GlobalSettings().TabSwitcherMode(TabSwitcherMode::MostRecentlyUsed);
+        });
+
+        Log::Comment(L"Select the tabs from 0 to 3");
+        RunOnUIThread([&page]() {
+            page->_UpdatedSelectedTab(0);
+            page->_UpdatedSelectedTab(1);
+            page->_UpdatedSelectedTab(2);
+            page->_UpdatedSelectedTab(3);
+        });
+
+        VERIFY_ARE_EQUAL(4u, page->_mruTabs.Size());
+        VERIFY_ARE_EQUAL(L"d", page->_mruTabs.GetAt(0).Title());
+        VERIFY_ARE_EQUAL(L"c", page->_mruTabs.GetAt(1).Title());
+        VERIFY_ARE_EQUAL(L"b", page->_mruTabs.GetAt(2).Title());
+        VERIFY_ARE_EQUAL(L"a", page->_mruTabs.GetAt(3).Title());
+
+        Log::Comment(L"Switch to the next MRU tab, which is the third tab");
+        RunOnUIThread([&page]() {
+            page->_SelectNextTab(true);
+            // In the course of a single tick, the Command Palette will:
+            // * open
+            // * select the proper tab from the mru's list
+            // * raise an event for _filteredActionsView().SelectionChanged to
+            //   immediately preview the new tab
+            // * raise a _SwitchToTabRequestedHandlers event
+            // * then dismiss itself, because we can't fake holing down an
+            //   anchor key in the tests
+        });
+
+        TestOnUIThread([&page]() {
+            VERIFY_ARE_EQUAL(L"c", page->_mruTabs.GetAt(0).Title());
+            VERIFY_ARE_EQUAL(L"d", page->_mruTabs.GetAt(1).Title());
+            VERIFY_ARE_EQUAL(L"b", page->_mruTabs.GetAt(2).Title());
+            VERIFY_ARE_EQUAL(L"a", page->_mruTabs.GetAt(3).Title());
+        });
+
+        const auto palette = winrt::get_self<winrt::TerminalApp::implementation::CommandPalette>(page->CommandPalette());
+
+        VERIFY_ARE_EQUAL(winrt::TerminalApp::implementation::CommandPaletteMode::TabSwitchMode, palette->_currentMode, L"Verify we are in the tab switcher mode");
+        // At this point, the contents of the command palette's _mruTabs list is
+        // still the _old_ ordering (d, c, b, a). The ordering is only updated
+        // in TerminalPage::_SelectNextTab, but as we saw before, the palette
+        // will also dismiss itself immediately when that's called. So we can't
+        // really inspect the contents of the list in this test, unfortunately.
     }
 }
