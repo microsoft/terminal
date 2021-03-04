@@ -71,7 +71,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // Otherwise, the King will tell us if we should make a new window
         _shouldCreateWindow = _isKing;
         std::optional<uint64_t> givenID;
-        winrt::hstring givenName = L""; // TODO:MG If we're the king, we might STILL WANT TO GET THE NAME. How do we get the name?
+        winrt::hstring givenName = L"";
         if (!_isKing)
         {
             // The monarch may respond back "you should be a new
@@ -123,7 +123,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             auto findWindowArgs{ winrt::make_self<Remoting::implementation::FindTargetWindowArgs>(args) };
             _raiseFindTargetWindowRequested(nullptr, *findWindowArgs);
 
-            auto responseId = findWindowArgs->ResultTargetWindow();
+            const auto responseId = findWindowArgs->ResultTargetWindow();
             if (responseId > 0)
             {
                 givenID = ::base::saturated_cast<uint64_t>(responseId);

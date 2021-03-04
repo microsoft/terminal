@@ -27,6 +27,9 @@ namespace winrt::TerminalApp::implementation
     public:
         FindTargetWindowResult(const int32_t id, const winrt::hstring& name) :
             _WindowId{ id }, _WindowName{ name } {};
+
+        FindTargetWindowResult(const int32_t id) :
+            FindTargetWindowResult(id, L""){};
     };
 
     struct AppLogic : AppLogicT<AppLogic, IInitializeWithWindow>

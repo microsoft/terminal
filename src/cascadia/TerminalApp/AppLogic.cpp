@@ -1240,7 +1240,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (!appArgs.GetExitMessage().empty())
             {
-                return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew, L"");
+                return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew);
             }
 
             const std::string parsedTarget{ appArgs.GetTargetWindow() };
@@ -1263,7 +1263,7 @@ namespace winrt::TerminalApp::implementation
                     windowId = WindowingBehaviorUseAnyExisting;
                     break;
                 }
-                return winrt::make<FindTargetWindowResult>(windowId, L"");
+                return winrt::make<FindTargetWindowResult>(windowId);
             }
 
             // Here, the user _has_ provided a window-id on the commandline.
@@ -1282,7 +1282,7 @@ namespace winrt::TerminalApp::implementation
 
                 // Hooray! This is a valid integer. The set of possible values
                 // here is {-1, 0, ℤ+}. Let's return that window ID.
-                return winrt::make<TerminalApp::implementation::FindTargetWindowResult>(windowId, L"");
+                return winrt::make<FindTargetWindowResult>(windowId);
             }
             catch (...)
             {
@@ -1292,11 +1292,11 @@ namespace winrt::TerminalApp::implementation
                 // First, check the reserved keywords:
                 if (parsedTarget == "new")
                 {
-                    return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew, L"");
+                    return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew);
                 }
                 else if (parsedTarget == "last")
                 {
-                    return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseExisting, L"");
+                    return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseExisting);
                 }
                 else
                 {
@@ -1319,7 +1319,7 @@ namespace winrt::TerminalApp::implementation
         // create a new window. Then, in that new window, we'll try to  set the
         // StartupActions, which will again fail, returning the correct error
         // message.
-        return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew, L"");
+        return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew);
     }
 
     // Method Description:

@@ -859,11 +859,5 @@ void AppCommandlineArgs::FullResetState()
 
 std::string_view AppCommandlineArgs::GetTargetWindow() const noexcept
 {
-    // // If the user provides _any_ negative number, then treat it as -1, for "use a new window".
-    // if (_windowTarget.has_value() && *_windowTarget < 0)
-    // {
-    //     return { -1 };
-    // }
-
     return _windowTarget;
 }
