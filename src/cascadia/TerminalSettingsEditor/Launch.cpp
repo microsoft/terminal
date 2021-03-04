@@ -53,20 +53,4 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         value;
     }
-
-    Windows::Foundation::Collections::IObservableVector<IInspectable> Launch::DefaultConsoles()
-    {
-        Windows::Foundation::Collections::IObservableVector<IInspectable> vec;
-        return vec;
-    }
-
-    IInspectable Launch::CurrentDefaultConsole()
-    {
-        return nullptr;
-    }
-
-    void Launch::CurrentDefaultConsole(const IInspectable& value)
-    {
-        value;
-    }
 }
