@@ -26,7 +26,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool UseCustomStartingDirectory();
         bool BackgroundImageSettingsVisible();
 
-        GETSET_PROPERTY(bool, IsBaseLayer, false);
+        WINRT_PROPERTY(bool, IsBaseLayer, false);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, ConnectionType);
@@ -116,9 +116,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) { _Schemes = val; }
 
         TYPED_EVENT(DeleteProfile, Editor::ProfilePageNavigationState, Editor::DeleteProfileEventArgs);
-        GETSET_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
-        GETSET_PROPERTY(Editor::ProfilesPivots, LastActivePivot, Editor::ProfilesPivots::General);
-        GETSET_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
+        WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
+        WINRT_PROPERTY(Editor::ProfilesPivots, LastActivePivot, Editor::ProfilesPivots::General);
+        WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
 
     private:
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
@@ -150,12 +150,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::IInspectable CurrentFontWeight() const;
         void CurrentFontWeight(const Windows::Foundation::IInspectable& enumEntry);
         bool IsCustomFontWeight();
-        GETSET_PROPERTY(Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry>, FontWeightList);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry>, FontWeightList);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
-        GETSET_PROPERTY(Editor::ProfilePageNavigationState, State, nullptr);
-        GETSET_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);
+        WINRT_PROPERTY(Editor::ProfilePageNavigationState, State, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);
         GETSET_BINDABLE_ENUM_SETTING(CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle, State().Profile, CursorShape);
         GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, State().Profile, BackgroundImageStretchMode);
         GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode, State().Profile, AntialiasingMode);

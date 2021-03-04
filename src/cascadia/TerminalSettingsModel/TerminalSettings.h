@@ -53,24 +53,24 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void ColorTable(std::array<uint32_t, 16> colors);
         std::array<uint32_t, 16> ColorTable();
 
-        GETSET_SETTING(Model::TerminalSettings, uint32_t, DefaultForeground, DEFAULT_FOREGROUND_WITH_ALPHA);
-        GETSET_SETTING(Model::TerminalSettings, uint32_t, DefaultBackground, DEFAULT_BACKGROUND_WITH_ALPHA);
-        GETSET_SETTING(Model::TerminalSettings, uint32_t, SelectionBackground, DEFAULT_FOREGROUND);
-        GETSET_SETTING(Model::TerminalSettings, int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
-        GETSET_SETTING(Model::TerminalSettings, int32_t, InitialRows, 30);
-        GETSET_SETTING(Model::TerminalSettings, int32_t, InitialCols, 80);
+        INHERITABLE_SETTING(Model::TerminalSettings, uint32_t, DefaultForeground, DEFAULT_FOREGROUND_WITH_ALPHA);
+        INHERITABLE_SETTING(Model::TerminalSettings, uint32_t, DefaultBackground, DEFAULT_BACKGROUND_WITH_ALPHA);
+        INHERITABLE_SETTING(Model::TerminalSettings, uint32_t, SelectionBackground, DEFAULT_FOREGROUND);
+        INHERITABLE_SETTING(Model::TerminalSettings, int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
+        INHERITABLE_SETTING(Model::TerminalSettings, int32_t, InitialRows, 30);
+        INHERITABLE_SETTING(Model::TerminalSettings, int32_t, InitialCols, 80);
 
-        GETSET_SETTING(Model::TerminalSettings, bool, SnapOnInput, true);
-        GETSET_SETTING(Model::TerminalSettings, bool, AltGrAliasing, true);
-        GETSET_SETTING(Model::TerminalSettings, uint32_t, CursorColor, DEFAULT_CURSOR_COLOR);
-        GETSET_SETTING(Model::TerminalSettings, Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, TerminalControl::CursorStyle::Vintage);
-        GETSET_SETTING(Model::TerminalSettings, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
-        GETSET_SETTING(Model::TerminalSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
-        GETSET_SETTING(Model::TerminalSettings, bool, CopyOnSelect, false);
-        GETSET_SETTING(Model::TerminalSettings, bool, InputServiceWarning, true);
-        GETSET_SETTING(Model::TerminalSettings, bool, FocusFollowMouse, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, SnapOnInput, true);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, AltGrAliasing, true);
+        INHERITABLE_SETTING(Model::TerminalSettings, uint32_t, CursorColor, DEFAULT_CURSOR_COLOR);
+        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, TerminalControl::CursorStyle::Vintage);
+        INHERITABLE_SETTING(Model::TerminalSettings, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
+        INHERITABLE_SETTING(Model::TerminalSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, CopyOnSelect, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, InputServiceWarning, true);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, FocusFollowMouse, false);
 
-        GETSET_SETTING(Model::TerminalSettings, Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
+        INHERITABLE_SETTING(Model::TerminalSettings, Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
 
         // When set, StartingTabColor allows to create a terminal with a "sticky" tab color.
         // This color is prioritized above the TabColor (that is usually initialized based on profile settings).
@@ -80,44 +80,44 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // TODO: to ensure that this property is not populated during settings reload,
         // we should consider moving this property to a separate interface,
         // passed to the terminal only upon creation.
-        GETSET_SETTING(Model::TerminalSettings, Windows::Foundation::IReference<uint32_t>, StartingTabColor, nullptr);
+        INHERITABLE_SETTING(Model::TerminalSettings, Windows::Foundation::IReference<uint32_t>, StartingTabColor, nullptr);
 
         // ------------------------ End of Core Settings -----------------------
 
-        GETSET_SETTING(Model::TerminalSettings, hstring, ProfileName);
-        GETSET_SETTING(Model::TerminalSettings, bool, UseAcrylic, false);
-        GETSET_SETTING(Model::TerminalSettings, double, TintOpacity, 0.5);
-        GETSET_SETTING(Model::TerminalSettings, hstring, Padding, DEFAULT_PADDING);
-        GETSET_SETTING(Model::TerminalSettings, hstring, FontFace, DEFAULT_FONT_FACE);
-        GETSET_SETTING(Model::TerminalSettings, int32_t, FontSize, DEFAULT_FONT_SIZE);
+        INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileName);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, UseAcrylic, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, double, TintOpacity, 0.5);
+        INHERITABLE_SETTING(Model::TerminalSettings, hstring, Padding, DEFAULT_PADDING);
+        INHERITABLE_SETTING(Model::TerminalSettings, hstring, FontFace, DEFAULT_FONT_FACE);
+        INHERITABLE_SETTING(Model::TerminalSettings, int32_t, FontSize, DEFAULT_FONT_SIZE);
 
-        GETSET_SETTING(Model::TerminalSettings, winrt::Windows::UI::Text::FontWeight, FontWeight);
+        INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Text::FontWeight, FontWeight);
 
-        GETSET_SETTING(Model::TerminalSettings, hstring, BackgroundImage);
-        GETSET_SETTING(Model::TerminalSettings, double, BackgroundImageOpacity, 1.0);
+        INHERITABLE_SETTING(Model::TerminalSettings, hstring, BackgroundImage);
+        INHERITABLE_SETTING(Model::TerminalSettings, double, BackgroundImageOpacity, 1.0);
 
-        GETSET_SETTING(Model::TerminalSettings, winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill);
-        GETSET_SETTING(Model::TerminalSettings, winrt::Windows::UI::Xaml::HorizontalAlignment, BackgroundImageHorizontalAlignment, winrt::Windows::UI::Xaml::HorizontalAlignment::Center);
-        GETSET_SETTING(Model::TerminalSettings, winrt::Windows::UI::Xaml::VerticalAlignment, BackgroundImageVerticalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment::Center);
+        INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill);
+        INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Xaml::HorizontalAlignment, BackgroundImageHorizontalAlignment, winrt::Windows::UI::Xaml::HorizontalAlignment::Center);
+        INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Xaml::VerticalAlignment, BackgroundImageVerticalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment::Center);
 
-        GETSET_SETTING(Model::TerminalSettings, Microsoft::Terminal::TerminalControl::IKeyBindings, KeyBindings, nullptr);
+        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::TerminalControl::IKeyBindings, KeyBindings, nullptr);
 
-        GETSET_SETTING(Model::TerminalSettings, hstring, Commandline);
-        GETSET_SETTING(Model::TerminalSettings, hstring, StartingDirectory);
-        GETSET_SETTING(Model::TerminalSettings, hstring, StartingTitle);
-        GETSET_SETTING(Model::TerminalSettings, bool, SuppressApplicationTitle);
-        GETSET_SETTING(Model::TerminalSettings, hstring, EnvironmentVariables);
+        INHERITABLE_SETTING(Model::TerminalSettings, hstring, Commandline);
+        INHERITABLE_SETTING(Model::TerminalSettings, hstring, StartingDirectory);
+        INHERITABLE_SETTING(Model::TerminalSettings, hstring, StartingTitle);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, SuppressApplicationTitle);
+        INHERITABLE_SETTING(Model::TerminalSettings, hstring, EnvironmentVariables);
 
-        GETSET_SETTING(Model::TerminalSettings, Microsoft::Terminal::TerminalControl::ScrollbarState, ScrollState, Microsoft::Terminal::TerminalControl::ScrollbarState::Visible);
+        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::TerminalControl::ScrollbarState, ScrollState, Microsoft::Terminal::TerminalControl::ScrollbarState::Visible);
 
-        GETSET_SETTING(Model::TerminalSettings, Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
+        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
 
-        GETSET_SETTING(Model::TerminalSettings, bool, RetroTerminalEffect, false);
-        GETSET_SETTING(Model::TerminalSettings, bool, ForceFullRepaintRendering, false);
-        GETSET_SETTING(Model::TerminalSettings, bool, SoftwareRendering, false);
-        GETSET_SETTING(Model::TerminalSettings, bool, ForceVTInput, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, RetroTerminalEffect, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, ForceFullRepaintRendering, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, SoftwareRendering, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, ForceVTInput, false);
 
-        GETSET_PROPERTY(hstring, PixelShaderPath);
+        INHERITABLE_SETTING(Model::TerminalSettings, hstring, PixelShaderPath);
 
     private:
         std::optional<std::array<uint32_t, COLOR_TABLE_SIZE>> _ColorTable;
