@@ -312,7 +312,7 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
     return S_OK;
 }
 
-HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
+[[nodiscard]] HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
                                 const ConsoleArguments* const args, // this can't stay like this because ConsoleArguments could change...
                                 HANDLE driverInputEvent,
                                 PCONSOLE_API_MSG connectMessage)
@@ -364,9 +364,9 @@ try
 
     RETURN_IF_FAILED(CoCreateInstance(g.handoffTerminalClsid.value(), nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&handoff)));
 
-    RETURN_IF_FAILED(handoff->EstablishHandoff(inPipeTheirSide.get(),
-                                               outPipeTheirSide.get(),
-                                               signalPipeTheirSide.get()));
+    RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeTheirSide.get(),
+                                                  outPipeTheirSide.get(),
+                                                  signalPipeTheirSide.get()));
 
     inPipeTheirSide.release();
     outPipeTheirSide.release();

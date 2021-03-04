@@ -1,3 +1,19 @@
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
+
+Module Name:
+- CConsoleHandoff.hpp
+
+Abstract:
+- This module receives a console session handoff from the operating system to
+  an out-of-band, out-of-box console host.
+
+Author(s):
+- Michael Niksa (MiNiksa) 31-Aug-2020
+
+--*/
+
 #pragma once
 
 #include "IConsoleHandoff.h"

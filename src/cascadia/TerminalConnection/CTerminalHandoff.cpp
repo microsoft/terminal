@@ -71,7 +71,7 @@ HRESULT _duplicateHandle(const HANDLE in, HANDLE& out) noexcept
     return S_OK;
 }
 
-HRESULT CTerminalHandoff::EstablishHandoff(HANDLE in, HANDLE out, HANDLE signal) noexcept
+HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE signal) noexcept
 {
     // Duplicate the handles from what we received.
     // The contract with COM specifies that any HANDLEs we receive from the caller belong

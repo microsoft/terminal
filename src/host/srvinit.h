@@ -28,9 +28,9 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 
 [[nodiscard]] bool ConsoleConnectionDeservesVisibleWindow(PCONSOLE_API_CONNECTINFO p);
 
-HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
-                                const ConsoleArguments* const args,
-                                HANDLE driverInputEvent,
-                                PCONSOLE_API_MSG connectMessage);
+[[nodiscard]] HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
+                                              const ConsoleArguments* const args,
+                                              HANDLE driverInputEvent,
+                                              PCONSOLE_API_MSG connectMessage);
 
 void ConsoleCheckDebug();

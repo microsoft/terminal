@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "precomp.h"
 
 #include "CConsoleHandoff.h"
@@ -12,7 +15,7 @@
 // - out - Where to place the duplicated value
 // Return Value:
 // - S_OK or Win32 error from `::DuplicateHandle`
-HRESULT _duplicateHandle(const HANDLE in, HANDLE& out)
+static HRESULT _duplicateHandle(const HANDLE in, HANDLE& out)
 {
     RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), in, GetCurrentProcess(), &out, 0, FALSE, DUPLICATE_SAME_ACCESS));
     return S_OK;
@@ -35,7 +38,7 @@ try
     // and the return portion of the api message.
     // We will re-retrieve the connect information (title, window state, etc.) when the
     // new console session begins servicing this.
-    CONSOLE_API_MSG apiMsg;
+    CONSOLE_API_MSG apiMsg{};
     apiMsg.Descriptor.Identifier.HighPart = msg->IdHighPart;
     apiMsg.Descriptor.Identifier.LowPart = msg->IdLowPart;
     apiMsg.Descriptor.Process = msg->Process;

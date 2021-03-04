@@ -18,9 +18,9 @@ struct __declspec(uuid(__CLSID_CTerminalHandoff))
     CTerminalHandoff : public RuntimeClass<RuntimeClassFlags<ClassicCom>, ITerminalHandoff>
 {
 #pragma region ITerminalHandoff
-    STDMETHODIMP EstablishHandoff(HANDLE in,
-                                  HANDLE out,
-                                  HANDLE signal) noexcept override;
+    STDMETHODIMP EstablishPtyHandoff(HANDLE in,
+                                    HANDLE out,
+                                    HANDLE signal) noexcept override;
 
 #pragma endregion
 

@@ -9,7 +9,7 @@ import "ocidl.idl";
     uuid(FA1E3AB4-9AEC-4A3C-96CA-E6078C30BD74)
 ] interface ITerminalHandoff : IUnknown
 {
-    HRESULT EstablishHandoff([in, system_handle(sh_pipe)] HANDLE in,
-                             [in, system_handle(sh_pipe)] HANDLE out,
-                             [in, system_handle(sh_pipe)] HANDLE signal);
+    HRESULT EstablishPtyHandoff([in, system_handle(sh_pipe)] HANDLE in,
+                               [in, system_handle(sh_pipe)] HANDLE out,
+                               [in, system_handle(sh_pipe)] HANDLE signal);
 };
