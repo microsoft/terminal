@@ -7,6 +7,7 @@
 #include "ColorControl.h"
 #include <functional>
 #include "../propslib/DelegationConfig.hpp"
+#include "../types/inc/User32Utils.hpp"
 
 // From conattrs.h
 const COLORREF INVALID_COLOR = 0xffffffff;
@@ -101,7 +102,17 @@ void _PrepDefAppCombo(const HWND hDlg,
     for (DWORD i = 0; i < gsl::narrow<DWORD>(list.size()); ++i)
     {
         auto& item = list[i];
-        ComboBox_AddString(hCombo, item.terminal.name.c_str());
+
+        // An empty CLSID is a sentinel for the inbox console.
+        if (item.terminal.clsid == CLSID{ 0 })
+        {
+            const auto name = GetStringResource(IDS_TERMINAL_DEF_INBOX);
+            ComboBox_AddString(hCombo, name.c_str());
+        }
+        else
+        {
+            ComboBox_AddString(hCombo, item.terminal.name.c_str());
+        }
         ComboBox_SetItemData(hCombo, i, &item);
         if (selected == item)
         {

@@ -35,8 +35,9 @@ HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
 
     T useInbox = { 0 };
     useInbox.clsid = { 0 };
-    useInbox.name = L"Windows Console Host";
-    useInbox.author = L"Microsoft Corporation";
+    // CLSID of 0 will be sentinel to say "inbox console" or something.
+    // The UI displaying this information will have to go look up appropriate strings
+    // to convey that message.
 
     vec.push_back(useInbox);
 
