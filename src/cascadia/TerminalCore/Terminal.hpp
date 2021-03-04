@@ -64,7 +64,7 @@ public:
                             Microsoft::Console::Render::IRenderTarget& renderTarget);
 
     void UpdateSettings(winrt::Microsoft::Terminal::TerminalControl::ICoreSettings settings);
-    void UpdateAppearance(winrt::Microsoft::Terminal::TerminalControl::ICoreAppearance appearance);
+    void UpdateAppearance(const winrt::Microsoft::Terminal::TerminalControl::ICoreAppearance appearance);
 
     // Write goes through the parser
     void Write(std::wstring_view stringView);

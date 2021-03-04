@@ -153,7 +153,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 //   CoreAppearance object.
 // Arguments:
 // - appearance: an ICoreAppearance with new settings values for us to use.
-void Terminal::UpdateAppearance(ICoreAppearance appearance)
+void Terminal::UpdateAppearance(const ICoreAppearance appearance)
 {
     // Set the default background as transparent to prevent the
     // DX layer from overwriting the background image or acrylic effect
