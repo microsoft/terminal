@@ -81,7 +81,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 }
 
 // Use this macro to quickly implement both getters and the setter for an
-// inheritable setting property. This is similar to the GETSET_PROPERTY macro, except...
+// inheritable setting property. This is similar to the WINRT_PROPERTY macro, except...
 // - Has(): checks if the user explicitly set a value for this setting
 // - SourceGetter(): return the object that provides the resolved value
 // - Getter(): return the resolved value

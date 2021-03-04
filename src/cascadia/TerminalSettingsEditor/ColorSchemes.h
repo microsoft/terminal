@@ -16,8 +16,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ColorSchemesPageNavigationState(const Model::CascadiaSettings& settings) :
             _Settings{ settings } {}
 
-        GETSET_PROPERTY(Model::CascadiaSettings, Settings, nullptr);
-        GETSET_PROPERTY(winrt::hstring, LastSelectedScheme, L"");
+        WINRT_PROPERTY(Model::CascadiaSettings, Settings, nullptr);
+        WINRT_PROPERTY(winrt::hstring, LastSelectedScheme, L"");
     };
 
     struct ColorSchemes : ColorSchemesT<ColorSchemes>
@@ -38,11 +38,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool CanDeleteCurrentScheme() const;
         void DeleteConfirmation_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
-        GETSET_PROPERTY(Editor::ColorSchemesPageNavigationState, State, nullptr);
-        GETSET_PROPERTY(Model::ColorScheme, CurrentColorScheme, nullptr);
-        GETSET_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, CurrentNonBrightColorTable, nullptr);
-        GETSET_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, CurrentBrightColorTable, nullptr);
-        GETSET_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);
+        WINRT_PROPERTY(Editor::ColorSchemesPageNavigationState, State, nullptr);
+        WINRT_PROPERTY(Model::ColorScheme, CurrentColorScheme, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, CurrentNonBrightColorTable, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, CurrentBrightColorTable, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(bool, IsRenaming, _PropertyChangedHandlers, nullptr);

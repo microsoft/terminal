@@ -27,7 +27,7 @@ namespace winrt::Microsoft::Terminal::ShellExtension::implementation
     struct PlaceholderType : PlaceholderTypeT<PlaceholderType>
     {
         PlaceholderType() = default;
-        GETSET_PROPERTY(int32_t, Placeholder, 42);
+        WINRT_PROPERTY(int32_t, Placeholder, 42);
     };
 }
 

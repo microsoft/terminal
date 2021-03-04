@@ -67,7 +67,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         hstring ExpandedBackgroundImagePath() const;
         static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 
-        GETSET_PROPERTY(OriginTag, Origin, OriginTag::Custom);
+        WINRT_PROPERTY(OriginTag, Origin, OriginTag::Custom);
 
         INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
         INHERITABLE_SETTING(Model::Profile, hstring, Name, L"Default");

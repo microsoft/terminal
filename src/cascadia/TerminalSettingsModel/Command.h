@@ -59,7 +59,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, KeyChordText, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, IconPath, _PropertyChangedHandlers);
 
-        GETSET_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
+        WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
 
     private:
         Json::Value _originalJson;
