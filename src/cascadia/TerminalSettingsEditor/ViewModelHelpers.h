@@ -67,6 +67,11 @@ public:                                                   \
         }                                            \
     }                                                \
     auto name##OverrideSource() { return target.name##OverrideSource().as<decltype(target)>(); }
+// Using this macro in Profiles.idl without the 'decltype' causes an error because the ViewModel doesn't
+// like that the appearance settings of a profile are defined in a separate interface (IAppearanceConfig).
+// So, instead of creating another macro for appearance settings (resulting in two macros, one for the
+// appearance settings of a profile and one for non-appearance settings), we just add a decltype here to
+// hide the fact that its two interfaces.
 
 // Defines a setting that reflects another object's same-named
 // setting, but which cannot be erased.
