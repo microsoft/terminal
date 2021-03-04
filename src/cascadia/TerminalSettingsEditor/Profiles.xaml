@@ -317,8 +317,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                     HasSettingValue="{x:Bind State.Profile.HasCursorHeight, Mode=OneWay}"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearCursorHeight}"
                                                     SettingOverrideSource="{x:Bind State.Profile.CursorHeightOverrideSource, Mode=OneWay}"
-                                                    Visibility="{x:Bind IsVintageCursor, Mode=OneWay}"
-                                                    Margin="0">
+                                                    Visibility="{x:Bind IsVintageCursor, Mode=OneWay}">
                                 <Grid Style="{StaticResource CustomSliderControlGridStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
