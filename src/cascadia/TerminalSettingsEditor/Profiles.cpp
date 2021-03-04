@@ -125,34 +125,31 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 THROW_IF_FAILED(fontFamily->GetFamilyNames(localizedFamilyNames.put()));
 
                 // construct a font entry for tracking
-                const auto fontEntry{ _GetFont(localizedFamilyNames) };
-
-                // check if the font is monospaced
-                try
+                if (const auto fontEntry{ _GetFont(localizedFamilyNames) })
                 {
-                    com_ptr<IDWriteFont> font;
-                    THROW_IF_FAILED(fontFamily->GetFirstMatchingFont(DWRITE_FONT_WEIGHT::DWRITE_FONT_WEIGHT_NORMAL,
-                                                                     DWRITE_FONT_STRETCH::DWRITE_FONT_STRETCH_NORMAL,
-                                                                     DWRITE_FONT_STYLE::DWRITE_FONT_STYLE_NORMAL,
-                                                                     font.put()));
-
-                    // add the font name to our list of monospace fonts
-                    const auto castedFont{ font.as<IDWriteFont1>() };
-                    if (castedFont && castedFont->IsMonospacedFont())
+                    // check if the font is monospaced
+                    try
                     {
-                        monospaceFontList.emplace_back(fontEntry);
-                    }
-                }
-                CATCH_LOG();
+                        com_ptr<IDWriteFont> font;
+                        THROW_IF_FAILED(fontFamily->GetFirstMatchingFont(DWRITE_FONT_WEIGHT::DWRITE_FONT_WEIGHT_NORMAL,
+                                                                         DWRITE_FONT_STRETCH::DWRITE_FONT_STRETCH_NORMAL,
+                                                                         DWRITE_FONT_STYLE::DWRITE_FONT_STYLE_NORMAL,
+                                                                         font.put()));
 
-                // add the font name to our list of all fonts
-                fontList.emplace_back(std::move(fontEntry));
+                        // add the font name to our list of monospace fonts
+                        const auto castedFont{ font.try_as<IDWriteFont1>() };
+                        if (castedFont && castedFont->IsMonospacedFont())
+                        {
+                            monospaceFontList.emplace_back(fontEntry);
+                        }
+                    }
+                    CATCH_LOG();
+
+                    // add the font name to our list of all fonts
+                    fontList.emplace_back(std::move(fontEntry));
+                }
             }
-            catch (...)
-            {
-                LOG_CAUGHT_EXCEPTION();
-                continue;
-            }
+            CATCH_LOG();
         }
 
         // sort and save the lists
@@ -437,7 +434,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (font.LocalizedName() == L"Cascadia Mono")
             {
-                fallbackFont = font;
+                fallbackFont = box_value(font);
             }
         }
 
