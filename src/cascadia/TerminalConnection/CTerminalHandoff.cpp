@@ -19,7 +19,6 @@ try
 {
     RETURN_HR_IF(E_NOT_VALID_STATE, _pfnHandoff != nullptr);
 
-    // We could probably hold this in a static...
     auto classFactory = Make<SimpleClassFactory<CTerminalHandoff>>();
 
     RETURN_IF_NULL_ALLOC(classFactory);
