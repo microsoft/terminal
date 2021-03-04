@@ -76,8 +76,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //     the profile.
     // - keybindings: the keybinding handler
     Model::TerminalSettings TerminalSettings::BuildSettings(const Model::CascadiaSettings& appSettings,
-                                                     const Model::NewTerminalArgs& newTerminalArgs,
-                                                     const IKeyBindings& keybindings)
+                                                            const Model::NewTerminalArgs& newTerminalArgs,
+                                                            const IKeyBindings& keybindings)
     {
         const guid profileGuid = appSettings.GetProfileForArgs(newTerminalArgs);
         auto settings{ winrt::make<TerminalSettings>(appSettings, profileGuid, keybindings) };
@@ -104,6 +104,26 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         return settings;
+    }
+
+    // Method Description:
+    // - Creates a projectedType version of a child of this TerminalSettings.
+    // - We can't just expose CreateChild() in the IDL because it returns the wrong type.
+    Model::TerminalSettings TerminalSettings::MakeChild() const
+    {
+        return *CreateChild();
+    }
+
+    // Method Description:
+    // - Sets our parent to the provided TerminalSettings
+    // Arguments:
+    // - parent: our new parent
+    void TerminalSettings::SetParent(Model::TerminalSettings parent)
+    {
+        ClearParents();
+        com_ptr<TerminalSettings> parentImpl;
+        parentImpl.copy_from(get_self<TerminalSettings>(parent));
+        InsertParent(parentImpl);
     }
 
     // Method Description:

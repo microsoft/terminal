@@ -39,14 +39,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                      const Model::NewTerminalArgs& newTerminalArgs,
                                                      const TerminalControl::IKeyBindings& keybindings);
 
-        Model::TerminalSettings MakeChild() { return *CreateChild(); }
-        void SetParent(Model::TerminalSettings parent)
-        {
-            ClearParents();
-            com_ptr<TerminalSettings> parentImpl;
-            parentImpl.attach(get_self<TerminalSettings>(parent));
-            InsertParent(0, parentImpl);
-        }
+        Model::TerminalSettings MakeChild() const;
+        void SetParent(Model::TerminalSettings parent);
 
         void ApplyColorScheme(const Model::ColorScheme& scheme);
 
@@ -92,86 +86,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         GETSET_SETTING(Model::TerminalSettings, hstring, ProfileName);
         GETSET_SETTING(Model::TerminalSettings, bool, UseAcrylic, false);
-//    public: /* Returns true if the user explicitly set the value, false otherwise*/
-//        bool HasUseAcrylic() const
-//        {
-//            return _UseAcrylic.has_value();
-//        }
-//
-//        Model::TerminalSettings UseAcrylicOverrideSource()
-//        { /*user set value was not set*/ /*iterate through parents to find one with a value*/
-//            for (auto& parent : _parents)
-//            {
-//                if (auto source{ parent->_getUseAcrylicOverrideSourceImpl() })
-//                {
-//                    return source;
-//                }
-//            }
-//
-//            /*no value was found*/
-//            return nullptr;
-//        }
-//
-//        /* Returns the resolved value for this setting */ /* fallback: user set value --> inherited value --> system set value */
-//        bool UseAcrylic() const
-//        {
-//            const auto val{ _getUseAcrylicImpl() };
-//            return val ? *val : bool{ false };
-//        }
-//
-//        /* Overwrite the user set value */
-//        void UseAcrylic(const bool& value)
-//        {
-//            _UseAcrylic = value;
-//        }
-//
-//        /* Clear the user set value */
-//        void ClearUseAcrylic()
-//        {
-//            _UseAcrylic = std::nullopt;
-//        }
-//
-//    private:
-//        std::optional<bool> _UseAcrylic{ std::nullopt };
-//        std::optional<bool> _getUseAcrylicImpl() const
-//        { /*return user set value*/
-//            if (_UseAcrylic)
-//            {
-//                return _UseAcrylic;
-//            }
-//
-//            /*user set value was not set*/ /*iterate through parents to find a value*/
-//            for (auto parent : _parents)
-//            {
-//                if (auto val{ parent->_getUseAcrylicImpl() })
-//                {
-//                    return val;
-//                }
-//            }
-//
-//            /*no value was found*/
-//            return std::nullopt;
-//        }
-//        Model::TerminalSettings _getUseAcrylicOverrideSourceImpl() const
-//        { /*we have a value*/
-//            if (_UseAcrylic)
-//            {
-//                return *this;
-//            }
-//
-//            /*user set value was not set*/ /*iterate through parents to find one with a value*/
-//            for (auto& parent : _parents)
-//            {
-//                if (auto source{ parent->_getUseAcrylicOverrideSourceImpl() })
-//                {
-//                    return source;
-//                }
-//            }
-//
-//            /*no value was found*/
-//            return nullptr;
-//        }
-
         GETSET_SETTING(Model::TerminalSettings, double, TintOpacity, 0.5);
         GETSET_SETTING(Model::TerminalSettings, hstring, Padding, DEFAULT_PADDING);
         GETSET_SETTING(Model::TerminalSettings, hstring, FontFace, DEFAULT_FONT_FACE);
