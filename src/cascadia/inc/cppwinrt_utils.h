@@ -126,7 +126,7 @@ private:                                                                        
 // private _setName() method, that the class can internally use to change the
 // value when it _knows_ it doesn't need to raise the PropertyChanged event
 // (like when the class is being initialized).
-#define OBSERVABLE_GETSET_PROPERTY(type, name, event, ...)                             \
+#define WINRT_OBSERVABLE_PROPERTY(type, name, event, ...)                              \
 public:                                                                                \
     type name() const noexcept { return _##name; };                                    \
     void name(const type& value)                                                       \

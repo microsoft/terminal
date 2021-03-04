@@ -54,10 +54,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker propertyChangedRevoker;
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(Model::ActionAndArgs, Action, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, KeyChordText, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, IconPath, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(Model::ActionAndArgs, Action, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, KeyChordText, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, IconPath, _PropertyChangedHandlers);
 
         GETSET_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
 
