@@ -50,24 +50,24 @@ namespace winrt::TerminalApp::implementation
         void ColorTable(std::array<uint32_t, 16> colors);
         std::array<uint32_t, 16> ColorTable();
 
-        GETSET_SETTING(TerminalApp::TerminalSettings, uint32_t, DefaultForeground, DEFAULT_FOREGROUND_WITH_ALPHA);
-        GETSET_SETTING(TerminalApp::TerminalSettings, uint32_t, DefaultBackground, DEFAULT_BACKGROUND_WITH_ALPHA);
-        GETSET_SETTING(TerminalApp::TerminalSettings, uint32_t, SelectionBackground, DEFAULT_FOREGROUND);
-        GETSET_SETTING(TerminalApp::TerminalSettings, int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
-        GETSET_SETTING(TerminalApp::TerminalSettings, int32_t, InitialRows, 30);
-        GETSET_SETTING(TerminalApp::TerminalSettings, int32_t, InitialCols, 80);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, uint32_t, DefaultForeground, DEFAULT_FOREGROUND_WITH_ALPHA);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, uint32_t, DefaultBackground, DEFAULT_BACKGROUND_WITH_ALPHA);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, uint32_t, SelectionBackground, DEFAULT_FOREGROUND);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, int32_t, InitialRows, 30);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, int32_t, InitialCols, 80);
 
-        GETSET_SETTING(TerminalApp::TerminalSettings, bool, SnapOnInput, true);
-        GETSET_SETTING(TerminalApp::TerminalSettings, bool, AltGrAliasing, true);
-        GETSET_SETTING(TerminalApp::TerminalSettings, uint32_t, CursorColor, DEFAULT_CURSOR_COLOR);
-        GETSET_SETTING(TerminalApp::TerminalSettings, Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle::Vintage);
-        GETSET_SETTING(TerminalApp::TerminalSettings, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
-        GETSET_SETTING(TerminalApp::TerminalSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
-        GETSET_SETTING(TerminalApp::TerminalSettings, bool, CopyOnSelect, false);
-        GETSET_SETTING(TerminalApp::TerminalSettings, bool, InputServiceWarning, true);
-        GETSET_SETTING(TerminalApp::TerminalSettings, bool, FocusFollowMouse, false);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, bool, SnapOnInput, true);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, bool, AltGrAliasing, true);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, uint32_t, CursorColor, DEFAULT_CURSOR_COLOR);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle::Vintage);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, bool, CopyOnSelect, false);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, bool, InputServiceWarning, true);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, bool, FocusFollowMouse, false);
 
-        GETSET_SETTING(TerminalApp::TerminalSettings, Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
 
         // When set, StartingTabColor allows to create a terminal with a "sticky" tab color.
         // This color is prioritized above the TabColor (that is usually initialized based on profile settings).
@@ -77,44 +77,44 @@ namespace winrt::TerminalApp::implementation
         // TODO: to ensure that this property is not populated during settings reload,
         // we should consider moving this property to a separate interface,
         // passed to the terminal only upon creation.
-        GETSET_SETTING(TerminalApp::TerminalSettings, Windows::Foundation::IReference<uint32_t>, StartingTabColor, nullptr);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, Windows::Foundation::IReference<uint32_t>, StartingTabColor, nullptr);
 
         // ------------------------ End of Core Settings -----------------------
 
-        GETSET_SETTING(TerminalApp::TerminalSettings, hstring, ProfileName);
-        GETSET_SETTING(TerminalApp::TerminalSettings, bool, UseAcrylic, false);
-        GETSET_SETTING(TerminalApp::TerminalSettings, double, TintOpacity, 0.5);
-        GETSET_SETTING(TerminalApp::TerminalSettings, hstring, Padding, DEFAULT_PADDING);
-        GETSET_SETTING(TerminalApp::TerminalSettings, hstring, FontFace, DEFAULT_FONT_FACE);
-        GETSET_SETTING(TerminalApp::TerminalSettings, int32_t, FontSize, DEFAULT_FONT_SIZE);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, hstring, ProfileName);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, bool, UseAcrylic, false);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, double, TintOpacity, 0.5);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, hstring, Padding, DEFAULT_PADDING);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, hstring, FontFace, DEFAULT_FONT_FACE);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, int32_t, FontSize, DEFAULT_FONT_SIZE);
 
-        GETSET_SETTING(TerminalApp::TerminalSettings, winrt::Windows::UI::Text::FontWeight, FontWeight);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, winrt::Windows::UI::Text::FontWeight, FontWeight);
 
-        GETSET_SETTING(TerminalApp::TerminalSettings, hstring, BackgroundImage);
-        GETSET_SETTING(TerminalApp::TerminalSettings, double, BackgroundImageOpacity, 1.0);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, hstring, BackgroundImage);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, double, BackgroundImageOpacity, 1.0);
 
-        GETSET_SETTING(TerminalApp::TerminalSettings, winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill);
-        GETSET_SETTING(TerminalApp::TerminalSettings, winrt::Windows::UI::Xaml::HorizontalAlignment, BackgroundImageHorizontalAlignment, winrt::Windows::UI::Xaml::HorizontalAlignment::Center);
-        GETSET_SETTING(TerminalApp::TerminalSettings, winrt::Windows::UI::Xaml::VerticalAlignment, BackgroundImageVerticalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment::Center);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, winrt::Windows::UI::Xaml::HorizontalAlignment, BackgroundImageHorizontalAlignment, winrt::Windows::UI::Xaml::HorizontalAlignment::Center);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, winrt::Windows::UI::Xaml::VerticalAlignment, BackgroundImageVerticalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment::Center);
 
-        GETSET_SETTING(TerminalApp::TerminalSettings, Microsoft::Terminal::TerminalControl::IKeyBindings, KeyBindings, nullptr);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, Microsoft::Terminal::TerminalControl::IKeyBindings, KeyBindings, nullptr);
 
-        GETSET_SETTING(TerminalApp::TerminalSettings, hstring, Commandline);
-        GETSET_SETTING(TerminalApp::TerminalSettings, hstring, StartingDirectory);
-        GETSET_SETTING(TerminalApp::TerminalSettings, hstring, StartingTitle);
-        GETSET_SETTING(TerminalApp::TerminalSettings, bool, SuppressApplicationTitle);
-        GETSET_SETTING(TerminalApp::TerminalSettings, hstring, EnvironmentVariables);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, hstring, Commandline);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, hstring, StartingDirectory);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, hstring, StartingTitle);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, bool, SuppressApplicationTitle);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, hstring, EnvironmentVariables);
 
-        GETSET_SETTING(TerminalApp::TerminalSettings, Microsoft::Terminal::TerminalControl::ScrollbarState, ScrollState, Microsoft::Terminal::TerminalControl::ScrollbarState::Visible);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, Microsoft::Terminal::TerminalControl::ScrollbarState, ScrollState, Microsoft::Terminal::TerminalControl::ScrollbarState::Visible);
 
-        GETSET_SETTING(TerminalApp::TerminalSettings, Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
 
-        GETSET_SETTING(TerminalApp::TerminalSettings, bool, RetroTerminalEffect, false);
-        GETSET_SETTING(TerminalApp::TerminalSettings, bool, ForceFullRepaintRendering, false);
-        GETSET_SETTING(TerminalApp::TerminalSettings, bool, SoftwareRendering, false);
-        GETSET_SETTING(TerminalApp::TerminalSettings, bool, ForceVTInput, false);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, bool, RetroTerminalEffect, false);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, bool, ForceFullRepaintRendering, false);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, bool, SoftwareRendering, false);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, bool, ForceVTInput, false);
 
-        GETSET_SETTING(TerminalApp::TerminalSettings, hstring, PixelShaderPath);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, hstring, PixelShaderPath);
 
     private:
         std::optional<std::array<uint32_t, COLOR_TABLE_SIZE>> _ColorTable;
