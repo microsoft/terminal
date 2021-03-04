@@ -114,7 +114,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_SETTING(TerminalApp::TerminalSettings, bool, SoftwareRendering, false);
         GETSET_SETTING(TerminalApp::TerminalSettings, bool, ForceVTInput, false);
 
-        GETSET_PROPERTY(hstring, PixelShaderPath);
+        GETSET_SETTING(TerminalApp::TerminalSettings, hstring, PixelShaderPath);
 
     private:
         std::optional<std::array<uint32_t, COLOR_TABLE_SIZE>> _ColorTable;
