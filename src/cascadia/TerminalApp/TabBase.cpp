@@ -49,7 +49,7 @@ namespace winrt::TerminalApp::implementation
         Controls::MenuFlyoutItem closeTabMenuItem;
         Controls::FontIcon closeSymbol;
         closeSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
-        closeSymbol.Glyph(L"\xE8BB");
+        closeSymbol.Glyph(L"\xE711");
 
         closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
