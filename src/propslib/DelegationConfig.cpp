@@ -66,6 +66,9 @@ HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
         ComPtr<IPackage> extensionPackage;
         RETURN_IF_FAILED(extension->get_Package(&extensionPackage));
 
+        ComPtr<IPackage2> extensionPackage2;
+        RETURN_IF_FAILED(extensionPackage.As(&extensionPackage2));
+
         ComPtr<IPackageId> extensionPackageId;
         RETURN_IF_FAILED(extensionPackage->get_Id(&extensionPackageId));
 
@@ -73,11 +76,11 @@ HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
         RETURN_IF_FAILED(extensionPackageId->get_PublisherId(publisherId.GetAddressOf()));
 
         HString name;
-        RETURN_IF_FAILED(extensionPackageId->get_Name(name.GetAddressOf()));
+        RETURN_IF_FAILED(extensionPackage2->get_DisplayName(name.GetAddressOf()));
         extensionMetadata.name = std::wstring{ name.GetRawBuffer(nullptr) };
 
         HString publisher;
-        RETURN_IF_FAILED(extensionPackageId->get_Publisher(publisher.GetAddressOf()));
+        RETURN_IF_FAILED(extensionPackage2->get_PublisherDisplayName(publisher.GetAddressOf()));
         extensionMetadata.author = std::wstring{ publisher.GetRawBuffer(nullptr) };
 
         HString pfn;
