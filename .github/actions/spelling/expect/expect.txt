@@ -178,6 +178,7 @@ BOTTOMLEFT
 BOTTOMRIGHT
 boutput
 BPBF
+bpp
 7bpp
 BPPF
 branchconfig
