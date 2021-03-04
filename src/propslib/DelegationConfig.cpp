@@ -244,13 +244,13 @@ CATCH_RETURN()
 
 [[nodiscard]] HRESULT DelegationConfig::s_GetDefaultConsoleId(IID& iid) noexcept
 {
-    iid = {0};
+    iid = { 0 };
     return s_Get(DELEGATION_CONSOLE_KEY_NAME, iid);
 }
 
 [[nodiscard]] HRESULT DelegationConfig::s_GetDefaultTerminalId(IID& iid) noexcept
 {
-    iid = {0};
+    iid = { 0 };
     return s_Get(DELEGATION_TERMINAL_KEY_NAME, iid);
 }
 
@@ -287,7 +287,6 @@ CATCH_RETURN()
                                                                   REG_SZ,
                                                                   reinterpret_cast<BYTE*>(buffer.get()),
                                                                   &bytesUsed));
-
 
     RETURN_IF_FAILED(IIDFromString(buffer.get(), &iid));
 

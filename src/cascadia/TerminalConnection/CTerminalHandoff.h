@@ -19,8 +19,8 @@ struct __declspec(uuid(__CLSID_CTerminalHandoff))
 {
 #pragma region ITerminalHandoff
     STDMETHODIMP EstablishPtyHandoff(HANDLE in,
-                                    HANDLE out,
-                                    HANDLE signal) noexcept override;
+                                     HANDLE out,
+                                     HANDLE signal) noexcept override;
 
 #pragma endregion
 

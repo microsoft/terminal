@@ -80,7 +80,6 @@ public:
         }
     };
 
-    
     [[nodiscard]] static HRESULT s_GetAvailablePackages(std::vector<DelegationPackage>& packages, DelegationPackage& default) noexcept;
 
     [[nodiscard]] static HRESULT s_SetDefaultByPackage(const DelegationPackage& pkg) noexcept;

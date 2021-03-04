@@ -211,7 +211,7 @@ bool InitTerminalDialog(const HWND hDlg) noexcept
 
     CheckDlgButton(hDlg, IDD_DISABLE_SCROLLFORWARD, gpStateInfo->TerminalScrolling);
 
-    _PrepDefAppCombo(hDlg, 
+    _PrepDefAppCombo(hDlg,
                      IDD_TERMINAL_COMBO_DEFTERM,
                      g_availablePackages,
                      g_selectedPackage,

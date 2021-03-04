@@ -313,9 +313,9 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
 }
 
 [[nodiscard]] HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
-                                const ConsoleArguments* const args, // this can't stay like this because ConsoleArguments could change...
-                                HANDLE driverInputEvent,
-                                PCONSOLE_API_MSG connectMessage)
+                                              const ConsoleArguments* const args, // this can't stay like this because ConsoleArguments could change...
+                                              HANDLE driverInputEvent,
+                                              PCONSOLE_API_MSG connectMessage)
 try
 {
     auto& g = ServiceLocator::LocateGlobals();
