@@ -89,7 +89,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 // - Clear(): clear the user set value
 // - the setting is saved as an optional, where nullopt means
 //   that we must inherit the value from our parent
-#define GETSET_SETTING(projectedType, type, name, ...)                      \
+#define SETTING(projectedType, type, name, ...)                             \
 public:                                                                     \
     /* Returns true if the user explicitly set the value, false otherwise*/ \
     bool Has##name() const                                                  \
@@ -182,7 +182,7 @@ private:                                                                    \
 // like Profile.Foreground (where null is interpreted
 // as an acceptable value, rather than "inherit")
 // "type" is exposed as an IReference
-#define GETSET_NULLABLE_SETTING(projectedType, type, name, ...)             \
+#define NULLABLE_SETTING(projectedType, type, name, ...)                    \
 public:                                                                     \
     /* Returns true if the user explicitly set the value, false otherwise*/ \
     bool Has##name() const                                                  \
