@@ -182,7 +182,7 @@ private:                                                                    \
 // like Profile.Foreground (where null is interpreted
 // as an acceptable value, rather than "inherit")
 // "type" is exposed as an IReference
-#define NULLABLE_SETTING(projectedType, type, name, ...)                    \
+#define INHERITABLE_NULLABLE_SETTING(projectedType, type, name, ...)        \
 public:                                                                     \
     /* Returns true if the user explicitly set the value, false otherwise*/ \
     bool Has##name() const                                                  \

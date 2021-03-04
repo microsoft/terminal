@@ -80,7 +80,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         SETTING(Model::Profile, CloseOnExitMode, CloseOnExit, CloseOnExitMode::Graceful);
         SETTING(Model::Profile, hstring, TabTitle);
-        NULLABLE_SETTING(Model::Profile, Windows::UI::Color, TabColor, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, TabColor, nullptr);
         SETTING(Model::Profile, bool, SuppressApplicationTitle, false);
 
         SETTING(Model::Profile, bool, UseAcrylic, false);
@@ -108,10 +108,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         SETTING(Model::Profile, hstring, ColorSchemeName, L"Campbell");
 
-        NULLABLE_SETTING(Model::Profile, Windows::UI::Color, Foreground, nullptr);
-        NULLABLE_SETTING(Model::Profile, Windows::UI::Color, Background, nullptr);
-        NULLABLE_SETTING(Model::Profile, Windows::UI::Color, SelectionBackground, nullptr);
-        NULLABLE_SETTING(Model::Profile, Windows::UI::Color, CursorColor, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, Foreground, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, Background, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, SelectionBackground, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, CursorColor, nullptr);
 
         SETTING(Model::Profile, int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
         SETTING(Model::Profile, bool, SnapOnInput, true);
