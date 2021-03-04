@@ -34,6 +34,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void AddProfile::_DuplicateClick(const IInspectable& /*sender*/,
                                      const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
     {
-        _State.RequestAddNew();
+        if (const auto selected = Profiles().SelectedItem())
+        {
+            _State.RequestDuplicate(selected.try_as<Model::Profile>().Guid());
+        }
     }
 }

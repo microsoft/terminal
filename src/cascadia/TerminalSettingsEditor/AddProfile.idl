@@ -9,7 +9,9 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Microsoft.Terminal.Settings.Model.CascadiaSettings Settings;
         void RequestAddNew();
+        void RequestDuplicate(Guid profile);
         event Windows.Foundation.TypedEventHandler<Object, Object> AddNew;
+        event Windows.Foundation.TypedEventHandler<Object, Object> Duplicate;
     };
 
     [default_interface] runtimeclass AddProfile : Windows.UI.Xaml.Controls.Page

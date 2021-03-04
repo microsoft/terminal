@@ -118,6 +118,12 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
     return profile;
 }
 
+winrt::com_ptr<Profile> Profile::Duplicate(winrt::com_ptr<Profile> source)
+{
+    auto duplicated = CopySettings(source);
+    return {};
+}
+
 // Method Description:
 // - Creates a copy of the inheritance graph by performing a depth-first traversal recursively.
 //   Profiles are recorded as visited via the "visited" parameter.

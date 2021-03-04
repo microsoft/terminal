@@ -40,7 +40,8 @@ the MIT License. See LICENSE in the project root for license information. -->
             </Button>
             <StackPanel Margin="{StaticResource StandardControlMargin}">
                 <local:SettingContainer x:Uid="AddProfile_Duplicate">
-                    <muxc:RadioButtons ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}">
+                    <muxc:RadioButtons ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}"
+                                       x:Name="Profiles">
                         <muxc:RadioButtons.ItemTemplate>
                             <DataTemplate x:DataType="SettingsModel:Profile">
                                 <Grid HorizontalAlignment="Stretch" ColumnSpacing="8">

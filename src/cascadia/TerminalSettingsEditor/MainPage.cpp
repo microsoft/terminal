@@ -280,15 +280,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == addProfileTag)
         {
-            auto actionsState{ winrt::make<AddProfilePageNavigationState>(_settingsClone) };
-            actionsState.AddNew([weakThis = get_weak()](auto&&, auto&&) {
+            auto addProfileState{ winrt::make<AddProfilePageNavigationState>(_settingsClone) };
+            addProfileState.AddNew([weakThis = get_weak()](auto&&, auto&&) {
                 if (auto self{ weakThis.get() })
                 {
                     const auto insertIndex = self->SettingsNav().MenuItems().Size() - 1;
                     self->_CreateAndNavigateToNewProfile(insertIndex);
                 }
             });
-            contentFrame().Navigate(xaml_typename<Editor::AddProfile>(), actionsState);
+            addProfileState.Duplicate([weakThis = get_weak()](auto&&, auto&& profileGuid) {
+                if (auto self{ weakThis.get() })
+                {
+                    const auto profile = self->_settingsClone.FindProfile(winrt::unbox_value<GUID>(profileGuid));
+                }
+            });
+            contentFrame().Navigate(xaml_typename<Editor::AddProfile>(), addProfileState);
         }
     }
 

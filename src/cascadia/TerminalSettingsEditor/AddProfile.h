@@ -20,8 +20,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _AddNewHandlers(nullptr, nullptr);
         }
 
+        void RequestDuplicate(GUID profile)
+        {
+            _DuplicateHandlers(nullptr, winrt::box_value(profile));
+        }
+
         GETSET_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
         TYPED_EVENT(AddNew, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable);
+        TYPED_EVENT(Duplicate, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable);
     };
 
     struct AddProfile : AddProfileT<AddProfile>
