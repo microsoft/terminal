@@ -89,7 +89,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 // - Clear(): clear the user set value
 // - the setting is saved as an optional, where nullopt means
 //   that we must inherit the value from our parent
-#define SETTING(projectedType, type, name, ...)                             \
+#define INHERITABLE_SETTING(projectedType, type, name, ...)                 \
 public:                                                                     \
     /* Returns true if the user explicitly set the value, false otherwise*/ \
     bool Has##name() const                                                  \
