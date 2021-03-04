@@ -313,7 +313,6 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
 }
 
 [[nodiscard]] HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
-                                              const ConsoleArguments* const args, // this can't stay like this because ConsoleArguments could change...
                                               HANDLE driverInputEvent,
                                               PCONSOLE_API_MSG connectMessage)
 try
@@ -376,16 +375,12 @@ try
     outPipeTheirSide.release();
     signalPipeTheirSide.release();
 
-    auto originalCommandLine = args->GetOriginalCommandLine();
+    const auto commandLine = fmt::format(L" --headless --signal {:#x}", (int64_t)signalPipeOurSide.release());
 
-    auto str2 = fmt::format(L" --headless --signal {:#x}", (int64_t)signalPipeOurSide.release());
+    ConsoleArguments consoleArgs(commandLine, inPipeOurSide.release(), outPipeOurSide.release());
+    RETURN_IF_FAILED(consoleArgs.ParseCommandline());
 
-    originalCommandLine = originalCommandLine.append(str2);
-
-    ConsoleArguments args2(originalCommandLine, inPipeOurSide.release(), outPipeOurSide.release());
-    RETURN_IF_FAILED(args2.ParseCommandline());
-
-    return ConsoleCreateIoThread(Server, &args2, driverInputEvent, connectMessage);
+    return ConsoleCreateIoThread(Server, &consoleArgs, driverInputEvent, connectMessage);
 }
 CATCH_RETURN()
 

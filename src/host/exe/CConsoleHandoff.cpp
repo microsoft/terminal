@@ -54,12 +54,8 @@ try
     RETURN_IF_FAILED(_duplicateHandle(server, server));
     RETURN_IF_FAILED(_duplicateHandle(inputEvent, inputEvent));
 
-    // Build a console arguments structure that contains all information on how the
-    // original console was started.
-    ConsoleArguments consoleArgs;
-
     // Now perform the handoff.
-    RETURN_IF_FAILED(ConsoleEstablishHandoff(server, &consoleArgs, inputEvent, &apiMsg));
+    RETURN_IF_FAILED(ConsoleEstablishHandoff(server, inputEvent, &apiMsg));
 
     return S_OK;
 }
