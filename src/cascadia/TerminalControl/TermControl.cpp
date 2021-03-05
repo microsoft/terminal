@@ -87,6 +87,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
 
+        // GH#8969: pre-seed working directory to prevent potential races
+        _terminal->SetWorkingDirectory(_settings.StartingDirectory());
+
         auto pfnWarningBell = std::bind(&TermControl::_TerminalWarningBell, this);
         _terminal->SetWarningBellCallback(pfnWarningBell);
 
@@ -122,9 +125,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         });
 
         _terminal->UpdateSettings(settings);
-
-        // GH#8969: pre-seed working directory to prevent potential races
-        _terminal->SetWorkingDirectory(_settings.StartingDirectory());
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
         _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
