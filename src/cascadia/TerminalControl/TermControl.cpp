@@ -123,6 +123,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _terminal->UpdateSettings(settings);
 
+        // GH#8969: pre-seed working directory to prevent potential races
+        _terminal->SetWorkingDirectory(_settings.StartingDirectory());
+
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
         _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
             _ConnectionStateChangedHandlers(*this, nullptr);
