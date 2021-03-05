@@ -553,7 +553,14 @@ BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE* pPsp, const s
         {
             pTerminalPage->dwSize = sizeof(PROPSHEETPAGE);
             pTerminalPage->hInstance = ghInstance;
-            pTerminalPage->pszTemplate = MAKEINTRESOURCE(DID_TERMINAL);
+            if (g_defAppEnabled)
+            {
+                pTerminalPage->pszTemplate = MAKEINTRESOURCE(DID_TERMINAL_WITH_DEFTERM);
+            }
+            else
+            {
+                pTerminalPage->pszTemplate = MAKEINTRESOURCE(DID_TERMINAL);
+            }
             pTerminalPage->pfnDlgProc = TerminalDlgProc;
             pTerminalPage->lParam = TERMINAL_PAGE_INDEX;
             pTerminalPage->dwFlags = PSP_DEFAULT;

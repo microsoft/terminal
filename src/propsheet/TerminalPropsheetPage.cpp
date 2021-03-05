@@ -92,8 +92,7 @@ void _UpdateTextAndScroll(const HWND hDlg,
 void _PrepDefAppCombo(const HWND hDlg,
                       const int dlgItem,
                       const std::vector<DelegationConfig::DelegationPackage>& list,
-                      const DelegationConfig::DelegationPackage& selected,
-                      const bool enabled)
+                      const DelegationConfig::DelegationPackage& selected)
 {
     HWND hCombo = GetDlgItem(hDlg, dlgItem);
     ComboBox_ResetContent(hCombo);
@@ -122,10 +121,7 @@ void _PrepDefAppCombo(const HWND hDlg,
 
     ComboBox_SetCurSel(hCombo, selectedIndex);
 
-    if (enabled)
-    {
-        ComboBox_Enable(hCombo, TRUE);
-    }
+    ComboBox_Enable(hCombo, TRUE);
 }
 
 bool InitTerminalDialog(const HWND hDlg) noexcept
@@ -225,8 +221,7 @@ bool InitTerminalDialog(const HWND hDlg) noexcept
     _PrepDefAppCombo(hDlg,
                      IDD_TERMINAL_COMBO_DEFTERM,
                      g_availablePackages,
-                     g_selectedPackage,
-                     g_defAppEnabled);
+                     g_selectedPackage);
 
     return true;
 }
