@@ -25,8 +25,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 {
     struct FindTargetWindowArgs : public FindTargetWindowArgsT<FindTargetWindowArgs>
     {
-        GETSET_PROPERTY(winrt::Microsoft::Terminal::Remoting::CommandlineArgs, Args, nullptr);
-        GETSET_PROPERTY(int, ResultTargetWindow, -1);
+        WINRT_PROPERTY(winrt::Microsoft::Terminal::Remoting::CommandlineArgs, Args, nullptr);
+        WINRT_PROPERTY(int, ResultTargetWindow, -1);
 
     public:
         FindTargetWindowArgs(winrt::Microsoft::Terminal::Remoting::CommandlineArgs args) :

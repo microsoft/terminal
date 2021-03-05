@@ -672,6 +672,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                 SettingOverrideSource="{x:Bind State.Profile.HistorySizeOverrideSource, Mode=OneWay}">
                             <muxc:NumberBox Value="{x:Bind State.Profile.HistorySize, Mode=TwoWay}"
                                             Style="{StaticResource NumberBoxSettingStyle}"
+                                            Minimum="0"
                                             SmallChange="10"
                                             LargeChange="100"/>
                         </local:SettingContainer>
