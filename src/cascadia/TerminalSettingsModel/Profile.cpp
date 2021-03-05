@@ -62,6 +62,8 @@ static constexpr std::string_view PixelShaderPathKey{ "experimental.pixelShaderP
 
 static constexpr std::wstring_view DesktopWallpaperEnum{ L"desktopWallpaper" };
 
+static constexpr std::wstring_view CopySuffix{ L" (Copy)" };
+
 Profile::Profile()
 {
 }
@@ -118,12 +120,6 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
     return profile;
 }
 
-winrt::com_ptr<Profile> Profile::Duplicate(winrt::com_ptr<Profile> source)
-{
-    auto duplicated = CopySettings(source);
-    return {};
-}
-
 // Method Description:
 // - Creates a copy of the inheritance graph by performing a depth-first traversal recursively.
 //   Profiles are recorded as visited via the "visited" parameter.
@@ -171,6 +167,25 @@ winrt::com_ptr<Profile> Profile::CloneInheritanceGraph(winrt::com_ptr<Profile> s
 
     // we have no more to explore down this path.
     return cloneGraph;
+}
+
+winrt::Microsoft::Terminal::Settings::Model::Profile Profile::Duplicate()
+{
+    com_ptr<Profile> comSource;
+    comSource.attach(this);
+    auto duplicated = CopySettings(comSource);
+    std::wstring newName{ Name() };
+    newName += CopySuffix;
+    duplicated->Name(winrt::hstring(newName));
+    duplicated->ClearSource();
+    duplicated->Guid(_GenerateGuidForProfile(winrt::hstring(newName), L""));
+    for (auto i : _parents)
+    {
+        // cant clear source of parents!
+        i->ClearSource();
+        duplicated->InsertParent(i);
+    }
+    return *duplicated;
 }
 
 // Method Description:
