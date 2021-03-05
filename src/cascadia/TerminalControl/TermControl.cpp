@@ -1348,7 +1348,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 {
                     _HyperlinkHandler(_terminal->GetHyperlinkAtPosition(terminalPosition));
                 }
-                else if (shiftEnabled && _terminal->IsSelectionActive())
+                else if (shiftEnabled && mode == ::Terminal::SelectionExpansionMode::Cell && _terminal->IsSelectionActive())
                 {
                     // Shift+Click: only set expand on the "end" selection point
                     _terminal->SetSelectionEnd(terminalPosition, mode);
