@@ -1308,7 +1308,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 _TrySendMouseEvent(point);
                 args.Handled(true);
-                return;
             }
 
             if (point.Properties().IsLeftButtonPressed())
@@ -1347,7 +1346,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     !(_terminal->GetHyperlinkAtPosition(terminalPosition).empty()))
                 {
                     _HyperlinkHandler(_terminal->GetHyperlinkAtPosition(terminalPosition));
+                    args.Handled(true);
                 }
+
+                if (args.Handled())
+                {
+                    // We already handled the event by either sending it to the VT,
+                    // or by handling hyper-link (or both)
+                    return;
+                }
+
                 else if (shiftEnabled && _terminal->IsSelectionActive())
                 {
                     // Shift+Click: only set expand on the "end" selection point
@@ -1427,10 +1435,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 _TrySendMouseEvent(point);
                 args.Handled(true);
-                return;
             }
-
-            if (_focused && point.Properties().IsLeftButtonPressed())
+            else if (_focused && point.Properties().IsLeftButtonPressed())
             {
                 auto lock = _terminal->LockForWriting();
 
