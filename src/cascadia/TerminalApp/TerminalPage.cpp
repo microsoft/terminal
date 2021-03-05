@@ -1238,7 +1238,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Duplicates the current focused tab
-    void TerminalPage::_DuplicateTabViewItem()
+    void TerminalPage::_DuplicateFocusedTab()
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {

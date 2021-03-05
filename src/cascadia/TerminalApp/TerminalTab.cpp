@@ -1217,13 +1217,6 @@ namespace winrt::TerminalApp::implementation
         return Title();
     }
 
-    // Method Description:
-    // - Dispatches duplication of this tab
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - The value to populate in the title run of the tool tip
-
     DEFINE_EVENT(TerminalTab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
     DEFINE_EVENT(TerminalTab, ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
     DEFINE_EVENT(TerminalTab, ColorCleared, _colorCleared, winrt::delegate<>);

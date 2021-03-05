@@ -176,7 +176,7 @@ namespace winrt::TerminalApp::implementation
                                                                                                                                             Windows::Foundation::Collections::IVectorView<Microsoft::Terminal::Settings::Model::Profile> profiles,
                                                                                                                                             Windows::Foundation::Collections::IMapView<winrt::hstring, Microsoft::Terminal::Settings::Model::ColorScheme> schemes);
 
-        void _DuplicateTabViewItem();
+        void _DuplicateFocusedTab();
         void _DuplicateTab(const TerminalTab& tab);
         void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
         winrt::Windows::Foundation::IAsyncAction _RemoveTab(winrt::TerminalApp::TabBase tab);
