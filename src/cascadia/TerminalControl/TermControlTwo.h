@@ -175,12 +175,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      viewport via touch input.
         std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
 
-        // Track the last cell we hovered over (used in pointerMovedHandler)
-        std::optional<COORD> _lastHoveredCell;
-        // Track the last hyperlink ID we hovered over
-        uint16_t _lastHoveredId;
+        // // Track the last cell we hovered over (used in pointerMovedHandler)
+        // std::optional<COORD> _lastHoveredCell;
+        // // Track the last hyperlink ID we hovered over
+        // uint16_t _lastHoveredId;
 
-        std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval;
+        // std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval;
 
         using Timestamp = uint64_t;
 
@@ -279,7 +279,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         winrt::fire_and_forget _RaiseReadOnlyWarning();
 
-        void _UpdateHoveredCell(const std::optional<COORD>& terminalPosition);
+        // void _UpdateHoveredCell(const std::optional<COORD>& terminalPosition);
+
+        ////////////////////////////////////////////////////////////////////////
+        winrt::fire_and_forget _hoveredHyperlinkChanged(const IInspectable& sender, const IInspectable& args);
     };
 }
 

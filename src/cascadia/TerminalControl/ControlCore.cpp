@@ -163,6 +163,38 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // // We do this after we initially set the swapchain so as to avoid unnecessary callbacks (and locking problems)
             // _renderEngine->SetCallback(std::bind(&TermControlTwo::RenderEngineSwapChainChanged, this));
 
+            dxEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
+            dxEngine->SetPixelShaderPath(_settings.PixelShaderPath());
+            dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
+            dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+
+            // Update DxEngine's AntialiasingMode
+            switch (_settings.AntialiasingMode())
+            {
+            case TextAntialiasingMode::Cleartype:
+                dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
+                break;
+            case TextAntialiasingMode::Aliased:
+                dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
+                break;
+            case TextAntialiasingMode::Grayscale:
+            default:
+                dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+                break;
+            }
+
+            // GH#5098: Inform the engine of the opacity of the default text background.
+            if (_settings.UseAcrylic())
+            {
+                dxEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+            }
+
+            THROW_IF_FAILED(dxEngine->Enable());
+            _renderEngine = std::move(dxEngine);
+
+            // !TODO! in the past we did SetSwapChainHandle _before_ calling
+            // EnablePainting. Mild worry that doing EnablePainting first will
+            // break
             localPointerToThread->EnablePainting();
 
             _initializedTerminal = true;
@@ -260,6 +292,117 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             _connection.WriteInput(wstr);
         }
+    }
+
+    // Method Description:
+    // - Writes the given sequence as input to the active terminal connection,
+    // Arguments:
+    // - wstr: the string of characters to write to the terminal connection.
+    // Return Value:
+    // - <none>
+    void ControlCore::SendInput(const winrt::hstring& wstr)
+    {
+        _SendInputToConnection(wstr);
+    }
+
+    void ControlCore::ToggleShaderEffects()
+    {
+        auto lock = _terminal->LockForWriting();
+        // Originally, this action could be used to enable the retro effects
+        // even when they're set to `false` in the settings. If the user didn't
+        // specify a custom pixel shader, manually enable the legacy retro
+        // effect first. This will ensure that a toggle off->on will still work,
+        // even if they currently have retro effect off.
+        if (_settings.PixelShaderPath().empty() && !_renderEngine->GetRetroTerminalEffect())
+        {
+            // SetRetroTerminalEffect to true will enable the effect. In this
+            // case, the shader effect will already be disabled (because neither
+            // a pixel shader nor the retro effects were originally requested).
+            // So we _don't_ want to toggle it again below, because that would
+            // toggle it back off.
+            _renderEngine->SetRetroTerminalEffect(true);
+        }
+        else
+        {
+            _renderEngine->ToggleShaderEffects();
+        }
+    }
+
+    // Method description:
+    // - Updates last hovered cell, renders / removes rendering of hyper-link if required
+    // Arguments:
+    // - terminalPosition: The terminal position of the pointer
+    void ControlCore::_UpdateHoveredCell(const std::optional<COORD>& terminalPosition)
+    {
+        if (terminalPosition == _lastHoveredCell)
+        {
+            return;
+        }
+
+        _lastHoveredCell = terminalPosition;
+
+        // if (terminalPosition.has_value())
+        // {
+        //     const auto uri = _core->_terminal->GetHyperlinkAtPosition(*terminalPosition);
+        //     if (!uri.empty())
+        //     {
+        //         // Update the tooltip with the URI
+        //         HoveredUri().Text(uri);
+
+        //         // Set the border thickness so it covers the entire cell
+        //         const auto charSizeInPixels = CharacterDimensions();
+        //         const auto htInDips = charSizeInPixels.Height / _compositionScaleY;
+        //         const auto wtInDips = charSizeInPixels.Width / _compositionScaleX;
+        //         const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
+        //         HyperlinkTooltipBorder().BorderThickness(newThickness);
+
+        //         // Compute the location of the top left corner of the cell in DIPS
+        //         const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
+        //         const til::point startPos{ terminalPosition->X, terminalPosition->Y };
+        //         const til::size fontSize{ _core->_actualFont.GetSize() };
+        //         const til::point posInPixels{ startPos * fontSize };
+        //         const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
+        //         const til::point locationInDIPs{ posInDIPs + marginsInDips };
+
+        //         // Move the border to the top left corner of the cell
+        //         OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
+        //         OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
+        //     }
+        // }
+
+        const uint16_t newId = terminalPosition.has_value() ? _terminal->GetHyperlinkIdAtPosition(*terminalPosition) :
+                                                              0u;
+        const auto newInterval = terminalPosition.has_value() ? _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition) :
+                                                                std::nullopt;
+
+        // If the hyperlink ID changed or the interval changed, trigger a redraw all
+        // (so this will happen both when we move onto a link and when we move off a link)
+        if (newId != _lastHoveredId ||
+            (newInterval != _lastHoveredInterval))
+        {
+            _lastHoveredId = newId;
+            _lastHoveredInterval = newInterval;
+            _renderEngine->UpdateHyperlinkHoveredId(newId);
+            _renderer->UpdateLastHoveredInterval(newInterval);
+            _renderer->TriggerRedrawAll();
+
+            _raiseHoveredHyperlinkChanged();
+        }
+    }
+
+    void ControlCore::_raiseHoveredHyperlinkChanged()
+    {
+        _HoveredHyperlinkChangedHandlers(*this, nullptr);
+    }
+
+    winrt::hstring ControlCore::GetHoveredUriText()
+    {
+        if (_lastHoveredCell.has_value())
+        {
+            const winrt::hstring uri{ _terminal->GetHyperlinkAtPosition(*_lastHoveredCell) };
+            return uri;
+        }
+        return { L"" };
     }
 
 }

@@ -43,6 +43,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         bool _isReadOnly{ false }; // ?
 
+        std::optional<COORD> _lastHoveredCell;
+        // Track the last hyperlink ID we hovered over
+        uint16_t _lastHoveredId;
+
+        std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval;
+
         ////////////////////////////////////////////////////////////////////////
         // These members are new
         double _compositionScaleX;
@@ -61,8 +67,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _SendInputToConnection(const winrt::hstring& wstr);
         void _SendInputToConnection(std::wstring_view wstr);
 
+        void SendInput(const winrt::hstring& wstr);
+        void ToggleShaderEffects();
+        void _UpdateHoveredCell(const std::optional<COORD>& terminalPosition);
+
         ////////////////////////////////////////////////////////////////////////
         // These methods are new
+        void _raiseHoveredHyperlinkChanged();
+        winrt::hstring GetHoveredUriText();
+
+        TYPED_EVENT(HoveredHyperlinkChanged, IInspectable, IInspectable);
     };
 }
 

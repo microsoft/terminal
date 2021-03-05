@@ -175,6 +175,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _autoScrollTimer.Tick({ this, &TermControlTwo::_UpdateAutoScroll });
 
         _ApplyUISettings(_settings);
+
+        _core->HoveredHyperlinkChanged({ get_weak(), &TermControlTwo::_hoveredHyperlinkChanged });
     }
 
     // Method Description:
@@ -366,30 +368,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControlTwo::SendInput(const winrt::hstring& wstr)
     {
-        _core->_SendInputToConnection(wstr);
+        _core->SendInput(wstr);
     }
 
     void TermControlTwo::ToggleShaderEffects()
     {
-        auto lock = _core->_terminal->LockForWriting();
-        // Originally, this action could be used to enable the retro effects
-        // even when they're set to `false` in the settings. If the user didn't
-        // specify a custom pixel shader, manually enable the legacy retro
-        // effect first. This will ensure that a toggle off->on will still work,
-        // even if they currently have retro effect off.
-        if (_settings.PixelShaderPath().empty() && !_core->_renderEngine->GetRetroTerminalEffect())
-        {
-            // SetRetroTerminalEffect to true will enable the effect. In this
-            // case, the shader effect will already be disabled (because neither
-            // a pixel shader nor the retro effects were originally requested).
-            // So we _don't_ want to toggle it again below, because that would
-            // toggle it back off.
-            _core->_renderEngine->SetRetroTerminalEffect(true);
-        }
-        else
-        {
-            _core->_renderEngine->ToggleShaderEffects();
-        }
+        _core->ToggleShaderEffects();
     }
 
     // Method Description:
@@ -699,111 +683,115 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     bool TermControlTwo::_InitializeTerminal()
     {
+        if (_initializedTerminal)
+        {
+            return false;
+        }
+
+        _core->InitializeTerminal(SwapChainPanel().ActualWidth(),
+                                  SwapChainPanel().ActualHeight(),
+                                  SwapChainPanel().CompositionScaleX(),
+                                  SwapChainPanel().CompositionScaleY());
         { // scope for terminalLock
-            auto terminalLock = _core->_terminal->LockForWriting();
+            // auto terminalLock = _core->_terminal->LockForWriting();
 
-            if (_initializedTerminal)
-            {
-                return false;
-            }
+            // const auto actualWidth = SwapChainPanel().ActualWidth();
+            // const auto actualHeight = SwapChainPanel().ActualHeight();
 
-            const auto actualWidth = SwapChainPanel().ActualWidth();
-            const auto actualHeight = SwapChainPanel().ActualHeight();
+            // const auto windowWidth = actualWidth * SwapChainPanel().CompositionScaleX(); // Width() and Height() are NaN?
+            // const auto windowHeight = actualHeight * SwapChainPanel().CompositionScaleY();
 
-            const auto windowWidth = actualWidth * SwapChainPanel().CompositionScaleX(); // Width() and Height() are NaN?
-            const auto windowHeight = actualHeight * SwapChainPanel().CompositionScaleY();
+            // if (windowWidth == 0 || windowHeight == 0)
+            // {
+            //     return false;
+            // }
 
-            if (windowWidth == 0 || windowHeight == 0)
-            {
-                return false;
-            }
+            // // First create the render thread.
+            // // Then stash a local pointer to the render thread so we can initialize it and enable it
+            // // to paint itself *after* we hand off its ownership to the renderer.
+            // // We split up construction and initialization of the render thread object this way
+            // // because the renderer and render thread have circular references to each other.
+            // auto renderThread = std::make_unique<::Microsoft::Console::Render::RenderThread>();
+            // auto* const localPointerToThread = renderThread.get();
 
-            // First create the render thread.
-            // Then stash a local pointer to the render thread so we can initialize it and enable it
-            // to paint itself *after* we hand off its ownership to the renderer.
-            // We split up construction and initialization of the render thread object this way
-            // because the renderer and render thread have circular references to each other.
-            auto renderThread = std::make_unique<::Microsoft::Console::Render::RenderThread>();
-            auto* const localPointerToThread = renderThread.get();
+            // // Now create the renderer and initialize the render thread.
+            // _core->_renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_core->_terminal.get(), nullptr, 0, std::move(renderThread));
+            // ::Microsoft::Console::Render::IRenderTarget& renderTarget = *_core->_renderer;
 
-            // Now create the renderer and initialize the render thread.
-            _core->_renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_core->_terminal.get(), nullptr, 0, std::move(renderThread));
-            ::Microsoft::Console::Render::IRenderTarget& renderTarget = *_core->_renderer;
+            // _core->_renderer->SetRendererEnteredErrorStateCallback([weakThis = get_weak()]() {
+            //     if (auto strongThis{ weakThis.get() })
+            //     {
+            //         strongThis->_RendererEnteredErrorState();
+            //     }
+            // });
 
-            _core->_renderer->SetRendererEnteredErrorStateCallback([weakThis = get_weak()]() {
-                if (auto strongThis{ weakThis.get() })
-                {
-                    strongThis->_RendererEnteredErrorState();
-                }
-            });
+            // THROW_IF_FAILED(localPointerToThread->Initialize(_core->_renderer.get()));
 
-            THROW_IF_FAILED(localPointerToThread->Initialize(_core->_renderer.get()));
+            // // Set up the DX Engine
+            // auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
+            // _core->_renderer->AddRenderEngine(dxEngine.get());
 
-            // Set up the DX Engine
-            auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-            _core->_renderer->AddRenderEngine(dxEngine.get());
+            // // Initialize our font with the renderer
+            // // We don't have to care about DPI. We'll get a change message immediately if it's not 96
+            // // and react accordingly.
+            // _UpdateFont(true);
 
-            // Initialize our font with the renderer
-            // We don't have to care about DPI. We'll get a change message immediately if it's not 96
-            // and react accordingly.
-            _UpdateFont(true);
+            // const COORD windowSize{ static_cast<short>(windowWidth), static_cast<short>(windowHeight) };
 
-            const COORD windowSize{ static_cast<short>(windowWidth), static_cast<short>(windowHeight) };
+            // // Fist set up the dx engine with the window size in pixels.
+            // // Then, using the font, get the number of characters that can fit.
+            // // Resize our terminal connection to match that size, and initialize the terminal with that size.
+            // const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);
+            // LOG_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
-            // Fist set up the dx engine with the window size in pixels.
-            // Then, using the font, get the number of characters that can fit.
-            // Resize our terminal connection to match that size, and initialize the terminal with that size.
-            const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);
-            LOG_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
+            // // Update DxEngine's SelectionBackground
+            // dxEngine->SetSelectionBackground(_settings.SelectionBackground());
 
-            // Update DxEngine's SelectionBackground
-            dxEngine->SetSelectionBackground(_settings.SelectionBackground());
+            // const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
+            // const auto width = vp.Width();
+            // const auto height = vp.Height();
+            // _core->_connection.Resize(height, width);
 
-            const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
-            const auto width = vp.Width();
-            const auto height = vp.Height();
-            _core->_connection.Resize(height, width);
+            // // Override the default width and height to match the size of the swapChainPanel
+            // _settings.InitialCols(width);
+            // _settings.InitialRows(height);
 
-            // Override the default width and height to match the size of the swapChainPanel
-            _settings.InitialCols(width);
-            _settings.InitialRows(height);
-
-            _core->_terminal->CreateFromSettings(_settings, renderTarget);
+            // _core->_terminal->CreateFromSettings(_settings, renderTarget);
 
             // IMPORTANT! Set this callback up sooner than later. If we do it
             // after Enable, then it'll be possible to paint the frame once
             // _before_ the warning handler is set up, and then warnings from
             // the first paint will be ignored!
-            dxEngine->SetWarningCallback(std::bind(&TermControlTwo::_RendererWarning, this, std::placeholders::_1));
+            _core->_renderEngine->SetWarningCallback(std::bind(&TermControlTwo::_RendererWarning, this, std::placeholders::_1));
 
-            dxEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-            dxEngine->SetPixelShaderPath(_settings.PixelShaderPath());
-            dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
-            dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+            // dxEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
+            // dxEngine->SetPixelShaderPath(_settings.PixelShaderPath());
+            // dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
+            // dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
-            // Update DxEngine's AntialiasingMode
-            switch (_settings.AntialiasingMode())
-            {
-            case TextAntialiasingMode::Cleartype:
-                dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
-                break;
-            case TextAntialiasingMode::Aliased:
-                dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
-                break;
-            case TextAntialiasingMode::Grayscale:
-            default:
-                dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
-                break;
-            }
+            // // Update DxEngine's AntialiasingMode
+            // switch (_settings.AntialiasingMode())
+            // {
+            // case TextAntialiasingMode::Cleartype:
+            //     dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
+            //     break;
+            // case TextAntialiasingMode::Aliased:
+            //     dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
+            //     break;
+            // case TextAntialiasingMode::Grayscale:
+            // default:
+            //     dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+            //     break;
+            // }
 
-            // GH#5098: Inform the engine of the opacity of the default text background.
-            if (_settings.UseAcrylic())
-            {
-                dxEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
-            }
+            // // GH#5098: Inform the engine of the opacity of the default text background.
+            // if (_settings.UseAcrylic())
+            // {
+            //     dxEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+            // }
 
-            THROW_IF_FAILED(dxEngine->Enable());
-            _core->_renderEngine = std::move(dxEngine);
+            // THROW_IF_FAILED(dxEngine->Enable());
+            // _core->_renderEngine = std::move(dxEngine);
 
             _AttachDxgiSwapChainToXaml(_core->_renderEngine->GetSwapChainHandle());
 
@@ -820,7 +808,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             ScrollBar().ViewportSize(bufferHeight);
             ScrollBar().LargeChange(std::max<SHORT>(bufferHeight - 1, 0)); // scroll one "screenful" at a time when the scroll bar is clicked
 
-            localPointerToThread->EnablePainting();
+            // localPointerToThread->EnablePainting();
 
             // Set up blinking cursor
             int blinkTime = GetCaretBlinkTime();
@@ -869,9 +857,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _initializedTerminal = true;
         } // scope for TerminalLock
 
-        // Start the connection outside of lock, because it could
-        // start writing output immediately.
-        _core->_connection.Start();
+        // // Start the connection outside of lock, because it could
+        // // start writing output immediately.
+        // _core->_connection.Start();
 
         // Likewise, run the event handlers outside of lock (they could
         // be reentrant)
@@ -1463,7 +1451,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
             }
 
-            _UpdateHoveredCell(terminalPosition);
+            _core->_UpdateHoveredCell(terminalPosition);
         }
         else if (_focused && ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
         {
@@ -3259,62 +3247,62 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
-    // Method description:
-    // - Updates last hovered cell, renders / removes rendering of hyper-link if required
-    // Arguments:
-    // - terminalPosition: The terminal position of the pointer
-    void TermControlTwo::_UpdateHoveredCell(const std::optional<COORD>& terminalPosition)
-    {
-        if (terminalPosition == _lastHoveredCell)
-        {
-            return;
-        }
+    // // Method description:
+    // // - Updates last hovered cell, renders / removes rendering of hyper-link if required
+    // // Arguments:
+    // // - terminalPosition: The terminal position of the pointer
+    // void TermControlTwo::_UpdateHoveredCell(const std::optional<COORD>& terminalPosition)
+    // {
+    //     if (terminalPosition == _lastHoveredCell)
+    //     {
+    //         return;
+    //     }
 
-        _lastHoveredCell = terminalPosition;
+    //     _lastHoveredCell = terminalPosition;
 
-        if (terminalPosition.has_value())
-        {
-            const auto uri = _core->_terminal->GetHyperlinkAtPosition(*terminalPosition);
-            if (!uri.empty())
-            {
-                // Update the tooltip with the URI
-                HoveredUri().Text(uri);
+    //     if (terminalPosition.has_value())
+    //     {
+    //         const auto uri = _core->_terminal->GetHyperlinkAtPosition(*terminalPosition);
+    //         if (!uri.empty())
+    //         {
+    //             // Update the tooltip with the URI
+    //             HoveredUri().Text(uri);
 
-                // Set the border thickness so it covers the entire cell
-                const auto charSizeInPixels = CharacterDimensions();
-                const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
-                const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
-                const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
-                HyperlinkTooltipBorder().BorderThickness(newThickness);
+    //             // Set the border thickness so it covers the entire cell
+    //             const auto charSizeInPixels = CharacterDimensions();
+    //             const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
+    //             const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
+    //             const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
+    //             HyperlinkTooltipBorder().BorderThickness(newThickness);
 
-                // Compute the location of the top left corner of the cell in DIPS
-                const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
-                const til::point startPos{ terminalPosition->X, terminalPosition->Y };
-                const til::size fontSize{ _core->_actualFont.GetSize() };
-                const til::point posInPixels{ startPos * fontSize };
-                const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
-                const til::point locationInDIPs{ posInDIPs + marginsInDips };
+    //             // Compute the location of the top left corner of the cell in DIPS
+    //             const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
+    //             const til::point startPos{ terminalPosition->X, terminalPosition->Y };
+    //             const til::size fontSize{ _core->_actualFont.GetSize() };
+    //             const til::point posInPixels{ startPos * fontSize };
+    //             const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
+    //             const til::point locationInDIPs{ posInDIPs + marginsInDips };
 
-                // Move the border to the top left corner of the cell
-                OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
-                OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
-            }
-        }
+    //             // Move the border to the top left corner of the cell
+    //             OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
+    //             OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
+    //         }
+    //     }
 
-        const uint16_t newId = terminalPosition.has_value() ? _core->_terminal->GetHyperlinkIdAtPosition(*terminalPosition) : 0u;
-        const auto newInterval = terminalPosition.has_value() ? _core->_terminal->GetHyperlinkIntervalFromPosition(*terminalPosition) : std::nullopt;
+    //     const uint16_t newId = terminalPosition.has_value() ? _core->_terminal->GetHyperlinkIdAtPosition(*terminalPosition) : 0u;
+    //     const auto newInterval = terminalPosition.has_value() ? _core->_terminal->GetHyperlinkIntervalFromPosition(*terminalPosition) : std::nullopt;
 
-        // If the hyperlink ID changed or the interval changed, trigger a redraw all
-        // (so this will happen both when we move onto a link and when we move off a link)
-        if (newId != _lastHoveredId || (newInterval != _lastHoveredInterval))
-        {
-            _lastHoveredId = newId;
-            _lastHoveredInterval = newInterval;
-            _core->_renderEngine->UpdateHyperlinkHoveredId(newId);
-            _core->_renderer->UpdateLastHoveredInterval(newInterval);
-            _core->_renderer->TriggerRedrawAll();
-        }
-    }
+    //     // If the hyperlink ID changed or the interval changed, trigger a redraw all
+    //     // (so this will happen both when we move onto a link and when we move off a link)
+    //     if (newId != _lastHoveredId || (newInterval != _lastHoveredInterval))
+    //     {
+    //         _lastHoveredId = newId;
+    //         _lastHoveredInterval = newInterval;
+    //         _core->_renderEngine->UpdateHyperlinkHoveredId(newId);
+    //         _core->_renderer->UpdateLastHoveredInterval(newInterval);
+    //         _core->_renderer->TriggerRedrawAll();
+    //     }
+    // }
 
     // Method Description:
     // - Handle a mouse exited event, specifically clearing last hovered cell
@@ -3324,7 +3312,48 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - args: event data
     void TermControlTwo::_PointerExitedHandler(Windows::Foundation::IInspectable const& /*sender*/, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
     {
-        _UpdateHoveredCell(std::nullopt);
+        _core->_UpdateHoveredCell(std::nullopt);
+    }
+
+    winrt::fire_and_forget TermControlTwo::_hoveredHyperlinkChanged(const IInspectable& sender,
+                                                    const IInspectable& args)
+    {
+        auto weakThis{ get_weak() };
+        co_await resume_foreground(Dispatcher());
+        if (auto self{ weakThis.get() })
+        {
+            if (_core->_lastHoveredCell.has_value())
+            {
+                const auto uriText = _core->GetHoveredUriText();
+                if (!uriText.empty())
+                {
+                    // Update the tooltip with the URI
+                    HoveredUri().Text(uriText);
+
+                    // Set the border thickness so it covers the entire cell
+                    const auto charSizeInPixels = CharacterDimensions();
+                    const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
+                    const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
+                    const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
+                    HyperlinkTooltipBorder().BorderThickness(newThickness);
+
+                    // Compute the location of the top left corner of the cell in DIPS
+                    const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
+                    const til::point startPos{ _core->_lastHoveredCell->X,
+                                               _core->_lastHoveredCell->Y };
+                    const til::size fontSize{ _core->_actualFont.GetSize() };
+                    const til::point posInPixels{ startPos * fontSize };
+                    const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
+                    const til::point locationInDIPs{ posInDIPs + marginsInDips };
+
+                    // Move the border to the top left corner of the cell
+                    OverlayCanvas().SetLeft(HyperlinkTooltipBorder(),
+                                            (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
+                    OverlayCanvas().SetTop(HyperlinkTooltipBorder(),
+                                           (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
+                }
+            }
+        }
     }
 
     // -------------------------------- WinRT Events ---------------------------------
