@@ -25,6 +25,9 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="ControlCore.h">
+      <DependentUpon>ControlCore.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="KeyChord.h">
       <DependentUpon>KeyChord.idl</DependentUpon>
     </ClInclude>
@@ -36,6 +39,9 @@
     </ClInclude>
     <ClInclude Include="TermControl.h">
       <DependentUpon>TermControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="TermControlTwo.h">
+      <DependentUpon>TermControlTwo.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="TermControlAutomationPeer.h">
       <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
@@ -50,6 +56,9 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="ControlCore.cpp">
+      <DependentUpon>ControlCore.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="EventArgs.cpp">
       <DependentUpon>EventArgs.idl</DependentUpon>
     </ClCompile>
@@ -63,6 +72,9 @@
     <ClCompile Include="TermControl.cpp">
       <DependentUpon>TermControl.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="TermControlTwo.cpp">
+      <DependentUpon>TermControlTwo.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="ThrottledFunc.cpp" />
     <ClCompile Include="TSFInputControl.cpp">
       <DependentUpon>TSFInputControl.xaml</DependentUpon>
@@ -74,6 +86,7 @@
     <ClCompile Include="XamlUiaTextRange.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Midl Include="ControlCore.idl" />
     <Midl Include="IDirectKeyListener.idl" />
     <Midl Include="KeyChord.idl" />
     <Midl Include="EventArgs.idl" />
@@ -84,6 +97,9 @@
     </Midl>
     <Midl Include="TermControl.idl">
       <DependentUpon>TermControl.xaml</DependentUpon>
+    </Midl>
+    <Midl Include="TermControlTwo.idl">
+      <DependentUpon>TermControlTwo.xaml</DependentUpon>
     </Midl>
     <Midl Include="TermControlAutomationPeer.idl" />
     <Midl Include="IMouseWheelListener.idl" />
@@ -123,6 +139,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="TermControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="TermControlTwo.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="TSFInputControl.xaml">
