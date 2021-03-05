@@ -1341,7 +1341,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     mode = ::Terminal::SelectionExpansionMode::Line;
                 }
 
-                // Update the selection appropriately
                 if (ctrlEnabled && multiClickMapper == 1 &&
                     !(_terminal->GetHyperlinkAtPosition(terminalPosition).empty()))
                 {
@@ -1351,12 +1350,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                 if (args.Handled())
                 {
-                    // We already handled the event by either sending it to the VT,
+                    // GH#9117: We already handled the event by either sending it to the VT,
                     // or by handling hyper-link (or both)
                     return;
                 }
 
-                else if (shiftEnabled && _terminal->IsSelectionActive())
+                // Update the selection appropriately
+                if (shiftEnabled && _terminal->IsSelectionActive())
                 {
                     // Shift+Click: only set expand on the "end" selection point
                     _terminal->SetSelectionEnd(terminalPosition, mode);
@@ -1434,7 +1434,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             if (_focused && !_isReadOnly && _CanSendVTMouseInput())
             {
                 _TrySendMouseEvent(point);
-                args.Handled(true);
             }
             else if (_focused && point.Properties().IsLeftButtonPressed())
             {
