@@ -207,7 +207,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _InitializeBackgroundBrush();
         winrt::fire_and_forget _BackgroundColorChanged(const COLORREF color);
         bool _InitializeTerminal();
-        void _UpdateFont(const bool initialUpdate = false);
+        // void _UpdateFont(const bool initialUpdate = false);
         void _SetFontSize(int fontSize);
         void _TappedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& e);
         void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
@@ -233,8 +233,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _SendPastedTextToConnection(const std::wstring& wstr);
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);
-        void _DoResizeUnderLock(const double newWidth, const double newHeight);
-        void _RefreshSizeUnderLock();
+        // void _DoResizeUnderLock(const double newWidth, const double newHeight);
+        // void _RefreshSizeUnderLock();
         void _TerminalWarningBell();
         void _TerminalTitleChanged(const std::wstring_view& wstr);
         void _TerminalTabColorChanged(const std::optional<til::color> color);

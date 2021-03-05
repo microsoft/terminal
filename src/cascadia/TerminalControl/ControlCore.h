@@ -51,6 +51,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         ////////////////////////////////////////////////////////////////////////
         // These members are new
+        double _panelWidth;
+        double _panelHeight;
         double _compositionScaleX;
         double _compositionScaleY;
         ////////////////////////////////////////////////////////////////////////
@@ -62,7 +64,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                 const double compositionScaleX,
                                 const double compositionScaleY);
 
-        void _UpdateFont(const bool initialUpdate);
+        void _SetFontSize(int fontSize);
+        void _UpdateFont(const bool initialUpdate = false);
+        void AdjustFontSize(int fontSizeDelta);
+        void ResetFontSize();
+        void _RefreshSizeUnderLock();
+        void _DoResizeUnderLock(const double newWidth,
+                                const double newHeight);
 
         void _SendInputToConnection(const winrt::hstring& wstr);
         void _SendInputToConnection(std::wstring_view wstr);
@@ -73,6 +81,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         ////////////////////////////////////////////////////////////////////////
         // These methods are new
+        void UpdateSettings(const IControlSettings& settings);
+
+        void SizeChanged(const double width, const double height);
+        void ScaleChanged(const double scaleX, const double scaleY);
+
         void _raiseHoveredHyperlinkChanged();
         winrt::hstring GetHoveredUriText();
 

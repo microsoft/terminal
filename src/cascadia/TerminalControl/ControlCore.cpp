@@ -78,6 +78,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                          const double compositionScaleX,
                                          const double compositionScaleY)
     {
+        _panelWidth = actualWidth;
+        _panelHeight = actualHeight;
         _compositionScaleX = compositionScaleX;
         _compositionScaleY = compositionScaleY;
 
@@ -210,57 +212,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // _InitializedHandlers(*this, nullptr);
         return true;
     }
-
-    // Method Description:
-    // - Update the font with the renderer. This will be called either when the
-    //      font changes or the DPI changes, as DPI changes will necessitate a
-    //      font change. This method will *not* change the buffer/viewport size
-    //      to account for the new glyph dimensions. Callers should make sure to
-    //      appropriately call _DoResizeUnderLock after this method is called.
-    // - The write lock should be held when calling this method.
-    // Arguments:
-    // - initialUpdate: whether this font update should be considered as being
-    //   concerned with initialization process. Value forwarded to event handler.
-    void ControlCore::_UpdateFont(const bool /*initialUpdate*/)
-    {
-        const int newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) *
-                                            _compositionScaleX);
-
-        // !TODO!: MSFT:20895307 If the font doesn't exist, this doesn't
-        //      actually fail. We need a way to gracefully fallback.
-        _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
-
-        // If the actual font isn't what was requested...
-        if (_actualFont.GetFaceName() != _desiredFont.GetFaceName())
-        {
-            // !TODO!: We _DO_ want this
-            // // Then warn the user that we picked something because we couldn't find their font.
-            // // Format message with user's choice of font and the font that was chosen instead.
-            // const winrt::hstring message{ fmt::format(std::wstring_view{ RS_(L"NoticeFontNotFound") }, _desiredFont.GetFaceName(), _actualFont.GetFaceName()) };
-            // // Capture what we need to resume later.
-            // [strongThis = get_strong(), message]() -> winrt::fire_and_forget {
-            //     // Take these out of the lambda and store them locally
-            //     // because the coroutine will lose them into space
-            //     // by the time it resumes.
-            //     const auto msg = message;
-            //     const auto strong = strongThis;
-
-            //     // Pop the rest of this function to the tail of the UI thread
-            //     // Just in case someone was holding a lock when they called us and
-            //     // the handlers decide to do something that take another lock
-            //     // (like ShellExecute pumping our messaging thread...GH#7994)
-            //     co_await strong->Dispatcher();
-
-            //     auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(msg));
-            //     strong->_raiseNoticeHandlers(*strong, std::move(noticeArgs));
-            // }();
-        }
-
-        // !TODO!: We _DO_ want this
-        // const auto actualNewSize = _actualFont.GetSize();
-        // _fontSizeChangedHandlers(actualNewSize.X, actualNewSize.Y, initialUpdate);
-    }
-
     // Method Description:
     // - Writes the given sequence as input to the active terminal connection.
     // - This method has been overloaded to allow zero-copy winrt::param::hstring optimizations.
@@ -341,35 +292,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _lastHoveredCell = terminalPosition;
 
-        // if (terminalPosition.has_value())
-        // {
-        //     const auto uri = _core->_terminal->GetHyperlinkAtPosition(*terminalPosition);
-        //     if (!uri.empty())
-        //     {
-        //         // Update the tooltip with the URI
-        //         HoveredUri().Text(uri);
-
-        //         // Set the border thickness so it covers the entire cell
-        //         const auto charSizeInPixels = CharacterDimensions();
-        //         const auto htInDips = charSizeInPixels.Height / _compositionScaleY;
-        //         const auto wtInDips = charSizeInPixels.Width / _compositionScaleX;
-        //         const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
-        //         HyperlinkTooltipBorder().BorderThickness(newThickness);
-
-        //         // Compute the location of the top left corner of the cell in DIPS
-        //         const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
-        //         const til::point startPos{ terminalPosition->X, terminalPosition->Y };
-        //         const til::size fontSize{ _core->_actualFont.GetSize() };
-        //         const til::point posInPixels{ startPos * fontSize };
-        //         const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
-        //         const til::point locationInDIPs{ posInDIPs + marginsInDips };
-
-        //         // Move the border to the top left corner of the cell
-        //         OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
-        //         OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
-        //     }
-        // }
-
         const uint16_t newId = terminalPosition.has_value() ? _terminal->GetHyperlinkIdAtPosition(*terminalPosition) :
                                                               0u;
         const auto newInterval = terminalPosition.has_value() ? _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition) :
@@ -403,6 +325,272 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return uri;
         }
         return { L"" };
+    }
+
+    void ControlCore::UpdateSettings(const IControlSettings& settings)
+    {
+        _settings = settings;
+
+        auto lock = _terminal->LockForWriting();
+
+        // Initialize our font information.
+        const auto fontFace = _settings.FontFace();
+        const short fontHeight = gsl::narrow_cast<short>(_settings.FontSize());
+        const auto fontWeight = _settings.FontWeight();
+        // The font width doesn't terribly matter, we'll only be using the
+        //      height to look it up
+        // The other params here also largely don't matter.
+        //      The family is only used to determine if the font is truetype or
+        //      not, but DX doesn't use that info at all.
+        //      The Codepage is additionally not actually used by the DX engine at all.
+        _actualFont = { fontFace, 0, fontWeight.Weight, { 0, fontHeight }, CP_UTF8, false };
+        _desiredFont = { _actualFont };
+
+        // Update the terminal core with its new Core settings
+        _terminal->UpdateSettings(_settings);
+
+        if (!_initializedTerminal)
+        {
+            // If we haven't initialized, there's no point in continuing.
+            // Initialization will handle the renderer settings.
+            return;
+        }
+
+        // Update DxEngine settings under the lock
+        _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
+
+        _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
+        _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
+        _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
+        _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+
+        switch (_settings.AntialiasingMode())
+        {
+        case TextAntialiasingMode::Cleartype:
+            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
+            break;
+        case TextAntialiasingMode::Aliased:
+            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
+            break;
+        case TextAntialiasingMode::Grayscale:
+        default:
+            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+            break;
+        }
+
+        // Refresh our font with the renderer
+        const auto actualFontOldSize = _actualFont.GetSize();
+        _UpdateFont();
+        const auto actualFontNewSize = _actualFont.GetSize();
+        if (actualFontNewSize != actualFontOldSize)
+        {
+            _RefreshSizeUnderLock();
+        }
+    }
+
+    // Method Description:
+    // - Update the font with the renderer. This will be called either when the
+    //      font changes or the DPI changes, as DPI changes will necessitate a
+    //      font change. This method will *not* change the buffer/viewport size
+    //      to account for the new glyph dimensions. Callers should make sure to
+    //      appropriately call _DoResizeUnderLock after this method is called.
+    // - The write lock should be held when calling this method.
+    // Arguments:
+    // - initialUpdate: whether this font update should be considered as being
+    //   concerned with initialization process. Value forwarded to event handler.
+    void ControlCore::_UpdateFont(const bool /*initialUpdate*/)
+    {
+        const int newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) *
+                                            _compositionScaleX);
+
+        // !TODO!: MSFT:20895307 If the font doesn't exist, this doesn't
+        //      actually fail. We need a way to gracefully fallback.
+        _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
+
+        // If the actual font isn't what was requested...
+        if (_actualFont.GetFaceName() != _desiredFont.GetFaceName())
+        {
+            // !TODO!: We _DO_ want this
+            // // Then warn the user that we picked something because we couldn't find their font.
+            // // Format message with user's choice of font and the font that was chosen instead.
+            // const winrt::hstring message{ fmt::format(std::wstring_view{ RS_(L"NoticeFontNotFound") }, _desiredFont.GetFaceName(), _actualFont.GetFaceName()) };
+            // // Capture what we need to resume later.
+            // [strongThis = get_strong(), message]() -> winrt::fire_and_forget {
+            //     // Take these out of the lambda and store them locally
+            //     // because the coroutine will lose them into space
+            //     // by the time it resumes.
+            //     const auto msg = message;
+            //     const auto strong = strongThis;
+
+            //     // Pop the rest of this function to the tail of the UI thread
+            //     // Just in case someone was holding a lock when they called us and
+            //     // the handlers decide to do something that take another lock
+            //     // (like ShellExecute pumping our messaging thread...GH#7994)
+            //     co_await strong->Dispatcher();
+
+            //     auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(msg));
+            //     strong->_raiseNoticeHandlers(*strong, std::move(noticeArgs));
+            // }();
+        }
+
+        // !TODO!: We _DO_ want this
+        // const auto actualNewSize = _actualFont.GetSize();
+        // _fontSizeChangedHandlers(actualNewSize.X, actualNewSize.Y, initialUpdate);
+    }
+
+    // Method Description:
+    // - Set the font size of the terminal control.
+    // Arguments:
+    // - fontSize: The size of the font.
+    void ControlCore::_SetFontSize(int fontSize)
+    {
+        try
+        {
+            // Make sure we have a non-zero font size
+            const auto newSize = std::max<short>(gsl::narrow_cast<short>(fontSize), 1);
+            const auto fontFace = _settings.FontFace();
+            const auto fontWeight = _settings.FontWeight();
+            _actualFont = { fontFace, 0, fontWeight.Weight, { 0, newSize }, CP_UTF8, false };
+            _desiredFont = { _actualFont };
+
+            auto lock = _terminal->LockForWriting();
+
+            // Refresh our font with the renderer
+            _UpdateFont();
+
+            // Resize the terminal's BUFFER to match the new font size. This does
+            // NOT change the size of the window, because that can lead to more
+            // problems (like what happens when you change the font size while the
+            // window is maximized?)
+            _RefreshSizeUnderLock();
+        }
+        CATCH_LOG();
+    }
+
+    // Method Description:
+    // - Reset the font size of the terminal to its default size.
+    // Arguments:
+    // - none
+    void ControlCore::ResetFontSize()
+    {
+        _SetFontSize(_settings.FontSize());
+    }
+
+    // Method Description:
+    // - Adjust the font size of the terminal control.
+    // Arguments:
+    // - fontSizeDelta: The amount to increase or decrease the font size by.
+    void ControlCore::AdjustFontSize(int fontSizeDelta)
+    {
+        const auto newSize = _desiredFont.GetEngineSize().Y + fontSizeDelta;
+        _SetFontSize(newSize);
+    }
+
+    // Method Description:
+    // - Perform a resize for the current size of the swapchainpanel. If the
+    //   font size changed, we'll need to resize the buffer to fit the existing
+    //   swapchain size. This helper will call _DoResizeUnderLock with the
+    //   current size of the swapchain, accounting for scaling due to DPI.
+    // - Note that a DPI change will also trigger a font size change, and will
+    //   call into here.
+    // - The write lock should be held when calling this method, we might be
+    //   changing the buffer size in _DoResizeUnderLock.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void ControlCore::_RefreshSizeUnderLock()
+    {
+        // const auto currentScaleX = SwapChainPanel().CompositionScaleX();
+        // const auto currentScaleY = SwapChainPanel().CompositionScaleY();
+        // const auto actualWidth = SwapChainPanel().ActualWidth();
+        // const auto actualHeight = SwapChainPanel().ActualHeight();
+
+        const auto widthInPixels = _panelWidth * _compositionScaleX;
+        const auto heightInPixels = _panelHeight * _compositionScaleY;
+
+        _DoResizeUnderLock(widthInPixels, heightInPixels);
+    }
+
+    // Method Description:
+    // - Process a resize event that was initiated by the user. This can either
+    //   be due to the user resizing the window (causing the swapchain to
+    //   resize) or due to the DPI changing (causing us to need to resize the
+    //   buffer to match)
+    // Arguments:
+    // - newWidth: the new width of the swapchain, in pixels.
+    // - newHeight: the new height of the swapchain, in pixels.
+    void ControlCore::_DoResizeUnderLock(const double newWidth,
+                                         const double newHeight)
+    {
+        SIZE size;
+        size.cx = static_cast<long>(newWidth);
+        size.cy = static_cast<long>(newHeight);
+
+        // Don't actually resize so small that a single character wouldn't fit
+        // in either dimension. The buffer really doesn't like being size 0.
+        if (size.cx < _actualFont.GetSize().X || size.cy < _actualFont.GetSize().Y)
+        {
+            return;
+        }
+
+        _terminal->ClearSelection();
+
+        // Tell the dx engine that our window is now the new size.
+        THROW_IF_FAILED(_renderEngine->SetWindowSize(size));
+
+        // Invalidate everything
+        _renderer->TriggerRedrawAll();
+
+        // Convert our new dimensions to characters
+        const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
+                                                           { static_cast<short>(size.cx), static_cast<short>(size.cy) });
+        const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
+
+        // If this function succeeds with S_FALSE, then the terminal didn't
+        // actually change size. No need to notify the connection of this no-op.
+        const HRESULT hr = _terminal->UserResize({ vp.Width(), vp.Height() });
+        if (SUCCEEDED(hr) && hr != S_FALSE)
+        {
+            _connection.Resize(vp.Height(), vp.Width());
+        }
+    }
+
+    void ControlCore::SizeChanged(const double width,
+                                  const double height)
+    {
+        _panelWidth = width;
+        _panelHeight = height;
+
+        auto lock = _terminal->LockForWriting();
+        const auto currentEngineScale = _renderEngine->GetScaling();
+
+        auto scaledWidth = width * currentEngineScale;
+        auto scaledHeight = height * currentEngineScale;
+        _DoResizeUnderLock(scaledWidth, scaledHeight);
+    }
+
+    void ControlCore::ScaleChanged(const double scaleX,
+                                   const double scaleY)
+    {
+        _compositionScaleX = scaleX;
+        _compositionScaleY = scaleY;
+
+        const auto dpi = (float)(scaleX * USER_DEFAULT_SCREEN_DPI);
+
+        const auto actualFontOldSize = _actualFont.GetSize();
+
+        auto lock = _terminal->LockForWriting();
+
+        _renderer->TriggerFontChange(::base::saturated_cast<int>(dpi),
+                                     _desiredFont,
+                                     _actualFont);
+
+        const auto actualFontNewSize = _actualFont.GetSize();
+        if (actualFontNewSize != actualFontOldSize)
+        {
+            _RefreshSizeUnderLock();
+        }
     }
 
 }
