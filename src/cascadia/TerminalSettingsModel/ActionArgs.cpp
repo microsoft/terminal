@@ -114,6 +114,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             ss << fmt::format(L"--tabColor \"{}\" ", tabColor.ToHexString(true));
         }
 
+        if (_SuppressApplicationTitle)
+        {
+            ss << fmt::format(L"--suppressApplicationTitle ");
+        }
+
         if (!_Commandline.empty())
         {
             ss << fmt::format(L"-- \"{}\" ", _Commandline);
