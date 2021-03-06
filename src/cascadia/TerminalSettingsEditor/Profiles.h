@@ -22,8 +22,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         hstring ToString() { return _LocalizedName; }
 
-        GETSET_PROPERTY(hstring, Name);
-        GETSET_PROPERTY(hstring, LocalizedName);
+        WINRT_PROPERTY(hstring, Name);
+        WINRT_PROPERTY(hstring, LocalizedName);
     };
 
     struct ProfileViewModel : ProfileViewModelT<ProfileViewModel>, ViewModelHelper<ProfileViewModel>
