@@ -124,8 +124,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // refresh the current page using the SelectedItem data we collected before the refresh
         if (selectedItemTag)
         {
-            const auto& selectedItemStringTag{ selectedItemTag.try_as<hstring>() };
-            const auto& selectedItemProfileTag{ selectedItemTag.try_as<ProfileViewModel>() };
             for (const auto& item : menuItems)
             {
                 if (const auto& menuItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
@@ -134,23 +132,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     {
                         if (const auto& stringTag{ tag.try_as<hstring>() })
                         {
-                            if (stringTag == selectedItemStringTag)
+                            if (const auto& selectedItemStringTag{ selectedItemTag.try_as<hstring>() })
                             {
-                                // found the one that was selected before the refresh
-                                SettingsNav().SelectedItem(item);
-                                _Navigate(*stringTag);
-                                co_return;
+                                if (stringTag == selectedItemStringTag)
+                                {
+                                    // found the one that was selected before the refresh
+                                    SettingsNav().SelectedItem(item);
+                                    _Navigate(*stringTag);
+                                    co_return;
+                                }
                             }
                         }
-                        // shouldn't check this if selectedprofiletag is empty, same for string above
                         else if (const auto& profileTag{ tag.try_as<ProfileViewModel>() })
                         {
-                            if (profileTag->Guid() == selectedItemProfileTag->Guid())
+                            if (const auto& selectedItemProfileTag{ selectedItemTag.try_as<ProfileViewModel>() })
                             {
-                                // found the one that was selected before the refresh
-                                SettingsNav().SelectedItem(item);
-                                _Navigate(*profileTag);
-                                co_return;
+                                if (profileTag->Guid() == selectedItemProfileTag->Guid())
+                                {
+                                    // found the one that was selected before the refresh
+                                    SettingsNav().SelectedItem(item);
+                                    _Navigate(*profileTag);
+                                    co_return;
+                                }
                             }
                         }
                     }
@@ -292,7 +295,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     if (profileGuid)
                     {
                         const auto profile = self->_settingsClone.FindProfile(winrt::unbox_value<GUID>(profileGuid));
-                        const auto duplicated = profile.Duplicate();
+                        const auto duplicated = self->_settingsClone.DuplicateProfile(profile);
                         self->_CreateAndNavigateToNewProfile(insertIndex, duplicated);
                     }
                     else

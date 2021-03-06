@@ -30,6 +30,8 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.Collections.IObservableVector<Profile> AllProfiles { get; };
         Windows.Foundation.Collections.IObservableVector<Profile> ActiveProfiles { get; };
 
+        Profile DuplicateProfile(Profile sourceProfile);
+
         KeyMapping KeyMap { get; };
 
         Windows.Foundation.Collections.IVectorView<SettingsLoadWarnings> Warnings { get; };

@@ -98,6 +98,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::guid GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const;
 
+        Model::Profile DuplicateProfile(Model::Profile source);
+
     private:
         com_ptr<GlobalAppSettings> _globals;
         Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles;
