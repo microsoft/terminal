@@ -323,7 +323,7 @@ namespace SettingsModelLocalTests
             }
         })" };
         auto profile = implementation::Profile::FromJson(VerifyParseSucceeded(profileString));
-        VERIFY_THROWS(profile->EvaluatedEnvironmentVariables(), winrt::hresult_error);
+        VERIFY_THROWS(profile->ValidateEvaluatedEnvironmentVariables(), winrt::hresult_error);
     }
 
     void ProfileTests::ProfileWithEnvVarCircularRefsThrows()
@@ -338,7 +338,7 @@ namespace SettingsModelLocalTests
             }
         })" };
         auto profile = implementation::Profile::FromJson(VerifyParseSucceeded(profileString));
-        VERIFY_THROWS(profile->EvaluatedEnvironmentVariables(), winrt::hresult_error);
+        VERIFY_THROWS(profile->ValidateEvaluatedEnvironmentVariables(), winrt::hresult_error);
     }
 
     void ProfileTests::ProfileWithEnvVarNoReferences()
@@ -376,9 +376,8 @@ namespace SettingsModelLocalTests
             }
         })" };
 
-        std::wstring expectedSystemRoot(static_cast<size_t>(MAX_PATH), L'\0');
-        VERIFY_IS_TRUE(GetEnvironmentVariableW(L"SystemRoot", expectedSystemRoot.data(), MAX_PATH) > 0);
-        expectedSystemRoot.erase(std::find_if(expectedSystemRoot.rbegin(), expectedSystemRoot.rend(), [](wchar_t ch) -> bool { return ch != L'\0'; }).base(), expectedSystemRoot.end());
+        const auto expectedSystemRoot = wil::TryGetEnvironmentVariableW<std::wstring>(L"SystemRoot");
+        VERIFY_IS_FALSE(expectedSystemRoot.empty());
         const auto profile = implementation::Profile::FromJson(VerifyParseSucceeded(profileString));
         const auto envMap = profile->EvaluatedEnvironmentVariables();
         VERIFY_ARE_EQUAL(static_cast<uint32_t>(2), envMap.Size());
@@ -443,9 +442,9 @@ namespace SettingsModelLocalTests
         const auto childProfile = implementation::Profile::FromJson(VerifyParseSucceeded(childString));
         childProfile->InsertParent(parentProfile);
 
-        std::wstring expectedSystemRoot(static_cast<size_t>(MAX_PATH), L'\0');
-        VERIFY_IS_TRUE(GetEnvironmentVariableW(L"SystemRoot", expectedSystemRoot.data(), MAX_PATH) > 0);
-        expectedSystemRoot.erase(std::find_if(expectedSystemRoot.rbegin(), expectedSystemRoot.rend(), [](wchar_t ch) -> bool { return ch != L'\0'; }).base(), expectedSystemRoot.end());
+        
+        const auto expectedSystemRoot = wil::TryGetEnvironmentVariableW<std::wstring>(L"SystemRoot");
+        VERIFY_IS_FALSE(expectedSystemRoot.empty());
 
         const auto parentEnvVars = parentProfile->EvaluatedEnvironmentVariables();
         const auto childEnvVars = childProfile->EvaluatedEnvironmentVariables();

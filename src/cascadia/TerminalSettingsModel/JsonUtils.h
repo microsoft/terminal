@@ -438,30 +438,6 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     };
 #endif
 
-    template<>
-    struct ConversionTrait<Json::Value>
-    {
-        Json::Value FromJson(const Json::Value& json)
-        {
-            return json;
-        }
-
-        bool CanConvert(const Json::Value&)
-        {
-            return true;
-        }
-
-        Json::Value ToJson(const Json::Value& val)
-        {
-            return val;
-        }
-
-        std::string TypeDescription() const
-        {
-            return "Json::Value";
-        }
-    };
-
     template<typename T>
     void SetValueForKey(Json::Value& json, std::string_view key, const T& target);
 

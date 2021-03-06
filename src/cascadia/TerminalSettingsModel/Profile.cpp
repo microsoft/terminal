@@ -345,7 +345,6 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
 
     JsonUtils::GetValueForKey(json, EnvironmentKey, _EnvironmentVariables);
-    EvaluatedEnvironmentVariables();
 }
 
 // Method Description:
@@ -559,17 +558,37 @@ namespace
         std::wstring resolvedValue;
     };
 
+    // Function Description:
+    // - Resolves a key's value from within envMap. Uses recursion to recursively resolve
+    //   referenced keys. envMap is updated as values are resolved so we don't double up on
+    //   work
+    // Arguments:
+    // - key: the key that may be in envMap or the environment (or unknown)
+    // - envMap: the map with all the keys, raw and resolved values
+    // - seenKeys: the list of keys that we have already seen when attempting to resolve the
+    //             current chain of keys. seenKeys needs to be passed in as a parameter so
+    //             that each layer in the recursion only has keys seen leading up to it
+    // Return Value:
+    // - The resolved value for key
     std::wstring ResolveEnvironmentVariableValue(const std::wstring& key, std::map<std::wstring, VariablePair>& envMap, std::list<std::wstring> seenKeys = {})
     {
+        // First check if the key is in our environment variable map
         auto it = envMap.find(key);
         if (it != envMap.end())
         {
             if (!it->second.resolvedValue.empty())
             {
+                // key has already been resolved, so just return it
                 return it->second.resolvedValue;
             }
             if (std::find(seenKeys.cbegin(), seenKeys.cend(), key) != seenKeys.end())
             {
+                // If we've attempted to resolve this key already then we're circularly resolving keys and this is
+                // an error, not aborting here would result in a dead-lock. e.g.:
+                // {
+                //    'KEY_1': '${env:KEY_2}',
+                //    'KEY_2': '${env:KEY_1}'
+                // }
                 std::wstringstream error;
                 error << L"Self referencing keys in environment settings: ";
                 for (auto seenKey : seenKeys)
@@ -579,7 +598,7 @@ namespace
                 error << L"'" << key << L"'";
                 throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::hstring(error.str()));
             }
-            const std::wregex parameterRegex(L"\\$\\{env:(.*?)\\}");
+            static const std::wregex parameterRegex(LR"(\$\{env:(.*?)\})");
             auto& value = it->second;
             auto textIter = value.rawValue.cbegin();
             std::wsmatch regexMatch;
@@ -596,10 +615,16 @@ namespace
                 const auto referencedKey = regexMatch[1];
                 if (referencedKey == key)
                 {
+                    // This key references itself, this is another dead-lock condition. e.g.:
+                    // {
+                    //   'KEY_1': 'abc${env:KEY_1}def'
+                    // }
                     std::wstringstream error;
                     error << L"Self referencing key '" << key << L"' in environment settings";
                     throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::hstring(error.str()));
                 }
+
+                // Add key to the list of seen keys and recursively resolve environment variables
                 seenKeys.push_back(key);
                 value.resolvedValue += ResolveEnvironmentVariableValue(referencedKey, envMap, seenKeys);
                 textIter = regexMatch[0].second;
@@ -608,22 +633,9 @@ namespace
 
             return value.resolvedValue;
         }
-        const auto size = GetEnvironmentVariableW(key.c_str(), nullptr, 0);
-        if (size > 0)
-        {
-            std::wstring value(static_cast<size_t>(size), L'\0');
-            if (GetEnvironmentVariableW(key.c_str(), value.data(), size) > 0)
-            {
-                // Documentation (https://docs.microsoft.com/en-us/windows/win32/api/processenv/nf-processenv-getenvironmentvariablew)
-                // says: "If the function succeeds, the return value is the number of characters stored in the buffer pointed to by lpBuffer,
-                // not including the terminating null character."
-                // However, my SystemDrive "C:" returns 3 and so without trimming we will end up with a stray NULL string terminator
-                // in the string.
-                value.erase(std::find_if(value.rbegin(), value.rend(), [](wchar_t ch) { return ch != L'\0'; }).base(), value.end());
-                return value;
-            }
-        }
-        return {};
+        // Try and resolve the key from the process' environment variables. If key doesn't exist as an
+        // environment variable, then TryGetEnvironmentVariableW will return an empty string
+        return wil::TryGetEnvironmentVariableW<std::wstring>(key.c_str());
     }
 }
 
