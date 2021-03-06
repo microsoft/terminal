@@ -21,9 +21,9 @@ Author(s):
 #include <conattrs.hpp>
 
 // fwdecl unittest classes
-namespace TerminalAppLocalTests
+namespace SettingsModelLocalTests
 {
-    class SettingsTests;
+    class TerminalSettingsTests;
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
@@ -125,7 +125,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _ApplyProfileSettings(const Model::Profile& profile, const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes);
         void _ApplyGlobalSettings(const Model::GlobalAppSettings& globalSettings) noexcept;
 
-        friend class TerminalAppLocalTests::SettingsTests;
+        friend class SettingsModelLocalTests::TerminalSettingsTests;
     };
 }
 
