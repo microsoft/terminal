@@ -32,6 +32,8 @@ static constexpr std::wstring_view DEFAULT_LINUX_ICON_GUID{ L"{9acb9455-ca41-5af
 // make sure this matches defaults.json.
 static constexpr std::wstring_view DEFAULT_WINDOWS_POWERSHELL_GUID{ L"{61c54bbd-c2c6-5271-96e7-009a87ff44bf}" };
 
+static constexpr std::wstring_view CopySuffix{ L" (Copy)" };
+
 CascadiaSettings::CascadiaSettings() :
     CascadiaSettings(true)
 {
@@ -229,6 +231,167 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::CreateNew
     newProfile->Name(newName);
 
     return *newProfile;
+}
+
+// Method Description:
+// - Duplicate a new profile based off another profile's settings
+// Return Value:
+// - a reference to the new profile
+winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::DuplicateProfile(Model::Profile source)
+{
+    auto duplicated{ _userDefaultProfileSettings->CreateChild() };
+    _allProfiles.Append(*duplicated);
+
+    std::wstring newName{ source.Name() };
+    newName += CopySuffix;
+    duplicated->Name(winrt::hstring(newName));
+
+    if (source.HasHidden() || source.HiddenOverrideSource() != nullptr)
+    {
+        duplicated->Hidden(source.Hidden());
+    }
+    if (source.HasIcon() || source.IconOverrideSource() != nullptr)
+    {
+        duplicated->Icon(source.Icon());
+    }
+    if (source.HasCloseOnExit() || source.CloseOnExitOverrideSource() != nullptr)
+    {
+        duplicated->CloseOnExit(source.CloseOnExit());
+    }
+    if (source.HasTabTitle() || source.TabTitleOverrideSource() != nullptr)
+    {
+        duplicated->TabTitle(source.TabTitle());
+    }
+    if (source.HasTabColor() || source.TabColorOverrideSource() != nullptr)
+    {
+        duplicated->TabColor(source.TabColor());
+    }
+    if (source.HasSuppressApplicationTitle() || source.SuppressApplicationTitleOverrideSource() != nullptr)
+    {
+        duplicated->SuppressApplicationTitle(source.SuppressApplicationTitle());
+    }
+    if (source.HasUseAcrylic() || source.UseAcrylicOverrideSource() != nullptr)
+    {
+        duplicated->UseAcrylic(source.UseAcrylic());
+    }
+    if (source.HasAcrylicOpacity() || source.AcrylicOpacityOverrideSource() != nullptr)
+    {
+        duplicated->AcrylicOpacity(source.AcrylicOpacity());
+    }
+    if (source.HasScrollState() || source.ScrollStateOverrideSource() != nullptr)
+    {
+        duplicated->ScrollState(source.ScrollState());
+    }
+    if (source.HasFontFace() || source.FontFaceOverrideSource() != nullptr)
+    {
+        duplicated->FontFace(source.FontFace());
+    }
+    if (source.HasFontSize() || source.FontSizeOverrideSource() != nullptr)
+    {
+        duplicated->FontSize(source.FontSize());
+    }
+    if (source.HasFontWeight() || source.FontWeightOverrideSource() != nullptr)
+    {
+        duplicated->FontWeight(source.FontWeight());
+    }
+    if (source.HasPadding() || source.PaddingOverrideSource() != nullptr)
+    {
+        duplicated->Padding(source.Padding());
+    }
+    if (source.HasCommandline() || source.CommandlineOverrideSource() != nullptr)
+    {
+        duplicated->Commandline(source.Commandline());
+    }
+    if (source.HasStartingDirectory() || source.StartingDirectoryOverrideSource() != nullptr)
+    {
+        duplicated->StartingDirectory(source.StartingDirectory());
+    }
+    if (source.HasBackgroundImagePath() || source.BackgroundImagePathOverrideSource() != nullptr)
+    {
+        duplicated->BackgroundImagePath(source.BackgroundImagePath());
+    }
+    if (source.HasBackgroundImageOpacity() || source.BackgroundImageOpacityOverrideSource() != nullptr)
+    {
+        duplicated->BackgroundImageOpacity(source.BackgroundImageOpacity());
+    }
+    if (source.HasBackgroundImageStretchMode() || source.BackgroundImageStretchModeOverrideSource() != nullptr)
+    {
+        duplicated->BackgroundImageStretchMode(source.BackgroundImageStretchMode());
+    }
+    if (source.HasAntialiasingMode() || source.AntialiasingModeOverrideSource() != nullptr)
+    {
+        duplicated->AntialiasingMode(source.AntialiasingMode());
+    }
+    if (source.HasRetroTerminalEffect() || source.RetroTerminalEffectOverrideSource() != nullptr)
+    {
+        duplicated->RetroTerminalEffect(source.RetroTerminalEffect());
+    }
+    if (source.HasForceFullRepaintRendering() || source.ForceFullRepaintRenderingOverrideSource() != nullptr)
+    {
+        duplicated->ForceFullRepaintRendering(source.ForceFullRepaintRendering());
+    }
+    if (source.HasSoftwareRendering() || source.SoftwareRenderingOverrideSource() != nullptr)
+    {
+        duplicated->SoftwareRendering(source.SoftwareRendering());
+    }
+    if (source.HasColorSchemeName() || source.ColorSchemeNameOverrideSource() != nullptr)
+    {
+        duplicated->ColorSchemeName(source.ColorSchemeName());
+    }
+    if (source.HasForeground() || source.ForegroundOverrideSource() != nullptr)
+    {
+        duplicated->Foreground(source.Foreground());
+    }
+    if (source.HasBackground() || source.BackgroundOverrideSource() != nullptr)
+    {
+        duplicated->Background(source.Background());
+    }
+    if (source.HasSelectionBackground() || source.SelectionBackgroundOverrideSource() != nullptr)
+    {
+        duplicated->SelectionBackground(source.SelectionBackground());
+    }
+    if (source.HasCursorColor() || source.CursorColorOverrideSource() != nullptr)
+    {
+        duplicated->CursorColor(source.CursorColor());
+    }
+    if (source.HasHistorySize() || source.HistorySizeOverrideSource() != nullptr)
+    {
+        duplicated->HistorySize(source.HistorySize());
+    }
+    if (source.HasSnapOnInput() || source.SnapOnInputOverrideSource() != nullptr)
+    {
+        duplicated->SnapOnInput(source.SnapOnInput());
+    }
+    if (source.HasAltGrAliasing() || source.AltGrAliasingOverrideSource() != nullptr)
+    {
+        duplicated->AltGrAliasing(source.AltGrAliasing());
+    }
+    if (source.HasCursorShape() || source.CursorShapeOverrideSource() != nullptr)
+    {
+        duplicated->CursorShape(source.CursorShape());
+    }
+    if (source.HasCursorHeight() || source.CursorHeightOverrideSource() != nullptr)
+    {
+        duplicated->CursorHeight(source.CursorHeight());
+    }
+    if (source.HasBellStyle() || source.BellStyleOverrideSource() != nullptr)
+    {
+        duplicated->BellStyle(source.BellStyle());
+    }
+    if (source.HasPixelShaderPath() || source.PixelShaderPathOverrideSource() != nullptr)
+    {
+        duplicated->PixelShaderPath(source.PixelShaderPath());
+    }
+    if (source.HasBackgroundImageAlignment() || source.BackgroundImageAlignmentOverrideSource() != nullptr)
+    {
+        duplicated->BackgroundImageAlignment(source.BackgroundImageAlignment());
+    }
+    if (source.HasConnectionType())
+    {
+        duplicated->ConnectionType(source.ConnectionType());
+    }
+
+    return *duplicated;
 }
 
 // Method Description:

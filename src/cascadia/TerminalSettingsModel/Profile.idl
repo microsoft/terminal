@@ -52,8 +52,6 @@ namespace Microsoft.Terminal.Settings.Model
 
         OriginTag Origin { get; };
 
-        Profile Duplicate();
-
         INHERITABLE_PROFILE_SETTING(String, Name);
 
         Boolean HasGuid();
