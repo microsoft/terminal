@@ -337,8 +337,8 @@ void CascadiaSettings::_ValidateProfilesExist()
 }
 
 // Method Description:
-// - Checks if the profiles contain invalid environment variable values
-//   profiles at all, we'll throw an error if there aren't any profiles.
+// - Checks if the profiles contain invalid environment variable values. Only winrt::hresult_error are caught
+//   other failures, such as std::bad_alloc will not be considered an environment variable configuration issue
 void CascadiaSettings::_ValidateProfileEnvironmentVariables()
 {
     for (const auto& profile : _allProfiles)
@@ -347,7 +347,7 @@ void CascadiaSettings::_ValidateProfileEnvironmentVariables()
         {
             profile.ValidateEvaluatedEnvironmentVariables();
         }
-        catch (...)
+        catch (winrt::hresult_error &)
         {
             _warnings.Append(Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::InvalidProfileEnvironmentVariables);
         }

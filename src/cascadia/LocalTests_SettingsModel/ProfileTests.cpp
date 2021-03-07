@@ -42,6 +42,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(ProfileWithEnvVarProcessEnv);
         TEST_METHOD(ProfileWithEnvVarComplex);
         TEST_METHOD(ProfileWithEnvVarWithParent);
+        TEST_METHOD(ProfileWithEnvVarAppendingToExistingProcessEnvVer);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -463,5 +464,32 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(L"child", childEnvVars.Lookup(L"VAR_6"));
         VERIFY_ARE_EQUAL(L"child", childEnvVars.Lookup(L"VAR_7"));
         VERIFY_ARE_EQUAL(expectedSystemRoot, childEnvVars.Lookup(L"VAR_8"));
+    }
+
+    void ProfileTests::ProfileWithEnvVarAppendingToExistingProcessEnvVer()
+    {
+        const std::string profileString{ R"({
+            "name": "profile0",
+            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "environment": {
+                "PATH": "${env:PATH};C:\\MyAwesomeFolder",
+                "SystemRoot": "prepend${env:SystemRoot}"
+            }
+        })" };
+
+        const auto profile = implementation::Profile::FromJson(VerifyParseSucceeded(profileString));
+        const auto envMap = profile->EvaluatedEnvironmentVariables();
+
+        auto expectedPath = wil::TryGetEnvironmentVariableW<std::wstring>(L"PATH");
+        VERIFY_IS_FALSE(expectedPath.empty());
+        expectedPath += L";C:\\MyAwesomeFolder";
+
+        auto expectedSystemRoot = wil::TryGetEnvironmentVariableW<std::wstring>(L"SystemRoot");
+        VERIFY_IS_FALSE(expectedSystemRoot.empty());
+        expectedSystemRoot.insert(0, L"prepend");
+
+        VERIFY_ARE_EQUAL(static_cast<uint32_t>(2), envMap.Size());
+        VERIFY_ARE_EQUAL(expectedPath, envMap.Lookup(L"PATH"));
+        VERIFY_ARE_EQUAL(expectedSystemRoot, envMap.Lookup(L"SystemRoot"));
     }
 }

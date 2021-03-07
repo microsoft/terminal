@@ -615,18 +615,37 @@ namespace
                 const auto referencedKey = regexMatch[1];
                 if (referencedKey == key)
                 {
-                    // This key references itself, this is another dead-lock condition. e.g.:
+                    // This key references itself, this is potentially another dead-lock condition. e.g.:
                     // {
                     //   'KEY_1': 'abc${env:KEY_1}def'
                     // }
-                    std::wstringstream error;
-                    error << L"Self referencing key '" << key << L"' in environment settings";
-                    throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::hstring(error.str()));
+                    // Unless KEY_1 is defined in the process environment
+                    std::wstring valueInEnvrionment;
+                    const auto hr = wil::GetEnvironmentVariableW<std::wstring>(key.c_str(), valueInEnvrionment);
+                    if (hr == S_OK)
+                    {
+                        // key exists in the process' environments append the value from the environment to the resolved value
+                        value.resolvedValue += valueInEnvrionment;
+                    }
+                    else if (hr == HRESULT_FROM_WIN32(ERROR_ENVVAR_NOT_FOUND))
+                    {
+                        // key was not found in the process environment, we are in a dead-lock so throw
+                        std::wstringstream error;
+                        error << L"Self referencing key '" << key << L"' in environment settings";
+                        throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::hstring(error.str()));
+                    }
+                    else
+                    {
+                        // wil::GetEnvironmentVariableW failed for an unexpected reason
+                        THROW_IF_FAILED(hr);
+                    }
                 }
-
-                // Add key to the list of seen keys and recursively resolve environment variables
-                seenKeys.push_back(key);
-                value.resolvedValue += ResolveEnvironmentVariableValue(referencedKey, envMap, seenKeys);
+                else
+                {
+                    // Add key to the list of seen keys and recursively resolve environment variables
+                    seenKeys.push_back(key);
+                    value.resolvedValue += ResolveEnvironmentVariableValue(referencedKey, envMap, seenKeys);
+                }
                 textIter = regexMatch[0].second;
             }
             std::copy(textIter, value.rawValue.cend(), std::back_inserter(value.resolvedValue));
