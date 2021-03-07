@@ -1364,17 +1364,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     // - GH#9384: the position is the same as of the first click starting the selection
                     // (we need to reset selection on double-click or triple-click, so it captures the word  or the line,
                     // rather than extending the selection)
-                    // - the click is the first click on selection anchor: we need to have a way to cancel selection with mouse,
-                    // even when shift is held (crucial for mouse mode, where all interaction with selection is done when shift is held)
-                    const auto isClickOnAnchor = _terminal->IsSelectionActive() && _terminal->GetSelectionAnchor() == terminalPosition && mode == ::Terminal::SelectionExpansionMode::Cell;
-                    if (_terminal->IsSelectionActive() && (!shiftEnabled || _lastMouseClickPosNoSelection == cursorPosition || isClickOnAnchor))
+                    if (_terminal->IsSelectionActive() && (!shiftEnabled || _lastMouseClickPosNoSelection == cursorPosition))
                     {
                         // Reset the selection
                         _terminal->ClearSelection();
                         _selectionNeedsToBeCopied = false; // there's no selection, so there's nothing to update
                     }
 
-                    if (shiftEnabled && !isClickOnAnchor)
+                    if (shiftEnabled)
                     {
                         if (_terminal->IsSelectionActive())
                         {
