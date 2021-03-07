@@ -620,12 +620,12 @@ namespace
                     //   'KEY_1': 'abc${env:KEY_1}def'
                     // }
                     // Unless KEY_1 is defined in the process environment
-                    std::wstring valueInEnvrionment;
-                    const auto hr = wil::GetEnvironmentVariableW<std::wstring>(key.c_str(), valueInEnvrionment);
+                    std::wstring valueInEnvironment;
+                    const auto hr = wil::GetEnvironmentVariableW<std::wstring>(key.c_str(), valueInEnvironment);
                     if (hr == S_OK)
                     {
                         // key exists in the process' environments append the value from the environment to the resolved value
-                        value.resolvedValue += valueInEnvrionment;
+                        value.resolvedValue += valueInEnvironment;
                     }
                     else if (hr == HRESULT_FROM_WIN32(ERROR_ENVVAR_NOT_FOUND))
                     {
