@@ -39,7 +39,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleDuplicateTab(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {
-        _DuplicateTabViewItem();
+        _DuplicateFocusedTab();
         args.Handled(true);
     }
 

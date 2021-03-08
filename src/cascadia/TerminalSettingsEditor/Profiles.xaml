@@ -25,6 +25,10 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <TextBlock Text="{x:Bind EnumName, Mode=OneWay}"/>
             </DataTemplate>
 
+            <DataTemplate x:DataType="local:Font" x:Key="FontFaceComboBoxItemTemplate">
+                <TextBlock Text="{x:Bind LocalizedName}" FontFamily="{x:Bind Name}"/>
+            </DataTemplate>
+
             <local:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
             <local:PercentageConverter x:Key="PercentageConverter"/>
             <local:FontWeightConverter x:Key="FontWeightConverter"/>
@@ -234,8 +238,27 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                     HasSettingValue="{x:Bind State.Profile.HasFontFace, Mode=OneWay}"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearFontFace}"
                                                     SettingOverrideSource="{x:Bind State.Profile.FontFaceOverrideSource, Mode=OneWay}">
-                                <TextBox Text="{x:Bind State.Profile.FontFace, Mode=TwoWay}"
-                                         Style="{StaticResource TextBoxSettingStyle}"/>
+                                <StackPanel>
+                                    <!--Binding the ItemsSource to a separate variable that switches between the
+                                          two font lists causes a crash within the ComboBox code.
+                                        As a workaround, introduce two ComboBox controls and only display one at a time.-->
+                                    <ComboBox ItemsSource="{x:Bind State.Profile.MonospaceFontList, Mode=OneWay}"
+                                              SelectedItem="{x:Bind CurrentFontFace, Mode=OneWay}"
+                                              SelectionChanged="FontFace_SelectionChanged"
+                                              Style="{StaticResource ComboBoxSettingStyle}"
+                                              ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
+                                              Visibility="{x:Bind State.Profile.ShowAllFonts, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}"/>
+                                    <ComboBox ItemsSource="{x:Bind State.Profile.CompleteFontList, Mode=OneWay}"
+                                              SelectedItem="{x:Bind CurrentFontFace, Mode=OneWay}"
+                                              SelectionChanged="FontFace_SelectionChanged"
+                                              Style="{StaticResource ComboBoxSettingStyle}"
+                                              ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
+                                              Visibility="{x:Bind State.Profile.ShowAllFonts, Mode=OneWay}"/>
+                                    <CheckBox x:Uid="Profile_FontFaceShowAllFonts"
+                                              x:Name="ShowAllFontsCheckbox"
+                                              IsChecked="{x:Bind State.Profile.ShowAllFonts, Mode=TwoWay}"
+                                              IsEnabled="{x:Bind State.Profile.UsingMonospaceFont, Mode=OneWay}"/>
+                                </StackPanel>
                             </local:SettingContainer>
 
                             <!--Font Size-->

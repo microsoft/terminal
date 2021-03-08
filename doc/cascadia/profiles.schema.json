@@ -222,6 +222,11 @@
           "$ref": "#/definitions/Color",
           "default": null,
           "description": "If provided, will set the tab's color to the given value"
+        },
+        "suppressApplicationTitle": {
+          "type": "boolean",
+          "default": "false",
+          "description": "When set to true, tabTitle overrides the default title of the tab and any title change messages from the application will be suppressed. When set to false, tabTitle behaves as normal"
         }
       },
       "type": "object"
