@@ -443,7 +443,6 @@ namespace SettingsModelLocalTests
         const auto childProfile = implementation::Profile::FromJson(VerifyParseSucceeded(childString));
         childProfile->InsertParent(parentProfile);
 
-        
         const auto expectedSystemRoot = wil::TryGetEnvironmentVariableW<std::wstring>(L"SystemRoot");
         VERIFY_IS_FALSE(expectedSystemRoot.empty());
 

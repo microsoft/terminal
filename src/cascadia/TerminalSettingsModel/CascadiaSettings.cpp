@@ -347,7 +347,7 @@ void CascadiaSettings::_ValidateProfileEnvironmentVariables()
         {
             profile.ValidateEvaluatedEnvironmentVariables();
         }
-        catch (winrt::hresult_error &)
+        catch (winrt::hresult_error&)
         {
             _warnings.Append(Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::InvalidProfileEnvironmentVariables);
         }
