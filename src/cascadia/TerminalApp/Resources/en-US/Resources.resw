@@ -316,6 +316,10 @@
   <data name="CmdTabColorArgDesc" xml:space="preserve">
     <value>Open the tab with the specified color, in #rrggbb format</value>
   </data>
+  <data name="CmdSuppressApplicationTitleDesc" xml:space="preserve">
+    <value>Open the tab with tabTitle overriding default title and suppressing title change messages from the application</value>
+    <comment>{Locked="\"tabTitle\""}</comment>
+  </data>
   <data name="CmdVersionDesc" xml:space="preserve">
     <value>Display the application version</value>
   </data>
