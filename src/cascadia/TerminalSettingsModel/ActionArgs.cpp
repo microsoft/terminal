@@ -67,9 +67,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             ss << fmt::format(L"tabColor: {}, ", tabColor.ToHexString(true));
         }
 
-        if (_SuppressApplicationTitle && _SuppressApplicationTitle.Value())
+        if (_SuppressApplicationTitle)
         {
-            ss << fmt::format(L"suppress application title, ");
+            if (_SuppressApplicationTitle.Value())
+            {
+                ss << fmt::format(L"suppress application title, ");
+            }
+            else
+            {
+                ss << fmt::format(L"use application title, ");
+            }
         }
 
         auto s = ss.str();
@@ -116,7 +123,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (_SuppressApplicationTitle)
         {
-            ss << fmt::format(L"--suppressApplicationTitle ");
+            if (_SuppressApplicationTitle.Value())
+            {
+                ss << fmt::format(L"--suppressApplicationTitle ");
+            }
+            else
+            {
+                ss << fmt::format(L"--useApplicationTitle ");
+            }
         }
 
         if (!_Commandline.empty())

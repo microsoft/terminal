@@ -418,7 +418,7 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
                                                                   RS_A(L"CmdTabColorArgDesc"));
 
     subcommand.suppressApplicationTitleOption = subcommand.subcommand->add_flag(
-        "--suppressApplicationTitle",
+        "--suppressApplicationTitle,!--useApplicationTitle",
         _suppressApplicationTitle,
         RS_A(L"CmdSuppressApplicationTitleDesc"));
 
