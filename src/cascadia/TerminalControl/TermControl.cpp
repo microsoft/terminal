@@ -79,6 +79,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _blinkTimer{},
         _lastMouseClickTimestamp{},
         _lastMouseClickPos{},
+        _lastMouseClickPosNoSelection{},
         _selectionNeedsToBeCopied{ false },
         _searchBox{ nullptr }
     {
@@ -1345,35 +1346,55 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     mode = ::Terminal::SelectionExpansionMode::Line;
                 }
 
-                // Update the selection appropriately
                 if (ctrlEnabled && multiClickMapper == 1 &&
                     !(_terminal->GetHyperlinkAtPosition(terminalPosition).empty()))
                 {
                     _HyperlinkHandler(_terminal->GetHyperlinkAtPosition(terminalPosition));
                 }
-                else if (shiftEnabled && _terminal->IsSelectionActive())
-                {
-                    // Shift+Click: only set expand on the "end" selection point
-                    _terminal->SetSelectionEnd(terminalPosition, mode);
-                    _selectionNeedsToBeCopied = true;
-                }
-                else if (mode == ::Terminal::SelectionExpansionMode::Cell && !shiftEnabled)
-                {
-                    // Single Click: reset the selection and begin a new one
-                    _terminal->ClearSelection();
-                    _singleClickTouchdownPos = cursorPosition;
-                    _selectionNeedsToBeCopied = false; // there's no selection, so there's nothing to update
-                }
                 else
                 {
-                    // Multi-Click Selection: expand both "start" and "end" selection points
-                    _terminal->MultiClickSelection(terminalPosition, mode);
-                    _selectionNeedsToBeCopied = true;
-                }
+                    // Update the selection appropriately
 
-                _lastMouseClickTimestamp = point.Timestamp();
-                _lastMouseClickPos = cursorPosition;
-                _renderer->TriggerSelection();
+                    // Capture the position of the first click when no selection is active
+                    if (mode == ::Terminal::SelectionExpansionMode::Cell && !_terminal->IsSelectionActive())
+                    {
+                        _singleClickTouchdownPos = cursorPosition;
+                        _lastMouseClickPosNoSelection = cursorPosition;
+                    }
+
+                    // We reset the active selection if one of the conditions apply:
+                    // - shift is not held
+                    // - GH#9384: the position is the same as of the first click starting the selection
+                    // (we need to reset selection on double-click or triple-click, so it captures the word or the line,
+                    // rather than extending the selection)
+                    if (_terminal->IsSelectionActive() && (!shiftEnabled || _lastMouseClickPosNoSelection == cursorPosition))
+                    {
+                        // Reset the selection
+                        _terminal->ClearSelection();
+                        _selectionNeedsToBeCopied = false; // there's no selection, so there's nothing to update
+                    }
+
+                    if (shiftEnabled)
+                    {
+                        if (_terminal->IsSelectionActive())
+                        {
+                            // If there is a selection we extend it using the selection mode
+                            // (expand the "end"selection point)
+                            _terminal->SetSelectionEnd(terminalPosition, mode);
+                        }
+                        else
+                        {
+                            // If there is no selection we establish it using the selected mode
+                            // (expand both "start" and "end" selection points)
+                            _terminal->MultiClickSelection(terminalPosition, mode);
+                        }
+                        _selectionNeedsToBeCopied = true;
+                    }
+
+                    _lastMouseClickTimestamp = point.Timestamp();
+                    _lastMouseClickPos = cursorPosition;
+                    _renderer->TriggerSelection();
+                }
             }
             else if (point.Properties().IsRightButtonPressed())
             {
