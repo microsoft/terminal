@@ -87,6 +87,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
 
+        // GH#8969: pre-seed working directory to prevent potential races
+        _terminal->SetWorkingDirectory(_settings.StartingDirectory());
+
         auto pfnWarningBell = std::bind(&TermControl::_TerminalWarningBell, this);
         _terminal->SetWarningBellCallback(pfnWarningBell);
 
