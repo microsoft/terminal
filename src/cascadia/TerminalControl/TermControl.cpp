@@ -1362,7 +1362,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     // We reset the active selection if one of the conditions apply:
                     // - shift is not held
                     // - GH#9384: the position is the same as of the first click starting the selection
-                    // (we need to reset selection on double-click or triple-click, so it captures the word  or the line,
+                    // (we need to reset selection on double-click or triple-click, so it captures the word or the line,
                     // rather than extending the selection)
                     if (_terminal->IsSelectionActive() && (!shiftEnabled || _lastMouseClickPosNoSelection == cursorPosition))
                     {
