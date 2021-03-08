@@ -34,7 +34,7 @@ namespace Microsoft.Terminal.Settings.Model
         All = 0xffffffff
     };
 
-    [default_interface] runtimeclass Profile : IAppearanceConfig, Windows.Foundation.IStringable {
+    [default_interface] runtimeclass Profile : Windows.Foundation.IStringable {
         Profile();
         Profile(Guid guid);
 
@@ -68,6 +68,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(String, StartingDirectory);
         String EvaluatedStartingDirectory { get; };
 
+        INHERITABLE_PROFILE_SETTING(IAppearanceConfig, DefaultAppearance);
         INHERITABLE_PROFILE_SETTING(IAppearanceConfig, UnfocusedAppearance);
 
         INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.TerminalControl.TextAntialiasingMode, AntialiasingMode);

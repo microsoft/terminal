@@ -94,26 +94,26 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
     profile->_Padding = source->_Padding;
     profile->_Commandline = source->_Commandline;
     profile->_StartingDirectory = source->_StartingDirectory;
-    profile->_BackgroundImagePath = source->_BackgroundImagePath;
-    profile->_BackgroundImageOpacity = source->_BackgroundImageOpacity;
-    profile->_BackgroundImageStretchMode = source->_BackgroundImageStretchMode;
+    //profile->_BackgroundImagePath = source->_BackgroundImagePath;
+    //profile->_BackgroundImageOpacity = source->_BackgroundImageOpacity;
+    //profile->_BackgroundImageStretchMode = source->_BackgroundImageStretchMode;
     profile->_AntialiasingMode = source->_AntialiasingMode;
     profile->_RetroTerminalEffect = source->_RetroTerminalEffect;
     profile->_ForceFullRepaintRendering = source->_ForceFullRepaintRendering;
     profile->_SoftwareRendering = source->_SoftwareRendering;
-    profile->_ColorSchemeName = source->_ColorSchemeName;
-    profile->_Foreground = source->_Foreground;
-    profile->_Background = source->_Background;
-    profile->_SelectionBackground = source->_SelectionBackground;
-    profile->_CursorColor = source->_CursorColor;
+    //profile->_ColorSchemeName = source->_ColorSchemeName;
+    //profile->_Foreground = source->_Foreground;
+    //profile->_Background = source->_Background;
+    //profile->_SelectionBackground = source->_SelectionBackground;
+    //profile->_CursorColor = source->_CursorColor;
     profile->_HistorySize = source->_HistorySize;
     profile->_SnapOnInput = source->_SnapOnInput;
     profile->_AltGrAliasing = source->_AltGrAliasing;
-    profile->_CursorShape = source->_CursorShape;
-    profile->_CursorHeight = source->_CursorHeight;
+    //profile->_CursorShape = source->_CursorShape;
+    //profile->_CursorHeight = source->_CursorHeight;
     profile->_BellStyle = source->_BellStyle;
     profile->_PixelShaderPath = source->_PixelShaderPath;
-    profile->_BackgroundImageAlignment = source->_BackgroundImageAlignment;
+    //profile->_BackgroundImageAlignment = source->_BackgroundImageAlignment;
     profile->_ConnectionType = source->_ConnectionType;
     profile->_Origin = source->_Origin;
 
@@ -306,6 +306,8 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
 // <none>
 void Profile::LayerJson(const Json::Value& json)
 {
+    const auto defaultAppearance = get_self<Model::implementation::AppearanceConfig>(_DefaultAppearance.value());
+
     // Profile-specific Settings
     JsonUtils::GetValueForKey(json, NameKey, _Name);
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
@@ -313,18 +315,18 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, SourceKey, _Source);
 
     // Core Settings
-    JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
-    JsonUtils::GetValueForKey(json, BackgroundKey, _Background);
-    JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
-    JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
-    JsonUtils::GetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
+    JsonUtils::GetValueForKey(json, ForegroundKey, defaultAppearance->_Foreground);
+    JsonUtils::GetValueForKey(json, BackgroundKey, defaultAppearance->_Background);
+    JsonUtils::GetValueForKey(json, SelectionBackgroundKey, defaultAppearance->_SelectionBackground);
+    JsonUtils::GetValueForKey(json, CursorColorKey, defaultAppearance->_CursorColor);
+    JsonUtils::GetValueForKey(json, ColorSchemeKey, defaultAppearance->_ColorSchemeName);
 
     // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
     JsonUtils::GetValueForKey(json, HistorySizeKey, _HistorySize);
     JsonUtils::GetValueForKey(json, SnapOnInputKey, _SnapOnInput);
     JsonUtils::GetValueForKey(json, AltGrAliasingKey, _AltGrAliasing);
-    JsonUtils::GetValueForKey(json, CursorHeightKey, _CursorHeight);
-    JsonUtils::GetValueForKey(json, CursorShapeKey, _CursorShape);
+    JsonUtils::GetValueForKey(json, CursorHeightKey, defaultAppearance->_CursorHeight);
+    JsonUtils::GetValueForKey(json, CursorShapeKey, defaultAppearance->_CursorShape);
     JsonUtils::GetValueForKey(json, TabTitleKey, _TabTitle);
 
     // Control Settings
@@ -347,10 +349,10 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
 
     JsonUtils::GetValueForKey(json, IconKey, _Icon);
-    JsonUtils::GetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
-    JsonUtils::GetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
-    JsonUtils::GetValueForKey(json, BackgroundImageStretchModeKey, _BackgroundImageStretchMode);
-    JsonUtils::GetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
+    JsonUtils::GetValueForKey(json, BackgroundImageKey, defaultAppearance->_BackgroundImagePath);
+    JsonUtils::GetValueForKey(json, BackgroundImageOpacityKey, defaultAppearance->_BackgroundImageOpacity);
+    JsonUtils::GetValueForKey(json, BackgroundImageStretchModeKey, defaultAppearance->_BackgroundImageStretchMode);
+    JsonUtils::GetValueForKey(json, BackgroundImageAlignmentKey, defaultAppearance->_BackgroundImageAlignment);
     JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::GetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
@@ -361,7 +363,7 @@ void Profile::LayerJson(const Json::Value& json)
         // If an unfocused appearance is defined in this profile, any undefined parameters are
         // taken from this profile itself, so add this profile as a parent
         auto unfocusedAppearance{ winrt::make_self<implementation::AppearanceConfig>() };
-        unfocusedAppearance->InsertParent(winrt::com_ptr<Profile>(get_strong()));
+        //unfocusedAppearance->InsertParent(winrt::com_ptr<Profile>(get_strong()));
         unfocusedAppearance->LayerJson(json[JsonKey(UnfocusedAppearanceKey)]);
         _UnfocusedAppearance = *unfocusedAppearance;
     }
@@ -377,7 +379,7 @@ void Profile::LayerJson(const Json::Value& json)
 // - This profile's expanded background image path / desktops's wallpaper path /the empty string.
 winrt::hstring Profile::ExpandedBackgroundImagePath() const
 {
-    const auto path{ BackgroundImagePath() };
+    const auto path{ _DefaultAppearance->BackgroundImagePath() };
     if (path.empty())
     {
         return path;
@@ -510,6 +512,7 @@ winrt::guid Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
 Json::Value Profile::ToJson() const
 {
     Json::Value json{ Json::ValueType::objectValue };
+    const auto defaultAppearance = get_self<Model::implementation::AppearanceConfig>(_DefaultAppearance.value());
 
     // Profile-specific Settings
     JsonUtils::SetValueForKey(json, NameKey, _Name);
@@ -518,18 +521,18 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, SourceKey, _Source);
 
     // Core Settings
-    JsonUtils::SetValueForKey(json, ForegroundKey, _Foreground);
-    JsonUtils::SetValueForKey(json, BackgroundKey, _Background);
-    JsonUtils::SetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
-    JsonUtils::SetValueForKey(json, CursorColorKey, _CursorColor);
-    JsonUtils::SetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
+    JsonUtils::SetValueForKey(json, ForegroundKey, defaultAppearance->_Foreground);
+    JsonUtils::SetValueForKey(json, BackgroundKey, defaultAppearance->_Background);
+    JsonUtils::SetValueForKey(json, SelectionBackgroundKey, defaultAppearance->_SelectionBackground);
+    JsonUtils::SetValueForKey(json, CursorColorKey, defaultAppearance->_CursorColor);
+    JsonUtils::SetValueForKey(json, ColorSchemeKey, defaultAppearance->_ColorSchemeName);
 
     // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
     JsonUtils::SetValueForKey(json, HistorySizeKey, _HistorySize);
     JsonUtils::SetValueForKey(json, SnapOnInputKey, _SnapOnInput);
     JsonUtils::SetValueForKey(json, AltGrAliasingKey, _AltGrAliasing);
-    JsonUtils::SetValueForKey(json, CursorHeightKey, _CursorHeight);
-    JsonUtils::SetValueForKey(json, CursorShapeKey, _CursorShape);
+    JsonUtils::SetValueForKey(json, CursorHeightKey, defaultAppearance->_CursorHeight);
+    JsonUtils::SetValueForKey(json, CursorShapeKey, defaultAppearance->_CursorShape);
     JsonUtils::SetValueForKey(json, TabTitleKey, _TabTitle);
 
     // Control Settings
@@ -549,10 +552,10 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, ScrollbarStateKey, _ScrollState);
     JsonUtils::SetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
     JsonUtils::SetValueForKey(json, IconKey, _Icon);
-    JsonUtils::SetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
-    JsonUtils::SetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
-    JsonUtils::SetValueForKey(json, BackgroundImageStretchModeKey, _BackgroundImageStretchMode);
-    JsonUtils::SetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
+    JsonUtils::SetValueForKey(json, BackgroundImageKey, defaultAppearance->_BackgroundImagePath);
+    JsonUtils::SetValueForKey(json, BackgroundImageOpacityKey, defaultAppearance->_BackgroundImageOpacity);
+    JsonUtils::SetValueForKey(json, BackgroundImageStretchModeKey, defaultAppearance->_BackgroundImageStretchMode);
+    JsonUtils::SetValueForKey(json, BackgroundImageAlignmentKey, defaultAppearance->_BackgroundImageAlignment);
     JsonUtils::SetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::SetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
     JsonUtils::SetValueForKey(json, TabColorKey, _TabColor);

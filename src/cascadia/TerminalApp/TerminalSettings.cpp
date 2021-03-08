@@ -59,7 +59,7 @@ namespace winrt::TerminalApp::implementation
         const auto globals = appSettings.GlobalSettings();
         _ApplyProfileSettings(profile);
         _ApplyGlobalSettings(globals);
-        ApplyAppearanceSettings(profile, globals.ColorSchemes());
+        ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes());
     }
 
     // Method Description:

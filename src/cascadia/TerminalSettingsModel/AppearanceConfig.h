@@ -25,7 +25,7 @@ Author(s):
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct AppearanceConfig : AppearanceConfigT<AppearanceConfig>, IInheritable<Profile>
+    struct AppearanceConfig : AppearanceConfigT<AppearanceConfig>, IInheritable<AppearanceConfig>
     {
     public:
         AppearanceConfig();
@@ -51,6 +51,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(Model::IAppearanceConfig, Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::UniformToFill);
 
     private:
+        friend struct implementation::Profile;
     };
 }
 

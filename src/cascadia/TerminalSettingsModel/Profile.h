@@ -97,10 +97,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(Model::Profile, hstring, Commandline, L"cmd.exe");
         GETSET_SETTING(Model::Profile, hstring, StartingDirectory);
 
-        GETSET_SETTING(Model::Profile, hstring, BackgroundImagePath);
-        GETSET_SETTING(Model::Profile, double, BackgroundImageOpacity, 1.0);
-        GETSET_SETTING(Model::Profile, Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::UniformToFill);
-        GETSET_SETTING(Model::Profile, ConvergedAlignment, BackgroundImageAlignment, ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center);
+        //GETSET_SETTING(Model::Profile, hstring, BackgroundImagePath);
+        //GETSET_SETTING(Model::Profile, double, BackgroundImageOpacity, 1.0);
+        //GETSET_SETTING(Model::Profile, Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::UniformToFill);
+        //GETSET_SETTING(Model::Profile, ConvergedAlignment, BackgroundImageAlignment, ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center);
 
         GETSET_SETTING(Model::Profile, Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
         GETSET_SETTING(Model::Profile, bool, RetroTerminalEffect, false);
@@ -108,22 +108,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(Model::Profile, bool, ForceFullRepaintRendering, false);
         GETSET_SETTING(Model::Profile, bool, SoftwareRendering, false);
 
-        GETSET_SETTING(Model::Profile, hstring, ColorSchemeName, L"Campbell");
+        //GETSET_SETTING(Model::Profile, hstring, ColorSchemeName, L"Campbell");
 
-        GETSET_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, Foreground, nullptr);
-        GETSET_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, Background, nullptr);
-        GETSET_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, SelectionBackground, nullptr);
-        GETSET_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, CursorColor, nullptr);
+        //GETSET_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, Foreground, nullptr);
+        //GETSET_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, Background, nullptr);
+        //GETSET_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, SelectionBackground, nullptr);
+        //GETSET_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, CursorColor, nullptr);
 
         GETSET_SETTING(Model::Profile, int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
         GETSET_SETTING(Model::Profile, bool, SnapOnInput, true);
         GETSET_SETTING(Model::Profile, bool, AltGrAliasing, true);
 
-        GETSET_SETTING(Model::Profile, Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle::Bar);
-        GETSET_SETTING(Model::Profile, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
+        //GETSET_SETTING(Model::Profile, Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle::Bar);
+        //GETSET_SETTING(Model::Profile, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
 
         GETSET_SETTING(Model::Profile, Model::BellStyle, BellStyle, BellStyle::Audible);
 
+        GETSET_SETTING(Model::Profile, Model::IAppearanceConfig, DefaultAppearance, Model::AppearanceConfig());
         GETSET_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
 
     private:
