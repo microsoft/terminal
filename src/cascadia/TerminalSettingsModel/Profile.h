@@ -125,7 +125,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         INHERITABLE_SETTING(Model::Profile, Model::BellStyle, BellStyle, BellStyle::Audible);
 
-        GETSET_SETTING(Model::Profile, winrt::Windows::Foundation::Collections::StringMap, EnvironmentVariables);
+        INHERITABLE_SETTING(Model::Profile, winrt::Windows::Foundation::Collections::StringMap, EnvironmentVariables, {});
 
     private:
         winrt::Windows::Foundation::Collections::StringMap _EvaluatedEnvironmentVariables() const;
