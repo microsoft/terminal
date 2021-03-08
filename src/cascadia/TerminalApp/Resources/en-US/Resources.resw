@@ -211,6 +211,9 @@
   <data name="RenameTabText" xml:space="preserve">
     <value>Rename Tab</value>
   </data>
+  <data name="DuplicateTabText" xml:space="preserve">
+    <value>Duplicate Tab</value>
+  </data>
   <data name="InvalidBackgroundImage" xml:space="preserve">
     <value>Found a profile with an invalid "backgroundImage". Defaulting that profile to have no background image. Make sure that when setting a "backgroundImage", the value is a valid file path to an image.</value>
     <comment>{Locked="\"backgroundImage\""}</comment>
