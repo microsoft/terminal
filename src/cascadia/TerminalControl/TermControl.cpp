@@ -1308,13 +1308,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
             const auto ctrlEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Control));
 
-            if (_CanSendVTMouseInput())
-            {
-                _TrySendMouseEvent(point);
-                args.Handled(true);
-                return;
-            }
-
             if (point.Properties().IsLeftButtonPressed())
             {
                 auto lock = _terminal->LockForWriting();
@@ -1350,6 +1343,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     !(_terminal->GetHyperlinkAtPosition(terminalPosition).empty()))
                 {
                     _HyperlinkHandler(_terminal->GetHyperlinkAtPosition(terminalPosition));
+                }
+                else if (_CanSendVTMouseInput())
+                {
+                    // GH#9396: hyper-link gets higher priority than mouse mode
+                    _TrySendMouseEvent(point);
                 }
                 else
                 {
@@ -1398,9 +1396,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
             else if (point.Properties().IsRightButtonPressed())
             {
-                // CopyOnSelect right click always pastes
-                if (_settings.CopyOnSelect() || !_terminal->IsSelectionActive())
+                if (_CanSendVTMouseInput())
                 {
+                    _TrySendMouseEvent(point);
+                }
+                else if (_settings.CopyOnSelect() || !_terminal->IsSelectionActive())
+                {
+                    // CopyOnSelect right click always pastes
                     PasteTextFromClipboard();
                 }
                 else
