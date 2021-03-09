@@ -188,6 +188,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <x:String x:Key="CaptionButtonPathWindowMaximized">M 0 2 h 8 v 8 h -8 v -8 M 2 2 v -2 h 8 v 8 h -2</x:String>
             </ResourceDictionary>
         </Button.Resources>
+        <ToolTipService.ToolTip>
+            <ToolTip>
+                <TextBlock>
+                <Run x:Name="MaximizeToolTip"/>
+                </TextBlock>
+            </ToolTip>
+        </ToolTipService.ToolTip>
     </Button>
     <Button Height="{StaticResource CaptionButtonHeightWindowed}" MinWidth="46.0" Width="46.0"
             x:Name="CloseButton"
