@@ -43,7 +43,7 @@ Commands with properties:
 - scrollDown has "rowsToScroll"
 - setColorScheme has "colorScheme"
 
-Majority of these commands listed above are inteded for the command palette, so they wouldn't make much sense with keys assigned to them anyway.
+Majority of these commands listed above are intended for the command palette, so they wouldn't make much sense with keys assigned to them anyway.
 
 ### Future Considerations
 
@@ -123,7 +123,7 @@ The Add new button is using the secondary color, to align with the button on the
 
 This design is not 1:1 with the JSON file, so actions that don't have keys will not appear on this page. Additionally, you can't add a new action without keys with this current design.
 
-You also cannot specify properties on commands (like the `newTab` command) and these will have to be added throught the JSON file. Considering there are only a few of these and we're planning to iterate on this and add a Command Palette page, we were okay with this decision.
+You also cannot specify properties on commands (like the `newTab` command) and these will have to be added through the JSON file. Considering there are only a few of these and we're planning to iterate on this and add a Command Palette page, we were okay with this decision.
 
 ## Resources
 
