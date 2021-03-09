@@ -850,11 +850,11 @@ namespace winrt::TerminalApp::implementation
         // results in the tab trying to access the active terminal control, which requires a valid active pane
         _PaneTypeChangedHandlers(nullptr, remainingChild);
 
-        const auto remainingFirstLeaf = remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>();
+        //const auto remainingFirstLeaf = remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>();
 
-        Dispatcher().TryRunAsync(CoreDispatcherPriority::Normal, [=]() {
-            remainingFirstLeaf.TerminalControl().Focus(FocusState::Programmatic);
-        });
+        //Dispatcher().TryRunAsync(CoreDispatcherPriority::Normal, [=]() {
+        //    remainingFirstLeaf.TerminalControl().Focus(FocusState::Programmatic);
+        //});
 
         //if (setupEvent)
         //{
@@ -1107,10 +1107,14 @@ namespace winrt::TerminalApp::implementation
 
         (isFirstChild ? _firstChild : _secondChild) = newChild;
 
+        const auto remainingChild = isFirstChild ? _secondChild : _firstChild;
+        remainingChild.FocusFirstChild();
+
         isFirstChild ? FirstChild_Root().Content(newChild.try_as<FrameworkElement>()) : SecondChild_Root().Content(newChild.try_as<FrameworkElement>());
 
         // Setup events appropriate for the new child
         _SetupChildEventHandlers(isFirstChild);
+        newChild.FocusFirstChild();
     }
 
     std::function<void(winrt::Windows::UI::Xaml::FrameworkElement const&, int32_t)> ParentPane::_GetGridSetColOrRowFunc() const noexcept
