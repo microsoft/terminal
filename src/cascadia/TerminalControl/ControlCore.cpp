@@ -12,6 +12,7 @@
 #include <LibraryResources.h>
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../../types/inc/Utils.hpp"
+#include "../../buffer/out/search.h"
 
 #include "ControlCore.g.cpp"
 // #include "TermControlAutomationPeer.h" // ?
@@ -844,5 +845,46 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
         return bufferData.text;
+    }
+
+    ::Microsoft::Console::Types::IUiaData* ControlCore::GetUiaData() const
+    {
+        return _terminal.get();
+    }
+
+    // Method Description:
+    // - Search text in text buffer. This is triggered if the user click
+    //   search button or press enter.
+    // Arguments:
+    // - text: the text to search
+    // - goForward: boolean that represents if the current search direction is forward
+    // - caseSensitive: boolean that represents if the current search is case sensitive
+    // Return Value:
+    // - <none>
+    void ControlCore::Search(const winrt::hstring& text,
+                             const bool goForward,
+                             const bool caseSensitive)
+    {
+        if (text.size() == 0 /* || _closing*/)
+        {
+            return;
+        }
+
+        const Search::Direction direction = goForward ?
+                                                Search::Direction::Forward :
+                                                Search::Direction::Backward;
+
+        const Search::Sensitivity sensitivity = caseSensitive ?
+                                                    Search::Sensitivity::CaseSensitive :
+                                                    Search::Sensitivity::CaseInsensitive;
+
+        ::Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
+        auto lock = _terminal->LockForWriting();
+        if (search.FindNext())
+        {
+            _terminal->SetBlockSelection(false);
+            search.Select();
+            _renderer->TriggerSelection();
+        }
     }
 }

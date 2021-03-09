@@ -195,50 +195,35 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControlTwo::SearchMatch(const bool goForward)
     {
+        if (_closing)
+        {
+            return;
+        }
         if (!_searchBox)
         {
             CreateSearchBoxControl();
         }
         else
         {
-            _Search(_searchBox->TextBox().Text(), goForward, false);
+            _core->Search(_searchBox->TextBox().Text(), goForward, false);
         }
     }
 
-    // Method Description:
-    // - Search text in text buffer. This is triggered if the user click
-    //   search button or press enter.
-    // Arguments:
-    // - text: the text to search
-    // - goForward: boolean that represents if the current search direction is forward
-    // - caseSensitive: boolean that represents if the current search is case sensitive
-    // Return Value:
-    // - <none>
+    // // Method Description:
+    // // - Search text in text buffer. This is triggered if the user click
+    // //   search button or press enter.
+    // // Arguments:
+    // // - text: the text to search
+    // // - goForward: boolean that represents if the current search direction is forward
+    // // - caseSensitive: boolean that represents if the current search is case sensitive
+    // // Return Value:
+    // // - <none>
     void TermControlTwo::_Search(const winrt::hstring& text,
                                  const bool goForward,
                                  const bool caseSensitive)
     {
-        if (text.size() == 0 || _closing)
-        {
-            return;
-        }
-
-        const Search::Direction direction = goForward ?
-                                                Search::Direction::Forward :
-                                                Search::Direction::Backward;
-
-        const Search::Sensitivity sensitivity = caseSensitive ?
-                                                    Search::Sensitivity::CaseSensitive :
-                                                    Search::Sensitivity::CaseInsensitive;
-
-        Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
-        auto lock = _core->_terminal->LockForWriting();
-        if (search.FindNext())
-        {
-            _core->_terminal->SetBlockSelection(false);
-            search.Select();
-            _core->_renderer->TriggerSelection();
-        }
+        // !!TODO!! This is bound in XAML, and that seems a little silly now
+        _core->Search(text, goForward, caseSensitive);
     }
 
     // Method Description:
@@ -534,7 +519,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     ::Microsoft::Console::Types::IUiaData* TermControlTwo::GetUiaData() const
     {
-        return _core->_terminal.get();
+        return _core->GetUiaData();
     }
 
     const Windows::UI::Xaml::Thickness TermControlTwo::GetPadding()

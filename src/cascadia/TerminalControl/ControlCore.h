@@ -86,6 +86,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _SetEndSelectionPointAtCursor(winrt::Windows::Foundation::Point const& cursorPosition);
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
 
+        ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
+
 #pragma region ICoreState
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
         const size_t TaskbarState() const noexcept;
@@ -135,6 +137,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         bool HasSelection() const;
         std::vector<std::wstring> SelectedText(bool trimTrailingWhitespace) const;
+
+        void Search(const winrt::hstring& text,
+                    const bool goForward,
+                    const bool caseSensitive);
 
         TYPED_EVENT(HoveredHyperlinkChanged, IInspectable, IInspectable);
     };
