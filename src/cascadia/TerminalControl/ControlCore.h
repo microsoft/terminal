@@ -79,6 +79,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void ToggleShaderEffects();
         void _UpdateHoveredCell(const std::optional<COORD>& terminalPosition);
 
+        void _SetEndSelectionPointAtCursor(winrt::Windows::Foundation::Point const& cursorPosition);
+
         ////////////////////////////////////////////////////////////////////////
         // These methods are new
         void UpdateSettings(const IControlSettings& settings);

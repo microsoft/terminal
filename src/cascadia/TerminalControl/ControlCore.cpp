@@ -593,4 +593,36 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    // Method Description:
+    // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
+    // Arguments:
+    // - ~~cursorPosition: in pixels, relative to the origin of the control~~
+    // - cursorPosition: in cells
+    void ControlCore::_SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition)
+    {
+        if (!_terminal->IsSelectionActive())
+        {
+            return;
+        }
+
+        // Have to take the lock because the renderer will not draw correctly if
+        // you move its endpoints while it is generating a frame.
+        auto lock = _terminal->LockForWriting();
+
+        // til::point terminalPosition{ cursorPosition };
+        // auto terminalPosition = _GetTerminalPosition(cursorPosition);
+
+        const short lastVisibleRow = std::max<short>(_terminal->GetViewport().Height() - 1, 0);
+        const short lastVisibleCol = std::max<short>(_terminal->GetViewport().Width() - 1, 0);
+
+        til::point terminalPosition{ til::math::rounding,
+                                     std::clamp<float>(cursorPosition.X, 0, lastVisibleCol),
+                                     std::clamp<float>(cursorPosition.Y, 0, lastVisibleRow) };
+
+        // save location (for rendering) + render
+        _terminal->SetSelectionEnd(terminalPosition);
+        _renderer->TriggerSelection();
+        // _selectionNeedsToBeCopied = true;
+    }
+
 }

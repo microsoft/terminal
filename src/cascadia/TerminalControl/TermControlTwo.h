@@ -264,7 +264,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point);
         bool _CanSendVTMouseInput();
 
-        const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
+        const til::point _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 

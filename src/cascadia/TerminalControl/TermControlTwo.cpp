@@ -1408,6 +1408,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             if (_focused && point.Properties().IsLeftButtonPressed())
             {
+                // !!TODO!!: _SetEndSelectionPointAtCursor also takes the lock!
                 auto lock = _core->_terminal->LockForWriting();
 
                 if (_singleClickTouchdownPos)
@@ -1426,7 +1427,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     }
                 }
 
-                _SetEndSelectionPointAtCursor(cursorPosition);
+                _core->_SetEndSelectionPointAtCursor(cursorPosition);
 
                 const double cursorBelowBottomDist = cursorPosition.Y - SwapChainPanel().Margin().Top - SwapChainPanel().ActualHeight();
                 const double cursorAboveTopDist = -1 * cursorPosition.Y + SwapChainPanel().Margin().Top;
@@ -1752,14 +1753,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      for us.
         ScrollBar().Value(newValue);
 
-        if (_core->_terminal->IsSelectionActive() && isLeftButtonPressed)
+        if (isLeftButtonPressed)
         {
-            // Have to take the lock or we could change the endpoints out from under the renderer actively rendering.
-            auto lock = _core->_terminal->LockForWriting();
-
             // If user is mouse selecting and scrolls, they then point at new character.
             //      Make sure selection reflects that immediately.
-            _SetEndSelectionPointAtCursor(point);
+            _core->_SetEndSelectionPointAtCursor(point);
         }
     }
 
@@ -1898,9 +1896,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                 if (_autoScrollingPointerPoint.has_value())
                 {
-                    // Have to take the lock because the renderer will not draw correctly if you move its endpoints while it is generating a frame.
-                    auto lock = _core->_terminal->LockForWriting();
-
                     _SetEndSelectionPointAtCursor(_autoScrollingPointerPoint.value().Position());
                 }
             }
@@ -2232,28 +2227,29 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
-    // Method Description:
-    // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
-    // Arguments:
-    // - cursorPosition: in pixels, relative to the origin of the control
+    // // Method Description:
+    // // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
+    // // Arguments:
+    // // - cursorPosition: in pixels, relative to the origin of the control
     void TermControlTwo::_SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition)
     {
-        if (!_core->_terminal->IsSelectionActive())
-        {
-            return;
-        }
+        _core->_SetEndSelectionPointAtCursor(_GetTerminalPosition(cursorPosition));
+        //     if (!_core->_terminal->IsSelectionActive())
+        //     {
+        //         return;
+        //     }
 
-        auto terminalPosition = _GetTerminalPosition(cursorPosition);
+        //     auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
-        const short lastVisibleRow = std::max<short>(_core->_terminal->GetViewport().Height() - 1, 0);
-        const short lastVisibleCol = std::max<short>(_core->_terminal->GetViewport().Width() - 1, 0);
+        //     const short lastVisibleRow = std::max<short>(_core->_terminal->GetViewport().Height() - 1, 0);
+        //     const short lastVisibleCol = std::max<short>(_core->_terminal->GetViewport().Width() - 1, 0);
 
-        terminalPosition.Y = std::clamp<short>(terminalPosition.Y, 0, lastVisibleRow);
-        terminalPosition.X = std::clamp<short>(terminalPosition.X, 0, lastVisibleCol);
+        //     terminalPosition.Y = std::clamp<short>(terminalPosition.Y, 0, lastVisibleRow);
+        //     terminalPosition.X = std::clamp<short>(terminalPosition.X, 0, lastVisibleCol);
 
-        // save location (for rendering) + render
-        _core->_terminal->SetSelectionEnd(terminalPosition);
-        _core->_renderer->TriggerSelection();
+        //     // save location (for rendering) + render
+        //     _core->_terminal->SetSelectionEnd(terminalPosition);
+        //     _core->_renderer->TriggerSelection();
         _selectionNeedsToBeCopied = true;
     }
 
@@ -2886,7 +2882,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //    NOTE: origin (0,0) is top-left.
     // Return Value:
     // - the corresponding viewport terminal position for the given Point parameter
-    const COORD TermControlTwo::_GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition)
+    const til::point TermControlTwo::_GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition)
     {
         // cursorPosition is DIPs, relative to SwapChainPanel origin
         const til::point cursorPosInDIPs{ til::math::rounding, cursorPosition };
@@ -3075,7 +3071,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                           fullPath.end(),
                                                           L' ') != fullPath.end();
 
-                    auto lock = _core->_terminal->LockForWriting();
+                    // auto lock = _core->_terminal->LockForWriting();
 
                     if (containsSpaces)
                     {
