@@ -103,9 +103,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnTerminalCursorPositionChanged = std::bind(&TermControlTwo::_TerminalCursorPositionChanged, this);
         _core->_terminal->SetCursorPositionChangedCallback(pfnTerminalCursorPositionChanged);
 
-        // auto pfnCopyToClipboard = std::bind(&TermControlTwo::_CopyToClipboard, this, std::placeholders::_1);
-        // _core->_terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
-
         _core->_terminal->TaskbarProgressChangedCallback([&]() { TermControlTwo::TaskbarProgressChanged(); });
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
@@ -639,174 +636,86 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                   SwapChainPanel().ActualHeight(),
                                   SwapChainPanel().CompositionScaleX(),
                                   SwapChainPanel().CompositionScaleY());
-        { // scope for terminalLock
-            // auto terminalLock = _core->_terminal->LockForWriting();
 
-            // const auto actualWidth = SwapChainPanel().ActualWidth();
-            // const auto actualHeight = SwapChainPanel().ActualHeight();
+        // _terminal->CreateFromSettings(_settings, renderTarget);
 
-            // const auto windowWidth = actualWidth * SwapChainPanel().CompositionScaleX(); // Width() and Height() are NaN?
-            // const auto windowHeight = actualHeight * SwapChainPanel().CompositionScaleY();
+        // the warning callback was originally after
+        // `_terminal->CreateFromSettings` and before
+        // `SetRetroTerminalEffect`, `SetPixelShaderPath`, etc.
 
-            // if (windowWidth == 0 || windowHeight == 0)
-            // {
-            //     return false;
-            // }
+        // IMPORTANT! Set this callback up sooner than later. If we do it
+        // after Enable, then it'll be possible to paint the frame once
+        // _before_ the warning handler is set up, and then warnings from
+        // the first paint will be ignored!
+        _core->_renderEngine->SetWarningCallback(std::bind(&TermControlTwo::_RendererWarning, this, std::placeholders::_1));
 
-            // // First create the render thread.
-            // // Then stash a local pointer to the render thread so we can initialize it and enable it
-            // // to paint itself *after* we hand off its ownership to the renderer.
-            // // We split up construction and initialization of the render thread object this way
-            // // because the renderer and render thread have circular references to each other.
-            // auto renderThread = std::make_unique<::Microsoft::Console::Render::RenderThread>();
-            // auto* const localPointerToThread = renderThread.get();
+        // ...
 
-            // // Now create the renderer and initialize the render thread.
-            // _core->_renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_core->_terminal.get(), nullptr, 0, std::move(renderThread));
-            // ::Microsoft::Console::Render::IRenderTarget& renderTarget = *_core->_renderer;
+        // THROW_IF_FAILED(dxEngine->Enable());
+        // _renderEngine = std::move(dxEngine);
 
-            // _core->_renderer->SetRendererEnteredErrorStateCallback([weakThis = get_weak()]() {
-            //     if (auto strongThis{ weakThis.get() })
-            //     {
-            //         strongThis->_RendererEnteredErrorState();
-            //     }
-            // });
+        _AttachDxgiSwapChainToXaml(_core->_renderEngine->GetSwapChainHandle());
 
-            // THROW_IF_FAILED(localPointerToThread->Initialize(_core->_renderer.get()));
+        // Tell the DX Engine to notify us when the swap chain changes.
+        // We do this after we initially set the swapchain so as to avoid unnecessary callbacks (and locking problems)
+        _core->_renderEngine->SetCallback(std::bind(&TermControlTwo::RenderEngineSwapChainChanged, this));
 
-            // // Set up the DX Engine
-            // auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-            // _core->_renderer->AddRenderEngine(dxEngine.get());
+        auto bottom = _core->_terminal->GetViewport().BottomExclusive();
+        auto bufferHeight = bottom;
 
-            // // Initialize our font with the renderer
-            // // We don't have to care about DPI. We'll get a change message immediately if it's not 96
-            // // and react accordingly.
-            // _UpdateFont(true);
+        ScrollBar().Maximum(bufferHeight - bufferHeight);
+        ScrollBar().Minimum(0);
+        ScrollBar().Value(0);
+        ScrollBar().ViewportSize(bufferHeight);
+        ScrollBar().LargeChange(std::max<SHORT>(bufferHeight - 1, 0)); // scroll one "screenful" at a time when the scroll bar is clicked
 
-            // const COORD windowSize{ static_cast<short>(windowWidth), static_cast<short>(windowHeight) };
+        // localPointerToThread->EnablePainting();
 
-            // // Fist set up the dx engine with the window size in pixels.
-            // // Then, using the font, get the number of characters that can fit.
-            // // Resize our terminal connection to match that size, and initialize the terminal with that size.
-            // const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);
-            // LOG_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
+        // Set up blinking cursor
+        int blinkTime = GetCaretBlinkTime();
+        if (blinkTime != INFINITE)
+        {
+            // Create a timer
+            DispatcherTimer cursorTimer;
+            cursorTimer.Interval(std::chrono::milliseconds(blinkTime));
+            cursorTimer.Tick({ get_weak(), &TermControlTwo::_CursorTimerTick });
+            cursorTimer.Start();
+            _cursorTimer.emplace(std::move(cursorTimer));
+        }
+        else
+        {
+            // The user has disabled cursor blinking
+            _cursorTimer = std::nullopt;
+        }
 
-            // // Update DxEngine's SelectionBackground
-            // dxEngine->SetSelectionBackground(_settings.SelectionBackground());
+        // Set up blinking attributes
+        BOOL animationsEnabled = TRUE;
+        SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
+        if (animationsEnabled && blinkTime != INFINITE)
+        {
+            // Create a timer
+            DispatcherTimer blinkTimer;
+            blinkTimer.Interval(std::chrono::milliseconds(blinkTime));
+            blinkTimer.Tick({ get_weak(), &TermControlTwo::_BlinkTimerTick });
+            blinkTimer.Start();
+            _blinkTimer.emplace(std::move(blinkTimer));
+        }
+        else
+        {
+            // The user has disabled blinking
+            _blinkTimer = std::nullopt;
+        }
 
-            // const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
-            // const auto width = vp.Width();
-            // const auto height = vp.Height();
-            // _core->_connection.Resize(height, width);
+        // import value from WinUser (convert from milli-seconds to micro-seconds)
+        _multiClickTimer = GetDoubleClickTime() * 1000;
 
-            // // Override the default width and height to match the size of the swapChainPanel
-            // _settings.InitialCols(width);
-            // _settings.InitialRows(height);
+        // Focus the control here. If we do it during control initialization, then
+        //      focus won't actually get passed to us. I believe this is because
+        //      we're not technically a part of the UI tree yet, so focusing us
+        //      becomes a no-op.
+        this->Focus(FocusState::Programmatic);
 
-            // _core->_terminal->CreateFromSettings(_settings, renderTarget);
-
-            // IMPORTANT! Set this callback up sooner than later. If we do it
-            // after Enable, then it'll be possible to paint the frame once
-            // _before_ the warning handler is set up, and then warnings from
-            // the first paint will be ignored!
-            _core->_renderEngine->SetWarningCallback(std::bind(&TermControlTwo::_RendererWarning, this, std::placeholders::_1));
-
-            // dxEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-            // dxEngine->SetPixelShaderPath(_settings.PixelShaderPath());
-            // dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
-            // dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
-
-            // // Update DxEngine's AntialiasingMode
-            // switch (_settings.AntialiasingMode())
-            // {
-            // case TextAntialiasingMode::Cleartype:
-            //     dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
-            //     break;
-            // case TextAntialiasingMode::Aliased:
-            //     dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
-            //     break;
-            // case TextAntialiasingMode::Grayscale:
-            // default:
-            //     dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
-            //     break;
-            // }
-
-            // // GH#5098: Inform the engine of the opacity of the default text background.
-            // if (_settings.UseAcrylic())
-            // {
-            //     dxEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
-            // }
-
-            // THROW_IF_FAILED(dxEngine->Enable());
-            // _core->_renderEngine = std::move(dxEngine);
-
-            _AttachDxgiSwapChainToXaml(_core->_renderEngine->GetSwapChainHandle());
-
-            // Tell the DX Engine to notify us when the swap chain changes.
-            // We do this after we initially set the swapchain so as to avoid unnecessary callbacks (and locking problems)
-            _core->_renderEngine->SetCallback(std::bind(&TermControlTwo::RenderEngineSwapChainChanged, this));
-
-            auto bottom = _core->_terminal->GetViewport().BottomExclusive();
-            auto bufferHeight = bottom;
-
-            ScrollBar().Maximum(bufferHeight - bufferHeight);
-            ScrollBar().Minimum(0);
-            ScrollBar().Value(0);
-            ScrollBar().ViewportSize(bufferHeight);
-            ScrollBar().LargeChange(std::max<SHORT>(bufferHeight - 1, 0)); // scroll one "screenful" at a time when the scroll bar is clicked
-
-            // localPointerToThread->EnablePainting();
-
-            // Set up blinking cursor
-            int blinkTime = GetCaretBlinkTime();
-            if (blinkTime != INFINITE)
-            {
-                // Create a timer
-                DispatcherTimer cursorTimer;
-                cursorTimer.Interval(std::chrono::milliseconds(blinkTime));
-                cursorTimer.Tick({ get_weak(), &TermControlTwo::_CursorTimerTick });
-                cursorTimer.Start();
-                _cursorTimer.emplace(std::move(cursorTimer));
-            }
-            else
-            {
-                // The user has disabled cursor blinking
-                _cursorTimer = std::nullopt;
-            }
-
-            // Set up blinking attributes
-            BOOL animationsEnabled = TRUE;
-            SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
-            if (animationsEnabled && blinkTime != INFINITE)
-            {
-                // Create a timer
-                DispatcherTimer blinkTimer;
-                blinkTimer.Interval(std::chrono::milliseconds(blinkTime));
-                blinkTimer.Tick({ get_weak(), &TermControlTwo::_BlinkTimerTick });
-                blinkTimer.Start();
-                _blinkTimer.emplace(std::move(blinkTimer));
-            }
-            else
-            {
-                // The user has disabled blinking
-                _blinkTimer = std::nullopt;
-            }
-
-            // import value from WinUser (convert from milli-seconds to micro-seconds)
-            _multiClickTimer = GetDoubleClickTime() * 1000;
-
-            // Focus the control here. If we do it during control initialization, then
-            //      focus won't actually get passed to us. I believe this is because
-            //      we're not technically a part of the UI tree yet, so focusing us
-            //      becomes a no-op.
-            this->Focus(FocusState::Programmatic);
-
-            _initializedTerminal = true;
-        } // scope for TerminalLock
-
-        // // Start the connection outside of lock, because it could
-        // // start writing output immediately.
-        // _core->_connection.Start();
+        _initializedTerminal = true;
 
         // Likewise, run the event handlers outside of lock (they could
         // be reentrant)
@@ -1517,7 +1426,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     // Method Description:
     // - Actually handle a scrolling event, whether from a mouse wheel or a
-
     //   touchpad scroll. Depending upon what modifier keys are pressed,
     //   different actions will take place.
     //   * Attempts to first dispatch the mouse scroll as a VT event
@@ -2085,12 +1993,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         _TabColorChangedHandlers(*this, nullptr);
     }
-
-    // void TermControlTwo::_CopyToClipboard(const std::wstring_view& wstr)
-    // {
-    //     auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(wstr));
-    //     _core->_CopyToClipboardHandlers(*_core, *copyArgs);
-    // }
 
     // Method Description:
     // - Update the position and size of the scrollbar to match the given
@@ -2960,128 +2862,69 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlTwoReadOnly"));
             control->_raiseNoticeHandlers(*control, std::move(noticeArgs));
         }
-    }
 
-    // // Method description:
-    // // - Updates last hovered cell, renders / removes rendering of hyper-link if required
-    // // Arguments:
-    // // - terminalPosition: The terminal position of the pointer
-    // void TermControlTwo::_UpdateHoveredCell(const std::optional<COORD>& terminalPosition)
-    // {
-    //     if (terminalPosition == _lastHoveredCell)
-    //     {
-    //         return;
-    //     }
-
-    //     _lastHoveredCell = terminalPosition;
-
-    //     if (terminalPosition.has_value())
-    //     {
-    //         const auto uri = _core->_terminal->GetHyperlinkAtPosition(*terminalPosition);
-    //         if (!uri.empty())
-    //         {
-    //             // Update the tooltip with the URI
-    //             HoveredUri().Text(uri);
-
-    //             // Set the border thickness so it covers the entire cell
-    //             const auto charSizeInPixels = CharacterDimensions();
-    //             const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
-    //             const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
-    //             const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
-    //             HyperlinkTooltipBorder().BorderThickness(newThickness);
-
-    //             // Compute the location of the top left corner of the cell in DIPS
-    //             const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
-    //             const til::point startPos{ terminalPosition->X, terminalPosition->Y };
-    //             const til::size fontSize{ _core->_actualFont.GetSize() };
-    //             const til::point posInPixels{ startPos * fontSize };
-    //             const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
-    //             const til::point locationInDIPs{ posInDIPs + marginsInDips };
-
-    //             // Move the border to the top left corner of the cell
-    //             OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
-    //             OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
-    //         }
-    //     }
-
-    //     const uint16_t newId = terminalPosition.has_value() ? _core->_terminal->GetHyperlinkIdAtPosition(*terminalPosition) : 0u;
-    //     const auto newInterval = terminalPosition.has_value() ? _core->_terminal->GetHyperlinkIntervalFromPosition(*terminalPosition) : std::nullopt;
-
-    //     // If the hyperlink ID changed or the interval changed, trigger a redraw all
-    //     // (so this will happen both when we move onto a link and when we move off a link)
-    //     if (newId != _lastHoveredId || (newInterval != _lastHoveredInterval))
-    //     {
-    //         _lastHoveredId = newId;
-    //         _lastHoveredInterval = newInterval;
-    //         _core->_renderEngine->UpdateHyperlinkHoveredId(newId);
-    //         _core->_renderer->UpdateLastHoveredInterval(newInterval);
-    //         _core->_renderer->TriggerRedrawAll();
-    //     }
-    // }
-
-    // Method Description:
-    // - Handle a mouse exited event, specifically clearing last hovered cell
-    // and removing selection from hyper link if exists
-    // Arguments:
-    // - sender: not used
-    // - args: event data
-    void TermControlTwo::_PointerExitedHandler(Windows::Foundation::IInspectable const& /*sender*/, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
-    {
-        _core->_UpdateHoveredCell(std::nullopt);
-    }
-
-    winrt::fire_and_forget TermControlTwo::_hoveredHyperlinkChanged(const IInspectable& sender,
-                                                                    const IInspectable& args)
-    {
-        auto weakThis{ get_weak() };
-        co_await resume_foreground(Dispatcher());
-        if (auto self{ weakThis.get() })
+        // Method Description:
+        // - Handle a mouse exited event, specifically clearing last hovered cell
+        // and removing selection from hyper link if exists
+        // Arguments:
+        // - sender: not used
+        // - args: event data
+        void TermControlTwo::_PointerExitedHandler(Windows::Foundation::IInspectable const& /*sender*/, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
         {
-            if (_core->_lastHoveredCell.has_value())
+            _core->_UpdateHoveredCell(std::nullopt);
+        }
+
+        winrt::fire_and_forget TermControlTwo::_hoveredHyperlinkChanged(const IInspectable& sender,
+                                                                        const IInspectable& args)
+        {
+            auto weakThis{ get_weak() };
+            co_await resume_foreground(Dispatcher());
+            if (auto self{ weakThis.get() })
             {
-                const auto uriText = _core->GetHoveredUriText();
-                if (!uriText.empty())
+                if (_core->_lastHoveredCell.has_value())
                 {
-                    // Update the tooltip with the URI
-                    HoveredUri().Text(uriText);
+                    const auto uriText = _core->GetHoveredUriText();
+                    if (!uriText.empty())
+                    {
+                        // Update the tooltip with the URI
+                        HoveredUri().Text(uriText);
 
-                    // Set the border thickness so it covers the entire cell
-                    const auto charSizeInPixels = CharacterDimensions();
-                    const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
-                    const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
-                    const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
-                    HyperlinkTooltipBorder().BorderThickness(newThickness);
+                        // Set the border thickness so it covers the entire cell
+                        const auto charSizeInPixels = CharacterDimensions();
+                        const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
+                        const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
+                        const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
+                        HyperlinkTooltipBorder().BorderThickness(newThickness);
 
-                    // Compute the location of the top left corner of the cell in DIPS
-                    const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
-                    const til::point startPos{ _core->_lastHoveredCell->X,
-                                               _core->_lastHoveredCell->Y };
-                    const til::size fontSize{ _core->_actualFont.GetSize() };
-                    const til::point posInPixels{ startPos * fontSize };
-                    const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
-                    const til::point locationInDIPs{ posInDIPs + marginsInDips };
+                        // Compute the location of the top left corner of the cell in DIPS
+                        const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
+                        const til::point startPos{ _core->_lastHoveredCell->X,
+                                                   _core->_lastHoveredCell->Y };
+                        const til::size fontSize{ _core->_actualFont.GetSize() };
+                        const til::point posInPixels{ startPos * fontSize };
+                        const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
+                        const til::point locationInDIPs{ posInDIPs + marginsInDips };
 
-                    // Move the border to the top left corner of the cell
-                    OverlayCanvas().SetLeft(HyperlinkTooltipBorder(),
-                                            (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
-                    OverlayCanvas().SetTop(HyperlinkTooltipBorder(),
-                                           (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
+                        // Move the border to the top left corner of the cell
+                        OverlayCanvas().SetLeft(HyperlinkTooltipBorder(),
+                                                (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
+                        OverlayCanvas().SetTop(HyperlinkTooltipBorder(),
+                                               (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
+                    }
                 }
             }
         }
+
+        // -------------------------------- WinRT Events ---------------------------------
+        // Winrt events need a method for adding a callback to the event and removing the callback.
+        // These macros will define them both for you.
+        DEFINE_EVENT(TermControlTwo, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
+        DEFINE_EVENT(TermControlTwo, FontSizeChanged, _fontSizeChangedHandlers, TerminalControl::FontSizeChangedEventArgs);
+        DEFINE_EVENT(TermControlTwo, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
+
+        DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControlTwo, TerminalControl::PasteFromClipboardEventArgs);
+        DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControlTwo, TerminalControl::OpenHyperlinkEventArgs);
+        DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControlTwo, IInspectable);
+        DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControlTwo, TerminalControl::NoticeEventArgs);
+        // clang-format on
     }
-
-    // -------------------------------- WinRT Events ---------------------------------
-    // Winrt events need a method for adding a callback to the event and removing the callback.
-    // These macros will define them both for you.
-    DEFINE_EVENT(TermControlTwo, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
-    DEFINE_EVENT(TermControlTwo, FontSizeChanged, _fontSizeChangedHandlers, TerminalControl::FontSizeChangedEventArgs);
-    DEFINE_EVENT(TermControlTwo, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
-
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControlTwo, TerminalControl::PasteFromClipboardEventArgs);
-    // DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, CopyToClipboard, _clipboardCopyHandlers, TerminalControl::TermControlTwo, TerminalControl::CopyToClipboardEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControlTwo, TerminalControl::OpenHyperlinkEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControlTwo, IInspectable);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControlTwo, TerminalControl::NoticeEventArgs);
-    // clang-format on
-}
