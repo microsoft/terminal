@@ -5,11 +5,15 @@ import "IMouseWheelListener.idl";
 import "IControlSettings.idl";
 import "IDirectKeyListener.idl";
 import "EventArgs.idl";
+import "ICoreState.idl";
 
 namespace Microsoft.Terminal.TerminalControl
 {
 
-    [default_interface] runtimeclass TermControlTwo : Windows.UI.Xaml.Controls.UserControl, IDirectKeyListener, IMouseWheelListener
+    [default_interface] runtimeclass TermControlTwo : Windows.UI.Xaml.Controls.UserControl,
+                                                      IDirectKeyListener,
+                                                      IMouseWheelListener,
+                                                      ICoreState
     {
         TermControlTwo(Microsoft.Terminal.TerminalControl.IControlSettings settings, Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
@@ -36,7 +40,6 @@ namespace Microsoft.Terminal.TerminalControl
         event Windows.Foundation.TypedEventHandler<TermControlTwo, IInspectable> ConnectionStateChanged;
         Microsoft.Terminal.TerminalConnection.ConnectionState ConnectionState { get; };
 
-        String Title { get; };
 
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();
@@ -61,12 +64,7 @@ namespace Microsoft.Terminal.TerminalControl
         void SendInput(String input);
 
         void TaskbarProgressChanged();
-        UInt64 TaskbarState { get; };
-        UInt64 TaskbarProgress { get; };
 
-        String WorkingDirectory { get; };
-
-        Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
 
         Boolean ReadOnly { get; };

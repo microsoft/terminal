@@ -87,6 +87,7 @@
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ControlCore.idl" />
+    <Midl Include="ICoreState.idl" />
     <Midl Include="IDirectKeyListener.idl" />
     <Midl Include="KeyChord.idl" />
     <Midl Include="EventArgs.idl" />

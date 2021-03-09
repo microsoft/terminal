@@ -2038,8 +2038,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     hstring TermControlTwo::Title()
     {
-        hstring hstr{ _core->_terminal->GetConsoleTitle() };
-        return hstr;
+        return _core->Title();
     }
 
     hstring TermControlTwo::GetProfileName() const
@@ -2049,8 +2048,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     hstring TermControlTwo::WorkingDirectory() const
     {
-        hstring hstr{ _core->_terminal->GetWorkingDirectory() };
-        return hstr;
+        return _core->WorkingDirectory();
     }
 
     // // Method Description:
@@ -2799,8 +2797,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControlTwo::TabColor() noexcept
     {
-        auto coreColor = _core->_terminal->GetTabColor();
-        return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(coreColor.value()) : nullptr;
+        return _core->TabColor();
     }
 
     // Method Description:
@@ -2818,7 +2815,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - The taskbar state of this control
     const size_t TermControlTwo::TaskbarState() const noexcept
     {
-        return _core->_terminal->GetTaskbarState();
+        return _core->TaskbarState();
     }
 
     // Method Description:
@@ -2827,7 +2824,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - The taskbar progress of this control
     const size_t TermControlTwo::TaskbarProgress() const noexcept
     {
-        return _core->_terminal->GetTaskbarProgress();
+        return _core->TaskbarProgress();
     }
 
     // Method Description:

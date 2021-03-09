@@ -86,6 +86,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void _CopyToClipboardRequested(const std::wstring_view& wstr);
 
+#pragma region ICoreState
+        Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
+        const size_t TaskbarState() const noexcept;
+        const size_t TaskbarProgress() const noexcept;
+        hstring Title();
+        hstring WorkingDirectory() const;
+#pragma endregion
+
         TYPED_EVENT(CopyToClipboard, IInspectable, TerminalControl::CopyToClipboardEventArgs);
 
     public:

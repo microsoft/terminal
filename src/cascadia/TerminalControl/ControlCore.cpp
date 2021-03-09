@@ -712,4 +712,40 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _actualFont;
     }
 
+    hstring ControlCore::Title()
+    {
+        hstring hstr{ _terminal->GetConsoleTitle() };
+        return hstr;
+    }
+
+    hstring ControlCore::WorkingDirectory() const
+    {
+        hstring hstr{ _terminal->GetWorkingDirectory() };
+        return hstr;
+    }
+
+    Windows::Foundation::IReference<winrt::Windows::UI::Color> ControlCore::TabColor() noexcept
+    {
+        auto coreColor = _terminal->GetTabColor();
+        return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(coreColor.value()) :
+                                       nullptr;
+    }
+
+    // Method Description:
+    // - Gets the internal taskbar state value
+    // Return Value:
+    // - The taskbar state of this control
+    const size_t ControlCore::TaskbarState() const noexcept
+    {
+        return _terminal->GetTaskbarState();
+    }
+
+    // Method Description:
+    // - Gets the internal taskbar progress value
+    // Return Value:
+    // - The taskbar progress of this control
+    const size_t ControlCore::TaskbarProgress() const noexcept
+    {
+        return _terminal->GetTaskbarProgress();
+    }
 }
