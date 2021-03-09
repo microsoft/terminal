@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "Font.g.h"
 #include "Profiles.g.h"
 #include "ProfilePageNavigationState.g.h"
 #include "DeleteProfileEventArgs.g.h"
@@ -12,20 +13,44 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    struct Font : FontT<Font>
+    {
+    public:
+        Font(std::wstring name, std::wstring localizedName) :
+            _Name{ name },
+            _LocalizedName{ localizedName } {};
+
+        hstring ToString() { return _LocalizedName; }
+
+        WINRT_PROPERTY(hstring, Name);
+        WINRT_PROPERTY(hstring, LocalizedName);
+    };
+
     struct ProfileViewModel : ProfileViewModelT<ProfileViewModel>, ViewModelHelper<ProfileViewModel>
     {
     public:
         ProfileViewModel(const Model::Profile& profile);
 
-        bool CanDeleteProfile() const;
-
+        // background image
         bool UseDesktopBGImage();
         void UseDesktopBGImage(const bool useDesktop);
+        bool BackgroundImageSettingsVisible();
+
+        // starting directory
         bool UseParentProcessDirectory();
         void UseParentProcessDirectory(const bool useParent);
         bool UseCustomStartingDirectory();
-        bool BackgroundImageSettingsVisible();
 
+        // font face
+        static void UpdateFontList() noexcept;
+        Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() const noexcept;
+        Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() const noexcept;
+        bool UsingMonospaceFont() const noexcept;
+        bool ShowAllFonts() const noexcept;
+        void ShowAllFonts(const bool& value);
+
+        // general profile knowledge
+        bool CanDeleteProfile() const;
         WINRT_PROPERTY(bool, IsBaseLayer, false);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
@@ -71,6 +96,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::Profile _profile;
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
+        bool _ShowAllFonts;
+
+        static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
+        static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
+
+        static Editor::Font _GetFont(com_ptr<IDWriteLocalizedStrings> localizedFamilyNames);
     };
 
     struct DeleteProfileEventArgs :
@@ -129,6 +160,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         Profiles();
 
+        // font face
+        Windows::Foundation::IInspectable CurrentFontFace() const;
+
         void OnNavigatedTo(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
         void OnNavigatedFrom(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
@@ -142,6 +176,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void BIAlignment_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void DeleteConfirmation_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void Pivot_SelectionChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
+        void FontFace_SelectionChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& e);
 
         // CursorShape visibility logic
         bool IsVintageCursor() const;

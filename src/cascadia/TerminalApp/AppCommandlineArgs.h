@@ -61,6 +61,7 @@ private:
         CLI::Option* startingDirectoryOption;
         CLI::Option* titleOption;
         CLI::Option* tabColorOption;
+        CLI::Option* suppressApplicationTitleOption;
     };
 
     struct NewPaneSubcommand : public NewTerminalSubcommand
@@ -85,6 +86,7 @@ private:
     std::string _startingDirectory;
     std::string _startingTitle;
     std::string _startingTabColor;
+    bool _suppressApplicationTitle{ false };
 
     winrt::Microsoft::Terminal::Settings::Model::FocusDirection _moveFocusDirection{ winrt::Microsoft::Terminal::Settings::Model::FocusDirection::None };
 
