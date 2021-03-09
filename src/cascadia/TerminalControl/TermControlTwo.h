@@ -95,22 +95,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         bool ReadOnly() const noexcept;
         void ToggleReadOnly();
 
-        // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
-        DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
+        FORWARDED_TYPED_EVENT(CopyToClipboard, IInspectable, TerminalControl::CopyToClipboardEventArgs, _core, CopyToClipboard);
+        FORWARDED_TYPED_EVENT(TitleChanged, IInspectable, TerminalControl::TitleChangedEventArgs, _core, TitleChanged);
+        FORWARDED_TYPED_EVENT(WarningBell, IInspectable, IInspectable, _core, WarningBell);
+        FORWARDED_TYPED_EVENT(TabColorChanged, IInspectable, IInspectable, _core, TabColorChanged);
+        // clang-format off
+
         DECLARE_EVENT(FontSizeChanged,          _fontSizeChangedHandlers,           TerminalControl::FontSizeChangedEventArgs);
         DECLARE_EVENT(ScrollPositionChanged,    _scrollPositionChangedHandlers,     TerminalControl::ScrollPositionChangedEventArgs);
 
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard,  _clipboardPasteHandlers,    TerminalControl::TermControlTwo, TerminalControl::PasteFromClipboardEventArgs);
-        FORWARDED_TYPED_EVENT(CopyToClipboard, winrt::Windows::Foundation::IInspectable, TerminalControl::CopyToClipboardEventArgs, _core, CopyToClipboard);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControlTwo, TerminalControl::OpenHyperlinkEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControlTwo, IInspectable);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControlTwo, TerminalControl::NoticeEventArgs);
 
-        TYPED_EVENT(WarningBell, IInspectable, IInspectable);
         TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControlTwo, IInspectable);
         TYPED_EVENT(Initialized, TerminalControl::TermControlTwo, Windows::UI::Xaml::RoutedEventArgs);
-        TYPED_EVENT(TabColorChanged, IInspectable, IInspectable);
         TYPED_EVENT(HidePointerCursor, IInspectable, IInspectable);
         TYPED_EVENT(RestorePointerCursor, IInspectable, IInspectable);
         TYPED_EVENT(ReadOnlyChanged, IInspectable, IInspectable);

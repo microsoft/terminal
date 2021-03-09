@@ -3,7 +3,6 @@
 
 namespace Microsoft.Terminal.TerminalControl
 {
-    delegate void TitleChangedEventArgs(String newTitle);
     delegate void FontSizeChangedEventArgs(Int32 width, Int32 height, Boolean isInitialChange);
     delegate void ScrollPositionChangedEventArgs(Int32 viewTop, Int32 viewHeight, Int32 bufferLength);
 
@@ -21,6 +20,11 @@ namespace Microsoft.Terminal.TerminalControl
         String Html { get; };
         String Rtf { get; };
         Windows.Foundation.IReference<CopyFormat> Formats { get; };
+    }
+
+    runtimeclass TitleChangedEventArgs
+    {
+        String Title;
     }
 
     runtimeclass PasteFromClipboardEventArgs

@@ -20,7 +20,7 @@ namespace Microsoft.Terminal.TerminalControl
 
         Microsoft.Terminal.TerminalControl.IControlSettings Settings { get; };
 
-        event TitleChangedEventArgs TitleChanged;
+        // event TitleChangedEventArgs TitleChanged;
         event FontSizeChangedEventArgs FontSizeChanged;
         event Windows.Foundation.TypedEventHandler<TermControl, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<TermControl, PasteFromClipboardEventArgs> PasteFromClipboard;

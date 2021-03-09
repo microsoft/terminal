@@ -85,15 +85,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _core = winrt::make_self<ControlCore>(settings, connection);
 
-        auto pfnWarningBell = std::bind(&TermControlTwo::_TerminalWarningBell, this);
-        _core->_terminal->SetWarningBellCallback(pfnWarningBell);
-
-        auto pfnTitleChanged = std::bind(&TermControlTwo::_TerminalTitleChanged, this, std::placeholders::_1);
-        _core->_terminal->SetTitleChangedCallback(pfnTitleChanged);
-
-        auto pfnTabColorChanged = std::bind(&TermControlTwo::_TerminalTabColorChanged, this, std::placeholders::_1);
-        _core->_terminal->SetTabColorChangedCallback(pfnTabColorChanged);
-
         auto pfnBackgroundColorChanged = std::bind(&TermControlTwo::_BackgroundColorChanged, this, std::placeholders::_1);
         _core->_terminal->SetBackgroundCallback(pfnBackgroundColorChanged);
 
@@ -1975,20 +1966,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _selectionNeedsToBeCopied = true;
     }
 
-    void TermControlTwo::_TerminalWarningBell()
-    {
-        _WarningBellHandlers(*this, nullptr);
-    }
-
-    void TermControlTwo::_TerminalTitleChanged(const std::wstring_view& wstr)
-    {
-        _titleChangedHandlers(winrt::hstring{ wstr });
-    }
-    void TermControlTwo::_TerminalTabColorChanged(const std::optional<til::color> /*color*/)
-    {
-        _TabColorChangedHandlers(*this, nullptr);
-    }
-
     // Method Description:
     // - Update the position and size of the scrollbar to match the given
     //      viewport top, viewport height, and buffer size.
@@ -2910,7 +2887,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
-    DEFINE_EVENT(TermControlTwo, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
+    // DEFINE_EVENT(TermControlTwo, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
     DEFINE_EVENT(TermControlTwo, FontSizeChanged, _fontSizeChangedHandlers, TerminalControl::FontSizeChangedEventArgs);
     DEFINE_EVENT(TermControlTwo, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
 

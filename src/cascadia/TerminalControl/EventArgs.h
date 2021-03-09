@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "TitleChangedEventArgs.g.h"
 #include "CopyToClipboardEventArgs.g.h"
 #include "PasteFromClipboardEventArgs.g.h"
 #include "OpenHyperlinkEventArgs.g.h"
@@ -11,6 +12,16 @@
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
+    struct TitleChangedEventArgs :
+        public TitleChangedEventArgsT<TitleChangedEventArgs>
+    {
+    public:
+        TitleChangedEventArgs(hstring title) :
+            _Title(title) {}
+
+        WINRT_PROPERTY(hstring, Title);
+    };
+
     struct CopyToClipboardEventArgs :
         public CopyToClipboardEventArgsT<CopyToClipboardEventArgs>
     {

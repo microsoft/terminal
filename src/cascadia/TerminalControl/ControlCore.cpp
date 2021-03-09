@@ -70,8 +70,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _SendInputToConnection(wstr);
         });
 
-        auto pfnCopyToClipboard = std::bind(&ControlCore::_CopyToClipboardRequested, this, std::placeholders::_1);
+        auto pfnCopyToClipboard = std::bind(&ControlCore::_TerminalCopyToClipboard, this, std::placeholders::_1);
         _terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
+
+        auto pfnWarningBell = std::bind(&ControlCore::_TerminalWarningBell, this);
+        _terminal->SetWarningBellCallback(pfnWarningBell);
+
+        auto pfnTitleChanged = std::bind(&ControlCore::_TerminalTitleChanged, this, std::placeholders::_1);
+        _terminal->SetTitleChangedCallback(pfnTitleChanged);
+
+        auto pfnTabColorChanged = std::bind(&ControlCore::_TerminalTabColorChanged, this, std::placeholders::_1);
+        _terminal->SetTabColorChangedCallback(pfnTabColorChanged);
 
         _terminal->UpdateSettings(settings);
     }
@@ -627,7 +636,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     // Called when the Terminal wants to set something to the clipboard, i.e.
     // when an OSC 52 is emitted.
-    void ControlCore::_CopyToClipboardRequested(const std::wstring_view& wstr)
+    void ControlCore::_TerminalCopyToClipboard(const std::wstring_view& wstr)
     {
         auto copyArgs = winrt::make_self<implementation::CopyToClipboardEventArgs>(winrt::hstring(wstr));
         _CopyToClipboardHandlers(*this, *copyArgs);
@@ -747,5 +756,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     const size_t ControlCore::TaskbarProgress() const noexcept
     {
         return _terminal->GetTaskbarProgress();
+    }
+
+    void ControlCore::_TerminalWarningBell()
+    {
+        _WarningBellHandlers(*this, nullptr);
+    }
+
+    void ControlCore::_TerminalTitleChanged(const std::wstring_view& wstr)
+    {
+        auto titleArgs = winrt::make_self<TitleChangedEventArgs>(winrt::hstring{ wstr });
+        _TitleChangedHandlers(*this, *titleArgs);
+    }
+    void ControlCore::_TerminalTabColorChanged(const std::optional<til::color> /*color*/)
+    {
+        _TabColorChangedHandlers(*this, nullptr);
     }
 }

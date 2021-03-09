@@ -90,8 +90,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnWarningBell = std::bind(&TermControl::_TerminalWarningBell, this);
         _terminal->SetWarningBellCallback(pfnWarningBell);
 
-        auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
-        _terminal->SetTitleChangedCallback(pfnTitleChanged);
+        // auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
+        // _terminal->SetTitleChangedCallback(pfnTitleChanged);
 
         auto pfnTabColorChanged = std::bind(&TermControl::_TerminalTabColorChanged, this, std::placeholders::_1);
         _terminal->SetTabColorChangedCallback(pfnTabColorChanged);
@@ -2382,9 +2382,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _WarningBellHandlers(*this, nullptr);
     }
 
-    void TermControl::_TerminalTitleChanged(const std::wstring_view& wstr)
+    void TermControl::_TerminalTitleChanged(const std::wstring_view& /*wstr*/)
     {
-        _titleChangedHandlers(winrt::hstring{ wstr });
+        // _titleChangedHandlers(winrt::hstring{ wstr });
     }
     void TermControl::_TerminalTabColorChanged(const std::optional<til::color> /*color*/)
     {
@@ -3374,7 +3374,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
-    DEFINE_EVENT(TermControl, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
+    // DEFINE_EVENT(TermControl, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
     DEFINE_EVENT(TermControl, FontSizeChanged, _fontSizeChangedHandlers, TerminalControl::FontSizeChangedEventArgs);
     DEFINE_EVENT(TermControl, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
 

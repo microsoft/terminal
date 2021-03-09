@@ -23,7 +23,7 @@ namespace Microsoft.Terminal.TerminalControl
 
         Microsoft.Terminal.TerminalControl.IControlSettings Settings { get; };
 
-        event TitleChangedEventArgs TitleChanged;
+        event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
         event FontSizeChangedEventArgs FontSizeChanged;
         event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<TermControlTwo, PasteFromClipboardEventArgs> PasteFromClipboard;
@@ -33,6 +33,9 @@ namespace Microsoft.Terminal.TerminalControl
         event Windows.Foundation.TypedEventHandler<Object, Object> WarningBell;
         event Windows.Foundation.TypedEventHandler<Object, Object> HidePointerCursor;
         event Windows.Foundation.TypedEventHandler<Object, Object> RestorePointerCursor;
+        event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
 
         event Windows.Foundation.TypedEventHandler<TermControlTwo, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         // This is an event handler forwarder for the underlying connection.
@@ -65,11 +68,8 @@ namespace Microsoft.Terminal.TerminalControl
 
         void TaskbarProgressChanged();
 
-        event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
 
         Boolean ReadOnly { get; };
         void ToggleReadOnly();
-        event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
-        event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
     }
 }

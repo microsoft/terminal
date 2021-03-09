@@ -84,7 +84,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void _SetEndSelectionPointAtCursor(winrt::Windows::Foundation::Point const& cursorPosition);
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
-        void _CopyToClipboardRequested(const std::wstring_view& wstr);
 
 #pragma region ICoreState
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
@@ -94,7 +93,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         hstring WorkingDirectory() const;
 #pragma endregion
 
+#pragma region TerminalCoreCallbacks
+        void _TerminalCopyToClipboard(const std::wstring_view& wstr);
+        void _TerminalWarningBell();
+        void _TerminalTitleChanged(const std::wstring_view& wstr);
+        void _TerminalTabColorChanged(const std::optional<til::color> /*color*/);
+#pragma endregion
+
         TYPED_EVENT(CopyToClipboard, IInspectable, TerminalControl::CopyToClipboardEventArgs);
+
+        TYPED_EVENT(TitleChanged, IInspectable, TerminalControl::TitleChangedEventArgs);
+        TYPED_EVENT(WarningBell, IInspectable, IInspectable);
+        TYPED_EVENT(TabColorChanged, IInspectable, IInspectable);
 
     public:
         ////////////////////////////////////////////////////////////////////////
