@@ -25,6 +25,7 @@
 #pragma once
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
+#include "Pane.h"
 
 #include "LeafPane.g.h"
 
