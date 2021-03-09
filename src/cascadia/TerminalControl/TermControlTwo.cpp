@@ -549,11 +549,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _core->_terminal.get();
     }
 
-    const FontInfo TermControlTwo::GetActualFont() const
-    {
-        return _core->_actualFont;
-    }
-
     const Windows::UI::Xaml::Thickness TermControlTwo::GetPadding()
     {
         return SwapChainPanel().Margin();
@@ -1271,7 +1266,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     // Figure out if the user's moved a quarter of a cell's smaller axis away from the clickdown point
                     auto& touchdownPoint{ *_singleClickTouchdownPos };
                     auto distance{ std::sqrtf(std::powf(cursorPosition.X - touchdownPoint.X, 2) + std::powf(cursorPosition.Y - touchdownPoint.Y, 2)) };
-                    const til::size fontSize{ _core->_actualFont.GetSize() };
+                    const til::size fontSize{ _core->GetFont().GetSize() };
 
                     const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _core->_renderEngine->GetScaling());
                     if (distance >= (std::min(fontSizeInDips.width(), fontSizeInDips.height()) / 4.f))
@@ -1316,9 +1311,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             winrt::Windows::Foundation::Point newTouchPoint{ contactRect.X, contactRect.Y };
             const auto anchor = _touchAnchor.value();
 
-            // Our _core->_actualFont's size is in pixels, convert to DIPs, which the
+            // Our actualFont's size is in pixels, convert to DIPs, which the
             // rest of the Points here are in.
-            const til::size fontSize{ _core->_actualFont.GetSize() };
+            const til::size fontSize{ _core->GetFont().GetSize() };
             const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _core->_renderEngine->GetScaling());
 
             // Get the difference between the point we've dragged to and the start of the touch.
@@ -2307,7 +2302,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - The dimensions of a single character of this control, in DIPs
     winrt::Windows::Foundation::Size TermControlTwo::CharacterDimensions() const
     {
-        const auto fontSize = _core->_actualFont.GetSize();
+        const auto fontSize = _core->GetFont().GetSize();
         return { gsl::narrow_cast<float>(fontSize.X), gsl::narrow_cast<float>(fontSize.Y) };
     }
 
@@ -2324,7 +2319,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (_initializedTerminal)
         {
-            const auto fontSize = _core->_actualFont.GetSize();
+            const auto fontSize = _core->GetFont().GetSize();
             double width = fontSize.X;
             double height = fontSize.Y;
             // Reserve additional space if scrollbar is intended to be visible
@@ -2369,7 +2364,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - A dimension that would be aligned to the character grid.
     float TermControlTwo::SnapDimensionToGrid(const bool widthOrHeight, const float dimension)
     {
-        const auto fontSize = _core->_actualFont.GetSize();
+        const auto fontSize = _core->GetFont().GetSize();
         const auto fontDimension = widthOrHeight ? fontSize.X : fontSize.Y;
 
         const auto padding = GetPadding();
@@ -2513,7 +2508,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const til::point relativeToMarginInPixels{ relativeToMarginInDIPs * SwapChainPanel().CompositionScaleX() };
 
         // Get the size of the font, which is in pixels
-        const til::size fontSize{ _core->_actualFont.GetSize() };
+        const til::size fontSize{ _core->GetFont().GetSize() };
 
         // Convert the location in pixels to characters within the current viewport.
         return til::point{ relativeToMarginInPixels / fontSize };
@@ -2568,9 +2563,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControlTwo::_FontInfoHandler(const IInspectable& /*sender*/, const FontInfoEventArgs& eventArgs)
     {
         eventArgs.FontSize(CharacterDimensions());
-        eventArgs.FontFace(_core->_actualFont.GetFaceName());
+        eventArgs.FontFace(_core->GetFont().GetFaceName());
         ::winrt::Windows::UI::Text::FontWeight weight;
-        weight.Weight = static_cast<uint16_t>(_core->_actualFont.GetWeight());
+        weight.Weight = static_cast<uint16_t>(_core->GetFont().GetWeight());
         eventArgs.FontWeight(weight);
     }
 
@@ -2863,69 +2858,68 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             control->_raiseNoticeHandlers(*control, std::move(noticeArgs));
         }
     }
+    // Method Description:
+    // - Handle a mouse exited event, specifically clearing last hovered cell
+    // and removing selection from hyper link if exists
+    // Arguments:
+    // - sender: not used
+    // - args: event data
+    void TermControlTwo::_PointerExitedHandler(Windows::Foundation::IInspectable const& /*sender*/, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
+    {
+        _core->_UpdateHoveredCell(std::nullopt);
+    }
 
-        // Method Description:
-        // - Handle a mouse exited event, specifically clearing last hovered cell
-        // and removing selection from hyper link if exists
-        // Arguments:
-        // - sender: not used
-        // - args: event data
-        void TermControlTwo::_PointerExitedHandler(Windows::Foundation::IInspectable const& /*sender*/, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
+    winrt::fire_and_forget TermControlTwo::_hoveredHyperlinkChanged(const IInspectable& sender,
+                                                                    const IInspectable& args)
+    {
+        auto weakThis{ get_weak() };
+        co_await resume_foreground(Dispatcher());
+        if (auto self{ weakThis.get() })
         {
-            _core->_UpdateHoveredCell(std::nullopt);
-        }
-
-        winrt::fire_and_forget TermControlTwo::_hoveredHyperlinkChanged(const IInspectable& sender,
-                                                                        const IInspectable& args)
-        {
-            auto weakThis{ get_weak() };
-            co_await resume_foreground(Dispatcher());
-            if (auto self{ weakThis.get() })
+            if (_core->_lastHoveredCell.has_value())
             {
-                if (_core->_lastHoveredCell.has_value())
+                const auto uriText = _core->GetHoveredUriText();
+                if (!uriText.empty())
                 {
-                    const auto uriText = _core->GetHoveredUriText();
-                    if (!uriText.empty())
-                    {
-                        // Update the tooltip with the URI
-                        HoveredUri().Text(uriText);
+                    // Update the tooltip with the URI
+                    HoveredUri().Text(uriText);
 
-                        // Set the border thickness so it covers the entire cell
-                        const auto charSizeInPixels = CharacterDimensions();
-                        const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
-                        const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
-                        const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
-                        HyperlinkTooltipBorder().BorderThickness(newThickness);
+                    // Set the border thickness so it covers the entire cell
+                    const auto charSizeInPixels = CharacterDimensions();
+                    const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
+                    const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
+                    const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
+                    HyperlinkTooltipBorder().BorderThickness(newThickness);
 
-                        // Compute the location of the top left corner of the cell in DIPS
-                        const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
-                        const til::point startPos{ _core->_lastHoveredCell->X,
-                                                   _core->_lastHoveredCell->Y };
-                        const til::size fontSize{ _core->_actualFont.GetSize() };
-                        const til::point posInPixels{ startPos * fontSize };
-                        const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
-                        const til::point locationInDIPs{ posInDIPs + marginsInDips };
+                    // Compute the location of the top left corner of the cell in DIPS
+                    const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
+                    const til::point startPos{ _core->_lastHoveredCell->X,
+                                               _core->_lastHoveredCell->Y };
+                    const til::size fontSize{ _core->GetFont().GetSize() };
+                    const til::point posInPixels{ startPos * fontSize };
+                    const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
+                    const til::point locationInDIPs{ posInDIPs + marginsInDips };
 
-                        // Move the border to the top left corner of the cell
-                        OverlayCanvas().SetLeft(HyperlinkTooltipBorder(),
-                                                (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
-                        OverlayCanvas().SetTop(HyperlinkTooltipBorder(),
-                                               (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
-                    }
+                    // Move the border to the top left corner of the cell
+                    OverlayCanvas().SetLeft(HyperlinkTooltipBorder(),
+                                            (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
+                    OverlayCanvas().SetTop(HyperlinkTooltipBorder(),
+                                           (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
                 }
             }
         }
-
-        // -------------------------------- WinRT Events ---------------------------------
-        // Winrt events need a method for adding a callback to the event and removing the callback.
-        // These macros will define them both for you.
-        DEFINE_EVENT(TermControlTwo, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
-        DEFINE_EVENT(TermControlTwo, FontSizeChanged, _fontSizeChangedHandlers, TerminalControl::FontSizeChangedEventArgs);
-        DEFINE_EVENT(TermControlTwo, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
-
-        DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControlTwo, TerminalControl::PasteFromClipboardEventArgs);
-        DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControlTwo, TerminalControl::OpenHyperlinkEventArgs);
-        DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControlTwo, IInspectable);
-        DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControlTwo, TerminalControl::NoticeEventArgs);
-        // clang-format on
     }
+
+    // -------------------------------- WinRT Events ---------------------------------
+    // Winrt events need a method for adding a callback to the event and removing the callback.
+    // These macros will define them both for you.
+    DEFINE_EVENT(TermControlTwo, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
+    DEFINE_EVENT(TermControlTwo, FontSizeChanged, _fontSizeChangedHandlers, TerminalControl::FontSizeChangedEventArgs);
+    DEFINE_EVENT(TermControlTwo, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
+
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControlTwo, TerminalControl::PasteFromClipboardEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControlTwo, TerminalControl::OpenHyperlinkEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControlTwo, IInspectable);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControlTwo, TerminalControl::NoticeEventArgs);
+    // clang-format on
+}

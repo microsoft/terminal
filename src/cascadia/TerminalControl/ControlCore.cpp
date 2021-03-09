@@ -707,4 +707,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _terminal->TrySnapOnInput();
     }
 
+    FontInfo ControlCore::GetFont() const
+    {
+        return _actualFont;
+    }
+
 }

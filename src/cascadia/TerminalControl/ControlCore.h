@@ -36,9 +36,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         IControlSettings _settings; // ? Might be able to get away with only retrieving pieces
 
+    private:
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
 
+    public:
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate;
 
@@ -84,6 +86,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void _CopyToClipboardRequested(const std::wstring_view& wstr);
 
+        TYPED_EVENT(CopyToClipboard, IInspectable, TerminalControl::CopyToClipboardEventArgs);
+
+    public:
         ////////////////////////////////////////////////////////////////////////
         // These methods are new
         void UpdateSettings(const IControlSettings& settings);
@@ -96,8 +101,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void PasteText(const winrt::hstring& hstr);
 
+        FontInfo GetFont() const;
+
         TYPED_EVENT(HoveredHyperlinkChanged, IInspectable, IInspectable);
-        TYPED_EVENT(CopyToClipboard, IInspectable, TerminalControl::CopyToClipboardEventArgs);
     };
 }
 
