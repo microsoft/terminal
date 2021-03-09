@@ -660,6 +660,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _compositionScaleX = scaleX;
         _compositionScaleY = scaleY;
 
+        const auto currentEngineScale = _renderEngine->GetScaling();
+        // If we're getting a notification to change to the DPI we already
+        // have, then we're probably just beginning the DPI change. Since
+        // we'll get _another_ event with the real DPI, do nothing here for
+        // now. We'll also skip the next resize in _SwapChainSizeChanged.
+        const bool dpiWasUnchanged = currentEngineScale == scaleX;
+        if (dpiWasUnchanged)
+        {
+            return;
+        }
+
         const auto dpi = (float)(scaleX * USER_DEFAULT_SCREEN_DPI);
 
         const auto actualFontOldSize = _actualFont.GetSize();
@@ -677,12 +688,27 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    // !!TODO!! Does the Control really need to ask the Core for this? Or can it
+    // suffice with the swapchain value? That's unclear.
+    float ControlCore::RendererScale() const
+    {
+        return _renderEngine->GetScaling();
+    }
+
+    void ControlCore::SetSelectionAnchor(Windows::Foundation::Point const& position)
+    {
+        auto lock = _terminal->LockForWriting();
+        _terminal->SetSelectionAnchor(til::point{ til::math::rounding,
+                                                  position.X,
+                                                  position.Y });
+    }
+
     // Method Description:
     // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
     // Arguments:
     // - ~~cursorPosition: in pixels, relative to the origin of the control~~
     // - cursorPosition: in cells
-    void ControlCore::_SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition)
+    void ControlCore::_SetEndSelectionPoint(Windows::Foundation::Point const& position)
     {
         if (!_terminal->IsSelectionActive())
         {
@@ -697,8 +723,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const short lastVisibleCol = std::max<short>(_terminal->GetViewport().Width() - 1, 0);
 
         til::point terminalPosition{ til::math::rounding,
-                                     std::clamp<float>(cursorPosition.X, 0, lastVisibleCol),
-                                     std::clamp<float>(cursorPosition.Y, 0, lastVisibleRow) };
+                                     std::clamp<float>(position.X, 0, lastVisibleCol),
+                                     std::clamp<float>(position.Y, 0, lastVisibleRow) };
 
         // save location (for rendering) + render
         _terminal->SetSelectionEnd(terminalPosition);

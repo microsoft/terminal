@@ -1223,9 +1223,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             if (_focused && point.Properties().IsLeftButtonPressed())
             {
-                // !!TODO!!: _SetEndSelectionPointAtCursor also takes the lock!
-                auto lock = _core->_terminal->LockForWriting();
-
                 if (_singleClickTouchdownPos)
                 {
                     // Figure out if the user's moved a quarter of a cell's smaller axis away from the clickdown point
@@ -1233,16 +1230,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     auto distance{ std::sqrtf(std::powf(cursorPosition.X - touchdownPoint.X, 2) + std::powf(cursorPosition.Y - touchdownPoint.Y, 2)) };
                     const til::size fontSize{ _core->GetFont().GetSize() };
 
-                    const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _core->_renderEngine->GetScaling());
+                    const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _core->RendererScale());
                     if (distance >= (std::min(fontSizeInDips.width(), fontSizeInDips.height()) / 4.f))
                     {
-                        _core->_terminal->SetSelectionAnchor(_GetTerminalPosition(touchdownPoint));
+                        _core->SetSelectionAnchor(_GetTerminalPosition(touchdownPoint));
                         // stop tracking the touchdown point
                         _singleClickTouchdownPos = std::nullopt;
                     }
                 }
 
-                _core->_SetEndSelectionPointAtCursor(cursorPosition);
+                _core->_SetEndSelectionPoint(cursorPosition);
 
                 const double cursorBelowBottomDist = cursorPosition.Y - SwapChainPanel().Margin().Top - SwapChainPanel().ActualHeight();
                 const double cursorAboveTopDist = -1 * cursorPosition.Y + SwapChainPanel().Margin().Top;
@@ -1279,7 +1276,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Our actualFont's size is in pixels, convert to DIPs, which the
             // rest of the Points here are in.
             const til::size fontSize{ _core->GetFont().GetSize() };
-            const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _core->_renderEngine->GetScaling());
+            const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _core->RendererScale());
 
             // Get the difference between the point we've dragged to and the start of the touch.
             const float dy = newTouchPoint.Y - anchor.Y;
@@ -1568,7 +1565,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // If user is mouse selecting and scrolls, they then point at new character.
             //      Make sure selection reflects that immediately.
-            _core->_SetEndSelectionPointAtCursor(point);
+            _core->_SetEndSelectionPoint(point);
         }
     }
 
@@ -1879,18 +1876,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             const auto scaleX = sender.CompositionScaleX();
             const auto scaleY = sender.CompositionScaleY();
-            const auto dpi = (float)(scaleX * USER_DEFAULT_SCREEN_DPI);
-            const auto currentEngineScale = _core->_renderEngine->GetScaling();
+            // const auto dpi = (float)(scaleX * USER_DEFAULT_SCREEN_DPI);
+            // const auto currentEngineScale = _core->RendererScale();
 
-            // If we're getting a notification to change to the DPI we already
-            // have, then we're probably just beginning the DPI change. Since
-            // we'll get _another_ event with the real DPI, do nothing here for
-            // now. We'll also skip the next resize in _SwapChainSizeChanged.
-            const bool dpiWasUnchanged = currentEngineScale == scaleX;
-            if (dpiWasUnchanged)
-            {
-                return;
-            }
+            // // If we're getting a notification to change to the DPI we already
+            // // have, then we're probably just beginning the DPI change. Since
+            // // we'll get _another_ event with the real DPI, do nothing here for
+            // // now. We'll also skip the next resize in _SwapChainSizeChanged.
+            // const bool dpiWasUnchanged = currentEngineScale == scaleX;
+            // if (dpiWasUnchanged)
+            // {
+            //     return;
+            // }
 
             _core->ScaleChanged(scaleX, scaleY);
         }
@@ -1933,7 +1930,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // // - cursorPosition: in pixels, relative to the origin of the control
     void TermControlTwo::_SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition)
     {
-        _core->_SetEndSelectionPointAtCursor(_GetTerminalPosition(cursorPosition));
+        _core->_SetEndSelectionPoint(_GetTerminalPosition(cursorPosition));
         _selectionNeedsToBeCopied = true;
     }
 

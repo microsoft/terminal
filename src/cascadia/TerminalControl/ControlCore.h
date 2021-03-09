@@ -83,7 +83,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void ToggleShaderEffects();
         void _UpdateHoveredCell(const std::optional<COORD>& terminalPosition);
 
-        void _SetEndSelectionPointAtCursor(winrt::Windows::Foundation::Point const& cursorPosition);
+        void SetSelectionAnchor(winrt::Windows::Foundation::Point const& position);
+        void _SetEndSelectionPoint(winrt::Windows::Foundation::Point const& position);
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
 
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
@@ -128,6 +129,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void SizeChanged(const double width, const double height);
         void ScaleChanged(const double scaleX, const double scaleY);
+        float RendererScale() const;
 
         void _raiseHoveredHyperlinkChanged();
         winrt::hstring GetHoveredUriText();
