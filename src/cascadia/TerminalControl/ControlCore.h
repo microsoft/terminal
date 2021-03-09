@@ -91,6 +91,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _raiseHoveredHyperlinkChanged();
         winrt::hstring GetHoveredUriText();
 
+        void PasteText(const winrt::hstring& hstr);
+
         TYPED_EVENT(HoveredHyperlinkChanged, IInspectable, IInspectable);
     };
 }

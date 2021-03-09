@@ -625,4 +625,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // _selectionNeedsToBeCopied = true;
     }
 
+    // Method Description:
+    // - Pre-process text pasted (presumably from the clipboard)
+    //   before sending it over the terminal's connection.
+    void ControlCore::PasteText(const winrt::hstring& hstr)
+    {
+        _terminal->WritePastedText(hstr);
+        _terminal->ClearSelection();
+        _terminal->TrySnapOnInput();
+    }
+
 }

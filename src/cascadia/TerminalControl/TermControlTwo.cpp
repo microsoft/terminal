@@ -2012,9 +2012,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   before sending it over the terminal's connection.
     void TermControlTwo::_SendPastedTextToConnection(const std::wstring& wstr)
     {
-        _core->_terminal->WritePastedText(wstr);
-        _core->_terminal->ClearSelection();
-        _core->_terminal->TrySnapOnInput();
+        _core->PasteText(winrt::hstring{ wstr });
+        // _core->_terminal->WritePastedText(wstr);
+        // _core->_terminal->ClearSelection();
+        // _core->_terminal->TrySnapOnInput();
     }
 
     // // Method Description:
@@ -3081,7 +3082,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                     allPaths += fullPath;
                 }
-                _core->_SendInputToConnection(allPaths);
+                _SendPastedTextToConnection(allPaths);
             }
         }
     }
