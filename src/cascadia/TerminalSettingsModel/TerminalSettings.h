@@ -35,6 +35,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                          guid profileGuid,
                          const TerminalControl::IKeyBindings& keybindings);
 
+        // BuildSettings is basically a constructor for TerminalSettings.
+        //  However, we can't actually make it a constructor because WinRT
+        //  gets confused if two functions of the same name have the same
+        //  number of arguments.
         static Model::TerminalSettings BuildSettings(const Model::CascadiaSettings& appSettings,
                                                      const Model::NewTerminalArgs& newTerminalArgs,
                                                      const TerminalControl::IKeyBindings& keybindings);
