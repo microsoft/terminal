@@ -2862,6 +2862,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlTwoReadOnly"));
             control->_raiseNoticeHandlers(*control, std::move(noticeArgs));
         }
+    }
 
         // Method Description:
         // - Handle a mouse exited event, specifically clearing last hovered cell
