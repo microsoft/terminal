@@ -85,17 +85,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _core = winrt::make_self<ControlCore>(settings, connection);
 
-        // auto pfnBackgroundColorChanged = std::bind(&TermControlTwo::_BackgroundColorChanged, this, std::placeholders::_1);
-        // _core->_terminal->SetBackgroundCallback(pfnBackgroundColorChanged);
-
-        // auto pfnScrollPositionChanged = std::bind(&TermControlTwo::_TerminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-        // _core->_terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
-
-        // auto pfnTerminalCursorPositionChanged = std::bind(&TermControlTwo::_TerminalCursorPositionChanged, this);
-        // _core->_terminal->SetCursorPositionChangedCallback(pfnTerminalCursorPositionChanged);
-
-        // _core->_terminal->TaskbarProgressChangedCallback([&]() { TermControlTwo::TaskbarProgressChanged(); });
-
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
         _core->_connectionStateChangedRevoker = _core->_connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
             _ConnectionStateChangedHandlers(*this, nullptr);
@@ -186,15 +175,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                 // If a text is selected inside terminal, use it to populate the search box.
                 // If the search box already contains a value, it will be overridden.
-                if (_core->_terminal->IsSelectionActive())
+                if (_core->HasSelection())
                 {
                     // Currently we populate the search box only if a single line is selected.
                     // Empirically, multi-line selection works as well on sample scenarios,
                     // but since code paths differ, extra work is required to ensure correctness.
-                    const auto bufferData = _core->_terminal->RetrieveSelectedTextFromBuffer(true);
-                    if (bufferData.text.size() == 1)
+                    auto bufferText = _core->SelectedText(true);
+                    if (bufferText.size() == 1)
                     {
-                        const auto selectedLine{ til::at(bufferData.text, 0) };
+                        const auto selectedLine{ til::at(bufferText, 0) };
                         _searchBox->PopulateTextbox(selectedLine.data());
                     }
                 }

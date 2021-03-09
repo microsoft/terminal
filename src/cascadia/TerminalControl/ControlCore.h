@@ -133,6 +133,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfo GetFont() const;
         til::color BackgroundColor() const;
 
+        bool HasSelection() const;
+        std::vector<std::wstring> SelectedText(bool trimTrailingWhitespace) const;
+
         TYPED_EVENT(HoveredHyperlinkChanged, IInspectable, IInspectable);
     };
 }

@@ -834,4 +834,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         _TaskbarProgressChangedHandlers(*this, nullptr);
     }
+
+    bool ControlCore::HasSelection() const
+    {
+        return _terminal->IsSelectionActive();
+    }
+
+    std::vector<std::wstring> ControlCore::SelectedText(bool trimTrailingWhitespace) const
+    {
+        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
+        return bufferData.text;
+    }
 }
