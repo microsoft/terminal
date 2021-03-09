@@ -281,6 +281,62 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _SendInputToConnection(wstr);
     }
 
+    // Method Description:
+    // - Send this particular key event to the terminal.
+    //   See Terminal::SendKeyEvent for more information.
+    // - Clears the current selection.
+    // - Makes the cursor briefly visible during typing.
+    // Arguments:
+    // - vkey: The vkey of the key pressed.
+    // - scanCode: The scan code of the key pressed.
+    // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
+    // - keyDown: If true, the key was pressed, otherwise the key was released.
+    bool ControlCore::TrySendKeyEvent(const WORD vkey,
+                                      const WORD scanCode,
+                                      const ControlKeyStates modifiers,
+                                      const bool eitherWinPressed,
+                                      const bool keyDown)
+    {
+        // When there is a selection active, escape should clear it and NOT flow through
+        // to the terminal. With any other keypress, it should clear the selection AND
+        // flow through to the terminal.
+        // GH#6423 - don't dismiss selection if the key that was pressed was a
+        // modifier key. We'll wait for a real keystroke to dismiss the
+        // GH #7395 - don't dismiss selection when taking PrintScreen
+        // selection.
+        // GH#8522, GH#3758 - Only dismiss the selection on key _down_. If we
+        // dismiss on key up, then there's chance that we'll immediately dismiss
+        // a selection created by an action bound to a keydown.
+        if (HasSelection() &&
+            !KeyEvent::IsModifierKey(vkey) &&
+            vkey != VK_SNAPSHOT &&
+            keyDown)
+        {
+            // GH#8791 - don't dismiss selection if Windows key was also pressed as a key-combination.
+            if (!eitherWinPressed)
+            {
+                _terminal->ClearSelection();
+                _renderer->TriggerSelection();
+            }
+
+            if (vkey == VK_ESCAPE)
+            {
+                return true;
+            }
+        }
+
+        // If the terminal translated the key, mark the event as handled.
+        // This will prevent the system from trying to get the character out
+        // of it and sending us a CharacterReceived event.
+        const auto handled = vkey ? _terminal->SendKeyEvent(vkey,
+                                                            scanCode,
+                                                            modifiers,
+                                                            keyDown) :
+                                    true;
+
+        return handled;
+    }
+
     void ControlCore::ToggleShaderEffects()
     {
         auto lock = _terminal->LockForWriting();

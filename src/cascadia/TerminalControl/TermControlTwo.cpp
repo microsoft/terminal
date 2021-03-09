@@ -918,39 +918,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                           const ControlKeyStates modifiers,
                                           const bool keyDown)
     {
-        // When there is a selection active, escape should clear it and NOT flow through
-        // to the terminal. With any other keypress, it should clear the selection AND
-        // flow through to the terminal.
-        // GH#6423 - don't dismiss selection if the key that was pressed was a
-        // modifier key. We'll wait for a real keystroke to dismiss the
-        // GH #7395 - don't dismiss selection when taking PrintScreen
-        // selection.
-        // GH#8522, GH#3758 - Only dismiss the selection on key _down_. If we
-        // dismiss on key up, then there's chance that we'll immediately dismiss
-        // a selection created by an action bound to a keydown.
-        if (_core->_terminal->IsSelectionActive() &&
-            !KeyEvent::IsModifierKey(vkey) &&
-            vkey != VK_SNAPSHOT &&
-            keyDown)
-        {
-            const CoreWindow window = CoreWindow::GetForCurrentThread();
-            const auto leftWinKeyState = window.GetKeyState(VirtualKey::LeftWindows);
-            const auto rightWinKeyState = window.GetKeyState(VirtualKey::RightWindows);
-            const auto isLeftWinKeyDown = WI_IsFlagSet(leftWinKeyState, CoreVirtualKeyStates::Down);
-            const auto isRightWinKeyDown = WI_IsFlagSet(rightWinKeyState, CoreVirtualKeyStates::Down);
-
-            // GH#8791 - don't dismiss selection if Windows key was also pressed as a key-combination.
-            if (!isLeftWinKeyDown && !isRightWinKeyDown)
-            {
-                _core->_terminal->ClearSelection();
-                _core->_renderer->TriggerSelection();
-            }
-
-            if (vkey == VK_ESCAPE)
-            {
-                return true;
-            }
-        }
+        const CoreWindow window = CoreWindow::GetForCurrentThread();
+        const auto leftWinKeyState = window.GetKeyState(VirtualKey::LeftWindows);
+        const auto rightWinKeyState = window.GetKeyState(VirtualKey::RightWindows);
+        const auto isLeftWinKeyDown = WI_IsFlagSet(leftWinKeyState, CoreVirtualKeyStates::Down);
+        const auto isRightWinKeyDown = WI_IsFlagSet(rightWinKeyState, CoreVirtualKeyStates::Down);
+        const bool eitherWinPressed = isLeftWinKeyDown || isRightWinKeyDown;
 
         if (vkey == VK_ESCAPE ||
             vkey == VK_RETURN)
@@ -961,7 +934,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // If the terminal translated the key, mark the event as handled.
         // This will prevent the system from trying to get the character out
         // of it and sending us a CharacterReceived event.
-        const auto handled = vkey ? _core->_terminal->SendKeyEvent(vkey, scanCode, modifiers, keyDown) : true;
+        const auto handled = vkey ?
+                                 _core->TrySendKeyEvent(vkey,
+                                                        scanCode,
+                                                        modifiers,
+                                                        eitherWinPressed,
+                                                        keyDown) :
+                                 true;
 
         if (_cursorTimer.has_value())
         {

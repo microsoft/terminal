@@ -145,6 +145,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     const bool caseSensitive);
 
         void SetBackgroundOpacity(const float opacity);
+        bool TrySendKeyEvent(const WORD vkey,
+                             const WORD scanCode,
+                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+                             const bool eitherWinPressed,
+                             const bool keyDown);
 
         TYPED_EVENT(HoveredHyperlinkChanged, IInspectable, IInspectable);
     };
