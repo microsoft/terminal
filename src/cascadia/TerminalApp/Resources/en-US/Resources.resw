@@ -366,9 +366,6 @@
   <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Maximize</value>
   </data>
-  <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Maximize</value>
-  </data>
   <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Minimize</value>
   </data>
@@ -568,5 +565,11 @@
   </data>
   <data name="CommandPalette_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>More options</value>
+  </data>
+  <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
+    <value>Maximize</value>
+  </data>
+  <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
+    <value>Restore Down</value>
   </data>
 </root>
