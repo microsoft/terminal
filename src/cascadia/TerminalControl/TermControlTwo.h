@@ -42,8 +42,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         float SnapDimensionToGrid(const bool widthOrHeight, const float dimension);
 
         void ScrollViewport(int viewTop);
-        int GetScrollOffset();
-        int GetViewHeight() const;
+        int ScrollOffset();
+        int ViewHeight() const;
 
         void AdjustFontSize(int fontSizeDelta);
         void ResetFontSize();

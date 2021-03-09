@@ -1558,7 +1558,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // WHEEL_PAGESCROLL is a Win32 constant that represents the "scroll one page
         // at a time" setting. If we ignore it, we will scroll a truly absurd number
         // of rows.
-        const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? GetViewHeight() : _rowsToScroll };
+        const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? ViewHeight() : _rowsToScroll };
         double newValue = (rowsToScroll * rowDelta) + (currentOffset);
 
         // The scroll bar's ValueChanged handler will actually move the viewport
@@ -2108,19 +2108,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         ScrollBar().Value(viewTop);
     }
 
-    int TermControlTwo::GetScrollOffset()
+    int TermControlTwo::ScrollOffset()
     {
-        return _core->_terminal->GetScrollOffset();
+        return _core->ScrollOffset();
     }
 
     // Function Description:
     // - Gets the height of the terminal in lines of text
     // Return Value:
     // - The height of the terminal in lines of text
-    int TermControlTwo::GetViewHeight() const
+    int TermControlTwo::ViewHeight() const
     {
-        const auto viewPort = _core->_terminal->GetViewport();
-        return viewPort.Height();
+        return _core->ViewHeight();
     }
 
     // Function Description:
@@ -2463,7 +2462,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        _core->_connection.WriteInput(text);
+        _core->SendInput(text);
     }
 
     // Method Description:

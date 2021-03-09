@@ -14,5 +14,9 @@ namespace Microsoft.Terminal.TerminalControl
         String WorkingDirectory { get; };
 
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
+
+
+        Int32 ScrollOffset { get; };
+        Int32 ViewHeight { get; };
     };
 }

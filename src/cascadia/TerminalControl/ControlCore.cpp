@@ -776,6 +776,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _terminal->GetTaskbarProgress();
     }
 
+    int ControlCore::ScrollOffset()
+    {
+        return _terminal->GetScrollOffset();
+    }
+
+    // Function Description:
+    // - Gets the height of the terminal in lines of text
+    // Return Value:
+    // - The height of the terminal in lines of text
+    int ControlCore::ViewHeight() const
+    {
+        const auto viewPort = _terminal->GetViewport();
+        return viewPort.Height();
+    }
+
     void ControlCore::_TerminalWarningBell()
     {
         _WarningBellHandlers(*this, nullptr);

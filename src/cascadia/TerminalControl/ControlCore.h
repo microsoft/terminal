@@ -94,6 +94,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const size_t TaskbarProgress() const noexcept;
         hstring Title();
         hstring WorkingDirectory() const;
+        int ScrollOffset();
+        int ViewHeight() const;
 #pragma endregion
 
 #pragma region TerminalCoreCallbacks
