@@ -71,6 +71,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _SendInputToConnection(wstr);
         });
 
+        // GH#8969: pre-seed working directory to prevent potential races
+        _terminal->SetWorkingDirectory(_settings.StartingDirectory());
+
         auto pfnCopyToClipboard = std::bind(&ControlCore::_TerminalCopyToClipboard, this, std::placeholders::_1);
         _terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
 

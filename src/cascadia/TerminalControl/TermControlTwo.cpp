@@ -1123,7 +1123,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     // Update the selection appropriately
 
                     // Capture the position of the first click when no selection is active
-                    if (mode == ::Terminal::SelectionExpansionMode::Cell && !_core->_terminal->IsSelectionActive())
+                    if (mode == ::Terminal::SelectionExpansionMode::Cell && !_core->HasSelection())
                     {
                         _singleClickTouchdownPos = cursorPosition;
                         _lastMouseClickPosNoSelection = cursorPosition;
@@ -1134,7 +1134,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     // - GH#9384: the position is the same as of the first click starting the selection
                     // (we need to reset selection on double-click or triple-click, so it captures the word or the line,
                     // rather than extending the selection)
-                    if (_core->_terminal->IsSelectionActive() && (!shiftEnabled || _lastMouseClickPosNoSelection == cursorPosition))
+                    if (_core->HasSelection() && (!shiftEnabled || _lastMouseClickPosNoSelection == cursorPosition))
                     {
                         // Reset the selection
                         _core->_terminal->ClearSelection();
@@ -1143,7 +1143,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                     if (shiftEnabled)
                     {
-                        if (_core->_terminal->IsSelectionActive())
+                        if (_core->HasSelection())
                         {
                             // If there is a selection we extend it using the selection mode
                             // (expand the "end"selection point)
@@ -1166,7 +1166,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             else if (point.Properties().IsRightButtonPressed())
             {
                 // CopyOnSelect right click always pastes
-                if (_settings.CopyOnSelect() || !_core->_terminal->IsSelectionActive())
+                if (_settings.CopyOnSelect() || !_core->HasSelection())
                 {
                     PasteTextFromClipboard();
                 }
