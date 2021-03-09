@@ -206,6 +206,11 @@ namespace winrt::TerminalApp::implementation
                 const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
                                         WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
+                const auto rShiftState = window.GetKeyState(VirtualKey::RightShift);
+                const auto lShiftState = window.GetKeyState(VirtualKey::LeftShift);
+                const bool shiftPressed = WI_IsFlagSet(rShiftState, CoreVirtualKeyStates::Down) ||
+                                          WI_IsFlagSet(lShiftState, CoreVirtualKeyStates::Down);
+
                 // Check for DebugTap
                 bool debugTap = page->_settings.GlobalSettings().DebugFeaturesEnabled() &&
                                 WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
@@ -217,6 +222,10 @@ namespace winrt::TerminalApp::implementation
                                      SplitType::Manual,
                                      0.5f,
                                      nullptr);
+                }
+                if (shiftPressed && !debugTap)
+                {
+                    page->_OpenNewWindow(false, NewTerminalArgs());
                 }
                 else
                 {
@@ -608,6 +617,11 @@ namespace winrt::TerminalApp::implementation
                     const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
                                             WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
+                    const auto rShiftState = window.GetKeyState(VirtualKey::RightShift);
+                    const auto lShiftState = window.GetKeyState(VirtualKey::LeftShift);
+                    const bool shiftPressed = WI_IsFlagSet(rShiftState, CoreVirtualKeyStates::Down) ||
+                                              WI_IsFlagSet(lShiftState, CoreVirtualKeyStates::Down);
+
                     // Check for DebugTap
                     bool debugTap = page->_settings.GlobalSettings().DebugFeaturesEnabled() &&
                                     WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
@@ -619,6 +633,12 @@ namespace winrt::TerminalApp::implementation
                                          SplitType::Manual,
                                          0.5f,
                                          newTerminalArgs);
+                    }
+                    if (shiftPressed && !debugTap)
+                    {
+                        // Manually fill in the evaluated profile.
+                        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(page->_settings.GetProfileForArgs(newTerminalArgs)));
+                        page->_OpenNewWindow(false, newTerminalArgs);
                     }
                     else
                     {
