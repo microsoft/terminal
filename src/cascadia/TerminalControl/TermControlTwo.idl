@@ -21,7 +21,7 @@ namespace Microsoft.Terminal.TerminalControl
 
         event TitleChangedEventArgs TitleChanged;
         event FontSizeChangedEventArgs FontSizeChanged;
-        event Windows.Foundation.TypedEventHandler<TermControlTwo, CopyToClipboardEventArgs> CopyToClipboard;
+        event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<TermControlTwo, PasteFromClipboardEventArgs> PasteFromClipboard;
         event Windows.Foundation.TypedEventHandler<TermControlTwo, OpenHyperlinkEventArgs> OpenHyperlink;
         event Windows.Foundation.TypedEventHandler<TermControlTwo, Object> SetTaskbarProgress;

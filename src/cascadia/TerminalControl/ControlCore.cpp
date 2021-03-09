@@ -70,6 +70,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _SendInputToConnection(wstr);
         });
 
+        auto pfnCopyToClipboard = std::bind(&ControlCore::_CopyToClipboardRequested, this, std::placeholders::_1);
+        _terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
+
         _terminal->UpdateSettings(settings);
     }
 
@@ -609,9 +612,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // you move its endpoints while it is generating a frame.
         auto lock = _terminal->LockForWriting();
 
-        // til::point terminalPosition{ cursorPosition };
-        // auto terminalPosition = _GetTerminalPosition(cursorPosition);
-
         const short lastVisibleRow = std::max<short>(_terminal->GetViewport().Height() - 1, 0);
         const short lastVisibleCol = std::max<short>(_terminal->GetViewport().Width() - 1, 0);
 
@@ -623,6 +623,78 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _terminal->SetSelectionEnd(terminalPosition);
         _renderer->TriggerSelection();
         // _selectionNeedsToBeCopied = true;
+    }
+
+    // Called when the Terminal wants to set something to the clipboard, i.e.
+    // when an OSC 52 is emitted.
+    void ControlCore::_CopyToClipboardRequested(const std::wstring_view& wstr)
+    {
+        auto copyArgs = winrt::make_self<implementation::CopyToClipboardEventArgs>(winrt::hstring(wstr));
+        _CopyToClipboardHandlers(*this, *copyArgs);
+    }
+
+    // Method Description:
+    // - Given a copy-able selection, get the selected text from the buffer and send it to the
+    //     Windows Clipboard (CascadiaWin32:main.cpp).
+    // - CopyOnSelect does NOT clear the selection
+    // Arguments:
+    // - singleLine: collapse all of the text to one line
+    // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
+    //             if we should defer which formats are copied to the global setting
+    bool ControlCore::CopySelectionToClipboard(bool singleLine,
+                                               const Windows::Foundation::IReference<CopyFormat>& formats)
+    {
+        // no selection --> nothing to copy
+        if (!_terminal->IsSelectionActive())
+        {
+            return false;
+        }
+
+        // // Mark the current selection as copied
+        // _selectionNeedsToBeCopied = false;
+
+        // extract text from buffer
+        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(singleLine);
+
+        // convert text: vector<string> --> string
+        std::wstring textData;
+        for (const auto& text : bufferData.text)
+        {
+            textData += text;
+        }
+
+        // convert text to HTML format
+        // GH#5347 - Don't provide a title for the generated HTML, as many
+        // web applications will paste the title first, followed by the HTML
+        // content, which is unexpected.
+        const auto htmlData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::HTML) ?
+                                  TextBuffer::GenHTML(bufferData,
+                                                      _actualFont.GetUnscaledSize().Y,
+                                                      _actualFont.GetFaceName(),
+                                                      _settings.DefaultBackground()) :
+                                  "";
+
+        // convert to RTF format
+        const auto rtfData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::RTF) ?
+                                 TextBuffer::GenRTF(bufferData,
+                                                    _actualFont.GetUnscaledSize().Y,
+                                                    _actualFont.GetFaceName(),
+                                                    _settings.DefaultBackground()) :
+                                 "";
+
+        if (!_settings.CopyOnSelect())
+        {
+            _terminal->ClearSelection();
+            _renderer->TriggerSelection();
+        }
+
+        // send data up for clipboard
+        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData),
+                                                                   winrt::to_hstring(htmlData),
+                                                                   winrt::to_hstring(rtfData),
+                                                                   formats);
+        _CopyToClipboardHandlers(*this, *copyArgs);
+        return true;
     }
 
     // Method Description:

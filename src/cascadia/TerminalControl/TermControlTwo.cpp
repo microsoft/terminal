@@ -103,8 +103,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnTerminalCursorPositionChanged = std::bind(&TermControlTwo::_TerminalCursorPositionChanged, this);
         _core->_terminal->SetCursorPositionChangedCallback(pfnTerminalCursorPositionChanged);
 
-        auto pfnCopyToClipboard = std::bind(&TermControlTwo::_CopyToClipboard, this, std::placeholders::_1);
-        _core->_terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
+        // auto pfnCopyToClipboard = std::bind(&TermControlTwo::_CopyToClipboard, this, std::placeholders::_1);
+        // _core->_terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
 
         _core->_terminal->TaskbarProgressChangedCallback([&]() { TermControlTwo::TaskbarProgressChanged(); });
 
@@ -2028,7 +2028,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
 
             _core->ScaleChanged(scaleX, scaleY);
-
         }
     }
 
@@ -2087,11 +2086,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _TabColorChangedHandlers(*this, nullptr);
     }
 
-    void TermControlTwo::_CopyToClipboard(const std::wstring_view& wstr)
-    {
-        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(wstr));
-        _clipboardCopyHandlers(*this, *copyArgs);
-    }
+    // void TermControlTwo::_CopyToClipboard(const std::wstring_view& wstr)
+    // {
+    //     auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(wstr));
+    //     _core->_CopyToClipboardHandlers(*_core, *copyArgs);
+    // }
 
     // Method Description:
     // - Update the position and size of the scrollbar to match the given
@@ -2157,14 +2156,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return hstr;
     }
 
-    // Method Description:
-    // - Given a copy-able selection, get the selected text from the buffer and send it to the
-    //     Windows Clipboard (CascadiaWin32:main.cpp).
-    // - CopyOnSelect does NOT clear the selection
-    // Arguments:
-    // - singleLine: collapse all of the text to one line
-    // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
-    //             if we should defer which formats are copied to the global setting
+    // // Method Description:
+    // // - Given a copy-able selection, get the selected text from the buffer and send it to the
+    // //     Windows Clipboard (CascadiaWin32:main.cpp).
+    // // - CopyOnSelect does NOT clear the selection
+    // // Arguments:
+    // // - singleLine: collapse all of the text to one line
+    // // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
+    // //             if we should defer which formats are copied to the global setting
     bool TermControlTwo::CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
     {
         if (_closing)
@@ -2172,57 +2171,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return false;
         }
 
-        // no selection --> nothing to copy
-        if (!_core->_terminal->IsSelectionActive())
+        if (_core)
         {
-            return false;
+            // Note to future self: This should return false if there's no
+            // selection to copy. If there's no selection, returning false will
+            // indicate that the actions that trigered this should _not_ be
+            // marked as handled, so ctrl+c without a selection can still send
+            // ^C
+
+            // Mark the current selection as copied
+            _selectionNeedsToBeCopied = false;
+
+            return _core->CopySelectionToClipboard(singleLine, formats);
         }
 
-        // Mark the current selection as copied
-        _selectionNeedsToBeCopied = false;
-
-        // extract text from buffer
-        const auto bufferData = _core->_terminal->RetrieveSelectedTextFromBuffer(singleLine);
-
-        // convert text: vector<string> --> string
-        std::wstring textData;
-        for (const auto& text : bufferData.text)
-        {
-            textData += text;
-        }
-
-        // convert text to HTML format
-        // GH#5347 - Don't provide a title for the generated HTML, as many
-        // web applications will paste the title first, followed by the HTML
-        // content, which is unexpected.
-        const auto htmlData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::HTML) ?
-                                  TextBuffer::GenHTML(bufferData,
-                                                      _core->_actualFont.GetUnscaledSize().Y,
-                                                      _core->_actualFont.GetFaceName(),
-                                                      _settings.DefaultBackground()) :
-                                  "";
-
-        // convert to RTF format
-        const auto rtfData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::RTF) ?
-                                 TextBuffer::GenRTF(bufferData,
-                                                    _core->_actualFont.GetUnscaledSize().Y,
-                                                    _core->_actualFont.GetFaceName(),
-                                                    _settings.DefaultBackground()) :
-                                 "";
-
-        if (!_settings.CopyOnSelect())
-        {
-            _core->_terminal->ClearSelection();
-            _core->_renderer->TriggerSelection();
-        }
-
-        // send data up for clipboard
-        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData),
-                                                                   winrt::to_hstring(htmlData),
-                                                                   winrt::to_hstring(rtfData),
-                                                                   formats);
-        _clipboardCopyHandlers(*this, *copyArgs);
-        return true;
+        return false;
     }
 
     // Method Description:
@@ -3116,7 +3079,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     DEFINE_EVENT(TermControlTwo, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControlTwo, TerminalControl::PasteFromClipboardEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, CopyToClipboard, _clipboardCopyHandlers, TerminalControl::TermControlTwo, TerminalControl::CopyToClipboardEventArgs);
+    // DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, CopyToClipboard, _clipboardCopyHandlers, TerminalControl::TermControlTwo, TerminalControl::CopyToClipboardEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControlTwo, TerminalControl::OpenHyperlinkEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControlTwo, IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControlTwo, TerminalControl::NoticeEventArgs);

@@ -102,7 +102,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         DECLARE_EVENT(ScrollPositionChanged,    _scrollPositionChangedHandlers,     TerminalControl::ScrollPositionChangedEventArgs);
 
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard,  _clipboardPasteHandlers,    TerminalControl::TermControlTwo, TerminalControl::PasteFromClipboardEventArgs);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CopyToClipboard,     _clipboardCopyHandlers,     TerminalControl::TermControlTwo, TerminalControl::CopyToClipboardEventArgs);
+        // TYPED_EVENT(CopyToClipboard, IInspectable, TerminalControl::CopyToClipboardEventArgs);
+        FORWARDED_TYPED_EVENT(CopyToClipboard, winrt::Windows::Foundation::IInspectable, TerminalControl::CopyToClipboardEventArgs, _core, CopyToClipboard);
+        // DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CopyToClipboard,     _clipboardCopyHandlers,     TerminalControl::TermControlTwo, TerminalControl::CopyToClipboardEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControlTwo, TerminalControl::OpenHyperlinkEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControlTwo, IInspectable);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControlTwo, TerminalControl::NoticeEventArgs);
@@ -157,7 +159,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::shared_ptr<ThrottledFunc<ScrollBarUpdate>> _updateScrollBar;
         bool _isInternalScrollBarUpdate;
 
-        unsigned int _rowsToScroll; // Definitely Control
+        unsigned int _rowsToScroll; // Definitely Control/Interactivity
 
         // Auto scroll occurs when user, while selecting, drags cursor outside viewport. View is then scrolled to 'follow' the cursor.
         double _autoScrollVelocity;
@@ -195,7 +197,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // since it was last copied. It's generally used to prevent copyOnSelect
         // from firing when the pointer _just happens_ to be released over the
         // terminal.
-        bool _selectionNeedsToBeCopied;
+        bool _selectionNeedsToBeCopied; // ->Interactivity
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
@@ -238,7 +240,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _TerminalWarningBell();
         void _TerminalTitleChanged(const std::wstring_view& wstr);
         void _TerminalTabColorChanged(const std::optional<til::color> color);
-        void _CopyToClipboard(const std::wstring_view& wstr);
+        // void _CopyToClipboard(const std::wstring_view& wstr);
         void _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
         void _TerminalCursorPositionChanged();
 

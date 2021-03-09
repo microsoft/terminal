@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "EventArgs.h"
 #include "ControlCore.g.h"
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include "../../renderer/base/Renderer.hpp"
@@ -80,6 +81,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _UpdateHoveredCell(const std::optional<COORD>& terminalPosition);
 
         void _SetEndSelectionPointAtCursor(winrt::Windows::Foundation::Point const& cursorPosition);
+        bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
+        void _CopyToClipboardRequested(const std::wstring_view& wstr);
 
         ////////////////////////////////////////////////////////////////////////
         // These methods are new
@@ -94,6 +97,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void PasteText(const winrt::hstring& hstr);
 
         TYPED_EVENT(HoveredHyperlinkChanged, IInspectable, IInspectable);
+        TYPED_EVENT(CopyToClipboard, IInspectable, TerminalControl::CopyToClipboardEventArgs);
     };
 }
 
