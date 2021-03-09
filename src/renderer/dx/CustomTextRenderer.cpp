@@ -310,6 +310,8 @@ try
         // Enforce min/max cursor height
         ULONG ulHeight = std::clamp(options.ulCursorHeightPercent, MinCursorHeightPercent, MaxCursorHeightPercent);
         ulHeight = (glyphSize.height<ULONG>() * ulHeight) / 100;
+        ulHeight = std::max(ulHeight, MinCursorHeightPixels); // No smaller than 1px
+
         rect.top = rect.bottom - ulHeight;
         break;
     }
