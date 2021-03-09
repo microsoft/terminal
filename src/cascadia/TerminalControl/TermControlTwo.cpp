@@ -299,47 +299,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Update our control settings
         _ApplyUISettings(_settings);
-
-        // // Update the terminal core with its new Core settings
-        // _core->_terminal->UpdateSettings(_settings);
-
-        // if (!_initializedTerminal)
-        // {
-        //     // If we haven't initialized, there's no point in continuing.
-        //     // Initialization will handle the renderer settings.
-        //     return;
-        // }
-
-        // // Update DxEngine settings under the lock
-        // _core->_renderEngine->SetSelectionBackground(_settings.SelectionBackground());
-
-        // _core->_renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-        // _core->_renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
-        // _core->_renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
-        // _core->_renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
-
-        // switch (_settings.AntialiasingMode())
-        // {
-        // case TextAntialiasingMode::Cleartype:
-        //     _core->_renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
-        //     break;
-        // case TextAntialiasingMode::Aliased:
-        //     _core->_renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
-        //     break;
-        // case TextAntialiasingMode::Grayscale:
-        // default:
-        //     _core->_renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
-        //     break;
-        // }
-
-        // // Refresh our font with the renderer
-        // const auto actualFontOldSize = _core->_actualFont.GetSize();
-        // _core->_UpdateFont();
-        // const auto actualFontNewSize = _core->_actualFont.GetSize();
-        // if (actualFontNewSize != actualFontOldSize)
-        // {
-        //     _RefreshSizeUnderLock();
-        // }
     }
 
     // Method Description:
@@ -399,19 +358,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Apply padding as swapChainPanel's margin
         auto newMargin = _ParseThicknessFromPadding(newSettings.Padding());
         SwapChainPanel().Margin(newMargin);
-
-        // // Initialize our font information.
-        // const auto fontFace = newSettings.FontFace();
-        // const short fontHeight = gsl::narrow_cast<short>(newSettings.FontSize());
-        // const auto fontWeight = newSettings.FontWeight();
-        // // The font width doesn't terribly matter, we'll only be using the
-        // //      height to look it up
-        // // The other params here also largely don't matter.
-        // //      The family is only used to determine if the font is truetype or
-        // //      not, but DX doesn't use that info at all.
-        // //      The Codepage is additionally not actually used by the DX engine at all.
-        // _core->_actualFont = { fontFace, 0, fontWeight.Weight, { 0, fontHeight }, CP_UTF8, false };
-        // _core->_desiredFont = { _core->_actualFont };
 
         // set TSF Foreground
         Media::SolidColorBrush foregroundBrush{};
@@ -2013,88 +1959,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControlTwo::_SendPastedTextToConnection(const std::wstring& wstr)
     {
         _core->PasteText(winrt::hstring{ wstr });
-        // _core->_terminal->WritePastedText(wstr);
-        // _core->_terminal->ClearSelection();
-        // _core->_terminal->TrySnapOnInput();
     }
-
-    // // Method Description:
-    // // - Update the font with the renderer. This will be called either when the
-    // //      font changes or the DPI changes, as DPI changes will necessitate a
-    // //      font change. This method will *not* change the buffer/viewport size
-    // //      to account for the new glyph dimensions. Callers should make sure to
-    // //      appropriately call _DoResizeUnderLock after this method is called.
-    // // - The write lock should be held when calling this method.
-    // // Arguments:
-    // // - initialUpdate: whether this font update should be considered as being
-    // //   concerned with initialization process. Value forwarded to event handler.
-    // void TermControlTwo::_UpdateFont(const bool initialUpdate)
-    // {
-    //     const int newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) * SwapChainPanel().CompositionScaleX());
-
-    //     // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
-    //     //      actually fail. We need a way to gracefully fallback.
-    //     _core->_renderer->TriggerFontChange(newDpi, _core->_desiredFont, _core->_actualFont);
-
-    //     // If the actual font isn't what was requested...
-    //     if (_core->_actualFont.GetFaceName() != _core->_desiredFont.GetFaceName())
-    //     {
-    //         // Then warn the user that we picked something because we couldn't find their font.
-
-    //         // Format message with user's choice of font and the font that was chosen instead.
-    //         const winrt::hstring message{ fmt::format(std::wstring_view{ RS_(L"NoticeFontNotFound") }, _core->_desiredFont.GetFaceName(), _core->_actualFont.GetFaceName()) };
-
-    //         // Capture what we need to resume later.
-    //         [strongThis = get_strong(), message]() -> winrt::fire_and_forget {
-    //             // Take these out of the lambda and store them locally
-    //             // because the coroutine will lose them into space
-    //             // by the time it resumes.
-    //             const auto msg = message;
-    //             const auto strong = strongThis;
-
-    //             // Pop the rest of this function to the tail of the UI thread
-    //             // Just in case someone was holding a lock when they called us and
-    //             // the handlers decide to do something that take another lock
-    //             // (like ShellExecute pumping our messaging thread...GH#7994)
-    //             co_await strong->Dispatcher();
-
-    //             auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(msg));
-    //             strong->_raiseNoticeHandlers(*strong, std::move(noticeArgs));
-    //         }();
-    //     }
-
-    //     const auto actualNewSize = _core->_actualFont.GetSize();
-    //     _fontSizeChangedHandlers(actualNewSize.X, actualNewSize.Y, initialUpdate);
-    // }
-
-    // // Method Description:
-    // // - Set the font size of the terminal control.
-    // // Arguments:
-    // // - fontSize: The size of the font.
-    // void TermControlTwo::_SetFontSize(int fontSize)
-    // {
-    //     try
-    //     {
-    //         // Make sure we have a non-zero font size
-    //         const auto newSize = std::max<short>(gsl::narrow_cast<short>(fontSize), 1);
-    //         const auto fontFace = _settings.FontFace();
-    //         const auto fontWeight = _settings.FontWeight();
-    //         _core->_actualFont = { fontFace, 0, fontWeight.Weight, { 0, newSize }, CP_UTF8, false };
-    //         _core->_desiredFont = { _core->_actualFont };
-
-    //         auto lock = _core->_terminal->LockForWriting();
-
-    //         // Refresh our font with the renderer
-    //         _UpdateFont();
-
-    //         // Resize the terminal's BUFFER to match the new font size. This does
-    //         // NOT change the size of the window, because that can lead to more
-    //         // problems (like what happens when you change the font size while the
-    //         // window is maximized?)
-    //         _RefreshSizeUnderLock();
-    //     }
-    //     CATCH_LOG();
-    // }
 
     // Method Description:
     // - Triggered when the swapchain changes size. We use this to resize the
@@ -2113,25 +1978,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         const auto newSize = e.NewSize();
         _core->SizeChanged(newSize.Width, newSize.Height);
-        // const auto currentScaleX = SwapChainPanel().CompositionScaleX();
-        // const auto currentEngineScale = _core->_renderEngine->GetScaling();
-        // auto foundationSize = newSize;
-
-        // // A strange thing can happen here. If you have two tabs open, and drag
-        // // across a DPI boundary, then switch to the other tab, that tab will
-        // // receive two events: First, a SizeChanged, then a ScaleChanged. In the
-        // // SizeChanged event handler, the SwapChainPanel's CompositionScale will
-        // // _already_ be the new scaling, but the engine won't have that value
-        // // yet. If we scale by the CompositionScale here, we'll end up in a
-        // // weird torn state. I'm not totally sure why.
-        // //
-        // // Fortunately we will be getting that following ScaleChanged event, and
-        // // we'll end up resizing again, so we don't terribly need to worry about
-        // // this.
-        // foundationSize.Width *= currentEngineScale;
-        // foundationSize.Height *= currentEngineScale;
-
-        // _DoResizeUnderLock(foundationSize.Width, foundationSize.Height);
     }
 
     // Method Description:
@@ -2183,17 +2029,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             _core->ScaleChanged(scaleX, scaleY);
 
-            // const auto actualFontOldSize = _core->_actualFont.GetSize();
-
-            // auto lock = _core->_terminal->LockForWriting();
-
-            // _core->_renderer->TriggerFontChange(::base::saturated_cast<int>(dpi), _core->_desiredFont, _core->_actualFont);
-
-            // const auto actualFontNewSize = _core->_actualFont.GetSize();
-            // if (actualFontNewSize != actualFontOldSize)
-            // {
-            //     _RefreshSizeUnderLock();
-            // }
         }
     }
 
@@ -2235,91 +2070,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControlTwo::_SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition)
     {
         _core->_SetEndSelectionPointAtCursor(_GetTerminalPosition(cursorPosition));
-        //     if (!_core->_terminal->IsSelectionActive())
-        //     {
-        //         return;
-        //     }
-
-        //     auto terminalPosition = _GetTerminalPosition(cursorPosition);
-
-        //     const short lastVisibleRow = std::max<short>(_core->_terminal->GetViewport().Height() - 1, 0);
-        //     const short lastVisibleCol = std::max<short>(_core->_terminal->GetViewport().Width() - 1, 0);
-
-        //     terminalPosition.Y = std::clamp<short>(terminalPosition.Y, 0, lastVisibleRow);
-        //     terminalPosition.X = std::clamp<short>(terminalPosition.X, 0, lastVisibleCol);
-
-        //     // save location (for rendering) + render
-        //     _core->_terminal->SetSelectionEnd(terminalPosition);
-        //     _core->_renderer->TriggerSelection();
         _selectionNeedsToBeCopied = true;
     }
-
-    // // Method Description:
-    // // - Perform a resize for the current size of the swapchainpanel. If the
-    // //   font size changed, we'll need to resize the buffer to fit the existing
-    // //   swapchain size. This helper will call _DoResizeUnderLock with the current size
-    // //   of the swapchain, accounting for scaling due to DPI.
-    // // - Note that a DPI change will also trigger a font size change, and will call into here.
-    // // - The write lock should be held when calling this method, we might be changing the buffer size in _DoResizeUnderLock.
-    // // Arguments:
-    // // - <none>
-    // // Return Value:
-    // // - <none>
-    // void TermControlTwo::_RefreshSizeUnderLock()
-    // {
-    //     const auto currentScaleX = SwapChainPanel().CompositionScaleX();
-    //     const auto currentScaleY = SwapChainPanel().CompositionScaleY();
-    //     const auto actualWidth = SwapChainPanel().ActualWidth();
-    //     const auto actualHeight = SwapChainPanel().ActualHeight();
-
-    //     const auto widthInPixels = actualWidth * currentScaleX;
-    //     const auto heightInPixels = actualHeight * currentScaleY;
-
-    //     _DoResizeUnderLock(widthInPixels, heightInPixels);
-    // }
-
-    // // Method Description:
-    // // - Process a resize event that was initiated by the user. This can either
-    // //   be due to the user resizing the window (causing the swapchain to
-    // //   resize) or due to the DPI changing (causing us to need to resize the
-    // //   buffer to match)
-    // // Arguments:
-    // // - newWidth: the new width of the swapchain, in pixels.
-    // // - newHeight: the new height of the swapchain, in pixels.
-    // void TermControlTwo::_DoResizeUnderLock(const double newWidth, const double newHeight)
-    // {
-    //     SIZE size;
-    //     size.cx = static_cast<long>(newWidth);
-    //     size.cy = static_cast<long>(newHeight);
-
-    //     // Don't actually resize so small that a single character wouldn't fit
-    //     // in either dimension. The buffer really doesn't like being size 0.
-    //     if (size.cx < _core->_actualFont.GetSize().X || size.cy < _core->_actualFont.GetSize().Y)
-    //     {
-    //         return;
-    //     }
-
-    //     _core->_terminal->ClearSelection();
-
-    //     // Tell the dx engine that our window is now the new size.
-    //     THROW_IF_FAILED(_core->_renderEngine->SetWindowSize(size));
-
-    //     // Invalidate everything
-    //     _core->_renderer->TriggerRedrawAll();
-
-    //     // Convert our new dimensions to characters
-    //     const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
-    //                                                        { static_cast<short>(size.cx), static_cast<short>(size.cy) });
-    //     const auto vp = _core->_renderEngine->GetViewportInCharacters(viewInPixels);
-
-    //     // If this function succeeds with S_FALSE, then the terminal didn't
-    //     // actually change size. No need to notify the connection of this no-op.
-    //     const HRESULT hr = _core->_terminal->UserResize({ vp.Width(), vp.Height() });
-    //     if (SUCCEEDED(hr) && hr != S_FALSE)
-    //     {
-    //         _core->_connection.Resize(vp.Height(), vp.Width());
-    //     }
-    // }
 
     void TermControlTwo::_TerminalWarningBell()
     {
