@@ -206,10 +206,12 @@ namespace winrt::TerminalApp::implementation
                 const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
                                         WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
+                const auto shiftState{ window.GetKeyState(VirtualKey::Shift) };
                 const auto rShiftState = window.GetKeyState(VirtualKey::RightShift);
                 const auto lShiftState = window.GetKeyState(VirtualKey::LeftShift);
-                const bool shiftPressed = WI_IsFlagSet(rShiftState, CoreVirtualKeyStates::Down) ||
-                                          WI_IsFlagSet(lShiftState, CoreVirtualKeyStates::Down);
+                const auto shiftPressed{ WI_IsFlagSet(shiftState, CoreVirtualKeyStates::Down) ||
+                                         WI_IsFlagSet(lShiftState, CoreVirtualKeyStates::Down) ||
+                                         WI_IsFlagSet(rShiftState, CoreVirtualKeyStates::Down) };
 
                 // Check for DebugTap
                 bool debugTap = page->_settings.GlobalSettings().DebugFeaturesEnabled() &&
@@ -223,7 +225,7 @@ namespace winrt::TerminalApp::implementation
                                      0.5f,
                                      nullptr);
                 }
-                if (shiftPressed && !debugTap)
+                else if (shiftPressed && !debugTap)
                 {
                     page->_OpenNewWindow(false, NewTerminalArgs());
                 }
@@ -617,10 +619,12 @@ namespace winrt::TerminalApp::implementation
                     const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
                                             WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
+                    const auto shiftState{ window.GetKeyState(VirtualKey::Shift) };
                     const auto rShiftState = window.GetKeyState(VirtualKey::RightShift);
                     const auto lShiftState = window.GetKeyState(VirtualKey::LeftShift);
-                    const bool shiftPressed = WI_IsFlagSet(rShiftState, CoreVirtualKeyStates::Down) ||
-                                              WI_IsFlagSet(lShiftState, CoreVirtualKeyStates::Down);
+                    const auto shiftPressed{ WI_IsFlagSet(shiftState, CoreVirtualKeyStates::Down) ||
+                                             WI_IsFlagSet(lShiftState, CoreVirtualKeyStates::Down) ||
+                                             WI_IsFlagSet(rShiftState, CoreVirtualKeyStates::Down) };
 
                     // Check for DebugTap
                     bool debugTap = page->_settings.GlobalSettings().DebugFeaturesEnabled() &&
@@ -634,7 +638,7 @@ namespace winrt::TerminalApp::implementation
                                          0.5f,
                                          newTerminalArgs);
                     }
-                    if (shiftPressed && !debugTap)
+                    else if (shiftPressed && !debugTap)
                     {
                         // Manually fill in the evaluated profile.
                         newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(page->_settings.GetProfileForArgs(newTerminalArgs)));
