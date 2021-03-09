@@ -260,7 +260,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        // auto lock = _core->_terminal->LockForWriting();
         _core->UpdateSettings(_settings);
 
         // Update our control settings
@@ -401,10 +400,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
 
             // GH#5098: Inform the engine of the new opacity of the default text background.
-            if (_core->_renderEngine)
-            {
-                _core->_renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
-            }
+            _core->SetBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
         }
         else
         {
@@ -412,10 +408,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             RootGrid().Background(solidColor);
 
             // GH#5098: Inform the engine of the new opacity of the default text background.
-            if (_core->_renderEngine)
-            {
-                _core->_renderEngine->SetDefaultTextBackgroundOpacity(1.0f);
-            }
+            _core->SetBackgroundOpacity(1.0f);
         }
 
         if (!_settings.BackgroundImage().empty())
@@ -1500,10 +1493,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 else
                 {
                     // GH#5098: Inform the engine of the new opacity of the default text background.
-                    if (_core->_renderEngine)
-                    {
-                        _core->_renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
-                    }
+                    _core->SetBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
                 }
             }
             CATCH_LOG();

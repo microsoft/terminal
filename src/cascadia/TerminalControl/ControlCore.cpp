@@ -887,4 +887,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _renderer->TriggerSelection();
         }
     }
+
+    void ControlCore::SetBackgroundOpacity(const float opacity)
+    {
+        if (_renderEngine)
+        {
+            _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(opacity));
+        }
+    }
 }

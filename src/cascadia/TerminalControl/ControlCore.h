@@ -142,6 +142,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     const bool goForward,
                     const bool caseSensitive);
 
+        void SetBackgroundOpacity(const float opacity);
+
         TYPED_EVENT(HoveredHyperlinkChanged, IInspectable, IInspectable);
     };
 }
