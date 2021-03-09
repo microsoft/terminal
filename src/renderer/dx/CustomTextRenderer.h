@@ -55,6 +55,7 @@ namespace Microsoft::Console::Render
         Outline
     };
 
+    constexpr const ULONG MinCursorHeightPixels = 1;
     constexpr const ULONG MinCursorHeightPercent = 1;
     constexpr const ULONG MaxCursorHeightPercent = 100;
 
