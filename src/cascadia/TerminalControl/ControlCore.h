@@ -58,6 +58,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         double _panelHeight;
         double _compositionScaleX;
         double _compositionScaleY;
+        til::color _backgroundColor; // This is _in_ Terminal already!
         ////////////////////////////////////////////////////////////////////////
 
         ////////////////////////////////////////////////////////////////////////
@@ -97,7 +98,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _TerminalCopyToClipboard(const std::wstring_view& wstr);
         void _TerminalWarningBell();
         void _TerminalTitleChanged(const std::wstring_view& wstr);
-        void _TerminalTabColorChanged(const std::optional<til::color> /*color*/);
+        void _TerminalTabColorChanged(const std::optional<til::color> color);
+        void _TerminalBackgroundColorChanged(const COLORREF color);
+        void _TerminalScrollPositionChanged(const int viewTop,
+                                            const int viewHeight,
+                                            const int bufferSize);
+        void _TerminalCursorPositionChanged();
+        void _TerminalTaskbarProgressChanged();
 #pragma endregion
 
         TYPED_EVENT(CopyToClipboard, IInspectable, TerminalControl::CopyToClipboardEventArgs);
@@ -105,6 +112,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TYPED_EVENT(TitleChanged, IInspectable, TerminalControl::TitleChangedEventArgs);
         TYPED_EVENT(WarningBell, IInspectable, IInspectable);
         TYPED_EVENT(TabColorChanged, IInspectable, IInspectable);
+        TYPED_EVENT(BackgroundColorChanged, IInspectable, IInspectable);
+        TYPED_EVENT(ScrollPositionChanged, IInspectable, TerminalControl::ScrollPositionChangedArgs);
+        TYPED_EVENT(CursorPositionChanged, IInspectable, IInspectable);
+        TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
 
     public:
         ////////////////////////////////////////////////////////////////////////
@@ -120,6 +131,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void PasteText(const winrt::hstring& hstr);
 
         FontInfo GetFont() const;
+        til::color BackgroundColor() const;
 
         TYPED_EVENT(HoveredHyperlinkChanged, IInspectable, IInspectable);
     };

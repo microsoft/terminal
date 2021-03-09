@@ -28,7 +28,7 @@ namespace Microsoft.Terminal.TerminalControl
         event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<TermControlTwo, PasteFromClipboardEventArgs> PasteFromClipboard;
         event Windows.Foundation.TypedEventHandler<TermControlTwo, OpenHyperlinkEventArgs> OpenHyperlink;
-        event Windows.Foundation.TypedEventHandler<TermControlTwo, Object> SetTaskbarProgress;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
         event Windows.Foundation.TypedEventHandler<TermControlTwo, NoticeEventArgs> RaiseNotice;
         event Windows.Foundation.TypedEventHandler<Object, Object> WarningBell;
         event Windows.Foundation.TypedEventHandler<Object, Object> HidePointerCursor;
@@ -54,7 +54,7 @@ namespace Microsoft.Terminal.TerminalControl
         void ScrollViewport(Int32 viewTop);
         Int32 GetScrollOffset();
         Int32 GetViewHeight();
-        event ScrollPositionChangedEventArgs ScrollPositionChanged;
+        // event ScrollPositionChangedEventArgs ScrollPositionChanged;
 
         void CreateSearchBoxControl();
 
@@ -66,7 +66,7 @@ namespace Microsoft.Terminal.TerminalControl
         void ToggleShaderEffects();
         void SendInput(String input);
 
-        void TaskbarProgressChanged();
+        // void TaskbarProgressChanged();
 
 
         Boolean ReadOnly { get; };

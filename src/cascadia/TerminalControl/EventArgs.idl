@@ -50,4 +50,11 @@ namespace Microsoft.Terminal.TerminalControl
         NoticeLevel Level { get; };
         String Message { get; };
     }
+
+    runtimeclass ScrollPositionChangedArgs
+    {
+        Int32 ViewTop { get; };
+        Int32 ViewHeight { get; };
+        Int32 BufferSize { get; };
+    }
 }

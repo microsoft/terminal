@@ -85,21 +85,25 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _core = winrt::make_self<ControlCore>(settings, connection);
 
-        auto pfnBackgroundColorChanged = std::bind(&TermControlTwo::_BackgroundColorChanged, this, std::placeholders::_1);
-        _core->_terminal->SetBackgroundCallback(pfnBackgroundColorChanged);
+        // auto pfnBackgroundColorChanged = std::bind(&TermControlTwo::_BackgroundColorChanged, this, std::placeholders::_1);
+        // _core->_terminal->SetBackgroundCallback(pfnBackgroundColorChanged);
 
-        auto pfnScrollPositionChanged = std::bind(&TermControlTwo::_TerminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-        _core->_terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
+        // auto pfnScrollPositionChanged = std::bind(&TermControlTwo::_TerminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        // _core->_terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
 
-        auto pfnTerminalCursorPositionChanged = std::bind(&TermControlTwo::_TerminalCursorPositionChanged, this);
-        _core->_terminal->SetCursorPositionChangedCallback(pfnTerminalCursorPositionChanged);
+        // auto pfnTerminalCursorPositionChanged = std::bind(&TermControlTwo::_TerminalCursorPositionChanged, this);
+        // _core->_terminal->SetCursorPositionChangedCallback(pfnTerminalCursorPositionChanged);
 
-        _core->_terminal->TaskbarProgressChangedCallback([&]() { TermControlTwo::TaskbarProgressChanged(); });
+        // _core->_terminal->TaskbarProgressChangedCallback([&]() { TermControlTwo::TaskbarProgressChanged(); });
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
         _core->_connectionStateChangedRevoker = _core->_connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
             _ConnectionStateChangedHandlers(*this, nullptr);
         });
+
+        _core->BackgroundColorChanged({ get_weak(), &TermControlTwo::_BackgroundColorChangedHandler });
+        _core->ScrollPositionChanged({ get_weak(), &TermControlTwo::_ScrollPositionChanged });
+        _core->CursorPositionChanged({ get_weak(), &TermControlTwo::_CursorPositionChanged });
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
@@ -341,7 +345,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _InitializeBackgroundBrush();
 
         COLORREF bg = newSettings.DefaultBackground();
-        _BackgroundColorChanged(bg);
+        _changeBackgroundColor(bg);
 
         // Apply padding as swapChainPanel's margin
         auto newMargin = _ParseThicknessFromPadding(newSettings.Padding());
@@ -479,24 +483,28 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - color: The background color to use as a uint32 (aka DWORD COLORREF)
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControlTwo::_BackgroundColorChanged(const COLORREF color)
+    void TermControlTwo::_BackgroundColorChangedHandler(const IInspectable& /*sender*/,
+                                                        const IInspectable& /*args*/)
     {
-        til::color newBgColor{ color };
+        til::color newBgColor{ _core->BackgroundColor() };
+        _changeBackgroundColor(newBgColor);
+    }
 
+    winrt::fire_and_forget TermControlTwo::_changeBackgroundColor(til::color bg)
+    {
         auto weakThis{ get_weak() };
-
         co_await winrt::resume_foreground(Dispatcher());
 
         if (auto control{ weakThis.get() })
         {
             if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
             {
-                acrylic.FallbackColor(newBgColor);
-                acrylic.TintColor(newBgColor);
+                acrylic.FallbackColor(bg);
+                acrylic.TintColor(bg);
             }
             else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
             {
-                solidColor.Color(newBgColor);
+                solidColor.Color(bg);
             }
         }
     }
@@ -1513,7 +1521,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     _settings.UseAcrylic(false);
                     _InitializeBackgroundBrush();
                     COLORREF bg = _settings.DefaultBackground();
-                    _BackgroundColorChanged(bg);
+                    _changeBackgroundColor(bg);
                 }
                 else
                 {
@@ -1976,28 +1984,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //      of the buffer.
     // - viewHeight: the height of the viewport in rows.
     // - bufferSize: the length of the buffer, in rows
-    void TermControlTwo::_TerminalScrollPositionChanged(const int viewTop,
-                                                        const int viewHeight,
-                                                        const int bufferSize)
+    void TermControlTwo::_ScrollPositionChanged(const IInspectable& /*sender*/,
+                                                const TerminalControl::ScrollPositionChangedArgs& args)
     {
-        // Since this callback fires from non-UI thread, we might be already
-        // closed/closing.
-        if (_closing.load())
-        {
-            return;
-        }
-
-        // Clear the regex pattern tree so the renderer does not try to render them while scrolling
-        _core->_terminal->ClearPatternTree();
-
-        _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
-
         ScrollBarUpdate update;
-        const auto hiddenContent = bufferSize - viewHeight;
+        const auto hiddenContent = args.BufferSize() - args.ViewHeight();
         update.newMaximum = hiddenContent;
         update.newMinimum = 0;
-        update.newViewportSize = viewHeight;
-        update.newValue = viewTop;
+        update.newViewportSize = args.ViewHeight();
+        update.newValue = args.ViewTop();
 
         _updateScrollBar->Run(update);
         _updatePatternLocations->Run();
@@ -2008,7 +2003,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   to be where the current cursor position is.
     // Arguments:
     // - N/A
-    void TermControlTwo::_TerminalCursorPositionChanged()
+    void TermControlTwo::_CursorPositionChanged(const IInspectable& /*sender*/,
+                                                const IInspectable& /*args*/)
     {
         _tsfTryRedrawCanvas->Run();
     }
@@ -2777,14 +2773,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _core->TabColor();
     }
 
-    // Method Description:
-    // - Sends an event (which will be caught by TerminalPage and forwarded to AppHost after)
-    //   to set the progress indicator on the taskbar
-    winrt::fire_and_forget TermControlTwo::TaskbarProgressChanged()
-    {
-        co_await resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
-        _setTaskbarProgressHandlers(*this, nullptr);
-    }
+    // // Method Description:
+    // // - Sends an event (which will be caught by TerminalPage and forwarded to AppHost after)
+    // //   to set the progress indicator on the taskbar
+    // winrt::fire_and_forget TermControlTwo::TaskbarProgressChanged()
+    // {
+    //     co_await resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
+    //     _setTaskbarProgressHandlers(*this, nullptr);
+    // }
 
     // Method Description:
     // - Gets the internal taskbar state value
@@ -2889,11 +2885,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // These macros will define them both for you.
     // DEFINE_EVENT(TermControlTwo, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
     DEFINE_EVENT(TermControlTwo, FontSizeChanged, _fontSizeChangedHandlers, TerminalControl::FontSizeChangedEventArgs);
-    DEFINE_EVENT(TermControlTwo, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
+    // DEFINE_EVENT(TermControlTwo, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControlTwo, TerminalControl::PasteFromClipboardEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControlTwo, TerminalControl::OpenHyperlinkEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControlTwo, IInspectable);
+    // DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControlTwo, IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControlTwo, TerminalControl::NoticeEventArgs);
     // clang-format on
 }

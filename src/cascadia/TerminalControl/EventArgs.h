@@ -8,6 +8,7 @@
 #include "PasteFromClipboardEventArgs.g.h"
 #include "OpenHyperlinkEventArgs.g.h"
 #include "NoticeEventArgs.g.h"
+#include "ScrollPositionChangedArgs.g.h"
 #include "cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
@@ -93,5 +94,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     private:
         const NoticeLevel _level;
         const hstring _message;
+    };
+
+    struct ScrollPositionChangedArgs :
+        public ScrollPositionChangedArgsT<ScrollPositionChangedArgs>
+    {
+    public:
+        ScrollPositionChangedArgs(const int viewTop,
+                                  const int viewHeight,
+                                  const int bufferSize) :
+            _ViewTop(viewTop),
+            _ViewHeight(viewHeight),
+            _BufferSize(bufferSize)
+        {
+        }
+
+        WINRT_PROPERTY(int32_t, ViewTop);
+        WINRT_PROPERTY(int32_t, ViewHeight);
+        WINRT_PROPERTY(int32_t, BufferSize);
     };
 }

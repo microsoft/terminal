@@ -8,3 +8,4 @@
 #include "PasteFromClipboardEventArgs.g.cpp"
 #include "OpenHyperlinkEventArgs.g.cpp"
 #include "NoticeEventArgs.g.cpp"
+#include "ScrollPositionChangedArgs.g.cpp"

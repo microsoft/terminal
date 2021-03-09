@@ -88,7 +88,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
 
-        winrt::fire_and_forget TaskbarProgressChanged();
+        // winrt::fire_and_forget TaskbarProgressChanged();
         const size_t TaskbarState() const noexcept;
         const size_t TaskbarProgress() const noexcept;
 
@@ -100,14 +100,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FORWARDED_TYPED_EVENT(TitleChanged, IInspectable, TerminalControl::TitleChangedEventArgs, _core, TitleChanged);
         FORWARDED_TYPED_EVENT(WarningBell, IInspectable, IInspectable, _core, WarningBell);
         FORWARDED_TYPED_EVENT(TabColorChanged, IInspectable, IInspectable, _core, TabColorChanged);
+        FORWARDED_TYPED_EVENT(SetTaskbarProgress, IInspectable, IInspectable, _core, TaskbarProgressChanged);
         // clang-format off
 
         DECLARE_EVENT(FontSizeChanged,          _fontSizeChangedHandlers,           TerminalControl::FontSizeChangedEventArgs);
-        DECLARE_EVENT(ScrollPositionChanged,    _scrollPositionChangedHandlers,     TerminalControl::ScrollPositionChangedEventArgs);
+        // DECLARE_EVENT(ScrollPositionChanged,    _scrollPositionChangedHandlers,     TerminalControl::ScrollPositionChangedEventArgs);
 
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard,  _clipboardPasteHandlers,    TerminalControl::TermControlTwo, TerminalControl::PasteFromClipboardEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControlTwo, TerminalControl::OpenHyperlinkEventArgs);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControlTwo, IInspectable);
+        // DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControlTwo, IInspectable);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControlTwo, TerminalControl::NoticeEventArgs);
 
         TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControlTwo, IInspectable);
@@ -206,7 +207,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _UpdateSettingsOnUIThread();
         void _UpdateSystemParameterSettings() noexcept;
         void _InitializeBackgroundBrush();
-        winrt::fire_and_forget _BackgroundColorChanged(const COLORREF color);
+        void _BackgroundColorChangedHandler(const IInspectable& sender, const IInspectable& args);
+        winrt::fire_and_forget _changeBackgroundColor(til::color bg);
         bool _InitializeTerminal();
         // void _UpdateFont(const bool initialUpdate = false);
         void _SetFontSize(int fontSize);
@@ -236,12 +238,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);
         // void _DoResizeUnderLock(const double newWidth, const double newHeight);
         // void _RefreshSizeUnderLock();
-        void _TerminalWarningBell();
-        void _TerminalTitleChanged(const std::wstring_view& wstr);
-        void _TerminalTabColorChanged(const std::optional<til::color> color);
         // void _CopyToClipboard(const std::wstring_view& wstr);
-        void _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
-        void _TerminalCursorPositionChanged();
+        // void _TerminalWarningBell();
+        // void _TerminalTitleChanged(const std::wstring_view& wstr);
+        void _TerminalTabColorChanged(const std::optional<til::color> color);
+        void _ScrollPositionChanged(const IInspectable& sender, const TerminalControl::ScrollPositionChangedArgs& args);
+        void _CursorPositionChanged(const IInspectable& sender, const IInspectable& args);
 
         void _MouseScrollHandler(const double mouseDelta, const Windows::Foundation::Point point, const bool isLeftButtonPressed);
         void _MouseZoomHandler(const double delta);

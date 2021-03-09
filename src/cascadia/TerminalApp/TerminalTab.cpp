@@ -167,7 +167,17 @@ namespace winrt::TerminalApp::implementation
             if (lastFocusedControl)
             {
                 lastFocusedControl.Focus(_focusState);
-                lastFocusedControl.TaskbarProgressChanged();
+                // !!TODO!!: This is weird: The tab calls a method on the
+                // control to cause the control to raise an event to the page to
+                // the app logic
+                //
+                //            TermControl \v
+                //              /^       TerminalPage \v
+                // TerminalTab /^                  AppLogic \v
+                //                                       AppHost
+                // Seems like there's a better way...
+                //
+                // lastFocusedControl.TaskbarProgressChanged();
             }
             // When we gain focus, remove the bell indicator if it is active
             if (_tabStatus.BellIndicator())

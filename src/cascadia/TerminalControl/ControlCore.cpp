@@ -82,6 +82,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnTabColorChanged = std::bind(&ControlCore::_TerminalTabColorChanged, this, std::placeholders::_1);
         _terminal->SetTabColorChangedCallback(pfnTabColorChanged);
 
+        auto pfnBackgroundColorChanged = std::bind(&ControlCore::_TerminalBackgroundColorChanged, this, std::placeholders::_1);
+        _terminal->SetBackgroundCallback(pfnBackgroundColorChanged);
+
+        auto pfnScrollPositionChanged = std::bind(&ControlCore::_TerminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
+
+        auto pfnTerminalCursorPositionChanged = std::bind(&ControlCore::_TerminalCursorPositionChanged, this);
+        _terminal->SetCursorPositionChangedCallback(pfnTerminalCursorPositionChanged);
+
+        auto pfnTerminalTaskbarProgressChanged = std::bind(&ControlCore::_TerminalTaskbarProgressChanged, this);
+        _terminal->TaskbarProgressChangedCallback(pfnTerminalTaskbarProgressChanged);
+
         _terminal->UpdateSettings(settings);
     }
 
@@ -740,6 +752,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                        nullptr;
     }
 
+    til::color ControlCore::BackgroundColor() const
+    {
+        return _backgroundColor;
+    }
+
     // Method Description:
     // - Gets the internal taskbar state value
     // Return Value:
@@ -771,5 +788,50 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void ControlCore::_TerminalTabColorChanged(const std::optional<til::color> /*color*/)
     {
         _TabColorChangedHandlers(*this, nullptr);
+    }
+
+    void ControlCore::_TerminalBackgroundColorChanged(const COLORREF color)
+    {
+        _backgroundColor = color;
+        _BackgroundColorChangedHandlers(*this, nullptr);
+    }
+
+    // Method Description:
+    // - Update the position and size of the scrollbar to match the given
+    //      viewport top, viewport height, and buffer size.
+    //   Additionally fires a ScrollPositionChanged event for anyone who's
+    //      registered an event handler for us.
+    // Arguments:
+    // - viewTop: the top of the visible viewport, in rows. 0 indicates the top
+    //      of the buffer.
+    // - viewHeight: the height of the viewport in rows.
+    // - bufferSize: the length of the buffer, in rows
+    void ControlCore::_TerminalScrollPositionChanged(const int viewTop,
+                                                     const int viewHeight,
+                                                     const int bufferSize)
+    {
+        // // Since this callback fires from non-UI thread, we might be already
+        // // closed/closing.
+        // if (_closing.load())
+        // {
+        //     return;
+        // }
+
+        // Clear the regex pattern tree so the renderer does not try to render
+        // them while scrolling
+        _terminal->ClearPatternTree();
+
+        auto scrollArgs = winrt::make_self<ScrollPositionChangedArgs>(viewTop, viewHeight, bufferSize);
+        _ScrollPositionChangedHandlers(*this, *scrollArgs);
+    }
+
+    void ControlCore::_TerminalCursorPositionChanged()
+    {
+        _CursorPositionChangedHandlers(*this, nullptr);
+    }
+
+    void ControlCore::_TerminalTaskbarProgressChanged()
+    {
+        _TaskbarProgressChangedHandlers(*this, nullptr);
     }
 }
