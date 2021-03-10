@@ -94,13 +94,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void Close();
 
 #pragma region ICoreState
+        // existing
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
         const size_t TaskbarState() const noexcept;
         const size_t TaskbarProgress() const noexcept;
         hstring Title();
         hstring WorkingDirectory() const;
+        // new
         int ScrollOffset();
         int ViewHeight() const;
+        int BufferHeight() const;
 #pragma endregion
 
 #pragma region TerminalCoreCallbacks
@@ -163,6 +166,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                              const bool keyDown);
 
         HANDLE GetSwapChainHandle() const;
+
+        void BlinkAttributeTick();
+        void BlinkCursor();
+        bool CursorOn() const;
+        void CursorOn(const bool isCursorOn);
+
+        void ResumeRendering();
 
         TYPED_EVENT(HoveredHyperlinkChanged, IInspectable, IInspectable);
 

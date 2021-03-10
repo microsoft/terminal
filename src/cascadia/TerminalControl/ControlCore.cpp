@@ -870,13 +870,24 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Function Description:
-    // - Gets the height of the terminal in lines of text
+    // - Gets the height of the terminal in lines of text. This is just the
+    //   height of the viewport.
     // Return Value:
     // - The height of the terminal in lines of text
     int ControlCore::ViewHeight() const
     {
         const auto viewPort = _terminal->GetViewport();
         return viewPort.Height();
+    }
+
+    // Function Description:
+    // - Gets the height of the terminal in lines of text. This includes the
+    //   history AND the viewport.
+    // Return Value:
+    // - The height of the terminal in lines of text
+    int ControlCore::BufferHeight() const
+    {
+        return _terminal->GetViewport().BottomExclusive();
     }
 
     void ControlCore::_TerminalWarningBell()
@@ -914,6 +925,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                      const int viewHeight,
                                                      const int bufferSize)
     {
+        // !!TODO!! do we need this?
         // // Since this callback fires from non-UI thread, we might be already
         // // closed/closing.
         // if (_closing.load())
@@ -968,6 +980,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                              const bool goForward,
                              const bool caseSensitive)
     {
+        // !!TODO!! do we need this?
         if (text.size() == 0 /* || _closing*/)
         {
             return;
@@ -1071,5 +1084,39 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void ControlCore::RenderEngineSwapChainChanged()
     {
         _SwapChainChangedHandlers(*this, nullptr);
+    }
+
+    void ControlCore::BlinkAttributeTick()
+    {
+        auto lock = _terminal->LockForWriting();
+
+        auto& renderTarget = *_renderer;
+        auto& blinkingState = _terminal->GetBlinkingState();
+        blinkingState.ToggleBlinkingRendition(renderTarget);
+    }
+
+    void ControlCore::BlinkCursor()
+    {
+        if (!_terminal->IsCursorBlinkingAllowed() &&
+            _terminal->IsCursorVisible())
+        {
+            return;
+        }
+        _terminal->SetCursorOn(!_terminal->IsCursorOn());
+    }
+
+    bool ControlCore::CursorOn() const
+    {
+        return _terminal->IsCursorOn();
+    }
+
+    void ControlCore::CursorOn(const bool isCursorOn)
+    {
+        _terminal->SetCursorOn(isCursorOn);
+    }
+
+    void ControlCore::ResumeRendering()
+    {
+        _renderer->ResetErrorStateAndResume();
     }
 }

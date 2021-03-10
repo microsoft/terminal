@@ -614,14 +614,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // callbacks (and locking problems)
         _core->SwapChainChanged({ get_weak(), &TermControlTwo::RenderEngineSwapChainChanged });
 
-        auto bottom = _core->_terminal->GetViewport().BottomExclusive();
-        auto bufferHeight = bottom;
+        auto bufferHeight = _core->BufferHeight();
 
         ScrollBar().Maximum(bufferHeight - bufferHeight);
         ScrollBar().Minimum(0);
         ScrollBar().Value(0);
         ScrollBar().ViewportSize(bufferHeight);
-        ScrollBar().LargeChange(std::max<SHORT>(bufferHeight - 1, 0)); // scroll one "screenful" at a time when the scroll bar is clicked
+        ScrollBar().LargeChange(std::max(bufferHeight - 1, 0)); // scroll one "screenful" at a time when the scroll bar is clicked
 
         // localPointerToThread->EnablePainting();
 
@@ -939,7 +938,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // Manually show the cursor when a key is pressed. Restarting
             // the timer prevents flickering.
-            _core->_terminal->SetCursorOn(true);
+            _core->CursorOn(true);
             _cursorTimer.value().Start();
         }
 
@@ -1745,7 +1744,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_cursorTimer.has_value())
         {
             // When the terminal focuses, show the cursor immediately
-            _core->_terminal->SetCursorOn(true);
+            _core->CursorOn(true);
             _cursorTimer.value().Start();
         }
 
@@ -1799,7 +1798,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_cursorTimer.has_value())
         {
             _cursorTimer.value().Stop();
-            _core->_terminal->SetCursorOn(false);
+            _core->CursorOn(false);
         }
 
         if (_blinkTimer.has_value())
@@ -1828,8 +1827,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             return;
         }
-
-        auto lock = _core->_terminal->LockForWriting();
 
         const auto newSize = e.NewSize();
         _core->SizeChanged(newSize.Width, newSize.Height);
@@ -1879,11 +1876,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControlTwo::_CursorTimerTick(Windows::Foundation::IInspectable const& /* sender */,
                                           Windows::Foundation::IInspectable const& /* e */)
     {
-        if ((_closing) || (!_core->_terminal->IsCursorBlinkingAllowed() && _core->_terminal->IsCursorVisible()))
+        if (!_closing)
         {
-            return;
+            _core->BlinkCursor();
         }
-        _core->_terminal->SetCursorOn(!_core->_terminal->IsCursorOn());
     }
 
     // Method Description:
@@ -1896,9 +1892,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (!_closing)
         {
-            auto& renderTarget = *_core->_renderer;
-            auto& blinkingState = _core->_terminal->GetBlinkingState();
-            blinkingState.ToggleBlinkingRendition(renderTarget);
+            _core->BlinkAttributeTick();
         }
     }
 
@@ -2540,8 +2534,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                           fullPath.end(),
                                                           L' ') != fullPath.end();
 
-                    // auto lock = _core->_terminal->LockForWriting();
-
                     if (containsSpaces)
                     {
                         fullPath.insert(0, L"\"");
@@ -2645,7 +2637,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // It's already loaded if we get here, so just hide it.
         RendererFailedNotice().Visibility(Visibility::Collapsed);
-        _core->_renderer->ResetErrorStateAndResume();
+        _core->ResumeRendering();
     }
 
     IControlSettings TermControlTwo::Settings() const
@@ -2768,13 +2760,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
-    // DEFINE_EVENT(TermControlTwo, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
     DEFINE_EVENT(TermControlTwo, FontSizeChanged, _fontSizeChangedHandlers, TerminalControl::FontSizeChangedEventArgs);
-    // DEFINE_EVENT(TermControlTwo, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
-
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControlTwo, TerminalControl::PasteFromClipboardEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControlTwo, TerminalControl::OpenHyperlinkEventArgs);
-    // DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControlTwo, IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlTwo, RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControlTwo, TerminalControl::NoticeEventArgs);
     // clang-format on
 }
