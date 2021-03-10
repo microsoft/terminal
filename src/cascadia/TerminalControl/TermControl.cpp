@@ -1308,24 +1308,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
             const auto ctrlEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Control));
 
-            if (_CanSendVTMouseInput())
+            auto lock = _terminal->LockForWriting();
+            const auto cursorPosition = point.Position();
+            const auto terminalPosition = _GetTerminalPosition(cursorPosition);
+
+            // GH#9396: we prioritize hyper-link over VT mouse events
+            if (point.Properties().IsLeftButtonPressed() && ctrlEnabled && !_terminal->GetHyperlinkAtPosition(terminalPosition).empty())
+            {
+                // Handle hyper-link only on the first click to prevent multiple activations
+                const auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
+                if (clickCount == 1)
+                {
+                    _HyperlinkHandler(_terminal->GetHyperlinkAtPosition(terminalPosition));
+                }
+            }
+            else if (_CanSendVTMouseInput())
             {
                 _TrySendMouseEvent(point);
-                args.Handled(true);
-                return;
             }
-
-            if (point.Properties().IsLeftButtonPressed())
+            else if (point.Properties().IsLeftButtonPressed())
             {
-                auto lock = _terminal->LockForWriting();
-
-                const auto cursorPosition = point.Position();
-                const auto terminalPosition = _GetTerminalPosition(cursorPosition);
-
+                // Update the selection appropriately
                 // handle ALT key
                 _terminal->SetBlockSelection(altEnabled);
 
-                auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
+                const auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
 
                 // This formula enables the number of clicks to cycle properly between single-, double-, and triple-click.
                 // To increase the number of acceptable click states, simply increment MAX_CLICK_COUNT and add another if-statement
@@ -1346,61 +1353,49 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     mode = ::Terminal::SelectionExpansionMode::Line;
                 }
 
-                if (ctrlEnabled && multiClickMapper == 1 &&
-                    !(_terminal->GetHyperlinkAtPosition(terminalPosition).empty()))
+                // Capture the position of the first click when no selection is active
+                if (mode == ::Terminal::SelectionExpansionMode::Cell && !_terminal->IsSelectionActive())
                 {
-                    _HyperlinkHandler(_terminal->GetHyperlinkAtPosition(terminalPosition));
+                    _singleClickTouchdownPos = cursorPosition;
+                    _lastMouseClickPosNoSelection = cursorPosition;
                 }
-                else
+
+                // We reset the active selection if one of the conditions apply:
+                // - shift is not held
+                // - GH#9384: the position is the same as of the first click starting the selection
+                // (we need to reset selection on double-click or triple-click, so it captures the word or the line,
+                // rather than extending the selection)
+                if (_terminal->IsSelectionActive() && (!shiftEnabled || _lastMouseClickPosNoSelection == cursorPosition))
                 {
-                    // Update the selection appropriately
-
-                    // Capture the position of the first click when no selection is active
-                    if (mode == ::Terminal::SelectionExpansionMode::Cell && !_terminal->IsSelectionActive())
-                    {
-                        _singleClickTouchdownPos = cursorPosition;
-                        _lastMouseClickPosNoSelection = cursorPosition;
-                    }
-
-                    // We reset the active selection if one of the conditions apply:
-                    // - shift is not held
-                    // - GH#9384: the position is the same as of the first click starting the selection
-                    // (we need to reset selection on double-click or triple-click, so it captures the word or the line,
-                    // rather than extending the selection)
-                    if (_terminal->IsSelectionActive() && (!shiftEnabled || _lastMouseClickPosNoSelection == cursorPosition))
-                    {
-                        // Reset the selection
-                        _terminal->ClearSelection();
-                        _selectionNeedsToBeCopied = false; // there's no selection, so there's nothing to update
-                    }
-
-                    if (shiftEnabled)
-                    {
-                        if (_terminal->IsSelectionActive())
-                        {
-                            // If there is a selection we extend it using the selection mode
-                            // (expand the "end"selection point)
-                            _terminal->SetSelectionEnd(terminalPosition, mode);
-                        }
-                        else
-                        {
-                            // If there is no selection we establish it using the selected mode
-                            // (expand both "start" and "end" selection points)
-                            _terminal->MultiClickSelection(terminalPosition, mode);
-                        }
-                        _selectionNeedsToBeCopied = true;
-                    }
-
-                    _lastMouseClickTimestamp = point.Timestamp();
-                    _lastMouseClickPos = cursorPosition;
-                    _renderer->TriggerSelection();
+                    // Reset the selection
+                    _terminal->ClearSelection();
+                    _selectionNeedsToBeCopied = false; // there's no selection, so there's nothing to update
                 }
+
+                if (shiftEnabled)
+                {
+                    if (_terminal->IsSelectionActive())
+                    {
+                        // If there is a selection we extend it using the selection mode
+                        // (expand the "end"selection point)
+                        _terminal->SetSelectionEnd(terminalPosition, mode);
+                    }
+                    else
+                    {
+                        // If there is no selection we establish it using the selected mode
+                        // (expand both "start" and "end" selection points)
+                        _terminal->MultiClickSelection(terminalPosition, mode);
+                    }
+                    _selectionNeedsToBeCopied = true;
+                }
+
+                _renderer->TriggerSelection();
             }
             else if (point.Properties().IsRightButtonPressed())
             {
-                // CopyOnSelect right click always pastes
                 if (_settings.CopyOnSelect() || !_terminal->IsSelectionActive())
                 {
+                    // CopyOnSelect right click always pastes
                     PasteTextFromClipboard();
                 }
                 else
@@ -1450,11 +1445,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             if (_focused && !_isReadOnly && _CanSendVTMouseInput())
             {
                 _TrySendMouseEvent(point);
-                args.Handled(true);
-                return;
             }
-
-            if (_focused && point.Properties().IsLeftButtonPressed())
+            else if (_focused && point.Properties().IsLeftButtonPressed())
             {
                 auto lock = _terminal->LockForWriting();
 
@@ -3038,7 +3030,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Returns the number of clicks that occurred (double and triple click support)
+    // - Returns the number of clicks that occurred (double and triple click support).
+    // Every call to this function registers a click.
     // Arguments:
     // - clickPos: the (x,y) position of a given cursor (i.e.: mouse cursor).
     //    NOTE: origin (0,0) is top-left.
@@ -3053,13 +3046,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         THROW_IF_FAILED(UInt64Sub(clickTime, _lastMouseClickTimestamp, &delta));
         if (clickPos != _lastMouseClickPos || delta > _multiClickTimer)
         {
-            // exit early. This is a single click.
             _multiClickCounter = 1;
         }
         else
         {
             _multiClickCounter++;
         }
+
+        _lastMouseClickTimestamp = clickTime;
+        _lastMouseClickPos = clickPos;
         return _multiClickCounter;
     }
 
