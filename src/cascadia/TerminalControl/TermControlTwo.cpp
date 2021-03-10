@@ -691,7 +691,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             modifiers |= ControlKeyStates::EnhancedKey;
         }
-        const bool handled = _core->_terminal->SendCharEvent(ch, scanCode, modifiers);
+        const bool handled = _core->SendCharEvent(ch, scanCode, modifiers);
         e.Handled(handled);
     }
 

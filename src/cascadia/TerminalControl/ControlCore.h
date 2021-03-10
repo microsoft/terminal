@@ -176,6 +176,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void ResumeRendering();
 
+        bool SendCharEvent(const wchar_t ch,
+                           const WORD scanCode,
+                           const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+
         TYPED_EVENT(HoveredHyperlinkChanged, IInspectable, IInspectable);
 
         TYPED_EVENT(SwapChainChanged, IInspectable, IInspectable);

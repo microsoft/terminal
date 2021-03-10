@@ -287,6 +287,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _SendInputToConnection(wstr);
     }
 
+    bool ControlCore::SendCharEvent(const wchar_t ch,
+                                    const WORD scanCode,
+                                    const ::Microsoft::Terminal::Core::ControlKeyStates modifiers)
+    {
+        return _terminal->SendCharEvent(ch, scanCode, modifiers);
+    }
+
     // Method Description:
     // - Send this particular key event to the terminal.
     //   See Terminal::SendKeyEvent for more information.
