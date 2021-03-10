@@ -118,7 +118,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() })
                 {
-                    control->UpdatePatternLocations();
+                    control->_core->UpdatePatternLocations();
                 }
             },
             UpdatePatternLocationsInterval,
@@ -1214,7 +1214,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
             }
 
-            _core->_UpdateHoveredCell(terminalPosition);
+            _core->UpdateHoveredCell(terminalPosition);
         }
         else if (_focused && ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
         {
@@ -1403,15 +1403,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                midButtonDown,
                                                rightButtonDown };
         return _DoMouseWheel(location, modifiers, delta, state);
-    }
-
-    // Method Description:
-    // - Tell TerminalCore to update its knowledge about the locations of visible regex patterns
-    // - We should call this (through the throttled function) when something causes the visible
-    //   region to change, such as when new text enters the buffer or the viewport is scrolled
-    void TermControlTwo::UpdatePatternLocations()
-    {
-        _core->_terminal->UpdatePatterns();
     }
 
     // Method Description:
@@ -1857,7 +1848,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // // - cursorPosition: in pixels, relative to the origin of the control
     void TermControlTwo::_SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition)
     {
-        _core->_SetEndSelectionPoint(_GetTerminalPosition(cursorPosition));
+        _core->SetEndSelectionPoint(_GetTerminalPosition(cursorPosition));
         _selectionNeedsToBeCopied = true;
     }
 
@@ -2670,7 +2661,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - args: event data
     void TermControlTwo::_PointerExitedHandler(Windows::Foundation::IInspectable const& /*sender*/, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
     {
-        _core->_UpdateHoveredCell(std::nullopt);
+        _core->UpdateHoveredCell(std::nullopt);
     }
 
     winrt::fire_and_forget TermControlTwo::_hoveredHyperlinkChanged(const IInspectable& sender,

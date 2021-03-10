@@ -66,8 +66,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta, const bool leftButtonDown, const bool midButtonDown, const bool rightButtonDown);
 
-        void UpdatePatternLocations();
-
         ~TermControlTwo();
 
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();

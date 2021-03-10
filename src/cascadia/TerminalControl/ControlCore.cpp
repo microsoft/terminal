@@ -391,11 +391,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    // Method Description:
+    // - Tell TerminalCore to update its knowledge about the locations of visible regex patterns
+    // - We should call this (through the throttled function) when something causes the visible
+    //   region to change, such as when new text enters the buffer or the viewport is scrolled
+    void ControlCore::UpdatePatternLocations()
+    {
+        _terminal->UpdatePatterns();
+    }
+
     // Method description:
     // - Updates last hovered cell, renders / removes rendering of hyper-link if required
     // Arguments:
     // - terminalPosition: The terminal position of the pointer
-    void ControlCore::_UpdateHoveredCell(const std::optional<COORD>& terminalPosition)
+    void ControlCore::UpdateHoveredCell(const std::optional<COORD>& terminalPosition)
     {
         if (terminalPosition == _lastHoveredCell)
         {
@@ -751,7 +760,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - ~~cursorPosition: in pixels, relative to the origin of the control~~
     // - cursorPosition: in cells
-    void ControlCore::_SetEndSelectionPoint(Windows::Foundation::Point const& position)
+    void ControlCore::SetEndSelectionPoint(Windows::Foundation::Point const& position)
     {
         if (!_terminal->IsSelectionActive())
         {

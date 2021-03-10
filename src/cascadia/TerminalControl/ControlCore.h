@@ -82,10 +82,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void SendInput(const winrt::hstring& wstr);
         void ToggleShaderEffects();
-        void _UpdateHoveredCell(const std::optional<COORD>& terminalPosition);
+        void UpdatePatternLocations();
+        void UpdateHoveredCell(const std::optional<COORD>& terminalPosition);
 
         void SetSelectionAnchor(winrt::Windows::Foundation::Point const& position);
-        void _SetEndSelectionPoint(winrt::Windows::Foundation::Point const& position);
+        void SetEndSelectionPoint(winrt::Windows::Foundation::Point const& position);
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
 
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
