@@ -25,7 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _AddNewHandlers(profile);
         }
 
-        GETSET_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
+        WINRT_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
         WINRT_CALLBACK(AddNew, AddNewArgs);
     };
 
@@ -39,7 +39,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void AddNewClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void DuplicateClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
-        GETSET_PROPERTY(Editor::AddProfilePageNavigationState, State, nullptr);
+        WINRT_PROPERTY(Editor::AddProfilePageNavigationState, State, nullptr);
     };
 }
 
