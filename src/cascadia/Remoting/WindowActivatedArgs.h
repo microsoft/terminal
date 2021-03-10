@@ -28,7 +28,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     struct WindowActivatedArgs : public WindowActivatedArgsT<WindowActivatedArgs>
     {
         GETSET_PROPERTY(uint64_t, PeasantID, 0);
-        GETSET_PROPERTY(winrt::guid, DesktopID, {});
+        GETSET_PROPERTY(winrt::guid, DesktopID);
         GETSET_PROPERTY(winrt::Windows::Foundation::DateTime, ActivatedTime, {});
         GETSET_PROPERTY(uint64_t, Hwnd, 0);
 
