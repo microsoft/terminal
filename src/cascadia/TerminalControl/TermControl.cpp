@@ -1308,13 +1308,27 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
             const auto ctrlEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Control));
 
-            if (point.Properties().IsLeftButtonPressed())
+            auto lock = _terminal->LockForWriting();
+            const auto cursorPosition = point.Position();
+            const auto terminalPosition = _GetTerminalPosition(cursorPosition);
+
+            // GH#9396: we prioritize hyper-link over VT mouse events
+            if (point.Properties().IsLeftButtonPressed() && ctrlEnabled && !_terminal->GetHyperlinkAtPosition(terminalPosition).empty())
             {
-                auto lock = _terminal->LockForWriting();
-
-                const auto cursorPosition = point.Position();
-                const auto terminalPosition = _GetTerminalPosition(cursorPosition);
-
+                // Handle hyper-link only on the first click to prevent multiple activations
+                auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
+                if (clickCount == 1)
+                {
+                    _HyperlinkHandler(_terminal->GetHyperlinkAtPosition(terminalPosition));
+                }
+            }
+            else if (_CanSendVTMouseInput())
+            {
+                _TrySendMouseEvent(point);
+            }
+            else if (point.Properties().IsLeftButtonPressed())
+            {
+                // Update the selection appropriately
                 // handle ALT key
                 _terminal->SetBlockSelection(altEnabled);
 
@@ -1339,68 +1353,47 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     mode = ::Terminal::SelectionExpansionMode::Line;
                 }
 
-                if (ctrlEnabled && multiClickMapper == 1 &&
-                    !(_terminal->GetHyperlinkAtPosition(terminalPosition).empty()))
+                // Capture the position of the first click when no selection is active
+                if (mode == ::Terminal::SelectionExpansionMode::Cell && !_terminal->IsSelectionActive())
                 {
-                    _HyperlinkHandler(_terminal->GetHyperlinkAtPosition(terminalPosition));
+                    _singleClickTouchdownPos = cursorPosition;
+                    _lastMouseClickPosNoSelection = cursorPosition;
                 }
-                else if (_CanSendVTMouseInput())
+
+                // We reset the active selection if one of the conditions apply:
+                // - shift is not held
+                // - GH#9384: the position is the same as of the first click starting the selection
+                // (we need to reset selection on double-click or triple-click, so it captures the word or the line,
+                // rather than extending the selection)
+                if (_terminal->IsSelectionActive() && (!shiftEnabled || _lastMouseClickPosNoSelection == cursorPosition))
                 {
-                    // GH#9396: hyper-link gets higher priority than mouse mode
-                    _TrySendMouseEvent(point);
+                    // Reset the selection
+                    _terminal->ClearSelection();
+                    _selectionNeedsToBeCopied = false; // there's no selection, so there's nothing to update
                 }
-                else
+
+                if (shiftEnabled)
                 {
-                    // Update the selection appropriately
-
-                    // Capture the position of the first click when no selection is active
-                    if (mode == ::Terminal::SelectionExpansionMode::Cell && !_terminal->IsSelectionActive())
+                    if (_terminal->IsSelectionActive())
                     {
-                        _singleClickTouchdownPos = cursorPosition;
-                        _lastMouseClickPosNoSelection = cursorPosition;
+                        // If there is a selection we extend it using the selection mode
+                        // (expand the "end"selection point)
+                        _terminal->SetSelectionEnd(terminalPosition, mode);
                     }
-
-                    // We reset the active selection if one of the conditions apply:
-                    // - shift is not held
-                    // - GH#9384: the position is the same as of the first click starting the selection
-                    // (we need to reset selection on double-click or triple-click, so it captures the word or the line,
-                    // rather than extending the selection)
-                    if (_terminal->IsSelectionActive() && (!shiftEnabled || _lastMouseClickPosNoSelection == cursorPosition))
+                    else
                     {
-                        // Reset the selection
-                        _terminal->ClearSelection();
-                        _selectionNeedsToBeCopied = false; // there's no selection, so there's nothing to update
+                        // If there is no selection we establish it using the selected mode
+                        // (expand both "start" and "end" selection points)
+                        _terminal->MultiClickSelection(terminalPosition, mode);
                     }
-
-                    if (shiftEnabled)
-                    {
-                        if (_terminal->IsSelectionActive())
-                        {
-                            // If there is a selection we extend it using the selection mode
-                            // (expand the "end"selection point)
-                            _terminal->SetSelectionEnd(terminalPosition, mode);
-                        }
-                        else
-                        {
-                            // If there is no selection we establish it using the selected mode
-                            // (expand both "start" and "end" selection points)
-                            _terminal->MultiClickSelection(terminalPosition, mode);
-                        }
-                        _selectionNeedsToBeCopied = true;
-                    }
-
-                    _lastMouseClickTimestamp = point.Timestamp();
-                    _lastMouseClickPos = cursorPosition;
-                    _renderer->TriggerSelection();
+                    _selectionNeedsToBeCopied = true;
                 }
+
+                _renderer->TriggerSelection();
             }
             else if (point.Properties().IsRightButtonPressed())
             {
-                if (_CanSendVTMouseInput())
-                {
-                    _TrySendMouseEvent(point);
-                }
-                else if (_settings.CopyOnSelect() || !_terminal->IsSelectionActive())
+                if (_settings.CopyOnSelect() || !_terminal->IsSelectionActive())
                 {
                     // CopyOnSelect right click always pastes
                     PasteTextFromClipboard();
@@ -3059,6 +3052,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             _multiClickCounter++;
         }
+
+        _lastMouseClickTimestamp = clickTime;
+        _lastMouseClickPos = clickPos;
         return _multiClickCounter;
     }
 
