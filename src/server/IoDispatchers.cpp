@@ -155,7 +155,7 @@ static bool _shouldAttemptHandoff(const Globals& globals,
         return false;
     }
 
-    // If this is an AttachConsole message and not occuring
+    // If this is an AttachConsole message and not occurring
     // because of a conclnt!ConsoleInitialize, do not handoff.
     // ConsoleApp is FALSE for attach.
     if (!cac.ConsoleApp)
@@ -203,6 +203,8 @@ static bool _shouldAttemptHandoff(const Globals& globals,
         case SW_SHOWMINNOACTIVE:
         case SW_FORCEMINIMIZE:
             return false;
+            // Intentionally fall through for all others
+            // like maximize and show to hit the true below.
         }
     }
 

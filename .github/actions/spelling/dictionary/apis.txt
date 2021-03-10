@@ -15,6 +15,7 @@ dlldata
 environstrings
 EXPCMDFLAGS
 EXPCMDSTATE
+FORCEMINIMIZE
 frac
 fullkbd
 futex
@@ -83,6 +84,7 @@ semver
 serializer
 shobjidl
 SINGLEUSE
+SHOWMINIMIZED
 SIZENS
 smoothstep
 GETDESKWALLPAPER

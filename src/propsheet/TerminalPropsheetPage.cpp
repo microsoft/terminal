@@ -94,7 +94,7 @@ void _PrepDefAppCombo(const HWND hDlg,
                       const std::vector<DelegationConfig::DelegationPackage>& list,
                       const DelegationConfig::DelegationPackage& selected)
 {
-    HWND hCombo = GetDlgItem(hDlg, dlgItem);
+    const HWND hCombo = GetDlgItem(hDlg, dlgItem);
     ComboBox_ResetContent(hCombo);
 
     DWORD selectedIndex = 0;
@@ -393,11 +393,11 @@ bool TerminalDlgCommand(const HWND hDlg, const WORD item, const WORD command) no
     {
         if (CBN_SELCHANGE == command)
         {
-            HWND hCombo = GetDlgItem(hDlg, IDD_TERMINAL_COMBO_DEFTERM);
-            DWORD comboItem = ComboBox_GetCurSel(hCombo);
+            const HWND hCombo = GetDlgItem(hDlg, IDD_TERMINAL_COMBO_DEFTERM);
+            const DWORD comboItem = ComboBox_GetCurSel(hCombo);
             if (CB_ERR != comboItem)
             {
-                auto pPackage = reinterpret_cast<const DelegationConfig::DelegationPackage* const>(ComboBox_GetItemData(hCombo, comboItem));
+                const auto pPackage = reinterpret_cast<const DelegationConfig::DelegationPackage* const>(ComboBox_GetItemData(hCombo, comboItem));
                 g_selectedPackage = *pPackage;
             }
         }
