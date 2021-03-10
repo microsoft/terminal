@@ -53,7 +53,7 @@ try
     // Check if this conhost is allowed to delegate its activities to another.
     // If so, look up the registered default console handler.
     bool isEnabled = false;
-    if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy(isEnabled) && isEnabled))
+    if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy(isEnabled)) && isEnabled)
     {
         IID delegationClsid;
         if (SUCCEEDED(DelegationConfig::s_GetDefaultConsoleId(delegationClsid)))
