@@ -37,10 +37,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <ToolTipService.ToolTip>
                     <ToolTip Placement="Mouse">
                         <TextBlock IsTextSelectionEnabled="False">
-                            <Run x:Uid="NewTabRun"/> <LineBreak />
+                            <Run x:Uid="NewTabRun"/> <LineBreak/>
                             <Run x:Uid="NewPaneRun"
-                                 FontStyle="Italic">
-                            </Run>
+                                 FontStyle="Italic"/> <LineBreak/>
+                            <Run x:Uid="NewWindowRun"
+                                 FontStyle="Italic"/>
                         </TextBlock>
                     </ToolTip>
                 </ToolTipService.ToolTip>
