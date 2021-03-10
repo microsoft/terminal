@@ -14,6 +14,7 @@ DERR
 environstrings
 EXPCMDFLAGS
 EXPCMDSTATE
+FORCEMINIMIZE
 frac
 fullkbd
 futex
@@ -81,6 +82,7 @@ schandle
 semver
 serializer
 shobjidl
+SHOWMINIMIZED
 SIZENS
 smoothstep
 GETDESKWALLPAPER

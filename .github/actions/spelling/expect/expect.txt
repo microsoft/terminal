@@ -327,6 +327,7 @@ conattrs
 conbufferout
 concat
 concfg
+conclnt
 conddkrefs
 condrv
 conechokey
@@ -563,6 +564,7 @@ DECSWL
 DECTCEM
 Dedupe
 deduplicated
+DEFAPP
 DEFAULTBACKGROUND
 DEFAULTFOREGROUND
 defaultsettings
