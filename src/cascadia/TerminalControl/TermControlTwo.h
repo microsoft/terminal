@@ -72,7 +72,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
-        // const FontInfo GetActualFont() const;
         const Windows::UI::Xaml::Thickness GetPadding();
 
         TerminalConnection::ConnectionState ConnectionState() const;
@@ -102,17 +101,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FORWARDED_TYPED_EVENT(WarningBell, IInspectable, IInspectable, _core, WarningBell);
         FORWARDED_TYPED_EVENT(TabColorChanged, IInspectable, IInspectable, _core, TabColorChanged);
         FORWARDED_TYPED_EVENT(SetTaskbarProgress, IInspectable, IInspectable, _core, TaskbarProgressChanged);
+        FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable, _core, ConnectionStateChanged);
         // clang-format off
 
         DECLARE_EVENT(FontSizeChanged,          _fontSizeChangedHandlers,           TerminalControl::FontSizeChangedEventArgs);
-        // DECLARE_EVENT(ScrollPositionChanged,    _scrollPositionChangedHandlers,     TerminalControl::ScrollPositionChangedEventArgs);
 
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard,  _clipboardPasteHandlers,    TerminalControl::TermControlTwo, TerminalControl::PasteFromClipboardEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControlTwo, TerminalControl::OpenHyperlinkEventArgs);
-        // DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControlTwo, IInspectable);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControlTwo, TerminalControl::NoticeEventArgs);
 
-        TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControlTwo, IInspectable);
         TYPED_EVENT(Initialized, TerminalControl::TermControlTwo, Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(HidePointerCursor, IInspectable, IInspectable);
         TYPED_EVENT(RestorePointerCursor, IInspectable, IInspectable);

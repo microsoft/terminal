@@ -15,8 +15,9 @@ namespace Microsoft.Terminal.TerminalControl
 
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
 
-
         Int32 ScrollOffset { get; };
         Int32 ViewHeight { get; };
+
+        Microsoft.Terminal.TerminalConnection.ConnectionState ConnectionState { get; };
     };
 }

@@ -100,6 +100,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const size_t TaskbarProgress() const noexcept;
         hstring Title();
         hstring WorkingDirectory() const;
+        TerminalConnection::ConnectionState ConnectionState() const;
         // new
         int ScrollOffset();
         int ViewHeight() const;
@@ -133,6 +134,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TYPED_EVENT(ScrollPositionChanged, IInspectable, TerminalControl::ScrollPositionChangedArgs);
         TYPED_EVENT(CursorPositionChanged, IInspectable, IInspectable);
         TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
+        TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable);
 
     public:
         ////////////////////////////////////////////////////////////////////////

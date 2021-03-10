@@ -56,6 +56,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
 
+        // Subscribe to the connection's disconnected event and call our connection closed handlers.
+        _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
+            _ConnectionStateChangedHandlers(*this, nullptr);
+        });
+
         // This event is explicitly revoked in the destructor: does not need weak_ref
         auto onReceiveOutputFn = [this](const hstring str) {
             _terminal->Write(str);
@@ -220,7 +225,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             THROW_IF_FAILED(dxEngine->Enable());
             _renderEngine = std::move(dxEngine);
 
-            // !TODO! in the past we did SetSwapChainHandle _before_ calling
+            // !TODO! in the past we did _AttachDxgiSwapChainToXaml _before_ calling
             // EnablePainting. Mild worry that doing EnablePainting first will
             // break
             localPointerToThread->EnablePainting();
@@ -820,6 +825,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     FontInfo ControlCore::GetFont() const
     {
         return _actualFont;
+    }
+
+    TerminalConnection::ConnectionState ControlCore::ConnectionState() const
+    {
+        return _connection.State();
     }
 
     hstring ControlCore::Title()

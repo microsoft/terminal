@@ -38,10 +38,10 @@ namespace Microsoft.Terminal.TerminalControl
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
 
         event Windows.Foundation.TypedEventHandler<TermControlTwo, Windows.UI.Xaml.RoutedEventArgs> Initialized;
-        // This is an event handler forwarder for the underlying connection.
-        // We expose this and ConnectionState here so that it might eventually be data bound.
-        event Windows.Foundation.TypedEventHandler<TermControlTwo, IInspectable> ConnectionStateChanged;
-        Microsoft.Terminal.TerminalConnection.ConnectionState ConnectionState { get; };
+        // // This is an event handler forwarder for the underlying connection.
+        // // We expose this and ConnectionState here so that it might eventually be data bound.
+        event Windows.Foundation.TypedEventHandler<Object, Object> ConnectionStateChanged;
+        // Microsoft.Terminal.TerminalConnection.ConnectionState ConnectionState { get; };
 
 
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);

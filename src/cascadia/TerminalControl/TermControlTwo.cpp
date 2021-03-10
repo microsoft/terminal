@@ -85,11 +85,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _core = winrt::make_self<ControlCore>(settings, connection);
 
-        // Subscribe to the connection's disconnected event and call our connection closed handlers.
-        _core->_connectionStateChangedRevoker = _core->_connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
-            _ConnectionStateChangedHandlers(*this, nullptr);
-        });
-
         _core->BackgroundColorChanged({ get_weak(), &TermControlTwo::_BackgroundColorChangedHandler });
         _core->ScrollPositionChanged({ get_weak(), &TermControlTwo::_ScrollPositionChanged });
         _core->CursorPositionChanged({ get_weak(), &TermControlTwo::_CursorPositionChanged });
@@ -522,7 +517,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     TerminalConnection::ConnectionState TermControlTwo::ConnectionState() const
     {
-        return _core->_connection.State();
+        return _core->ConnectionState();
     }
 
     winrt::fire_and_forget TermControlTwo::RenderEngineSwapChainChanged(const IInspectable& /*sender*/, const IInspectable& /*args*/)
@@ -622,6 +617,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         ScrollBar().ViewportSize(bufferHeight);
         ScrollBar().LargeChange(std::max(bufferHeight - 1, 0)); // scroll one "screenful" at a time when the scroll bar is clicked
 
+        // Mild worry that doing EnablePainting in Core::InitializeTerminal,
+        // before we _AttachDxgiSwapChainToXaml will break
+        //
         // localPointerToThread->EnablePainting();
 
         // Set up blinking cursor
