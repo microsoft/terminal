@@ -146,7 +146,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         float RendererScale() const;
 
         void _raiseHoveredHyperlinkChanged();
-        winrt::hstring GetHoveredUriText();
+        winrt::hstring GetHoveredUriText() const;
+        std::optional<COORD> GetHoveredCell() const;
 
         void PasteText(const winrt::hstring& hstr);
 
@@ -186,6 +187,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void ResumeRendering();
         bool IsVtMouseModeEnabled() const;
+        til::point CursorPosition() const;
 
         TYPED_EVENT(HoveredHyperlinkChanged, IInspectable, IInspectable);
 

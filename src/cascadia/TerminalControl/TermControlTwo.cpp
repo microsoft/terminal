@@ -2388,7 +2388,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - eventArgs: event for storing the current cursor position
     // Return Value:
     // - <none>
-    void TermControlTwo::_CurrentCursorPositionHandler(const IInspectable& /*sender*/, const CursorPositionEventArgs& eventArgs)
+    void TermControlTwo::_CurrentCursorPositionHandler(const IInspectable& /*sender*/,
+                                                       const CursorPositionEventArgs& eventArgs)
     {
         auto lock = _core->_terminal->LockForReading();
         if (!_initializedTerminal)
@@ -2398,7 +2399,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        const til::point cursorPos = _core->_terminal->GetCursorPosition();
+        const til::point cursorPos = _core->CursorPosition();
         Windows::Foundation::Point p = { ::base::ClampedNumeric<float>(cursorPos.x()),
                                          ::base::ClampedNumeric<float>(cursorPos.y()) };
         eventArgs.CurrentPosition(p);
@@ -2411,7 +2412,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - eventArgs: event for storing the current font information
     // Return Value:
     // - <none>
-    void TermControlTwo::_FontInfoHandler(const IInspectable& /*sender*/, const FontInfoEventArgs& eventArgs)
+    void TermControlTwo::_FontInfoHandler(const IInspectable& /*sender*/,
+                                          const FontInfoEventArgs& eventArgs)
     {
         eventArgs.FontSize(CharacterDimensions());
         eventArgs.FontFace(_core->GetFont().GetFaceName());
@@ -2724,7 +2726,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         co_await resume_foreground(Dispatcher());
         if (auto self{ weakThis.get() })
         {
-            if (_core->_lastHoveredCell.has_value())
+            auto lastHoveredCell = _core->GetHoveredCell();
+            if (lastHoveredCell.has_value())
             {
                 const auto uriText = _core->GetHoveredUriText();
                 if (!uriText.empty())
@@ -2741,8 +2744,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                     // Compute the location of the top left corner of the cell in DIPS
                     const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
-                    const til::point startPos{ _core->_lastHoveredCell->X,
-                                               _core->_lastHoveredCell->Y };
+                    const til::point startPos{ lastHoveredCell->X,
+                                               lastHoveredCell->Y };
                     const til::size fontSize{ _core->GetFont().GetSize() };
                     const til::point posInPixels{ startPos * fontSize };
                     const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };

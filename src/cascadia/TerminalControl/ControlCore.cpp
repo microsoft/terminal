@@ -420,7 +420,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _HoveredHyperlinkChangedHandlers(*this, nullptr);
     }
 
-    winrt::hstring ControlCore::GetHoveredUriText()
+    winrt::hstring ControlCore::GetHoveredUriText() const
     {
         if (_lastHoveredCell.has_value())
         {
@@ -428,6 +428,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return uri;
         }
         return { L"" };
+    }
+
+    std::optional<COORD> ControlCore::GetHoveredCell() const
+    {
+        return _lastHoveredCell;
     }
 
     void ControlCore::UpdateSettings(const IControlSettings& settings)
@@ -1149,6 +1154,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     bool ControlCore::IsVtMouseModeEnabled() const
     {
         return _terminal != nullptr && _terminal->IsTrackingMouseInput();
+    }
+
+    til::point ControlCore::CursorPosition() const
+    {
+        // If we haven't been initialized yet, then fake it.
+        if (!_initializedTerminal)
+        {
+            return { 0, 0 };
+        }
+
+        auto lock = _terminal->LockForReading();
+        return _terminal->GetCursorPosition();
     }
 
 }
