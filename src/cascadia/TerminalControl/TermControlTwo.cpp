@@ -1072,14 +1072,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             if (point.Properties().IsLeftButtonPressed())
             {
-                auto lock = _core->_terminal->LockForWriting();
-
                 const auto cursorPosition = point.Position();
                 const auto terminalPosition = _GetTerminalPosition(cursorPosition);
-
-                // handle ALT key
-                _core->_terminal->SetBlockSelection(altEnabled);
-
                 auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
 
                 // This formula enables the number of clicks to cycle properly between single-, double-, and triple-click.
@@ -1087,68 +1081,35 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 const unsigned int MAX_CLICK_COUNT = 3;
                 const auto multiClickMapper = clickCount > MAX_CLICK_COUNT ? ((clickCount + MAX_CLICK_COUNT - 1) % MAX_CLICK_COUNT) + 1 : clickCount;
 
-                ::Terminal::SelectionExpansionMode mode = ::Terminal::SelectionExpansionMode::Cell;
-                if (multiClickMapper == 1)
+                auto hyperlink = _core->GetHyperlink(terminalPosition);
+                if (ctrlEnabled &&
+                    multiClickMapper == 1 &&
+                    !(hyperlink.empty()))
                 {
-                    mode = ::Terminal::SelectionExpansionMode::Cell;
-                }
-                else if (multiClickMapper == 2)
-                {
-                    mode = ::Terminal::SelectionExpansionMode::Word;
-                }
-                else if (multiClickMapper == 3)
-                {
-                    mode = ::Terminal::SelectionExpansionMode::Line;
-                }
-
-                if (ctrlEnabled && multiClickMapper == 1 &&
-                    !(_core->_terminal->GetHyperlinkAtPosition(terminalPosition).empty()))
-                {
-                    _HyperlinkHandler(_core->_terminal->GetHyperlinkAtPosition(terminalPosition));
+                    _HyperlinkHandler(hyperlink);
                 }
                 else
                 {
                     // Update the selection appropriately
 
                     // Capture the position of the first click when no selection is active
-                    if (mode == ::Terminal::SelectionExpansionMode::Cell && !_core->HasSelection())
+                    if (multiClickMapper == 1 &&
+                        !_core->HasSelection())
                     {
                         _singleClickTouchdownPos = cursorPosition;
                         _lastMouseClickPosNoSelection = cursorPosition;
                     }
+                    const bool isOnOriginalPosition = _lastMouseClickPosNoSelection == cursorPosition;
 
-                    // We reset the active selection if one of the conditions apply:
-                    // - shift is not held
-                    // - GH#9384: the position is the same as of the first click starting the selection
-                    // (we need to reset selection on double-click or triple-click, so it captures the word or the line,
-                    // rather than extending the selection)
-                    if (_core->HasSelection() && (!shiftEnabled || _lastMouseClickPosNoSelection == cursorPosition))
-                    {
-                        // Reset the selection
-                        _core->_terminal->ClearSelection();
-                        _selectionNeedsToBeCopied = false; // there's no selection, so there's nothing to update
-                    }
-
-                    if (shiftEnabled)
-                    {
-                        if (_core->HasSelection())
-                        {
-                            // If there is a selection we extend it using the selection mode
-                            // (expand the "end"selection point)
-                            _core->_terminal->SetSelectionEnd(terminalPosition, mode);
-                        }
-                        else
-                        {
-                            // If there is no selection we establish it using the selected mode
-                            // (expand both "start" and "end" selection points)
-                            _core->_terminal->MultiClickSelection(terminalPosition, mode);
-                        }
-                        _selectionNeedsToBeCopied = true;
-                    }
+                    _core->LeftClickOnTerminal(terminalPosition,
+                                               multiClickMapper,
+                                               altEnabled,
+                                               shiftEnabled,
+                                               isOnOriginalPosition,
+                                               _selectionNeedsToBeCopied);
 
                     _lastMouseClickTimestamp = point.Timestamp();
                     _lastMouseClickPos = cursorPosition;
-                    _core->_renderer->TriggerSelection();
                 }
             }
             else if (point.Properties().IsRightButtonPressed())
@@ -1227,7 +1188,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     }
                 }
 
-                _core->_SetEndSelectionPoint(cursorPosition);
+                _SetEndSelectionPoint(cursorPosition);
 
                 const double cursorBelowBottomDist = cursorPosition.Y - SwapChainPanel().Margin().Top - SwapChainPanel().ActualHeight();
                 const double cursorAboveTopDist = -1 * cursorPosition.Y + SwapChainPanel().Margin().Top;
@@ -1557,7 +1518,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // If user is mouse selecting and scrolls, they then point at new character.
             //      Make sure selection reflects that immediately.
-            _core->_SetEndSelectionPoint(point);
+            _SetEndSelectionPoint(point);
         }
     }
 
@@ -2391,7 +2352,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControlTwo::_CurrentCursorPositionHandler(const IInspectable& /*sender*/,
                                                        const CursorPositionEventArgs& eventArgs)
     {
-        auto lock = _core->_terminal->LockForReading();
         if (!_initializedTerminal)
         {
             // fake it

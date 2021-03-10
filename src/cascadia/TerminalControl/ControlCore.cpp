@@ -420,6 +420,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _HoveredHyperlinkChangedHandlers(*this, nullptr);
     }
 
+    winrt::hstring ControlCore::GetHyperlink(const til::point pos) const
+    {
+        return winrt::hstring{ _terminal->GetHyperlinkAtPosition(pos) };
+    }
+
     winrt::hstring ControlCore::GetHoveredUriText() const
     {
         if (_lastHoveredCell.has_value())
@@ -1166,6 +1171,71 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         auto lock = _terminal->LockForReading();
         return _terminal->GetCursorPosition();
+    }
+
+    // This one's really pushing the boundary of "encapsulation". It really
+    // belongs in the "Interactivity" layer, which doesn't yet exist. There's so
+    // many accesses to the selection in the Core though, that I just put this
+    // here. The Control shouldn't be futzing that much with the selection
+    // itself.
+    void ControlCore::LeftClickOnTerminal(const til::point terminalPosition,
+                                          const int numberOfClicks,
+                                          const bool altEnabled,
+                                          const bool shiftEnabled,
+                                          const bool isOnOriginalPosition,
+                                          bool& selectionNeedsToBeCopied)
+    {
+        auto lock = _terminal->LockForWriting();
+        // handle ALT key
+        _terminal->SetBlockSelection(altEnabled);
+
+        ::Terminal::SelectionExpansionMode mode = ::Terminal::SelectionExpansionMode::Cell;
+        if (numberOfClicks == 1)
+        {
+            mode = ::Terminal::SelectionExpansionMode::Cell;
+        }
+        else if (numberOfClicks == 2)
+        {
+            mode = ::Terminal::SelectionExpansionMode::Word;
+        }
+        else if (numberOfClicks == 3)
+        {
+            mode = ::Terminal::SelectionExpansionMode::Line;
+        }
+
+        // Update the selection appropriately
+
+        // We reset the active selection if one of the conditions apply:
+        // - shift is not held
+        // - GH#9384: the position is the same as of the first click starting
+        //   the selection (we need to reset selection on double-click or
+        //   triple-click, so it captures the word or the line, rather than
+        //   extending the selection)
+        if (HasSelection() && (!shiftEnabled || isOnOriginalPosition))
+        {
+            // Reset the selection
+            _terminal->ClearSelection();
+            selectionNeedsToBeCopied = false; // there's no selection, so there's nothing to update
+        }
+
+        if (shiftEnabled)
+        {
+            if (HasSelection())
+            {
+                // If there is a selection we extend it using the selection mode
+                // (expand the "end"selection point)
+                _terminal->SetSelectionEnd(terminalPosition, mode);
+            }
+            else
+            {
+                // If there is no selection we establish it using the selected mode
+                // (expand both "start" and "end" selection points)
+                _terminal->MultiClickSelection(terminalPosition, mode);
+            }
+            selectionNeedsToBeCopied = true;
+        }
+
+        _renderer->TriggerSelection();
     }
 
 }
