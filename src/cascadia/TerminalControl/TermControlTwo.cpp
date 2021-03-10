@@ -525,12 +525,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _core->_connection.State();
     }
 
-    winrt::fire_and_forget TermControlTwo::RenderEngineSwapChainChanged()
+    winrt::fire_and_forget TermControlTwo::RenderEngineSwapChainChanged(const IInspectable& /*sender*/, const IInspectable& /*args*/)
     {
         // This event is only registered during terminal initialization,
         // so we don't need to check _initializedTerminal.
         // We also don't lock for things that come back from the renderer.
-        auto chainHandle = _core->_renderEngine->GetSwapChainHandle();
+        auto chainHandle = _core->GetSwapChainHandle();
         auto weakThis{ get_weak() };
 
         co_await winrt::resume_foreground(Dispatcher());
@@ -551,8 +551,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - hr: an  HRESULT describing the warning
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControlTwo::_RendererWarning(const HRESULT hr)
+    winrt::fire_and_forget TermControlTwo::_RendererWarning(const IInspectable& /*sender*/,
+                                                            const TerminalControl::RendererWarningArgs& args)
     {
+        const HRESULT hr = static_cast<HRESULT>(args.Result());
+
         auto weakThis{ get_weak() };
         co_await winrt::resume_foreground(Dispatcher());
 
@@ -593,33 +596,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return false;
         }
 
+        // IMPORTANT! Set this callback up sooner than later. If we do it
+        // after Enable, then it'll be possible to paint the frame once
+        // _before_ the warning handler is set up, and then warnings from
+        // the first paint will be ignored!
+        _core->RendererWarning({ get_weak(), &TermControlTwo::_RendererWarning });
+
         _core->InitializeTerminal(SwapChainPanel().ActualWidth(),
                                   SwapChainPanel().ActualHeight(),
                                   SwapChainPanel().CompositionScaleX(),
                                   SwapChainPanel().CompositionScaleY());
 
-        // _terminal->CreateFromSettings(_settings, renderTarget);
+        _AttachDxgiSwapChainToXaml(_core->GetSwapChainHandle());
 
-        // the warning callback was originally after
-        // `_terminal->CreateFromSettings` and before
-        // `SetRetroTerminalEffect`, `SetPixelShaderPath`, etc.
-
-        // IMPORTANT! Set this callback up sooner than later. If we do it
-        // after Enable, then it'll be possible to paint the frame once
-        // _before_ the warning handler is set up, and then warnings from
-        // the first paint will be ignored!
-        _core->_renderEngine->SetWarningCallback(std::bind(&TermControlTwo::_RendererWarning, this, std::placeholders::_1));
-
-        // ...
-
-        // THROW_IF_FAILED(dxEngine->Enable());
-        // _renderEngine = std::move(dxEngine);
-
-        _AttachDxgiSwapChainToXaml(_core->_renderEngine->GetSwapChainHandle());
-
-        // Tell the DX Engine to notify us when the swap chain changes.
-        // We do this after we initially set the swapchain so as to avoid unnecessary callbacks (and locking problems)
-        _core->_renderEngine->SetCallback(std::bind(&TermControlTwo::RenderEngineSwapChainChanged, this));
+        // Tell the DX Engine to notify us when the swap chain changes. We do
+        // this after we initially set the swapchain so as to avoid unnecessary
+        // callbacks (and locking problems)
+        _core->SwapChainChanged({ get_weak(), &TermControlTwo::RenderEngineSwapChainChanged });
 
         auto bottom = _core->_terminal->GetViewport().BottomExclusive();
         auto bufferHeight = bottom;
@@ -1872,25 +1865,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControlTwo::_SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender,
                                                 Windows::Foundation::IInspectable const& /*args*/)
     {
-        if (_core->_renderEngine)
-        {
-            const auto scaleX = sender.CompositionScaleX();
-            const auto scaleY = sender.CompositionScaleY();
-            // const auto dpi = (float)(scaleX * USER_DEFAULT_SCREEN_DPI);
-            // const auto currentEngineScale = _core->RendererScale();
+        const auto scaleX = sender.CompositionScaleX();
+        const auto scaleY = sender.CompositionScaleY();
 
-            // // If we're getting a notification to change to the DPI we already
-            // // have, then we're probably just beginning the DPI change. Since
-            // // we'll get _another_ event with the real DPI, do nothing here for
-            // // now. We'll also skip the next resize in _SwapChainSizeChanged.
-            // const bool dpiWasUnchanged = currentEngineScale == scaleX;
-            // if (dpiWasUnchanged)
-            // {
-            //     return;
-            // }
-
-            _core->ScaleChanged(scaleX, scaleY);
-        }
+        _core->ScaleChanged(scaleX, scaleY);
     }
 
     // Method Description:
@@ -2029,69 +2007,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _clipboardPasteHandlers(*this, *pasteArgs);
     }
 
-    // Method Description:
-    // - Asynchronously close our connection. The Connection will likely wait
-    //   until the attached process terminates before Close returns. If that's
-    //   the case, we don't want to block the UI thread waiting on that process
-    //   handle.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    winrt::fire_and_forget TermControlTwo::_AsyncCloseConnection()
-    {
-        if (auto localConnection{ std::exchange(_core->_connection, nullptr) })
-        {
-            // Close the connection on the background thread.
-            co_await winrt::resume_background();
-            localConnection.Close();
-            // connection is destroyed.
-        }
-    }
-
     void TermControlTwo::Close()
     {
         if (!_closing.exchange(true))
         {
             _RestorePointerCursorHandlers(*this, nullptr);
 
-            // Stop accepting new output and state changes before we disconnect everything.
-            _core->_connection.TerminalOutput(_core->_connectionOutputEventToken);
-            _core->_connectionStateChangedRevoker.revoke();
-
-            TSFInputControl().Close(); // Disconnect the TSF input control so it doesn't receive EditContext events.
+            // Disconnect the TSF input control so it doesn't receive EditContext events.
+            TSFInputControl().Close();
             _autoScrollTimer.Stop();
 
-            // GH#1996 - Close the connection asynchronously on a background
-            // thread.
-            // Since TermControlTwo::Close is only ever triggered by the UI, we
-            // don't really care to wait for the connection to be completely
-            // closed. We can just do it whenever.
-            _AsyncCloseConnection();
-
-            {
-                // GH#8734:
-                // We lock the terminal here to make sure it isn't still being
-                // used in the connection thread before we destroy the renderer.
-                // However, we must unlock it again prior to triggering the
-                // teardown, to avoid the render thread being deadlocked. The
-                // renderer may be waiting to acquire the terminal lock, while
-                // we're waiting for the renderer to finish.
-                auto lock = _core->_terminal->LockForWriting();
-            }
-
-            if (auto localRenderEngine{ std::exchange(_core->_renderEngine, nullptr) })
-            {
-                if (auto localRenderer{ std::exchange(_core->_renderer, nullptr) })
-                {
-                    localRenderer->TriggerTeardown();
-                    // renderer is destroyed
-                }
-                // renderEngine is destroyed
-            }
-
-            // we don't destroy _core->_terminal here; it now has the same lifetime as the
-            // control.
+            _core->Close();
         }
     }
 

@@ -32,11 +32,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
+
+    private:
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
         IControlSettings _settings; // ? Might be able to get away with only retrieving pieces
 
-    private:
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
 
@@ -89,6 +90,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
 
+        winrt::fire_and_forget _AsyncCloseConnection();
+        void Close();
+
 #pragma region ICoreState
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
         const size_t TaskbarState() const noexcept;
@@ -110,6 +114,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                             const int bufferSize);
         void _TerminalCursorPositionChanged();
         void _TerminalTaskbarProgressChanged();
+#pragma endregion
+
+#pragma region RendererCallbacks
+        void _RendererWarning(const HRESULT hr);
+        void RenderEngineSwapChainChanged();
 #pragma endregion
 
         TYPED_EVENT(CopyToClipboard, IInspectable, TerminalControl::CopyToClipboardEventArgs);
@@ -153,7 +162,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                              const bool eitherWinPressed,
                              const bool keyDown);
 
+        HANDLE GetSwapChainHandle() const;
+
         TYPED_EVENT(HoveredHyperlinkChanged, IInspectable, IInspectable);
+
+        TYPED_EVENT(SwapChainChanged, IInspectable, IInspectable);
+        TYPED_EVENT(RendererWarning, IInspectable, TerminalControl::RendererWarningArgs);
     };
 }
 

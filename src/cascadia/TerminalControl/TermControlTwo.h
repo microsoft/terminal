@@ -51,11 +51,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void SendInput(const winrt::hstring& input);
         void ToggleShaderEffects();
 
-        winrt::fire_and_forget RenderEngineSwapChainChanged();
+        winrt::fire_and_forget RenderEngineSwapChainChanged(const IInspectable& sender, const IInspectable& args);
         void _AttachDxgiSwapChainToXaml(HANDLE swapChainHandle);
         winrt::fire_and_forget _RendererEnteredErrorState();
         void _RenderRetryButton_Click(IInspectable const& button, IInspectable const& args);
-        winrt::fire_and_forget _RendererWarning(const HRESULT hr);
+        winrt::fire_and_forget _RendererWarning(const IInspectable& sender,
+                                                const TerminalControl::RendererWarningArgs& args);
 
         void CreateSearchBoxControl();
 
@@ -279,7 +280,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _CompositionCompleted(winrt::hstring text);
         void _CurrentCursorPositionHandler(const IInspectable& sender, const CursorPositionEventArgs& eventArgs);
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
-        winrt::fire_and_forget _AsyncCloseConnection();
+        // winrt::fire_and_forget _AsyncCloseConnection();
 
         winrt::fire_and_forget _RaiseReadOnlyWarning();
 

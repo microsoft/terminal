@@ -9,6 +9,7 @@
 #include "OpenHyperlinkEventArgs.g.h"
 #include "NoticeEventArgs.g.h"
 #include "ScrollPositionChangedArgs.g.h"
+#include "RendererWarningArgs.g.h"
 #include "cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
@@ -112,5 +113,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         WINRT_PROPERTY(int32_t, ViewTop);
         WINRT_PROPERTY(int32_t, ViewHeight);
         WINRT_PROPERTY(int32_t, BufferSize);
+    };
+
+    struct RendererWarningArgs :
+        public RendererWarningArgsT<RendererWarningArgs>
+    {
+    public:
+        RendererWarningArgs(const uint64_t hr) :
+            _Result(hr)
+        {
+        }
+
+        WINRT_PROPERTY(uint64_t, Result);
     };
 }

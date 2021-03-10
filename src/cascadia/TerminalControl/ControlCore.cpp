@@ -181,17 +181,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             _terminal->CreateFromSettings(_settings, renderTarget);
 
-            // !TODO!: We _DO_ want this
-            // // IMPORTANT! Set this callback up sooner than later. If we do it
-            // // after Enable, then it'll be possible to paint the frame once
-            // // _before_ the warning handler is set up, and then warnings from
-            // // the first paint will be ignored!
-            // dxEngine->SetWarningCallback(std::bind(&TermControlTwo::_RendererWarning, this, std::placeholders::_1));
+            // IMPORTANT! Set this callback up sooner than later. If we do it
+            // after Enable, then it'll be possible to paint the frame once
+            // _before_ the warning handler is set up, and then warnings from
+            // the first paint will be ignored!
+            dxEngine->SetWarningCallback(std::bind(&ControlCore::_RendererWarning, this, std::placeholders::_1));
 
-            // !TODO!: We _DO_ want this
-            // // Tell the DX Engine to notify us when the swap chain changes.
-            // // We do this after we initially set the swapchain so as to avoid unnecessary callbacks (and locking problems)
-            // _renderEngine->SetCallback(std::bind(&TermControlTwo::RenderEngineSwapChainChanged, this));
+            // Tell the DX Engine to notify us when the swap chain changes.
+            // We do this after we initially set the swapchain so as to avoid unnecessary callbacks (and locking problems)
+            _renderEngine->SetCallback(std::bind(&ControlCore::RenderEngineSwapChainChanged, this));
 
             dxEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
             dxEngine->SetPixelShaderPath(_settings.PixelShaderPath());
@@ -657,6 +655,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void ControlCore::ScaleChanged(const double scaleX,
                                    const double scaleY)
     {
+        if (!_renderEngine)
+        {
+            return;
+        }
+
         _compositionScaleX = scaleX;
         _compositionScaleY = scaleY;
 
@@ -994,5 +997,79 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(opacity));
         }
+    }
+
+    // Method Description:
+    // - Asynchronously close our connection. The Connection will likely wait
+    //   until the attached process terminates before Close returns. If that's
+    //   the case, we don't want to block the UI thread waiting on that process
+    //   handle.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget ControlCore::_AsyncCloseConnection()
+    {
+        if (auto localConnection{ std::exchange(_connection, nullptr) })
+        {
+            // Close the connection on the background thread.
+            co_await winrt::resume_background();
+            localConnection.Close();
+            // connection is destroyed.
+        }
+    }
+
+    void ControlCore::Close()
+    {
+        // Stop accepting new output and state changes before we disconnect everything.
+        _connection.TerminalOutput(_connectionOutputEventToken);
+        _connectionStateChangedRevoker.revoke();
+
+        // GH#1996 - Close the connection asynchronously on a background
+        // thread.
+        // Since TermControlTwo::Close is only ever triggered by the UI, we
+        // don't really care to wait for the connection to be completely
+        // closed. We can just do it whenever.
+        _AsyncCloseConnection();
+
+        {
+            // GH#8734:
+            // We lock the terminal here to make sure it isn't still being
+            // used in the connection thread before we destroy the renderer.
+            // However, we must unlock it again prior to triggering the
+            // teardown, to avoid the render thread being deadlocked. The
+            // renderer may be waiting to acquire the terminal lock, while
+            // we're waiting for the renderer to finish.
+            auto lock = _terminal->LockForWriting();
+        }
+
+        if (auto localRenderEngine{ std::exchange(_renderEngine, nullptr) })
+        {
+            if (auto localRenderer{ std::exchange(_renderer, nullptr) })
+            {
+                localRenderer->TriggerTeardown();
+                // renderer is destroyed
+            }
+            // renderEngine is destroyed
+        }
+
+        // we don't destroy _terminal here; it now has the same lifetime as the
+        // control.
+    }
+
+    HANDLE ControlCore::GetSwapChainHandle() const
+    {
+        return _renderEngine->GetSwapChainHandle();
+    }
+
+    void ControlCore::_RendererWarning(const HRESULT hr)
+    {
+        auto args{ winrt::make_self<RendererWarningArgs>(hr) };
+        _RendererWarningHandlers(*this, *args);
+    }
+
+    void ControlCore::RenderEngineSwapChainChanged()
+    {
+        _SwapChainChangedHandlers(*this, nullptr);
     }
 }
