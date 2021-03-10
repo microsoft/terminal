@@ -1188,7 +1188,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     }
                 }
 
-                _SetEndSelectionPoint(cursorPosition);
+                _SetEndSelectionPointAtCursor(cursorPosition);
 
                 const double cursorBelowBottomDist = cursorPosition.Y - SwapChainPanel().Margin().Top - SwapChainPanel().ActualHeight();
                 const double cursorAboveTopDist = -1 * cursorPosition.Y + SwapChainPanel().Margin().Top;
@@ -1518,7 +1518,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // If user is mouse selecting and scrolls, they then point at new character.
             //      Make sure selection reflects that immediately.
-            _SetEndSelectionPoint(point);
+            _SetEndSelectionPointAtCursor(point);
         }
     }
 
@@ -1533,14 +1533,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        // Clear the regex pattern tree so the renderer does not try to render them while scrolling
-        _core->_terminal->ClearPatternTree();
-
         const auto newValue = static_cast<int>(args.NewValue());
-
-        // This is a scroll event that wasn't initiated by the terminal
-        //      itself - it was initiated by the mouse wheel, or the scrollbar.
-        _core->_terminal->UserScrollViewport(newValue);
+        _core->UserScrollViewport(newValue);
 
         // User input takes priority over terminal events so cancel
         // any pending scroll bar update if the user scrolls.

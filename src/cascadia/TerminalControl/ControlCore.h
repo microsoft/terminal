@@ -164,12 +164,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void SetBackgroundOpacity(const float opacity);
 
+#pragma region ITerminalInputButNotReally
         bool TrySendKeyEvent(const WORD vkey,
                              const WORD scanCode,
                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                              const bool eitherWinPressed,
                              const bool keyDown);
-
         bool SendCharEvent(const wchar_t ch,
                            const WORD scanCode,
                            const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
@@ -178,6 +178,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                             const ::Microsoft::Terminal::Core::ControlKeyStates states,
                             const short wheelDelta,
                             const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
+        void UserScrollViewport(const int viewTop);
+#pragma endregion
 
         HANDLE GetSwapChainHandle() const;
 

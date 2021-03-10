@@ -358,6 +358,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         return _terminal->SendMouseEvent(viewportPos, uiButton, states, wheelDelta, state);
     }
+    void ControlCore::UserScrollViewport(const int viewTop)
+    {
+        // Clear the regex pattern tree so the renderer does not try to render them while scrolling
+        _terminal->ClearPatternTree();
+
+        // This is a scroll event that wasn't initiated by the terminal
+        //      itself - it was initiated by the mouse wheel, or the scrollbar.
+        _terminal->UserScrollViewport(viewTop);
+    }
 
     void ControlCore::ToggleShaderEffects()
     {
