@@ -646,7 +646,7 @@
     <comment>{Locked="⚠"}</comment>
   </data>
   <data name="Nav_AddNewProfile.Content" xml:space="preserve">
-    <value>Add new profile</value>
+    <value>Add a new profile</value>
   </data>
   <data name="Nav_Profiles.Content" xml:space="preserve">
     <value>Profiles</value>

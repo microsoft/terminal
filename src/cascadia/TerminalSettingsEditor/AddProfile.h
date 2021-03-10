@@ -17,16 +17,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void RequestAddNew()
         {
-            _AddNewHandlers(nullptr, nullptr);
+            _AddNewHandlers(GUID{});
         }
 
         void RequestDuplicate(GUID profile)
         {
-            _AddNewHandlers(nullptr, winrt::box_value(profile));
+            _AddNewHandlers(profile);
         }
 
         GETSET_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
-        TYPED_EVENT(AddNew, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable);
+        WINRT_CALLBACK(AddNew, AddNewArgs);
     };
 
     struct AddProfile : AddProfileT<AddProfile>
@@ -36,13 +36,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
+        void AddNewClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+        void DuplicateClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+
         GETSET_PROPERTY(Editor::AddProfilePageNavigationState, State, nullptr);
-
-    private:
-        friend struct AddProfileT<AddProfile>; // for Xaml to bind events
-
-        void _AddNewClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
-        void _DuplicateClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
     };
 }
 

@@ -1,16 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "EnumEntry.idl";
-
 namespace Microsoft.Terminal.Settings.Editor
 {
+    delegate void AddNewArgs(Guid profile);
+
     runtimeclass AddProfilePageNavigationState
     {
         Microsoft.Terminal.Settings.Model.CascadiaSettings Settings;
         void RequestAddNew();
         void RequestDuplicate(Guid profile);
-        event Windows.Foundation.TypedEventHandler<Object, Object> AddNew;
+        event AddNewArgs AddNew;
     };
 
     [default_interface] runtimeclass AddProfile : Windows.UI.Xaml.Controls.Page

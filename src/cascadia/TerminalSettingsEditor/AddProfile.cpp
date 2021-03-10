@@ -25,14 +25,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _State = e.Parameter().as<Editor::AddProfilePageNavigationState>();
     }
 
-    void AddProfile::_AddNewClick(const IInspectable& /*sender*/,
-                                  const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
+    void AddProfile::AddNewClick(const IInspectable& /*sender*/,
+                                 const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
     {
         _State.RequestAddNew();
     }
 
-    void AddProfile::_DuplicateClick(const IInspectable& /*sender*/,
-                                     const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
+    void AddProfile::DuplicateClick(const IInspectable& /*sender*/,
+                                    const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
     {
         if (const auto selected = Profiles().SelectedItem())
         {

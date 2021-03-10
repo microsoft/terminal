@@ -8,7 +8,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-    xmlns:SettingsModel="using:Microsoft.Terminal.Settings.Model"
+    xmlns:model="using:Microsoft.Terminal.Settings.Model"
     mc:Ignorable="d">
 
     <Page.Resources>
@@ -20,21 +20,21 @@ the MIT License. See LICENSE in the project root for license information. -->
             <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
                 <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
             </DataTemplate>
-            <SettingsModel:IconPathConverter x:Key="IconSourceConverter"/>
+            <model:IconPathConverter x:Key="IconSourceConverter"/>
         </ResourceDictionary>
     </Page.Resources>
 
     <ScrollViewer>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <Button x:Name="AddNewButton"
-                    Click="_AddNewClick"
+                    Click="AddNewClick"
                     Style="{StaticResource AccentButtonStyle}">
                 <Button.Content>
                     <StackPanel Orientation="Horizontal">
                         <FontIcon Glyph="&#xE710;"
                                     FontSize="{StaticResource StandardIconSize}"/>
                         <TextBlock x:Uid="AddProfile_AddNewButton"
-                                    Margin="10,0,0,0"/>
+                                   Style="{StaticResource IconButtonTextBlockStyle}"/>
                     </StackPanel>
                 </Button.Content>
             </Button>
@@ -43,7 +43,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <muxc:RadioButtons ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}"
                                        x:Name="Profiles">
                         <muxc:RadioButtons.ItemTemplate>
-                            <DataTemplate x:DataType="SettingsModel:Profile">
+                            <DataTemplate x:DataType="model:Profile">
                                 <Grid HorizontalAlignment="Stretch" ColumnSpacing="8">
 
                                     <Grid.ColumnDefinitions>
@@ -70,14 +70,15 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </muxc:RadioButtons>
                 </local:SettingContainer>
                 <Button x:Name="DuplicateButton"
-                        Click="_DuplicateClick"
+                        Click="DuplicateClick"
+                        Margin="{StaticResource StandardControlMargin}"
                         Style="{StaticResource AccentButtonStyle}">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal">
                                 <FontIcon Glyph="&#xE710;"
                                           FontSize="{StaticResource StandardIconSize}"/>
                                 <TextBlock x:Uid="AddProfile_DuplicateButton"
-                                           Margin="10,0,0,0"/>
+                                           Style="{StaticResource IconButtonTextBlockStyle}"/>
                             </StackPanel>
                         </Button.Content>
                 </Button>
