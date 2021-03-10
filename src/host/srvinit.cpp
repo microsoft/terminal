@@ -56,7 +56,7 @@ try
     if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy(isEnabled) && isEnabled))
     {
         IID delegationClsid;
-        if (SUCCEEDED(DelegationConfig::s_GetConsole(delegationClsid)))
+        if (SUCCEEDED(DelegationConfig::s_GetDefaultConsoleId(delegationClsid)))
         {
             Globals.handoffConsoleClsid = delegationClsid;
         }

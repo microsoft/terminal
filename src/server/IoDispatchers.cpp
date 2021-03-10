@@ -139,6 +139,79 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCloseObject(_In_ PCONSOLE_API_MSG pMessag
 }
 
 // Routine Description:
+// - Uses some information about current console state and
+//   the incoming process state and preferences to determine
+//   whether we should attempt to handoff to a registered console.
+static bool _shouldAttemptHandoff(const Globals& globals,
+                                  const CONSOLE_INFORMATION& gci,
+                                  CONSOLE_API_CONNECTINFO& cac)
+{
+    // This console is already initialized. Do not
+    // attempt handoff to another one.
+    // Note you can have a non-attach secondary connect for a child process
+    // that is supposed to be inheriting the existing console/window from the parent.
+    if (WI_IsFlagSet(gci.Flags, CONSOLE_INITIALIZED))
+    {
+        return false;
+    }
+
+    // If this is an AttachConsole message and not occuring
+    // because of a conclnt!ConsoleInitialize, do not handoff.
+    // ConsoleApp is FALSE for attach.
+    if (!cac.ConsoleApp)
+    {
+        return false;
+    }
+
+    // If it is a PTY session, do not attempt handoff.
+    if (globals.launchArgs.IsHeadless())
+    {
+        return false;
+    }
+
+    // If we do not have a registered handoff, do not attempt.
+    if (!globals.handoffConsoleClsid)
+    {
+        return false;
+    }
+
+    // If we're already a target for receiving another handoff,
+    // do not chain.
+    if (globals.handoffTarget)
+    {
+        return false;
+    }
+
+    // If the client was started with CREATE_NO_WINDOW to CreateProcess,
+    // this function will say that it does NOT deserve a visible window.
+    // Return false.
+    if (!ConsoleConnectionDeservesVisibleWindow(&cac))
+    {
+        return false;
+    }
+
+    // If the process is giving us explicit window show information, we need
+    // to look at which one it is.
+    if (WI_IsFlagSet(cac.ConsoleInfo.GetStartupFlags(), STARTF_USESHOWWINDOW))
+    {
+        switch (cac.ConsoleInfo.GetShowWindow())
+        {
+            // For all hide or minimize actions, do not hand off.
+        case SW_HIDE:
+        case SW_SHOWMINIMIZED:
+        case SW_MINIMIZE:
+        case SW_SHOWMINNOACTIVE:
+        case SW_FORCEMINIMIZE:
+            return false;
+            // Intentionally fall through for all others
+            // like maximize and show to hit the true below.
+        }
+    }
+
+    return true;
+}
+
+// Routine Description:
 // - Used when a client application establishes an initial connection to this console server.
 // - This is supposed to represent accounting for the process, making the appropriate handles, etc.
 // Arguments:
@@ -165,12 +238,9 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         goto Error;
     }
 
-    // If we are NOT a PTY session (headless)...
-    // we have FOUND a CLSID for a different console to be the default startup handler...
-    // we are NOT already receiving an inbound console connection handoff...
-    // and the client app is going to end up showing a window...
+    // If we pass the tests...
     // then attempt to delegate the startup to the registered replacement.
-    if (!Globals.launchArgs.IsHeadless() && Globals.handoffConsoleClsid && !Globals.handoffTarget && ConsoleConnectionDeservesVisibleWindow(&Cac))
+    if (_shouldAttemptHandoff(Globals, gci, Cac))
     {
         try
         {
