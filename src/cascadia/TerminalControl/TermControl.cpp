@@ -3030,7 +3030,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Returns the number of clicks that occurred (double and triple click support)
+    // - Returns the number of clicks that occurred (double and triple click support).
+    // Every call to this function registers a click.
     // Arguments:
     // - clickPos: the (x,y) position of a given cursor (i.e.: mouse cursor).
     //    NOTE: origin (0,0) is top-left.
@@ -3045,7 +3046,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         THROW_IF_FAILED(UInt64Sub(clickTime, _lastMouseClickTimestamp, &delta));
         if (clickPos != _lastMouseClickPos || delta > _multiClickTimer)
         {
-            // exit early. This is a single click.
             _multiClickCounter = 1;
         }
         else
