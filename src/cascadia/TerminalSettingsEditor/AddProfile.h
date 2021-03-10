@@ -1,5 +1,19 @@
-﻿// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
+﻿/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
+
+Module Name:
+- AddProfile.h
+
+Abstract:
+- This creates the 'add new profile' page in the settings UI and handles
+  user interaction with it, raising events to the main page as necessary
+
+
+Author(s):
+- Pankaj Bhojwani - March 2021
+
+--*/
 
 #pragma once
 

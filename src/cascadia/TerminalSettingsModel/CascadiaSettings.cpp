@@ -32,8 +32,6 @@ static constexpr std::wstring_view DEFAULT_LINUX_ICON_GUID{ L"{9acb9455-ca41-5af
 // make sure this matches defaults.json.
 static constexpr std::wstring_view DEFAULT_WINDOWS_POWERSHELL_GUID{ L"{61c54bbd-c2c6-5271-96e7-009a87ff44bf}" };
 
-static constexpr std::wstring_view CopySuffix{ L" (Copy)" };
-
 CascadiaSettings::CascadiaSettings() :
     CascadiaSettings(true)
 {
@@ -243,7 +241,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
     _allProfiles.Append(*duplicated);
 
     std::wstring newName{ source.Name() };
-    newName += CopySuffix;
+    newName += RS_(L"CopySuffix");
     duplicated->Name(winrt::hstring(newName));
 
     if (source.HasHidden() || source.HiddenOverrideSource() != nullptr)
