@@ -1316,7 +1316,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             if (point.Properties().IsLeftButtonPressed() && ctrlEnabled && !_terminal->GetHyperlinkAtPosition(terminalPosition).empty())
             {
                 // Handle hyper-link only on the first click to prevent multiple activations
-                auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
+                const auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
                 if (clickCount == 1)
                 {
                     _HyperlinkHandler(_terminal->GetHyperlinkAtPosition(terminalPosition));
@@ -1332,7 +1332,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // handle ALT key
                 _terminal->SetBlockSelection(altEnabled);
 
-                auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
+                const auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
 
                 // This formula enables the number of clicks to cycle properly between single-, double-, and triple-click.
                 // To increase the number of acceptable click states, simply increment MAX_CLICK_COUNT and add another if-statement
