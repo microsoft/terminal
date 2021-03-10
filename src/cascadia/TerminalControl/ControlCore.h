@@ -161,11 +161,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     const bool caseSensitive);
 
         void SetBackgroundOpacity(const float opacity);
+
         bool TrySendKeyEvent(const WORD vkey,
                              const WORD scanCode,
                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                              const bool eitherWinPressed,
                              const bool keyDown);
+
+        bool SendCharEvent(const wchar_t ch,
+                           const WORD scanCode,
+                           const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+        bool SendMouseEvent(const COORD viewportPos,
+                            const unsigned int uiButton,
+                            const ::Microsoft::Terminal::Core::ControlKeyStates states,
+                            const short wheelDelta,
+                            const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
 
         HANDLE GetSwapChainHandle() const;
 
@@ -175,10 +185,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void CursorOn(const bool isCursorOn);
 
         void ResumeRendering();
-
-        bool SendCharEvent(const wchar_t ch,
-                           const WORD scanCode,
-                           const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+        bool IsVtMouseModeEnabled() const;
 
         TYPED_EVENT(HoveredHyperlinkChanged, IInspectable, IInspectable);
 

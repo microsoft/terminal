@@ -350,6 +350,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return handled;
     }
 
+    bool ControlCore::SendMouseEvent(const COORD viewportPos,
+                                     const unsigned int uiButton,
+                                     const ControlKeyStates states,
+                                     const short wheelDelta,
+                                     const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state)
+    {
+        return _terminal->SendMouseEvent(viewportPos, uiButton, states, wheelDelta, state);
+    }
+
     void ControlCore::ToggleShaderEffects()
     {
         auto lock = _terminal->LockForWriting();
@@ -1136,4 +1145,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         _renderer->ResetErrorStateAndResume();
     }
+
+    bool ControlCore::IsVtMouseModeEnabled() const
+    {
+        return _terminal != nullptr && _terminal->IsTrackingMouseInput();
+    }
+
 }

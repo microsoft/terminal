@@ -1001,8 +1001,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const auto modifiers = _GetPressedModifierKeys();
-        const TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(), props.IsMiddleButtonPressed(), props.IsRightButtonPressed() };
-        return _core->_terminal->SendMouseEvent(terminalPosition, uiButton, modifiers, sWheelDelta, state);
+        const TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(),
+                                                     props.IsMiddleButtonPressed(),
+                                                     props.IsRightButtonPressed() };
+        return _core->SendMouseEvent(terminalPosition, uiButton, modifiers, sWheelDelta, state);
     }
 
     // Method Description:
@@ -1011,10 +1013,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - point: the PointerPoint object representing a mouse event from our XAML input handler
     bool TermControlTwo::_CanSendVTMouseInput()
     {
-        if (!_core->_terminal)
-        {
-            return false;
-        }
         // If the user is holding down Shift, suppress mouse events
         // TODO GH#4875: disable/customize this functionality
         const auto modifiers = _GetPressedModifierKeys();
@@ -1022,7 +1020,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             return false;
         }
-        return _core->_terminal->IsTrackingMouseInput();
+        return _core->IsVtMouseModeEnabled();
     }
 
     // Method Description:
@@ -1360,7 +1358,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         const auto point = args.GetCurrentPoint(*this);
         const auto props = point.Properties();
-        const TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(), props.IsMiddleButtonPressed(), props.IsRightButtonPressed() };
+        const TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(),
+                                                     props.IsMiddleButtonPressed(),
+                                                     props.IsRightButtonPressed() };
         auto result = _DoMouseWheel(point.Position(),
                                     ControlKeyStates{ args.KeyModifiers() },
                                     point.Properties().MouseWheelDelta(),
@@ -1396,11 +1396,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // here with a PointerPoint. However, as of #979, we don't have a
             // PointerPoint to work with. So, we're just going to do a
             // mousewheel event manually
-            return _core->_terminal->SendMouseEvent(_GetTerminalPosition(point),
-                                                    WM_MOUSEWHEEL,
-                                                    _GetPressedModifierKeys(),
-                                                    ::base::saturated_cast<short>(delta),
-                                                    state);
+            return _core->SendMouseEvent(_GetTerminalPosition(point),
+                                         WM_MOUSEWHEEL,
+                                         _GetPressedModifierKeys(),
+                                         ::base::saturated_cast<short>(delta),
+                                         state);
         }
 
         const auto ctrlPressed = modifiers.IsCtrlPressed();
@@ -1438,7 +1438,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                       const bool rightButtonDown)
     {
         const auto modifiers = _GetPressedModifierKeys();
-        TerminalInput::MouseButtonState state{ leftButtonDown, midButtonDown, rightButtonDown };
+        TerminalInput::MouseButtonState state{ leftButtonDown,
+                                               midButtonDown,
+                                               rightButtonDown };
         return _DoMouseWheel(location, modifiers, delta, state);
     }
 
@@ -2397,7 +2399,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const til::point cursorPos = _core->_terminal->GetCursorPosition();
-        Windows::Foundation::Point p = { ::base::ClampedNumeric<float>(cursorPos.x()), ::base::ClampedNumeric<float>(cursorPos.y()) };
+        Windows::Foundation::Point p = { ::base::ClampedNumeric<float>(cursorPos.x()),
+                                         ::base::ClampedNumeric<float>(cursorPos.y()) };
         eventArgs.CurrentPosition(p);
     }
 
