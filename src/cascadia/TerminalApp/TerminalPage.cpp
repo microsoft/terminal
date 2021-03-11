@@ -2207,7 +2207,7 @@ namespace winrt::TerminalApp::implementation
                 if (warningResult == ContentDialogResult::Secondary)
                 {
                     // strip line breaks before pasting
-                    std::wstring strippedText{text};
+                    std::wstring strippedText{ text };
                     til::replace_needle_in_haystack_inplace(strippedText, L"\r\n", L" ");
                     til::replace_needle_in_haystack_inplace(strippedText, L"\n", L" ");
                     til::replace_needle_in_haystack_inplace(strippedText, L"\r", L" ");
