@@ -14,6 +14,7 @@ DERR
 environstrings
 EXPCMDFLAGS
 EXPCMDSTATE
+FORCEMINIMIZE
 frac
 fullkbd
 futex
@@ -41,6 +42,7 @@ IObject
 IPackage
 IPeasant
 IStorage
+istream
 IStringable
 ITab
 ITaskbar
@@ -80,6 +82,7 @@ schandle
 semver
 serializer
 shobjidl
+SHOWMINIMIZED
 SIZENS
 smoothstep
 GETDESKWALLPAPER
@@ -108,4 +111,9 @@ wpc
 wsregex
 XDocument
 XElement
+xlocmes
+xlocmon
+xlocnum
+xloctime
 XParse
+xstring

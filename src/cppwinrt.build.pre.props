@@ -8,7 +8,7 @@
 
   <Import Project="..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
 
-  <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.201017.1\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.201017.1\build\native\Microsoft.Windows.CppWinRT.props')" />
+  <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.210309.3\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.210309.3\build\native\Microsoft.Windows.CppWinRT.props')" />
 
   <PropertyGroup Label="Globals">
     <!-- 17134 is RS4, 17763 is RS5, 18362 is 19H1 -->

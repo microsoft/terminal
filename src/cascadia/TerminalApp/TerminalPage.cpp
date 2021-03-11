@@ -93,21 +93,27 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::SetSettings(CascadiaSettings settings, bool needRefreshUI)
     {
         _settings = settings;
-        if (needRefreshUI)
-        {
-            _RefreshUIForSettingsReload();
-        }
-
-        // Upon settings update we reload the system settings for scrolling as well.
-        // TODO: consider reloading this value periodically.
-        _systemRowsToScroll = _ReadSystemRowsToScroll();
 
         auto weakThis{ get_weak() };
         co_await winrt::resume_foreground(Dispatcher());
         if (auto page{ weakThis.get() })
         {
+            // Make sure to _UpdateCommandsForPalette before
+            // _RefreshUIForSettingsReload. _UpdateCommandsForPalette will make
+            // sure the KeyChordText of Commands is updated, which needs to
+            // happen before the Settings UI is reloaded and tries to re-read
+            // those values.
             _UpdateCommandsForPalette();
             CommandPalette().SetKeyMap(_settings.KeyMap());
+
+            if (needRefreshUI)
+            {
+                _RefreshUIForSettingsReload();
+            }
+
+            // Upon settings update we reload the system settings for scrolling as well.
+            // TODO: consider reloading this value periodically.
+            _systemRowsToScroll = _ReadSystemRowsToScroll();
         }
     }
 
@@ -200,6 +206,13 @@ namespace winrt::TerminalApp::implementation
                 const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
                                         WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
+                const auto shiftState{ window.GetKeyState(VirtualKey::Shift) };
+                const auto rShiftState = window.GetKeyState(VirtualKey::RightShift);
+                const auto lShiftState = window.GetKeyState(VirtualKey::LeftShift);
+                const auto shiftPressed{ WI_IsFlagSet(shiftState, CoreVirtualKeyStates::Down) ||
+                                         WI_IsFlagSet(lShiftState, CoreVirtualKeyStates::Down) ||
+                                         WI_IsFlagSet(rShiftState, CoreVirtualKeyStates::Down) };
+
                 // Check for DebugTap
                 bool debugTap = page->_settings.GlobalSettings().DebugFeaturesEnabled() &&
                                 WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
@@ -211,6 +224,10 @@ namespace winrt::TerminalApp::implementation
                                      SplitType::Manual,
                                      0.5f,
                                      nullptr);
+                }
+                else if (shiftPressed && !debugTap)
+                {
+                    page->_OpenNewWindow(false, NewTerminalArgs());
                 }
                 else
                 {
@@ -580,11 +597,16 @@ namespace winrt::TerminalApp::implementation
             auto newPaneRun = WUX::Documents::Run();
             newPaneRun.Text(RS_(L"NewPaneRun/Text"));
             newPaneRun.FontStyle(FontStyle::Italic);
+            auto newWindowRun = WUX::Documents::Run();
+            newWindowRun.Text(RS_(L"NewWindowRun/Text"));
+            newWindowRun.FontStyle(FontStyle::Italic);
 
             auto textBlock = WUX::Controls::TextBlock{};
             textBlock.Inlines().Append(newTabRun);
             textBlock.Inlines().Append(WUX::Documents::LineBreak{});
             textBlock.Inlines().Append(newPaneRun);
+            textBlock.Inlines().Append(WUX::Documents::LineBreak{});
+            textBlock.Inlines().Append(newWindowRun);
 
             auto toolTip = WUX::Controls::ToolTip{};
             toolTip.Content(textBlock);
@@ -602,6 +624,13 @@ namespace winrt::TerminalApp::implementation
                     const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
                                             WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
+                    const auto shiftState{ window.GetKeyState(VirtualKey::Shift) };
+                    const auto rShiftState = window.GetKeyState(VirtualKey::RightShift);
+                    const auto lShiftState = window.GetKeyState(VirtualKey::LeftShift);
+                    const auto shiftPressed{ WI_IsFlagSet(shiftState, CoreVirtualKeyStates::Down) ||
+                                             WI_IsFlagSet(lShiftState, CoreVirtualKeyStates::Down) ||
+                                             WI_IsFlagSet(rShiftState, CoreVirtualKeyStates::Down) };
+
                     // Check for DebugTap
                     bool debugTap = page->_settings.GlobalSettings().DebugFeaturesEnabled() &&
                                     WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
@@ -613,6 +642,12 @@ namespace winrt::TerminalApp::implementation
                                          SplitType::Manual,
                                          0.5f,
                                          newTerminalArgs);
+                    }
+                    else if (shiftPressed && !debugTap)
+                    {
+                        // Manually fill in the evaluated profile.
+                        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(page->_settings.GetProfileForArgs(newTerminalArgs)));
+                        page->_OpenNewWindow(false, newTerminalArgs);
                     }
                     else
                     {
@@ -652,7 +687,7 @@ namespace winrt::TerminalApp::implementation
                 settingsItem.Click({ this, &TerminalPage::_SettingsButtonOnClick });
                 newTabFlyout.Items().Append(settingsItem);
 
-                Microsoft::Terminal::Settings::Model::OpenSettingsArgs args{ SettingsTarget::SettingsFile };
+                Microsoft::Terminal::Settings::Model::OpenSettingsArgs args{ SettingsTarget::SettingsUI };
                 Microsoft::Terminal::Settings::Model::ActionAndArgs settingsAction{ ShortcutAction::OpenSettings, args };
                 const auto settingsKeyChord{ keyBindings.GetKeyBindingForActionWithArgs(settingsAction) };
                 if (settingsKeyChord)
@@ -841,6 +876,16 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        newTabImpl->DuplicateRequested([weakTab, weakThis{ get_weak() }]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab)
+            {
+                page->_DuplicateTab(*tab);
+            }
+        });
+
         auto tabViewItem = newTabImpl->TabViewItem();
         _tabView.TabItems().Append(tabViewItem);
 
@@ -876,7 +921,7 @@ namespace winrt::TerminalApp::implementation
 
         if (debugConnection) // this will only be set if global debugging is on and tap is active
         {
-            TermControl newControl{ settings, debugConnection };
+            TermControl newControl{ *(winrt::get_self<TerminalSettings>(settings)->CreateChild()), debugConnection };
             _RegisterTerminalEvents(newControl, *newTabImpl);
             // Split (auto) with the debug tap.
             newTabImpl->SplitPane(SplitState::Automatic, 0.5f, profileGuid, newControl);
@@ -983,12 +1028,30 @@ namespace winrt::TerminalApp::implementation
                                               const RoutedEventArgs&)
     {
         const CoreWindow window = CoreWindow::GetForCurrentThread();
-        const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
-        const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
-        const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
-                                WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
-        const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
+        // check alt state
+        const auto rAltState{ window.GetKeyState(VirtualKey::RightMenu) };
+        const auto lAltState{ window.GetKeyState(VirtualKey::LeftMenu) };
+        const bool altPressed{ WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
+                               WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down) };
+
+        // check shift state
+        const auto shiftState{ window.GetKeyState(VirtualKey::Shift) };
+        const auto lShiftState{ window.GetKeyState(VirtualKey::LeftShift) };
+        const auto rShiftState{ window.GetKeyState(VirtualKey::RightShift) };
+        const auto shiftPressed{ WI_IsFlagSet(shiftState, CoreVirtualKeyStates::Down) ||
+                                 WI_IsFlagSet(lShiftState, CoreVirtualKeyStates::Down) ||
+                                 WI_IsFlagSet(rShiftState, CoreVirtualKeyStates::Down) };
+
+        auto target{ SettingsTarget::SettingsUI };
+        if (shiftPressed)
+        {
+            target = SettingsTarget::SettingsFile;
+        }
+        else if (altPressed)
+        {
+            target = SettingsTarget::DefaultsFile;
+        }
         _LaunchSettings(target);
     }
 
@@ -1204,41 +1267,50 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Duplicates the current focused tab
-    void TerminalPage::_DuplicateTabViewItem()
+    void TerminalPage::_DuplicateFocusedTab()
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
-            try
-            {
-                // TODO: GH#5047 - In the future, we should get the Profile of
-                // the focused pane, and use that to build a new instance of the
-                // settings so we can duplicate this tab/pane.
-                //
-                // Currently, if the profile doesn't exist anymore in our
-                // settings, we'll silently do nothing.
-                //
-                // In the future, it will be preferable to just duplicate the
-                // current control's settings, but we can't do that currently,
-                // because we won't be able to create a new instance of the
-                // connection without keeping an instance of the original Profile
-                // object around.
-
-                const auto& profileGuid = terminalTab->GetFocusedProfile();
-                if (profileGuid.has_value())
-                {
-                    const auto settings{ winrt::make<TerminalSettings>(_settings, profileGuid.value(), *_bindings) };
-                    const auto workingDirectory = terminalTab->GetActiveTerminalControl().WorkingDirectory();
-                    const auto validWorkingDirectory = !workingDirectory.empty();
-                    if (validWorkingDirectory)
-                    {
-                        settings.StartingDirectory(workingDirectory);
-                    }
-
-                    _CreateNewTabFromSettings(profileGuid.value(), settings);
-                }
-            }
-            CATCH_LOG();
+            _DuplicateTab(*terminalTab);
         }
+    }
+
+    // Method Description:
+    // - Duplicates specified tab
+    // Arguments:
+    // - tab: tab to duplicate
+    void TerminalPage::_DuplicateTab(const TerminalTab& tab)
+    {
+        try
+        {
+            // TODO: GH#5047 - In the future, we should get the Profile of
+            // the focused pane, and use that to build a new instance of the
+            // settings so we can duplicate this tab/pane.
+            //
+            // Currently, if the profile doesn't exist anymore in our
+            // settings, we'll silently do nothing.
+            //
+            // In the future, it will be preferable to just duplicate the
+            // current control's settings, but we can't do that currently,
+            // because we won't be able to create a new instance of the
+            // connection without keeping an instance of the original Profile
+            // object around.
+
+            const auto& profileGuid = tab.GetFocusedProfile();
+            if (profileGuid.has_value())
+            {
+                const auto settings{ winrt::make<TerminalSettings>(_settings, profileGuid.value(), *_bindings) };
+                const auto workingDirectory = tab.GetActiveTerminalControl().WorkingDirectory();
+                const auto validWorkingDirectory = !workingDirectory.empty();
+                if (validWorkingDirectory)
+                {
+                    settings.StartingDirectory(workingDirectory);
+                }
+
+                _CreateNewTabFromSettings(profileGuid.value(), settings);
+            }
+        }
+        CATCH_LOG();
     }
 
     // Method Description:
@@ -1841,7 +1913,7 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            TermControl newControl{ controlSettings, controlConnection };
+            TermControl newControl{ *(winrt::get_self<TerminalSettings>(controlSettings)->CreateChild()), controlConnection };
 
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl, *focusedTab);

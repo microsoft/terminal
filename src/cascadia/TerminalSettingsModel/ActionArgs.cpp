@@ -67,6 +67,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             ss << fmt::format(L"tabColor: {}, ", tabColor.ToHexString(true));
         }
 
+        if (_SuppressApplicationTitle)
+        {
+            if (_SuppressApplicationTitle.Value())
+            {
+                ss << fmt::format(L"suppress application title, ");
+            }
+            else
+            {
+                ss << fmt::format(L"use application title, ");
+            }
+        }
+
         auto s = ss.str();
         if (s.empty())
         {
@@ -107,6 +119,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             const til::color tabColor{ _TabColor.Value() };
             ss << fmt::format(L"--tabColor \"{}\" ", tabColor.ToHexString(true));
+        }
+
+        if (_SuppressApplicationTitle)
+        {
+            if (_SuppressApplicationTitle.Value())
+            {
+                ss << fmt::format(L"--suppressApplicationTitle ");
+            }
+            else
+            {
+                ss << fmt::format(L"--useApplicationTitle ");
+            }
         }
 
         if (!_Commandline.empty())
@@ -341,10 +365,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"OpenDefaultSettingsCommandKey");
         case SettingsTarget::AllFiles:
             return RS_(L"OpenBothSettingsFilesCommandKey");
-        case SettingsTarget::SettingsUI:
-            return RS_(L"OpenSettingsUICommandKey");
-        default:
+        case SettingsTarget::SettingsFile:
             return RS_(L"OpenSettingsCommandKey");
+        case SettingsTarget::SettingsUI:
+        default:
+            return RS_(L"OpenSettingsUICommandKey");
         }
     }
 

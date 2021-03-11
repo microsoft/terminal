@@ -7,6 +7,7 @@
 #include "Launch.h"
 #include "Interaction.h"
 #include "Rendering.h"
+#include "Actions.h"
 #include "Profiles.h"
 #include "GlobalAppearance.h"
 #include "ColorSchemes.h"
@@ -30,6 +31,7 @@ using namespace winrt::Windows::UI::Xaml::Controls;
 static const std::wstring_view launchTag{ L"Launch_Nav" };
 static const std::wstring_view interactionTag{ L"Interaction_Nav" };
 static const std::wstring_view renderingTag{ L"Rendering_Nav" };
+static const std::wstring_view actionsTag{ L"Actions_Nav" };
 static const std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
 static const std::wstring_view addProfileTag{ L"AddProfile" };
 static const std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
@@ -255,6 +257,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (clickedItemTag == renderingTag)
         {
             contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<RenderingPageNavigationState>(_settingsClone.GlobalSettings()));
+        }
+        else if (clickedItemTag == actionsTag)
+        {
+            auto actionsState{ winrt::make<ActionsPageNavigationState>(_settingsClone) };
+            actionsState.OpenJson([weakThis = get_weak()](auto&&, auto&& arg) {
+                if (auto self{ weakThis.get() })
+                {
+                    self->_OpenJsonHandlers(nullptr, arg);
+                }
+            });
+            contentFrame().Navigate(xaml_typename<Editor::Actions>(), actionsState);
         }
         else if (clickedItemTag == globalProfileTag)
         {

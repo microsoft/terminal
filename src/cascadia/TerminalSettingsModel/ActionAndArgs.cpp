@@ -21,7 +21,7 @@ static constexpr std::string_view MoveFocusKey{ "moveFocus" };
 static constexpr std::string_view NewTabKey{ "newTab" };
 static constexpr std::string_view NextTabKey{ "nextTab" };
 static constexpr std::string_view OpenNewTabDropdownKey{ "openNewTabDropdown" };
-static constexpr std::string_view OpenSettingsKey{ "openSettings" }; // TODO GH#2557: Add args for OpenSettings
+static constexpr std::string_view OpenSettingsKey{ "openSettings" };
 static constexpr std::string_view OpenTabColorPickerKey{ "openTabColorPicker" };
 static constexpr std::string_view PasteTextKey{ "paste" };
 static constexpr std::string_view PrevTabKey{ "prevTab" };
@@ -291,7 +291,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::NewTab, RS_(L"NewTabCommandKey") },
                 { ShortcutAction::NextTab, RS_(L"NextTabCommandKey") },
                 { ShortcutAction::OpenNewTabDropdown, RS_(L"OpenNewTabDropdownCommandKey") },
-                { ShortcutAction::OpenSettings, RS_(L"OpenSettingsCommandKey") },
+                { ShortcutAction::OpenSettings, RS_(L"OpenSettingsUICommandKey") },
                 { ShortcutAction::OpenTabColorPicker, RS_(L"OpenTabColorPickerCommandKey") },
                 { ShortcutAction::PasteText, RS_(L"PasteTextCommandKey") },
                 { ShortcutAction::PrevTab, RS_(L"PrevTabCommandKey") },

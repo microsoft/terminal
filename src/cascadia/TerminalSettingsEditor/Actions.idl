@@ -1,0 +1,23 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "EnumEntry.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass ActionsPageNavigationState
+    {
+        Microsoft.Terminal.Settings.Model.CascadiaSettings Settings;
+        void RequestOpenJson(Microsoft.Terminal.Settings.Model.SettingsTarget target);
+        event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.SettingsTarget> OpenJson;
+    };
+
+    [default_interface] runtimeclass Actions : Windows.UI.Xaml.Controls.Page
+    {
+        Actions();
+        ActionsPageNavigationState State { get; };
+
+        IObservableVector<Microsoft.Terminal.Settings.Model.Command> FilteredActions { get; };
+
+    }
+}
