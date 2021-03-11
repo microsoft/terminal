@@ -70,7 +70,7 @@ namespace Microsoft::Console::Render
 
         void SetSoftwareRendering(bool enable) noexcept;
 
-        ::Microsoft::WRL::ComPtr<IDXGISwapChain1> GetSwapChain();
+        HANDLE GetSwapChainHandle();
 
         // IRenderEngine Members
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
@@ -127,6 +127,8 @@ namespace Microsoft::Console::Render
         void SetSelectionBackground(const COLORREF color, const float alpha = 0.5f) noexcept;
         void SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept;
         void SetDefaultTextBackgroundOpacity(const float opacity) noexcept;
+
+        wil::unique_handle _swapChainHandle;
 
         void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept;
 
@@ -210,6 +212,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushBackground;
 
         ::Microsoft::WRL::ComPtr<IDXGIFactory2> _dxgiFactory2;
+        ::Microsoft::WRL::ComPtr<IDXGIFactoryMedia> _dxgiFactoryMedia;
         ::Microsoft::WRL::ComPtr<IDXGIDevice> _dxgiDevice;
         ::Microsoft::WRL::ComPtr<IDXGISurface> _dxgiSurface;
 
