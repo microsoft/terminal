@@ -54,7 +54,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         winrt::fire_and_forget RenderEngineSwapChainChanged(const IInspectable& sender, const IInspectable& args);
         void _AttachDxgiSwapChainToXaml(HANDLE swapChainHandle);
-        winrt::fire_and_forget _RendererEnteredErrorState();
+        winrt::fire_and_forget _RendererEnteredErrorState(const IInspectable& sender, const IInspectable& args);
         void _RenderRetryButton_Click(IInspectable const& button, IInspectable const& args);
         winrt::fire_and_forget _RendererWarning(const IInspectable& sender,
                                                 const TerminalControl::RendererWarningArgs& args);

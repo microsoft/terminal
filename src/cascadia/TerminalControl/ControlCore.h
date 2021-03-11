@@ -203,6 +203,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         TYPED_EVENT(HoveredHyperlinkChanged, IInspectable, IInspectable);
 
+        TYPED_EVENT(RendererEnteredErrorState, IInspectable, IInspectable);
         TYPED_EVENT(SwapChainChanged, IInspectable, IInspectable);
         TYPED_EVENT(RendererWarning, IInspectable, TerminalControl::RendererWarningArgs);
     };

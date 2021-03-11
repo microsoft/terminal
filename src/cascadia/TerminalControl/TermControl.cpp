@@ -88,6 +88,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _core->BackgroundColorChanged({ get_weak(), &TermControl::_BackgroundColorChangedHandler });
         _core->ScrollPositionChanged({ get_weak(), &TermControl::_ScrollPositionChanged });
         _core->CursorPositionChanged({ get_weak(), &TermControl::_CursorPositionChanged });
+        _core->RendererEnteredErrorState({ get_weak(), &TermControl::_RendererEnteredErrorState });
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
@@ -1087,7 +1088,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             const auto cursorPosition = point.Position();
             const auto terminalPosition = _GetTerminalPosition(cursorPosition);
-            const auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
+            // const auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
 
             // GH#9396: we prioritize hyper-link over VT mouse events
             //
@@ -1096,6 +1097,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             if (point.Properties().IsLeftButtonPressed() &&
                 ctrlEnabled && !hyperlink.empty())
             {
+                const auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
                 // Handle hyper-link only on the first click to prevent multiple activations
                 if (clickCount == 1)
                 {
@@ -1108,6 +1110,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
             else if (point.Properties().IsLeftButtonPressed())
             {
+                const auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
                 // This formula enables the number of clicks to cycle properly
                 // between single-, double-, and triple-click. To increase the
                 // number of acceptable click states, simply increment
@@ -2584,7 +2587,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     // Method Description:
     // - Produces the error dialog that notifies the user that rendering cannot proceed.
-    winrt::fire_and_forget TermControl::_RendererEnteredErrorState()
+    winrt::fire_and_forget TermControl::_RendererEnteredErrorState(IInspectable const& /*sender*/,
+                                                                   IInspectable const& /*args*/)
     {
         auto strongThis{ get_strong() };
         co_await Dispatcher(); // pop up onto the UI thread

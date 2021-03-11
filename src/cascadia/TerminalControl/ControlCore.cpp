@@ -144,13 +144,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal.get(), nullptr, 0, std::move(renderThread));
             ::Microsoft::Console::Render::IRenderTarget& renderTarget = *_renderer;
 
-            // !TODO!: We _DO_ want this
-            // _renderer->SetRendererEnteredErrorStateCallback([weakThis = get_weak()]() {
-            //     if (auto strongThis{ weakThis.get() })
-            //     {
-            //         strongThis->_RendererEnteredErrorState();
-            //     }
-            // });
+            _renderer->SetRendererEnteredErrorStateCallback([weakThis = get_weak()]() {
+                if (auto strongThis{ weakThis.get() })
+                {
+                    strongThis->_RendererEnteredErrorStateHandlers(*strongThis, nullptr);
+                }
+            });
 
             THROW_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
 
@@ -225,9 +224,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             THROW_IF_FAILED(dxEngine->Enable());
             _renderEngine = std::move(dxEngine);
 
-            // !TODO! in the past we did _AttachDxgiSwapChainToXaml _before_ calling
-            // EnablePainting. Mild worry that doing EnablePainting first will
-            // break
+            // In the past we did _AttachDxgiSwapChainToXaml _before_ calling
+            // EnablePainting. There's mild worry that doing EnablePainting
+            // first will break something, but this seems to work.
             localPointerToThread->EnablePainting();
 
             _initializedTerminal = true;
@@ -237,10 +236,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // start writing output immediately.
         _connection.Start();
 
-        // !TODO!: Do we want this?
-        // Likewise, run the event handlers outside of lock (they could
-        // be reentrant)
-        // _InitializedHandlers(*this, nullptr);
         return true;
     }
     // Method Description:
@@ -979,14 +974,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                      const int viewHeight,
                                                      const int bufferSize)
     {
-        // !!TODO!! do we need this?
-        // // Since this callback fires from non-UI thread, we might be already
-        // // closed/closing.
-        // if (_closing.load())
-        // {
-        //     return;
-        // }
-
         // Clear the regex pattern tree so the renderer does not try to render
         // them while scrolling
         _terminal->ClearPatternTree();
@@ -1034,8 +1021,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                              const bool goForward,
                              const bool caseSensitive)
     {
-        // !!TODO!! do we need this?
-        if (text.size() == 0 /* || _closing*/)
+        if (text.size() == 0)
         {
             return;
         }
