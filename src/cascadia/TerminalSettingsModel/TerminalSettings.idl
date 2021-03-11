@@ -18,9 +18,9 @@ namespace Microsoft.Terminal.Settings.Model
                                     Microsoft.Terminal.TerminalControl.IControlSettings
     {
         TerminalSettings();
-        TerminalSettings(CascadiaSettings appSettings, Guid profileGuid, Microsoft.Terminal.TerminalControl.IKeyBindings keybindings);
 
-        static TerminalSettings BuildSettings(CascadiaSettings appSettings, NewTerminalArgs newTerminalArgs, Microsoft.Terminal.TerminalControl.IKeyBindings keybindings);
+        static TerminalSettings CreateWithProfileByID(CascadiaSettings appSettings, Guid profileGuid, Microsoft.Terminal.TerminalControl.IKeyBindings keybindings);
+        static TerminalSettings CreateWithNewTerminalArgs(CascadiaSettings appSettings, NewTerminalArgs newTerminalArgs, Microsoft.Terminal.TerminalControl.IKeyBindings keybindings);
 
         TerminalSettings MakeChild();
         void SetParent(TerminalSettings parent);

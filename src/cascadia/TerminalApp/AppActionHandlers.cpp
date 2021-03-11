@@ -659,7 +659,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         const auto profileGuid{ _settings.GetProfileForArgs(newTerminalArgs) };
-        const auto settings{ TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings) };
+        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
         // Manually fill in the evaluated profile.
         newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profileGuid));

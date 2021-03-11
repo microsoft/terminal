@@ -49,15 +49,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return { horizAlign, vertAlign };
     }
 
-    TerminalSettings::TerminalSettings(const Model::CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings) :
-        _KeyBindings{ keybindings }
+    // Method Description:
+    // - Create a TerminalSettings object for the provided profile guid. We'll
+    //   use the guid to look up the profile that should be used to
+    //   create these TerminalSettings. Then, we'll apply settings contained in the
+    //   global and profile settings to the instance.
+    // Arguments:
+    // - appSettings: the set of settings being used to construct the new terminal
+    // - profileGuid: the unique identifier (guid) of the profile
+    // - keybindings: the keybinding handler
+    Model::TerminalSettings TerminalSettings::CreateWithProfileByID(const Model::CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings)
     {
+        auto settings{ winrt::make_self<TerminalSettings>() };
+        settings->_KeyBindings = keybindings;
+
         const auto profile = appSettings.FindProfile(profileGuid);
         THROW_HR_IF_NULL(E_INVALIDARG, profile);
 
         const auto globals = appSettings.GlobalSettings();
-        _ApplyProfileSettings(profile, globals.ColorSchemes());
-        _ApplyGlobalSettings(globals);
+        settings->_ApplyProfileSettings(profile, globals.ColorSchemes());
+        settings->_ApplyGlobalSettings(globals);
+
+        return *settings;
     }
 
     // Method Description:
@@ -75,12 +88,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //     StartingDirectory) in this object to override the settings directly from
     //     the profile.
     // - keybindings: the keybinding handler
-    Model::TerminalSettings TerminalSettings::BuildSettings(const Model::CascadiaSettings& appSettings,
-                                                            const Model::NewTerminalArgs& newTerminalArgs,
-                                                            const IKeyBindings& keybindings)
+    Model::TerminalSettings TerminalSettings::CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
+                                                                        const Model::NewTerminalArgs& newTerminalArgs,
+                                                                        const IKeyBindings& keybindings)
     {
         const guid profileGuid = appSettings.GetProfileForArgs(newTerminalArgs);
-        auto settings{ winrt::make<TerminalSettings>(appSettings, profileGuid, keybindings) };
+        auto settings{ CreateWithProfileByID(appSettings, profileGuid, keybindings) };
 
         if (newTerminalArgs)
         {
@@ -122,7 +135,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - Sets our parent to the provided TerminalSettings
     // Arguments:
     // - parent: our new parent
-    void TerminalSettings::SetParent(Model::TerminalSettings parent)
+    void TerminalSettings::SetParent(const Model::TerminalSettings& parent)
     {
         ClearParents();
         com_ptr<TerminalSettings> parentImpl;

@@ -31,20 +31,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct TerminalSettings : TerminalSettingsT<TerminalSettings>, IInheritable<TerminalSettings>
     {
         TerminalSettings() = default;
-        TerminalSettings(const Model::CascadiaSettings& appSettings,
-                         guid profileGuid,
-                         const TerminalControl::IKeyBindings& keybindings);
 
-        // BuildSettings is basically a constructor for TerminalSettings.
-        //  However, we can't actually make it a constructor because WinRT
-        //  gets confused if two functions of the same name have the same
-        //  number of arguments.
-        static Model::TerminalSettings BuildSettings(const Model::CascadiaSettings& appSettings,
-                                                     const Model::NewTerminalArgs& newTerminalArgs,
-                                                     const TerminalControl::IKeyBindings& keybindings);
+        static Model::TerminalSettings CreateWithProfileByID(const Model::CascadiaSettings& appSettings,
+                                                             guid profileGuid,
+                                                             const TerminalControl::IKeyBindings& keybindings);
+
+        static Model::TerminalSettings CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
+                                                                 const Model::NewTerminalArgs& newTerminalArgs,
+                                                                 const TerminalControl::IKeyBindings& keybindings);
 
         Model::TerminalSettings MakeChild() const;
-        void SetParent(Model::TerminalSettings parent);
+        void SetParent(const Model::TerminalSettings& parent);
 
         void ApplyColorScheme(const Model::ColorScheme& scheme);
 

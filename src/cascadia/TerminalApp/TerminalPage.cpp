@@ -728,12 +728,12 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - newTerminalArgs: An object that may contain a blob of parameters to
     //   control which profile is created and with possible other
-    //   configurations. See TerminalSettings::BuildSettings for more details.
+    //   configurations. See TerminalSettings::CreateWithNewTerminalArgs for more details.
     void TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs)
     try
     {
         const auto profileGuid{ _settings.GetProfileForArgs(newTerminalArgs) };
-        const auto settings{ TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings) };
+        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
         _CreateNewTabFromSettings(profileGuid, settings);
 
@@ -1271,7 +1271,7 @@ namespace winrt::TerminalApp::implementation
             const auto& profileGuid = tab.GetFocusedProfile();
             if (profileGuid.has_value())
             {
-                const TerminalSettings settings{ _settings, profileGuid.value(), *_bindings };
+                const auto settings{ TerminalSettings::CreateWithProfileByID(_settings, profileGuid.value(), *_bindings) };
                 const auto workingDirectory = tab.GetActiveTerminalControl().WorkingDirectory();
                 const auto validWorkingDirectory = !workingDirectory.empty();
                 if (validWorkingDirectory)
@@ -1830,7 +1830,7 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
-            TerminalSettings controlSettings;
+            TerminalSettings controlSettings{ nullptr };
             GUID realGuid;
             bool profileFound = false;
 
@@ -1840,7 +1840,7 @@ namespace winrt::TerminalApp::implementation
                 if (current_guid)
                 {
                     profileFound = true;
-                    controlSettings = { _settings, current_guid.value(), *_bindings };
+                    controlSettings = TerminalSettings::CreateWithProfileByID(_settings, current_guid.value(), *_bindings);
                     const auto workingDirectory = focusedTab->GetActiveTerminalControl().WorkingDirectory();
                     const auto validWorkingDirectory = !workingDirectory.empty();
                     if (validWorkingDirectory)
@@ -1865,7 +1865,7 @@ namespace winrt::TerminalApp::implementation
             if (!profileFound)
             {
                 realGuid = _settings.GetProfileForArgs(newTerminalArgs);
-                controlSettings = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
+                controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
             }
 
             const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
@@ -2540,7 +2540,7 @@ namespace winrt::TerminalApp::implementation
             {
                 // This can throw an exception if the profileGuid does
                 // not belong to an actual profile in the list of profiles.
-                TerminalSettings settings{ _settings, profileGuid, *_bindings };
+                auto settings{ TerminalSettings::CreateWithProfileByID(_settings, profileGuid, *_bindings) };
 
                 for (auto tab : _tabs)
                 {
