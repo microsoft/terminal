@@ -758,6 +758,7 @@ failfast
 FAILIFTHERE
 fallthrough
 FARPROC
+fastlink
 fcb
 fcharset
 fclose
