@@ -223,7 +223,7 @@ namespace winrt::TerminalApp::implementation
         void _ShowCouldNotOpenDialog(winrt::hstring reason, winrt::hstring uri);
         bool _CopyText(const bool singleLine, const Windows::Foundation::IReference<Microsoft::Terminal::TerminalControl::CopyFormat>& formats);
 
-        void _SetTaskbarProgressHandler(const IInspectable sender, const IInspectable eventArgs);
+        winrt::fire_and_forget _SetTaskbarProgressHandler(const IInspectable sender, const IInspectable eventArgs);
 
         void _PasteText();
 
