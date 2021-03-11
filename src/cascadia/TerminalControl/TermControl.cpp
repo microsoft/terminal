@@ -1068,54 +1068,51 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
             const auto ctrlEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Control));
 
-            if (_CanSendVTMouseInput())
+            const auto cursorPosition = point.Position();
+            const auto terminalPosition = _GetTerminalPosition(cursorPosition);
+            const auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
+
+            // GH#9396: we prioritize hyper-link over VT mouse events
+            //
+            // !TODO! Before we'd lock the terminal before getting the hyperlink. Do we still need to?
+            auto hyperlink = _core->GetHyperlink(terminalPosition);
+            if (point.Properties().IsLeftButtonPressed() &&
+                ctrlEnabled && !hyperlink.empty())
             {
-                _TrySendMouseEvent(point);
-                args.Handled(true);
-                return;
-            }
-
-            if (point.Properties().IsLeftButtonPressed())
-            {
-                const auto cursorPosition = point.Position();
-                const auto terminalPosition = _GetTerminalPosition(cursorPosition);
-                auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
-
-                // This formula enables the number of clicks to cycle properly between single-, double-, and triple-click.
-                // To increase the number of acceptable click states, simply increment MAX_CLICK_COUNT and add another if-statement
-                const unsigned int MAX_CLICK_COUNT = 3;
-                const auto multiClickMapper = clickCount > MAX_CLICK_COUNT ? ((clickCount + MAX_CLICK_COUNT - 1) % MAX_CLICK_COUNT) + 1 : clickCount;
-
-                auto hyperlink = _core->GetHyperlink(terminalPosition);
-                if (ctrlEnabled &&
-                    multiClickMapper == 1 &&
-                    !(hyperlink.empty()))
+                // Handle hyper-link only on the first click to prevent multiple activations
+                if (clickCount == 1)
                 {
                     _HyperlinkHandler(hyperlink);
                 }
-                else
+            }
+            else if (_CanSendVTMouseInput())
+            {
+                _TrySendMouseEvent(point);
+            }
+            else if (point.Properties().IsLeftButtonPressed())
+            {
+                // This formula enables the number of clicks to cycle properly
+                // between single-, double-, and triple-click. To increase the
+                // number of acceptable click states, simply increment
+                // MAX_CLICK_COUNT and add another if-statement
+                const unsigned int MAX_CLICK_COUNT = 3;
+                const auto multiClickMapper = clickCount > MAX_CLICK_COUNT ? ((clickCount + MAX_CLICK_COUNT - 1) % MAX_CLICK_COUNT) + 1 : clickCount;
+
+                // Capture the position of the first click when no selection is active
+                if (multiClickMapper == 1 &&
+                    !_core->HasSelection())
                 {
-                    // Update the selection appropriately
-
-                    // Capture the position of the first click when no selection is active
-                    if (multiClickMapper == 1 &&
-                        !_core->HasSelection())
-                    {
-                        _singleClickTouchdownPos = cursorPosition;
-                        _lastMouseClickPosNoSelection = cursorPosition;
-                    }
-                    const bool isOnOriginalPosition = _lastMouseClickPosNoSelection == cursorPosition;
-
-                    _core->LeftClickOnTerminal(terminalPosition,
-                                               multiClickMapper,
-                                               altEnabled,
-                                               shiftEnabled,
-                                               isOnOriginalPosition,
-                                               _selectionNeedsToBeCopied);
-
-                    _lastMouseClickTimestamp = point.Timestamp();
-                    _lastMouseClickPos = cursorPosition;
+                    _singleClickTouchdownPos = cursorPosition;
+                    _lastMouseClickPosNoSelection = cursorPosition;
                 }
+                const bool isOnOriginalPosition = _lastMouseClickPosNoSelection == cursorPosition;
+
+                _core->LeftClickOnTerminal(terminalPosition,
+                                           multiClickMapper,
+                                           altEnabled,
+                                           shiftEnabled,
+                                           isOnOriginalPosition,
+                                           _selectionNeedsToBeCopied);
             }
             else if (point.Properties().IsRightButtonPressed())
             {
@@ -1171,11 +1168,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             if (_focused && !_isReadOnly && _CanSendVTMouseInput())
             {
                 _TrySendMouseEvent(point);
-                args.Handled(true);
-                return;
             }
-
-            if (_focused && point.Properties().IsLeftButtonPressed())
+            else if (_focused && point.Properties().IsLeftButtonPressed())
             {
                 if (_singleClickTouchdownPos)
                 {
@@ -2373,7 +2367,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Returns the number of clicks that occurred (double and triple click support)
+    // - Returns the number of clicks that occurred (double and triple click support).
+    // Every call to this function registers a click.
     // Arguments:
     // - clickPos: the (x,y) position of a given cursor (i.e.: mouse cursor).
     //    NOTE: origin (0,0) is top-left.
@@ -2388,13 +2383,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         THROW_IF_FAILED(UInt64Sub(clickTime, _lastMouseClickTimestamp, &delta));
         if (clickPos != _lastMouseClickPos || delta > _multiClickTimer)
         {
-            // exit early. This is a single click.
             _multiClickCounter = 1;
         }
         else
         {
             _multiClickCounter++;
         }
+
+        _lastMouseClickTimestamp = clickTime;
+        _lastMouseClickPos = clickPos;
         return _multiClickCounter;
     }
 
