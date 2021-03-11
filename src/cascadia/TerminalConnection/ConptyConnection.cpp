@@ -213,7 +213,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             _guid = Utils::CreateGuid();
         }
-        _piClient.hProcess = reinterpret_cast<HANDLE>(hClientProcess);
+
+        // We are knowingly doing a semi-dangerous repack
+        // of a HANDLE in a 64-bit number for this interface.
+        // Reinterpret and C-cast are really our options for
+        // getting the data out and both need an audit suppress.
+#pragma warning(suppress: 26493)
+        _piClient.hProcess = (HANDLE)(hClientProcess);
     }
 
     ConptyConnection::ConptyConnection(const hstring& commandline,
