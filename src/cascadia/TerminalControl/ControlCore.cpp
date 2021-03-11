@@ -194,7 +194,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             // Tell the DX Engine to notify us when the swap chain changes.
             // We do this after we initially set the swapchain so as to avoid unnecessary callbacks (and locking problems)
-            _renderEngine->SetCallback(std::bind(&ControlCore::RenderEngineSwapChainChanged, this));
+            dxEngine->SetCallback(std::bind(&ControlCore::RenderEngineSwapChainChanged, this));
 
             dxEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
             dxEngine->SetPixelShaderPath(_settings.PixelShaderPath());

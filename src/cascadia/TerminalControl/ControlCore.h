@@ -24,44 +24,45 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         ////////////////////////////////////////////////////////////////////////
         // These members are taken from TermControl
 
-        bool _initializedTerminal;
+        std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
 
-        TerminalConnection::ITerminalConnection _connection;
+    private:
+        bool _initializedTerminal{ false };
+
+        TerminalConnection::ITerminalConnection _connection{ nullptr };
         event_token _connectionOutputEventToken;
         TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
 
-        std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
-        std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
+        std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal{ nullptr };
 
-    private:
-        std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
+        std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine{ nullptr };
 
-        IControlSettings _settings; // ? Might be able to get away with only retrieving pieces
+        IControlSettings _settings{ nullptr }; // ? Might be able to get away with only retrieving pieces
 
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
 
-    public:
         // storage location for the leading surrogate of a utf-16 surrogate pair
-        std::optional<wchar_t> _leadingSurrogate;
+        std::optional<wchar_t> _leadingSurrogate{ std::nullopt };
 
         bool _isReadOnly{ false }; // ?
 
-        std::optional<COORD> _lastHoveredCell;
+        std::optional<COORD> _lastHoveredCell{ std::nullopt };
         // Track the last hyperlink ID we hovered over
-        uint16_t _lastHoveredId;
+        uint16_t _lastHoveredId{ 0 };
 
-        std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval;
+        std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval{ std::nullopt };
 
         ////////////////////////////////////////////////////////////////////////
         // These members are new
-        double _panelWidth;
-        double _panelHeight;
-        double _compositionScaleX;
-        double _compositionScaleY;
+        double _panelWidth{ 0 };
+        double _panelHeight{ 0 };
+        double _compositionScaleX{ 0 };
+        double _compositionScaleY{ 0 };
         til::color _backgroundColor; // This is _in_ Terminal already!
         ////////////////////////////////////////////////////////////////////////
 
+    public:
         ////////////////////////////////////////////////////////////////////////
         // These methods are taken from TermControl
         bool InitializeTerminal(const double actualWidth,

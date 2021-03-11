@@ -596,16 +596,33 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return false;
         }
 
+        const auto panelWidth = SwapChainPanel().ActualWidth();
+        const auto panelHeight = SwapChainPanel().ActualHeight();
+        const auto panelScaleX = SwapChainPanel().CompositionScaleX();
+        const auto panelScaleY = SwapChainPanel().CompositionScaleY();
+
+        const auto windowWidth = panelWidth * panelScaleX;
+        const auto windowHeight = panelHeight * panelScaleY;
+
+        if (windowWidth == 0 || windowHeight == 0)
+        {
+            return false;
+        }
+
         // IMPORTANT! Set this callback up sooner than later. If we do it
         // after Enable, then it'll be possible to paint the frame once
         // _before_ the warning handler is set up, and then warnings from
         // the first paint will be ignored!
         _core->RendererWarning({ get_weak(), &TermControl::_RendererWarning });
 
-        _core->InitializeTerminal(SwapChainPanel().ActualWidth(),
-                                  SwapChainPanel().ActualHeight(),
-                                  SwapChainPanel().CompositionScaleX(),
-                                  SwapChainPanel().CompositionScaleY());
+        const auto coreInitialized = _core->InitializeTerminal(panelWidth,
+                                                               panelHeight,
+                                                               panelScaleX,
+                                                               panelScaleY);
+        if (!coreInitialized)
+        {
+            return false;
+        }
 
         _AttachDxgiSwapChainToXaml(_core->GetSwapChainHandle());
 
