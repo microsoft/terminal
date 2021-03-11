@@ -1381,7 +1381,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
                 else if (mode != ::Terminal::SelectionExpansionMode::Cell || shiftEnabled)
                 {
-                    // If we are handling a double / triple-click or shift+single clicks we establish selection using the selected mode
+                    // If we are handling a double / triple-click or shift+single click
+                    // we establish selection using the selected mode
                     // (expand both "start" and "end" selection points)
                     _terminal->MultiClickSelection(terminalPosition, mode);
                     _selectionNeedsToBeCopied = true;
