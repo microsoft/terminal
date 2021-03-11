@@ -447,6 +447,9 @@
   <data name="MultiLinePasteDialog.PrimaryButtonText" xml:space="preserve">
     <value>Paste anyway</value>
   </data>
+  <data name="MultiLinePasteDialog.SecondaryButtonText" xml:space="preserve">
+    <value>Strip line breaks</value>
+  </data>
   <data name="MultiLinePasteDialog.Title" xml:space="preserve">
     <value>Warning</value>
   </data>

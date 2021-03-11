@@ -2204,7 +2204,16 @@ namespace winrt::TerminalApp::implementation
                 // Clear the clipboard text so it doesn't lie around in memory
                 ClipboardText().Text(L"");
 
-                if (warningResult != ContentDialogResult::Primary)
+                if (warningResult == ContentDialogResult::Secondary)
+                {
+                    // strip line breaks before pasting
+                    std::wstring strippedText{text};
+                    til::replace_needle_in_haystack_inplace(strippedText, L"\r\n", L" ");
+                    til::replace_needle_in_haystack_inplace(strippedText, L"\n", L" ");
+                    til::replace_needle_in_haystack_inplace(strippedText, L"\r", L" ");
+                    text = hstring(strippedText);
+                }
+                else if (warningResult != ContentDialogResult::Primary)
                 {
                     // user rejected the paste
                     co_return;
