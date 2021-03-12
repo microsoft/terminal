@@ -63,7 +63,7 @@ runtimeclass Action
     IActionArgs Args;
 
     // Future Considerations:
-    // - #6899: Action IDs --> add an identifier here
+    // - [#6899]: Action IDs --> add an identifier here
     // - source tracking --> add a tag here
     // - action grouping (i.e. clipboard, pane management, etc...) --> expose a getter here
 }
@@ -114,7 +114,7 @@ runtimeclass ActionMap
     KeyChord GetKeyBindingForAction(ShortcutAction action, IActionArgs actionArgs);
 
     // Future Considerations:
-    // - #6899: Action IDs --> GetActionByID()
+    // - [#6899]: Action IDs --> GetActionByID()
     // - Getters for groups of actions...
     //   - IMap<> GetActionsByGrouping
     //   - IMap<> GetActionsByTag
@@ -233,13 +233,13 @@ In making a distinction between "unbound" actions and "invalid" actions, we can 
 ## Future considerations
 
 There are a number of ideas regarding actions that would be fairly trivial to implement given this refactor:
-- #6899: Action IDs
+- [#6899]: Action IDs
   - As actions grow to become more widespread within Windows Terminal (i.e. dropdown and jumplist integration),
      a formal ID system would help users reference the same action throughout the app. With the internal
      ID system introduced in the "copying the action map" section, we would simply introduce a new
      `std:map<string, unsigned int> _ExternalIDMap` that is updated like the others, and add a `String ID`
      property to `Action`.
-- #8100 Source Tracking
+- [#8100] Source Tracking
   - Identifying where a setting came from can be very beneficial in the settings model and UI. For example,
      profile settings now have an `OverrideSource` getter that describes what `Profile` object the setting
      came from (i.e. base layer, profile generator, etc...). A similar system can be used for `Action` in
@@ -254,7 +254,7 @@ There are a number of ideas regarding actions that would be fairly trivial to im
      like breaking up the Settings UI's Actions page into multiple lists by category (though this could
      arguably be a responsibility of the view model). Another possible benefit would be to provide context
      for when an action is valid (i.e. window-level, pane-level, etc...). This would do some of the work
-     for #8767, and allow for window-level actions to be accessed via the command palette and key bindings.
+     for [#8767], and allow for window-level actions to be accessed via the command palette and key bindings.
 
 ## Resources
 
