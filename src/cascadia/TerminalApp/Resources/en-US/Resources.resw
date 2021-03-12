@@ -446,9 +446,11 @@
   </data>
   <data name="MultiLinePasteDialog.PrimaryButtonText" xml:space="preserve">
     <value>Paste anyway</value>
+    <comment>Pastes the clipboard text into the terminal with no modifications</comment>
   </data>
   <data name="MultiLinePasteDialog.SecondaryButtonText" xml:space="preserve">
     <value>Paste without line breaks</value>
+    <comment>Replaces all line breaks in the clipboard text with spaces, and then pastes it into the terminal</comment>
   </data>
   <data name="MultiLinePasteDialog.Title" xml:space="preserve">
     <value>Warning</value>
