@@ -208,7 +208,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _inPipe{ (HANDLE)hIn },
         _outPipe{ (HANDLE)hOut }
     {
-        hSig; // TODO: this needs to be packed into the hpcon
+        hSig; // TODO: GH 9464 this needs to be packed into the hpcon
         if (_guid == guid{})
         {
             _guid = Utils::CreateGuid();
