@@ -152,7 +152,7 @@ static bool _shouldAttemptHandoff(const Globals& globals,
     const bool insideWindows = false;
 #endif
 
-    // If we are outside of Windows, do not attempt to handoff
+    // If we are outside of Windows, do not attempt a handoff
     // to another target as handoff is an inbox escape mechanism
     // to get to this copy!
     if (!insideWindows)
