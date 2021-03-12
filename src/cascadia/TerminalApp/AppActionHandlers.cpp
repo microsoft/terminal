@@ -667,4 +667,5 @@ namespace winrt::TerminalApp::implementation
         _OpenNewWindow(false, newTerminalArgs);
         actionArgs.Handled(true);
     }
+
 }
