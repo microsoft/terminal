@@ -52,24 +52,8 @@
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
-    <!--
-      the packaging project won't recurse through our dependencies, you have to
-      make sure that if you add a cppwinrt dependency to any of these projects,
-      you also update all the consumers
-    -->
-    <!-- <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
-      <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
-    </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\buffer\out\lib\bufferout.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)src\renderer\base\lib\base.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)src\renderer\dx\lib\dx.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)src\renderer\uia\lib\uia.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)src\terminal\parser\lib\parser.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)src\terminal\input\lib\terminalinput.vcxproj" /> -->
-    <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalCore\lib\TerminalCore-lib.vcxproj" /> -->
-    <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" /> -->
-    <!-- Reference TerminalControlLib here, so we can use it's TerminalControl.winmd as
-    our TerminalControl.winmd. This didn't work correctly in VS2017, you'd need to
+    <!-- Reference TerminalControlLib here, so we can use it's Microsoft.Terminal.Control.winmd as
+    our Microsoft.Terminal.Control.winmd. This didn't work correctly in VS2017, you'd need to
     manually reference the lib -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControlLib.vcxproj">
       <Private>true</Private>
@@ -97,13 +81,6 @@
     </Reference>
   </ItemGroup>
 
-  <!-- <Import Project="$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" /> -->
-<!--   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets'))" />
-  </Target> -->
   <ItemDefinitionGroup>
     <Link>
       <AdditionalDependencies>dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;user32.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
