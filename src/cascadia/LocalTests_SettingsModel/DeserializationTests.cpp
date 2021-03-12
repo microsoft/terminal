@@ -15,7 +15,7 @@ using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 
 namespace SettingsModelLocalTests
 {
@@ -1376,7 +1376,7 @@ namespace SettingsModelLocalTests
                 },
                 {
                     "name": "parent",
-                    "commands": [                        
+                    "commands": [
                         { "command": { "action": "setColorScheme", "colorScheme": "invalidScheme" } }
                     ]
                 }
@@ -1403,11 +1403,11 @@ namespace SettingsModelLocalTests
                 },
                 {
                     "name": "grandparent",
-                    "commands": [                        
+                    "commands": [
                         {
                             "name": "parent",
                             "commands": [
-                                { 
+                                {
                                     "command": { "action": "setColorScheme", "colorScheme": "invalidScheme" }
                                 }
                             ]

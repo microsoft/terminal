@@ -26,12 +26,12 @@ Author(s):
 
 #include "TermControl.h"
 #include "TermControlAutomationPeer.g.h"
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/Microsoft.Terminal.Control.h>
 #include "../types/TermControlUiaProvider.hpp"
 #include "../types/IUiaEventDispatcher.h"
 #include "../types/IControlAccessibilityInfo.h"
 
-namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct TermControlAutomationPeer :
         public TermControlAutomationPeerT<TermControlAutomationPeer>,
@@ -39,7 +39,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         ::Microsoft::Console::Types::IControlAccessibilityInfo
     {
     public:
-        TermControlAutomationPeer(Microsoft::Terminal::TerminalControl::implementation::TermControl* owner);
+        TermControlAutomationPeer(Microsoft::Terminal::Control::implementation::TermControl* owner);
 
 #pragma region FrameworkElementAutomationPeer
         hstring GetClassNameCore() const;
@@ -81,7 +81,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     private:
         ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
-        winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl* _termControl;
+        winrt::Microsoft::Terminal::Control::implementation::TermControl* _termControl;
         winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> WrapArrayOfTextRangeProviders(SAFEARRAY* textRanges);
     };
 }

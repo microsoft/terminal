@@ -13,7 +13,7 @@ namespace TerminalApp
     //      and pass along the Core properties to the terminal core.
     [default_interface]
     runtimeclass TerminalSettings : Microsoft.Terminal.Core.ICoreSettings,
-                                    Microsoft.Terminal.TerminalControl.IControlSettings
+                                    Microsoft.Terminal.Control.IControlSettings
     {
         TerminalSettings();
     };

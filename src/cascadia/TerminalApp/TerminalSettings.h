@@ -33,11 +33,11 @@ namespace winrt::TerminalApp::implementation
         TerminalSettings() = default;
         TerminalSettings(const Microsoft::Terminal::Settings::Model::CascadiaSettings& appSettings,
                          guid profileGuid,
-                         const Microsoft::Terminal::TerminalControl::IKeyBindings& keybindings);
+                         const Microsoft::Terminal::Control::IKeyBindings& keybindings);
 
         static std::tuple<guid, TerminalApp::TerminalSettings> BuildSettings(const Microsoft::Terminal::Settings::Model::CascadiaSettings& appSettings,
                                                                              const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs,
-                                                                             const Microsoft::Terminal::TerminalControl::IKeyBindings& keybindings);
+                                                                             const Microsoft::Terminal::Control::IKeyBindings& keybindings);
 
         void ApplyColorScheme(const Microsoft::Terminal::Settings::Model::ColorScheme& scheme);
 
@@ -97,7 +97,7 @@ namespace winrt::TerminalApp::implementation
         INHERITABLE_SETTING(TerminalApp::TerminalSettings, winrt::Windows::UI::Xaml::HorizontalAlignment, BackgroundImageHorizontalAlignment, winrt::Windows::UI::Xaml::HorizontalAlignment::Center);
         INHERITABLE_SETTING(TerminalApp::TerminalSettings, winrt::Windows::UI::Xaml::VerticalAlignment, BackgroundImageVerticalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment::Center);
 
-        INHERITABLE_SETTING(TerminalApp::TerminalSettings, Microsoft::Terminal::TerminalControl::IKeyBindings, KeyBindings, nullptr);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, Microsoft::Terminal::Control::IKeyBindings, KeyBindings, nullptr);
 
         INHERITABLE_SETTING(TerminalApp::TerminalSettings, hstring, Commandline);
         INHERITABLE_SETTING(TerminalApp::TerminalSettings, hstring, StartingDirectory);
@@ -105,9 +105,9 @@ namespace winrt::TerminalApp::implementation
         INHERITABLE_SETTING(TerminalApp::TerminalSettings, bool, SuppressApplicationTitle);
         INHERITABLE_SETTING(TerminalApp::TerminalSettings, hstring, EnvironmentVariables);
 
-        INHERITABLE_SETTING(TerminalApp::TerminalSettings, Microsoft::Terminal::TerminalControl::ScrollbarState, ScrollState, Microsoft::Terminal::TerminalControl::ScrollbarState::Visible);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible);
 
-        INHERITABLE_SETTING(TerminalApp::TerminalSettings, Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
 
         INHERITABLE_SETTING(TerminalApp::TerminalSettings, bool, RetroTerminalEffect, false);
         INHERITABLE_SETTING(TerminalApp::TerminalSettings, bool, ForceFullRepaintRendering, false);

@@ -4,8 +4,8 @@
     <ProjectGuid>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <ProjectName>TerminalControlLib</ProjectName>
-    <RootNamespace>Microsoft.Terminal.TerminalControl</RootNamespace>
-    <TargetName>Microsoft.Terminal.TerminalControlLib</TargetName>
+    <RootNamespace>Microsoft.Terminal.Control</RootNamespace>
+    <TargetName>Microsoft.Terminal.ControlLib</TargetName>
     <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
@@ -13,7 +13,7 @@
 
     <!-- C++/WinRT sets the depth to 1 if there is a XAML file in the project
          Unfortunately for us, we need it to be 3. When the namespace merging
-         depth is 1, Microsoft.Terminal.TerminalControl becomes "Microsoft",
+         depth is 1, Microsoft.Terminal.Control becomes "Microsoft",
          and our WinMD file becomes "Microsoft". Because WinRT is very
          namespace-driven, this winmd is considered to contain the entire
          Microsoft namespace. This is, obviously, not great. None of our other

@@ -13,7 +13,7 @@
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::System;
 
@@ -622,7 +622,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (tab->_focusState != FocusState::Unfocused)
                 {
-                    if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::TerminalControl::TermControl>() })
+                    if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::Control::TermControl>() })
                     {
                         termControl.Focus(FocusState::Pointer);
                     }

@@ -122,7 +122,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         CopyTextArgs() = default;
         WINRT_PROPERTY(bool, SingleLine, false);
-        WINRT_PROPERTY(Windows::Foundation::IReference<TerminalControl::CopyFormat>, CopyFormatting, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::IReference<Control::CopyFormat>, CopyFormatting, nullptr);
 
         static constexpr std::string_view SingleLineKey{ "singleLine" };
         static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
