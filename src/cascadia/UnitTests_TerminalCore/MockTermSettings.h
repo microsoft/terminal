@@ -5,10 +5,10 @@
 
 #include "DefaultSettings.h"
 
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/Microsoft.Terminal.Core.h>
 #include "../inc/cppwinrt_utils.h"
 
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Core;
 
 namespace TerminalCoreUnitTests
 {
