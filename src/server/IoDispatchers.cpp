@@ -146,6 +146,20 @@ static bool _shouldAttemptHandoff(const Globals& globals,
                                   const CONSOLE_INFORMATION& gci,
                                   CONSOLE_API_CONNECTINFO& cac)
 {
+#ifdef __INSIDE_WINDOWS
+    const bool insideWindows = true;
+#else
+    const bool insideWindows = false;
+#endif
+
+    // If we are outside of Windows, do not attempt to handoff
+    // to another target as handoff is an inbox escape mechanism
+    // to get to this copy!
+    if (!insideWindows)
+    {
+        return false;
+    }
+
     // This console is already initialized. Do not
     // attempt handoff to another one.
     // Note you can have a non-attach secondary connect for a child process

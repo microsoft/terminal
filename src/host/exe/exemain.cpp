@@ -8,6 +8,7 @@
 #include "CConsoleHandoff.h"
 #include "../server/Entrypoints.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
+#include "../inc/conint.h"
 
 // Define TraceLogging provider
 TRACELOGGING_DEFINE_PROVIDER(
@@ -221,7 +222,10 @@ int CALLBACK wWinMain(
     HRESULT hr = args.ParseCommandline();
     if (SUCCEEDED(hr))
     {
-        if (args.ShouldRunAsComServer())
+        // Only try to register as a handoff target if we are NOT a part of Windows.
+#ifndef __INSIDE_WINDOWS
+        bool defAppEnabled = false;
+        if (args.ShouldRunAsComServer() && SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy(defAppEnabled)) && defAppEnabled)
         {
             try
             {
@@ -248,6 +252,7 @@ int CALLBACK wWinMain(
             CATCH_RETURN()
         }
         else
+#endif
         {
             if (ShouldUseLegacyConhost(args))
             {
