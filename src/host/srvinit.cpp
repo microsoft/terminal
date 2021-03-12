@@ -9,7 +9,6 @@
 #include "handle.h"
 #include "registry.hpp"
 #include "renderFontDefaults.hpp"
-#include "..\propslib\DelegationConfig.hpp"
 
 #include "ApiRoutines.h"
 
