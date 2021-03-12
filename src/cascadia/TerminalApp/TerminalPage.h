@@ -245,8 +245,8 @@ namespace winrt::TerminalApp::implementation
 
         void _Find();
 
-        winrt::Microsoft::Terminal::TerminalControl::TermControl _InitControl(winrt::TerminalApp::TerminalSettings& settings,
-                                                                              winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
+        winrt::Microsoft::Terminal::TerminalControl::TermControl _InitControl(const winrt::TerminalApp::TerminalSettings& settings,
+                                                                              const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
 
         winrt::fire_and_forget _RefreshUIForSettingsReload();
 

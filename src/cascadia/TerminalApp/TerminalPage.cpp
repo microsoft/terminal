@@ -2498,7 +2498,7 @@ namespace winrt::TerminalApp::implementation
         _RemoveTabViewItem(tabViewItem);
     }
 
-    TermControl TerminalPage::_InitControl(TerminalApp::TerminalSettings& settings, ITerminalConnection connection)
+    TermControl TerminalPage::_InitControl(const TerminalApp::TerminalSettings& settings, const ITerminalConnection connection)
     {
         return TermControl{ *(winrt::get_self<TerminalSettings>(settings)->CreateChild()), connection };
     }
