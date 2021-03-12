@@ -218,7 +218,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // of a HANDLE in a 64-bit number for this interface.
         // Reinterpret and C-cast are really our options for
         // getting the data out and both need an audit suppress.
-#pragma warning(suppress: 26493)
+#pragma warning(suppress : 26493)
         _piClient.hProcess = (HANDLE)(hClientProcess);
     }
 

@@ -32,6 +32,8 @@ void EdpPolicy::AuditClipboard(const std::wstring_view /*destinationName*/) noex
 
 [[nodiscard]] HRESULT DefaultApp::CheckDefaultAppPolicy(bool& isEnabled) noexcept
 {
+    // False outside so OpenConsole does not even try to handoff again to another
+    // console if it is started solo.
     isEnabled = false;
     return S_OK;
 }

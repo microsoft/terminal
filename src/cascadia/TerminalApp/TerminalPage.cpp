@@ -3084,7 +3084,7 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection)
     {
-        // TODO: this should probably use a more reasonable profile than nullptr.
+        // TODO: GH 9458 will give us more context so we can try to choose a better profile.
         _OpenNewTab(nullptr, connection);
     }
 
