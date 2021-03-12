@@ -124,11 +124,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
-    // - Creates a projectedType version of a child of this TerminalSettings.
-    // - We can't just expose CreateChild() in the IDL because it returns the wrong type.
-    Model::TerminalSettings TerminalSettings::MakeChild() const
+    // - Creates a TerminalSettings object that inherits from a parent TerminalSettings
+    // Arguments::
+    // - parent: the TerminalSettings object that the newly created TerminalSettings will inherit from
+    // Return Value:
+    // - a newly created child of the given parent object
+    Model::TerminalSettings TerminalSettings::CreateWithParent(const Model::TerminalSettings& parent)
     {
-        return *CreateChild();
+        THROW_HR_IF_NULL(E_INVALIDARG, parent);
+
+        auto parentImpl{ get_self<TerminalSettings>(parent) };
+        return *parentImpl->CreateChild();
     }
 
     // Method Description:

@@ -40,7 +40,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                                  const Model::NewTerminalArgs& newTerminalArgs,
                                                                  const TerminalControl::IKeyBindings& keybindings);
 
-        Model::TerminalSettings MakeChild() const;
+        static Model::TerminalSettings CreateWithParent(const Model::TerminalSettings& parent);
         void SetParent(const Model::TerminalSettings& parent);
 
         void ApplyColorScheme(const Model::ColorScheme& scheme);

@@ -800,7 +800,7 @@ namespace winrt::TerminalApp::implementation
 
         // Give term control a child of the settings so that any overrides go in the child
         // This way, when we do a settings reload we just update the parent and the overrides remain
-        TermControl term{ settings.MakeChild(), connection };
+        TermControl term{ TerminalSettings::CreateWithParent(settings), connection };
 
         auto newTabImpl = winrt::make_self<TerminalTab>(profileGuid, term);
 
@@ -893,7 +893,7 @@ namespace winrt::TerminalApp::implementation
 
         if (debugConnection) // this will only be set if global debugging is on and tap is active
         {
-            TermControl newControl{ settings.MakeChild(), debugConnection };
+            TermControl newControl{ TerminalSettings::CreateWithParent(settings), debugConnection };
             _RegisterTerminalEvents(newControl, *newTabImpl);
             // Split (auto) with the debug tap.
             newTabImpl->SplitPane(SplitState::Automatic, 0.5f, profileGuid, newControl);
@@ -1886,7 +1886,7 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            TermControl newControl{ controlSettings.MakeChild(), controlConnection };
+            TermControl newControl{ TerminalSettings::CreateWithParent(controlSettings), controlConnection };
 
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl, *focusedTab);
