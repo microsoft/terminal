@@ -18,7 +18,7 @@ Abstract:
 #include "JsonUtils.h"
 #include "SettingsTypes.h"
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CursorStyle)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::CursorStyle)
 {
     static constexpr std::array<pair_type, 6> mappings = {
         pair_type{ "bar", ValueType::Bar },

@@ -20,7 +20,7 @@ namespace Microsoft.Terminal.Settings.Model
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.TerminalControl.ScrollbarState> ScrollbarState { get; };
         static Windows.Foundation.Collections.IMap<String, Windows.UI.Xaml.Media.Stretch> BackgroundImageStretchMode { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.TerminalControl.TextAntialiasingMode> TextAntialiasingMode { get; };
-        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.TerminalControl.CursorStyle> CursorStyle { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Core.CursorStyle> CursorStyle { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.BellStyle> BellStyle { get; };
         static Windows.Foundation.Collections.IMap<String, UInt16> FontWeight { get; };
     }

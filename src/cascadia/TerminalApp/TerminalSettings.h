@@ -60,7 +60,7 @@ namespace winrt::TerminalApp::implementation
         INHERITABLE_SETTING(TerminalApp::TerminalSettings, bool, SnapOnInput, true);
         INHERITABLE_SETTING(TerminalApp::TerminalSettings, bool, AltGrAliasing, true);
         INHERITABLE_SETTING(TerminalApp::TerminalSettings, uint32_t, CursorColor, DEFAULT_CURSOR_COLOR);
-        INHERITABLE_SETTING(TerminalApp::TerminalSettings, Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle::Vintage);
+        INHERITABLE_SETTING(TerminalApp::TerminalSettings, Microsoft::Terminal::Core::CursorStyle, CursorShape, Microsoft::Terminal::Core::CursorStyle::Vintage);
         INHERITABLE_SETTING(TerminalApp::TerminalSettings, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
         INHERITABLE_SETTING(TerminalApp::TerminalSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
         INHERITABLE_SETTING(TerminalApp::TerminalSettings, bool, CopyOnSelect, false);
