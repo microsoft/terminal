@@ -54,8 +54,7 @@ namespace Microsoft.Terminal.Settings.Model
         BreakIntoDebugger,
         TogglePaneReadOnly,
         FindMatch,
-        NewWindow,
-        ToggleInboundPty // Not currently bindable
+        NewWindow
     };
 
     [default_interface] runtimeclass ActionAndArgs {

@@ -265,11 +265,6 @@ namespace winrt::TerminalApp::implementation
             _NewWindowHandlers(*this, eventArgs);
             break;
         }
-        case ShortcutAction::ToggleInboundPty:
-        {
-            _ToggleInboundPtyHandlers(*this, eventArgs);
-            break;
-        }
         default:
             return false;
         }

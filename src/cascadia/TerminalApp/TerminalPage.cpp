@@ -195,8 +195,7 @@ namespace winrt::TerminalApp::implementation
         // Hookup our event handlers to the ShortcutActionDispatch
         _RegisterActionCallbacks();
 
-        // Hook up inbound PTY event handlers
-        InboundPtyChanged({ this, &TerminalPage::_OnInboundPtyChanged });
+        // Hook up inbound connection event handler
         TerminalConnection::ConptyConnection::NewConnection({ this, &TerminalPage::_OnNewConnection });
 
         //Event Bindings (Early)
@@ -1210,7 +1209,6 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->FindMatch({ this, &TerminalPage::_HandleFindMatch });
         _actionDispatch->TogglePaneReadOnly({ this, &TerminalPage::_HandleTogglePaneReadOnly });
         _actionDispatch->NewWindow({ this, &TerminalPage::_HandleNewWindow });
-        _actionDispatch->ToggleInboundPty({ this, &TerminalPage::_HandleToggleInboundPty });
     }
 
     // Method Description:
@@ -2845,18 +2843,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Toggles inbound pty mode. Raises InboundPtyChanged event.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalPage::ToggleInboundPty()
-    {
-        _isInboundPty = !_isInboundPty;
-        _inboundPtyChangedHandlers(*this, nullptr);
-    }
-
-    // Method Description:
     // - Sets the tab split button color when a new tab color is selected
     // Arguments:
     // - color: The color of the newly selected tab, used to properly calculate
@@ -3065,24 +3051,6 @@ namespace winrt::TerminalApp::implementation
     bool TerminalPage::AlwaysOnTop() const
     {
         return _isAlwaysOnTop;
-    }
-
-    bool TerminalPage::InboundPty() const
-    {
-        return _isInboundPty;
-    }
-
-    void TerminalPage::_OnInboundPtyChanged(const IInspectable& /*sender*/,
-                                            const IInspectable& /*eventArgs*/)
-    {
-        if (InboundPty())
-        {
-            ConptyConnection::StartInboundListener();
-        }
-        else
-        {
-            ConptyConnection::StopInboundListener();
-        }
     }
 
     void TerminalPage::_OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection)
@@ -3396,5 +3364,4 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, RaiseVisualBell, _raiseVisualBellHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTaskbarProgress, _setTaskbarProgressHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, InboundPtyChanged, _inboundPtyChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 }

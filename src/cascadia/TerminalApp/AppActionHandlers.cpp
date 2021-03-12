@@ -667,11 +667,4 @@ namespace winrt::TerminalApp::implementation
         _OpenNewWindow(false, newTerminalArgs);
         actionArgs.Handled(true);
     }
-
-    void TerminalPage::_HandleToggleInboundPty(const IInspectable& /*sender*/,
-                                               const ActionEventArgs& args)
-    {
-        ToggleInboundPty();
-        args.Handled(true);
-    }
 }

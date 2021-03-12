@@ -65,11 +65,9 @@ namespace winrt::TerminalApp::implementation
         void ToggleFocusMode();
         void ToggleFullscreen();
         void ToggleAlwaysOnTop();
-        void ToggleInboundPty();
         bool FocusMode() const;
         bool Fullscreen() const;
         bool AlwaysOnTop() const;
-        bool InboundPty() const;
 
         void SetStartupActions(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
         static std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> ConvertExecuteCommandlineToActions(const Microsoft::Terminal::Settings::Model::ExecuteCommandlineArgs& args);
@@ -96,7 +94,6 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RaiseVisualBell, _raiseVisualBellHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTaskbarProgress, _setTaskbarProgressHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(InboundPtyChanged, _inboundPtyChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(Initialized, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
 
     private:
@@ -127,7 +124,6 @@ namespace winrt::TerminalApp::implementation
         bool _isInFocusMode{ false };
         bool _isFullscreen{ false };
         bool _isAlwaysOnTop{ false };
-        bool _isInboundPty{ false };
 
         bool _rearranging;
         std::optional<int> _rearrangeFrom;
@@ -280,7 +276,6 @@ namespace winrt::TerminalApp::implementation
         void _HidePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
         void _RestorePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
 
-        void _OnInboundPtyChanged(const IInspectable& sender, const IInspectable& eventArgs);
         void _OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
 
 #pragma region ActionHandlers

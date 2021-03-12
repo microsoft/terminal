@@ -726,17 +726,23 @@ bool AppCommandlineArgs::ShouldExitEarly() const noexcept
 // - <none>
 void AppCommandlineArgs::ValidateStartupCommands()
 {
-    // If we parsed no commands, or the first command we've parsed is not a new
-    // tab action, prepend a new-tab command to the front of the list.
-    if (_startupActions.empty() ||
-        (_startupActions.front().Action() != ShortcutAction::NewTab && _startupActions.front().Action() != ShortcutAction::ToggleInboundPty))
+    // Only check over the actions list for the potential to add a new-tab
+    // command if we are not starting for the purposes of receiving an inbound
+    // handoff connection from the operating system.
+    if (!_isHandoffListener)
     {
-        // Build the NewTab action from the values we've parsed on the commandline.
-        NewTerminalArgs newTerminalArgs{};
-        NewTabArgs args{ newTerminalArgs };
-        ActionAndArgs newTabAction{ ShortcutAction::NewTab, args };
-        // push the arg onto the front
-        _startupActions.insert(_startupActions.begin(), 1, newTabAction);
+        // If we parsed no commands, or the first command we've parsed is not a new
+        // tab action, prepend a new-tab command to the front of the list.
+        if (_startupActions.empty() ||
+            _startupActions.front().Action() != ShortcutAction::NewTab)
+        {
+            // Build the NewTab action from the values we've parsed on the commandline.
+            NewTerminalArgs newTerminalArgs{};
+            NewTabArgs args{ newTerminalArgs };
+            ActionAndArgs newTabAction{ ShortcutAction::NewTab, args };
+            // push the arg onto the front
+            _startupActions.insert(_startupActions.begin(), 1, newTabAction);
+        }
     }
 }
 
@@ -764,8 +770,8 @@ int AppCommandlineArgs::ParseArgs(winrt::array_view<const winrt::hstring>& args)
     {
         if (arg == L"-Embedding")
         {
-            winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs embeddingAction(ShortcutAction::ToggleInboundPty, nullptr);
-            _startupActions.push_back(embeddingAction);
+            winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
+            _isHandoffListener = true;
             return 0;
         }
     }
