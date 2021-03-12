@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}</ProjectGuid>
-    <ProjectName>TerminalApp</ProjectName>
-    <RootNamespace>TerminalApp</RootNamespace>
+    <ProjectGuid>{CA5CAD1A-5555-4AC7-AC72-6CA5B3AB89ED}</ProjectGuid>
+    <ProjectName>TerminalControl</ProjectName>
+    <!-- <RootNamespace>TerminalControl</RootNamespace> -->
+    <RootNamespace>Microsoft.Terminal.TerminalControl</RootNamespace>
     <!-- cppwinrt.build.pre.props depends on these settings: -->
     <!-- build a dll, not exe (Application) -->
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -13,41 +14,31 @@
   </PropertyGroup>
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-  <Import Project="$(OpenConsoleDir)packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('$(OpenConsoleDir)packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
-    <!-- DON'T PUT XAML FILES HERE! Put them in TerminalAppLib.vcxproj -->
+    <!-- DON'T PUT XAML FILES HERE! Put them in TerminalControlLib.vcxproj -->
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <!-- Only put headers for winrt types in here. Don't put other header files
-    in here - put them in TerminalAppLib.vcxproj instead! -->
-    <ClInclude Include="../AppLogic.h" />
+    in here - put them in TerminalControlLib.vcxproj instead! -->
     <ClInclude Include="pch.h" />
-    <ClInclude Include="../TerminalPage.h" />
-    <ClInclude Include="../MinMaxCloseControl.h" />
-    <ClInclude Include="../AppKeyBindings.h" />
-    <ClInclude Include="../TitlebarControl.h" />
-    <ClInclude Include="../TabRowControl.h" />
-    <ClInclude Include="../App.h" />
-    <ClInclude Include="../TerminalTab.h" />
-    <ClInclude Include="../SettingsTab.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
-    <!-- Don't put source files in here - put them in TerminalAppLib.vcxproj instead! -->
+    <!-- Don't put source files in here - put them in TerminalControlLib.vcxproj instead! -->
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
-    <!-- DON'T PUT IDL FILES HERE! Put them in TerminalApp.vcxproj -->
+    <!-- DON'T PUT IDL FILES HERE! Put them in TerminalControlLib.vcxproj -->
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="TerminalApp.def" />
+    <None Include="TerminalControl.def" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
@@ -59,45 +50,36 @@
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
       <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
     </ProjectReference>
-    <!-- The midl compiler however, _will_ aggregate our winmd dependencies
-    somehow. So make sure to only include top-level dependencies here (don't
-    include Settings and Connection, since Control will include them for us) -->
+    <ProjectReference Include="$(OpenConsoleDir)src\buffer\out\lib\bufferout.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\renderer\base\lib\base.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\renderer\dx\lib\dx.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\renderer\uia\lib\uia.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\terminal\parser\lib\parser.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\terminal\input\lib\terminalinput.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalCore\lib\TerminalCore-lib.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsEditor\Microsoft.Terminal.Settings.Editor.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj" />
-    <!-- Reference TerminalAppLib here, so we can use it's TerminalApp.winmd as
-    our TerminalApp.winmd. This didn't work correctly in VS2017, you'd need to
+    <!-- Reference TerminalControlLib here, so we can use it's TerminalControl.winmd as
+    our TerminalControl.winmd. This didn't work correctly in VS2017, you'd need to
     manually reference the lib -->
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalAppLib.vcxproj">
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControlLib.vcxproj">
       <Private>true</Private>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </ProjectReference>
   </ItemGroup>
-
   <Import Project="$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" />
-  <Import Project="$(OpenConsoleDir)packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('$(OpenConsoleDir)packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets'))" />
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
   </Target>
-
   <ItemDefinitionGroup>
-    <ClCompile>
-      <AdditionalIncludeDirectories>$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
-    </ClCompile>
     <Link>
-      <AdditionalDependencies>User32.lib;WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <!-- TerminalAppLib contains a DllMain that we need to force the use of. -->
+      <AdditionalDependencies>dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;user32.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <!-- ControlLib contains a DllMain that we need to force the use of. -->
       <AdditionalOptions Condition="'$(Platform)'=='Win32'">/INCLUDE:_DllMain@12</AdditionalOptions>
       <AdditionalOptions Condition="'$(Platform)'!='Win32'">/INCLUDE:DllMain</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-  <!-- Import this set of targets that fixes a VS bug that manifests when using
-  the TerminalAppLib project -->
-  <Import Project="FixVisualStudioBug.targets" />
 </Project>

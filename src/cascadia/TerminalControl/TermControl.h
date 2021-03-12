@@ -9,6 +9,7 @@
 #include "OpenHyperlinkEventArgs.g.h"
 #include "NoticeEventArgs.g.h"
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
+#include <winrt/Microsoft.Terminal.Core.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../renderer/uia/UiaRenderer.hpp"
