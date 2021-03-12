@@ -155,7 +155,7 @@
     <comment>{0} will be replaced with a number</comment>
   </data>
   <data name="CopySuffix" xml:space="preserve">
-    <value> (Copy)</value>
+    <value>Copy</value>
     <comment>The suffix we add to the name of a duplicated profile.</comment>
   </data>
   <data name="MoveTabCommandKey" xml:space="preserve">

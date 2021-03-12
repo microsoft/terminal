@@ -240,8 +240,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
     auto duplicated{ _userDefaultProfileSettings->CreateChild() };
     _allProfiles.Append(*duplicated);
 
-    std::wstring newName{ source.Name() };
-    newName += RS_(L"CopySuffix");
+    const auto newName{ fmt::format(L"{} ({})", source.Name(), RS_(L"CopySuffix")) };
     duplicated->Name(winrt::hstring(newName));
 
     if (source.HasHidden() || source.HiddenOverrideSource() != nullptr)

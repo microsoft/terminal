@@ -31,7 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void RequestAddNew()
         {
-            _AddNewHandlers(GUID{});
+            _AddNewHandlers(winrt::guid{});
         }
 
         void RequestDuplicate(GUID profile)
