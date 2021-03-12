@@ -77,8 +77,8 @@
         </uap5:Extension>
         <uap3:Extension Category="windows.appExtension">
             <uap3:AppExtension Name="com.microsoft.windows.console.host"
-                Id="OpenConsole-Dev"
-                DisplayName="OpenConsole"
+                Id="OpenConsole-Pre"
+                DisplayName="OpenConsole Preview"
                 Description="Console host built from microsoft/terminal open source repository"
                 PublicFolder="Public">
                 <uap3:Properties>
@@ -88,8 +88,8 @@
         </uap3:Extension>
         <uap3:Extension Category="windows.appExtension">
             <uap3:AppExtension Name="com.microsoft.windows.terminal.host"
-                Id="Terminal-Dev"
-                DisplayName="Windows Terminal Dev"
+                Id="Terminal-Pre"
+                DisplayName="Windows Terminal Preview"
                 Description="Terminal host built from microsoft/terminal open source repository"
                 PublicFolder="Public">
                 <uap3:Properties>
