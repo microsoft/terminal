@@ -3,7 +3,7 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- CConsoleHandoff.hpp
+- CConsoleHandoff.h
 
 Abstract:
 - This module receives a console session handoff from the operating system to

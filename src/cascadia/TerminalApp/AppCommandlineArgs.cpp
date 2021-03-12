@@ -760,7 +760,7 @@ std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> AppComman
 // - 0 if the commandline was successfully parsed
 int AppCommandlineArgs::ParseArgs(winrt::array_view<const winrt::hstring>& args)
 {
-    for (auto& arg : args)
+    for (const auto& arg : args)
     {
         if (arg == L"-Embedding")
         {

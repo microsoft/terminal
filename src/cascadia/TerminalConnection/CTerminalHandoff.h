@@ -1,3 +1,19 @@
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
+
+Module Name:
+- CTerminalHandoff.h
+
+Abstract:
+- This module receives an incoming request to host a terminal UX
+  for a console mode application already started and attached to a PTY.
+
+Author(s):
+- Michael Niksa (MiNiksa) 31-Aug-2020
+
+--*/
+
 #pragma once
 
 #include "ITerminalHandoff.h"

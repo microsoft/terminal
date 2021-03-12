@@ -55,7 +55,7 @@ namespace Microsoft.Terminal.Settings.Model
         TogglePaneReadOnly,
         FindMatch,
         NewWindow,
-        ToggleInboundPty
+        ToggleInboundPty // Not currently bindable
     };
 
     [default_interface] runtimeclass ActionAndArgs {

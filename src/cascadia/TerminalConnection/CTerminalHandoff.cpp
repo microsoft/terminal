@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "pch.h"
 
 #include "CTerminalHandoff.h"
@@ -19,7 +22,7 @@ try
 {
     RETURN_HR_IF(E_NOT_VALID_STATE, _pfnHandoff != nullptr);
 
-    auto classFactory = Make<SimpleClassFactory<CTerminalHandoff>>();
+    const auto classFactory = Make<SimpleClassFactory<CTerminalHandoff>>();
 
     RETURN_IF_NULL_ALLOC(classFactory);
 
@@ -43,7 +46,7 @@ CATCH_RETURN()
 // - S_OK, E_NOT_VALID_STATE (stop called when not started), or relevant COM class revoke error
 HRESULT CTerminalHandoff::s_StopListening() noexcept
 {
-    RETURN_HR_IF(E_NOT_VALID_STATE, _pfnHandoff == nullptr);
+    RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _pfnHandoff);
 
     _pfnHandoff = nullptr;
 

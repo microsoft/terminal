@@ -38,6 +38,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _State.Settings().GlobalSettings().DefaultProfile(profile.Guid());
     }
 
+    // TODO GH#9463 - Complete hookup of Terminal UX to choose defapp.
     Windows::Foundation::Collections::IObservableVector<IInspectable> Launch::DefaultTerminals()
     {
         Windows::Foundation::Collections::IObservableVector<IInspectable> vec;
