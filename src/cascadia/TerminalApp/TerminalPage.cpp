@@ -763,7 +763,7 @@ namespace winrt::TerminalApp::implementation
     //   control which profile is created and with possible other
     //   configurations. See TerminalSettings::BuildSettings for more details.
     // - existingConnection: An optional connection that is already established to a PTY
-    //   for this tab to host and not create one. 
+    //   for this tab to host instead of creating one. 
     //   If not defined, the tab will create the connection.
     void TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection)
     try
