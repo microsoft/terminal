@@ -63,7 +63,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool ShouldBeLayered(const Json::Value& json) const;
         void LayerJson(const Json::Value& json);
         static bool IsDynamicProfileObject(const Json::Value& json);
-        Json::Value ToJson() const;
+        Json::Value ToJson();
 
         hstring EvaluatedStartingDirectory() const;
         hstring ExpandedBackgroundImagePath() const;
