@@ -1372,20 +1372,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     _selectionNeedsToBeCopied = false; // there's no selection, so there's nothing to update
                 }
 
-                if (shiftEnabled)
+                if (shiftEnabled && _terminal->IsSelectionActive())
                 {
-                    if (_terminal->IsSelectionActive())
-                    {
-                        // If there is a selection we extend it using the selection mode
-                        // (expand the "end"selection point)
-                        _terminal->SetSelectionEnd(terminalPosition, mode);
-                    }
-                    else
-                    {
-                        // If there is no selection we establish it using the selected mode
-                        // (expand both "start" and "end" selection points)
-                        _terminal->MultiClickSelection(terminalPosition, mode);
-                    }
+                    // If shift is pressed and there is a selection we extend it using the selection mode
+                    // (expand the "end"selection point)
+                    _terminal->SetSelectionEnd(terminalPosition, mode);
+                    _selectionNeedsToBeCopied = true;
+                }
+                else if (mode != ::Terminal::SelectionExpansionMode::Cell || shiftEnabled)
+                {
+                    // If we are handling a double / triple-click or shift+single click
+                    // we establish selection using the selected mode
+                    // (expand both "start" and "end" selection points)
+                    _terminal->MultiClickSelection(terminalPosition, mode);
                     _selectionNeedsToBeCopied = true;
                 }
 
