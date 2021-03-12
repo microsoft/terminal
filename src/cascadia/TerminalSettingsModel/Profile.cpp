@@ -76,6 +76,10 @@ Profile::Profile(guid guid) :
 winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
 {
     auto profile{ winrt::make_self<Profile>() };
+
+    auto sourceDefaultAppearance = winrt::get_self<implementation::AppearanceConfig>(source->_DefaultAppearance);
+    auto copyDefaultAppearance = winrt::get_self<implementation::AppearanceConfig>(profile->_DefaultAppearance);
+
     profile->_Guid = source->_Guid;
     profile->_Name = source->_Name;
     profile->_Source = source->_Source;
@@ -94,26 +98,26 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
     profile->_Padding = source->_Padding;
     profile->_Commandline = source->_Commandline;
     profile->_StartingDirectory = source->_StartingDirectory;
-    //profile->_BackgroundImagePath = source->_BackgroundImagePath;
-    //profile->_BackgroundImageOpacity = source->_BackgroundImageOpacity;
-    //profile->_BackgroundImageStretchMode = source->_BackgroundImageStretchMode;
+    copyDefaultAppearance->_BackgroundImagePath = sourceDefaultAppearance->_BackgroundImagePath;
+    copyDefaultAppearance->_BackgroundImageOpacity = sourceDefaultAppearance->_BackgroundImageOpacity;
+    copyDefaultAppearance->_BackgroundImageStretchMode = sourceDefaultAppearance->_BackgroundImageStretchMode;
     profile->_AntialiasingMode = source->_AntialiasingMode;
     profile->_RetroTerminalEffect = source->_RetroTerminalEffect;
     profile->_ForceFullRepaintRendering = source->_ForceFullRepaintRendering;
     profile->_SoftwareRendering = source->_SoftwareRendering;
-    //profile->_ColorSchemeName = source->_ColorSchemeName;
-    //profile->_Foreground = source->_Foreground;
-    //profile->_Background = source->_Background;
-    //profile->_SelectionBackground = source->_SelectionBackground;
-    //profile->_CursorColor = source->_CursorColor;
+    copyDefaultAppearance->_ColorSchemeName = sourceDefaultAppearance->_ColorSchemeName;
+    copyDefaultAppearance->_Foreground = sourceDefaultAppearance->_Foreground;
+    copyDefaultAppearance->_Background = sourceDefaultAppearance->_Background;
+    copyDefaultAppearance->_SelectionBackground = sourceDefaultAppearance->_SelectionBackground;
+    copyDefaultAppearance->_CursorColor = sourceDefaultAppearance->_CursorColor;
     profile->_HistorySize = source->_HistorySize;
     profile->_SnapOnInput = source->_SnapOnInput;
     profile->_AltGrAliasing = source->_AltGrAliasing;
-    //profile->_CursorShape = source->_CursorShape;
-    //profile->_CursorHeight = source->_CursorHeight;
+    copyDefaultAppearance->_CursorShape = sourceDefaultAppearance->_CursorShape;
+    copyDefaultAppearance->_CursorHeight = sourceDefaultAppearance->_CursorHeight;
     profile->_BellStyle = source->_BellStyle;
     profile->_PixelShaderPath = source->_PixelShaderPath;
-    //profile->_BackgroundImageAlignment = source->_BackgroundImageAlignment;
+    copyDefaultAppearance->_BackgroundImageAlignment = sourceDefaultAppearance->_BackgroundImageAlignment;
     profile->_ConnectionType = source->_ConnectionType;
     profile->_Origin = source->_Origin;
 
@@ -306,8 +310,7 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
 // <none>
 void Profile::LayerJson(const Json::Value& json)
 {
-    auto defaultAppearance{ _DefaultAppearance ? _DefaultAppearance.value() : AppearanceConfig() };
-    auto defaultAppearanceImpl = winrt::get_self<implementation::AppearanceConfig>(defaultAppearance);
+    auto defaultAppearanceImpl = winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance);
 
     // Profile-specific Settings
     JsonUtils::GetValueForKey(json, NameKey, _Name);
@@ -361,15 +364,18 @@ void Profile::LayerJson(const Json::Value& json)
 
     if (json.isMember(JsonKey(UnfocusedAppearanceKey)))
     {
-        // If an unfocused appearance is defined in this profile, any undefined parameters are
-        // taken from this profile itself, so add this profile as a parent
         auto unfocusedAppearance{ winrt::make_self<implementation::AppearanceConfig>() };
-        //unfocusedAppearance->InsertParent(winrt::com_ptr<Profile>(get_strong()));
+
+        // If an unfocused appearance is defined in this profile, any undefined parameters are
+        // taken from this profile's default appearance, so add it as a parent
+        com_ptr<AppearanceConfig> parentCom;
+        parentCom.copy_from(defaultAppearanceImpl);
+        unfocusedAppearance->InsertParent(parentCom);
+
         unfocusedAppearance->LayerJson(json[JsonKey(UnfocusedAppearanceKey)]);
         _UnfocusedAppearance = *unfocusedAppearance;
     }
     JsonUtils::GetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
-    _DefaultAppearance = defaultAppearance;
 }
 
 // Method Description:
@@ -381,7 +387,7 @@ void Profile::LayerJson(const Json::Value& json)
 // - This profile's expanded background image path / desktops's wallpaper path /the empty string.
 winrt::hstring Profile::ExpandedBackgroundImagePath() const
 {
-    const auto path{ _DefaultAppearance->BackgroundImagePath() };
+    const auto path{ _DefaultAppearance.BackgroundImagePath() };
     if (path.empty())
     {
         return path;
@@ -417,6 +423,11 @@ winrt::hstring Profile::EvaluatedStartingDirectory() const
     }
     // treated as "inherit directory from parent process"
     return path;
+}
+
+winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig Profile::DefaultAppearance()
+{
+    return _DefaultAppearance;
 }
 
 // Method Description:
@@ -511,11 +522,10 @@ winrt::guid Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
 // - <none>
 // Return Value:
 // - the JsonObject representing this instance
-Json::Value Profile::ToJson()
+Json::Value Profile::ToJson() const
 {
     Json::Value json{ Json::ValueType::objectValue };
-    auto defaultAppearance{ _DefaultAppearance ? _DefaultAppearance.value() : AppearanceConfig() };
-    auto defaultAppearanceImpl = winrt::get_self<implementation::AppearanceConfig>(defaultAppearance);
+    auto defaultAppearanceImpl = winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance);
 
     // Profile-specific Settings
     JsonUtils::SetValueForKey(json, NameKey, _Name);
@@ -570,6 +580,5 @@ Json::Value Profile::ToJson()
         json[JsonKey(UnfocusedAppearanceKey)] = winrt::get_self<AppearanceConfig>(_UnfocusedAppearance.value())->ToJson();
     }
 
-    _DefaultAppearance = *defaultAppearanceImpl;
     return json;
 }

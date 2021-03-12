@@ -29,7 +29,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
     public:
         AppearanceConfig();
-
         static winrt::com_ptr<AppearanceConfig> CopyAppearance(const winrt::com_ptr<AppearanceConfig> source);
         Json::Value ToJson() const;
 
