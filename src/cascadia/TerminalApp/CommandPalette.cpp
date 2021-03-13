@@ -1070,25 +1070,46 @@ namespace winrt::TerminalApp::implementation
         _switchToMode(CommandPaletteMode::TabSearchMode);
     }
 
-    void CommandPalette::_choosingItemContainer(Windows::UI::Xaml::Controls::ListViewBase const& /*sender*/, Windows::UI::Xaml::Controls::ChoosingItemContainerEventArgs const& args)
+    // Method Description:
+    // - This event is triggered when filteredActionView is looking for item container (ListViewItem)
+    // to use to present the filtered actions.
+    // GH#9288: unfortunately the default lookup seems to choose items with wrong data templates,
+    // e.g., using DataTemplate rendering actions for tab palette items.
+    // We handle this event by manually selecting an item from the cache.
+    // If no item is found we allocate a new one.
+    // Arguments:
+    // - args: the ChoosingItemContainerEventArgs allowing to get container candidate suggested by the
+    // system and replace it with another candidate if required.
+    // Return Value:
+    // - <none>
+    void CommandPalette::_choosingItemContainer(
+        Windows::UI::Xaml::Controls::ListViewBase const& /*sender*/,
+        Windows::UI::Xaml::Controls::ChoosingItemContainerEventArgs const& args)
     {
         const auto dataTemplate = _itemTemplateSelector.SelectTemplate(args.Item());
         const auto itemContainer = args.ItemContainer();
         if (itemContainer && itemContainer.ContentTemplate() == dataTemplate)
         {
-            _listViewItems[dataTemplate].erase(itemContainer);
+            // If the suggested candidate is OK simply remove it from the cache
+            // (so we won't allocate it until it is released) and return
+            _listViewItemsCache[dataTemplate].erase(itemContainer);
         }
         else
         {
-            auto& containersByTemplate = _listViewItems[dataTemplate];
+            // We need another candidate, let's look it up inside the cache
+            auto& containersByTemplate = _listViewItemsCache[dataTemplate];
             if (!containersByTemplate.empty())
             {
+                // There cache contains available items for required DataTemplate
+                // Let's return one of them (and remove it from the cache)
                 auto firstItem = containersByTemplate.begin();
                 args.ItemContainer(*firstItem);
                 containersByTemplate.erase(firstItem);
             }
             else
             {
+                // We were not able to find an available container in the cache,
+                // let's return a new item
                 Windows::UI::Xaml::Controls::ListViewItem listViewItem;
 
                 // This HorizontalContentAlignment = "Stretch" is important to make sure it takes the entire width of the line
@@ -1100,11 +1121,21 @@ namespace winrt::TerminalApp::implementation
         args.IsContainerPrepared(true);
     }
 
-    void CommandPalette::_containerContentChanging(Windows::UI::Xaml::Controls::ListViewBase const& /*sender*/, Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs const& args)
+    // Method Description:
+    // - This event is triggered when the data item associate with filteredActionView list item is changing.
+    //   We check if the item is being recycled. In this case we return it to the cache
+    // Arguments:
+    // - args: the ContainerContentChangingEventArgs describing the container change
+    // Return Value:
+    // - <none>
+    void CommandPalette::_containerContentChanging(
+        Windows::UI::Xaml::Controls::ListViewBase const& /*sender*/,
+        Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs const& args)
     {
-        if (args.InRecycleQueue())
+        const auto itemContainer = args.ItemContainer();
+        if (args.InRecycleQueue() && itemContainer && itemContainer.ContentTemplate())
         {
-            _listViewItems[args.ItemContainer().ContentTemplate()].insert(args.ItemContainer());
+            _listViewItemsCache[itemContainer.ContentTemplate()].insert(itemContainer);
         }
     }
 }
