@@ -26,6 +26,8 @@ namespace winrt::TerminalApp::implementation
     {
         InitializeComponent();
 
+        _itemTemplateSelector = Resources().Lookup(winrt::box_value(L"PaletteItemTemplateSelector")).try_as<PaletteItemTemplateSelector>();
+
         _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::FilteredCommand>();
         _nestedActionStack = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
         _currentNestedCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
@@ -1066,5 +1068,43 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::EnableTabSearchMode()
     {
         _switchToMode(CommandPaletteMode::TabSearchMode);
+    }
+
+    void CommandPalette::_choosingItemContainer(Windows::UI::Xaml::Controls::ListViewBase const& /*sender*/, Windows::UI::Xaml::Controls::ChoosingItemContainerEventArgs const& args)
+    {
+        const auto dataTemplate = _itemTemplateSelector.SelectTemplate(args.Item());
+        const auto itemContainer = args.ItemContainer();
+        if (itemContainer && itemContainer.ContentTemplate() == dataTemplate)
+        {
+            _listViewItems[dataTemplate].erase(itemContainer);
+        }
+        else
+        {
+            auto& containersByTemplate = _listViewItems[dataTemplate];
+            if (!containersByTemplate.empty())
+            {
+                auto firstItem = containersByTemplate.begin();
+                args.ItemContainer(*firstItem);
+                containersByTemplate.erase(firstItem);
+            }
+            else
+            {
+                Windows::UI::Xaml::Controls::ListViewItem listViewItem;
+
+                // This HorizontalContentAlignment = "Stretch" is important to make sure it takes the entire width of the line
+                listViewItem.HorizontalContentAlignment(HorizontalAlignment::Stretch);
+                listViewItem.ContentTemplate(dataTemplate);
+                args.ItemContainer(listViewItem);
+            }
+        }
+        args.IsContainerPrepared(true);
+    }
+
+    void CommandPalette::_containerContentChanging(Windows::UI::Xaml::Controls::ListViewBase const& /*sender*/, Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs const& args)
+    {
+        if (args.InRecycleQueue())
+        {
+            _listViewItems[args.ItemContainer().ContentTemplate()].insert(args.ItemContainer());
+        }
     }
 }
