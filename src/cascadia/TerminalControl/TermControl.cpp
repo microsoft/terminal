@@ -2111,13 +2111,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      actually fail. We need a way to gracefully fallback.
         _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
 
+        const auto actualFontName = _actualFont.GetFaceName();
+        const auto desiredFontName = _desiredFont.GetFaceName();
+
+        auto caseInsensitiveEquality = [](wchar_t a, wchar_t b) { return ::towlower(a) == ::towlower(b); };
+
+        const auto areEqual = std::equal(actualFontName.cbegin(), actualFontName.cend(), desiredFontName.cbegin(), desiredFontName.cend(), caseInsensitiveEquality);
+
         // If the actual font isn't what was requested...
-        if (_actualFont.GetFaceName() != _desiredFont.GetFaceName())
+        if (!areEqual)
         {
             // Then warn the user that we picked something because we couldn't find their font.
 
             // Format message with user's choice of font and the font that was chosen instead.
-            const winrt::hstring message{ fmt::format(std::wstring_view{ RS_(L"NoticeFontNotFound") }, _desiredFont.GetFaceName(), _actualFont.GetFaceName()) };
+            const winrt::hstring message{ fmt::format(std::wstring_view{ RS_(L"NoticeFontNotFound") }, desiredFontName, actualFontName) };
 
             // Capture what we need to resume later.
             [strongThis = get_strong(), message]() -> winrt::fire_and_forget {
