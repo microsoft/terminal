@@ -22,6 +22,11 @@ namespace winrt::TerminalApp::implementation
     // - true if we handled the event was handled, else false.
     bool ShortcutActionDispatch::DoAction(const ActionAndArgs& actionAndArgs)
     {
+        if (!actionAndArgs)
+        {
+            return false;
+        }
+
         const auto& action = actionAndArgs.Action();
         const auto& args = actionAndArgs.Args();
         auto eventArgs = args ? ActionEventArgs{ args } :

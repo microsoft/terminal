@@ -1376,7 +1376,7 @@ namespace SettingsModelLocalTests
                 },
                 {
                     "name": "parent",
-                    "commands": [                        
+                    "commands": [
                         { "command": { "action": "setColorScheme", "colorScheme": "invalidScheme" } }
                     ]
                 }
@@ -1403,11 +1403,11 @@ namespace SettingsModelLocalTests
                 },
                 {
                     "name": "grandparent",
-                    "commands": [                        
+                    "commands": [
                         {
                             "name": "parent",
                             "commands": [
-                                { 
+                                {
                                     "command": { "action": "setColorScheme", "colorScheme": "invalidScheme" }
                                 }
                             ]
@@ -1909,7 +1909,8 @@ namespace SettingsModelLocalTests
             "keybindings": [
                 { "command": { "action": "splitPane", "split":"auto" }, "keys": [ "ctrl+alt+t", "ctrl+a" ] },
                 { "command": { "action": "moveFocus" }, "keys": [ "ctrl+a" ] },
-                { "command": { "action": "resizePane" }, "keys": [ "ctrl+b" ] }
+                { "command": { "action": "resizePane" }, "keys": [ "ctrl+b" ] },
+                { "name": "invalid nested", "commands":[ { "name" : "hello" }, { "name" : "world" } ] }
             ]
         })" };
 
@@ -1918,18 +1919,20 @@ namespace SettingsModelLocalTests
 
         VERIFY_ARE_EQUAL(0u, settings->_globals->_keymap->_keyShortcuts.size());
 
-        VERIFY_ARE_EQUAL(3u, settings->_globals->_keybindingsWarnings.size());
+        VERIFY_ARE_EQUAL(4u, settings->_globals->_keybindingsWarnings.size());
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::TooManyKeysForChord, settings->_globals->_keybindingsWarnings.at(0));
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::MissingRequiredParameter, settings->_globals->_keybindingsWarnings.at(1));
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::MissingRequiredParameter, settings->_globals->_keybindingsWarnings.at(2));
+        VERIFY_ARE_EQUAL(SettingsLoadWarnings::FailedToParseSubCommands, settings->_globals->_keybindingsWarnings.at(3));
 
         settings->_ValidateKeybindings();
 
-        VERIFY_ARE_EQUAL(4u, settings->_warnings.Size());
+        VERIFY_ARE_EQUAL(5u, settings->_warnings.Size());
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::AtLeastOneKeybindingWarning, settings->_warnings.GetAt(0));
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::TooManyKeysForChord, settings->_warnings.GetAt(1));
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.GetAt(2));
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.GetAt(3));
+        VERIFY_ARE_EQUAL(SettingsLoadWarnings::FailedToParseSubCommands, settings->_warnings.GetAt(4));
     }
 
     void DeserializationTests::ValidateExecuteCommandlineWarning()
