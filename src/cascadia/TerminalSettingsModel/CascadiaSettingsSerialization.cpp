@@ -485,21 +485,24 @@ void CascadiaSettings::_LoadFragmentExtensions()
             // So we use another mutex and condition variable
             auto foundFolder = _extractValueFromTaskWithoutMainThreadAwait(ext.GetPublicFolderAsync());
 
-            // the StorageFolder class has its own methods for obtaining the files within the folder
-            // however, all those methods are Async methods
-            // you may have noticed that we need to resort to clunky implementations for async operations
-            // (they are in _extractValueFromTaskWithoutMainThreadAwait)
-            // so for now we will just take the folder path and access the files that way
-            auto path = winrt::to_string(foundFolder.Path());
-            path.append(FragmentsSubDirectory);
-
-            // If the directory exists, use the fragments in it
-            if (std::filesystem::exists(path))
+            if (foundFolder)
             {
-                const auto jsonFiles = _AccumulateJsonFilesInDirectory(til::u8u16(path));
+                // the StorageFolder class has its own methods for obtaining the files within the folder
+                // however, all those methods are Async methods
+                // you may have noticed that we need to resort to clunky implementations for async operations
+                // (they are in _extractValueFromTaskWithoutMainThreadAwait)
+                // so for now we will just take the folder path and access the files that way
+                auto path = winrt::to_string(foundFolder.Path());
+                path.append(FragmentsSubDirectory);
 
-                // Provide the package name as the source
-                _ParseAndLayerFragmentFiles(jsonFiles, ext.Package().Id().FamilyName().c_str());
+                // If the directory exists, use the fragments in it
+                if (std::filesystem::exists(path))
+                {
+                    const auto jsonFiles = _AccumulateJsonFilesInDirectory(til::u8u16(path));
+
+                    // Provide the package name as the source
+                    _ParseAndLayerFragmentFiles(jsonFiles, ext.Package().Id().FamilyName().c_str());
+                }
             }
         }
     }
