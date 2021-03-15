@@ -82,8 +82,10 @@ function Set-MsbuildDevEnvironment
     Import-Module -Global -Name $devshellmodule
 
     Write-Verbose 'Setting up environment variables'
-    Enter-VsDevShell -VsInstanceId $vsinfo.InstanceId -SkipAutomaticLocation `
-        -devCmdArguments "-arch=$arch" > $null
+    Enter-VsDevShell -VsInstallPath $vspath -SkipAutomaticLocation `
+        -devCmdArguments "-arch=$arch" | Out-Null
+        
+    New-Item -Force -path Env:\Platform -Value $arch | Out-Null
 
     Write-Host "Dev environment variables set" -ForegroundColor Green
 }
