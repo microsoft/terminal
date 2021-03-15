@@ -23,7 +23,6 @@ LKG
 mfcribbon
 microsoft
 microsoftonline
-msixbundle
 muxc
 netcore
 osgvsowi
