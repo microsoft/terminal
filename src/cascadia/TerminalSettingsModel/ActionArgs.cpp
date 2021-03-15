@@ -26,6 +26,9 @@
 #include "FindMatchArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
 #include "NewWindowArgs.g.cpp"
+#include "SwithchToAdjacentTabArgs.g.cpp"
+#include "PrevTabArgs.g.cpp"
+#include "NextTabArgs.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -533,5 +536,36 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring{
             fmt::format(L"{}, {}", RS_(L"NewWindowCommandKey"), newTerminalArgsStr)
         };
+    }
+
+    winrt::hstring SwithchToAdjacentTabArgs::GenerateName() const
+    {
+        if (_SwitcherMode && _SwitcherMode.Value() == TabSwitcherMode::MostRecentlyUsed)
+        {
+            return L"most recently used";
+        }
+        return L"in order";
+    }
+
+    winrt::hstring PrevTabArgs::GenerateName() const
+    {
+        const auto swithchToAdjacentTabStr = SwithchToAdjacentTabArgs::GenerateName();
+        if (swithchToAdjacentTabStr.empty())
+        {
+            return RS_(L"PrevTabCommandKey");
+        }
+
+        return winrt::hstring(fmt::format(L"{}, {}", RS_(L"PrevTabCommandKey"), swithchToAdjacentTabStr));
+    }
+
+    winrt::hstring NextTabArgs::GenerateName() const
+    {
+        const auto swithchToAdjacentTabStr = SwithchToAdjacentTabArgs::GenerateName();
+        if (swithchToAdjacentTabStr.empty())
+        {
+            return RS_(L"NextTabCommandKey");
+        }
+
+        return winrt::hstring(fmt::format(L"{}, {}", RS_(L"NextTabCommandKey"), swithchToAdjacentTabStr));
     }
 }

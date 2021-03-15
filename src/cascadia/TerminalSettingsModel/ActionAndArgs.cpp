@@ -151,6 +151,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { ShortcutAction::ToggleCommandPalette, ToggleCommandPaletteArgs::FromJson },
         { ShortcutAction::FindMatch, FindMatchArgs::FromJson },
         { ShortcutAction::NewWindow, NewWindowArgs::FromJson },
+        { ShortcutAction::PrevTab, PrevTabArgs::FromJson },
+        { ShortcutAction::NextTab, NextTabArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };

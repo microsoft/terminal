@@ -77,6 +77,13 @@ namespace Microsoft.Terminal.Settings.Model
         CommandLine
     };
 
+    enum TabSwitcherMode
+    {
+        MostRecentlyUsed,
+        InOrder,
+        Disabled,
+    };
+
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
@@ -225,5 +232,18 @@ namespace Microsoft.Terminal.Settings.Model
     {
         NewWindowArgs(NewTerminalArgs terminalArgs);
         NewTerminalArgs TerminalArgs { get; };
+    };
+
+    unsealed runtimeclass SwithchToAdjacentTabArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
+    };
+
+    [default_interface] runtimeclass PrevTabArgs : SwithchToAdjacentTabArgs
+    {
+    };
+
+    [default_interface] runtimeclass NextTabArgs : SwithchToAdjacentTabArgs
+    {
     };
 }
