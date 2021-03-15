@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2021-02-23
-last updated: 2021-02-24
+last updated: 2021-03-15
 issue id: #653
 ---
 
@@ -13,7 +13,7 @@ Many existing terminals support a feature whereby a user can press a keybinding
 anywhere in the OS, and summon their terminal application. Oftentimes the act of
 summoning this window is accompanied by a "dropdown" animation, where the window
 slides in to view from the top of the screen. This global summon action is often
-referred to as "quake mode", a reference to the videogame Quake who's console
+referred to as "quake mode", a reference to the video game Quake, who's console
 slid in from the top.
 
 This spec addresses both of the following two issues:
@@ -33,7 +33,7 @@ existing terminal emulators support similar functionality:
 
 * **Tilda** allows the user to specify different keys to summon the window on
   different monitors.
-* **Guake** alternatively allows the user to either sumon the terminal window to
+* **Guake** alternatively allows the user to either summon the terminal window to
   a specific monitor, or whichever monitor the mouse is on. Guake only allows
   one single instance, so pressing the global hotkey always summons the same
   instance.
@@ -65,6 +65,7 @@ To implement this feature, we'll add the following settings:
 * a new action, named `globalSummon`.
 * a new global, app setting named `minimizeToTray`
 * a new global, app setting named `alwaysShowTrayIcon`
+* a new action, named `quakeMode`, and a specially named `_quake` window.
 
 ### `globalSummon` Action
 
@@ -94,91 +95,24 @@ the new Monarch will re-register for the hotkeys.
 
 Since users may want to bind multiple keys to summon different windows, we'll
 need to allow the user to specify multiple keybindings simultaneously, each with
-their own set of args. The following are three proposals for different ways for
-allowing users to specify multiple global hotkeys:
-
-##### Proposal 1A
+their own set of args.
 
 We stick all the `globalSummon`s in the actions array, like they're any other
 keybinding.
 
 However, these are not keys that are handled by the TerminalApp layer itself.
-These are keys that need to be registered with the OS. So they don't make sense
-to put in the normal `KeyMap`. We'll need to parse them not into the `KeyMap`,
-but into a global summon list that the window layer can get at easier.
+These are keys that need to be registered with the OS. So while they will be in
+the normal `KeyMap`, they will need to be retrieved from that object and
+manually passed to the window layer.
 
-**Pros**:
-* We re-use the existing _action_ arg parsing entirely.
-* These actions would show up as commands for the command palette.
-  - I don't know if that's desirable. Would we want them to? They'd need to
-    raise events into the window layer, for the window to dispatch them.
-  - If it is desirable, then these actions could also be added to the context
-    menu, the new tab dropdown, anywhere we plan on placing actions.
-
-**Cons**:
-* We'll need to modify the keybinding parsing to place globalSummon actions into
-  a totally different object
-* Not sure that having these available in the command palette really makes sense
-
-##### Proposal 1B
-
-If we're going to need another data structure (separate from the `KeyMap`), then
-why have the `globalSummon` actions in `actions` at all? Instead, we could add a
-top-level `globalHotkeys` array, with only global summon actions in it.
-
-```json
-{
-    "globalHotkeys": [
-        { "keys": "win+1", "command": { "action": "globalSummon", "monitor": 1 } },
-        { "keys": "win+2", "command": { "action": "globalSummon", "monitor": 2, "desktop": "toCurrent" } }
-    ]
-}
-```
-
-**Pros**:
-* We re-use the existing _action_ arg parsing entirely.
-* Don't need to modify (complicate) the current keybinding parsing.
-* Clearly separates these actions from the bulk of other actions
-
-**Cons**:
-* Is fairly verbose to add to the settings. `"command": { "action":
-  "globalSummon"` is present in _all_ of the actions, but doesn't add value.
-* Difficult, but not impossible, to get these actions into other places in the
-  UI that we want actions (unsure if this is even wanted)
-
-##### Proposal 1C
-
-The previous proposal is qute verbose. We've already got these actions in their
-own setting. We could instead add a top-level `globalHotkeys` array, but with a
-less verbose syntax. Everything in here is a global summon action, no need to
-repeat ourselves:
-
-```json
-{
-    "globalHotkeys": [
-        { "keys": "win+1", "monitor": 1 },
-        { "keys": "win+2", "monitor": 2, "desktop": "toCurrent" }
-    ]
-}
-```
-
-**Pros**:
-* Is the least verbose way of adding these actions.
-* Don't need to modify (complicate) the current keybinding parsing.
-* Clearly separates these actions from the bulk of other actions.
-
-**Cons**:
-* We're going to need a new _action_ parser just for global hotkeys like this.
-  One that always tries the action as a `globalSummon` action.
-* **H**ard to get these actions into other places in the UI that we want actions
-  (unsure if this is even wanted)
-
-##### Conclusion
-
-From an engineering standpoint, I like 1C the best. It doesn't complicate the
-existing keybinding parsing. The cost of modifying the existing action arg
-parsing just for `globalSummon` actions shouldn't be too high. It's also the
-most ergonomic for users to add this fairly complex setting.
+> A previous iteration of this spec considered placing the `globalSummon`
+> actions in their own top-level array of the settings file, separate from the
+> keybindings. This is no longer being considered, because it would not work for
+> the case where the user has something like:
+> ```json
+> { "keys": "ctrl+c", "command": { "action": "globalSummon", "monitor": 1 } },
+> { "keys": "ctrl+v", "command": { "action": "copy" } },
+> ```
 
 #### Which window, and where?
 
@@ -199,27 +133,29 @@ two arguments to the `globalSummon` action:
 
 ```json
 "monitor": "any"|"toCurrent"|"onCurrent"|int,
-"desktop": null|"toCurrent"|"onCurrent"
+"desktop": "any"|"toCurrent"|"onCurrent"
 ```
 
 The way these settings can be combined is in a table below. As an overview:
 
 * `monitor`: This controls the monitor that the window will be summoned from/to
-  - `"any"`/omitted: (_default_) Summon the MRU window, regardless of which
-    monitor it's currently on.
-  - `"toCurrent"`: Summon the MRU window TO the current monitor.
-  - `"onCurrent"`: Summon the MRU window ALREADY ON the current monitor.
+  - `"any"`: Summon the MRU window, regardless of which monitor it's currently
+    on.
+  - `"toCurrent"`/omitted: (_default_): Summon the MRU window **TO** the current
+    monitor.
+  - `"onCurrent"`: Summon the MRU window **ALREADY ON** the current monitor.
   - `int`: Summon the MRU window for the given monitor (as identified by the
     "Identify" displays feature in the OS settings)
 
 * `desktop`: This controls how the terminal should interact with virtual desktops.
-  - `null`/omitted: (_default_) Leave the window on whatever desktop it's
-    already on - we'll switch to that desktop as we activate the window.
-    - **TODO: FOR DISCUSSION**: Should this just be `any` to match the above?
-        Read the rest of the doc and come back.
-  - `"toCurrent"`: Move the window to the current virtual desktop
-  - `"onCurrent"`: Only summon the window if it's already on the current virtual
-    desktop
+  - `"any"`: Leave the window on whatever desktop it's already on - we'll switch
+    to that desktop as we activate the window.
+    - > NOTE: A previous version of this spec had this enum value as `null`.
+      This was changed to `"any"` for parity with the `monitor` property.
+  - `"toCurrent"`/omitted: (_default_): Move the window **to** the current
+    virtual desktop
+  - `"onCurrent"`: Only summon the window if it's **already on** the current
+    virtual desktop
 
 Together, these settings interact in the following ways:
 
@@ -233,7 +169,7 @@ for pure markdown, sorry. -->
 <!-- ----------------------------------------------------------------------- -->
 <tr>
 <th><code>"monitor"</code></th>
-<td><code>null</code><br><strong>Leave where it is</strong></td>
+<td><code>any</code><br><strong>Leave where it is</strong></td>
 <td><code>"toCurrent"</code><br><strong>Move to current desktop</strong></td>
 <td><code>"onCurrent"</code><br><strong>On current desktop only</strong></td>
 </tr>
@@ -379,6 +315,43 @@ As some additional examples:
 { "keys": "win+6", "monitor": "onCurrent", "desktop": "toCurrent" },
 ```
 
+#### Summoning a specific window
+
+What if you want to press a keybinding to always summon a specific, named
+window? This window might not be the most recent terminal window, nor one that
+would be selected by the `monitor` and `desktop` selectors. You could name a
+window "Epona", and press `win+e` to always summon the "Epona" window.
+
+We'll add the following property to address this scenario
+
+* `"window": string|int`
+  - When omitted (_default_): Use monitor and desktop to find the appropriate
+    MRU window to summon.
+  - When provided: Always summon the window who's name or ID matches the given
+    `window` value. If no such window exists, then create a new window with that
+    name/id.
+
+When provided _with_ `monitor` and `desktop`, `window` behaves in the following
+ways:
+* `desktop`
+  - `"any"`: Go to the desktop the given window is already on.
+  - `"toCurrent"`: If the window is on another virtual desktop, then move it to
+    the currently active one.
+  - `"onCurrent"`: If the window is on another virtual desktop, then move it to
+    the currently active one.
+* `monitor`
+  - `"any"`: Leave the window on the monitor it is already on.
+  - `"toCurrent"`: If the window is on another monitor, then move it to the
+    currently active one.
+  - `"onCurrent"`: If the window is on another monitor, then move it to the
+    currently active one.
+  - `<int>`: If the window is on another monitor, then move it to the specified
+    monitor.
+
+> NOTE: You read that right, `onCurrent` and `toCurrent` both do the same thing
+> when `window` is provided. They both already know which window to select, the
+> context of moving to the "current" monitor is all that those parameters add.
+
 #### Other properties
 
 Some users would like the terminal to just appear when the global hotkey is
@@ -388,11 +361,13 @@ like to configure the speed at which that dropdown happens. To support this
 functionality, the `globalSummon` action will support the following property:
 
 * `"dropdownDuration": float`
-  - When omitted, `0`, or a negative number: (_default_) No animation is used
+  - When omitted, `0`, or a negative number: No animation is used
     when summoning the window. The summoned window is focused immediately where
     it is.
   - When a positive number is provided, the terminal will use that value as a
     duration (in seconds) to slide the terminal into position when activated.
+  - The default would be some sensible value. The pane animation is .2s, so
+    `0.2` might be a resonable default here.
 
 We could have alternatively provided a `"dropdownSpeed"` setting, that provided
 a number of pixels per second. In my opinion, that would be harder for users to
@@ -410,8 +385,53 @@ the following property:
 * `"hideWhenVisible": bool`
   - When `true`: (_default_) When this hotkey is pressed, and the terminal
     window is currently active, minimize the window.
+      - When `dropdownDuration` is not `0`, then the window will slide back off
+        the top at the same speed as it would come down.
   - When `false`: When this hotkey is pressed, and the terminal window is
     currently active, do nothing.
+
+### Quake Mode
+
+In addition to just summoning the window from anywhere, some terminals also
+support a special "quake mode" buffer or window. This window is one that closely
+emulates the console from quake:
+* It's docked to the top of the screen
+* It takes the full width of the monitor, and only the bottom can be resized
+* It often doesn't have any other UI elements, like tabs
+
+For fun, we'll also be adding a special `"_quake"` window with the same
+behavior. If the user names a window `_quake`, then it will behave in the
+following special ways:
+
+* On launch, it will ignore the `initialPosition` and
+  `initialRows`/`initialCols` setting, and instead resize to the top half of the
+  monitor.
+* On launch, it will ignore the `launchMode` setting, and always launch in focus
+  mode.
+  - Users can disable focus mode on the `_quake` window if they do want tabs.
+* It will not be resizable from any side except the bottom of the window, nor
+  will it be drag-able.
+* It will not be a valid target for the "most recent window" for window
+  glomming. If it's the only open window, with `"windowingBehavior":
+  "useExisting*"`, then a new window will be created instead.
+  - It _is_ still a valid target for something like `wt -w _quake new-tab`
+
+A window at runtime can be renamed to become the `_quake` window (if no other
+`_quake` window exists). When it does, it will resize to the position of the
+quake window, and enter focus mode.
+
+We'll also be adding a special action `quakeMode`. This action is a special case
+of the `globalSummon` action, to specifically invoke the quake window in the
+current place. It is basically the same thing as the more elaborate:
+
+```json
+{
+    "monitor": "toCurrent",
+    "desktop": "toCurrent",
+    "window": "_quake",
+    "dropdownDuration": 0.5
+},
+```
 
 ### Minimize to Tray
 
@@ -477,13 +497,22 @@ To summarize, we're proposing the following set of settings:
 {
     "minimizeToTray": bool,
     "alwaysShowTrayIcon": bool,
-    "globalHotkeys": [
+    "actions": [
         {
             "keys": KeyChord,
-            "dropdownDuration": float,
-            "hideWhenVisible": bool,
-            "monitor": "any"|"toCurrent"|"onCurrent"|int,
-            "desktop": null|"toCurrent"|"onCurrent"
+            "command": {
+                "action": "globalSummon",
+                "dropdownDuration": float,
+                "hideWhenVisible": bool,
+                "monitor": "any"|"toCurrent"|"onCurrent"|int,
+                "desktop": "any"|"toCurrent"|"onCurrent"
+            }
+        },
+        {
+            "keys": KeyChord,
+            "command": {
+                "action": "quakeMode"
+            }
         }
     ]
 }
@@ -568,14 +597,13 @@ that summons the MRU window, without dropdown. That would be a good place for
 anyone starting to work on this feature. From there, I imagine the following
 work would be needed:
 
-* [ ] Change the `globalHotKey` to a list of `globalHotkeys`. `AppHost` would
-  need to be able to get _all_ of these hotkeys, and register all of them. Each
-  one would need to be assigned a unique ID, so `WM_HOTKEY` can identify which
-  hotkey was pressed.
-    - This could be committed without any other args to the `globalHotkeys`.
-      We'd assume the "default" behavior or summoning the MRU window, where it
-      is, no dropdown, to start with. From there, we'd add the remaining
-      properties:
+* [ ] Add a `globalSummon` action. `AppHost` would need to be able to get _all_
+  of these actions, and register all of them. Each one would need to be assigned
+  a unique ID, so `WM_HOTKEY` can identify which hotkey was pressed.
+    - This could be committed without any other args to the `globalHotkeys`. in
+      this initial version, the behavior would be summoning the MRU window,
+      where it is, no dropdown, to start with. From there, we'd add the
+      remaining properties:
     * [ ] Add support for the `hideWhenVisible` property
     * [ ] Add support for the `desktop` property to control how window summoning
       interacts with virtual desktops
@@ -584,6 +612,12 @@ work would be needed:
 * [ ] Add the `minimizeToTray` setting, and implement it without any sort of flyout
     * [ ] Add a list of windows to the right-click flyout on the tray icon
     * [ ] Add support for the `alwaysShowTrayIcon` setting
+* [ ] When the user creates a window named `_quake`, ignore the initial size,
+  position, and launch mode, and create the window in quake mode instead.
+    * [ ] Exempt the `_quake` window from window glomming
+    * [ ] Add the `quakeMode` action, which `globalSummon`'s the `_quake` window.
+    * [ ] Prevent the `_quake` window from being dragged or resized on the
+      top/left/right.
 
 
 ### Future Considerations
@@ -591,16 +625,14 @@ work would be needed:
 I don't believe there are any other tracked requests that are planned that
 aren't already included in this spec.
 
-* While writing this spec, I wondered if anyone would want something like
-  `"window": "name" int` as an arg to the `globalSummon` action. This would let
-  the user say "I always want to summon the window named `name` / the window
-  with the given ID". If that window doesn't exist, make one. It's an
-  interesting idea, and would override the MRU selection based on current
-  desktop/monitor. This hasn't been explicitly requested, so I'm not diving into
-  it too deeply.
 * Should the tray icon's list of windows include window titles? Both the name
   and title? Maybe something like `({name}|{id}): {title}`? I'd bet that most
   people don't end up naming their windows.
+* Dropdown duration could be a `float|bool`, with `true`->(whatever the default
+  is), `false`->0.
+  - We could have the setting appear as a pair of radio buttons, with the first
+    disabling dropdown, and the second enabling a text box for inputting an
+    animation duration.
 
 ## Resources
 
@@ -609,12 +641,12 @@ Docs on adding a system tray item:
 * https://www.codeproject.com/Articles/18783/Example-of-a-SysTray-App-in-Win32
 
 Docs regarding hiding a window from the taskbar:
-* https://docs.microsoft.com/en-us/previous-versions//bb776822(v=vs.85)?redirectedfrom=MSDN#managing-taskbar-buttons
+* https://docs.microsoft.com/en-us/previous-versions//bb776822(v=vs.85)#managing-taskbar-buttons
 
 ### Footnotes
 
 <a name="footnote-1"><a>[1]: Quitting the terminal is different than closing the
-windows one-by-one. Quiiting implies an atomic action, for closing all the
+windows one-by-one. Quiting implies an atomic action, for closing all the
 windows. Once [#766] lands, this will give us a chance to persist the state of
 _all_ open windows. This will allow us to re-open with all the user's windows,
 not just the one that happened to be closed last.
