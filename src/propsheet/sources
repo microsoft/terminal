@@ -84,6 +84,8 @@ TARGETLIBS = \
     $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\onecore_internal.lib \
     $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\onecoreuap_internal.lib \
     $(ONECOREUAP_INTERNAL_SDK_LIB_PATH)\onecoreuapuuid.lib \
+    $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-dwmapi-ext-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-edputil-policy-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-dc-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-dc-create-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-draw-l1.lib \
@@ -100,9 +102,38 @@ TARGETLIBS = \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-syscolors-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-sysparams-l1.lib\
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-shell-shell32-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-uxtheme-themes-l1.lib \
     $(ONECOREBASE_INTERNAL_LIB_VPATH_L)\ext-ms-win-appmodel-shellexecute-l1.lib \
     $(ONECOREWINDOWS_INTERNAL_LIB_PATH_L)\ext-ms-win-gdi-internal-desktop-l1-1-1.lib \
+    $(WINCORE_OBJ_PATH)\console\conint\$(O)\conint.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\propslib\$(O)\conprops.lib \
+
+DELAYLOAD = \
+    ext-ms-win-dwmapi-ext-l1.dll; \
+    ext-ms-win-edputil-policy-l1.dll; \
+    ext-ms-win-uxtheme-themes-l1.dll; \
+    ext-ms-win-shell32-shellfolders-l1.dll; \
+    ext-ms-win-gdi-dc-l1.dll; \
+    ext-ms-win-gdi-dc-create-l1.dll; \
+    ext-ms-win-gdi-draw-l1.dll; \
+    ext-ms-win-gdi-font-l1.dll; \
+    ext-ms-win-ntuser-dialogbox-l1.dll; \
+    ext-ms-win-ntuser-draw-l1.dll; \
+    ext-ms-win-ntuser-keyboard-l1.dll; \
+    ext-ms-win-ntuser-gui-l1.dll; \
+    ext-ms-win-ntuser-misc-l1.dll; \
+    ext-ms-win-ntuser-window-l1.dll; \
+    ext-ms-win-rtcore-gdi-object-l1.dll; \
+    ext-ms-win-rtcore-ntuser-cursor-l1.dll; \
+    ext-ms-win-rtcore-ntuser-dc-access-l1.dll; \
+    ext-ms-win-rtcore-ntuser-syscolors-l1.dll; \
+    ext-ms-win-rtcore-ntuser-sysparams-l1.dll; \
+    ext-ms-win-shell-shell32-l1.dll; \
+    ext-ms-win-appmodel-shellexecute-l1.dll; \
+    ext-ms-win-gdi-internal-desktop-l1.dll; \
+
+
+DLOAD_ERROR_HANDLER = kernelbase
 
 # -------------------------------------
 # Side-by-side Manifesting
