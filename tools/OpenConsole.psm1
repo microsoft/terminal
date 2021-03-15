@@ -77,16 +77,13 @@ function Set-MsbuildDevEnvironment
         default { throw "Unknown architecture: $switch" }
     }
 
-    $vcvarsall = "$vspath\VC\Auxiliary\Build\vcvarsall.bat"
+    $devshellmodule = "$vspath\Common7\Tools\Microsoft.VisualStudio.DevShell.dll"
+
+    Import-Module -Global -Name $devshellmodule
 
     Write-Verbose 'Setting up environment variables'
-    cmd /c ("`"$vcvarsall`" $arch & set") | ForEach-Object {
-        if ($_ -match '=')
-        {
-            $s = $_.Split("=");
-            Set-Item -force -path "env:\$($s[0])" -value "$($s[1])"
-        }
-    }
+    Enter-VsDevShell -VsInstanceId $vsinfo.InstanceId -SkipAutomaticLocation `
+        -devCmdArguments "-arch=$arch" > $null
 
     Write-Host "Dev environment variables set" -ForegroundColor Green
 }
