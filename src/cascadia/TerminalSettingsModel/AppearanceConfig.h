@@ -35,19 +35,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void LayerJson(const Json::Value& json);
         winrt::hstring ExpandedBackgroundImagePath();
 
-        GETSET_SETTING(Model::IAppearanceConfig, ConvergedAlignment, BackgroundImageAlignment, ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center);
+        INHERITABLE_SETTING(Model::IAppearanceConfig, ConvergedAlignment, BackgroundImageAlignment, ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center);
 
-        GETSET_SETTING(Model::IAppearanceConfig, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
-        GETSET_SETTING(Model::IAppearanceConfig, hstring, ColorSchemeName, L"Campbell");
-        GETSET_NULLABLE_SETTING(Model::IAppearanceConfig, Windows::UI::Color, Foreground, nullptr);
-        GETSET_NULLABLE_SETTING(Model::IAppearanceConfig, Windows::UI::Color, Background, nullptr);
-        GETSET_NULLABLE_SETTING(Model::IAppearanceConfig, Windows::UI::Color, SelectionBackground, nullptr);
-        GETSET_NULLABLE_SETTING(Model::IAppearanceConfig, Windows::UI::Color, CursorColor, nullptr);
-        GETSET_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle::Bar);
-        GETSET_SETTING(Model::IAppearanceConfig, hstring, BackgroundImagePath);
+        INHERITABLE_SETTING(Model::IAppearanceConfig, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
+        INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, ColorSchemeName, L"Campbell");
+        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Windows::UI::Color, Foreground, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Windows::UI::Color, Background, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Windows::UI::Color, SelectionBackground, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Windows::UI::Color, CursorColor, nullptr);
+        INHERITABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle::Bar);
+        INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, BackgroundImagePath);
 
-        GETSET_SETTING(Model::IAppearanceConfig, double, BackgroundImageOpacity, 1.0);
-        GETSET_SETTING(Model::IAppearanceConfig, Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::UniformToFill);
+        INHERITABLE_SETTING(Model::IAppearanceConfig, double, BackgroundImageOpacity, 1.0);
+        INHERITABLE_SETTING(Model::IAppearanceConfig, Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::UniformToFill);
 
     private:
         friend struct implementation::Profile;

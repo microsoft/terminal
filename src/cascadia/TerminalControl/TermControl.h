@@ -192,7 +192,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TYPED_EVENT(FocusFollowMouseRequested, IInspectable, IInspectable);
         // clang-format on
 
-        GETSET_PROPERTY(IControlAppearance, UnfocusedAppearance);
+        WINRT_PROPERTY(IControlAppearance, UnfocusedAppearance);
 
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
@@ -264,6 +264,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         unsigned int _multiClickCounter;
         Timestamp _lastMouseClickTimestamp;
         std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPos;
+        std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPosNoSelection;
         std::optional<winrt::Windows::Foundation::Point> _singleClickTouchdownPos;
         // This field tracks whether the selection has changed meaningfully
         // since it was last copied. It's generally used to prevent copyOnSelect

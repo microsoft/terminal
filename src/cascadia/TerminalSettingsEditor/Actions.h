@@ -20,7 +20,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _OpenJsonHandlers(nullptr, target);
         }
 
-        GETSET_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
+        WINRT_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
         TYPED_EVENT(OpenJson, Windows::Foundation::IInspectable, Model::SettingsTarget);
     };
 
@@ -33,7 +33,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Model::Command> FilteredActions();
 
-        GETSET_PROPERTY(Editor::ActionsPageNavigationState, State, nullptr);
+        WINRT_PROPERTY(Editor::ActionsPageNavigationState, State, nullptr);
 
     private:
         friend struct ActionsT<Actions>; // for Xaml to bind events
