@@ -353,7 +353,12 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
     const wchar_t* lpString = pwchRealUnicode;
 
-    const COORD coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
+    COORD coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
+    // In VT mode, the width at which we wrap is determined by the line rendition attribute.
+    if (WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    {
+        coordScreenBufferSize.X = textBuffer.GetLineWidth(CursorPosition.Y);
+    }
 
     while (*pcb < BufferSize)
     {
@@ -371,6 +376,11 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 Status = AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
 
                 CursorPosition = cursor.GetPosition();
+                // In VT mode, we need to recalculate the width when moving to a new line.
+                if (WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+                {
+                    coordScreenBufferSize.X = textBuffer.GetLineWidth(CursorPosition.Y);
+                }
             }
         }
 

@@ -30,10 +30,13 @@ GdiEngine::GdiEngine() :
     _lastFg(INVALID_COLOR),
     _lastBg(INVALID_COLOR),
     _lastFontItalic(false),
+    _currentLineTransform(IDENTITY_XFORM),
+    _currentLineRendition(LineRendition::SingleWidth),
     _fPaintStarted(false),
+    _invalidCharacters{},
     _hfont(nullptr),
     _hfontItalic(nullptr),
-    _pool{}, // It's important the pool is first so it can be given to the others on construction.
+    _pool{ til::pmr::get_default_resource() }, // It's important the pool is first so it can be given to the others on construction.
     _polyStrings{ &_pool },
     _polyWidths{ &_pool }
 {
@@ -44,6 +47,9 @@ GdiEngine::GdiEngine() :
 
     _hdcMemoryContext = CreateCompatibleDC(nullptr);
     THROW_HR_IF_NULL(E_FAIL, _hdcMemoryContext);
+
+    // We need the advanced graphics mode in order to set a transform.
+    SetGraphicsMode(_hdcMemoryContext, GM_ADVANCED);
 
     // On session zero, text GDI APIs might not be ready.
     // Calling GetTextFace causes a wait that will be
@@ -122,6 +128,9 @@ GdiEngine::~GdiEngine()
     HDC const hdcNewMemoryContext = CreateCompatibleDC(hdcRealWindow);
     RETURN_HR_IF_NULL(E_FAIL, hdcNewMemoryContext);
 
+    // We need the advanced graphics mode in order to set a transform.
+    SetGraphicsMode(hdcNewMemoryContext, GM_ADVANCED);
+
     // If we had an existing memory context stored, release it before proceeding.
     if (nullptr != _hdcMemoryContext)
     {
@@ -181,6 +190,77 @@ GdiEngine::~GdiEngine()
         RETURN_LAST_ERROR_IF(0 != GetLastError());
     }
 
+    return S_OK;
+}
+
+// Routine Description
+// - Resets the world transform to the identity matrix.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if successful. S_FALSE if already reset. E_FAIL if there was an error.
+[[nodiscard]] HRESULT GdiEngine::ResetLineTransform() noexcept
+{
+    // Return early if the current transform is already the identity matrix.
+    RETURN_HR_IF(S_FALSE, _currentLineTransform == IDENTITY_XFORM);
+    // Flush any buffer lines which would be expecting to use the current transform.
+    LOG_IF_FAILED(_FlushBufferLines());
+    // Reset the active transform to the identity matrix.
+    RETURN_HR_IF(E_FAIL, !ModifyWorldTransform(_hdcMemoryContext, nullptr, MWT_IDENTITY));
+    // Reset the current state.
+    _currentLineTransform = IDENTITY_XFORM;
+    _currentLineRendition = LineRendition::SingleWidth;
+    return S_OK;
+}
+
+// Routine Description
+// - Applies an appropriate transform for the given line rendition and viewport offset.
+// Arguments:
+// - lineRendition - The line rendition specifying the scaling of the line.
+// - targetRow - The row on which the line is expected to be rendered.
+// - viewportLeft - The left offset of the current viewport.
+// Return Value:
+// - S_OK if successful. S_FALSE if already set. E_FAIL if there was an error.
+[[nodiscard]] HRESULT GdiEngine::PrepareLineTransform(const LineRendition lineRendition,
+                                                      const size_t targetRow,
+                                                      const size_t viewportLeft) noexcept
+{
+    XFORM lineTransform = {};
+    // The X delta is to account for the horizontal viewport offset.
+    lineTransform.eDx = viewportLeft ? -1.0f * viewportLeft * _GetFontSize().X : 0.0f;
+    switch (lineRendition)
+    {
+    case LineRendition::SingleWidth:
+        lineTransform.eM11 = 1; // single width
+        lineTransform.eM22 = 1; // single height
+        break;
+    case LineRendition::DoubleWidth:
+        lineTransform.eM11 = 2; // double width
+        lineTransform.eM22 = 1; // single height
+        break;
+    case LineRendition::DoubleHeightTop:
+        lineTransform.eM11 = 2; // double width
+        lineTransform.eM22 = 2; // double height
+        // The Y delta is to negate the offset caused by the scaled height.
+        lineTransform.eDy = -1.0f * targetRow * _GetFontSize().Y;
+        break;
+    case LineRendition::DoubleHeightBottom:
+        lineTransform.eM11 = 2; // double width
+        lineTransform.eM22 = 2; // double height
+        // The Y delta is to negate the offset caused by the scaled height.
+        // An extra row is added because we need the bottom half of the line.
+        lineTransform.eDy = -1.0f * (targetRow + 1) * _GetFontSize().Y;
+        break;
+    }
+    // Return early if the new matrix is the same as the current transform.
+    RETURN_HR_IF(S_FALSE, _currentLineRendition == lineRendition && _currentLineTransform == lineTransform);
+    // Flush any buffer lines which would be expecting to use the current transform.
+    LOG_IF_FAILED(_FlushBufferLines());
+    // Set the active transform with the new matrix.
+    RETURN_HR_IF(E_FAIL, !SetWorldTransform(_hdcMemoryContext, &lineTransform));
+    // Save the current state.
+    _currentLineTransform = lineTransform;
+    _currentLineRendition = lineRendition;
     return S_OK;
 }
 
@@ -392,7 +472,7 @@ GdiEngine::~GdiEngine()
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // -  S_OK if PostMessageW succeeded, otherwise E_FAIL
-[[nodiscard]] HRESULT GdiEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/) noexcept
+[[nodiscard]] HRESULT GdiEngine::_DoUpdateTitle(_In_ const std::wstring_view /*newTitle*/) noexcept
 {
     // the CM_UPDATE_TITLE handler in windowproc will query the updated title.
     return PostMessageW(_hwndTargetWindow, CM_UPDATE_TITLE, 0, (LPARAM) nullptr) ? S_OK : E_FAIL;

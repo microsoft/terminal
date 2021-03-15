@@ -211,6 +211,9 @@
   <data name="RenameTabText" xml:space="preserve">
     <value>Rename Tab</value>
   </data>
+  <data name="DuplicateTabText" xml:space="preserve">
+    <value>Duplicate Tab</value>
+  </data>
   <data name="InvalidBackgroundImage" xml:space="preserve">
     <value>Found a profile with an invalid "backgroundImage". Defaulting that profile to have no background image. Make sure that when setting a "backgroundImage", the value is a valid file path to an image.</value>
     <comment>{Locked="\"backgroundImage\""}</comment>
@@ -313,6 +316,10 @@
   <data name="CmdTabColorArgDesc" xml:space="preserve">
     <value>Open the tab with the specified color, in #rrggbb format</value>
   </data>
+  <data name="CmdSuppressApplicationTitleDesc" xml:space="preserve">
+    <value>Open the tab with tabTitle overriding default title and suppressing title change messages from the application</value>
+    <comment>{Locked="\"tabTitle\""}</comment>
+  </data>
   <data name="CmdVersionDesc" xml:space="preserve">
     <value>Display the application version</value>
   </data>
@@ -335,6 +342,9 @@
   <data name="CmdFocusDesc" xml:space="preserve">
     <value>Launch the window in focus mode</value>
   </data>
+  <data name="CmdWindowTargetArgDesc" xml:space="preserve">
+    <value>Specify a terminal window to run the given commandline in. "0" always refers to the current window. </value>
+  </data>
   <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Press the button to open a new terminal tab with your default profile. Open the flyout to select which profile you want to open.</value>
   </data>
@@ -347,6 +357,9 @@
   <data name="NewPaneRun.Text" xml:space="preserve">
     <value>Alt+Click to split the current window</value>
   </data>
+  <data name="NewWindowRun.Text" xml:space="preserve">
+    <value>Shift+Click to open a new window</value>
+  </data>
   <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Close</value>
   </data>
@@ -354,9 +367,6 @@
     <value>Close</value>
   </data>
   <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Maximize</value>
-  </data>
-  <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Maximize</value>
   </data>
   <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -448,7 +458,7 @@
   </data>
   <data name="CommandPalette_ParsedCommandLine" xml:space="preserve">
     <value>Executing command line will invoke the following commands:</value>
-	<comment>Will be followed by a list of strings describing parsed commands</comment>
+    <comment>Will be followed by a list of strings describing parsed commands</comment>
   </data>
   <data name="CommandPalette_FailedParsingCommandLine" xml:space="preserve">
     <value>Failed parsing command line:</value>
@@ -555,5 +565,14 @@
   </data>
   <data name="ClipboardTextHeader.Text" xml:space="preserve">
     <value>Clipboard contents (preview):</value>
+  </data>
+  <data name="CommandPalette_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>More options</value>
+  </data>
+  <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
+    <value>Maximize</value>
+  </data>
+  <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
+    <value>Restore Down</value>
   </data>
 </root>

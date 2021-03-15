@@ -9,10 +9,12 @@ COLORPROPERTY
 CXICON
 CYICON
 D2DERR_SHADER_COMPILE_FAILED
+dataobject
 DERR
 environstrings
 EXPCMDFLAGS
 EXPCMDSTATE
+FORCEMINIMIZE
 frac
 fullkbd
 futex
@@ -22,6 +24,7 @@ Hashtable
 HIGHCONTRASTON
 HIGHCONTRASTW
 href
+IApp
 IAppearance
 IAsync
 IBind
@@ -36,10 +39,14 @@ IExplorer
 IInheritable
 IMap
 IObject
+IPackage
 IPeasant
 IStorage
+istream
+IStringable
 ITab
 ITaskbar
+IVirtual
 LCID
 llabs
 llu
@@ -53,6 +60,7 @@ NCHITTEST
 NCLBUTTONDBLCLK
 NCRBUTTONDBLCLK
 NOAGGREGATION
+NOASYNC
 NOPROGRESS
 NOREDIRECTIONBITMAP
 ntprivapi
@@ -74,9 +82,11 @@ schandle
 semver
 serializer
 shobjidl
+SHOWMINIMIZED
 SIZENS
 smoothstep
 GETDESKWALLPAPER
+SHELLEXECUTEINFOW
 snprintf
 spsc
 sregex
@@ -90,6 +100,8 @@ TBPF
 THEMECHANGED
 tmp
 tolower
+TTask
+TVal
 tx
 UPDATEINIFILE
 userenv
@@ -99,4 +111,9 @@ wpc
 wsregex
 XDocument
 XElement
+xlocmes
+xlocmon
+xlocnum
+xloctime
 XParse
+xstring

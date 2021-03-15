@@ -82,6 +82,10 @@ public:
     bool EraseCharacters(const size_t /*numChars*/) noexcept override { return false; } // ECH
 
     bool SetGraphicsRendition(const VTParameters /*options*/) noexcept override { return false; } // SGR
+    bool SetLineRendition(const LineRendition /*rendition*/) noexcept override { return false; } // DECSWL, DECDWL, DECDHL
+
+    bool PushGraphicsRendition(const VTParameters /*options*/) noexcept override { return false; } // XTPUSHSGR
+    bool PopGraphicsRendition() noexcept override { return false; } // XTPOPSGR
 
     bool SetMode(const DispatchTypes::ModeParams /*param*/) noexcept override { return false; } // DECSET
 

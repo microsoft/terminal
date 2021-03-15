@@ -18,6 +18,9 @@ public:
 
     bool SetGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) noexcept override;
 
+    bool PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) noexcept override;
+    bool PopGraphicsRendition() noexcept override;
+
     bool CursorPosition(const size_t line,
                         const size_t column) noexcept override; // CUP
 

@@ -97,6 +97,10 @@
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="TerminalTabStatus.h">
+      <DependentUpon>TerminalTabStatus.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="TitlebarControl.h">
       <DependentUpon>TitlebarControl.xaml</DependentUpon>
     </ClInclude>
@@ -119,9 +123,6 @@
     <ClInclude Include="FilteredCommand.h" />
     <ClInclude Include="EmptyStringVisibilityConverter.h">
       <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="HasNestedCommandsVisibilityConverter.h">
-      <DependentUpon>HasNestedCommandsVisibilityConverter.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Pane.h" />
     <ClInclude Include="ColorHelper.h" />
@@ -173,6 +174,10 @@
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="TerminalTabStatus.cpp">
+      <DependentUpon>TerminalTabStatus.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="TitlebarControl.cpp">
       <DependentUpon>TitlebarControl.xaml</DependentUpon>
     </ClCompile>
@@ -195,9 +200,6 @@
     <ClCompile Include="FilteredCommand.cpp" />
     <ClCompile Include="EmptyStringVisibilityConverter.cpp">
       <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="HasNestedCommandsVisibilityConverter.cpp">
-      <DependentUpon>HasNestedCommandsVisibilityConverter.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Pane.cpp" />
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
@@ -255,6 +257,9 @@
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="TerminalTabStatus.idl">
+      <SubType>Designer</SubType>
+    </Midl>
     <Midl Include="TitlebarControl.idl">
       <DependentUpon>TitlebarControl.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -282,7 +287,6 @@
     </Midl>
     <Midl Include="FilteredCommand.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
-    <Midl Include="HasNestedCommandsVisibilityConverter.idl" />
     <Midl Include="TerminalSettings.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->

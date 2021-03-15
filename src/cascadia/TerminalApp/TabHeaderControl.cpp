@@ -65,7 +65,7 @@ namespace winrt::TerminalApp::implementation
             "TabRenamerOpened",
             TraceLoggingDescription("Event emitted when the tab renamer is opened"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     // Method Description:
@@ -93,7 +93,7 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingDescription("Event emitted when the tab renamer is closed"),
             TraceLoggingBoolean(_renameCancelled, "CancelledRename", "True if the user cancelled the rename, false if they committed."),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
         _CloseRenameBox();
         if (!_renameCancelled)
@@ -106,7 +106,11 @@ namespace winrt::TerminalApp::implementation
     // - Hides the rename box and displays the title text block
     void TabHeaderControl::_CloseRenameBox()
     {
-        HeaderRenamerTextBox().Visibility(Windows::UI::Xaml::Visibility::Collapsed);
-        HeaderTextBlock().Visibility(Windows::UI::Xaml::Visibility::Visible);
+        if (HeaderRenamerTextBox().Visibility() == Windows::UI::Xaml::Visibility::Visible)
+        {
+            HeaderRenamerTextBox().Visibility(Windows::UI::Xaml::Visibility::Collapsed);
+            HeaderTextBlock().Visibility(Windows::UI::Xaml::Visibility::Visible);
+            _RenameEndedHandlers(*this, nullptr);
+        }
     }
 }

@@ -104,6 +104,10 @@ namespace winrt::TerminalApp::implementation
             {
                 settings.StartingTabColor(static_cast<uint32_t>(til::color(newTerminalArgs.TabColor().Value())));
             }
+            if (newTerminalArgs.SuppressApplicationTitle())
+            {
+                settings.SuppressApplicationTitle(newTerminalArgs.SuppressApplicationTitle().Value());
+            }
         }
 
         return { profileGuid, settings };
@@ -208,6 +212,7 @@ namespace winrt::TerminalApp::implementation
 
         _WordDelimiters = globalSettings.WordDelimiters();
         _CopyOnSelect = globalSettings.CopyOnSelect();
+        _FocusFollowMouse = globalSettings.FocusFollowMouse();
         _ForceFullRepaintRendering = globalSettings.ForceFullRepaintRendering();
         _SoftwareRendering = globalSettings.SoftwareRendering();
         _ForceVTInput = globalSettings.ForceVTInput();

@@ -30,11 +30,13 @@
 #include <hstring.h>
 
 #include <winrt/Windows.ApplicationModel.h>
+#include <winrt/Windows.ApplicationModel.AppExtensions.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.UI.Xaml.Media.h>
+#include <winrt/Windows.Storage.h>
 
 #include <winrt/Windows.System.h>
 

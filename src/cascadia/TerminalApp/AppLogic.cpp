@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "AppLogic.h"
+#include "../inc/WindowingBehavior.h"
 #include "AppLogic.g.cpp"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
@@ -172,6 +173,9 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Returns the settings currently in use by the entire Terminal application.
+    // - IMPORTANT! This can throw! Make sure to try/catch this, so that the
+    //   LocalTests don't crash (because their Application::Current() won't be a
+    //   AppLogic)
     // Throws:
     // - HR E_INVALIDARG if the app isn't up and running.
     const CascadiaSettings AppLogic::CurrentAppSettings()
@@ -487,11 +491,15 @@ namespace winrt::TerminalApp::implementation
     void AppLogic::_OnLoaded(const IInspectable& /*sender*/,
                              const RoutedEventArgs& /*eventArgs*/)
     {
-        const auto keyboardServiceIsDisabled = !_IsKeyboardServiceEnabled();
-        if (keyboardServiceIsDisabled)
+        if (_settings.GlobalSettings().InputServiceWarning())
         {
-            _root->ShowKeyboardServiceWarning();
+            const auto keyboardServiceIsDisabled = !_IsKeyboardServiceEnabled();
+            if (keyboardServiceIsDisabled)
+            {
+                _root->ShowKeyboardServiceWarning();
+            }
         }
+
         if (FAILED(_settingsLoadedResult))
         {
             const winrt::hstring titleKey = USES_RESOURCE(L"InitialJsonParseErrorTitle");
@@ -658,6 +666,16 @@ namespace winrt::TerminalApp::implementation
             initialPosition.X ? initialPosition.X.Value() : defaultInitialX,
             initialPosition.Y ? initialPosition.Y.Value() : defaultInitialY
         };
+    }
+
+    bool AppLogic::CenterOnLaunch()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+        return _settings.GlobalSettings().CenterOnLaunch();
     }
 
     winrt::Windows::UI::Xaml::ElementTheme AppLogic::GetRequestedTheme()
@@ -1151,17 +1169,111 @@ namespace winrt::TerminalApp::implementation
         return result;
     }
 
-    int32_t AppLogic::ExecuteCommandline(array_view<const winrt::hstring> args)
+    // Method Description:
+    // - Parse the provided commandline arguments into actions, and try to
+    //   perform them immediately.
+    // - This function returns 0, unless a there was a non-zero result from
+    //   trying to parse one of the commands provided. In that case, no commands
+    //   after the failing command will be parsed, and the non-zero code
+    //   returned.
+    // - If a non-empty cwd is provided, the entire terminal exe will switch to
+    //   that CWD while we handle these actions, then return to the original
+    //   CWD.
+    // Arguments:
+    // - args: an array of strings to process as a commandline. These args can contain spaces
+    // - cwd: The directory to use as the CWD while performing these actions.
+    // Return Value:
+    // - the result of the first command who's parsing returned a non-zero code,
+    //   or 0. (see AppLogic::_ParseArgs)
+    int32_t AppLogic::ExecuteCommandline(array_view<const winrt::hstring> args,
+                                         const winrt::hstring& cwd)
     {
         ::TerminalApp::AppCommandlineArgs appArgs;
         auto result = appArgs.ParseArgs(args);
         if (result == 0)
         {
             auto actions = winrt::single_threaded_vector<ActionAndArgs>(std::move(appArgs.GetStartupActions()));
-            _root->ProcessStartupActions(actions, false);
+
+            _root->ProcessStartupActions(actions, false, cwd);
+        }
+        // Return the result of parsing with commandline, though it may or may not be used.
+        return result;
+    }
+
+    // Method Description:
+    // - Parse the given commandline args in an attempt to find the specified
+    //   window. The rest of the args are ignored for now (they'll be handled
+    //   whenever the commandline gets to the window it was intended for).
+    // - Note that this function will only ever be called by the monarch. A
+    //   return value of `0` in this case does not mean "run the commandline in
+    //   _this_ process", rather it means "run the commandline in the current
+    //   process", whoever that may be.
+    // Arguments:
+    // - args: an array of strings to process as a commandline. These args can contain spaces
+    // Return Value:
+    // - 0: We should handle the args "in the current window".
+    // - WindowingBehaviorUseNew: We should handle the args in a new window
+    // - WindowingBehaviorUseExisting: We should handle the args "in
+    //   the current window ON THIS DESKTOP"
+    // - WindowingBehaviorUseAnyExisting: We should handle the args "in the current
+    //   window ON ANY DESKTOP"
+    // - anything else: We should handle the commandline in the window with the given ID.
+    int32_t AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
+    {
+        return AppLogic::_doFindTargetWindow(args, _settings.GlobalSettings().WindowingBehavior());
+    }
+
+    // The main body of this function is a static helper, to facilitate unit-testing
+    int32_t AppLogic::_doFindTargetWindow(array_view<const winrt::hstring> args,
+                                          const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior)
+    {
+        ::TerminalApp::AppCommandlineArgs appArgs;
+        const auto result = appArgs.ParseArgs(args);
+        if (result == 0)
+        {
+            if (!appArgs.GetExitMessage().empty())
+            {
+                return WindowingBehaviorUseNew;
+            }
+
+            const auto parsedTarget = appArgs.GetTargetWindow();
+            if (parsedTarget.has_value())
+            {
+                // parsedTarget might be -1, if the user explicitly requested -1
+                // (or any other negative number) on the commandline. So the set
+                // of possible values here is {-1, 0, ℤ+}
+                return *parsedTarget;
+            }
+            else
+            {
+                // If the user did not provide any value on the commandline,
+                // then lookup our windowing behavior to determine what to do
+                // now.
+                switch (windowingBehavior)
+                {
+                case WindowingMode::UseExisting:
+                    return WindowingBehaviorUseExisting;
+                case WindowingMode::UseAnyExisting:
+                    return WindowingBehaviorUseAnyExisting;
+                case WindowingMode::UseNew:
+                default:
+                    return WindowingBehaviorUseNew;
+                }
+            }
         }
 
-        return result; // TODO:MG does a return value make sense
+        // Any unsuccessful parse will be a new window. That new window will try
+        // to handle the commandline itself, and find that the commandline
+        // failed to parse. When that happens, the new window will display the
+        // message box.
+        //
+        // This will also work for the case where the user specifies an invalid
+        // commandline in conjunction with `-w 0`. This function will determine
+        // that the commandline has a  parse error, and indicate that we should
+        // create a new window. Then, in that new window, we'll try to  set the
+        // StartupActions, which will again fail, returning the correct error
+        // message.
+        return WindowingBehaviorUseNew;
     }
 
     // Method Description:

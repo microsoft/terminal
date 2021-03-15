@@ -1,4 +1,5 @@
 import "Peasant.idl";
+import "Monarch.idl";
 
 
 namespace Microsoft.Terminal.Remoting
@@ -9,5 +10,6 @@ namespace Microsoft.Terminal.Remoting
         void ProposeCommandline(CommandlineArgs args);
         Boolean ShouldCreateWindow { get; };
         IPeasant CurrentWindow();
+        event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
     };
 }

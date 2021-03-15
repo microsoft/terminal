@@ -54,7 +54,7 @@ public:
 
     const bool IsGridLineDrawingAllowed() noexcept override;
 
-    const std::wstring GetConsoleTitle() const noexcept override;
+    const std::wstring_view GetConsoleTitle() const noexcept override;
 
     const std::wstring GetHyperlinkUri(uint16_t id) const noexcept override;
     const std::wstring GetHyperlinkCustomId(uint16_t id) const noexcept override;

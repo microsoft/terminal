@@ -9,8 +9,18 @@ namespace Microsoft.Terminal.Remoting
         CommandlineArgs();
         CommandlineArgs(String[] args, String cwd);
 
-        String[] Args { get; set; };
+        String[] Commandline { get; set; };
         String CurrentDirectory();
+    };
+
+    runtimeclass WindowActivatedArgs
+    {
+        WindowActivatedArgs(UInt64 peasantID, Guid desktopID, Windows.Foundation.DateTime activatedTime);
+        WindowActivatedArgs(UInt64 peasantID, UInt64 hwnd, Guid desktopID, Windows.Foundation.DateTime activatedTime);
+        UInt64 PeasantID { get; };
+        UInt64 Hwnd { get; };
+        Guid DesktopID { get; };
+        Windows.Foundation.DateTime ActivatedTime { get; };
     };
 
     interface IPeasant
@@ -21,7 +31,10 @@ namespace Microsoft.Terminal.Remoting
         UInt64 GetID();
         UInt64 GetPID();
         Boolean ExecuteCommandline(CommandlineArgs args);
-        event Windows.Foundation.TypedEventHandler<Object, Object> WindowActivated;
+        void ActivateWindow(WindowActivatedArgs args);
+        WindowActivatedArgs GetLastActivatedArgs();
+
+        event Windows.Foundation.TypedEventHandler<Object, WindowActivatedArgs> WindowActivated;
         event Windows.Foundation.TypedEventHandler<Object, CommandlineArgs> ExecuteCommandlineRequested;
     };
 

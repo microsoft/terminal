@@ -81,7 +81,9 @@ namespace winrt::TerminalApp::implementation
         void ShowKeyboardServiceWarning();
         winrt::hstring KeyboardServiceDisabledText();
 
-        winrt::fire_and_forget ProcessStartupActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions, const bool initial);
+        winrt::fire_and_forget ProcessStartupActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions,
+                                                     const bool initial,
+                                                     const winrt::hstring cwd = L"");
 
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
@@ -153,6 +155,8 @@ namespace winrt::TerminalApp::implementation
         void _CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
 
+        winrt::fire_and_forget _OpenNewWindow(const bool elevate, const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
+
         bool _displayingCloseDialog{ false };
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _FeedbackButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
@@ -174,7 +178,8 @@ namespace winrt::TerminalApp::implementation
                                                                                                                                             Windows::Foundation::Collections::IVectorView<Microsoft::Terminal::Settings::Model::Profile> profiles,
                                                                                                                                             Windows::Foundation::Collections::IMapView<winrt::hstring, Microsoft::Terminal::Settings::Model::ColorScheme> schemes);
 
-        void _DuplicateTabViewItem();
+        void _DuplicateFocusedTab();
+        void _DuplicateTab(const TerminalTab& tab);
         void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
         winrt::Windows::Foundation::IAsyncAction _RemoveTab(winrt::TerminalApp::TabBase tab);
         winrt::fire_and_forget _RemoveTabs(const std::vector<winrt::TerminalApp::TabBase> tabs);
@@ -215,6 +220,8 @@ namespace winrt::TerminalApp::implementation
                                                           const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
 
         void _OpenHyperlinkHandler(const IInspectable sender, const Microsoft::Terminal::TerminalControl::OpenHyperlinkEventArgs eventArgs);
+        bool _IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri);
+
         void _ShowCouldNotOpenDialog(winrt::hstring reason, winrt::hstring uri);
         bool _CopyText(const bool singleLine, const Windows::Foundation::IReference<Microsoft::Terminal::TerminalControl::CopyFormat>& formats);
 
@@ -240,6 +247,9 @@ namespace winrt::TerminalApp::implementation
         void _OnSwitchToTabRequested(const IInspectable& sender, const winrt::TerminalApp::TabBase& tab);
 
         void _Find();
+
+        winrt::Microsoft::Terminal::TerminalControl::TermControl _InitControl(const winrt::TerminalApp::TerminalSettings& settings,
+                                                                              const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
 
         winrt::fire_and_forget _RefreshUIForSettingsReload();
 
@@ -313,7 +323,9 @@ namespace winrt::TerminalApp::implementation
         void _HandleOpenTabSearch(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleMoveTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleBreakIntoDebugger(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleFindMatch(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleTogglePaneReadOnly(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleNewWindow(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
 
         // Make sure to hook new actions up in _RegisterActionCallbacks!
 #pragma endregion

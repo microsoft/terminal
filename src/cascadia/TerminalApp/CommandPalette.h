@@ -48,12 +48,12 @@ namespace winrt::TerminalApp::implementation
         void EnableTabSearchMode();
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, NoMatchesText, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, SearchBoxPlaceholderText, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, PrefixCharacter, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, ControlName, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, ParentCommandName, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, ParsedCommandLineText, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, NoMatchesText, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, SearchBoxPlaceholderText, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, PrefixCharacter, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, ControlName, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, ParentCommandName, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, ParsedCommandLineText, _PropertyChangedHandlers);
 
         TYPED_EVENT(SwitchToTabRequested, winrt::TerminalApp::CommandPalette, winrt::TerminalApp::TabBase);
         TYPED_EVENT(CommandLineExecutionRequested, winrt::TerminalApp::CommandPalette, winrt::hstring);
@@ -75,8 +75,7 @@ namespace winrt::TerminalApp::implementation
                                 Windows::UI::Xaml::RoutedEventArgs const& args);
         void _previewKeyDownHandler(Windows::Foundation::IInspectable const& sender,
                                     Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
-        void _keyDownHandler(Windows::Foundation::IInspectable const& sender,
-                             Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+
         void _keyUpHandler(Windows::Foundation::IInspectable const& sender,
                            Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
 

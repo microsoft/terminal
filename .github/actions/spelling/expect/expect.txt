@@ -22,6 +22,7 @@ activatable
 ACTIVEBORDER
 ACTIVECAPTION
 ADDALIAS
+ADDB
 ADDREF
 addressof
 ADDSTRING
@@ -326,6 +327,7 @@ conattrs
 conbufferout
 concat
 concfg
+conclnt
 conddkrefs
 condrv
 conechokey
@@ -520,6 +522,8 @@ DECAUPSS
 DECAWM
 DECCKM
 DECCOLM
+DECDHL
+DECDWL
 DECEKBD
 DECID
 DECKPAM
@@ -556,9 +560,11 @@ DECSR
 decstandar
 DECSTBM
 DECSTR
+DECSWL
 DECTCEM
 Dedupe
 deduplicated
+DEFAPP
 DEFAULTBACKGROUND
 DEFAULTFOREGROUND
 defaultsettings
@@ -750,6 +756,7 @@ failfast
 FAILIFTHERE
 fallthrough
 FARPROC
+fastlink
 fcb
 fcharset
 fclose
@@ -1637,6 +1644,7 @@ ONECOREWINDOWS
 onehalf
 ONLCR
 Oo
+openconsoleproxy
 openbash
 opencode
 opencon
@@ -2824,6 +2832,7 @@ Xes
 XES
 xff
 XFile
+XFORM
 XManifest
 XMath
 XMFLOAT
@@ -2842,6 +2851,8 @@ XSubstantial
 xtended
 xterm
 XTest
+XTPUSHSGR
+XTPOPSGR
 xunit
 xutr
 xvalue

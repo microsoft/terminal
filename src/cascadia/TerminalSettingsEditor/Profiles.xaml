@@ -25,6 +25,10 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <TextBlock Text="{x:Bind EnumName, Mode=OneWay}"/>
             </DataTemplate>
 
+            <DataTemplate x:DataType="local:Font" x:Key="FontFaceComboBoxItemTemplate">
+                <TextBlock Text="{x:Bind LocalizedName}" FontFamily="{x:Bind Name}"/>
+            </DataTemplate>
+
             <local:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
             <local:PercentageConverter x:Key="PercentageConverter"/>
             <local:FontWeightConverter x:Key="FontWeightConverter"/>
@@ -76,6 +80,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                 x:Name="CommandlineContainer"
                                                 HasSettingValue="{x:Bind State.Profile.HasCommandline, Mode=OneWay}"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearCommandline}"
+                                                SettingOverrideSource="{x:Bind State.Profile.CommandlineOverrideSource, Mode=OneWay}"
                                                 Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}"
                                                 Margin="0,0,0,24">
                             <StackPanel Orientation="Horizontal">
@@ -92,6 +97,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                 x:Name="StartingDirectoryContainer"
                                                 HasSettingValue="{x:Bind State.Profile.HasStartingDirectory, Mode=OneWay}"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearStartingDirectory}"
+                                                SettingOverrideSource="{x:Bind State.Profile.StartingDirectoryOverrideSource, Mode=OneWay}"
                                                 Margin="0">
                             <StackPanel Orientation="Vertical">
                                 <StackPanel Orientation="Horizontal">
@@ -113,7 +119,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <!--Icon-->
                         <local:SettingContainer x:Uid="Profile_Icon"
                                                 HasSettingValue="{x:Bind State.Profile.HasIcon, Mode=OneWay}"
-                                                ClearSettingValue="{x:Bind State.Profile.ClearIcon}">
+                                                ClearSettingValue="{x:Bind State.Profile.ClearIcon}"
+                                                SettingOverrideSource="{x:Bind State.Profile.IconOverrideSource, Mode=OneWay}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBox Text="{x:Bind State.Profile.Icon, Mode=TwoWay}"
                                          FontFamily="Segoe UI, Segoe MDL2 Assets"
@@ -127,7 +134,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <!--Tab Title-->
                         <local:SettingContainer x:Uid="Profile_TabTitle"
                                                 HasSettingValue="{x:Bind State.Profile.HasTabTitle, Mode=OneWay}"
-                                                ClearSettingValue="{x:Bind State.Profile.ClearTabTitle}">
+                                                ClearSettingValue="{x:Bind State.Profile.ClearTabTitle}"
+                                                SettingOverrideSource="{x:Bind State.Profile.TabTitleOverrideSource, Mode=OneWay}">
                             <TextBox Text="{x:Bind State.Profile.TabTitle, Mode=TwoWay}"
                                      Style="{StaticResource TextBoxSettingStyle}"/>
                         </local:SettingContainer>
@@ -212,6 +220,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <local:SettingContainer x:Uid="Profile_ColorScheme"
                                                     HasSettingValue="{x:Bind State.Profile.HasColorSchemeName, Mode=OneWay}"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearColorSchemeName}"
+                                                    SettingOverrideSource="{x:Bind State.Profile.ColorSchemeNameOverrideSource, Mode=OneWay}"
                                                     Margin="0">
                                 <ComboBox ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
                                           SelectedItem="{x:Bind CurrentColorScheme, Mode=TwoWay}"
@@ -227,15 +236,36 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <!--Font Face-->
                             <local:SettingContainer x:Uid="Profile_FontFace"
                                                     HasSettingValue="{x:Bind State.Profile.HasFontFace, Mode=OneWay}"
-                                                    ClearSettingValue="{x:Bind State.Profile.ClearFontFace}">
-                                <TextBox Text="{x:Bind State.Profile.FontFace, Mode=TwoWay}"
-                                         Style="{StaticResource TextBoxSettingStyle}"/>
+                                                    ClearSettingValue="{x:Bind State.Profile.ClearFontFace}"
+                                                    SettingOverrideSource="{x:Bind State.Profile.FontFaceOverrideSource, Mode=OneWay}">
+                                <StackPanel>
+                                    <!--Binding the ItemsSource to a separate variable that switches between the
+                                          two font lists causes a crash within the ComboBox code.
+                                        As a workaround, introduce two ComboBox controls and only display one at a time.-->
+                                    <ComboBox ItemsSource="{x:Bind State.Profile.MonospaceFontList, Mode=OneWay}"
+                                              SelectedItem="{x:Bind CurrentFontFace, Mode=OneWay}"
+                                              SelectionChanged="FontFace_SelectionChanged"
+                                              Style="{StaticResource ComboBoxSettingStyle}"
+                                              ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
+                                              Visibility="{x:Bind State.Profile.ShowAllFonts, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}"/>
+                                    <ComboBox ItemsSource="{x:Bind State.Profile.CompleteFontList, Mode=OneWay}"
+                                              SelectedItem="{x:Bind CurrentFontFace, Mode=OneWay}"
+                                              SelectionChanged="FontFace_SelectionChanged"
+                                              Style="{StaticResource ComboBoxSettingStyle}"
+                                              ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
+                                              Visibility="{x:Bind State.Profile.ShowAllFonts, Mode=OneWay}"/>
+                                    <CheckBox x:Uid="Profile_FontFaceShowAllFonts"
+                                              x:Name="ShowAllFontsCheckbox"
+                                              IsChecked="{x:Bind State.Profile.ShowAllFonts, Mode=TwoWay}"
+                                              IsEnabled="{x:Bind State.Profile.UsingMonospaceFont, Mode=OneWay}"/>
+                                </StackPanel>
                             </local:SettingContainer>
 
                             <!--Font Size-->
                             <local:SettingContainer x:Uid="Profile_FontSize"
                                                     HasSettingValue="{x:Bind State.Profile.HasFontSize, Mode=OneWay}"
-                                                    ClearSettingValue="{x:Bind State.Profile.ClearFontSize}">
+                                                    ClearSettingValue="{x:Bind State.Profile.ClearFontSize}"
+                                                    SettingOverrideSource="{x:Bind State.Profile.FontSizeOverrideSource, Mode=OneWay}">
                                 <muxc:NumberBox Value="{x:Bind State.Profile.FontSize, Mode=TwoWay}"
                                                 Style="{StaticResource NumberBoxSettingStyle}"
                                                 AcceptsExpression="False"
@@ -249,7 +279,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <local:SettingContainer x:Uid="Profile_FontWeight"
                                                     x:Name="FontWeightContainer"
                                                     HasSettingValue="{x:Bind State.Profile.HasFontWeight, Mode=OneWay}"
-                                                    ClearSettingValue="{x:Bind State.Profile.ClearFontWeight}">
+                                                    ClearSettingValue="{x:Bind State.Profile.ClearFontWeight}"
+                                                    SettingOverrideSource="{x:Bind State.Profile.FontWeightOverrideSource, Mode=OneWay}">
                                 <StackPanel>
                                     <ComboBox x:Name="FontWeightComboBox"
                                               ItemsSource="{x:Bind FontWeightList, Mode=OneWay}"
@@ -283,7 +314,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <!--Retro Terminal Effect-->
                             <local:SettingContainer x:Uid="Profile_RetroTerminalEffect"
                                                     HasSettingValue="{x:Bind State.Profile.HasRetroTerminalEffect, Mode=OneWay}"
-                                                    ClearSettingValue="{x:Bind State.Profile.ClearRetroTerminalEffect}">
+                                                    ClearSettingValue="{x:Bind State.Profile.ClearRetroTerminalEffect}"
+                                                    SettingOverrideSource="{x:Bind State.Profile.RetroTerminalEffectOverrideSource, Mode=OneWay}">
                                 <ToggleSwitch IsOn="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}"/>
                             </local:SettingContainer>
                         </StackPanel>
@@ -296,6 +328,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <local:SettingContainer x:Uid="Profile_CursorShape"
                                                     HasSettingValue="{x:Bind State.Profile.HasCursorShape, Mode=OneWay}"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearCursorShape}"
+                                                    SettingOverrideSource="{x:Bind State.Profile.CursorShapeOverrideSource, Mode=OneWay}"
                                                     Margin="0">
                                 <muxc:RadioButtons ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
                                                    SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
@@ -306,11 +339,22 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <local:SettingContainer x:Uid="Profile_CursorHeight"
                                                     HasSettingValue="{x:Bind State.Profile.HasCursorHeight, Mode=OneWay}"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearCursorHeight}"
+                                                    SettingOverrideSource="{x:Bind State.Profile.CursorHeightOverrideSource, Mode=OneWay}"
                                                     Visibility="{x:Bind IsVintageCursor, Mode=OneWay}">
-                                <muxc:NumberBox Value="{x:Bind State.Profile.CursorHeight, Mode=TwoWay}"
-                                                Style="{StaticResource NumberBoxSettingStyle}"
-                                                SmallChange="1"
-                                                LargeChange="10"/>
+                                <Grid Style="{StaticResource CustomSliderControlGridStyle}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Slider x:Name="CursorHeightSlider"
+                                            Grid.Column="0"
+                                            Minimum="1"
+                                            Maximum="100"
+                                            Value="{x:Bind State.Profile.CursorHeight, Mode=TwoWay}"/>
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding ElementName=CursorHeightSlider, Path=Value, Mode=OneWay}"
+                                               Style="{StaticResource SliderValueLabelStyle}"/>
+                                </Grid>
                             </local:SettingContainer>
                         </StackPanel>
 
@@ -323,6 +367,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                     x:Name="BackgroundImageContainer"
                                                     HasSettingValue="{x:Bind State.Profile.HasBackgroundImagePath, Mode=OneWay}"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearBackgroundImagePath}"
+                                                    SettingOverrideSource="{x:Bind State.Profile.BackgroundImagePathOverrideSource, Mode=OneWay}"
                                                     Margin="0">
                                 <StackPanel Orientation="Vertical">
                                     <StackPanel Orientation="Horizontal">
@@ -344,6 +389,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <local:SettingContainer x:Uid="Profile_BackgroundImageStretchMode"
                                                     HasSettingValue="{x:Bind State.Profile.HasBackgroundImageStretchMode, Mode=OneWay}"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearBackgroundImageStretchMode}"
+                                                    SettingOverrideSource="{x:Bind State.Profile.BackgroundImageStretchModeOverrideSource, Mode=OneWay}"
                                                     Visibility="{x:Bind State.Profile.BackgroundImageSettingsVisible, Mode=OneWay}">
                                 <muxc:RadioButtons ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
                                                    SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
@@ -354,6 +400,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <local:SettingContainer x:Uid="Profile_BackgroundImageAlignment"
                                                     HasSettingValue="{x:Bind State.Profile.HasBackgroundImageAlignment, Mode=OneWay}"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearBackgroundImageAlignment}"
+                                                    SettingOverrideSource="{x:Bind State.Profile.BackgroundImageAlignmentOverrideSource, Mode=OneWay}"
                                                     Visibility="{x:Bind State.Profile.BackgroundImageSettingsVisible, Mode=OneWay}">
                                 <Grid HorizontalAlignment="Left">
                                     <Grid.RowDefinitions>
@@ -509,6 +556,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                     x:Name="BackgroundImageOpacityContainer"
                                                     HasSettingValue="{x:Bind State.Profile.HasBackgroundImageOpacity, Mode=OneWay}"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearBackgroundImageOpacity}"
+                                                    SettingOverrideSource="{x:Bind State.Profile.BackgroundImageOpacityOverrideSource, Mode=OneWay}"
                                                     Visibility="{x:Bind State.Profile.BackgroundImageSettingsVisible, Mode=OneWay}">
                                 <Grid Style="{StaticResource CustomSliderControlGridStyle}">
                                     <Grid.ColumnDefinitions>
@@ -533,6 +581,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <local:SettingContainer x:Uid="Profile_UseAcrylic"
                                                     HasSettingValue="{x:Bind State.Profile.HasUseAcrylic, Mode=OneWay}"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearUseAcrylic}"
+                                                    SettingOverrideSource="{x:Bind State.Profile.UseAcrylicOverrideSource, Mode=OneWay}"
                                                     Margin="0">
                                 <ToggleSwitch x:Name="UseAcrylicToggleSwitch"
                                               IsOn="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}"/>
@@ -543,6 +592,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                     x:Name="AcrylicOpacityContainer"
                                                     HasSettingValue="{x:Bind State.Profile.HasAcrylicOpacity, Mode=OneWay}"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearAcrylicOpacity}"
+                                                    SettingOverrideSource="{x:Bind State.Profile.AcrylicOpacityOverrideSource, Mode=OneWay}"
                                                     Visibility="{Binding ElementName=UseAcrylicToggleSwitch, Path=IsOn, Mode=OneWay}">
                                 <StackPanel x:Name="AcrylicOpacityControl">
                                     <Grid Style="{StaticResource CustomSliderControlGridStyle}">
@@ -569,6 +619,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <local:SettingContainer x:Uid="Profile_Padding"
                                                     HasSettingValue="{x:Bind State.Profile.HasPadding, Mode=OneWay}"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearPadding}"
+                                                    SettingOverrideSource="{x:Bind State.Profile.PaddingOverrideSource, Mode=OneWay}"
                                                     Margin="0">
                                 <Grid Style="{StaticResource CustomSliderControlGridStyle}">
                                     <Grid.ColumnDefinitions>
@@ -587,7 +638,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <!--Scrollbar Visibility-->
                             <local:SettingContainer x:Uid="Profile_ScrollbarVisibility"
                                                     HasSettingValue="{x:Bind State.Profile.HasScrollState, Mode=OneWay}"
-                                                    ClearSettingValue="{x:Bind State.Profile.ClearScrollState}">
+                                                    ClearSettingValue="{x:Bind State.Profile.ClearScrollState}"
+                                                    SettingOverrideSource="{x:Bind State.Profile.ScrollStateOverrideSource, Mode=OneWay}">
                                 <muxc:RadioButtons ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
                                                    SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}"
                                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
@@ -605,6 +657,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <local:SettingContainer x:Uid="Profile_SuppressApplicationTitle"
                                                 HasSettingValue="{x:Bind State.Profile.HasSuppressApplicationTitle, Mode=OneWay}"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearSuppressApplicationTitle}"
+                                                SettingOverrideSource="{x:Bind State.Profile.SuppressApplicationTitleOverrideSource, Mode=OneWay}"
                                                 Margin="0">
                             <ToggleSwitch IsOn="{x:Bind State.Profile.SuppressApplicationTitle, Mode=TwoWay}"/>
                         </local:SettingContainer>
@@ -612,7 +665,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <!--Antialiasing Mode-->
                         <local:SettingContainer x:Uid="Profile_AntialiasingMode"
                                                 HasSettingValue="{x:Bind State.Profile.HasAntialiasingMode, Mode=OneWay}"
-                                                ClearSettingValue="{x:Bind State.Profile.ClearAntialiasingMode}">
+                                                ClearSettingValue="{x:Bind State.Profile.ClearAntialiasingMode}"
+                                                SettingOverrideSource="{x:Bind State.Profile.AntialiasingModeOverrideSource, Mode=OneWay}">
                             <muxc:RadioButtons ItemsSource="{x:Bind AntiAliasingModeList, Mode=OneWay}"
                                                SelectedItem="{x:Bind CurrentAntiAliasingMode, Mode=TwoWay}"
                                                ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
@@ -621,23 +675,27 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <!--AltGr Aliasing-->
                         <local:SettingContainer x:Uid="Profile_AltGrAliasing"
                                                 HasSettingValue="{x:Bind State.Profile.HasAltGrAliasing, Mode=OneWay}"
-                                                ClearSettingValue="{x:Bind State.Profile.ClearAltGrAliasing}">
+                                                ClearSettingValue="{x:Bind State.Profile.ClearAltGrAliasing}"
+                                                SettingOverrideSource="{x:Bind State.Profile.AltGrAliasingOverrideSource, Mode=OneWay}">
                             <ToggleSwitch IsOn="{x:Bind State.Profile.AltGrAliasing, Mode=TwoWay}"/>
                         </local:SettingContainer>
 
                         <!--Snap On Input-->
                         <local:SettingContainer x:Uid="Profile_SnapOnInput"
                                                 HasSettingValue="{x:Bind State.Profile.HasSnapOnInput, Mode=OneWay}"
-                                                ClearSettingValue="{x:Bind State.Profile.ClearSnapOnInput}">
+                                                ClearSettingValue="{x:Bind State.Profile.ClearSnapOnInput}"
+                                                SettingOverrideSource="{x:Bind State.Profile.SnapOnInputOverrideSource, Mode=OneWay}">
                             <ToggleSwitch IsOn="{x:Bind State.Profile.SnapOnInput, Mode=TwoWay}"/>
                         </local:SettingContainer>
 
                         <!--History Size-->
                         <local:SettingContainer x:Uid="Profile_HistorySize"
                                                 HasSettingValue="{x:Bind State.Profile.HasHistorySize, Mode=OneWay}"
-                                                ClearSettingValue="{x:Bind State.Profile.ClearHistorySize}">
+                                                ClearSettingValue="{x:Bind State.Profile.ClearHistorySize}"
+                                                SettingOverrideSource="{x:Bind State.Profile.HistorySizeOverrideSource, Mode=OneWay}">
                             <muxc:NumberBox Value="{x:Bind State.Profile.HistorySize, Mode=TwoWay}"
                                             Style="{StaticResource NumberBoxSettingStyle}"
+                                            Minimum="0"
                                             SmallChange="10"
                                             LargeChange="100"/>
                         </local:SettingContainer>
@@ -645,7 +703,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <!--Close On Exit-->
                         <local:SettingContainer x:Uid="Profile_CloseOnExit"
                                                 HasSettingValue="{x:Bind State.Profile.HasCloseOnExit, Mode=OneWay}"
-                                                ClearSettingValue="{x:Bind State.Profile.ClearCloseOnExit}">
+                                                ClearSettingValue="{x:Bind State.Profile.ClearCloseOnExit}"
+                                                SettingOverrideSource="{x:Bind State.Profile.CloseOnExitOverrideSource, Mode=OneWay}">
                             <muxc:RadioButtons ItemsSource="{x:Bind CloseOnExitModeList, Mode=OneWay}"
                                                SelectedItem="{x:Bind CurrentCloseOnExitMode, Mode=TwoWay}"
                                                ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
@@ -654,7 +713,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <!--Bell Style-->
                         <local:SettingContainer x:Uid="Profile_BellStyle"
                                                 HasSettingValue="{x:Bind State.Profile.HasBellStyle, Mode=OneWay}"
-                                                ClearSettingValue="{x:Bind State.Profile.ClearBellStyle}">
+                                                ClearSettingValue="{x:Bind State.Profile.ClearBellStyle}"
+                                                SettingOverrideSource="{x:Bind State.Profile.BellStyleOverrideSource, Mode=OneWay}">
                             <muxc:RadioButtons ItemsSource="{x:Bind BellStyleList, Mode=OneWay}"
                                                SelectedItem="{x:Bind CurrentBellStyle, Mode=TwoWay}"
                                                ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>

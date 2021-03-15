@@ -133,6 +133,11 @@ namespace Microsoft.Terminal.Wpf
             rendersize.Width *= dpiScale.DpiScaleX;
             rendersize.Height *= dpiScale.DpiScaleY;
 
+            if (rendersize.Width == 0 || rendersize.Height == 0)
+            {
+                return (0, 0);
+            }
+
             this.termContainer.Resize(rendersize);
 
             return (this.Rows, this.Columns);
