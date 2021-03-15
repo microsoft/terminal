@@ -234,16 +234,16 @@ namespace Microsoft.Terminal.Settings.Model
         NewTerminalArgs TerminalArgs { get; };
     };
 
-    unsealed runtimeclass SwithchToAdjacentTabArgs : IActionArgs
+    unsealed runtimeclass SwitchToAdjacentTabArgs : IActionArgs
     {
         Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
     };
 
-    [default_interface] runtimeclass PrevTabArgs : SwithchToAdjacentTabArgs
+    [default_interface] runtimeclass PrevTabArgs : SwitchToAdjacentTabArgs
     {
     };
 
-    [default_interface] runtimeclass NextTabArgs : SwithchToAdjacentTabArgs
+    [default_interface] runtimeclass NextTabArgs : SwitchToAdjacentTabArgs
     {
     };
 }

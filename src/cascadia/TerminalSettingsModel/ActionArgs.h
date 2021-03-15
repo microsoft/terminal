@@ -28,7 +28,7 @@
 #include "ToggleCommandPaletteArgs.g.h"
 #include "FindMatchArgs.g.h"
 #include "NewWindowArgs.g.h"
-#include "SwithchToAdjacentTabArgs.g.h"
+#include "SwitchToAdjacentTabArgs.g.h"
 #include "PrevTabArgs.g.h"
 #include "NextTabArgs.g.h"
 
@@ -927,9 +927,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
-    struct SwithchToAdjacentTabArgs : public SwithchToAdjacentTabArgsT<SwithchToAdjacentTabArgs>
+    struct SwitchToAdjacentTabArgs : public SwitchToAdjacentTabArgsT<SwitchToAdjacentTabArgs>
     {
-        SwithchToAdjacentTabArgs() = default;
+        SwitchToAdjacentTabArgs() = default;
         WINRT_PROPERTY(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, nullptr);
         static constexpr std::string_view SwitcherModeKey{ "tabSwitcherMode" };
 
@@ -938,7 +938,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         bool Equals(const IActionArgs& other)
         {
-            auto otherAsUs = other.try_as<SwithchToAdjacentTabArgs>();
+            auto otherAsUs = other.try_as<SwitchToAdjacentTabArgs>();
             if (otherAsUs)
             {
                 return otherAsUs->_SwitcherMode == _SwitcherMode;
@@ -948,25 +948,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<SwithchToAdjacentTabArgs>();
+            auto args = winrt::make_self<SwitchToAdjacentTabArgs>();
             JsonUtils::GetValueForKey(json, SwitcherModeKey, args->_SwitcherMode);
             return { *args, {} };
         }
         IActionArgs Copy() const
         {
-            auto copy{ winrt::make_self<SwithchToAdjacentTabArgs>() };
+            auto copy{ winrt::make_self<SwitchToAdjacentTabArgs>() };
             copy->_SwitcherMode = _SwitcherMode;
             return *copy;
         }
     };
 
-    struct PrevTabArgs : public PrevTabArgsT<PrevTabArgs, SwithchToAdjacentTabArgs>
+    struct PrevTabArgs : public PrevTabArgsT<PrevTabArgs, SwitchToAdjacentTabArgs>
     {
     public:
         hstring GenerateName() const;
     };
 
-    struct NextTabArgs : public NextTabArgsT<NextTabArgs, SwithchToAdjacentTabArgs>
+    struct NextTabArgs : public NextTabArgsT<NextTabArgs, SwitchToAdjacentTabArgs>
     {
     public:
         hstring GenerateName() const;
