@@ -2114,12 +2114,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto actualFontName = _actualFont.GetFaceName();
         const auto desiredFontName = _desiredFont.GetFaceName();
 
-        auto caseInsensitiveEquality = [](wchar_t a, wchar_t b) { return ::towlower(a) == ::towlower(b); };
-
-        const auto areEqual = std::equal(actualFontName.cbegin(), actualFontName.cend(), desiredFontName.cbegin(), desiredFontName.cend(), caseInsensitiveEquality);
+        const int compareResult = CompareStringOrdinal(
+            actualFontName.data(),
+            (int)actualFontName.size(),
+            desiredFontName.data(),
+            (int)desiredFontName.size(),
+            TRUE /* bIgnoreCase */);
 
         // If the actual font isn't what was requested...
-        if (!areEqual)
+        if (CSTR_EQUAL != compareResult)
         {
             // Then warn the user that we picked something because we couldn't find their font.
 
