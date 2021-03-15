@@ -16,10 +16,6 @@ the MIT License. See LICENSE in the project root for license information. -->
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="CommonResources.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-
-            <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
-                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
-            </DataTemplate>
             <model:IconPathConverter x:Key="IconSourceConverter"/>
         </ResourceDictionary>
     </Page.Resources>

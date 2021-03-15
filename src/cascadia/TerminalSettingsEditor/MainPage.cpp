@@ -188,6 +188,29 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return false;
     }
 
+    void MainPage::AddProfileHandler(winrt::guid profileGuid)
+    {
+        uint32_t insertIndex;
+        auto selectedItem{ SettingsNav().SelectedItem() };
+        auto menuItems{ SettingsNav().MenuItems() };
+        menuItems.IndexOf(selectedItem, insertIndex);
+        if (profileGuid != winrt::guid{})
+        {
+            // if we were given a non-empty guid, we want to duplicate the corresponding profile
+            const auto profile = _settingsClone.FindProfile(profileGuid);
+            if (profile)
+            {
+                const auto duplicated = _settingsClone.DuplicateProfile(profile);
+                _CreateAndNavigateToNewProfile(insertIndex, duplicated);
+            }
+        }
+        else
+        {
+            // we were given an empty guid, create a new profile
+            _CreateAndNavigateToNewProfile(insertIndex, nullptr);
+        }
+    }
+
     // Function Description:
     // - Called when the NavigationView is loaded. Navigates to the first item in the NavigationView, if no item is selected
     // Arguments:
@@ -285,25 +308,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (clickedItemTag == addProfileTag)
         {
             auto addProfileState{ winrt::make<AddProfilePageNavigationState>(_settingsClone) };
-            addProfileState.AddNew([weakThis = get_weak()](auto&& profileGuid) {
-                if (auto self{ weakThis.get() })
-                {
-                    uint32_t insertIndex;
-                    auto selectedItem{ self->SettingsNav().SelectedItem() };
-                    auto menuItems{ self->SettingsNav().MenuItems() };
-                    menuItems.IndexOf(selectedItem, insertIndex);
-                    if (profileGuid != winrt::guid{})
-                    {
-                        const auto profile = self->_settingsClone.FindProfile(profileGuid);
-                        const auto duplicated = self->_settingsClone.DuplicateProfile(profile);
-                        self->_CreateAndNavigateToNewProfile(insertIndex, duplicated);
-                    }
-                    else
-                    {
-                        self->_CreateAndNavigateToNewProfile(insertIndex, nullptr);
-                    }
-                }
-            });
+            addProfileState.AddNew({ get_weak(), &MainPage::AddProfileHandler });
             contentFrame().Navigate(xaml_typename<Editor::AddProfile>(), addProfileState);
         }
     }
