@@ -74,9 +74,9 @@ function Set-MsbuildDevEnvironment
         default { throw "Unknown architecture: $switch" }
     }
 
-    $devshellmodule = "$vspath\Common7\Tools\Microsoft.VisualStudio.DevShell.dll"
+    $devShellModule = "$vspath\Common7\Tools\Microsoft.VisualStudio.DevShell.dll"
 
-    Import-Module -Global -Name $devshellmodule
+    Import-Module -Global -Name $devShellModule
 
     Write-Verbose 'Setting up environment variables'
     Enter-VsDevShell -VsInstallPath $vspath -SkipAutomaticLocation `
