@@ -20,6 +20,7 @@ namespace winrt::TerminalApp::implementation
 {
     static const int PaneBorderSize = 2;
     static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
+    winrt::Windows::UI::Xaml::Media::SolidColorBrush ParentPane::s_unfocusedBorderBrush = { nullptr };
 
     static const int AnimationDurationInMilliseconds = 200;
     static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(AnimationDurationInMilliseconds)));
@@ -45,6 +46,8 @@ namespace winrt::TerminalApp::implementation
         _secondLayoutRevoker = secondChild.TerminalControl().LayoutUpdated(winrt::auto_revoke, [&](auto /*s*/, auto /*e*/) {
             _ChildrenLayoutUpdatedHelper(false);
         });
+
+        _SetupResources();
     }
 
     // Method Description:
@@ -949,8 +952,8 @@ namespace winrt::TerminalApp::implementation
             // Create the dummy grid. This grid will be the one we actually animate,
             // in the place of the closed pane.
             Controls::Grid dummyGrid;
-            // todo: put s_unfocusedBorderBrush in a common pane.h so both parent and leaf can access it
-            //dummyGrid.Background(s_unfocusedBorderBrush);
+
+            dummyGrid.Background(s_unfocusedBorderBrush);
 
             // It should be the size of the closed pane.
             dummyGrid.Width(removedOriginalSize.Width);
@@ -1178,7 +1181,7 @@ namespace winrt::TerminalApp::implementation
         while (sizeTree.size < fullSize)
         {
             lastSizeTree = sizeTree;
-            AdvanceSnappedDimension(widthOrHeight, sizeTree);
+            _AdvanceSnappedDimension(widthOrHeight, sizeTree);
 
             if (sizeTree.size == fullSize)
             {
@@ -1245,7 +1248,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - widthOrHeight: if true operates on width, otherwise on height.
     // - sizeNode: a layout size node that corresponds to this pane.
-    void ParentPane::AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const
+    void ParentPane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const
     {
         // We're a parent pane, so we have to advance dimension of our children panes. In
         // fact, we advance only one child (chosen later) to keep the growth fine-grained.
@@ -1273,7 +1276,7 @@ namespace winrt::TerminalApp::implementation
             else
             {
                 auto firstChildAsParentImpl = winrt::get_self<implementation::ParentPane>(_firstChild);
-                firstChildAsParentImpl->AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextFirstChild);
+                firstChildAsParentImpl->_AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextFirstChild);
             }
         }
         if (sizeNode.nextSecondChild == nullptr)
@@ -1295,7 +1298,7 @@ namespace winrt::TerminalApp::implementation
             else
             {
                 auto secondChildAsParentImpl = winrt::get_self<implementation::ParentPane>(_secondChild);
-                secondChildAsParentImpl->AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextSecondChild);
+                secondChildAsParentImpl->_AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextSecondChild);
             }
         }
 
@@ -1359,7 +1362,7 @@ namespace winrt::TerminalApp::implementation
             else
             {
                 auto firstChildAsParentImpl = winrt::get_self<implementation::ParentPane>(_firstChild);
-                firstChildAsParentImpl->AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextFirstChild);
+                firstChildAsParentImpl->_AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextFirstChild);
             }
         }
         else
@@ -1380,7 +1383,7 @@ namespace winrt::TerminalApp::implementation
             else
             {
                 auto secondChildAsParentImpl = winrt::get_self<implementation::ParentPane>(_secondChild);
-                secondChildAsParentImpl->AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextSecondChild);
+                secondChildAsParentImpl->_AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextSecondChild);
             }
         }
 
@@ -1397,6 +1400,29 @@ namespace winrt::TerminalApp::implementation
         // Because we have grown, we're certainly no longer of our
         // minimal size (if we've ever been).
         sizeNode.isMinimumSize = false;
+    }
+
+    // Function Description:
+    // - Attempts to load some XAML resources that the Pane will need. This includes:
+    //   * The Color we'll use for active Panes's borders - SystemAccentColor
+    //   * The Brush we'll use for inactive Panes - TabViewBackground (to match the
+    //     color of the titlebar)
+    void ParentPane::_SetupResources()
+    {
+        const auto res = Application::Current().Resources();
+        const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
+        if (res.HasKey(tabViewBackgroundKey))
+        {
+            winrt::Windows::Foundation::IInspectable obj = res.Lookup(tabViewBackgroundKey);
+            s_unfocusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+        }
+        else
+        {
+            // DON'T use Transparent here - if it's "Transparent", then it won't
+            // be able to hittest for clicks, and then clicking on the border
+            // will eat focus.
+            s_unfocusedBorderBrush = SolidColorBrush{ Colors::Black() };
+        }
     }
 
     // Method Description:

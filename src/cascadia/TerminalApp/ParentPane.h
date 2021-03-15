@@ -79,6 +79,7 @@ namespace winrt::TerminalApp::implementation
     private:
         struct SnapChildrenSizeResult;
         struct LayoutSizeNode;
+        static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
 
         IPane _firstChild;
         IPane _secondChild;
@@ -114,7 +115,9 @@ namespace winrt::TerminalApp::implementation
         SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;
         LayoutSizeNode _CreateMinSizeTree(const bool widthOrHeight) const;
         float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
-        void AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const;
+        void _AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const;
+
+        void _SetupResources();
 
         struct SnapChildrenSizeResult
         {

@@ -48,10 +48,7 @@ namespace winrt::TerminalApp::implementation
         // On the Pane's creation, lookup resources we'll use to theme the
         // Pane, including the brushed to use for the focused/unfocused border
         // color.
-        if (s_focusedBorderBrush == nullptr || s_unfocusedBorderBrush == nullptr)
-        {
-            _SetupResources();
-        }
+        _SetupResources();
 
         // Use the unfocused border color as the pane background, so an actual color
         // appears behind panes as we animate them sliding in.
