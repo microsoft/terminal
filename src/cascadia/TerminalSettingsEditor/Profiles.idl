@@ -12,12 +12,23 @@ import "MainPage.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
+    runtimeclass Font : Windows.Foundation.IStringable
+    {
+        String Name { get; };
+        String LocalizedName { get; };
+    }
+
     runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
+        Windows.Foundation.Collections.IObservableVector<Font> CompleteFontList { get; };
+        Windows.Foundation.Collections.IObservableVector<Font> MonospaceFontList { get; };
+
         Boolean CanDeleteProfile { get; };
+        Boolean UsingMonospaceFont { get; };
         Boolean IsBaseLayer;
         Boolean UseDesktopBGImage;
         Boolean UseParentProcessDirectory;
+        Boolean ShowAllFonts;
         Boolean UseCustomStartingDirectory { get; };
         Boolean BackgroundImageSettingsVisible { get; };
 
@@ -66,7 +77,8 @@ namespace Microsoft.Terminal.Settings.Editor
         Guid ProfileGuid { get; };
     }
 
-    enum ProfilesPivots {
+    enum ProfilesPivots
+    {
         General = 0,
         Appearance = 1,
         Advanced = 2
@@ -113,5 +125,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };
+
+        IInspectable CurrentFontFace { get; };
     }
 }

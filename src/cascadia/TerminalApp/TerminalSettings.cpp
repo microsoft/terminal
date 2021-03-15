@@ -104,6 +104,10 @@ namespace winrt::TerminalApp::implementation
             {
                 settings.StartingTabColor(static_cast<uint32_t>(til::color(newTerminalArgs.TabColor().Value())));
             }
+            if (newTerminalArgs.SuppressApplicationTitle())
+            {
+                settings.SuppressApplicationTitle(newTerminalArgs.SuppressApplicationTitle().Value());
+            }
         }
 
         return { profileGuid, settings };
