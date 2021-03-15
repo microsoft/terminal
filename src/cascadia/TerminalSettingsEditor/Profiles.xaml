@@ -341,12 +341,20 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                     ClearSettingValue="{x:Bind State.Profile.ClearCursorHeight}"
                                                     SettingOverrideSource="{x:Bind State.Profile.CursorHeightOverrideSource, Mode=OneWay}"
                                                     Visibility="{x:Bind IsVintageCursor, Mode=OneWay}">
-                                <muxc:NumberBox Value="{x:Bind State.Profile.CursorHeight, Mode=TwoWay}"
-                                                Style="{StaticResource NumberBoxSettingStyle}"
-                                                Minimum="1"
-                                                Maximum="100"
-                                                SmallChange="1"
-                                                LargeChange="10"/>
+                                <Grid Style="{StaticResource CustomSliderControlGridStyle}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Slider x:Name="CursorHeightSlider"
+                                            Grid.Column="0"
+                                            Minimum="1"
+                                            Maximum="100"
+                                            Value="{x:Bind State.Profile.CursorHeight, Mode=TwoWay}"/>
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding ElementName=CursorHeightSlider, Path=Value, Mode=OneWay}"
+                                               Style="{StaticResource SliderValueLabelStyle}"/>
+                                </Grid>
                             </local:SettingContainer>
                         </StackPanel>
 
