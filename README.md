@@ -40,10 +40,13 @@ page](https://github.com/microsoft/terminal/releases).
 Download the `Microsoft.WindowsTerminal_<versionNumber>.msixbundle` file from
 the **Assets** section. To install the app, you can simply double-click on the
 `.msixbundle` file, and the app installer should automatically run. If that
-fails for any reason, you can try the following command at a PowerShell prompt
-instead:
+fails for any reason, you can try the following command at a PowerShell prompt:
 
 ```powershell
+# NOTE: If you are using PowerShell 7+, please run
+# Import-Module Appx -UseWindowsPowerShell
+# before using Add-AppxPackage.
+
 Add-AppxPackage Microsoft.WindowsTerminal_<versionNumber>.msixbundle
 ```
 
