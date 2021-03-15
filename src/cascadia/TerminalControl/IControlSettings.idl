@@ -54,5 +54,6 @@ namespace Microsoft.Terminal.TerminalControl
         Boolean SoftwareRendering;
         String PixelShaderPath;
 
+        IControlAppearance UnfocusedAppearance;
     };
 }

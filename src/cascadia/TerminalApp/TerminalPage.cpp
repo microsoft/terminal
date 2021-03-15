@@ -828,18 +828,9 @@ namespace winrt::TerminalApp::implementation
 
         // Give term control a child of the settings so that any overrides go in the child
         // This way, when we do a settings reload we just update the parent and the overrides remain
-        const auto child = winrt::get_self<TerminalSettings>(settings)->CreateChild();
-        TermControl term{ *child, connection };
+        auto term = _InitControl(settings, connection);
 
-        // Check if the profile defines an unfocusedAppearance
         const auto profile = _settings.FindProfile(profileGuid);
-        if (profile.UnfocusedAppearance())
-        {
-            // Now, make a grandchild for the unfocused appearance
-            const auto grandchild = child->CreateChild();
-            grandchild->ApplyAppearanceSettings(profile.UnfocusedAppearance(), _settings.GlobalSettings().ColorSchemes());
-            term.UnfocusedAppearance(*grandchild);
-        }
 
         auto newTabImpl = winrt::make_self<TerminalTab>(profileGuid, term);
 
@@ -1925,18 +1916,7 @@ namespace winrt::TerminalApp::implementation
 
             // Give term control a child of the settings so that any overrides go in the child
             // This way, when we do a settings reload we just update the parent and the overrides remain
-            const auto child = (winrt::get_self<TerminalSettings>(controlSettings)->CreateChild());
-            TermControl newControl{ *child, controlConnection };
-
-            // Check if the profile defines an UnfocusedAppearance
-            const auto profile = _settings.FindProfile(_settings.GetProfileForArgs(newTerminalArgs));
-            if (profile.UnfocusedAppearance())
-            {
-                // Now, make a grandchild for the unfocused appearance
-                const auto grandchild = child->CreateChild();
-                grandchild->ApplyAppearanceSettings(profile.UnfocusedAppearance(), _settings.GlobalSettings().ColorSchemes());
-                newControl.UnfocusedAppearance(*grandchild);
-            }
+            auto newControl = _InitControl(controlSettings, controlConnection);
 
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl, *focusedTab);
