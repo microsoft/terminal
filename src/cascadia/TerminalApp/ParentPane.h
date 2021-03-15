@@ -26,7 +26,6 @@
 
 #include "inc/cppwinrt_utils.h"
 #include "LeafPane.h"
-#include "Pane.h"
 
 #include "ParentPane.g.h"
 
