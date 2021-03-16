@@ -1311,9 +1311,9 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
         VERIFY_ARE_EQUAL(2u, settings->_globals->ColorSchemes().Size());
 
-        VERIFY_ARE_EQUAL(L"schemeOne", settings->_allProfiles.GetAt(0).ColorSchemeName());
-        VERIFY_ARE_EQUAL(L"InvalidSchemeName", settings->_allProfiles.GetAt(1).ColorSchemeName());
-        VERIFY_ARE_EQUAL(L"Campbell", settings->_allProfiles.GetAt(2).ColorSchemeName());
+        VERIFY_ARE_EQUAL(L"schemeOne", settings->_allProfiles.GetAt(0).DefaultAppearance().ColorSchemeName());
+        VERIFY_ARE_EQUAL(L"InvalidSchemeName", settings->_allProfiles.GetAt(1).DefaultAppearance().ColorSchemeName());
+        VERIFY_ARE_EQUAL(L"Campbell", settings->_allProfiles.GetAt(2).DefaultAppearance().ColorSchemeName());
 
         settings->_ValidateAllSchemesExist();
 
@@ -1323,9 +1323,9 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
         VERIFY_ARE_EQUAL(2u, settings->_globals->ColorSchemes().Size());
 
-        VERIFY_ARE_EQUAL(L"schemeOne", settings->_allProfiles.GetAt(0).ColorSchemeName());
-        VERIFY_ARE_EQUAL(L"Campbell", settings->_allProfiles.GetAt(1).ColorSchemeName());
-        VERIFY_ARE_EQUAL(L"Campbell", settings->_allProfiles.GetAt(2).ColorSchemeName());
+        VERIFY_ARE_EQUAL(L"schemeOne", settings->_allProfiles.GetAt(0).DefaultAppearance().ColorSchemeName());
+        VERIFY_ARE_EQUAL(L"Campbell", settings->_allProfiles.GetAt(1).DefaultAppearance().ColorSchemeName());
+        VERIFY_ARE_EQUAL(L"Campbell", settings->_allProfiles.GetAt(2).DefaultAppearance().ColorSchemeName());
     }
 
     void DeserializationTests::ValidateColorSchemeInCommands()
@@ -1543,7 +1543,7 @@ namespace SettingsModelLocalTests
         settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);
         VERIFY_ARE_NOT_EQUAL(0u, settings->_allProfiles.Size());
-        VERIFY_ARE_EQUAL(expectedPath, settings->_allProfiles.GetAt(0).ExpandedBackgroundImagePath());
+        VERIFY_ARE_EQUAL(expectedPath, settings->_allProfiles.GetAt(0).DefaultAppearance().ExpandedBackgroundImagePath());
     }
     void DeserializationTests::TestProfileBackgroundImageWithDesktopWallpaper()
     {
@@ -1564,8 +1564,8 @@ namespace SettingsModelLocalTests
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
         settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);
-        VERIFY_ARE_EQUAL(expectedBackgroundImagePath, settings->_allProfiles.GetAt(0).BackgroundImagePath());
-        VERIFY_ARE_NOT_EQUAL(expectedBackgroundImagePath, settings->_allProfiles.GetAt(0).ExpandedBackgroundImagePath());
+        VERIFY_ARE_EQUAL(expectedBackgroundImagePath, settings->_allProfiles.GetAt(0).DefaultAppearance().BackgroundImagePath());
+        VERIFY_ARE_NOT_EQUAL(expectedBackgroundImagePath, settings->_allProfiles.GetAt(0).DefaultAppearance().ExpandedBackgroundImagePath());
     }
     void DeserializationTests::TestCloseOnExitParsing()
     {
