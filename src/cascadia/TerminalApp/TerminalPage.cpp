@@ -826,11 +826,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // Give term control a child of the settings so that any overrides go in the child
-        // This way, when we do a settings reload we just update the parent and the overrides remain
-        auto term = _InitControl(settings, connection);
-
-        const auto profile = _settings.FindProfile(profileGuid);
+        auto term = _InitControl(settings, connection, profileGuid);
 
         auto newTabImpl = winrt::make_self<TerminalTab>(profileGuid, term);
 
@@ -892,6 +888,7 @@ namespace winrt::TerminalApp::implementation
         _tabView.TabItems().Append(tabViewItem);
 
         // Set this tab's icon to the icon from the user's profile
+        const auto profile = _settings.FindProfile(profileGuid);
         if (profile != nullptr && !profile.Icon().empty())
         {
             newTabImpl->UpdateIcon(profile.Icon());
@@ -922,7 +919,7 @@ namespace winrt::TerminalApp::implementation
 
         if (debugConnection) // this will only be set if global debugging is on and tap is active
         {
-            auto newControl = _InitControl(settings, debugConnection);
+            auto newControl = _InitControl(settings, debugConnection, profileGuid);
             _RegisterTerminalEvents(newControl, *newTabImpl);
             // Split (auto) with the debug tap.
             newTabImpl->SplitPane(SplitState::Automatic, 0.5f, profileGuid, newControl);
@@ -1914,9 +1911,7 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            // Give term control a child of the settings so that any overrides go in the child
-            // This way, when we do a settings reload we just update the parent and the overrides remain
-            auto newControl = _InitControl(controlSettings, controlConnection);
+            auto newControl = _InitControl(controlSettings, controlConnection, realGuid);
 
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl, *focusedTab);
@@ -2549,9 +2544,24 @@ namespace winrt::TerminalApp::implementation
         _RemoveTabViewItem(tabViewItem);
     }
 
-    TermControl TerminalPage::_InitControl(const TerminalApp::TerminalSettings& settings, const ITerminalConnection& connection)
+    TermControl TerminalPage::_InitControl(const TerminalApp::TerminalSettings& settings, const ITerminalConnection& connection, const GUID profileGuid)
     {
-        return TermControl{ *(winrt::get_self<TerminalSettings>(settings)->CreateChild()), connection };
+        // Give term control a child of the settings so that any overrides go in the child
+        // This way, when we do a settings reload we just update the parent and the overrides remain
+        const auto child = winrt::get_self<TerminalSettings>(settings)->CreateChild();
+        TermControl term{ *child, connection };
+
+        // Check if the profile defines an unfocusedAppearance
+        const auto profile = _settings.FindProfile(profileGuid);
+        if (profile.UnfocusedAppearance())
+        {
+            // Now, make a grandchild for the unfocused appearance
+            const auto grandchild = child->CreateChild();
+            grandchild->ApplyAppearanceSettings(profile.UnfocusedAppearance(), _settings.GlobalSettings().ColorSchemes());
+            term.UnfocusedAppearance(*grandchild);
+        }
+
+        return term;
     }
 
     // Method Description:

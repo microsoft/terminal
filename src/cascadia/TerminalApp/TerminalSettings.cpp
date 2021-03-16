@@ -200,8 +200,6 @@ namespace winrt::TerminalApp::implementation
             const til::color colorRef{ profile.TabColor().Value() };
             _TabColor = static_cast<uint32_t>(colorRef);
         }
-
-        //_UnfocusedAppearance = profile.UnfocusedAppearance();
     }
 
     // Method Description:

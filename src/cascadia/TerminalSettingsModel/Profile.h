@@ -125,7 +125,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         friend class SettingsModelLocalTests::KeyBindingsTests;
         friend class TerminalAppUnitTests::DynamicProfileTests;
         friend class TerminalAppUnitTests::JsonTests;
-        friend struct implementation::AppearanceConfig;
     };
 }
 

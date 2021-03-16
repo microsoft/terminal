@@ -71,8 +71,6 @@ namespace winrt::TerminalApp::implementation
 
         INHERITABLE_SETTING(TerminalApp::TerminalSettings, Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
 
-        INHERITABLE_SETTING(TerminalApp::TerminalSettings, Microsoft::Terminal::TerminalControl::IControlAppearance, UnfocusedAppearance, nullptr);
-
         // When set, StartingTabColor allows to create a terminal with a "sticky" tab color.
         // This color is prioritized above the TabColor (that is usually initialized based on profile settings).
         // Due to this prioritization, the tab color will be preserved upon settings reload
