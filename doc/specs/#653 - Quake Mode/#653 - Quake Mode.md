@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2021-02-23
-last updated: 2021-03-15
+last updated: 2021-03-16
 issue id: #653
 ---
 
@@ -76,7 +76,7 @@ summon.
 
 From a technical perspective, the action will work by using the
 [`RegisterHotKey`] function. This API allows us to bind a particular hotkey with
-the OS. Whenever that hotkey is pressed, our window message loop will recieve a
+the OS. Whenever that hotkey is pressed, our window message loop will receive a
 `WM_HOTKEY`. We'll use the payload of that window message to lookup the action
 arguments for that hotkey. Then we'll use those arguments to control which
 window is invoked, where, and how the window behaves.
@@ -280,7 +280,7 @@ the discussion of these settings_)
 
 * **Story A** Press a hotkey anywhere to activate the single Terminal window
   wherever it was
-  - This is `{ "monitor": "any", "desktop": null }`
+  - This is `{ "monitor": "any", "desktop": "any" }`
 * **Story B** Press a hotkey anywhere to activate the single Terminal window _on
   the current monitor_. If it wasn't previously on that monitor, move it there.
   - This is `{ "monitor": "toCurrent" }`
@@ -292,27 +292,27 @@ As some additional examples:
 
 ```json
 // Go to the MRU window, wherever it is
-{ "keys": "win+1", "monitor":"any", "desktop": null },
-// Since "any" & null are the default values, just placing a single entry here
-// will bind the same behavior:
-{ "keys": "win+1" },
+{ "keys": "win+1", "command":{ "action":"globalSummon", "monitor":"any", "desktop": "any" } },
 
 // activate the MRU window, and move it to this desktop & this monitor
-{ "keys": "win+2", "monitor":"toCurrent", "desktop": "toCurrent" },
+{ "keys": "win+2", "command":{ "action":"globalSummon", "monitor":"toCurrent", "desktop": "toCurrent" } },
+// Since "toCurrent" & "toCurrent" are the default values, just placing a single
+// entry here will bind the same behavior:
+{ "keys": "win+2", "command": "globalSummon" },
 
 // activate the MRU window on this desktop
-{ "keys": "win+3", "monitor":"any", "desktop": "onCurrent" },
+{ "keys": "win+3", "command":{ "action":"globalSummon", "monitor":"any", "desktop": "onCurrent" } },
 
 // Activate the MRU window on monitor 2 (from any desktop), and place it on the
 // current desktop. If there isn't one on monitor 2, make a new one.
-{ "keys": "win+4", "monitor": 2, "desktop": "toCurrent" },
+{ "keys": "win+4", "command":{ "action":"globalSummon", "monitor": 2, "desktop": "toCurrent" } },
 
 // Activate the MRU window on monitor 3 (ONLY THIS desktop), or make a new one.
-{ "keys": "win+5", "monitor": 3, "desktop": "onCurrent" },
+{ "keys": "win+5", "command":{ "action":"globalSummon", "monitor": 3, "desktop": "onCurrent" } },
 
 // Activate the MRU window on this monitor (from any desktop), and place it on
 // the current desktop. If there isn't one on this monitor, make a new one.
-{ "keys": "win+6", "monitor": "onCurrent", "desktop": "toCurrent" },
+{ "keys": "win+6", "command":{ "action":"globalSummon", "monitor": "onCurrent", "desktop": "toCurrent" } },
 ```
 
 #### Summoning a specific window
@@ -367,13 +367,16 @@ functionality, the `globalSummon` action will support the following property:
   - When a positive number is provided, the terminal will use that value as a
     duration (in seconds) to slide the terminal into position when activated.
   - The default would be some sensible value. The pane animation is .2s, so
-    `0.2` might be a resonable default here.
+    `0.2` might be a reasonable default here.
 
 We could have alternatively provided a `"dropdownSpeed"` setting, that provided
 a number of pixels per second. In my opinion, that would be harder for users to
 use correctly. I believe that it's easier for users to mentally picture "I'd
 like the dropdown to last 100ms" vs "My monitor is 1504px tall, so I need to set
 this to 15040 to make the window traverse the entire display in .1s"
+
+> NOTE: `dropdownDuration` will be ignored when the user has animations disabled
+> in the OS. In that case, the terminal will just appear, as if it was set to 0.
 
 Some users might want to be able to use the global hotkey to hide the window
 when the window is already visible. This would let the hotkey act as a sort of
@@ -382,7 +385,7 @@ just want the action to always bring the Terminal into focus, and do nothing if
 the terminal is already focused. To facilitate both these use cases, we'll add
 the following property:
 
-* `"hideWhenVisible": bool`
+* `"toggleVisibility": bool`
   - When `true`: (_default_) When this hotkey is pressed, and the terminal
     window is currently active, minimize the window.
       - When `dropdownDuration` is not `0`, then the window will slide back off
@@ -429,6 +432,7 @@ current place. It is basically the same thing as the more elaborate:
     "monitor": "toCurrent",
     "desktop": "toCurrent",
     "window": "_quake",
+    "toggleVisibility": true,
     "dropdownDuration": 0.5
 },
 ```
@@ -449,7 +453,8 @@ When users want to be able to "minimize to the tray", they want:
 * The window to no longer appear in the alt-tab order
 
 When minimized to the tray, it's almost as if there's no window for the Terminal
-at all. This can be combined with the global hotkey to quickly restore the window.
+at all. This can be combined with the global hotkey (or the tray icon's context
+menu) to quickly restore the window.
 
 The tray icon could be used for a variety of purposes. As a simple start, we
 could include the following three options:
@@ -503,7 +508,7 @@ To summarize, we're proposing the following set of settings:
             "command": {
                 "action": "globalSummon",
                 "dropdownDuration": float,
-                "hideWhenVisible": bool,
+                "toggleVisibility": bool,
                 "monitor": "any"|"toCurrent"|"onCurrent"|int,
                 "desktop": "any"|"toCurrent"|"onCurrent"
             }
@@ -545,7 +550,7 @@ apps. Each privilege level has its own Monarch. The two are unable to
 communicate across the elevation boundary.
 
 This means that if the user often runs terminals in both contexts, then only one
-will have the global hotkeys bound. The naïve implementation would have the
+will have the global hotkeys bound. The naive implementation would have the
 first elevation level "win" the keybindings.
 
 A different option would be to have elevated windows not register global hotkeys
@@ -575,19 +580,24 @@ worried about this.
 </tr>
 </table>
 
-If there are any other applications running that have already registered hotkeys
-with `RegisterHotKey`, then it's possible that the Terminal's attempt to
-register that hotkey will fail. If that should happen, then we should display a
-warning dialog to the user indicating which hotkey will not work (because it's
-already used for something else).
+* If there are any other applications running that have already registered
+  hotkeys with `RegisterHotKey`, then it's possible that the Terminal's attempt
+  to register that hotkey will fail. If that should happen, then we should
+  display a warning dialog to the user indicating which hotkey will not work
+  (because it's already used for something else).
 
-Which is the "current" monitor? The one with the mouse or the one with the
-active window? This isn't something that has an obvious answer. Guake implements
-this feature where the "current monitor" is the one with the mouse on it. At
-least for the first iterations of this action, that's what we'll use.
+* Which is the "current" monitor? The one with the mouse or the one with the
+  active window? This isn't something that has an obvious answer. Guake
+  implements this feature where the "current monitor" is the one with the mouse
+  on it. At least for the first iterations of this action, that's what we'll
+  use.
+  `monitor: onCurrent|onCurrentWindow|toCurrent|<int>`
 
-`monitor: onCurrent|onCurrentWindow|toCurrent|<int>`
-
+* Currently, running both the Release and Preview versions of the Terminal at
+  the same time side-by-side is not generally supported. (For example, `wt.exe`
+  can only ever point at one of two.) If a user binds the same key to a
+  `globalSummon` or `quakeMode` action, then only one of the apps will actually
+  be able to successfully claim the global hotkey.
 
 ## Implementation plan
 
@@ -604,7 +614,7 @@ work would be needed:
       this initial version, the behavior would be summoning the MRU window,
       where it is, no dropdown, to start with. From there, we'd add the
       remaining properties:
-    * [ ] Add support for the `hideWhenVisible` property
+    * [ ] Add support for the `toggleVisibility` property
     * [ ] Add support for the `desktop` property to control how window summoning
       interacts with virtual desktops
     * [ ] Add support for the `monitor` which monitor the window appears on.
@@ -633,6 +643,15 @@ aren't already included in this spec.
   - We could have the setting appear as a pair of radio buttons, with the first
     disabling dropdown, and the second enabling a text box for inputting an
     animation duration.
+* It might be an interesting idea to have the ability to dock the quake window
+  to a specific side of the monitor, not just the top. We could probably do that
+  with a global setting `"quakeModeDockSide": "top"|"left"|"bottom"|"right"` or
+  something like that.
+* We might want to pre-load the quake window into the tray icon as an entry for
+  "Quake Mode", and otherwise exclude it from the list of windows in that menu.
+* We might think of other things for the Quake Mode window in the future - this
+  spec is by no means comprehensive. For example, it might make sense for the
+  quake mode window to automatically open in "always on top" mode.
 
 ## Resources
 
