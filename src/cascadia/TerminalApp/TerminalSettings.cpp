@@ -79,12 +79,12 @@ namespace winrt::TerminalApp::implementation
     // - keybindings: the keybinding handler
     // Return Value:
     // - the GUID of the created profile, and a fully initialized TerminalSettings object
-    std::tuple<guid, TerminalApp::TerminalSettings> TerminalSettings::BuildSettings(const CascadiaSettings& appSettings,
-                                                                                    const NewTerminalArgs& newTerminalArgs,
-                                                                                    const IKeyBindings& keybindings)
+    std::tuple<guid, TerminalApp::TerminalSettings, std::optional<TerminalApp::TerminalSettings>> TerminalSettings::BuildSettings(const CascadiaSettings& appSettings,
+                                                                                                                                  const NewTerminalArgs& newTerminalArgs,
+                                                                                                                                  const IKeyBindings& keybindings)
     {
         const guid profileGuid = appSettings.GetProfileForArgs(newTerminalArgs);
-        auto settings{ winrt::make<TerminalSettings>(appSettings, profileGuid, keybindings) };
+        auto [settings, unfocusedSettings] = BuildSettings(appSettings, profileGuid, keybindings);
 
         if (newTerminalArgs)
         {
@@ -111,7 +111,26 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        return { profileGuid, settings };
+        return { profileGuid, settings, unfocusedSettings };
+    }
+
+    std::tuple<TerminalApp::TerminalSettings, std::optional<TerminalApp::TerminalSettings>> TerminalSettings::BuildSettings(const CascadiaSettings& appSettings,
+                                                                                                                            guid profileGuid,
+                                                                                                                            const IKeyBindings& keybindings)
+    {
+        const auto profile = appSettings.FindProfile(profileGuid);
+        THROW_HR_IF_NULL(E_INVALIDARG, profile);
+
+        auto settingsImpl{ winrt::make_self<TerminalSettings>(appSettings, profileGuid, keybindings) };
+
+        if (profile.UnfocusedAppearance())
+        {
+            auto child = settingsImpl->CreateChild();
+            child->ApplyAppearanceSettings(profile.UnfocusedAppearance(), appSettings.GlobalSettings().ColorSchemes());
+            return { *settingsImpl, std::optional<TerminalApp::TerminalSettings>(*child) };
+        }
+
+        return { *settingsImpl, std::nullopt };
     }
 
     void TerminalSettings::ApplyAppearanceSettings(const IAppearanceConfig& appearance, const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes)

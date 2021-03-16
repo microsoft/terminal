@@ -35,9 +35,13 @@ namespace winrt::TerminalApp::implementation
                          guid profileGuid,
                          const Microsoft::Terminal::TerminalControl::IKeyBindings& keybindings);
 
-        static std::tuple<guid, TerminalApp::TerminalSettings> BuildSettings(const Microsoft::Terminal::Settings::Model::CascadiaSettings& appSettings,
-                                                                             const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs,
-                                                                             const Microsoft::Terminal::TerminalControl::IKeyBindings& keybindings);
+        static std::tuple<guid, TerminalApp::TerminalSettings, std::optional<TerminalApp::TerminalSettings>> BuildSettings(const Microsoft::Terminal::Settings::Model::CascadiaSettings& appSettings,
+                                                                                                                           const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs,
+                                                                                                                           const Microsoft::Terminal::TerminalControl::IKeyBindings& keybindings);
+
+        static std::tuple<TerminalApp::TerminalSettings, std::optional<TerminalApp::TerminalSettings>> BuildSettings(const Microsoft::Terminal::Settings::Model::CascadiaSettings& appSettings,
+                                                                                                                     guid profileGuid,
+                                                                                                                     const Microsoft::Terminal::TerminalControl::IKeyBindings& keybindings);
 
         void ApplyColorScheme(const Microsoft::Terminal::Settings::Model::ColorScheme& scheme);
         void ApplyAppearanceSettings(const Microsoft::Terminal::Settings::Model::IAppearanceConfig& appearance,

@@ -761,9 +761,9 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs)
     try
     {
-        auto [profileGuid, settings] = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
+        auto [profileGuid, settings, unfocusedSettings] = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
 
-        _CreateNewTabFromSettings(profileGuid, settings);
+        _CreateNewTabFromSettings(profileGuid, settings, unfocusedSettings);
 
         const uint32_t tabCount = _tabs.Size();
         const bool usedManualProfile = (newTerminalArgs != nullptr) &&
@@ -805,7 +805,7 @@ namespace winrt::TerminalApp::implementation
     //      currently displayed, it will be shown.
     // Arguments:
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
-    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings)
+    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings, std::optional<TerminalApp::TerminalSettings> unfocusedSettings)
     {
         // Initialize the new tab
 
@@ -826,7 +826,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        auto term = _InitControl(settings, connection, profileGuid);
+        auto term = _InitControl(settings, connection, unfocusedSettings);
 
         auto newTabImpl = winrt::make_self<TerminalTab>(profileGuid, term);
 
@@ -919,7 +919,7 @@ namespace winrt::TerminalApp::implementation
 
         if (debugConnection) // this will only be set if global debugging is on and tap is active
         {
-            auto newControl = _InitControl(settings, debugConnection, profileGuid);
+            auto newControl = _InitControl(settings, debugConnection, unfocusedSettings);
             _RegisterTerminalEvents(newControl, *newTabImpl);
             // Split (auto) with the debug tap.
             newTabImpl->SplitPane(SplitState::Automatic, 0.5f, profileGuid, newControl);
@@ -1297,7 +1297,7 @@ namespace winrt::TerminalApp::implementation
             const auto& profileGuid = tab.GetFocusedProfile();
             if (profileGuid.has_value())
             {
-                const auto settings{ winrt::make<TerminalSettings>(_settings, profileGuid.value(), *_bindings) };
+                const auto [settings, unfocusedSettings] = TerminalSettings::BuildSettings(_settings, profileGuid.value(), *_bindings);
                 const auto workingDirectory = tab.GetActiveTerminalControl().WorkingDirectory();
                 const auto validWorkingDirectory = !workingDirectory.empty();
                 if (validWorkingDirectory)
@@ -1305,7 +1305,7 @@ namespace winrt::TerminalApp::implementation
                     settings.StartingDirectory(workingDirectory);
                 }
 
-                _CreateNewTabFromSettings(profileGuid.value(), settings);
+                _CreateNewTabFromSettings(profileGuid.value(), settings, unfocusedSettings);
             }
         }
         CATCH_LOG();
@@ -1857,6 +1857,7 @@ namespace winrt::TerminalApp::implementation
         try
         {
             TerminalApp::TerminalSettings controlSettings;
+            std::optional<TerminalApp::TerminalSettings> unfocusedSettings;
             GUID realGuid;
             bool profileFound = false;
 
@@ -1866,7 +1867,7 @@ namespace winrt::TerminalApp::implementation
                 if (current_guid)
                 {
                     profileFound = true;
-                    controlSettings = { winrt::make<TerminalSettings>(_settings, current_guid.value(), *_bindings) };
+                    std::tie(controlSettings, unfocusedSettings) = TerminalSettings::BuildSettings(_settings, current_guid.value(), *_bindings);
                     const auto workingDirectory = focusedTab->GetActiveTerminalControl().WorkingDirectory();
                     const auto validWorkingDirectory = !workingDirectory.empty();
                     if (validWorkingDirectory)
@@ -1890,7 +1891,7 @@ namespace winrt::TerminalApp::implementation
             }
             if (!profileFound)
             {
-                std::tie(realGuid, controlSettings) = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
+                std::tie(realGuid, controlSettings, unfocusedSettings) = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
             }
 
             const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
@@ -1911,7 +1912,7 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            auto newControl = _InitControl(controlSettings, controlConnection, realGuid);
+            auto newControl = _InitControl(controlSettings, controlConnection, unfocusedSettings);
 
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl, *focusedTab);
@@ -2544,21 +2545,16 @@ namespace winrt::TerminalApp::implementation
         _RemoveTabViewItem(tabViewItem);
     }
 
-    TermControl TerminalPage::_InitControl(const TerminalApp::TerminalSettings& settings, const ITerminalConnection& connection, const GUID profileGuid)
+    TermControl TerminalPage::_InitControl(const TerminalApp::TerminalSettings& settings, const ITerminalConnection& connection, std::optional<TerminalApp::TerminalSettings> unfocusedAppearance)
     {
         // Give term control a child of the settings so that any overrides go in the child
         // This way, when we do a settings reload we just update the parent and the overrides remain
         const auto child = winrt::get_self<TerminalSettings>(settings)->CreateChild();
         TermControl term{ *child, connection };
 
-        // Check if the profile defines an unfocusedAppearance
-        const auto profile = _settings.FindProfile(profileGuid);
-        if (profile.UnfocusedAppearance())
+        if (unfocusedAppearance)
         {
-            // Now, make a grandchild for the unfocused appearance
-            const auto grandchild = child->CreateChild();
-            grandchild->ApplyAppearanceSettings(profile.UnfocusedAppearance(), _settings.GlobalSettings().ColorSchemes());
-            term.UnfocusedAppearance(*grandchild);
+            term.UnfocusedAppearance(unfocusedAppearance.value());
         }
 
         return term;

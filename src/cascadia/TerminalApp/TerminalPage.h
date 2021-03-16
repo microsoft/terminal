@@ -152,7 +152,7 @@ namespace winrt::TerminalApp::implementation
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
         void _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs);
-        void _CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
+        void _CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings, std::optional<TerminalApp::TerminalSettings> unfocusedSettings);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
 
         winrt::fire_and_forget _OpenNewWindow(const bool elevate, const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
@@ -250,7 +250,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::TerminalControl::TermControl _InitControl(const winrt::TerminalApp::TerminalSettings& settings,
                                                                               const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection,
-                                                                              const GUID profileGuid);
+                                                                              std::optional<winrt::TerminalApp::TerminalSettings> unfocusedAppearance);
 
         winrt::fire_and_forget _RefreshUIForSettingsReload();
 
