@@ -685,6 +685,18 @@ std::vector<ActionAndArgs>& AppCommandlineArgs::GetStartupActions()
 }
 
 // Method Description:
+// - Returns whether we should start listening for inbound PTY connections
+//   coming from the operating system default application feature.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if the listener should be started. False otherwise.
+bool AppCommandlineArgs::IsHandoffListener() const noexcept
+{
+    return _isHandoffListener;
+}
+
+// Method Description:
 // - Get the string of text that should be displayed to the user on exit. This
 //   is usually helpful for cases where the user entered some sort of invalid
 //   commandline. It's additionally also used when the user has requested the
@@ -770,7 +782,6 @@ int AppCommandlineArgs::ParseArgs(winrt::array_view<const winrt::hstring>& args)
     {
         if (arg == L"-Embedding")
         {
-            winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
             _isHandoffListener = true;
             return 0;
         }

@@ -831,6 +831,14 @@ namespace winrt::TerminalApp::implementation
 
         _loadedInitialSettings = true;
 
+        // Check if we were started as a COM server for inbound connections of console sessions
+        // coming out of the operating system default application feature. If so,
+        // start the listener so COM has the registrations to receive requests.
+        if (_settingsAppArgs.IsHandoffListener())
+        {
+            winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
+        }
+
         // Register for directory change notification.
         _RegisterSettingsChange();
 
