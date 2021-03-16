@@ -51,7 +51,7 @@ public:
     void ClearActive();
     void SetActive();
 
-    void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings,
+    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettings& settings,
                         const GUID& profile);
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
     void Relayout();
