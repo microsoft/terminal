@@ -21,8 +21,8 @@ namespace winrt::TerminalApp::implementation
 {
     struct FindTargetWindowResult : FindTargetWindowResultT<FindTargetWindowResult>
     {
-        GETSET_PROPERTY(int32_t, WindowId, -1);
-        GETSET_PROPERTY(winrt::hstring, WindowName, L"");
+        WINRT_PROPERTY(int32_t, WindowId, -1);
+        WINRT_PROPERTY(winrt::hstring, WindowName, L"");
 
     public:
         FindTargetWindowResult(const int32_t id, const winrt::hstring& name) :

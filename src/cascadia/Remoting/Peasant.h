@@ -26,7 +26,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs GetLastActivatedArgs();
 
         winrt::Microsoft::Terminal::Remoting::CommandlineArgs InitialArgs();
-        GETSET_PROPERTY(winrt::hstring, WindowName);
+        WINRT_PROPERTY(winrt::hstring, WindowName);
 
         TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs);
         TYPED_EVENT(ExecuteCommandlineRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::CommandlineArgs);

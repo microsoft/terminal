@@ -10,6 +10,9 @@
 #include "MinMaxCloseControl.h"
 
 #include "MinMaxCloseControl.g.cpp"
+
+#include <LibraryResources.h>
+
 using namespace winrt::Windows::UI::Xaml;
 
 namespace winrt::TerminalApp::implementation
@@ -77,6 +80,7 @@ namespace winrt::TerminalApp::implementation
             MinimizeButton().Height(maximizedHeight);
             MaximizeButton().Height(maximizedHeight);
             CloseButton().Height(maximizedHeight);
+            MaximizeToolTip().Text(RS_(L"WindowRestoreDownButtonToolTip"));
             break;
 
         case WindowVisualState::WindowVisualStateNormal:
@@ -87,6 +91,7 @@ namespace winrt::TerminalApp::implementation
             MinimizeButton().Height(windowedHeight);
             MaximizeButton().Height(windowedHeight);
             CloseButton().Height(windowedHeight);
+            MaximizeToolTip().Text(RS_(L"WindowMaximizeButtonToolTip"));
             break;
         }
     }

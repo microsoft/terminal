@@ -55,7 +55,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static bool ValidateColorScheme(const Json::Value& scheme);
 
-        GETSET_PROPERTY(winrt::hstring, Name);
+        WINRT_PROPERTY(winrt::hstring, Name);
         GETSET_COLORPROPERTY(Foreground); // defined in constructor
         GETSET_COLORPROPERTY(Background); // defined in constructor
         GETSET_COLORPROPERTY(SelectionBackground); // defined in constructor

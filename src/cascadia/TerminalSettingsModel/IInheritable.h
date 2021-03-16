@@ -81,7 +81,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 }
 
 // Use this macro to quickly implement both getters and the setter for an
-// inheritable setting property. This is similar to the GETSET_PROPERTY macro, except...
+// inheritable setting property. This is similar to the WINRT_PROPERTY macro, except...
 // - Has(): checks if the user explicitly set a value for this setting
 // - SourceGetter(): return the object that provides the resolved value
 // - Getter(): return the resolved value
@@ -89,7 +89,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 // - Clear(): clear the user set value
 // - the setting is saved as an optional, where nullopt means
 //   that we must inherit the value from our parent
-#define GETSET_SETTING(projectedType, type, name, ...)                      \
+#define INHERITABLE_SETTING(projectedType, type, name, ...)                 \
 public:                                                                     \
     /* Returns true if the user explicitly set the value, false otherwise*/ \
     bool Has##name() const                                                  \
@@ -145,7 +145,7 @@ private:                                                                    \
                                                                             \
         /*user set value was not set*/                                      \
         /*iterate through parents to find a value*/                         \
-        for (auto parent : _parents)                                        \
+        for (const auto& parent : _parents)                                 \
         {                                                                   \
             if (auto val{ parent->_get##name##Impl() })                     \
             {                                                               \
@@ -166,7 +166,7 @@ private:                                                                    \
                                                                             \
         /*user set value was not set*/                                      \
         /*iterate through parents to find one with a value*/                \
-        for (auto& parent : _parents)                                       \
+        for (const auto& parent : _parents)                                 \
         {                                                                   \
             if (auto source{ parent->_get##name##OverrideSourceImpl() })    \
             {                                                               \
@@ -182,7 +182,7 @@ private:                                                                    \
 // like Profile.Foreground (where null is interpreted
 // as an acceptable value, rather than "inherit")
 // "type" is exposed as an IReference
-#define GETSET_NULLABLE_SETTING(projectedType, type, name, ...)             \
+#define INHERITABLE_NULLABLE_SETTING(projectedType, type, name, ...)        \
 public:                                                                     \
     /* Returns true if the user explicitly set the value, false otherwise*/ \
     bool Has##name() const                                                  \
@@ -194,7 +194,7 @@ public:                                                                     \
     {                                                                       \
         /*user set value was not set*/                                      \
         /*iterate through parents to find one with a value*/                \
-        for (auto parent : _parents)                                        \
+        for (const auto& parent : _parents)                                 \
         {                                                                   \
             if (auto source{ parent->_get##name##OverrideSourceImpl() })    \
             {                                                               \
@@ -254,7 +254,7 @@ private:                                                                    \
                                                                             \
         /*user set value was not set*/                                      \
         /*iterate through parents to find a value*/                         \
-        for (auto parent : _parents)                                        \
+        for (const auto& parent : _parents)                                 \
         {                                                                   \
             if (auto val{ parent->_get##name##Impl() })                     \
             {                                                               \
@@ -275,7 +275,7 @@ private:                                                                    \
                                                                             \
         /*user set value was not set*/                                      \
         /*iterate through parents to find one with a value*/                \
-        for (auto& parent : _parents)                                       \
+        for (const auto& parent : _parents)                                 \
         {                                                                   \
             if (auto source{ parent->_get##name##OverrideSourceImpl() })    \
             {                                                               \

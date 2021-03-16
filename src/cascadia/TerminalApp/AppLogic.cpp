@@ -46,7 +46,8 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWar
     USES_RESOURCE(L"FailedToWriteToSettings"),
     USES_RESOURCE(L"InvalidColorSchemeInCmd"),
     USES_RESOURCE(L"InvalidSplitSize"),
-    USES_RESOURCE(L"FailedToParseStartupActions")
+    USES_RESOURCE(L"FailedToParseStartupActions"),
+    USES_RESOURCE(L"FailedToParseSubCommands"),
 };
 static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
@@ -576,7 +577,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Use the default profile to determine how big of a window we need.
-        const auto [_, settings] = TerminalSettings::BuildSettings(_settings, nullptr, nullptr);
+        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
 
         auto proposedSize = TermControl::GetProposedDimensions(settings, dpi);
 
