@@ -3,10 +3,9 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <ProjectName>TerminalControlLib</ProjectName>
+    <ProjectName>Microsoft.Terminal.Control.Lib</ProjectName>
     <RootNamespace>Microsoft.Terminal.Control</RootNamespace>
     <TargetName>Microsoft.Terminal.ControlLib</TargetName>
-    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
@@ -132,10 +131,6 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>$(OpenConsoleDir)src\cascadia\inc;$(OpenConsoleDir)src\types\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
-    <Link>
-      <AdditionalDependencies>dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;user32.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <!-- <AdditionalDependencies>WindowsApp.lib;user32.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies> -->
-    </Link>
     <Reference>
       <Private>false</Private>
     </Reference>

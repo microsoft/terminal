@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{CA5CAD1A-5555-4AC7-AC72-6CA5B3AB89ED}</ProjectGuid>
-    <ProjectName>TerminalControl</ProjectName>
-    <!-- <RootNamespace>TerminalControl</RootNamespace> -->
+    <ProjectGuid>{CA5CAD1A-F542-4635-A069-7CAEFB930070}</ProjectGuid>
+    <ProjectName>Microsoft.Terminal.Control</ProjectName>
     <RootNamespace>Microsoft.Terminal.Control</RootNamespace>
     <!-- cppwinrt.build.pre.props depends on these settings: -->
     <!-- build a dll, not exe (Application) -->

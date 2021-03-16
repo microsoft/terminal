@@ -287,7 +287,7 @@
     to do it exactly like this so the packaging project won't roll up
     TermControl's .xbf's from both the TermControl project and this one. -->
     <Reference Include="Microsoft.Terminal.Control">
-      <HintPath>$(OpenConsoleCommonOutDir)TerminalControl\Microsoft.Terminal.Control.winmd</HintPath>
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Control\Microsoft.Terminal.Control.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>

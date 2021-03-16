@@ -77,17 +77,9 @@
 
 
   <ItemGroup>
-    <!-- Manually add a reference to TerminalControl here. We need this so
-    MDMERGE will know where the TermControl types are defined. However, we need
-    to do it exactly like this so the packaging project won't roll up
-    TermControl's .xbf's from both the TermControl project and this one. -->
-<!--     <Reference Include="Microsoft.Terminal.Control">
-      <HintPath>$(OpenConsoleCommonOutDir)TerminalControl\Microsoft.Terminal.Control.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </Reference> -->
-
+    <!-- Manually include the Terminal.Core winmd, so we know where those types
+    are defined. We don't want to include it as a project reference, because
+    that would make us link that lib into our own binary. -->
     <Reference Include="Microsoft.Terminal.Core">
       <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
