@@ -507,7 +507,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             if (auto targetPeasant{ _getPeasant(windowID) })
             {
                 auto result{ winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(false) };
-                result->WindowName(targetWindowName);
                 try
                 {
                     // This will raise the peasant's ExecuteCommandlineRequested
@@ -521,6 +520,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                     // If we fail to propose the commandline to the peasant (it
                     // died?) then just tell this process to become a new window
                     // instead.
+                    result->WindowName(targetWindowName);
                     result->ShouldCreateWindow(true);
 
                     // If this fails, it'll be logged in the following

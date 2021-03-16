@@ -120,6 +120,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // possible someone started the _first_ wt with something like `wt
             // -w king` as the commandline - we want to make sure we set our
             // name to "king".
+            //
+            // The FindTargetWindow event is the WindowManager's way of saying
+            // "I do not know how to figure out how to turn this list of args
+            // into a window ID/name. Whoever's listening to this event does, so
+            // I'll ask them". It's a convoluted way of hooking the
+            // WindowManager up to AppLogic without actually telling it anything
+            // about TerminalApp (or even WindowsTerminal)
             auto findWindowArgs{ winrt::make_self<Remoting::implementation::FindTargetWindowArgs>(args) };
             _raiseFindTargetWindowRequested(nullptr, *findWindowArgs);
 
@@ -142,6 +149,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 TraceLoggingWrite(g_hRemotingProvider,
                                   "WindowManager_ProposeCommandline_AsMonarch",
                                   TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
+                                  TraceLoggingUInt64(0, "Id", "The ID we should assign our peasant"),
                                   TraceLoggingWideString(givenName.c_str(), "Name", "The name we should assign this window"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
             }
@@ -150,6 +158,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 TraceLoggingWrite(g_hRemotingProvider,
                                   "WindowManager_ProposeCommandline_AsMonarch",
                                   TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
+                                  TraceLoggingUInt64(0, "Id", "The ID we should assign our peasant"),
+                                  TraceLoggingWideString(L"", "Name", "The name we should assign this window"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
             }
         }
