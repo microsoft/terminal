@@ -71,7 +71,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // Otherwise, the King will tell us if we should make a new window
         _shouldCreateWindow = _isKing;
         std::optional<uint64_t> givenID;
-        winrt::hstring givenName = L"";
+        winrt::hstring givenName{};
         if (!_isKing)
         {
             // The monarch may respond back "you should be a new

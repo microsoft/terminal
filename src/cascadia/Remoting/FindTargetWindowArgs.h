@@ -27,7 +27,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         GETSET_PROPERTY(winrt::Microsoft::Terminal::Remoting::CommandlineArgs, Args, nullptr);
         GETSET_PROPERTY(int, ResultTargetWindow, -1);
-        GETSET_PROPERTY(winrt::hstring, ResultTargetWindowName, L"");
+        GETSET_PROPERTY(winrt::hstring, ResultTargetWindowName);
 
     public:
         FindTargetWindowArgs(winrt::Microsoft::Terminal::Remoting::CommandlineArgs args) :

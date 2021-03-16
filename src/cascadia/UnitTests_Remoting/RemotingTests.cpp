@@ -987,6 +987,8 @@ namespace RemotingUnitTests
 
     void RemotingTests::GetPeasantsByName()
     {
+        Log::Comment(L"Test that looking up a peasant by name finds the window we expect");
+
         const auto monarch0PID = 12345u;
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;
@@ -1033,6 +1035,8 @@ namespace RemotingUnitTests
 
     void RemotingTests::AddNamedPeasantsToNewMonarch()
     {
+        Log::Comment(L"Test that moving peasants to a new monarch persists their original names");
+
         const auto monarch0PID = 12345u;
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;
@@ -1087,6 +1091,10 @@ namespace RemotingUnitTests
 
     void RemotingTests::LookupNamedPeasantWhenOthersDied()
     {
+        Log::Comment(L"Test that looking for a peasant by name when a different"
+                     L" peasant has died cleans up the corpses of any peasants "
+                     L"we may have tripped over.");
+
         const auto monarch0PID = 12345u;
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;
@@ -1136,6 +1144,9 @@ namespace RemotingUnitTests
 
     void RemotingTests::LookupNamedPeasantWhenItDied()
     {
+        Log::Comment(L"Test that looking up a dead peasant by name returns 0, "
+                     L"indicating there's no peasant with that name.");
+
         const auto monarch0PID = 12345u;
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;

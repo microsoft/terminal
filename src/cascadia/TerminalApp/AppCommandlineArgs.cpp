@@ -854,7 +854,7 @@ void AppCommandlineArgs::FullResetState()
     _exitMessage = "";
     _shouldExitEarly = false;
 
-    _windowTarget = "";
+    _windowTarget = {};
 }
 
 std::string_view AppCommandlineArgs::GetTargetWindow() const noexcept
