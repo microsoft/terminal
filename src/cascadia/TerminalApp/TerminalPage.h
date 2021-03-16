@@ -6,7 +6,6 @@
 #include "TerminalPage.g.h"
 #include "TerminalTab.h"
 #include "AppKeyBindings.h"
-#include "TerminalSettings.h"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 
@@ -152,8 +151,8 @@ namespace winrt::TerminalApp::implementation
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
         void _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
-        void _CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
-        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
+        void _CreateNewTabFromSettings(GUID profileGuid, Microsoft::Terminal::Settings::Model::TerminalSettings settings, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, Microsoft::Terminal::Settings::Model::TerminalSettings settings);
 
         winrt::fire_and_forget _OpenNewWindow(const bool elevate, const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
@@ -247,6 +246,9 @@ namespace winrt::TerminalApp::implementation
         void _OnSwitchToTabRequested(const IInspectable& sender, const winrt::TerminalApp::TabBase& tab);
 
         void _Find();
+
+        winrt::Microsoft::Terminal::TerminalControl::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettings& settings,
+                                                                              const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
 
         winrt::fire_and_forget _RefreshUIForSettingsReload();
 

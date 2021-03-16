@@ -8,10 +8,9 @@
 #include "TerminalSettings.g.cpp"
 
 using namespace winrt::Microsoft::Terminal::TerminalControl;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace Microsoft::Console::Utils;
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     static std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment> ConvertConvergedAlignment(ConvergedAlignment alignment)
     {
@@ -50,15 +49,28 @@ namespace winrt::TerminalApp::implementation
         return { horizAlign, vertAlign };
     }
 
-    TerminalSettings::TerminalSettings(const CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings) :
-        _KeyBindings{ keybindings }
+    // Method Description:
+    // - Create a TerminalSettings object for the provided profile guid. We'll
+    //   use the guid to look up the profile that should be used to
+    //   create these TerminalSettings. Then, we'll apply settings contained in the
+    //   global and profile settings to the instance.
+    // Arguments:
+    // - appSettings: the set of settings being used to construct the new terminal
+    // - profileGuid: the unique identifier (guid) of the profile
+    // - keybindings: the keybinding handler
+    Model::TerminalSettings TerminalSettings::CreateWithProfileByID(const Model::CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings)
     {
+        auto settings{ winrt::make_self<TerminalSettings>() };
+        settings->_KeyBindings = keybindings;
+
         const auto profile = appSettings.FindProfile(profileGuid);
         THROW_HR_IF_NULL(E_INVALIDARG, profile);
 
         const auto globals = appSettings.GlobalSettings();
-        _ApplyProfileSettings(profile, globals.ColorSchemes());
-        _ApplyGlobalSettings(globals);
+        settings->_ApplyProfileSettings(profile, globals.ColorSchemes());
+        settings->_ApplyGlobalSettings(globals);
+
+        return *settings;
     }
 
     // Method Description:
@@ -76,14 +88,12 @@ namespace winrt::TerminalApp::implementation
     //     StartingDirectory) in this object to override the settings directly from
     //     the profile.
     // - keybindings: the keybinding handler
-    // Return Value:
-    // - the GUID of the created profile, and a fully initialized TerminalSettings object
-    std::tuple<guid, TerminalApp::TerminalSettings> TerminalSettings::BuildSettings(const CascadiaSettings& appSettings,
-                                                                                    const NewTerminalArgs& newTerminalArgs,
-                                                                                    const IKeyBindings& keybindings)
+    Model::TerminalSettings TerminalSettings::CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
+                                                                        const Model::NewTerminalArgs& newTerminalArgs,
+                                                                        const IKeyBindings& keybindings)
     {
         const guid profileGuid = appSettings.GetProfileForArgs(newTerminalArgs);
-        auto settings{ winrt::make<TerminalSettings>(appSettings, profileGuid, keybindings) };
+        auto settings{ CreateWithProfileByID(appSettings, profileGuid, keybindings) };
 
         if (newTerminalArgs)
         {
@@ -110,7 +120,33 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        return { profileGuid, settings };
+        return settings;
+    }
+
+    // Method Description:
+    // - Creates a TerminalSettings object that inherits from a parent TerminalSettings
+    // Arguments::
+    // - parent: the TerminalSettings object that the newly created TerminalSettings will inherit from
+    // Return Value:
+    // - a newly created child of the given parent object
+    Model::TerminalSettings TerminalSettings::CreateWithParent(const Model::TerminalSettings& parent)
+    {
+        THROW_HR_IF_NULL(E_INVALIDARG, parent);
+
+        auto parentImpl{ get_self<TerminalSettings>(parent) };
+        return *parentImpl->CreateChild();
+    }
+
+    // Method Description:
+    // - Sets our parent to the provided TerminalSettings
+    // Arguments:
+    // - parent: our new parent
+    void TerminalSettings::SetParent(const Model::TerminalSettings& parent)
+    {
+        ClearParents();
+        com_ptr<TerminalSettings> parentImpl;
+        parentImpl.copy_from(get_self<TerminalSettings>(parent));
+        InsertParent(parentImpl);
     }
 
     // Method Description:
@@ -120,7 +156,7 @@ namespace winrt::TerminalApp::implementation
     // - schemes: a map of schemes to look for our color scheme in, if we have one.
     // Return Value:
     // - <none>
-    void TerminalSettings::_ApplyProfileSettings(const Profile& profile, const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes)
+    void TerminalSettings::_ApplyProfileSettings(const Model::Profile& profile, const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes)
     {
         // Fill in the Terminal Setting's CoreSettings from the profile
         _HistorySize = profile.HistorySize();
@@ -205,7 +241,7 @@ namespace winrt::TerminalApp::implementation
     // - globalSettings: the global property values we're applying.
     // Return Value:
     // - <none>
-    void TerminalSettings::_ApplyGlobalSettings(const GlobalAppSettings& globalSettings) noexcept
+    void TerminalSettings::_ApplyGlobalSettings(const Model::GlobalAppSettings& globalSettings) noexcept
     {
         _InitialRows = globalSettings.InitialRows();
         _InitialCols = globalSettings.InitialCols();
@@ -225,7 +261,7 @@ namespace winrt::TerminalApp::implementation
     // - scheme: the ColorScheme we are applying to the TerminalSettings object
     // Return Value:
     // - <none>
-    void TerminalSettings::ApplyColorScheme(const ColorScheme& scheme)
+    void TerminalSettings::ApplyColorScheme(const Model::ColorScheme& scheme)
     {
         _DefaultForeground = til::color{ scheme.Foreground() };
         _DefaultBackground = til::color{ scheme.Background() };
