@@ -542,7 +542,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        control.TitleChanged([weakThis](auto newTitle) {
+        control.TitleChanged([weakThis](auto&&, auto&&) {
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
             {

@@ -28,6 +28,9 @@
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="EventArgs.h">
+      <DependentUpon>EventArgs.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="KeyChord.h">
       <DependentUpon>KeyChord.idl</DependentUpon>
     </ClInclude>
@@ -51,6 +54,9 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="EventArgs.cpp">
+      <DependentUpon>EventArgs.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="init.cpp" />
     <ClCompile Include="KeyChord.cpp">
       <DependentUpon>KeyChord.idl</DependentUpon>
@@ -73,7 +79,9 @@
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
+    <Midl Include="EventArgs.idl" />
     <Midl Include="KeyChord.idl" />
+    <Midl Include="IDirectKeyListener.idl" />
     <Midl Include="IKeyBindings.idl" />
     <Midl Include="IControlSettings.idl" />
     <Midl Include="SearchBoxControl.idl">
