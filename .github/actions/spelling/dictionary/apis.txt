@@ -24,6 +24,7 @@ Hashtable
 HIGHCONTRASTON
 HIGHCONTRASTW
 href
+IActivation
 IApp
 IAppearance
 IAsync

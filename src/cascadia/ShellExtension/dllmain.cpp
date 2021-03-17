@@ -11,9 +11,9 @@ STDAPI DllCanUnloadNow()
     return Module<InProc>::GetModule().Terminate() ? S_OK : S_FALSE;
 }
 
-STDAPI DllGetActivationFactory(_In_ HSTRING activatibleClassId, _COM_Outptr_ IActivationFactory** factory)
+STDAPI DllGetActivationFactory(_In_ HSTRING activatableClassId, _COM_Outptr_ IActivationFactory** factory)
 {
-    return Module<InProc>::GetModule().GetActivationFactory(activatibleClassId, factory);
+    return Module<InProc>::GetModule().GetActivationFactory(activatableClassId, factory);
 }
 
 STDAPI DllGetClassObject(_In_ REFCLSID rclsid, _In_ REFIID riid, _COM_Outptr_ void** ppv)
