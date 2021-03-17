@@ -355,16 +355,7 @@ namespace winrt::TerminalApp::implementation
         if (_startupState == StartupState::NotInitialized)
         {
             _startupState = StartupState::InStartup;
-            if (_startupActions.Size() == 0)
-            {
-                _OpenNewTab(nullptr);
-
-                _CompleteInitialization();
-            }
-            else
-            {
-                ProcessStartupActions(_startupActions, true);
-            }
+            ProcessStartupActions(_startupActions, true);
         }
     }
 
@@ -386,11 +377,6 @@ namespace winrt::TerminalApp::implementation
                                                                const bool initial,
                                                                const winrt::hstring cwd)
     {
-        // If there are no actions left, do nothing.
-        if (actions.Size() == 0)
-        {
-            return;
-        }
         auto weakThis{ get_weak() };
 
         // Handle it on a subsequent pass of the UI thread.
@@ -3046,6 +3032,7 @@ namespace winrt::TerminalApp::implementation
     {
         return _isFullscreen;
     }
+
     // Method Description:
     // - Returns true if we're currently in "Always on top" mode. When we're in
     //   always on top mode, the window should be on top of all other windows.
@@ -3174,7 +3161,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // Method Description:
     // Method Description:
     // - Computes the delta for scrolling the tab's viewport.
     // Arguments:
