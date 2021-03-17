@@ -67,7 +67,7 @@ namespace Microsoft.Terminal.TerminalControl
 
         void UpdateSettings();
 
-        Microsoft.Terminal.TerminalControl.IControlSettings Settings { get; };
+        Microsoft.Terminal.TerminalControl.IControlSettings Settings;
 
         event TitleChangedEventArgs TitleChanged;
         event FontSizeChangedEventArgs FontSizeChanged;

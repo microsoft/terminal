@@ -213,6 +213,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <ScrollViewer>
                     <StackPanel>
                         <StackPanel Style="{StaticResource PivotStackStyle}">
+                            <Border x:Name="ControlPreview"
+                                    Height="200"
+                                    Width="600"/>
                             <!--Grouping: Text-->
                             <TextBlock x:Uid="Profile_TextHeader" Style="{StaticResource SubtitleTextBlockStyle}"/>
 

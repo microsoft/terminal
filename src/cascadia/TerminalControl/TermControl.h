@@ -150,6 +150,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         TerminalConnection::ConnectionState ConnectionState() const;
         IControlSettings Settings() const;
+        void Settings(IControlSettings newSettings);
 
         static Windows::Foundation::Size GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi);
         static Windows::Foundation::Size GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,

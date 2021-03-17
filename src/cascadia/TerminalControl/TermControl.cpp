@@ -3259,6 +3259,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _settings;
     }
 
+    void TermControl::Settings(IControlSettings newSettings)
+    {
+        _settings = newSettings;
+    }
+
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControl::TabColor() noexcept
     {
         auto coreColor = _terminal->GetTabColor();
