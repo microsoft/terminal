@@ -282,7 +282,7 @@ This ensures that the change propagates post-serialization.
 
 ### Unbinding actions
 
-Removing a name or a key chord is currently ommitted from this spec because there
+Removing a name or a key chord is currently omitted from this spec because there
  is no Settings UI use case for it at the moment. This class of scenarios is
  designed for Command Palette customization.
 
