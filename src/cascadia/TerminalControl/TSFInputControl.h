@@ -15,7 +15,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     public:
         CursorPositionEventArgs() = default;
 
-        GETSET_PROPERTY(Windows::Foundation::Point, CurrentPosition);
+        WINRT_PROPERTY(Windows::Foundation::Point, CurrentPosition);
     };
 
     struct FontInfoEventArgs :
@@ -24,11 +24,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     public:
         FontInfoEventArgs() = default;
 
-        GETSET_PROPERTY(Windows::Foundation::Size, FontSize);
+        WINRT_PROPERTY(Windows::Foundation::Size, FontSize);
 
-        GETSET_PROPERTY(winrt::hstring, FontFace);
+        WINRT_PROPERTY(winrt::hstring, FontFace);
 
-        GETSET_PROPERTY(Windows::UI::Text::FontWeight, FontWeight);
+        WINRT_PROPERTY(Windows::UI::Text::FontWeight, FontWeight);
     };
 
     struct TSFInputControl : TSFInputControlT<TSFInputControl>

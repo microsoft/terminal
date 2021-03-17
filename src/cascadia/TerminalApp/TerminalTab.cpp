@@ -211,7 +211,7 @@ namespace winrt::TerminalApp::implementation
     // - profile: The GUID of the profile these settings should apply to.
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile)
+    void TerminalTab::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
     {
         _rootPane->UpdateSettings(settings, profile);
 
@@ -379,7 +379,7 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(control.Dispatcher());
 
         const auto currentOffset = control.GetScrollOffset();
-        control.ScrollViewport(currentOffset + delta);
+        control.ScrollViewport(::base::ClampAdd(currentOffset, delta));
     }
 
     // Method Description:
@@ -841,11 +841,29 @@ namespace winrt::TerminalApp::implementation
             renameTabMenuItem.Icon(renameTabSymbol);
         }
 
+        Controls::MenuFlyoutItem duplicateTabMenuItem;
+        {
+            // "Duplicate Tab"
+            Controls::FontIcon duplicateTabSymbol;
+            duplicateTabSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            duplicateTabSymbol.Glyph(L"\xF5ED");
+
+            duplicateTabMenuItem.Click([weakThis](auto&&, auto&&) {
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->_DuplicateRequestedHandlers();
+                }
+            });
+            duplicateTabMenuItem.Text(RS_(L"DuplicateTabText"));
+            duplicateTabMenuItem.Icon(duplicateTabSymbol);
+        }
+
         // Build the menu
         Controls::MenuFlyout newTabFlyout;
         Controls::MenuFlyoutSeparator menuSeparator;
         newTabFlyout.Items().Append(chooseColorMenuItem);
         newTabFlyout.Items().Append(renameTabMenuItem);
+        newTabFlyout.Items().Append(duplicateTabMenuItem);
         newTabFlyout.Items().Append(menuSeparator);
         newTabFlyout.Items().Append(_CreateCloseSubMenu());
         newTabFlyout.Items().Append(closeTabMenuItem);
@@ -1203,4 +1221,5 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(TerminalTab, ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
     DEFINE_EVENT(TerminalTab, ColorCleared, _colorCleared, winrt::delegate<>);
     DEFINE_EVENT(TerminalTab, TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
+    DEFINE_EVENT(TerminalTab, DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
 }

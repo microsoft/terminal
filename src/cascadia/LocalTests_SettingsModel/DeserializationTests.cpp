@@ -79,6 +79,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(TestCommandsAndKeybindings);
 
         TEST_METHOD(TestNestedCommandWithoutName);
+        TEST_METHOD(TestNestedCommandWithBadSubCommands);
         TEST_METHOD(TestUnbindNestedCommand);
         TEST_METHOD(TestRebindNestedCommand);
 
@@ -1376,7 +1377,7 @@ namespace SettingsModelLocalTests
                 },
                 {
                     "name": "parent",
-                    "commands": [                        
+                    "commands": [
                         { "command": { "action": "setColorScheme", "colorScheme": "invalidScheme" } }
                     ]
                 }
@@ -1403,11 +1404,11 @@ namespace SettingsModelLocalTests
                 },
                 {
                     "name": "grandparent",
-                    "commands": [                        
+                    "commands": [
                         {
                             "name": "parent",
                             "commands": [
-                                { 
+                                {
                                     "command": { "action": "setColorScheme", "colorScheme": "invalidScheme" }
                                 }
                             ]
@@ -1909,7 +1910,8 @@ namespace SettingsModelLocalTests
             "keybindings": [
                 { "command": { "action": "splitPane", "split":"auto" }, "keys": [ "ctrl+alt+t", "ctrl+a" ] },
                 { "command": { "action": "moveFocus" }, "keys": [ "ctrl+a" ] },
-                { "command": { "action": "resizePane" }, "keys": [ "ctrl+b" ] }
+                { "command": { "action": "resizePane" }, "keys": [ "ctrl+b" ] },
+                { "name": "invalid nested", "commands":[ { "name" : "hello" }, { "name" : "world" } ] }
             ]
         })" };
 
@@ -1918,18 +1920,20 @@ namespace SettingsModelLocalTests
 
         VERIFY_ARE_EQUAL(0u, settings->_globals->_keymap->_keyShortcuts.size());
 
-        VERIFY_ARE_EQUAL(3u, settings->_globals->_keybindingsWarnings.size());
+        VERIFY_ARE_EQUAL(4u, settings->_globals->_keybindingsWarnings.size());
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::TooManyKeysForChord, settings->_globals->_keybindingsWarnings.at(0));
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::MissingRequiredParameter, settings->_globals->_keybindingsWarnings.at(1));
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::MissingRequiredParameter, settings->_globals->_keybindingsWarnings.at(2));
+        VERIFY_ARE_EQUAL(SettingsLoadWarnings::FailedToParseSubCommands, settings->_globals->_keybindingsWarnings.at(3));
 
         settings->_ValidateKeybindings();
 
-        VERIFY_ARE_EQUAL(4u, settings->_warnings.Size());
+        VERIFY_ARE_EQUAL(5u, settings->_warnings.Size());
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::AtLeastOneKeybindingWarning, settings->_warnings.GetAt(0));
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::TooManyKeysForChord, settings->_warnings.GetAt(1));
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.GetAt(2));
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.GetAt(3));
+        VERIFY_ARE_EQUAL(SettingsLoadWarnings::FailedToParseSubCommands, settings->_warnings.GetAt(4));
     }
 
     void DeserializationTests::ValidateExecuteCommandlineWarning()
@@ -2313,6 +2317,53 @@ namespace SettingsModelLocalTests
         // Because the "parent" command didn't have a name, it couldn't be
         // placed into the list of commands. It and it's children are just
         // ignored.
+        VERIFY_ARE_EQUAL(0u, commands.Size());
+    }
+
+    void DeserializationTests::TestNestedCommandWithBadSubCommands()
+    {
+        // This test tests a nested command without a name specified. This type
+        // of command should just be ignored, since we can't auto-generate names
+        // for nested commands, they _must_ have names specified.
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                }
+            ],
+            "actions": [
+                {
+                    "name": "nested command",
+                    "commands": [
+                        {
+                            "name": "child1"
+                        },
+                        {
+                            "name": "child2"
+                        }
+                    ]
+                },
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+
+        auto settings = winrt::make_self<implementation::CascadiaSettings>();
+        settings->_ParseJsonString(settingsJson, false);
+        settings->LayerJson(settings->_userSettings);
+        auto commands = settings->_globals->Commands();
+        settings->_ValidateSettings();
+
+        VERIFY_ARE_EQUAL(2u, settings->_warnings.Size());
+        VERIFY_ARE_EQUAL(SettingsLoadWarnings::AtLeastOneKeybindingWarning, settings->_warnings.GetAt(0));
+        VERIFY_ARE_EQUAL(SettingsLoadWarnings::FailedToParseSubCommands, settings->_warnings.GetAt(1));
         VERIFY_ARE_EQUAL(0u, commands.Size());
     }
 

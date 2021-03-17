@@ -1,0 +1,32 @@
+{
+    "C_Cpp.default.browse.databaseFilename": "${workspaceFolder}\\.vscode\\.BROWSE.VC.DB",
+    "C_Cpp.default.browse.path": [
+        "${workspaceFolder}"
+    ],
+    "C_Cpp.loggingLevel": "None",
+    "files.associations": {
+        "xstring": "cpp",
+        "*.idl": "cpp",
+        "array": "cpp",
+        "future": "cpp",
+        "istream": "cpp",
+        "memory": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "utility": "cpp",
+        "variant": "cpp",
+        "xlocmes": "cpp",
+        "xlocmon": "cpp",
+        "xlocnum": "cpp",
+        "xloctime": "cpp",
+        "multi_span": "cpp",
+        "pointers": "cpp",
+        "vector": "cpp"
+    },
+    "files.exclude": {
+        "**/bin/**": true,
+        "**/obj/**": true,
+        "**/packages/**": true,
+        "**/generated files/**": true
+    }
+}

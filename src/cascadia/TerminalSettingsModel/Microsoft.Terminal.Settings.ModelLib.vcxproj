@@ -57,6 +57,9 @@
       <DependentUpon>EnumMappings.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="SettingsTypes.h" />
+    <ClInclude Include="TerminalSettings.h">
+      <DependentUpon>TerminalSettings.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="TerminalSettingsSerializationHelpers.h" />
     <ClInclude Include="TerminalWarnings.h">
       <DependentUpon>TerminalWarnings.idl</DependentUpon>
@@ -108,6 +111,9 @@
     <ClCompile Include="Profile.cpp">
       <DependentUpon>Profile.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="TerminalSettings.cpp">
+      <DependentUpon>TerminalSettings.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="EnumMappings.cpp">
       <DependentUpon>EnumMappings.idl</DependentUpon>
     </ClCompile>
@@ -130,6 +136,7 @@
     <Midl Include="KeyMapping.idl" />
     <Midl Include="Profile.idl" />
     <Midl Include="EnumMappings.idl" />
+    <Midl Include="TerminalSettings.idl" />
     <Midl Include="TerminalWarnings.idl" />
     <Midl Include="KeyChordSerialization.idl" />
   </ItemGroup>

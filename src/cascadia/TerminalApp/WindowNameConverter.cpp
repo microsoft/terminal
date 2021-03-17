@@ -19,7 +19,7 @@ namespace winrt::TerminalApp::implementation
                                                         Foundation::IInspectable const& /* parameter */,
                                                         hstring const& /* language */)
     {
-        // Returns Visible if the string is _not_ "desktopWallpaper", else returns Collapsed
+        // Returns a string like "Window: 12345" for the window with ID 12345
         const auto& id = winrt::unbox_value_or<uint64_t>(value, 0);
         return winrt::box_value(fmt::format(std::wstring_view(RS_(L"WindowIdPrefix")), id));
     }
@@ -37,6 +37,7 @@ namespace winrt::TerminalApp::implementation
                                                           Foundation::IInspectable const& /* parameter */,
                                                           hstring const& /* language */)
     {
+        // Returns the window's name, or "<unnamed-window>" if a window has no name
         const auto& name = winrt::unbox_value_or<hstring>(value, L"");
         return winrt::box_value(name.empty() ? L"<unnamed-window>" : name);
     }

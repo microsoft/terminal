@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-namespace TerminalApp
+import "CascadiaSettings.idl";
+
+namespace Microsoft.Terminal.Settings.Model
 {
     // Class Description:
     // TerminalSettings encapsulates all settings that control the
@@ -16,6 +18,13 @@ namespace TerminalApp
                                     Microsoft.Terminal.TerminalControl.IControlSettings
     {
         TerminalSettings();
+
+        static TerminalSettings CreateWithProfileByID(CascadiaSettings appSettings, Guid profileGuid, Microsoft.Terminal.TerminalControl.IKeyBindings keybindings);
+        static TerminalSettings CreateWithNewTerminalArgs(CascadiaSettings appSettings, NewTerminalArgs newTerminalArgs, Microsoft.Terminal.TerminalControl.IKeyBindings keybindings);
+        static TerminalSettings CreateWithParent(TerminalSettings parent);
+
+        void SetParent(TerminalSettings parent);
+        void ApplyColorScheme(ColorScheme scheme);
     };
 
 }

@@ -91,6 +91,8 @@ namespace Microsoft.Terminal.Settings.Model
         // a IReference, so it's nullable
         Windows.Foundation.IReference<Int32> ProfileIndex { get; };
 
+        Windows.Foundation.IReference<Boolean> SuppressApplicationTitle;
+
         Boolean Equals(NewTerminalArgs other);
         String GenerateName();
         String ToCommandline();

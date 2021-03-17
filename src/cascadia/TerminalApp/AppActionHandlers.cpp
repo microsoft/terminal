@@ -39,7 +39,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleDuplicateTab(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {
-        _DuplicateTabViewItem();
+        _DuplicateFocusedTab();
         args.Handled(true);
     }
 
@@ -376,7 +376,7 @@ namespace winrt::TerminalApp::implementation
                     if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
                     {
                         auto controlSettings = activeControl.Settings().as<TerminalSettings>();
-                        controlSettings->ApplyColorScheme(scheme);
+                        controlSettings.ApplyColorScheme(scheme);
                         activeControl.UpdateSettings();
                         args.Handled(true);
                     }
@@ -598,8 +598,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Important: Don't take the param by reference, since we'll be doing work
     // on another thread.
-    fire_and_forget _OpenNewWindow(const bool elevate,
-                                   const NewTerminalArgs newTerminalArgs)
+    fire_and_forget TerminalPage::_OpenNewWindow(const bool elevate,
+                                                 const NewTerminalArgs newTerminalArgs)
     {
         // Hop to the BG thread
         co_await winrt::resume_background();
@@ -658,9 +658,8 @@ namespace winrt::TerminalApp::implementation
             newTerminalArgs = NewTerminalArgs();
         }
 
-        auto [profileGuid, settings] = TerminalSettings::BuildSettings(_settings,
-                                                                       newTerminalArgs,
-                                                                       *_bindings);
+        const auto profileGuid{ _settings.GetProfileForArgs(newTerminalArgs) };
+        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
         // Manually fill in the evaluated profile.
         newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profileGuid));
@@ -668,24 +667,36 @@ namespace winrt::TerminalApp::implementation
         actionArgs.Handled(true);
     }
 
+    // Method Description:
+    // - Raise a IdentifyWindowsRequested event. This will bubble up to the
+    //   AppLogic, to the AppHost, to the Peasant, to the Monarch, then get
+    //   distributed down to _all_ the Peasants, as to display info about the
+    //   window in _every_ Peasant window.
+    // - This action is also buggy right now, because TeachingTips behave
+    //   weird in XAML Islands. See microsoft-ui-xaml#4382
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
     void TerminalPage::_HandleIdentifyWindows(const IInspectable& /*sender*/,
                                               const ActionEventArgs& args)
     {
-        // Raise a IdentifyWindowsRequested event. This will bubble up to the
-        // AppLogic, to the AppHost, to the Peasant, to the Monarch, then get
-        // distributed down to _all_ the Peasants, as to display info about the
-        // window in _every_ Peasant window.
-        //
-        // This action is also buggy right now, because TeachingTips behave
-        // weird in XAML Islands. See microsoft-ui-xaml#4382
         _IdentifyWindowsRequestedHandlers(*this, nullptr);
         args.Handled(true);
     }
+
+    // Method Description:
+    // - Display the "Toast" with the name and ID of this window.
+    // - Unlike _HandleIdentifyWindow**s**, this event just displays the window
+    //   ID and name in the current window. It does not involve any bubbling
+    //   up/down the page/logic/host/manager/peasant/monarch.
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
     void TerminalPage::_HandleIdentifyWindow(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {
-        // Unlike _HandleIdentifyWindow**s**, this event just displays the
-        // window ID and name in the current window.
         IdentifyWindow();
         args.Handled(true);
     }

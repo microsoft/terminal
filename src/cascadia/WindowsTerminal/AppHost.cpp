@@ -611,9 +611,24 @@ GUID AppHost::_CurrentDesktopGuid()
     return currentDesktopGuid;
 }
 
+<<<<<<< HEAD
 winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
                                                           const winrt::Windows::Foundation::IInspectable /*args*/)
+=======
+// Method Description:
+// - Called when this window wants _all_ windows to display their
+//   identification. We'll hop to the BG thread, and raise an event (eventually
+//   handled by the monarch) to bubble this request to all the Terminal windows.
+// Arguments:
+// - <unused>
+// Return Value:
+// - <none>
+winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                          const winrt::Windows::Foundation::IInspectable& /*args*/)
+>>>>>>> dev/migrie/f/identifyWindows
 {
+    // We'll be raising an event that may result in a RPC call to the monarch -
+    // make sure we're on the background thread, or this will silently fail
     co_await winrt::resume_background();
 
     if (auto peasant{ _windowManager.CurrentWindow() })
@@ -622,6 +637,13 @@ winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const winrt::Windows::
     }
 }
 
+// Method Description:
+// - Called when the monarch wants us to display our window ID. We'll call down
+//   to the app layer to display the toast.
+// Arguments:
+// - <unused>
+// Return Value:
+// - <none>
 void AppHost::_DisplayWindowId(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                const winrt::Windows::Foundation::IInspectable& /*args*/)
 {

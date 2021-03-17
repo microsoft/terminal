@@ -130,9 +130,6 @@
     </ClInclude>
     <ClInclude Include="Pane.h" />
     <ClInclude Include="ColorHelper.h" />
-    <ClInclude Include="TerminalSettings.h">
-      <DependentUpon>TerminalSettings.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="ShortcutActionDispatch.h">
       <DependentUpon>ShortcutActionDispatch.idl</DependentUpon>
@@ -147,6 +144,7 @@
     <ClInclude Include="AppLogic.h">
       <DependentUpon>AppLogic.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="Toast.h"/>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -213,9 +211,6 @@
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
     <ClCompile Include="ColorHelper.cpp" />
     <ClCompile Include="DebugTapConnection.cpp" />
-    <ClCompile Include="TerminalSettings.cpp">
-      <DependentUpon>TerminalSettings.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -235,6 +230,8 @@
       <DependentUpon>AppLogic.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="Toast.cpp" />
+
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -295,7 +292,6 @@
     </Midl>
     <Midl Include="FilteredCommand.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
-    <Midl Include="TerminalSettings.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>

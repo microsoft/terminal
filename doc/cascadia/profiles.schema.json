@@ -222,6 +222,11 @@
           "$ref": "#/definitions/Color",
           "default": null,
           "description": "If provided, will set the tab's color to the given value"
+        },
+        "suppressApplicationTitle": {
+          "type": "boolean",
+          "default": "false",
+          "description": "When set to true, tabTitle overrides the default title of the tab and any title change messages from the application will be suppressed. When set to false, tabTitle behaves as normal"
         }
       },
       "type": "object"
@@ -993,9 +998,9 @@
           "description": "Sets the color of the cursor. Overrides the cursor color from the color scheme. Uses hex color format: \"#rrggbb\"."
         },
         "cursorHeight": {
-          "description": "Sets the percentage height of the cursor starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 25-100.",
+          "description": "Sets the percentage height of the cursor starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 1-100.",
           "maximum": 100,
-          "minimum": 25,
+          "minimum": 1,
           "type": ["integer","null"],
           "default": 25
         },
