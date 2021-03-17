@@ -26,7 +26,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
 
   <ItemGroup Label="ProjectConfigurations">
-  <ProjectConfiguration Include="AuditMode|Win32">
+    <ProjectConfiguration Include="AuditMode|Win32">
       <Configuration>AuditMode</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
@@ -88,9 +88,8 @@
       <PreprocessorDefinitions>_WINDOWS;EXTERNAL_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
-      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\Win32K;$(SolutionDir)\dep\gsl\include;$(SolutionDir)\dep\wil\include;$(SolutionDir)\oss\chromium;$(SolutionDir)\oss\fmt\include;$(SolutionDir)\oss\dynamic_bitset;$(SolutionDir)\oss\libpopcnt;$(SolutionDir)\oss\interval_tree;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\Win32K;$(SolutionDir)\dep\gsl\include;$(SolutionDir)\dep\wil\include;$(SolutionDir)\oss\chromium;$(SolutionDir)\oss\fmt\include;$(SolutionDir)\oss\dynamic_bitset;$(SolutionDir)\oss\libpopcnt;$(SolutionDir)\oss\interval_tree;$(SolutionDir)\oss\boost\boost_1_73_0;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
@@ -102,9 +101,13 @@
       <PreprocessorDefinitions>EXTERNAL_BUILD;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <Link>
-      <ProgramDatabaseFile>$(OutDir)$(TargetName)FullPDB.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <SetChecksum>true</SetChecksum>
+      <!-- Force full debugging info (not fastlink) in all configurations.
+           Our "App container" or WinRT projects already do this in Release,
+           and it can only help in debug. -->
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
 
@@ -119,9 +122,6 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;DBG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <Link>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
   </ItemDefinitionGroup>
 
   <!-- For Release ONLY -->
@@ -171,6 +171,6 @@
     <PropertyGroup>
       <ErrorText>This project references git submodule(s) that are missing on this computer. Use `git submodule update --init --recursive` to download them.  For more information, see https://github.com/microsoft/terminal#building-the-code. </ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\dep\wil') Or !Exists('$(SolutionDir)\dep\gsl')" Text="$([System.String]::Format('$(ErrorText)'))" />
+    <Error Condition="!Exists('$(SolutionDir)\dep\wil\README.md') Or !Exists('$(SolutionDir)\dep\gsl\README.md')" Text="$([System.String]::Format('$(ErrorText)'))" />
   </Target>
 </Project>

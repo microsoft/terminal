@@ -15,6 +15,7 @@
 #include <d2d1.h>
 #include <d2d1_1.h>
 #include <d2d1helper.h>
+#include <DirectXMath.h>
 #include <dwrite.h>
 #include <dwrite_1.h>
 #include <dwrite_2.h>
@@ -25,6 +26,7 @@
 
 #include "CustomTextLayout.h"
 #include "CustomTextRenderer.h"
+#include "DxFontRenderData.h"
 
 #include "../../types/inc/Viewport.hpp"
 
@@ -55,9 +57,14 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT SetWindowSize(const SIZE pixels) noexcept;
 
         void SetCallback(std::function<void()> pfn);
+        void SetWarningCallback(std::function<void(const HRESULT)> pfn);
 
-        bool GetRetroTerminalEffects() const noexcept;
-        void SetRetroTerminalEffects(bool enable) noexcept;
+        void ToggleShaderEffects();
+
+        bool GetRetroTerminalEffect() const noexcept;
+        void SetRetroTerminalEffect(bool enable) noexcept;
+
+        void SetPixelShaderPath(std::wstring_view value) noexcept;
 
         void SetForceFullRepaintRendering(bool enable) noexcept;
 
@@ -67,7 +74,7 @@ namespace Microsoft::Console::Render
 
         // IRenderEngine Members
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
-        [[nodiscard]] HRESULT InvalidateCursor(const COORD* const pcoordCursor) noexcept override;
+        [[nodiscard]] HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept override;
         [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
         [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
@@ -77,6 +84,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT StartPaint() noexcept override;
         [[nodiscard]] HRESULT EndPaint() noexcept override;
+
+        [[nodiscard]] bool RequiresContinuousRedraw() noexcept override;
 
         void WaitUntilCanRender() noexcept override;
         [[nodiscard]] HRESULT Present() noexcept override;
@@ -105,7 +114,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, int const iDpi) noexcept override;
 
-        [[nodiscard]] std::vector<til::rectangle> GetDirtyArea() override;
+        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept override;
 
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
@@ -122,8 +131,9 @@ namespace Microsoft::Console::Render
         void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept;
 
     protected:
-        [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
+        [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring_view newTitle) noexcept override;
         [[nodiscard]] HRESULT _PaintTerminalEffects() noexcept;
+        [[nodiscard]] bool _FullRepaintNeeded() const noexcept;
 
     private:
         enum class SwapChainMode
@@ -141,24 +151,12 @@ namespace Microsoft::Console::Render
         float _prevScale;
 
         std::function<void()> _pfn;
+        std::function<void(const HRESULT)> _pfnWarningCallback;
 
         bool _isEnabled;
         bool _isPainting;
 
-        struct LineMetrics
-        {
-            float gridlineWidth;
-            float underlineOffset;
-            float underlineOffset2;
-            float underlineWidth;
-            float strikethroughOffset;
-            float strikethroughWidth;
-        };
-
-        LineMetrics _lineMetrics;
         til::size _displaySizePixels;
-        til::size _glyphCell;
-        ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
 
         D2D1_COLOR_F _defaultForegroundColor;
         D2D1_COLOR_F _defaultBackgroundColor;
@@ -171,7 +169,8 @@ namespace Microsoft::Console::Render
 
         bool _firstFrame;
         bool _invalidateFullRows;
-        til::bitmap _invalidMap;
+        std::pmr::unsynchronized_pool_resource _pool;
+        til::pmr::bitmap _invalidMap;
         til::point _invalidScroll;
         bool _allInvalid;
 
@@ -187,14 +186,13 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID2D1Factory1> _d2dFactory;
 
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
-        ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _dwriteTextFormat;
-        ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _dwriteFontFace;
-        ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
         ::Microsoft::WRL::ComPtr<CustomTextLayout> _customLayout;
         ::Microsoft::WRL::ComPtr<CustomTextRenderer> _customRenderer;
         ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _strokeStyle;
         ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _dashStrokeStyle;
         ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _hyperlinkStrokeStyle;
+
+        std::unique_ptr<DxFontRenderData> _fontRenderData;
 
         D2D1_STROKE_STYLE_PROPERTIES _strokeStyleProperties;
         D2D1_STROKE_STYLE_PROPERTIES _dashStrokeStyleProperties;
@@ -221,7 +219,24 @@ namespace Microsoft::Console::Render
         std::unique_ptr<DrawingContext> _drawingContext;
 
         // Terminal effects resources.
-        bool _retroTerminalEffects;
+
+        // Controls if configured terminal effects are enabled
+        bool _terminalEffectsEnabled;
+
+        // Experimental and deprecated retro terminal effect
+        //  Preserved for backwards compatibility
+        //  Implemented in terms of the more generic pixel shader effect
+        //  Has precendence over pixel shader effect
+        bool _retroTerminalEffect;
+
+        // Experimental and pixel shader effect
+        //  Allows user to load a pixel shader from a few presets or from a file path
+        std::wstring _pixelShaderPath;
+        bool _pixelShaderLoaded{ false };
+
+        std::chrono::steady_clock::time_point _shaderStartTime;
+
+        // DX resources needed for terminal effects
         ::Microsoft::WRL::ComPtr<ID3D11RenderTargetView> _renderTargetView;
         ::Microsoft::WRL::ComPtr<ID3D11VertexShader> _vertexShader;
         ::Microsoft::WRL::ComPtr<ID3D11PixelShader> _pixelShader;
@@ -242,12 +257,19 @@ namespace Microsoft::Console::Render
         // DirectX constant buffers need to be a multiple of 16; align to pad the size.
         __declspec(align(16)) struct
         {
-            float ScaledScanLinePeriod;
-            float ScaledGaussianSigma;
+            // Note: This can be seen as API endpoint towards user provided pixel shaders.
+            //  Changes here can break existing pixel shaders so be careful with changing datatypes
+            //  and order of parameters
+            float Time;
+            float Scale;
+            DirectX::XMFLOAT2 Resolution;
+            DirectX::XMFLOAT4 Background;
 #pragma warning(suppress : 4324) // structure was padded due to __declspec(align())
         } _pixelShaderSettings;
 
         [[nodiscard]] HRESULT _CreateDeviceResources(const bool createSwapChain) noexcept;
+        bool _HasTerminalEffects() const noexcept;
+        std::string _LoadPixelShaderFile() const;
         HRESULT _SetupTerminalEffects();
         void _ComputePixelShaderSettings() noexcept;
 
@@ -265,31 +287,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _CopyFrontToBack() noexcept;
 
         [[nodiscard]] HRESULT _EnableDisplayAccess(const bool outputEnabled) noexcept;
-
-        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _ResolveFontFaceWithFallback(std::wstring& familyName,
-                                                                                              DWRITE_FONT_WEIGHT& weight,
-                                                                                              DWRITE_FONT_STRETCH& stretch,
-                                                                                              DWRITE_FONT_STYLE& style,
-                                                                                              std::wstring& localeName) const;
-
-        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _FindFontFace(std::wstring& familyName,
-                                                                               DWRITE_FONT_WEIGHT& weight,
-                                                                               DWRITE_FONT_STRETCH& stretch,
-                                                                               DWRITE_FONT_STYLE& style,
-                                                                               std::wstring& localeName) const;
-
-        [[nodiscard]] std::wstring _GetLocaleName() const;
-
-        [[nodiscard]] std::wstring _GetFontFamilyName(gsl::not_null<IDWriteFontFamily*> const fontFamily,
-                                                      std::wstring& localeName) const;
-
-        [[nodiscard]] HRESULT _GetProposedFont(const FontInfoDesired& desired,
-                                               FontInfo& actual,
-                                               const int dpi,
-                                               ::Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
-                                               ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
-                                               ::Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace,
-                                               LineMetrics& lineMetrics) const noexcept;
 
         [[nodiscard]] til::size _GetClientSize() const;
 

@@ -5,6 +5,7 @@
 #include "ColorScheme.h"
 #include "DefaultSettings.h"
 #include "../../types/inc/Utils.hpp"
+#include "../../types/inc/colorTable.hpp"
 #include "Utils.h"
 #include "JsonUtils.h"
 
@@ -41,14 +42,18 @@ static constexpr std::array<std::string_view, 16> TableColors = {
 };
 
 ColorScheme::ColorScheme() :
-    _Foreground{ DEFAULT_FOREGROUND_WITH_ALPHA },
-    _Background{ DEFAULT_BACKGROUND_WITH_ALPHA },
-    _SelectionBackground{ DEFAULT_FOREGROUND },
-    _CursorColor{ DEFAULT_CURSOR_COLOR }
+    ColorScheme(L"", DEFAULT_FOREGROUND_WITH_ALPHA, DEFAULT_BACKGROUND_WITH_ALPHA, DEFAULT_CURSOR_COLOR)
 {
+    Utils::InitializeCampbellColorTable(_table);
 }
 
-ColorScheme::ColorScheme(winrt::hstring name, Color defaultFg, Color defaultBg, Color cursorColor) :
+ColorScheme::ColorScheme(winrt::hstring name) :
+    ColorScheme(name, DEFAULT_FOREGROUND_WITH_ALPHA, DEFAULT_BACKGROUND_WITH_ALPHA, DEFAULT_CURSOR_COLOR)
+{
+    Utils::InitializeCampbellColorTable(_table);
+}
+
+ColorScheme::ColorScheme(winrt::hstring name, COLORREF defaultFg, COLORREF defaultBg, COLORREF cursorColor) :
     _Name{ name },
     _Foreground{ defaultFg },
     _Background{ defaultBg },
@@ -166,6 +171,29 @@ void ColorScheme::SetColorTableEntry(uint8_t index, const winrt::Windows::UI::Co
 {
     THROW_HR_IF(E_INVALIDARG, index > _table.size() - 1);
     _table[index] = value;
+}
+
+// Method Description:
+// - Validates a given color scheme
+// - A color scheme is valid if it has a name and defines all the colors
+// Arguments:
+// - The color scheme to validate
+// Return Value:
+// - true if the scheme is valid, false otherwise
+bool ColorScheme::ValidateColorScheme(const Json::Value& scheme)
+{
+    for (const auto& key : TableColors)
+    {
+        if (!scheme.isMember(JsonKey(key)))
+        {
+            return false;
+        }
+    }
+    if (!scheme.isMember(JsonKey(NameKey)))
+    {
+        return false;
+    }
+    return true;
 }
 
 // Method Description:

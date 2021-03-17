@@ -16,13 +16,23 @@ namespace Microsoft.Terminal.Settings.Model
         IActionArgs ActionArgs { get; };
     };
 
-    enum Direction
+    enum ResizeDirection
     {
         None = 0,
         Left,
         Right,
         Up,
         Down
+    };
+
+    enum FocusDirection
+    {
+        None = 0,
+        Left,
+        Right,
+        Up,
+        Down,
+        Previous
     };
 
     enum SplitState
@@ -43,7 +53,8 @@ namespace Microsoft.Terminal.Settings.Model
     {
         SettingsFile = 0,
         DefaultsFile,
-        AllFiles
+        AllFiles,
+        SettingsUI
     };
 
     enum MoveTabDirection
@@ -51,6 +62,13 @@ namespace Microsoft.Terminal.Settings.Model
         None = 0,
         Forward,
         Backward
+    };
+
+    enum FindMatchDirection
+    {
+        None = 0,
+        Next,
+        Previous
     };
 
     enum CommandPaletteLaunchMode
@@ -73,8 +91,11 @@ namespace Microsoft.Terminal.Settings.Model
         // a IReference, so it's nullable
         Windows.Foundation.IReference<Int32> ProfileIndex { get; };
 
+        Windows.Foundation.IReference<Boolean> SuppressApplicationTitle;
+
         Boolean Equals(NewTerminalArgs other);
         String GenerateName();
+        String ToCommandline();
     };
 
     [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
@@ -103,13 +124,13 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass ResizePaneArgs : IActionArgs
     {
-        Direction Direction { get; };
+        ResizeDirection ResizeDirection { get; };
     };
 
     [default_interface] runtimeclass MoveFocusArgs : IActionArgs
     {
-        MoveFocusArgs(Direction direction);
-        Direction Direction { get; };
+        MoveFocusArgs(FocusDirection direction);
+        FocusDirection FocusDirection { get; };
     };
 
     [default_interface] runtimeclass AdjustFontSizeArgs : IActionArgs
@@ -124,16 +145,19 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
+        SplitPaneArgs(SplitState split, Double size, NewTerminalArgs terminalArgs);
         SplitPaneArgs(SplitState split, NewTerminalArgs terminalArgs);
         SplitPaneArgs(SplitType splitMode);
 
         SplitState SplitStyle { get; };
         NewTerminalArgs TerminalArgs { get; };
         SplitType SplitMode { get; };
+        Double SplitSize { get; };
     };
 
     [default_interface] runtimeclass OpenSettingsArgs : IActionArgs
     {
+        OpenSettingsArgs(SettingsTarget target);
         SettingsTarget Target { get; };
     };
 
@@ -189,5 +213,17 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs
     {
         CommandPaletteLaunchMode LaunchMode { get; };
+    };
+
+    [default_interface] runtimeclass FindMatchArgs : IActionArgs
+    {
+        FindMatchArgs(FindMatchDirection direction);
+        FindMatchDirection Direction { get; };
+    };
+
+    [default_interface] runtimeclass NewWindowArgs : IActionArgs
+    {
+        NewWindowArgs(NewTerminalArgs terminalArgs);
+        NewTerminalArgs TerminalArgs { get; };
     };
 }

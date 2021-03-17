@@ -59,10 +59,10 @@ CATCH_RETURN();
 // Routine Description:
 // - Notifies us that the console has changed the position of the cursor.
 // Arguments:
-// - pcoordCursor - the new position of the cursor
+// - psrRegion - the region covered by the cursor
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT VtEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
+[[nodiscard]] HRESULT VtEngine::InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept
 {
     // If we just inherited the cursor, we're going to get an InvalidateCursor
     //      for both where the old cursor was, and where the new cursor is
@@ -70,9 +70,9 @@ CATCH_RETURN();
     // We should ignore the first one, but after that, if the client application
     //      is moving the cursor around in the viewport, move our virtual top
     //      up to meet their changes.
-    if (!_skipCursor && _virtualTop > pcoordCursor->Y)
+    if (!_skipCursor && _virtualTop > psrRegion->Top)
     {
-        _virtualTop = pcoordCursor->Y;
+        _virtualTop = psrRegion->Top;
     }
     _skipCursor = false;
 

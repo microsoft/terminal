@@ -3,9 +3,6 @@
 
 #include "pch.h"
 
-#include <winrt/TerminalApp.h>
-#include <winrt/Microsoft.Terminal.Settings.Model.h>
-
 #include "NonClientIslandWindow.h"
 
 class AppHost
@@ -20,12 +17,16 @@ public:
     bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
     void SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
 
+    bool HasWindow();
+
 private:
     bool _useNonClientArea;
 
     std::unique_ptr<IslandWindow> _window;
     winrt::TerminalApp::App _app;
     winrt::TerminalApp::AppLogic _logic;
+    bool _shouldCreateWindow{ false };
+    winrt::Microsoft::Terminal::Remoting::WindowManager _windowManager{ nullptr };
 
     void _HandleCommandlineArgs();
 
@@ -43,4 +44,12 @@ private:
     void _RaiseVisualBell(const winrt::Windows::Foundation::IInspectable& sender,
                           const winrt::Windows::Foundation::IInspectable& arg);
     void _WindowMouseWheeled(const til::point coord, const int32_t delta);
+    winrt::fire_and_forget _WindowActivated();
+
+    void _DispatchCommandline(winrt::Windows::Foundation::IInspectable sender,
+                              winrt::Microsoft::Terminal::Remoting::CommandlineArgs args);
+
+    void _FindTargetWindow(const winrt::Windows::Foundation::IInspectable& sender,
+                           const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
+    GUID _CurrentDesktopGuid();
 };

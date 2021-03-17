@@ -49,6 +49,8 @@ filling in the last row, and updating the screen.
 
 #pragma once
 
+#include <vector>
+
 #include "cursor.h"
 #include "Row.hpp"
 #include "TextAttribute.hpp"
@@ -120,6 +122,16 @@ public:
 
     void SetCurrentAttributes(const TextAttribute& currentAttributes) noexcept;
 
+    void SetCurrentLineRendition(const LineRendition lineRendition);
+    void ResetLineRenditionRange(const size_t startRow, const size_t endRow);
+    LineRendition GetLineRendition(const size_t row) const;
+    bool IsDoubleWidthLine(const size_t row) const;
+
+    SHORT GetLineWidth(const size_t row) const;
+    COORD ClampPositionWithinLine(const COORD position) const;
+    COORD ScreenToBufferPosition(const COORD position) const;
+    COORD BufferToScreenPosition(const COORD position) const;
+
     void Reset();
 
     [[nodiscard]] HRESULT ResizeTraditional(const COORD newSize) noexcept;
@@ -139,12 +151,12 @@ public:
     bool MoveToNextGlyph(til::point& pos, bool allowBottomExclusive = false) const;
     bool MoveToPreviousGlyph(til::point& pos) const;
 
-    const std::vector<SMALL_RECT> GetTextRects(COORD start, COORD end, bool blockSelection = false) const;
+    const std::vector<SMALL_RECT> GetTextRects(COORD start, COORD end, bool blockSelection, bool bufferCoordinates) const;
 
     void AddHyperlinkToMap(std::wstring_view uri, uint16_t id);
     std::wstring GetHyperlinkUriFromId(uint16_t id) const;
     uint16_t GetHyperlinkId(std::wstring_view uri, std::wstring_view id);
-    void RemoveHyperlinkFromMap(uint16_t id);
+    void RemoveHyperlinkFromMap(uint16_t id) noexcept;
     std::wstring GetCustomIdFromId(uint16_t id) const;
     void CopyHyperlinkMaps(const TextBuffer& OtherBuffer);
 
@@ -156,10 +168,11 @@ public:
         std::vector<std::vector<COLORREF>> BkAttr;
     };
 
-    const TextAndColor GetText(const bool lineSelection,
+    const TextAndColor GetText(const bool includeCRLF,
                                const bool trimTrailingWhitespace,
                                const std::vector<SMALL_RECT>& textRects,
-                               std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors = nullptr) const;
+                               std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors = nullptr,
+                               const bool formatWrappedRows = false) const;
 
     static std::string GenHTML(const TextAndColor& rows,
                                const int fontHeightPoints,
@@ -189,7 +202,7 @@ public:
 private:
     void _UpdateSize();
     Microsoft::Console::Types::Viewport _size;
-    std::deque<ROW> _storage;
+    std::vector<ROW> _storage;
     Cursor _cursor;
 
     SHORT _firstRow; // indexes top row (not necessarily 0)
@@ -209,7 +222,7 @@ private:
 
     void _SetFirstRowIndex(const SHORT FirstRowIndex) noexcept;
 
-    COORD _GetPreviousFromCursor() const noexcept;
+    COORD _GetPreviousFromCursor() const;
 
     void _SetWrapOnCurrentRow();
     void _AdjustWrapOnCurrentRow(const bool fSet);

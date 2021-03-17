@@ -203,6 +203,35 @@ winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings CascadiaSettings:
 }
 
 // Method Description:
+// - Get a reference to our profiles.defaults object
+// Arguments:
+// - <none>
+// Return Value:
+// - a reference to our profile.defaults object
+winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::ProfileDefaults() const
+{
+    return *_userDefaultProfileSettings;
+}
+
+// Method Description:
+// - Create a new profile based off the default profile settings.
+// Arguments:
+// - <none>
+// Return Value:
+// - a reference to the new profile
+winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::CreateNewProfile()
+{
+    auto newProfile{ _userDefaultProfileSettings->CreateChild() };
+    _allProfiles.Append(*newProfile);
+
+    // Give the new profile a distinct name so a guid is properly generated
+    const winrt::hstring newName{ fmt::format(L"Profile {}", _allProfiles.Size()) };
+    newProfile->Name(newName);
+
+    return *newProfile;
+}
+
+// Method Description:
 // - Gets our list of warnings we found during loading. These are things that we
 //   knew were bad when we called `_ValidateSettings` last.
 // Return Value:
@@ -834,6 +863,33 @@ winrt::Microsoft::Terminal::Settings::Model::ColorScheme CascadiaSettings::GetCo
     }
     const auto schemeName = profile.ColorSchemeName();
     return _globals->ColorSchemes().TryLookup(schemeName);
+}
+
+// Method Description:
+// - updates all references to that color scheme with the new name
+// Arguments:
+// - oldName: the original name for the color scheme
+// - newName: the new name for the color scheme
+// Return Value:
+// - <none>
+void CascadiaSettings::UpdateColorSchemeReferences(const hstring oldName, const hstring newName)
+{
+    // update profiles.defaults, if necessary
+    if (_userDefaultProfileSettings &&
+        _userDefaultProfileSettings->HasColorSchemeName() &&
+        _userDefaultProfileSettings->ColorSchemeName() == oldName)
+    {
+        _userDefaultProfileSettings->ColorSchemeName(newName);
+    }
+
+    // update all profiles referencing this color scheme
+    for (const auto& profile : _allProfiles)
+    {
+        if (profile.HasColorSchemeName() && profile.ColorSchemeName() == oldName)
+        {
+            profile.ColorSchemeName(newName);
+        }
+    }
 }
 
 winrt::hstring CascadiaSettings::ApplicationDisplayName()

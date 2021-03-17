@@ -8,6 +8,14 @@
 #include "Jumplist.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
+#ifdef UNIT_TESTING
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class CommandlineTest;
+};
+#endif
+
 namespace winrt::TerminalApp::implementation
 {
     struct AppLogic : AppLogicT<AppLogic, IInitializeWithWindow>
@@ -29,6 +37,8 @@ namespace winrt::TerminalApp::implementation
         [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
 
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
+        int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd);
+        int32_t FindTargetWindow(array_view<const winrt::hstring> actions);
         winrt::hstring ParseCommandlineMessage();
         bool ShouldExitEarly();
 
@@ -37,6 +47,7 @@ namespace winrt::TerminalApp::implementation
         bool AlwaysOnTop() const;
 
         Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);
+        bool CenterOnLaunch();
         TerminalApp::InitialPosition GetInitialPosition(int64_t defaultInitialX, int64_t defaultInitialY);
         winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme();
         Microsoft::Terminal::Settings::Model::LaunchMode GetLaunchMode();
@@ -85,7 +96,10 @@ namespace winrt::TerminalApp::implementation
         std::atomic<bool> _settingsReloadQueued{ false };
 
         ::TerminalApp::AppCommandlineArgs _appArgs;
+        ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
         int _ParseArgs(winrt::array_view<const hstring>& args);
+        static int32_t _doFindTargetWindow(winrt::array_view<const hstring> args,
+                                           const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior);
 
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);
         void _ShowLoadWarningsDialog();
@@ -106,6 +120,10 @@ namespace winrt::TerminalApp::implementation
 
         void _ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme);
 
+        bool _hasCommandLineArguments{ false };
+        bool _hasSettingsStartupActions{ false };
+        std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> _warnings;
+
         // These are events that are handled by the TerminalPage, but are
         // exposed through the AppLogic. This macro is used to forward the event
         // directly to them.
@@ -117,6 +135,10 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(AlwaysOnTopChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, AlwaysOnTopChanged);
         FORWARDED_TYPED_EVENT(RaiseVisualBell, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, RaiseVisualBell);
         FORWARDED_TYPED_EVENT(SetTaskbarProgress, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, SetTaskbarProgress);
+
+#ifdef UNIT_TESTING
+        friend class TerminalAppLocalTests::CommandlineTest;
+#endif
     };
 }
 

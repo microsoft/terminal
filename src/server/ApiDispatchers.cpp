@@ -35,7 +35,7 @@
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleMode);
     CONSOLE_MODE_MSG* const a = &m->u.consoleMsgL1.GetConsoleMode;
-    std::wstring handleType = L"unknown";
+    std::wstring_view handleType = L"unknown";
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "API_GetConsoleMode",
@@ -54,14 +54,14 @@
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
     if (pObjectHandle->IsInputHandle())
     {
-        handleType = L"input handle";
+        handleType = L"input";
         InputBuffer* pObj;
         RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_READ, &pObj));
         m->_pApiRoutines->GetConsoleInputModeImpl(*pObj, a->Mode);
     }
     else
     {
-        handleType = L"output handle";
+        handleType = L"output";
         SCREEN_INFORMATION* pObj;
         RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
         m->_pApiRoutines->GetConsoleOutputModeImpl(*pObj, a->Mode);

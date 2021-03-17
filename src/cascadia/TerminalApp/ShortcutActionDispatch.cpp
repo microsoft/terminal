@@ -22,6 +22,11 @@ namespace winrt::TerminalApp::implementation
     // - true if we handled the event was handled, else false.
     bool ShortcutActionDispatch::DoAction(const ActionAndArgs& actionAndArgs)
     {
+        if (!actionAndArgs)
+        {
+            return false;
+        }
+
         const auto& action = actionAndArgs.Action();
         const auto& args = actionAndArgs.Args();
         auto eventArgs = args ? ActionEventArgs{ args } :
@@ -60,12 +65,6 @@ namespace winrt::TerminalApp::implementation
             _NewTabHandlers(*this, eventArgs);
             break;
         }
-
-        case ShortcutAction::NewWindow:
-        {
-            _NewWindowHandlers(*this, eventArgs);
-            break;
-        }
         case ShortcutAction::CloseWindow:
         {
             _CloseWindowHandlers(*this, eventArgs);
@@ -102,7 +101,16 @@ namespace winrt::TerminalApp::implementation
             _ScrollDownPageHandlers(*this, eventArgs);
             break;
         }
-
+        case ShortcutAction::ScrollToTop:
+        {
+            _ScrollToTopHandlers(*this, eventArgs);
+            break;
+        }
+        case ShortcutAction::ScrollToBottom:
+        {
+            _ScrollToBottomHandlers(*this, eventArgs);
+            break;
+        }
         case ShortcutAction::NextTab:
         {
             _NextTabHandlers(*this, eventArgs);
@@ -167,9 +175,9 @@ namespace winrt::TerminalApp::implementation
             _ResetFontSizeHandlers(*this, eventArgs);
             break;
         }
-        case ShortcutAction::ToggleRetroEffect:
+        case ShortcutAction::ToggleShaderEffects:
         {
-            _ToggleRetroEffectHandlers(*this, eventArgs);
+            _ToggleShaderEffectsHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::ToggleFocusMode:
@@ -245,6 +253,21 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::BreakIntoDebugger:
         {
             _BreakIntoDebuggerHandlers(*this, eventArgs);
+            break;
+        }
+        case ShortcutAction::FindMatch:
+        {
+            _FindMatchHandlers(*this, eventArgs);
+            break;
+        }
+        case ShortcutAction::TogglePaneReadOnly:
+        {
+            _TogglePaneReadOnlyHandlers(*this, eventArgs);
+            break;
+        }
+        case ShortcutAction::NewWindow:
+        {
+            _NewWindowHandlers(*this, eventArgs);
             break;
         }
         default:

@@ -47,6 +47,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         Profile();
         Profile(guid guid);
+
+        hstring ToString()
+        {
+            return Name();
+        }
+
         static com_ptr<Profile> CloneInheritanceGraph(com_ptr<Profile> oldProfile, com_ptr<Profile> newProfile, std::unordered_map<void*, com_ptr<Profile>>& visited);
         static com_ptr<Profile> CopySettings(com_ptr<Profile> source);
 
@@ -61,56 +67,60 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         hstring ExpandedBackgroundImagePath() const;
         static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 
-        GETSET_SETTING(guid, Guid, _GenerateGuidForProfile(Name(), Source()));
-        GETSET_SETTING(hstring, Name, L"Default");
-        GETSET_SETTING(hstring, Source);
-        GETSET_SETTING(bool, Hidden, false);
-        GETSET_SETTING(guid, ConnectionType);
+        WINRT_PROPERTY(OriginTag, Origin, OriginTag::Custom);
 
-        GETSET_SETTING(hstring, Icon);
+        INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
+        INHERITABLE_SETTING(Model::Profile, hstring, Name, L"Default");
+        INHERITABLE_SETTING(Model::Profile, hstring, Source);
+        INHERITABLE_SETTING(Model::Profile, bool, Hidden, false);
+        INHERITABLE_SETTING(Model::Profile, guid, ConnectionType);
 
-        GETSET_SETTING(CloseOnExitMode, CloseOnExit, CloseOnExitMode::Graceful);
-        GETSET_SETTING(hstring, TabTitle);
-        GETSET_NULLABLE_SETTING(Windows::UI::Color, TabColor, nullptr);
-        GETSET_SETTING(bool, SuppressApplicationTitle, false);
+        // Default Icon: Segoe MDL2 CommandPrompt icon
+        INHERITABLE_SETTING(Model::Profile, hstring, Icon, L"\uE756");
 
-        GETSET_SETTING(bool, UseAcrylic, false);
-        GETSET_SETTING(double, AcrylicOpacity, 0.5);
-        GETSET_SETTING(Microsoft::Terminal::TerminalControl::ScrollbarState, ScrollState, Microsoft::Terminal::TerminalControl::ScrollbarState::Visible);
+        INHERITABLE_SETTING(Model::Profile, CloseOnExitMode, CloseOnExit, CloseOnExitMode::Graceful);
+        INHERITABLE_SETTING(Model::Profile, hstring, TabTitle);
+        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, TabColor, nullptr);
+        INHERITABLE_SETTING(Model::Profile, bool, SuppressApplicationTitle, false);
 
-        GETSET_SETTING(hstring, FontFace, DEFAULT_FONT_FACE);
-        GETSET_SETTING(int32_t, FontSize, DEFAULT_FONT_SIZE);
-        GETSET_SETTING(Windows::UI::Text::FontWeight, FontWeight, DEFAULT_FONT_WEIGHT);
-        GETSET_SETTING(hstring, Padding, DEFAULT_PADDING);
+        INHERITABLE_SETTING(Model::Profile, bool, UseAcrylic, false);
+        INHERITABLE_SETTING(Model::Profile, double, AcrylicOpacity, 0.5);
+        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::TerminalControl::ScrollbarState, ScrollState, Microsoft::Terminal::TerminalControl::ScrollbarState::Visible);
 
-        GETSET_SETTING(hstring, Commandline, L"cmd.exe");
-        GETSET_SETTING(hstring, StartingDirectory);
+        INHERITABLE_SETTING(Model::Profile, hstring, FontFace, DEFAULT_FONT_FACE);
+        INHERITABLE_SETTING(Model::Profile, int32_t, FontSize, DEFAULT_FONT_SIZE);
+        INHERITABLE_SETTING(Model::Profile, Windows::UI::Text::FontWeight, FontWeight, DEFAULT_FONT_WEIGHT);
+        INHERITABLE_SETTING(Model::Profile, hstring, Padding, DEFAULT_PADDING);
 
-        GETSET_SETTING(hstring, BackgroundImagePath);
-        GETSET_SETTING(double, BackgroundImageOpacity, 1.0);
-        GETSET_SETTING(Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::UniformToFill);
-        GETSET_SETTING(ConvergedAlignment, BackgroundImageAlignment, ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center);
+        INHERITABLE_SETTING(Model::Profile, hstring, Commandline, L"cmd.exe");
+        INHERITABLE_SETTING(Model::Profile, hstring, StartingDirectory);
 
-        GETSET_SETTING(Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
-        GETSET_SETTING(bool, RetroTerminalEffect, false);
-        GETSET_SETTING(bool, ForceFullRepaintRendering, false);
-        GETSET_SETTING(bool, SoftwareRendering, false);
+        INHERITABLE_SETTING(Model::Profile, hstring, BackgroundImagePath);
+        INHERITABLE_SETTING(Model::Profile, double, BackgroundImageOpacity, 1.0);
+        INHERITABLE_SETTING(Model::Profile, Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::UniformToFill);
+        INHERITABLE_SETTING(Model::Profile, ConvergedAlignment, BackgroundImageAlignment, ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center);
 
-        GETSET_SETTING(hstring, ColorSchemeName, L"Campbell");
+        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
+        INHERITABLE_SETTING(Model::Profile, bool, RetroTerminalEffect, false);
+        INHERITABLE_SETTING(Model::Profile, hstring, PixelShaderPath, L"");
+        INHERITABLE_SETTING(Model::Profile, bool, ForceFullRepaintRendering, false);
+        INHERITABLE_SETTING(Model::Profile, bool, SoftwareRendering, false);
 
-        GETSET_NULLABLE_SETTING(Windows::UI::Color, Foreground, nullptr);
-        GETSET_NULLABLE_SETTING(Windows::UI::Color, Background, nullptr);
-        GETSET_NULLABLE_SETTING(Windows::UI::Color, SelectionBackground, nullptr);
-        GETSET_NULLABLE_SETTING(Windows::UI::Color, CursorColor, nullptr);
+        INHERITABLE_SETTING(Model::Profile, hstring, ColorSchemeName, L"Campbell");
 
-        GETSET_SETTING(int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
-        GETSET_SETTING(bool, SnapOnInput, true);
-        GETSET_SETTING(bool, AltGrAliasing, true);
+        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, Foreground, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, Background, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, SelectionBackground, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, CursorColor, nullptr);
 
-        GETSET_SETTING(Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle::Bar);
-        GETSET_SETTING(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
+        INHERITABLE_SETTING(Model::Profile, int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
+        INHERITABLE_SETTING(Model::Profile, bool, SnapOnInput, true);
+        INHERITABLE_SETTING(Model::Profile, bool, AltGrAliasing, true);
 
-        GETSET_SETTING(Model::BellStyle, BellStyle, BellStyle::Audible);
+        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle::Bar);
+        INHERITABLE_SETTING(Model::Profile, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
+
+        INHERITABLE_SETTING(Model::Profile, Model::BellStyle, BellStyle, BellStyle::Audible);
 
     private:
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);

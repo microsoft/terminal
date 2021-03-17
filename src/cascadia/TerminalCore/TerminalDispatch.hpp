@@ -18,6 +18,9 @@ public:
 
     bool SetGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) noexcept override;
 
+    bool PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) noexcept override;
+    bool PopGraphicsRendition() noexcept override;
+
     bool CursorPosition(const size_t line,
                         const size_t column) noexcept override; // CUP
 
@@ -68,6 +71,7 @@ public:
     bool EnableButtonEventMouseMode(const bool enabled) noexcept override; // ?1002
     bool EnableAnyEventMouseMode(const bool enabled) noexcept override; // ?1003
     bool EnableAlternateScroll(const bool enabled) noexcept override; // ?1007
+    bool EnableXtermBracketedPasteMode(const bool enabled) noexcept override; // ?2004
 
     bool SetMode(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ModeParams /*param*/) noexcept override; // DECSET
     bool ResetMode(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ModeParams /*param*/) noexcept override; // DECRST

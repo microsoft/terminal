@@ -26,6 +26,8 @@
     "theme": "system",
     "snapToGridOnResize": true,
     "disableAnimations": false,
+    "startupActions": "",
+    "focusFollowMouse": false,
 
     "profiles":
     [
@@ -282,10 +284,13 @@
         { "command": "toggleFocusMode" },
         { "command": "toggleAlwaysOnTop" },
         { "command": "openNewTabDropdown", "keys": "ctrl+shift+space" },
-        { "command": "openSettings", "keys": "ctrl+," },
+        { "command": { "action": "openSettings", "target": "settingsUI" }, "keys": "ctrl+," },
+        { "command": { "action": "openSettings", "target": "settingsFile" }, "keys": "ctrl+shift+," },
         { "command": { "action": "openSettings", "target": "defaultsFile" }, "keys": "ctrl+alt+," },
         { "command": "find", "keys": "ctrl+shift+f" },
-        { "command": "toggleRetroEffect" },
+        { "command": { "action": "findMatch", "direction": "next" } },
+        { "command": { "action": "findMatch", "direction": "prev" } },
+        { "command": "toggleShaderEffects" },
         { "command": "openTabColorPicker" },
         { "command": "renameTab" },
         { "command": "openTabRenamer" },
@@ -299,6 +304,7 @@
         { "command": { "action" : "moveTab", "direction": "forward" }},
         { "command": { "action" : "moveTab", "direction": "backward" }},
         { "command": "newTab", "keys": "ctrl+shift+t" },
+        { "command": "newWindow", "keys": "ctrl+shift+n" },
         { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+shift+1" },
         { "command": { "action": "newTab", "index": 1 }, "keys": "ctrl+shift+2" },
         { "command": { "action": "newTab", "index": 2 }, "keys": "ctrl+shift+3" },
@@ -333,7 +339,9 @@
         { "command": { "action": "moveFocus", "direction": "left" }, "keys": "alt+left" },
         { "command": { "action": "moveFocus", "direction": "right" }, "keys": "alt+right" },
         { "command": { "action": "moveFocus", "direction": "up" }, "keys": "alt+up" },
+        { "command": { "action": "moveFocus", "direction": "previous" }, "keys": "ctrl+alt+left" },
         { "command": "togglePaneZoom" },
+        { "command": "toggleReadOnlyMode" },
 
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },
@@ -346,6 +354,8 @@
         { "command": "scrollDownPage", "keys": "ctrl+shift+pgdn" },
         { "command": "scrollUp", "keys": "ctrl+shift+up" },
         { "command": "scrollUpPage", "keys": "ctrl+shift+pgup" },
+        { "command": "scrollToTop", "keys": "ctrl+shift+home" },
+        { "command": "scrollToBottom", "keys": "ctrl+shift+end" },
 
         // Visual Adjustments
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+=" },

@@ -17,7 +17,7 @@ namespace Microsoft.Terminal.TerminalControl
     // If you press F7 or Alt and get a runtime error, go make sure both copies are the same.
     [uuid("0ddf4edc-3fda-4dee-97ca-a417ee3dd510")] interface IDirectKeyListener {
         Boolean OnDirectKeyEvent(UInt32 vkey, UInt8 scanCode, Boolean down);
-    }
+    };
 
     [flags]
     enum CopyFormat
@@ -65,7 +65,7 @@ namespace Microsoft.Terminal.TerminalControl
 
         static Windows.Foundation.Size GetProposedDimensions(Microsoft.Terminal.TerminalControl.IControlSettings settings, UInt32 dpi);
 
-        void UpdateSettings(Microsoft.Terminal.TerminalControl.IControlSettings newSettings);
+        void UpdateSettings();
 
         Microsoft.Terminal.TerminalControl.IControlSettings Settings { get; };
 
@@ -77,6 +77,8 @@ namespace Microsoft.Terminal.TerminalControl
         event Windows.Foundation.TypedEventHandler<TermControl, Object> SetTaskbarProgress;
         event Windows.Foundation.TypedEventHandler<TermControl, NoticeEventArgs> RaiseNotice;
         event Windows.Foundation.TypedEventHandler<Object, Object> WarningBell;
+        event Windows.Foundation.TypedEventHandler<Object, Object> HidePointerCursor;
+        event Windows.Foundation.TypedEventHandler<Object, Object> RestorePointerCursor;
 
         event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         // This is an event handler forwarder for the underlying connection.
@@ -100,17 +102,26 @@ namespace Microsoft.Terminal.TerminalControl
 
         void CreateSearchBoxControl();
 
+        void SearchMatch(Boolean goForward);
+
         void AdjustFontSize(Int32 fontSizeDelta);
         void ResetFontSize();
 
+        void ToggleShaderEffects();
         void SendInput(String input);
-        void ToggleRetroEffect();
 
         void TaskbarProgressChanged();
         UInt64 TaskbarState { get; };
         UInt64 TaskbarProgress { get; };
 
+        String WorkingDirectory { get; };
+
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
+
+        Boolean ReadOnly { get; };
+        void ToggleReadOnly();
+        event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
     }
 }

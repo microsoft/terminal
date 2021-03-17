@@ -84,7 +84,7 @@ namespace SettingsModelLocalTests
                 "initialPosition": ",",
                 "launchMode": "default",
                 "alwaysOnTop": false,
-
+                "inputServiceWarning": true,
                 "copyOnSelect": false,
                 "copyFormatting": "all",
                 "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
@@ -226,6 +226,7 @@ namespace SettingsModelLocalTests
         const std::string settingsString{ R"({
                                                 "$schema": "https://aka.ms/terminal-profiles-schema",
                                                 "defaultProfile": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
+                                                "disabledProfileSources": [ "Windows.Terminal.Wsl" ],
 
                                                 "profiles": {
                                                     "defaults": {

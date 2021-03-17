@@ -23,7 +23,9 @@
 #include "CloseOtherTabsArgs.g.cpp"
 #include "CloseTabsAfterArgs.g.cpp"
 #include "MoveTabArgs.g.cpp"
+#include "FindMatchArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
+#include "NewWindowArgs.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -65,6 +67,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             ss << fmt::format(L"tabColor: {}, ", tabColor.ToHexString(true));
         }
 
+        if (_SuppressApplicationTitle)
+        {
+            if (_SuppressApplicationTitle.Value())
+            {
+                ss << fmt::format(L"suppress application title, ");
+            }
+            else
+            {
+                ss << fmt::format(L"use application title, ");
+            }
+        }
+
         auto s = ss.str();
         if (s.empty())
         {
@@ -73,6 +87,65 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Chop off the last ", "
         return winrt::hstring{ s.substr(0, s.size() - 2) };
+    }
+
+    winrt::hstring NewTerminalArgs::ToCommandline() const
+    {
+        std::wstringstream ss;
+
+        if (!_Profile.empty())
+        {
+            ss << fmt::format(L"--profile \"{}\" ", _Profile);
+        }
+        // The caller is always expected to provide the evaluated profile in the
+        // NewTerminalArgs, not the index
+        //
+        // else if (_ProfileIndex)
+        // {
+        //     ss << fmt::format(L"profile index: {}, ", _ProfileIndex.Value());
+        // }
+
+        if (!_StartingDirectory.empty())
+        {
+            ss << fmt::format(L"--startingDirectory \"{}\" ", _StartingDirectory);
+        }
+
+        if (!_TabTitle.empty())
+        {
+            ss << fmt::format(L"--title \"{}\" ", _TabTitle);
+        }
+
+        if (_TabColor)
+        {
+            const til::color tabColor{ _TabColor.Value() };
+            ss << fmt::format(L"--tabColor \"{}\" ", tabColor.ToHexString(true));
+        }
+
+        if (_SuppressApplicationTitle)
+        {
+            if (_SuppressApplicationTitle.Value())
+            {
+                ss << fmt::format(L"--suppressApplicationTitle ");
+            }
+            else
+            {
+                ss << fmt::format(L"--useApplicationTitle ");
+            }
+        }
+
+        if (!_Commandline.empty())
+        {
+            ss << fmt::format(L"-- \"{}\" ", _Commandline);
+        }
+
+        auto s = ss.str();
+        if (s.empty())
+        {
+            return L"";
+        }
+
+        // Chop off the last " "
+        return winrt::hstring{ s.substr(0, s.size() - 1) };
     }
 
     winrt::hstring CopyTextArgs::GenerateName() const
@@ -147,18 +220,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring ResizePaneArgs::GenerateName() const
     {
         winrt::hstring directionString;
-        switch (_Direction)
+        switch (_ResizeDirection)
         {
-        case Direction::Left:
+        case ResizeDirection::Left:
             directionString = RS_(L"DirectionLeft");
             break;
-        case Direction::Right:
+        case ResizeDirection::Right:
             directionString = RS_(L"DirectionRight");
             break;
-        case Direction::Up:
+        case ResizeDirection::Up:
             directionString = RS_(L"DirectionUp");
             break;
-        case Direction::Down:
+        case ResizeDirection::Down:
             directionString = RS_(L"DirectionDown");
             break;
         }
@@ -171,20 +244,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring MoveFocusArgs::GenerateName() const
     {
         winrt::hstring directionString;
-        switch (_Direction)
+        switch (_FocusDirection)
         {
-        case Direction::Left:
+        case FocusDirection::Left:
             directionString = RS_(L"DirectionLeft");
             break;
-        case Direction::Right:
+        case FocusDirection::Right:
             directionString = RS_(L"DirectionRight");
             break;
-        case Direction::Up:
+        case FocusDirection::Up:
             directionString = RS_(L"DirectionUp");
             break;
-        case Direction::Down:
+        case FocusDirection::Down:
             directionString = RS_(L"DirectionDown");
             break;
+        case FocusDirection::Previous:
+            return RS_(L"MoveFocusToLastUsedPane");
         }
         return winrt::hstring{
             fmt::format(std::wstring_view(RS_(L"MoveFocusWithArgCommandKey")),
@@ -229,8 +304,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring SplitPaneArgs::GenerateName() const
     {
         // The string will be similar to the following:
-        // * "Duplicate pane[, split: <direction>][, new terminal arguments...]"
-        // * "Split pane[, split: <direction>][, new terminal arguments...]"
+        // * "Duplicate pane[, split: <direction>][, size: <size>%][, new terminal arguments...]"
+        // * "Split pane[, split: <direction>][, size: <size>%][, new terminal arguments...]"
         //
         // Direction will only be added to the string if the split direction is
         // not "auto".
@@ -260,6 +335,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             break;
         }
 
+        if (_SplitSize != .5f)
+        {
+            ss << L"size: " << (_SplitSize * 100) << L"%, ";
+        }
+
         winrt::hstring newTerminalArgsStr;
         if (_TerminalArgs)
         {
@@ -285,8 +365,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"OpenDefaultSettingsCommandKey");
         case SettingsTarget::AllFiles:
             return RS_(L"OpenBothSettingsFilesCommandKey");
-        default:
+        case SettingsTarget::SettingsFile:
             return RS_(L"OpenSettingsCommandKey");
+        case SettingsTarget::SettingsUI:
+        default:
+            return RS_(L"OpenSettingsUICommandKey");
         }
     }
 
@@ -421,5 +504,34 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"ToggleCommandPaletteCommandLineModeCommandKey");
         }
         return RS_(L"ToggleCommandPaletteCommandKey");
+    }
+
+    winrt::hstring FindMatchArgs::GenerateName() const
+    {
+        switch (_Direction)
+        {
+        case FindMatchDirection::Next:
+            return winrt::hstring{ RS_(L"FindNextCommandKey") };
+        case FindMatchDirection::Previous:
+            return winrt::hstring{ RS_(L"FindPrevCommandKey") };
+        }
+        return L"";
+    }
+
+    winrt::hstring NewWindowArgs::GenerateName() const
+    {
+        winrt::hstring newTerminalArgsStr;
+        if (_TerminalArgs)
+        {
+            newTerminalArgsStr = _TerminalArgs.GenerateName();
+        }
+
+        if (newTerminalArgsStr.empty())
+        {
+            return RS_(L"NewWindowCommandKey");
+        }
+        return winrt::hstring{
+            fmt::format(L"{}, {}", RS_(L"NewWindowCommandKey"), newTerminalArgsStr)
+        };
     }
 }
