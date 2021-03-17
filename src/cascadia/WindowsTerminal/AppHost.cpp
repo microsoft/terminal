@@ -566,7 +566,8 @@ void AppHost::_FindTargetWindow(const winrt::Windows::Foundation::IInspectable& 
                                 const Remoting::FindTargetWindowArgs& args)
 {
     const auto targetWindow = _logic.FindTargetWindow(args.Args().Commandline());
-    args.ResultTargetWindow(targetWindow);
+    args.ResultTargetWindow(targetWindow.WindowId());
+    args.ResultTargetWindowName(targetWindow.WindowName());
 }
 
 winrt::fire_and_forget AppHost::_WindowActivated()

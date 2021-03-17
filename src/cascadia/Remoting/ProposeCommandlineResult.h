@@ -27,6 +27,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
     public:
         WINRT_PROPERTY(Windows::Foundation::IReference<uint64_t>, Id);
+        WINRT_PROPERTY(winrt::hstring, WindowName);
         WINRT_PROPERTY(bool, ShouldCreateWindow, true);
 
     public:

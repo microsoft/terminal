@@ -4,6 +4,7 @@
 #pragma once
 
 #include "AppLogic.g.h"
+#include "FindTargetWindowResult.g.h"
 #include "TerminalPage.h"
 #include "Jumplist.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
@@ -18,6 +19,19 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
+    struct FindTargetWindowResult : FindTargetWindowResultT<FindTargetWindowResult>
+    {
+        WINRT_PROPERTY(int32_t, WindowId, -1);
+        WINRT_PROPERTY(winrt::hstring, WindowName, L"");
+
+    public:
+        FindTargetWindowResult(const int32_t id, const winrt::hstring& name) :
+            _WindowId{ id }, _WindowName{ name } {};
+
+        FindTargetWindowResult(const int32_t id) :
+            FindTargetWindowResult(id, L""){};
+    };
+
     struct AppLogic : AppLogicT<AppLogic, IInitializeWithWindow>
     {
     public:
@@ -38,7 +52,7 @@ namespace winrt::TerminalApp::implementation
 
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
         int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd);
-        int32_t FindTargetWindow(array_view<const winrt::hstring> actions);
+        TerminalApp::FindTargetWindowResult FindTargetWindow(array_view<const winrt::hstring> actions);
         winrt::hstring ParseCommandlineMessage();
         bool ShouldExitEarly();
 
@@ -98,8 +112,8 @@ namespace winrt::TerminalApp::implementation
         ::TerminalApp::AppCommandlineArgs _appArgs;
         ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
         int _ParseArgs(winrt::array_view<const hstring>& args);
-        static int32_t _doFindTargetWindow(winrt::array_view<const hstring> args,
-                                           const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior);
+        static TerminalApp::FindTargetWindowResult _doFindTargetWindow(winrt::array_view<const hstring> args,
+                                                                       const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior);
 
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);
         void _ShowLoadWarningsDialog();
