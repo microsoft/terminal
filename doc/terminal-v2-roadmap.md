@@ -2,17 +2,16 @@
 
 ## Overview
 
-This document outlines the roadmap towards delivering Windows Terminal 2.0 by Spring 2021.
-
+This document outlines the roadmap towards delivering Windows Terminal 2.0 by Winter 2021.
 
 ## Milestones
 
-The Windows Terminal project is engineered and delivered as a set of 4-week milestones. New features will go into [Windows Terminal Preview](https://aka.ms/terminal-preview) first, then a month after they've been in Preview, those features will move into [Windows Terminal](https://aka.ms/terminal).
+Windows Terminal is engineered and delivered as a set of 6-week milestones. New features will go into [Windows Terminal Preview](https://aka.ms/terminal-preview) first, then a month after they've been in Preview, those features will move into [Windows Terminal](https://aka.ms/terminal).
 
 | Duration | Activity | Releases |
 | --- | --- | --- |
-| 2 weeks | Dev Work<br/> <ul><li>Fixes / Features for future Windows Releases</li><li>Fixes / Features for Windows Terminal</li></ul> |  Release to Internal Selfhosters at end of week 2 |
-| 1 week | Quality & Stability<br/> <ul><li>Bug Fixes</li><li>Perf & Stability</li><li>UI Polish</li><li>Tests</li><li>etc.</li></ul>| Push to Microsoft Store at end of week 3 |
+| 4 weeks | Dev Work<br/> <ul><li>Fixes / Features for future Windows Releases</li><li>Fixes / Features for Windows Terminal</li></ul> |  Release to Internal Selfhosters at end of week 4 |
+| 1 week | Quality & Stability<br/> <ul><li>Bug Fixes</li><li>Perf & Stability</li><li>UI Polish</li><li>Tests</li><li>etc.</li></ul>| Push to Microsoft Store at end of week 5 |
 | 1 week | Release <br/> <ul><li>Available from [Microsoft Store](https://aka.ms/terminal) & [GitHub Releases](https://github.com/microsoft/terminal/releases)</li><li>Release Notes & Announcement Blog published</li><li>Engineering System Maintenance</li><li>Community Engagement</li><li>Docs</li><li>Future Milestone Planning</li></ul> | Release available from Microsoft Store & GitHub Releases |
 
 ## Terminal Roadmap / Timeline
@@ -26,12 +25,15 @@ Below is the schedule for when milestones will be included in release builds of 
 | 2020-08-31 | [1.3] in Windows Terminal Preview<br>[1.2] in Windows Terminal | [Windows Terminal Preview 1.3 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-3-release/) |
 | 2020-09-30 | [1.4] in Windows Terminal Preview<br>[1.3] in Windows Terminal | [Windows Terminal Preview 1.4 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-4-release/) |
 | 2020-11-30 | [1.5] in Windows Terminal Preview<br>[1.4] in Windows Terminal | [Windows Terminal Preview 1.5 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-5-release/) |
-| 2020-12-31 | [1.6] in Windows Terminal Preview<br>[1.5] in Windows Terminal | |
-| 2021-01-31 | 1.7 in Windows Terminal Preview<br>[1.6] in Windows Terminal | |
-| 2021-02-28 | 1.8 in Windows Terminal Preview<br>1.8 in Windows Terminal | |
-| 2021-03-31 | 1.9 in Windows Terminal Preview<br>1.9 in Windows Terminal | |
-| 2021-04-30 | 2.0 RC in Windows Terminal Preview<br>2.0 RC in Windows Terminal | |
-| 2021-05-31 | [2.0] in Windows Terminal Preview<br>[2.0] in Windows Terminal | |
+| 2021-01-31 | [1.6] in Windows Terminal Preview<br>[1.5] in Windows Terminal | [Windows Terminal Preview 1.6 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-6-release/) |
+| 2021-03-01 | [1.7] in Windows Terminal Preview<br>[1.6] in Windows Terminal | [Windows Terminal Preview 1.7 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-7-release/) |
+| 2021-04-30 | [1.8] in Windows Terminal Preview<br>[1.7] in Windows Terminal | |
+| 2021-05-31 | [1.9] in Windows Terminal Preview<br>[1.8] in Windows Terminal | |
+| 2021-07-31 | 1.10 in Windows Terminal Preview<br>[1.9] in Windows Terminal | |
+| 2021-08-30 | 1.11 in Windows Terminal Preview<br>1.10 in Windows Terminal | |
+| 2021-10-31 | 1.12 in Windows Terminal Preview<br>1.11 in Windows Terminal | |
+| 2021-11-30 | 2.0 RC in Windows Terminal Preview<br>2.0 RC in Windows Terminal | |
+| 2021-12-31 | [2.0] in Windows Terminal Preview<br>[2.0] in Windows Terminal | |
 
 ## Issue Triage & Prioritization
 
@@ -84,6 +86,9 @@ Feature Notes:
 [1.4]: https://github.com/microsoft/terminal/milestone/28
 [1.5]: https://github.com/microsoft/terminal/milestone/30
 [1.6]: https://github.com/microsoft/terminal/milestone/31
+[1.7]: https://github.com/microsoft/terminal/milestone/32
+[1.8]: https://github.com/microsoft/terminal/milestone/33
+[1.9]: https://github.com/microsoft/terminal/milestone/34
 [2.0]: https://github.com/microsoft/terminal/milestone/22
 [#1564]: https://github.com/microsoft/terminal/issues/1564
 [#6720]: https://github.com/microsoft/terminal/pull/6720
