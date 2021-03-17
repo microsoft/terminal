@@ -117,6 +117,14 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return _lastActivatedArgs;
     }
 
+    // Method Description:
+    // - Tell this window to display it's window ID. We'll raise a
+    //   DisplayWindowIdRequested event, which will get handled in the AppHost,
+    //   and used to tell the app to display the ID toast.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void Peasant::DisplayWindowId()
     {
         // Not worried about try/catching this. The handler is in AppHost, which
@@ -124,6 +132,14 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _DisplayWindowIdRequestedHandlers(*this, nullptr);
     }
 
+    // Method Description:
+    // - Raises an event to ask that all windows be identified. This will come
+    //   back to us when the Monarch handles the event and calls our
+    //   DisplayWindowId method.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void Peasant::RequestIdentifyWindows()
     {
         bool successfullyNotified = false;

@@ -17,6 +17,13 @@ Toast::Toast(const winrt::Microsoft::UI::Xaml::Controls::TeachingTip& tip) :
     _timer.Interval(ToastDuration);
 }
 
+// Method Description:
+// - Open() the TeachingTip, and start our timer. When the timer expires, the
+//   tip will be closed.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void Toast::Open()
 {
     _tip.IsOpen(true);

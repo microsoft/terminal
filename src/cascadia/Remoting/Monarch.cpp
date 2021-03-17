@@ -573,6 +573,16 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return *result;
     }
 
+    // Method Description:
+    // - This is an event handler for the IdentifyWindowsRequested event. A
+    //   Peasant may raise that event if they want _all_ windows to identify
+    //   themselves.
+    // - This will tell each and every peasant to identify themselves. This will
+    //   eventually propagate down to TerminalPage::IdentifyWindow.
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
     void Monarch::_identifyWindows(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                    const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
@@ -586,7 +596,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             catch (...)
             {
                 LOG_CAUGHT_EXCEPTION();
-                // If this fails, we don't _really_ care. Just movoe on to the
+                // If this fails, we don't _really_ care. Just move on to the
                 // next one. Someone else will clean up the dead peasant.
                 TraceLoggingWrite(g_hRemotingProvider,
                                   "Monarch_identifyWindows_Failed",

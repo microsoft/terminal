@@ -275,6 +275,8 @@ namespace winrt::TerminalApp::implementation
 
         _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
 
+        // This lambda is a local because there will be more toasts in the
+        // future that will need the same logic.
         auto safeRefocus = [weakThis{ get_weak() }](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
             {
@@ -3374,7 +3376,6 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(Dispatcher());
         if (auto page{ weakThis.get() })
         {
-            // page->WindowIdToast().IsOpen(true);
             page->_windowIdToast->Open();
         }
     }
