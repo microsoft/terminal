@@ -51,12 +51,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool HasNestedCommands() const;
         Windows::Foundation::Collections::IMapView<winrt::hstring, Model::Command> NestedCommands() const;
 
+        hstring KeyChordText();
+
         winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker propertyChangedRevoker;
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(Model::ActionAndArgs, Action, _PropertyChangedHandlers);
-        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, KeyChordText, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(Control::KeyChord, Keys, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, IconPath, _PropertyChangedHandlers);
 
         WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
