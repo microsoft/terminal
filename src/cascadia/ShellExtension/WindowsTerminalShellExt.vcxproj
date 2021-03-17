@@ -21,23 +21,13 @@
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="OpenTerminalHere.h" />
-    <ClInclude Include="PlaceholderType.h">
-      <DependentUpon>PlaceholderType.idl</DependentUpon>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="PlaceholderType.cpp">
-      <DependentUpon>PlaceholderType.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="OpenTerminalHere.cpp" />
     <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <Midl Include="PlaceholderType.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
