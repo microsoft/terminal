@@ -891,6 +891,7 @@ void AppCommandlineArgs::FullResetState()
     _startupActions.clear();
     _exitMessage = "";
     _shouldExitEarly = false;
+    _isHandoffListener = false;
 
     _windowTarget = std::nullopt;
 }
