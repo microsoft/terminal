@@ -14,7 +14,8 @@ namespace Microsoft.Terminal.Settings.Model
 
         String Name;
         ActionAndArgs Action;
-        String KeyChordText;
+        Microsoft.Terminal.Control.KeyChord Keys;
+        String KeyChordText { get; };
 
         String IconPath;
 

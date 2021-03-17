@@ -6,7 +6,7 @@
 #include "Command.g.cpp"
 
 #include "ActionAndArgs.h"
-#include "JsonUtils.h"
+#include "KeyChordSerialization.h"
 #include <LibraryResources.h>
 #include "TerminalSettingsSerializationHelpers.h"
 
@@ -26,6 +26,7 @@ static constexpr std::string_view ActionKey{ "command" };
 static constexpr std::string_view ArgsKey{ "args" };
 static constexpr std::string_view IterateOnKey{ "iterateOn" };
 static constexpr std::string_view CommandsKey{ "commands" };
+static constexpr std::string_view KeysKey{ "keys" };
 
 static constexpr std::string_view ProfileNameToken{ "${profile.name}" };
 static constexpr std::string_view ProfileIconToken{ "${profile.icon}" };
@@ -43,7 +44,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto command{ winrt::make_self<Command>() };
         command->_Name = _Name;
         command->_Action = _Action;
-        command->_KeyChordText = _KeyChordText;
+        command->_Keys = _Keys;
         command->_IconPath = _IconPath;
         command->_IterateOn = _IterateOn;
 
@@ -178,6 +179,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         JsonUtils::GetValueForKey(json, IconKey, result->_IconPath);
+        JsonUtils::GetValueForKey(json, KeysKey, result->_Keys);
 
         // If we're a nested command, we can ignore the current action.
         if (!nested)
@@ -469,5 +471,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         return newCommands;
+    }
+
+    hstring Command::KeyChordText()
+    {
+        return KeyChordSerialization::ToString(_Keys);
     }
 }
