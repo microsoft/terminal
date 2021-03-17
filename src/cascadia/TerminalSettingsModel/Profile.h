@@ -85,7 +85,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         INHERITABLE_SETTING(Model::Profile, bool, UseAcrylic, false);
         INHERITABLE_SETTING(Model::Profile, double, AcrylicOpacity, 0.5);
-        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::TerminalControl::ScrollbarState, ScrollState, Microsoft::Terminal::TerminalControl::ScrollbarState::Visible);
+        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible);
 
         INHERITABLE_SETTING(Model::Profile, hstring, FontFace, DEFAULT_FONT_FACE);
         INHERITABLE_SETTING(Model::Profile, int32_t, FontSize, DEFAULT_FONT_SIZE);
@@ -100,7 +100,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::UniformToFill);
         INHERITABLE_SETTING(Model::Profile, ConvergedAlignment, BackgroundImageAlignment, ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center);
 
-        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
+        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
         INHERITABLE_SETTING(Model::Profile, bool, RetroTerminalEffect, false);
         INHERITABLE_SETTING(Model::Profile, hstring, PixelShaderPath, L"");
         INHERITABLE_SETTING(Model::Profile, bool, ForceFullRepaintRendering, false);
@@ -117,7 +117,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, bool, SnapOnInput, true);
         INHERITABLE_SETTING(Model::Profile, bool, AltGrAliasing, true);
 
-        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle::Bar);
+        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::CursorStyle, CursorShape, Microsoft::Terminal::Core::CursorStyle::Bar);
         INHERITABLE_SETTING(Model::Profile, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
 
         INHERITABLE_SETTING(Model::Profile, Model::BellStyle, BellStyle, BellStyle::Audible);

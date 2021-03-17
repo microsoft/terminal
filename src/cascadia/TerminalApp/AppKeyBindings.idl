@@ -4,7 +4,7 @@ import "ShortcutActionDispatch.idl";
 
 namespace TerminalApp
 {
-    [default_interface] runtimeclass AppKeyBindings : Microsoft.Terminal.TerminalControl.IKeyBindings
+    [default_interface] runtimeclass AppKeyBindings : Microsoft.Terminal.Control.IKeyBindings
     {
         AppKeyBindings();
 

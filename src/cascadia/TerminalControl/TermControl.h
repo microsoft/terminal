@@ -9,6 +9,7 @@
 #include "OpenHyperlinkEventArgs.g.h"
 #include "NoticeEventArgs.g.h"
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
+#include <winrt/Microsoft.Terminal.Core.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../renderer/uia/UiaRenderer.hpp"
@@ -23,7 +24,7 @@ namespace Microsoft::Console::VirtualTerminal
     struct MouseButtonState;
 }
 
-namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct CopyToClipboardEventArgs :
         public CopyToClipboardEventArgsT<CopyToClipboardEventArgs>
@@ -171,19 +172,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
-        DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
-        DECLARE_EVENT(FontSizeChanged,          _fontSizeChangedHandlers,           TerminalControl::FontSizeChangedEventArgs);
-        DECLARE_EVENT(ScrollPositionChanged,    _scrollPositionChangedHandlers,     TerminalControl::ScrollPositionChangedEventArgs);
+        DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              Control::TitleChangedEventArgs);
+        DECLARE_EVENT(FontSizeChanged,          _fontSizeChangedHandlers,           Control::FontSizeChangedEventArgs);
+        DECLARE_EVENT(ScrollPositionChanged,    _scrollPositionChangedHandlers,     Control::ScrollPositionChangedEventArgs);
 
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard,  _clipboardPasteHandlers,    TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CopyToClipboard,     _clipboardCopyHandlers,     TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControl, IInspectable);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControl, TerminalControl::NoticeEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard,  _clipboardPasteHandlers,    Control::TermControl, Control::PasteFromClipboardEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CopyToClipboard,     _clipboardCopyHandlers,     Control::TermControl, Control::CopyToClipboardEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(OpenHyperlink, _openHyperlinkHandlers, Control::TermControl, Control::OpenHyperlinkEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTaskbarProgress, _setTaskbarProgressHandlers, Control::TermControl, IInspectable);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RaiseNotice, _raiseNoticeHandlers, Control::TermControl, Control::NoticeEventArgs);
 
         TYPED_EVENT(WarningBell, IInspectable, IInspectable);
-        TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControl, IInspectable);
-        TYPED_EVENT(Initialized, TerminalControl::TermControl, Windows::UI::Xaml::RoutedEventArgs);
+        TYPED_EVENT(ConnectionStateChanged, Control::TermControl, IInspectable);
+        TYPED_EVENT(Initialized, Control::TermControl, Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(TabColorChanged, IInspectable, IInspectable);
         TYPED_EVENT(HidePointerCursor, IInspectable, IInspectable);
         TYPED_EVENT(RestorePointerCursor, IInspectable, IInspectable);
@@ -355,7 +356,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     };
 }
 
-namespace winrt::Microsoft::Terminal::TerminalControl::factory_implementation
+namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
     struct TermControl : TermControlT<TermControl, implementation::TermControl>
     {
