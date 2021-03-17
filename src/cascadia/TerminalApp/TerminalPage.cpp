@@ -757,13 +757,15 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - newTerminalArgs: An object that may contain a blob of parameters to
     //   control which profile is created and with possible other
-    //   configurations. See TerminalSettings::BuildSettings for more details.
+    //   configurations. See TerminalSettings::CreateWithNewTerminalArgs for more details.
     void TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs)
     try
     {
-        auto [profileGuid, settings, unfocusedSettings] = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
+        //auto [profileGuid, settings, unfocusedSettings] = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
+        const auto profileGuid{ _settings.GetProfileForArgs(newTerminalArgs) };
+        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
-        _CreateNewTabFromSettings(profileGuid, settings, unfocusedSettings);
+        _CreateNewTabFromSettings(profileGuid, settings, std::nullopt);
 
         const uint32_t tabCount = _tabs.Size();
         const bool usedManualProfile = (newTerminalArgs != nullptr) &&
@@ -938,7 +940,7 @@ namespace winrt::TerminalApp::implementation
     // Return value:
     // - the desired connection
     TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(GUID profileGuid,
-                                                                                        TerminalApp::TerminalSettings settings)
+                                                                                        TerminalSettings settings)
     {
         const auto profile = _settings.FindProfile(profileGuid);
 
@@ -1856,7 +1858,7 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
-            TerminalApp::TerminalSettings controlSettings;
+            TerminalSettings controlSettings;
             std::optional<TerminalApp::TerminalSettings> unfocusedSettings;
             GUID realGuid;
             bool profileFound = false;
@@ -1891,7 +1893,9 @@ namespace winrt::TerminalApp::implementation
             }
             if (!profileFound)
             {
-                std::tie(realGuid, controlSettings, unfocusedSettings) = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
+                //std::tie(realGuid, controlSettings, unfocusedSettings) = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
+                realGuid = _settings.GetProfileForArgs(newTerminalArgs);
+                controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
             }
 
             const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
@@ -2581,7 +2585,7 @@ namespace winrt::TerminalApp::implementation
             {
                 // This can throw an exception if the profileGuid does
                 // not belong to an actual profile in the list of profiles.
-                auto settings{ winrt::make<TerminalSettings>(_settings, profileGuid, *_bindings) };
+                auto settings{ TerminalSettings::CreateWithProfileByID(_settings, profileGuid, *_bindings) };
 
                 for (auto tab : _tabs)
                 {

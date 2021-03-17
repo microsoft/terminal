@@ -41,7 +41,7 @@ function Import-LocalModule
         Write-Verbose "$Name already downloaded"
         $versions = Get-ChildItem "$modules_root\$Name" | Sort-Object
 
-        Get-ChildItem -Path "$modules_root\$Name\$($versions[0])\$Name.psd1" | Import-Module
+        Get-ChildItem -Path "$($versions[0].FullName)\$Name.psd1" | Import-Module
     }
 }
 
@@ -74,16 +74,15 @@ function Set-MsbuildDevEnvironment
         default { throw "Unknown architecture: $switch" }
     }
 
-    $vcvarsall = "$vspath\VC\Auxiliary\Build\vcvarsall.bat"
+    $devShellModule = "$vspath\Common7\Tools\Microsoft.VisualStudio.DevShell.dll"
+
+    Import-Module -Global -Name $devShellModule
 
     Write-Verbose 'Setting up environment variables'
-    cmd /c ("`"$vcvarsall`" $arch & set") | ForEach-Object {
-        if ($_ -match '=')
-        {
-            $s = $_.Split("=");
-            Set-Item -force -path "env:\$($s[0])" -value "$($s[1])"
-        }
-    }
+    Enter-VsDevShell -VsInstallPath $vspath -SkipAutomaticLocation `
+        -devCmdArguments "-arch=$arch" | Out-Null
+        
+    Set-Item -Force -path "Env:\Platform" -Value $arch
 
     Write-Host "Dev environment variables set" -ForegroundColor Green
 }

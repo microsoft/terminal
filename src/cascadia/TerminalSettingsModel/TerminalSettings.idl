@@ -1,8 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-namespace TerminalApp
+import "CascadiaSettings.idl";
+
+namespace Microsoft.Terminal.Settings.Model
 {
+    struct TerminalSettingsStruct
+    {
+        TerminalSettings defaultSettings;
+        TerminalSettings unfocusedSettings;
+    };
+
     // Class Description:
     // TerminalSettings encapsulates all settings that control the
     //      TermControl's behavior. In these settings there is both the entirety
@@ -16,6 +24,12 @@ namespace TerminalApp
                                     Microsoft.Terminal.TerminalControl.IControlSettings
     {
         TerminalSettings();
-    };
 
+        static TerminalSettingsStruct CreateWithProfileByID(CascadiaSettings appSettings, Guid profileGuid, Microsoft.Terminal.TerminalControl.IKeyBindings keybindings);
+        static TerminalSettingsStruct CreateWithNewTerminalArgs(CascadiaSettings appSettings, NewTerminalArgs newTerminalArgs, Microsoft.Terminal.TerminalControl.IKeyBindings keybindings);
+        static TerminalSettingsStruct CreateWithParent(TerminalSettings parent);
+
+        void SetParent(TerminalSettings parent);
+        void ApplyColorScheme(ColorScheme scheme);
+    };
 }

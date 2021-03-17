@@ -6,7 +6,6 @@
 #include "TerminalPage.g.h"
 #include "TerminalTab.h"
 #include "AppKeyBindings.h"
-#include "TerminalSettings.h"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 
@@ -152,8 +151,9 @@ namespace winrt::TerminalApp::implementation
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
         void _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs);
-        void _CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings, std::optional<TerminalApp::TerminalSettings> unfocusedSettings);
-        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
+
+        void _CreateNewTabFromSettings(GUID profileGuid, Microsoft::Terminal::Settings::Model::TerminalSettings settings, std::optional<Microsoft::Terminal::Settings::Model::TerminalSettings> unfocusedSettings);
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, Microsoft::Terminal::Settings::Model::TerminalSettings settings);
 
         winrt::fire_and_forget _OpenNewWindow(const bool elevate, const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
@@ -248,9 +248,9 @@ namespace winrt::TerminalApp::implementation
 
         void _Find();
 
-        winrt::Microsoft::Terminal::TerminalControl::TermControl _InitControl(const winrt::TerminalApp::TerminalSettings& settings,
+        winrt::Microsoft::Terminal::TerminalControl::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettings& settings,
                                                                               const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection,
-                                                                              std::optional<winrt::TerminalApp::TerminalSettings> unfocusedAppearance);
+                                                                              std::optional<winrt::Microsoft::Terminal::Settings::Model::TerminalSettings> unfocusedAppearance);
 
         winrt::fire_and_forget _RefreshUIForSettingsReload();
 
