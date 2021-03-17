@@ -93,7 +93,7 @@ namespace RemotingUnitTests
         TEST_METHOD(LookupNamedPeasantWhenItDied);
         TEST_METHOD(GetMruPeasantAfterNameLookupForDeadPeasant);
 
-        TEST_METHOD(ProposeCommandlineForDeadNamedWindow);
+        TEST_METHOD(ProposeCommandlineForNamedDeadWindow);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -1273,7 +1273,7 @@ namespace RemotingUnitTests
         VERIFY_ARE_EQUAL(p1->GetID(), m0->_getMostRecentPeasantID(true));
     }
 
-    void RemotingTests::ProposeCommandlineForDeadNamedWindow()
+    void RemotingTests::ProposeCommandlineForNamedDeadWindow()
     {
         Log::Comment(L"Test proposing a commandline for a named window that's "
                      L"currently dead. This should result in a new window with "
