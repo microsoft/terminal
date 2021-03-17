@@ -7,6 +7,7 @@
 
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
+using namespace Microsoft::Terminal::Settings::Model::JsonUtils;
 
 static constexpr std::wstring_view CTRL_KEY{ L"ctrl" };
 static constexpr std::wstring_view SHIFT_KEY{ L"shift" };
@@ -103,10 +104,8 @@ static const std::unordered_map<std::wstring_view, int32_t> vkeyNamePairs {
 // - hstr: the string to parse into a keychord.
 // Return Value:
 // - a newly constructed KeyChord
-KeyChord KeyChordSerialization::FromString(const winrt::hstring& hstr)
+static KeyChord _FromString(const std::wstring& wstr)
 {
-    std::wstring wstr{ hstr };
-
     // Split the string on '+'
     std::wstring temp;
     std::vector<std::wstring> parts;
@@ -215,7 +214,7 @@ KeyChord KeyChordSerialization::FromString(const winrt::hstring& hstr)
 //   names listed in the vkeyNamePairs vector above, or is one of 0-9a-z.
 // Return Value:
 // - a string which is an equivalent serialization of this object.
-winrt::hstring KeyChordSerialization::ToString(const KeyChord& chord)
+static std::wstring _ToString(const KeyChord& chord)
 {
     bool serializedSuccessfully = false;
     const auto modifiers = chord.Modifiers();
@@ -282,5 +281,43 @@ winrt::hstring KeyChordSerialization::ToString(const KeyChord& chord)
         buffer = L"";
     }
 
-    return winrt::hstring{ buffer };
+    return buffer;
+}
+
+KeyChord KeyChordSerialization::FromString(const winrt::hstring& hstr)
+{
+    return _FromString(std::wstring{ hstr });
+}
+
+winrt::hstring KeyChordSerialization::ToString(const KeyChord& chord)
+{
+    return hstring{ _ToString(chord) };
+}
+
+KeyChord ConversionTrait<KeyChord>::FromJson(const Json::Value& json)
+{
+    const std::string keyChordText{ json.asString() };
+    try
+    {
+        return _FromString(til::u8u16(keyChordText));
+    }
+    catch (winrt::hresult_invalid_argument)
+    {
+        return nullptr;
+    }
+}
+
+bool ConversionTrait<KeyChord>::CanConvert(const Json::Value& json)
+{
+    return json.isString();
+}
+
+Json::Value ConversionTrait<KeyChord>::ToJson(const KeyChord& val)
+{
+    return til::u16u8(_ToString(val));
+}
+
+std::string ConversionTrait<KeyChord>::TypeDescription() const
+{
+    return "key chord";
 }
