@@ -211,6 +211,9 @@
   <data name="RenameTabText" xml:space="preserve">
     <value>Rename Tab</value>
   </data>
+  <data name="DuplicateTabText" xml:space="preserve">
+    <value>Duplicate Tab</value>
+  </data>
   <data name="InvalidBackgroundImage" xml:space="preserve">
     <value>Found a profile with an invalid "backgroundImage". Defaulting that profile to have no background image. Make sure that when setting a "backgroundImage", the value is a valid file path to an image.</value>
     <comment>{Locked="\"backgroundImage\""}</comment>
@@ -225,6 +228,9 @@
   <data name="TooManyKeysForChord" xml:space="preserve">
     <value>&#x2022; Found a keybinding with too many strings for the "keys" array. There should only be one string value in the "keys" array.</value>
     <comment>{Locked="\"keys\"","&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="FailedToParseSubCommands" xml:space="preserve">
+    <value>&#x2022; Failed to parse all subcommands of nested command.</value>
   </data>
   <data name="MissingRequiredParameter" xml:space="preserve">
     <value>&#x2022; Found a keybinding that was missing a required parameter value. This keybinding will be ignored.</value>
@@ -313,6 +319,10 @@
   <data name="CmdTabColorArgDesc" xml:space="preserve">
     <value>Open the tab with the specified color, in #rrggbb format</value>
   </data>
+  <data name="CmdSuppressApplicationTitleDesc" xml:space="preserve">
+    <value>Open the tab with tabTitle overriding default title and suppressing title change messages from the application</value>
+    <comment>{Locked="\"tabTitle\""}</comment>
+  </data>
   <data name="CmdVersionDesc" xml:space="preserve">
     <value>Display the application version</value>
   </data>
@@ -350,6 +360,9 @@
   <data name="NewPaneRun.Text" xml:space="preserve">
     <value>Alt+Click to split the current window</value>
   </data>
+  <data name="NewWindowRun.Text" xml:space="preserve">
+    <value>Shift+Click to open a new window</value>
+  </data>
   <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Close</value>
   </data>
@@ -357,9 +370,6 @@
     <value>Close</value>
   </data>
   <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Maximize</value>
-  </data>
-  <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Maximize</value>
   </data>
   <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -565,6 +575,11 @@
   <data name="WindowIdPrefix" xml:space="preserve">
     <value>Window: {}</value>
     <comment>{} will be replaced with a number identifying this window</comment>
-
+  </data>
+  <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
+    <value>Maximize</value>
+  </data>
+  <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
+    <value>Restore Down</value>
   </data>
 </root>

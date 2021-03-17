@@ -33,7 +33,15 @@ HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
 {
     vec.clear();
 
-    auto coinit = wil::CoInitializeEx(COINIT_MULTITHREADED);
+    T useInbox = { 0 };
+    useInbox.clsid = { 0 };
+    // CLSID of 0 will be sentinel to say "inbox console" or something.
+    // The UI displaying this information will have to go look up appropriate strings
+    // to convey that message.
+
+    vec.push_back(useInbox);
+
+    auto coinit = wil::CoInitializeEx(COINIT_APARTMENTTHREADED);
 
     ComPtr<IAppExtensionCatalogStatics> catalogStatics;
     RETURN_IF_FAILED(Windows::Foundation::GetActivationFactory(HStringReference(RuntimeClass_Windows_ApplicationModel_AppExtensions_AppExtensionCatalog).Get(), &catalogStatics));
@@ -59,23 +67,33 @@ HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
         ComPtr<IPackage> extensionPackage;
         RETURN_IF_FAILED(extension->get_Package(&extensionPackage));
 
+        ComPtr<IPackage2> extensionPackage2;
+        RETURN_IF_FAILED(extensionPackage.As(&extensionPackage2));
+
         ComPtr<IPackageId> extensionPackageId;
         RETURN_IF_FAILED(extensionPackage->get_Id(&extensionPackageId));
 
         HString publisherId;
         RETURN_IF_FAILED(extensionPackageId->get_PublisherId(publisherId.GetAddressOf()));
 
-        // PackageId.Name
         HString name;
-        RETURN_IF_FAILED(extensionPackageId->get_Name(name.GetAddressOf()));
-
+        RETURN_IF_FAILED(extensionPackage2->get_DisplayName(name.GetAddressOf()));
         extensionMetadata.name = std::wstring{ name.GetRawBuffer(nullptr) };
 
-        // PackageId.Version
         HString publisher;
-        RETURN_IF_FAILED(extensionPackageId->get_Publisher(publisher.GetAddressOf()));
-
+        RETURN_IF_FAILED(extensionPackage2->get_PublisherDisplayName(publisher.GetAddressOf()));
         extensionMetadata.author = std::wstring{ publisher.GetRawBuffer(nullptr) };
+
+        HString pfn;
+        RETURN_IF_FAILED(extensionPackageId->get_FamilyName(pfn.GetAddressOf()));
+        extensionMetadata.pfn = std::wstring{ pfn.GetRawBuffer(nullptr) };
+
+        PackageVersion version;
+        RETURN_IF_FAILED(extensionPackageId->get_Version(&version));
+        extensionMetadata.version.major = version.Major;
+        extensionMetadata.version.minor = version.Minor;
+        extensionMetadata.version.build = version.Build;
+        extensionMetadata.version.revision = version.Revision;
 
         // Fetch the custom properties XML out of the extension information
         ComPtr<IAsyncOperation<IPropertySet*>> propertiesOperation;
@@ -149,23 +167,91 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT DelegationConfig::s_SetConsole(const DelegationConsole& console) noexcept
+[[nodiscard]] HRESULT DelegationConfig::s_GetAvailablePackages(std::vector<DelegationPackage>& packages, DelegationPackage& defPackage) noexcept
+try
 {
-    return s_Set(DELEGATION_CONSOLE_KEY_NAME, console.clsid);
+    packages.clear();
+
+    std::vector<DelegationConsole> consoles;
+    RETURN_IF_FAILED(s_GetAvailableConsoles(consoles));
+
+    std::vector<DelegationTerminal> terminals;
+    RETURN_IF_FAILED(s_GetAvailableTerminals(terminals));
+
+    // TODO: I hate this algorithm (it's bad performance), but I couldn't
+    // find an AppModel interface that would let me look up all the extensions
+    // in one package.
+    for (auto& term : terminals)
+    {
+        for (auto& con : consoles)
+        {
+            if (term.IsFromSamePackage(con))
+            {
+                DelegationPackage pkg;
+                pkg.terminal = term;
+                pkg.console = con;
+                packages.push_back(pkg);
+                break;
+            }
+        }
+    }
+
+    // We should find at least one package.
+    RETURN_HR_IF(E_FAIL, packages.empty());
+
+    // We also find the default here while we have the list of available ones so
+    // we can return the opaque structure instead of the raw IID.
+    IID defCon;
+    RETURN_IF_FAILED(s_GetDefaultConsoleId(defCon));
+    IID defTerm;
+    RETURN_IF_FAILED(s_GetDefaultTerminalId(defTerm));
+
+    // The default one is the 0th one because that's supposed to be the inbox conhost one.
+    DelegationPackage chosenPackage = packages.at(0);
+
+    // Search through and find a package that matches. If we failed to match because
+    // it's torn across multiple or something not in the catalog, we'll offer the inbox conhost one.
+    for (auto& pkg : packages)
+    {
+        if (pkg.console.clsid == defCon && pkg.terminal.clsid == defTerm)
+        {
+            chosenPackage = pkg;
+            break;
+        }
+    }
+
+    defPackage = chosenPackage;
+
+    return S_OK;
+}
+CATCH_RETURN()
+
+[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultConsoleById(const IID& iid) noexcept
+{
+    return s_Set(DELEGATION_CONSOLE_KEY_NAME, iid);
 }
 
-[[nodiscard]] HRESULT DelegationConfig::s_SetTerminal(const DelegationTerminal& terminal) noexcept
+[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultTerminalById(const IID& iid) noexcept
 {
-    return s_Set(DELEGATION_TERMINAL_KEY_NAME, terminal.clsid);
+    return s_Set(DELEGATION_TERMINAL_KEY_NAME, iid);
 }
 
-[[nodiscard]] HRESULT DelegationConfig::s_GetConsole(IID& iid) noexcept
+[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultByPackage(const DelegationPackage& package) noexcept
 {
+    RETURN_IF_FAILED(s_SetDefaultConsoleById(package.console.clsid));
+    RETURN_IF_FAILED(s_SetDefaultTerminalById(package.terminal.clsid));
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT DelegationConfig::s_GetDefaultConsoleId(IID& iid) noexcept
+{
+    iid = { 0 };
     return s_Get(DELEGATION_CONSOLE_KEY_NAME, iid);
 }
 
-[[nodiscard]] HRESULT DelegationConfig::s_GetTerminal(IID& iid) noexcept
+[[nodiscard]] HRESULT DelegationConfig::s_GetDefaultTerminalId(IID& iid) noexcept
 {
+    iid = { 0 };
     return s_Get(DELEGATION_TERMINAL_KEY_NAME, iid);
 }
 
@@ -192,7 +278,7 @@ CATCH_RETURN()
         RETURN_NTSTATUS(result);
     }
 
-    auto buffer = std::make_unique<wchar_t[]>(bytesNeeded / sizeof(wchar_t));
+    auto buffer = std::make_unique<wchar_t[]>(bytesNeeded / sizeof(wchar_t) + 1);
 
     DWORD bytesUsed = 0;
 
@@ -222,7 +308,7 @@ try
     wil::unique_cotaskmem_string str;
     RETURN_IF_FAILED(StringFromCLSID(clsid, &str));
 
-    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_SetValue(startupKey.get(), value, REG_SZ, reinterpret_cast<BYTE*>(str.get()), gsl::narrow<DWORD>(wcslen(str.get() + 1) * sizeof(wchar_t))));
+    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_SetValue(startupKey.get(), value, REG_SZ, reinterpret_cast<BYTE*>(str.get()), gsl::narrow<DWORD>(wcslen(str.get()) * sizeof(wchar_t))));
 
     return S_OK;
 }

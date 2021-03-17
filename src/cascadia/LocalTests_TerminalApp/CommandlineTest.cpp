@@ -1594,6 +1594,9 @@ namespace TerminalAppLocalTests
     void CommandlineTest::TestFindTargetWindow()
     {
         {
+            Log::Comment(L"wt.exe with no args should always use the value from"
+                         L" the settings (passed as the second argument).");
+
             std::vector<winrt::hstring> args{ L"wt.exe" };
             auto result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseNew);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
@@ -1608,6 +1611,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"", result.WindowName());
         }
         {
+            Log::Comment(L"-w -1 should always result in a new window");
+
             std::vector<winrt::hstring> args{ L"wt.exe", L"-w", L"-1" };
             auto result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseNew);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
@@ -1622,6 +1627,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"", result.WindowName());
         }
         {
+            Log::Comment(L"\"new\" should always result in a new window");
+
             std::vector<winrt::hstring> args{ L"wt.exe", L"-w", L"new" };
             auto result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseNew);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
@@ -1636,6 +1643,9 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"", result.WindowName());
         }
         {
+            Log::Comment(L"-w with a negative number should always result in a "
+                         L"new window");
+
             std::vector<winrt::hstring> args{ L"wt.exe", L"-w", L"-12345" };
             auto result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseNew);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
@@ -1650,6 +1660,10 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"", result.WindowName());
         }
         {
+            Log::Comment(L"-w with a positive number should result in us trying"
+                         L" to either make a new one or find an existing one "
+                         L"with that ID, depending on the provided argument");
+
             std::vector<winrt::hstring> args{ L"wt.exe", L"-w", L"12345" };
             auto result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseNew);
             VERIFY_ARE_EQUAL(12345, result.WindowId());
@@ -1664,6 +1678,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"", result.WindowName());
         }
         {
+            Log::Comment(L"-w 0 should always use the \"current\" window");
+
             std::vector<winrt::hstring> args{ L"wt.exe", L"-w", L"0" };
             auto result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseNew);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseCurrent, result.WindowId());
@@ -1678,6 +1694,9 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"", result.WindowName());
         }
         {
+            Log::Comment(L"-w last should always use the most recent window on "
+                         L"this desktop");
+
             std::vector<winrt::hstring> args{ L"wt.exe", L"-w", L"last" };
             auto result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseNew);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseExisting, result.WindowId());
@@ -1692,6 +1711,9 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"", result.WindowName());
         }
         {
+            Log::Comment(L"Make sure we follow the provided argument when a "
+                         L"--window-id wasn't explicitly provided");
+
             std::vector<winrt::hstring> args{ L"wt.exe", L"new-tab" };
             auto result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseNew);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseNew, result.WindowId());
@@ -1706,6 +1728,9 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"", result.WindowName());
         }
         {
+            Log::Comment(L"Even if someone uses a subcommand as a window name, "
+                         L"that should work");
+
             std::vector<winrt::hstring> args{ L"wt.exe", L"-w", L"new-tab" };
             auto result = appImpl::AppLogic::_doFindTargetWindow({ args }, WindowingMode::UseNew);
             VERIFY_ARE_EQUAL(WindowingBehaviorUseName, result.WindowId());

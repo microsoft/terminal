@@ -6,7 +6,6 @@
 #include "TerminalPage.g.h"
 #include "TerminalTab.h"
 #include "AppKeyBindings.h"
-#include "TerminalSettings.h"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 
@@ -91,8 +90,8 @@ namespace winrt::TerminalApp::implementation
                                                      const winrt::hstring cwd = L"");
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, WindowName, _PropertyChangedHandlers, L"foo");
-        OBSERVABLE_GETSET_PROPERTY(uint64_t, WindowId, _PropertyChangedHandlers, 42);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, WindowName, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(uint64_t, WindowId, _PropertyChangedHandlers);
 
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
@@ -164,8 +163,10 @@ namespace winrt::TerminalApp::implementation
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
         void _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs);
-        void _CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
-        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
+        void _CreateNewTabFromSettings(GUID profileGuid, Microsoft::Terminal::Settings::Model::TerminalSettings settings);
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, Microsoft::Terminal::Settings::Model::TerminalSettings settings);
+
+        winrt::fire_and_forget _OpenNewWindow(const bool elevate, const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
         bool _displayingCloseDialog{ false };
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
@@ -188,7 +189,8 @@ namespace winrt::TerminalApp::implementation
                                                                                                                                             Windows::Foundation::Collections::IVectorView<Microsoft::Terminal::Settings::Model::Profile> profiles,
                                                                                                                                             Windows::Foundation::Collections::IMapView<winrt::hstring, Microsoft::Terminal::Settings::Model::ColorScheme> schemes);
 
-        void _DuplicateTabViewItem();
+        void _DuplicateFocusedTab();
+        void _DuplicateTab(const TerminalTab& tab);
         void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
         winrt::Windows::Foundation::IAsyncAction _RemoveTab(winrt::TerminalApp::TabBase tab);
         winrt::fire_and_forget _RemoveTabs(const std::vector<winrt::TerminalApp::TabBase> tabs);
@@ -256,6 +258,9 @@ namespace winrt::TerminalApp::implementation
         void _OnSwitchToTabRequested(const IInspectable& sender, const winrt::TerminalApp::TabBase& tab);
 
         void _Find();
+
+        winrt::Microsoft::Terminal::TerminalControl::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettings& settings,
+                                                                              const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
 
         winrt::fire_and_forget _RefreshUIForSettingsReload();
 

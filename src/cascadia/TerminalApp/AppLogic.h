@@ -21,12 +21,15 @@ namespace winrt::TerminalApp::implementation
 {
     struct FindTargetWindowResult : FindTargetWindowResultT<FindTargetWindowResult>
     {
-        GETSET_PROPERTY(int32_t, WindowId, -1);
-        GETSET_PROPERTY(winrt::hstring, WindowName, L"");
+        WINRT_PROPERTY(int32_t, WindowId, -1);
+        WINRT_PROPERTY(winrt::hstring, WindowName, L"");
 
     public:
         FindTargetWindowResult(const int32_t id, const winrt::hstring& name) :
             _WindowId{ id }, _WindowName{ name } {};
+
+        FindTargetWindowResult(const int32_t id) :
+            FindTargetWindowResult(id, L""){};
     };
 
     struct AppLogic : AppLogicT<AppLogic, IInitializeWithWindow>
