@@ -33,6 +33,7 @@ namespace Microsoft.Terminal.Remoting
         Boolean ExecuteCommandline(CommandlineArgs args);
         void ActivateWindow(WindowActivatedArgs args);
         WindowActivatedArgs GetLastActivatedArgs();
+        String WindowName { get; };
 
         event Windows.Foundation.TypedEventHandler<Object, WindowActivatedArgs> WindowActivated;
         event Windows.Foundation.TypedEventHandler<Object, CommandlineArgs> ExecuteCommandlineRequested;
