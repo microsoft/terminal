@@ -22,7 +22,7 @@
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
     <!-- C++/WinRT sets the depth to 1 if there is a XAML file in the project
       Unfortunately for us, we need it to be 3. When the namespace merging
-      depth is 1, Microsoft.Terminal.TerminalControl becomes "Microsoft",
+      depth is 1, Microsoft.Terminal.Control becomes "Microsoft",
       and our WinMD file becomes "Microsoft". Because WinRT is very
       namespace-driven, this winmd is considered to contain the entire
       Microsoft namespace. This is, obviously, not great. None of our other
@@ -267,7 +267,7 @@
       <Private>false</Private>
     </ProjectReference>
 
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj">
       <!-- Private:false and ReferenceOutputAssembly:false, in combination with
       the manual reference to TerminalControl.winmd below make sure that this
       project will compile correct, and that we won't roll up the TermControl
@@ -286,8 +286,14 @@
     MDMERGE will know where the TermControl types are defined. However, we need
     to do it exactly like this so the packaging project won't roll up
     TermControl's .xbf's from both the TermControl project and this one. -->
-    <Reference Include="Microsoft.Terminal.TerminalControl">
-      <HintPath>$(OpenConsoleCommonOutDir)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
+    <Reference Include="Microsoft.Terminal.Control">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Control\Microsoft.Terminal.Control.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.Core">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>

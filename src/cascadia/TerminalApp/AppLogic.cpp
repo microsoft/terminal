@@ -17,7 +17,7 @@ using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::TerminalApp;
 

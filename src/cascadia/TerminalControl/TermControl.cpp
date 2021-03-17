@@ -39,9 +39,9 @@ constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 // The minimum delay between updating the locations of regex patterns
 constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
 
-DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::TerminalControl::CopyFormat);
+DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::CopyFormat);
 
-namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+namespace winrt::Microsoft::Terminal::Control::implementation
 {
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
     // See microsoft/terminal#2066 for more info.
@@ -203,7 +203,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Lazy load the search box control.
         if (auto loadedSearchBox{ FindName(L"SearchBox") })
         {
-            if (auto searchBox{ loadedSearchBox.try_as<::winrt::Microsoft::Terminal::TerminalControl::SearchBoxControl>() })
+            if (auto searchBox{ loadedSearchBox.try_as<::winrt::Microsoft::Terminal::Control::SearchBoxControl>() })
             {
                 // get at its private implementation
                 _searchBox.copy_from(winrt::get_self<implementation::SearchBoxControl>(searchBox));
@@ -619,7 +619,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // create a custom automation peer with this code pattern:
             // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
-            auto autoPeer = winrt::make_self<winrt::Microsoft::Terminal::TerminalControl::implementation::TermControlAutomationPeer>(this);
+            auto autoPeer = winrt::make_self<winrt::Microsoft::Terminal::Control::implementation::TermControlAutomationPeer>(this);
 
             _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
             _renderer->AddRenderEngine(_uiaEngine.get());
@@ -3392,14 +3392,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
-    DEFINE_EVENT(TermControl, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
-    DEFINE_EVENT(TermControl, FontSizeChanged, _fontSizeChangedHandlers, TerminalControl::FontSizeChangedEventArgs);
-    DEFINE_EVENT(TermControl, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
+    DEFINE_EVENT(TermControl, TitleChanged, _titleChangedHandlers, Control::TitleChangedEventArgs);
+    DEFINE_EVENT(TermControl, FontSizeChanged, _fontSizeChangedHandlers, Control::FontSizeChangedEventArgs);
+    DEFINE_EVENT(TermControl, ScrollPositionChanged, _scrollPositionChangedHandlers, Control::ScrollPositionChangedEventArgs);
 
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, CopyToClipboard, _clipboardCopyHandlers, TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControl, IInspectable);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControl, TerminalControl::NoticeEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, Control::TermControl, Control::PasteFromClipboardEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, CopyToClipboard, _clipboardCopyHandlers, Control::TermControl, Control::CopyToClipboardEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, OpenHyperlink, _openHyperlinkHandlers, Control::TermControl, Control::OpenHyperlinkEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, SetTaskbarProgress, _setTaskbarProgressHandlers, Control::TermControl, IInspectable);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, RaiseNotice, _raiseNoticeHandlers, Control::TermControl, Control::NoticeEventArgs);
     // clang-format on
 }

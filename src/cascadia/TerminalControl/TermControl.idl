@@ -4,7 +4,7 @@
 import "IMouseWheelListener.idl";
 import "IControlSettings.idl";
 
-namespace Microsoft.Terminal.TerminalControl
+namespace Microsoft.Terminal.Control
 {
     delegate void TitleChangedEventArgs(String newTitle);
     delegate void FontSizeChangedEventArgs(Int32 width, Int32 height, Boolean isInitialChange);
@@ -61,13 +61,13 @@ namespace Microsoft.Terminal.TerminalControl
 
     [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl, IDirectKeyListener, IMouseWheelListener
     {
-        TermControl(Microsoft.Terminal.TerminalControl.IControlSettings settings, Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+        TermControl(Microsoft.Terminal.Control.IControlSettings settings, Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
-        static Windows.Foundation.Size GetProposedDimensions(Microsoft.Terminal.TerminalControl.IControlSettings settings, UInt32 dpi);
+        static Windows.Foundation.Size GetProposedDimensions(Microsoft.Terminal.Control.IControlSettings settings, UInt32 dpi);
 
         void UpdateSettings();
 
-        Microsoft.Terminal.TerminalControl.IControlSettings Settings { get; };
+        Microsoft.Terminal.Control.IControlSettings Settings { get; };
 
         event TitleChangedEventArgs TitleChanged;
         event FontSizeChangedEventArgs FontSizeChanged;

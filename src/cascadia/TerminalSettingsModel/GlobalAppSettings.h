@@ -73,7 +73,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, CopyOnSelect, false);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, InputServiceWarning, true);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, winrt::Microsoft::Terminal::TerminalControl::CopyFormat, CopyFormatting, 0);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, 0);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, WarnAboutLargePaste, true);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, WarnAboutMultiLinePaste, true);
         INHERITABLE_SETTING(Model::GlobalAppSettings, Model::LaunchPosition, InitialPosition, nullptr, nullptr);

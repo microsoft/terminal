@@ -191,12 +191,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_PROPERTY(Editor::ProfilePageNavigationState, State, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);
-        GETSET_BINDABLE_ENUM_SETTING(CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle, State().Profile, CursorShape);
+        GETSET_BINDABLE_ENUM_SETTING(CursorShape, Microsoft::Terminal::Core::CursorStyle, State().Profile, CursorShape);
         GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, State().Profile, BackgroundImageStretchMode);
-        GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode, State().Profile, AntialiasingMode);
+        GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, State().Profile, AntialiasingMode);
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, State().Profile, CloseOnExit);
         GETSET_BINDABLE_ENUM_SETTING(BellStyle, Microsoft::Terminal::Settings::Model::BellStyle, State().Profile, BellStyle);
-        GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::TerminalControl::ScrollbarState, State().Profile, ScrollState);
+        GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::Control::ScrollbarState, State().Profile, ScrollState);
 
     private:
         void _UpdateBIAlignmentControl(const int32_t val);

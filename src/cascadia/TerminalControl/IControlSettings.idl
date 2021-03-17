@@ -3,7 +3,7 @@
 
 import "IKeyBindings.idl";
 
-namespace Microsoft.Terminal.TerminalControl
+namespace Microsoft.Terminal.Control
 {
     enum ScrollbarState
     {
@@ -23,7 +23,7 @@ namespace Microsoft.Terminal.TerminalControl
     //      TermControl's behavior. In these settings there is both the entirety
     //      of the Core ITerminalSettings interface, and any additional settings
     //      for specifically the control.
-    interface IControlSettings requires ICoreSettings
+    interface IControlSettings requires Microsoft.Terminal.Core.ICoreSettings
     {
         String ProfileName;
 
@@ -36,7 +36,7 @@ namespace Microsoft.Terminal.TerminalControl
         Windows.UI.Text.FontWeight FontWeight;
         String Padding;
 
-        Microsoft.Terminal.TerminalControl.IKeyBindings KeyBindings;
+        Microsoft.Terminal.Control.IKeyBindings KeyBindings;
 
         Boolean CopyOnSelect;
         Boolean FocusFollowMouse;

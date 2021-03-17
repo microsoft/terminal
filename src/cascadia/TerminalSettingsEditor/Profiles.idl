@@ -44,7 +44,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SuppressApplicationTitle);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, UseAcrylic);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Double, AcrylicOpacity);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.TerminalControl.ScrollbarState, ScrollState);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.ScrollbarState, ScrollState);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, FontFace);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Int32, FontSize);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.UI.Text.FontWeight, FontWeight);
@@ -55,7 +55,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Double, BackgroundImageOpacity);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.ConvergedAlignment, BackgroundImageAlignment);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.TerminalControl.TextAntialiasingMode, AntialiasingMode);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.TextAntialiasingMode, AntialiasingMode);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RetroTerminalEffect);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ForceFullRepaintRendering);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SoftwareRendering);
@@ -67,7 +67,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Int32, HistorySize);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SnapOnInput);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AltGrAliasing);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.TerminalControl.CursorStyle, CursorShape);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(UInt32, CursorHeight);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.BellStyle, BellStyle);
     }
