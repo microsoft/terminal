@@ -280,7 +280,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
-    struct TermControl : TermControlT<TermControl, implementation::TermControl>
-    {
-    };
+    BASIC_FACTORY(TermControl);
 }
