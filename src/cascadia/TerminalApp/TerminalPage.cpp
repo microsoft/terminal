@@ -765,7 +765,7 @@ namespace winrt::TerminalApp::implementation
         const auto profileGuid{ _settings.GetProfileForArgs(newTerminalArgs) };
         const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
-        _CreateNewTabFromSettings(profileGuid, settings, std::nullopt);
+        _CreateNewTabFromSettings(profileGuid, settings.DefaultSettings(), std::nullopt);
 
         const uint32_t tabCount = _tabs.Size();
         const bool usedManualProfile = (newTerminalArgs != nullptr) &&
@@ -786,9 +786,9 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingUInt32(tabCount, "TabCount", "Count of tabs currently opened in TerminalApp"),
             TraceLoggingBool(usedManualProfile, "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
             TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
-            TraceLoggingBool(settings.UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
-            TraceLoggingFloat64(settings.TintOpacity(), "TintOpacity", "Opacity preference from the settings"),
-            TraceLoggingWideString(settings.FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
+            TraceLoggingBool(settings.DefaultSettings().UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
+            TraceLoggingFloat64(settings.DefaultSettings().TintOpacity(), "TintOpacity", "Opacity preference from the settings"),
+            TraceLoggingWideString(settings.DefaultSettings().FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
             TraceLoggingWideString(schemeName.data(), "SchemeName", "Color scheme set in the settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
@@ -807,7 +807,7 @@ namespace winrt::TerminalApp::implementation
     //      currently displayed, it will be shown.
     // Arguments:
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
-    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings, std::optional<TerminalApp::TerminalSettings> unfocusedSettings)
+    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, Microsoft::Terminal::Settings::Model::TerminalSettings settings, std::optional<Microsoft::Terminal::Settings::Model::TerminalSettings> unfocusedSettings)
     {
         // Initialize the new tab
 
@@ -1299,15 +1299,15 @@ namespace winrt::TerminalApp::implementation
             const auto& profileGuid = tab.GetFocusedProfile();
             if (profileGuid.has_value())
             {
-                const auto [settings, unfocusedSettings] = TerminalSettings::BuildSettings(_settings, profileGuid.value(), *_bindings);
+                const auto settingsStruct = TerminalSettings::CreateWithProfileByID(_settings, profileGuid.value(), *_bindings);
                 const auto workingDirectory = tab.GetActiveTerminalControl().WorkingDirectory();
                 const auto validWorkingDirectory = !workingDirectory.empty();
                 if (validWorkingDirectory)
                 {
-                    settings.StartingDirectory(workingDirectory);
+                    settingsStruct.DefaultSettings().StartingDirectory(workingDirectory);
                 }
 
-                _CreateNewTabFromSettings(profileGuid.value(), settings, unfocusedSettings);
+                _CreateNewTabFromSettings(profileGuid.value(), settingsStruct.DefaultSettings(), settingsStruct.UnfocusedSettings());
             }
         }
         CATCH_LOG();
@@ -1859,7 +1859,7 @@ namespace winrt::TerminalApp::implementation
         try
         {
             TerminalSettings controlSettings;
-            std::optional<TerminalApp::TerminalSettings> unfocusedSettings;
+            std::optional<TerminalSettings> unfocusedSettings;
             GUID realGuid;
             bool profileFound = false;
 
@@ -1869,7 +1869,9 @@ namespace winrt::TerminalApp::implementation
                 if (current_guid)
                 {
                     profileFound = true;
-                    std::tie(controlSettings, unfocusedSettings) = TerminalSettings::BuildSettings(_settings, current_guid.value(), *_bindings);
+                    auto settingsStruct = TerminalSettings::CreateWithProfileByID(_settings, current_guid.value(), *_bindings);
+                    controlSettings = settingsStruct.DefaultSettings();
+                    unfocusedSettings = settingsStruct.UnfocusedSettings();
                     const auto workingDirectory = focusedTab->GetActiveTerminalControl().WorkingDirectory();
                     const auto validWorkingDirectory = !workingDirectory.empty();
                     if (validWorkingDirectory)
@@ -1895,7 +1897,8 @@ namespace winrt::TerminalApp::implementation
             {
                 //std::tie(realGuid, controlSettings, unfocusedSettings) = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
                 realGuid = _settings.GetProfileForArgs(newTerminalArgs);
-                controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
+                auto settings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
+                controlSettings = settings.DefaultSettings();
             }
 
             const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
@@ -2549,12 +2552,12 @@ namespace winrt::TerminalApp::implementation
         _RemoveTabViewItem(tabViewItem);
     }
 
-    TermControl TerminalPage::_InitControl(const TerminalApp::TerminalSettings& settings, const ITerminalConnection& connection, std::optional<TerminalApp::TerminalSettings> unfocusedAppearance)
+    TermControl TerminalPage::_InitControl(const TerminalSettings& settings, const ITerminalConnection& connection, std::optional<TerminalSettings> unfocusedAppearance)
     {
         // Give term control a child of the settings so that any overrides go in the child
         // This way, when we do a settings reload we just update the parent and the overrides remain
-        const auto child = winrt::get_self<TerminalSettings>(settings)->CreateChild();
-        TermControl term{ *child, connection };
+        const auto child = TerminalSettings::CreateWithParent(settings);
+        TermControl term{ child, connection };
 
         if (unfocusedAppearance)
         {
@@ -2591,7 +2594,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     if (auto terminalTab = _GetTerminalTabImpl(tab))
                     {
-                        terminalTab->UpdateSettings(settings, profileGuid);
+                        terminalTab->UpdateSettings(settings.DefaultSettings(), profileGuid);
                     }
                 }
             }

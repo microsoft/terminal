@@ -5,11 +5,11 @@ import "CascadiaSettings.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
-    struct TerminalSettingsStruct
+    runtimeclass TerminalSettingsStruct
     {
-        TerminalSettings defaultSettings;
-        TerminalSettings unfocusedSettings;
-    };
+        TerminalSettings DefaultSettings { get; };
+        TerminalSettings UnfocusedSettings { get; };
+    }
 
     // Class Description:
     // TerminalSettings encapsulates all settings that control the
@@ -27,7 +27,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         static TerminalSettingsStruct CreateWithProfileByID(CascadiaSettings appSettings, Guid profileGuid, Microsoft.Terminal.TerminalControl.IKeyBindings keybindings);
         static TerminalSettingsStruct CreateWithNewTerminalArgs(CascadiaSettings appSettings, NewTerminalArgs newTerminalArgs, Microsoft.Terminal.TerminalControl.IKeyBindings keybindings);
-        static TerminalSettingsStruct CreateWithParent(TerminalSettings parent);
+        static TerminalSettings CreateWithParent(TerminalSettings parent);
 
         void SetParent(TerminalSettings parent);
         void ApplyColorScheme(ColorScheme scheme);
