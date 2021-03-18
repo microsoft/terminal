@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+    This targets file adds support for linking a whole static library (without needing you to
+    force-include any symbols.)
+
+    To do this, add <OCLinkWholeArchive>true</OCLinkWholeArchive> to the **ProjectReference**.
+  -->
+  <PropertyGroup>
+    <!-- We add this to the end of ComputeLinkInputsTargets to ensure it comes after ComputeReferenceLinkInputs,
+         which produces the library filenames for the project references. -->
+    <ComputeLinkInputsTargets>$(ComputeLinkInputsTargets);OCComputeWholeArchiveLinkLine</ComputeLinkInputsTargets>
+  </PropertyGroup>
+
+  <!--
+    Inputs="@(ProjectReferenceToLink)"
+    Outputs="@(_OCWholeArchiveDummyItem)"
+  -->
+  <Target Name="_OCComputeIncludedArchives" DependsOnTargets="ComputeReferenceLinkInputs">
+    <ItemGroup>
+      <_OCWholeArchiveInput Include="@(ProjectReferenceToLink)" Condition="'%(ProjectReferenceToLink.LinkLibraryDependencies)' == 'true' and '%(ProjectReferenceToLink.UseLibraryDependencyInputs)' != 'true' and '%(ProjectReferenceToLink.OCLinkWholeArchive)' == 'true'" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="OCComputeWholeArchiveLinkLine"
+    DependsOnTargets="_OCComputeIncludedArchives">
+    <ItemGroup Condition="'@(_OCWholeArchiveInput)' != ''">
+      <Link>
+        <AdditionalOptions>%(Link.AdditionalOptions) /WHOLEARCHIVE:@(_OCWholeArchiveInput, ' /WHOLEARCHIVE:')</AdditionalOptions>
+      </Link>
+    </ItemGroup>
+  </Target>
+</Project>
