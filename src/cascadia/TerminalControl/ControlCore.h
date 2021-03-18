@@ -116,6 +116,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void AttachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine);
 
+        bool IsInReadOnlyMode() const;
+        void ToggleReadOnlyMode();
+
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
         TYPED_EVENT(CopyToClipboard,           IInspectable, Control::CopyToClipboardEventArgs);
@@ -153,7 +156,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate{ std::nullopt };
 
-        bool _isReadOnly{ false }; // ?
+        bool _isReadOnly{ false }; // Probably belongs in Interactivity
 
         std::optional<COORD> _lastHoveredCell{ std::nullopt };
         // Track the last hyperlink ID we hovered over

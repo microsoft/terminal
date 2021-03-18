@@ -726,7 +726,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     bool TermControl::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
     {
         // Short-circuit isReadOnly check to avoid warning dialog
-        if (_isReadOnly)
+        if (_core->IsInReadOnlyMode())
         {
             return false;
         }
@@ -812,7 +812,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
 
         // Short-circuit isReadOnly check to avoid warning dialog
-        if (_isReadOnly)
+        if (_core->IsInReadOnlyMode())
         {
             e.Handled(!keyDown || _TryHandleKeyBinding(vkey, scanCode, modifiers));
             return;
@@ -1185,7 +1185,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
             // Short-circuit isReadOnly check to avoid warning dialog
-            if (_focused && !_isReadOnly && _CanSendVTMouseInput())
+            if (_focused && !_core->IsInReadOnlyMode() && _CanSendVTMouseInput())
             {
                 _TrySendMouseEvent(point);
             }
@@ -1292,7 +1292,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
             // Short-circuit isReadOnly check to avoid warning dialog
-            if (!_isReadOnly && _CanSendVTMouseInput())
+            if (!_core->IsInReadOnlyMode() && _CanSendVTMouseInput())
             {
                 _TrySendMouseEvent(point);
                 args.Handled(true);
@@ -1369,7 +1369,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                     const TerminalInput::MouseButtonState state)
     {
         // Short-circuit isReadOnly check to avoid warning dialog
-        if (!_isReadOnly && _CanSendVTMouseInput())
+        if (!_core->IsInReadOnlyMode() && _CanSendVTMouseInput())
         {
             // Most mouse event handlers call
             //      _TrySendMouseEvent(point);
@@ -2654,15 +2654,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - True if the mode is read-only
     bool TermControl::ReadOnly() const noexcept
     {
-        return _isReadOnly;
+        return _core->IsInReadOnlyMode();
     }
 
     // Method Description:
     // - Toggles the read-only flag, raises event describing the value change
     void TermControl::ToggleReadOnly()
     {
-        _isReadOnly = !_isReadOnly;
-        _ReadOnlyChangedHandlers(*this, winrt::box_value(_isReadOnly));
+        _core->ToggleReadOnlyMode();
+        _ReadOnlyChangedHandlers(*this, winrt::box_value(_core->IsInReadOnlyMode()));
     }
 
     winrt::fire_and_forget TermControl::_RaiseReadOnlyWarning()

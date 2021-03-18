@@ -1249,4 +1249,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    bool ControlCore::IsInReadOnlyMode() const
+    {
+        return _isReadOnly;
+    }
+    void ControlCore::ToggleReadOnlyMode()
+    {
+        _isReadOnly = !_isReadOnly;
+    }
+
 }
