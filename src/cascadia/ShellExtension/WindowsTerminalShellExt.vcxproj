@@ -31,7 +31,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="WindowsTerminalShellExt.def" />
+    <None Include="$(ProjectName).def" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
