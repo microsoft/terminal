@@ -10,7 +10,6 @@
     <SubSystem>Console</SubSystem>
     <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
-
     <!-- C++/WinRT sets the depth to 1 if there is a XAML file in the project
          Unfortunately for us, we need it to be 3. When the namespace merging
          depth is 1, Microsoft.Terminal.Control becomes "Microsoft",
@@ -32,6 +31,13 @@
     <!-- Only put headers for winrt types in here. Don't put other header files
     in here - put them in TerminalControlLib.vcxproj instead! -->
     <ClInclude Include="pch.h" />
+    <ClInclude Include="KeyChord.h" />
+    <ClInclude Include="SearchBoxControl.h" />
+    <ClInclude Include="TermControl.h" />
+    <ClInclude Include="TermControlAutomationPeer.h" />
+    <ClInclude Include="ThrottledFunc.h" />
+    <ClInclude Include="TSFInputControl.h" />
+    <ClInclude Include="XamlUiaTextRange.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -39,6 +45,7 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <!-- <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" /> -->
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -47,19 +54,24 @@
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="TerminalControl.def" />
+    <None Include="$(ProjectName).def" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
+
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
+      <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
+
     <!-- Reference TerminalControlLib here, so we can use it's Microsoft.Terminal.Control.winmd as
     our Microsoft.Terminal.Control.winmd. This didn't work correctly in VS2017, you'd need to
     manually reference the lib -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControlLib.vcxproj">
       <Private>true</Private>
-      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <!-- <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies> -->
     </ProjectReference>
   </ItemGroup>
-
   <ItemGroup>
     <!-- Manually add a reference to TerminalControl here. We need this so
     MDMERGE will know where the TermControl types are defined. However, we need
@@ -71,7 +83,6 @@
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
-
     <Reference Include="Microsoft.Terminal.TerminalConnection">
       <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
@@ -80,13 +91,15 @@
     </Reference>
   </ItemGroup>
 
+  <!-- <Import Project="$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" /> -->
+
+
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalDependencies>dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;user32.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>WindowsApp.lib;dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;user32.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <!-- ControlLib contains a DllMain that we need to force the use of. -->
       <AdditionalOptions Condition="'$(Platform)'=='Win32'">/INCLUDE:_DllMain@12</AdditionalOptions>
       <AdditionalOptions Condition="'$(Platform)'!='Win32'">/INCLUDE:DllMain</AdditionalOptions>
-
       <Reference>
         <!-- Do not propagate microsoft.ui.xaml upwards as a private dependency. -->
         <Private>false</Private>
