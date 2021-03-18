@@ -18,7 +18,8 @@
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <local:StringIsEmptyConverter x:Key="CommandKeyChordVisibilityConverter" />
+            <local:KeyChordToStringConverter x:Key="KeyChordToStringConverter"/>
+            <local:KeyChordToVisibilityConverter x:Key="KeyChordToVisibilityConverter"/>
 
             <!--
                 Template for actions. This is _heavily_ copied from the command
@@ -28,7 +29,7 @@
                 * We don't need the chevron for nested commands
                 * We're not displaying the icon
                 * We're binding directly to a Command, not a FilteredCommand
-                
+
                 If we wanted to reuse the command palette's list more directly,
                 that's theoretically possible, but then it would need to be
                 lifted out of TerminalApp and either moved into the
@@ -43,8 +44,8 @@
                     to make sure it takes the entire width of the line
                 -->
                 <ListViewItem HorizontalContentAlignment="Stretch"
-                              AutomationProperties.AcceleratorKey="{x:Bind KeyChordText, Mode=OneWay}"
-                              AutomationProperties.Name="{x:Bind Name, Mode=OneWay}">
+                              AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
+                              AutomationProperties.AcceleratorKey="{x:Bind Keys, Mode=OneWay, Converter={StaticResource KeyChordToStringConverter}}">
 
                     <Grid HorizontalAlignment="Stretch"
                           ColumnSpacing="8">
@@ -59,26 +60,26 @@
 
                         <TextBlock Grid.Column="0"
                                    HorizontalAlignment="Left"
-                                   Text="{x:Bind Name, Mode=OneWay}" />
+                                   Text="{x:Bind Name, Mode=OneWay}"/>
 
-                        <!--
-                            The block for the key chord is only visible
-                            when there's actual text set as the label. See
-                            CommandKeyChordVisibilityConverter for details.
-                            Inexplicably, we don't need to set the
-                            AutomationProperties to Raw here, unlike in the
-                            CommandPalette. We're not quite sure why.
-                        -->
-                        <Border Grid.Column="1"
+                        <!-- The block for the key chord is only visible
+                                when there's actual text set as the label. See
+                                CommandKeyChordVisibilityConverter for details.
+                             Inexplicably, we don't need to set the
+                                 AutomationProperties to Raw here, unlike in the
+                                 CommandPalette. We're not quite sure why.-->
+                        <Border Grid.Column="2"
+                                Visibility="{x:Bind Keys,
+                                             Mode=OneWay,
+                                             Converter={StaticResource KeyChordToVisibilityConverter}}"
+                                Style="{ThemeResource KeyChordBorderStyle}"
                                 Padding="2,0,2,0"
                                 HorizontalAlignment="Right"
-                                VerticalAlignment="Center"
-                                Style="{ThemeResource KeyChordBorderStyle}"
-                                Visibility="{x:Bind KeyChordText, Mode=OneWay, Converter={StaticResource CommandKeyChordVisibilityConverter}}">
+                                VerticalAlignment="Center">
 
-                            <TextBlock FontSize="12"
-                                       Style="{ThemeResource KeyChordTextBlockStyle}"
-                                       Text="{x:Bind KeyChordText, Mode=OneWay}" />
+                            <TextBlock Style="{ThemeResource KeyChordTextBlockStyle}"
+                                       FontSize="12"
+                                       Text="{x:Bind Keys, Mode=OneWay, Converter={StaticResource KeyChordToStringConverter}}" />
                         </Border>
                     </Grid>
                 </ListViewItem>

@@ -221,6 +221,11 @@ static KeyChord _FromString(const std::wstring& wstr)
 // - a string which is an equivalent serialization of this object.
 static std::wstring _ToString(const KeyChord& chord)
 {
+    if (!chord)
+    {
+        return {};
+    }
+
     bool serializedSuccessfully = false;
     const auto modifiers = chord.Modifiers();
     const auto vkey = chord.Vkey();
