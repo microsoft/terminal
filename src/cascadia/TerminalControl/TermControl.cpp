@@ -2399,8 +2399,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::_TerminalTitleChanged(const std::wstring_view& wstr)
     {
-        auto titleArgs = winrt::make_self<TitleChangedEventArgs>(winrt::hstring{ wstr });
-        _TitleChangedHandlers(*this, *titleArgs);
+        _TitleChangedHandlers(*this, winrt::make<TitleChangedEventArgs>(winrt::hstring{ wstr }));
     }
     void TermControl::_TerminalTabColorChanged(const std::optional<til::color> /*color*/)
     {
