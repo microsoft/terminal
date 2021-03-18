@@ -70,7 +70,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Boolean, SuppressApplicationTitle);
         INHERITABLE_PROFILE_SETTING(Boolean, UseAcrylic);
         INHERITABLE_PROFILE_SETTING(Double, AcrylicOpacity);
-        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.TerminalControl.ScrollbarState, ScrollState);
+        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.ScrollbarState, ScrollState);
         INHERITABLE_PROFILE_SETTING(String, FontFace);
         INHERITABLE_PROFILE_SETTING(Int32, FontSize);
         INHERITABLE_PROFILE_SETTING(Windows.UI.Text.FontWeight, FontWeight);
@@ -86,7 +86,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Double, BackgroundImageOpacity);
         INHERITABLE_PROFILE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
         INHERITABLE_PROFILE_SETTING(ConvergedAlignment, BackgroundImageAlignment);
-        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.TerminalControl.TextAntialiasingMode, AntialiasingMode);
+        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.TextAntialiasingMode, AntialiasingMode);
         INHERITABLE_PROFILE_SETTING(Boolean, RetroTerminalEffect);
         INHERITABLE_PROFILE_SETTING(String, PixelShaderPath);
         INHERITABLE_PROFILE_SETTING(Boolean, ForceFullRepaintRendering);
@@ -99,7 +99,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Int32, HistorySize);
         INHERITABLE_PROFILE_SETTING(Boolean, SnapOnInput);
         INHERITABLE_PROFILE_SETTING(Boolean, AltGrAliasing);
-        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.TerminalControl.CursorStyle, CursorShape);
+        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
         INHERITABLE_PROFILE_SETTING(UInt32, CursorHeight);
         INHERITABLE_PROFILE_SETTING(BellStyle, BellStyle);
     }

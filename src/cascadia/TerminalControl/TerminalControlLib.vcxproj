@@ -2,17 +2,17 @@
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</ProjectGuid>
-    <ProjectName>TerminalControl</ProjectName>
-    <RootNamespace>Microsoft.Terminal.TerminalControl</RootNamespace>
-    <!-- cppwinrt.build.pre.props depends on these settings: -->
-    <!-- build a dll, not exe (Application) -->
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectName>Microsoft.Terminal.Control.Lib</ProjectName>
+    <RootNamespace>Microsoft.Terminal.Control</RootNamespace>
+    <TargetName>Microsoft.Terminal.ControlLib</TargetName>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
-    <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+
     <!-- C++/WinRT sets the depth to 1 if there is a XAML file in the project
          Unfortunately for us, we need it to be 3. When the namespace merging
-         depth is 1, Microsoft.Terminal.TerminalControl becomes "Microsoft",
+         depth is 1, Microsoft.Terminal.Control becomes "Microsoft",
          and our WinMD file becomes "Microsoft". Because WinRT is very
          namespace-driven, this winmd is considered to contain the entire
          Microsoft namespace. This is, obviously, not great. None of our other
@@ -20,9 +20,12 @@
     -->
     <CppWinRTNamespaceMergeDepth>3</CppWinRTNamespaceMergeDepth>
     <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
+
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+
+  <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="KeyChord.h">
@@ -43,6 +46,7 @@
     </ClInclude>
     <ClInclude Include="XamlUiaTextRange.h" />
   </ItemGroup>
+  <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -67,6 +71,7 @@
     </ClCompile>
     <ClCompile Include="XamlUiaTextRange.cpp" />
   </ItemGroup>
+  <!-- ========================= idl Files ======================== -->
   <ItemGroup>
     <Midl Include="KeyChord.idl" />
     <Midl Include="IKeyBindings.idl" />
@@ -83,13 +88,23 @@
       <DependentUpon>TSFInputControl.xaml</DependentUpon>
     </Midl>
   </ItemGroup>
+  <!-- ========================= XAML Files ======================== -->
   <ItemGroup>
-    <None Include="packages.config" />
-    <None Include="TerminalControl.def" />
+    <Page Include="SearchBoxControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="TermControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="TSFInputControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
+  <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
     <PRIResource Include="Resources\en-US\Resources.resw" />
     <OCResourceDirectory Include="Resources" />
+    <None Include="packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
@@ -110,61 +125,18 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Page Include="SearchBoxControl.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="TermControl.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="TSFInputControl.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-  </ItemGroup>
-  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+  <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>
-    <Link>
-      <AdditionalDependencies>dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;user32.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
     <ClCompile>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>$(OpenConsoleDir)src\cascadia\inc;$(OpenConsoleDir)src\types\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <Reference>
+      <Private>false</Private>
+    </Reference>
   </ItemDefinitionGroup>
-  <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
+  <!-- ========================= Globals ======================== -->
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
-  <!--
-    We're linking a static library that has the same root namespace as us. Unfortunately,
-    if we allow a winmd that contains our namespace into the to-be-XamlCompiled reference list
-    the xaml compiler will become upset with us and fail to find any types defined in _this_
-    version of the namespace. Therefore, we have to strip them out.
-    Because ReferencePath is an important item group in MSBuild, we're going to make sure to
-    restore it the moment Xaml is done with it.
-    We have to use a static library with the _same_ namespace as ours because there's a weird
-    invariant somewhere in WinRT that every library project produce a single namespace. We're
-    going to let TerminalCore (static lib) contribute to our namespace, but when we do that
-    we get the xaml compiler complaining.
-  -->
-  <PropertyGroup>
-    <MarkupCompilePass1DependsOn>$(MarkupCompilePass1DependsOn);OpenConsoleStripDuplicateWinmdFromReferencesBeforePass1</MarkupCompilePass1DependsOn>
-    <MarkupCompilePass2DependsOn>$(MarkupCompilePass2DependsOn);OpenConsoleStripDuplicateWinmdFromReferencesBeforePass2</MarkupCompilePass2DependsOn>
-  </PropertyGroup>
-  <Target Name="OpenConsoleStripDuplicateWinmdFromReferencesBeforePass1">
-    <ItemGroup>
-      <!-- Back up the references we're about to delete -->
-      <OCReferencePathToRestore Include="@(ReferencePath)" Condition="'%(Filename)' == '$(RootNamespace)'"/>
-      <ReferencePath Remove="@(OCReferencePathToRestore)"/>
-    </ItemGroup>
-  </Target>
-  <Target Name="OpenConsoleRestoreDuplicateWinmdToReferences" AfterTargets="MarkupCompilePass2">
-    <ItemGroup>
-      <!-- Put them back. -->
-      <ReferencePath Include="@(OCReferencePathToRestore)"/>
-    </ItemGroup>
-  </Target>
-  <Target Name="OpenConsoleStripDuplicateWinmdFromReferencesBeforePass2">
-    <ItemGroup>
-      <!-- Nobody else uses this item group, it's safe to never restore. -->
-      <WinMDReferenceToCompile Remove="@(WinMDReferenceToCompile)" Condition="'%(Filename)' == '$(RootNamespace)'"/>
-    </ItemGroup>
-  </Target>
+  <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

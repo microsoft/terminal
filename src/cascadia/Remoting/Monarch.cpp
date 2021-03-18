@@ -148,6 +148,59 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     }
 
     // Method Description:
+    // - Find the ID of the peasant with the given name. If no such peasant
+    //   exists, then we'll return 0. If we encounter any peasants who have died
+    //   during this process, then we'll remove them from the set of _peasants
+    // Arguments:
+    // - name: The window name to look for
+    // Return Value:
+    // - 0 if we didn't find the given peasant, otherwise a positive number for
+    //   the window's ID.
+    uint64_t Monarch::_lookupPeasantIdForName(std::wstring_view name)
+    {
+        if (name.empty())
+        {
+            return 0;
+        }
+
+        std::vector<uint64_t> peasantsToErase{};
+        uint64_t result = 0;
+        for (const auto& [id, p] : _peasants)
+        {
+            try
+            {
+                auto otherName = p.WindowName();
+                if (otherName == name)
+                {
+                    result = id;
+                    break;
+                }
+            }
+            catch (...)
+            {
+                LOG_CAUGHT_EXCEPTION();
+                // Normally, we'd just erase the peasant here. However, we can't
+                // erase from the map while we're iterating over it like this.
+                // Instead, pull a good ole Java and collect this id for removal
+                // later.
+                peasantsToErase.push_back(id);
+            }
+        }
+
+        // Remove the dead peasants we came across while iterating.
+        for (const auto& id : peasantsToErase)
+        {
+            // Remove the peasant from the list of peasants
+            _peasants.erase(id);
+            // Remove the peasant from the list of MRU windows. They're dead.
+            // They can't be the MRU anymore.
+            _clearOldMruEntries(id);
+        }
+
+        return result;
+    }
+
+    // Method Description:
     // - Handler for the `Peasant::WindowActivated` event. We'll make a in-proc
     //   copy of the WindowActivatedArgs from the peasant. That way, we won't
     //   need to worry about the origin process dying when working with the
@@ -400,6 +453,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // After the event was handled, ResultTargetWindow() will be filled with
         // the parsed result.
         const auto targetWindow = findWindowArgs->ResultTargetWindow();
+        const auto targetWindowName = findWindowArgs->ResultTargetWindowName();
 
         TraceLoggingWrite(g_hRemotingProvider,
                           "Monarch_ProposeCommandline",
@@ -410,6 +464,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // that goes with it. Alternatively, if we were given a magic windowing
         // constant, we can use that to look up an appropriate peasant.
         if (targetWindow >= 0 ||
+            targetWindow == WindowingBehaviorUseName ||
             targetWindow == WindowingBehaviorUseExisting ||
             targetWindow == WindowingBehaviorUseAnyExisting)
         {
@@ -428,6 +483,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 break;
             case WindowingBehaviorUseAnyExisting:
                 windowID = _getMostRecentPeasantID(false);
+                break;
+            case WindowingBehaviorUseName:
+                windowID = _lookupPeasantIdForName(targetWindowName);
                 break;
             default:
                 windowID = ::base::saturated_cast<uint64_t>(targetWindow);
@@ -449,7 +507,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             if (auto targetPeasant{ _getPeasant(windowID) })
             {
                 auto result{ winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(false) };
-
                 try
                 {
                     // This will raise the peasant's ExecuteCommandlineRequested
@@ -463,6 +520,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                     // If we fail to propose the commandline to the peasant (it
                     // died?) then just tell this process to become a new window
                     // instead.
+                    result->WindowName(targetWindowName);
                     result->ShouldCreateWindow(true);
 
                     // If this fails, it'll be logged in the following
@@ -497,6 +555,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
                 auto result{ winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(true) };
                 result->Id(windowID);
+                result->WindowName(targetWindowName);
                 return *result;
             }
         }
@@ -508,6 +567,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 
         // In this case, no usable ID was provided. Return { true, nullopt }
-        return winrt::make<Remoting::implementation::ProposeCommandlineResult>(true);
+        auto result = winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(true);
+        result->WindowName(targetWindowName);
+        return *result;
     }
 }

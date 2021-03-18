@@ -185,9 +185,9 @@ void AppCommandlineArgs::_buildParser()
     maximized->excludes(fullscreen);
     focus->excludes(fullscreen);
 
-    _app.add_option<std::optional<int>, int>("-w,--window",
-                                             _windowTarget,
-                                             RS_A(L"CmdWindowTargetArgDesc"));
+    _app.add_option("-w,--window",
+                    _windowTarget,
+                    RS_A(L"CmdWindowTargetArgDesc"));
 
     // Subcommands
     _buildNewTabParser();
@@ -865,16 +865,10 @@ void AppCommandlineArgs::FullResetState()
     _exitMessage = "";
     _shouldExitEarly = false;
 
-    _windowTarget = std::nullopt;
+    _windowTarget = {};
 }
 
-std::optional<int> AppCommandlineArgs::GetTargetWindow() const noexcept
+std::string_view AppCommandlineArgs::GetTargetWindow() const noexcept
 {
-    // If the user provides _any_ negative number, then treat it as -1, for "use a new window".
-    if (_windowTarget.has_value() && *_windowTarget < 0)
-    {
-        return { -1 };
-    }
-
     return _windowTarget;
 }
