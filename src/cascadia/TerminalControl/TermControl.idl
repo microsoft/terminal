@@ -3,61 +3,11 @@
 
 import "IMouseWheelListener.idl";
 import "IControlSettings.idl";
+import "IDirectKeyListener.idl";
+import "EventArgs.idl";
 
 namespace Microsoft.Terminal.Control
 {
-    delegate void TitleChangedEventArgs(String newTitle);
-    delegate void FontSizeChangedEventArgs(Int32 width, Int32 height, Boolean isInitialChange);
-    delegate void ScrollPositionChangedEventArgs(Int32 viewTop, Int32 viewHeight, Int32 bufferLength);
-
-    // C++/winrt makes it difficult to share this idl between two projects,
-    // Instead, we just pin the uuid and include it in both TermControl and App
-    // If you update this one, please update TerminalApp\IDirectKeyListener.idl.
-    // If you change this interface, please update the guid.
-    // If you press F7 or Alt and get a runtime error, go make sure both copies are the same.
-    [uuid("0ddf4edc-3fda-4dee-97ca-a417ee3dd510")] interface IDirectKeyListener {
-        Boolean OnDirectKeyEvent(UInt32 vkey, UInt8 scanCode, Boolean down);
-    };
-
-    [flags]
-    enum CopyFormat
-    {
-        HTML = 0x1,
-        RTF = 0x2,
-        All = 0xffffffff
-    };
-
-    runtimeclass CopyToClipboardEventArgs
-    {
-        String Text { get; };
-        String Html { get; };
-        String Rtf { get; };
-        Windows.Foundation.IReference<CopyFormat> Formats { get; };
-    }
-
-    runtimeclass PasteFromClipboardEventArgs
-    {
-        void HandleClipboardData(String data);
-    }
-
-    runtimeclass OpenHyperlinkEventArgs
-    {
-        String Uri { get; };
-    }
-
-    enum NoticeLevel
-    {
-        Debug = 10,
-        Info = 20,
-        Warning = 30,
-        Error = 40,
-    };
-
-    runtimeclass NoticeEventArgs
-    {
-        NoticeLevel Level { get; };
-        String Message { get; };
-    }
 
     [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl, IDirectKeyListener, IMouseWheelListener
     {
@@ -69,21 +19,27 @@ namespace Microsoft.Terminal.Control
 
         Microsoft.Terminal.Control.IControlSettings Settings { get; };
 
-        event TitleChangedEventArgs TitleChanged;
+        event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
         event FontSizeChangedEventArgs FontSizeChanged;
-        event Windows.Foundation.TypedEventHandler<TermControl, CopyToClipboardEventArgs> CopyToClipboard;
-        event Windows.Foundation.TypedEventHandler<TermControl, PasteFromClipboardEventArgs> PasteFromClipboard;
-        event Windows.Foundation.TypedEventHandler<TermControl, OpenHyperlinkEventArgs> OpenHyperlink;
-        event Windows.Foundation.TypedEventHandler<TermControl, Object> SetTaskbarProgress;
-        event Windows.Foundation.TypedEventHandler<TermControl, NoticeEventArgs> RaiseNotice;
+        event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;
+        event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;
+        event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
+        event Windows.Foundation.TypedEventHandler<Object, NoticeEventArgs> RaiseNotice;
         event Windows.Foundation.TypedEventHandler<Object, Object> WarningBell;
         event Windows.Foundation.TypedEventHandler<Object, Object> HidePointerCursor;
         event Windows.Foundation.TypedEventHandler<Object, Object> RestorePointerCursor;
 
+        event ScrollPositionChangedEventArgs ScrollPositionChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
+
         event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         // This is an event handler forwarder for the underlying connection.
         // We expose this and ConnectionState here so that it might eventually be data bound.
-        event Windows.Foundation.TypedEventHandler<TermControl, IInspectable> ConnectionStateChanged;
+        event Windows.Foundation.TypedEventHandler<Object, IInspectable> ConnectionStateChanged;
+
         Microsoft.Terminal.TerminalConnection.ConnectionState ConnectionState { get; };
 
         String Title { get; };
@@ -98,7 +54,6 @@ namespace Microsoft.Terminal.Control
         void ScrollViewport(Int32 viewTop);
         Int32 GetScrollOffset();
         Int32 GetViewHeight();
-        event ScrollPositionChangedEventArgs ScrollPositionChanged;
 
         void CreateSearchBoxControl();
 
@@ -117,11 +72,8 @@ namespace Microsoft.Terminal.Control
         String WorkingDirectory { get; };
 
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
-        event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
 
         Boolean ReadOnly { get; };
         void ToggleReadOnly();
-        event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
-        event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
     }
 }
