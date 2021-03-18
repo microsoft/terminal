@@ -43,25 +43,6 @@ DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::CopyFormat);
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
-    // See microsoft/terminal#2066 for more info.
-    static bool _IsGlyphWideForceNarrowFallback(const std::wstring_view /* glyph */)
-    {
-        return false; // glyph is not wide.
-    }
-
-    static bool _EnsureStaticInitialization()
-    {
-        // use C++11 magic statics to make sure we only do this once.
-        static bool initialized = []() {
-            // *** THIS IS A SINGLETON ***
-            SetGlyphWidthFallback(_IsGlyphWideForceNarrowFallback);
-
-            return true;
-        }();
-        return initialized;
-    }
-
     TermControl::TermControl(IControlSettings settings,
                              TerminalConnection::ITerminalConnection connection) :
         _initializedTerminal{ false },
@@ -80,7 +61,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _selectionNeedsToBeCopied{ false },
         _searchBox{ nullptr }
     {
-        _EnsureStaticInitialization();
         InitializeComponent();
 
         _core = winrt::make_self<ControlCore>(settings, connection);
@@ -89,6 +69,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->ScrollPositionChanged({ get_weak(), &TermControl::_ScrollPositionChanged });
         _core->CursorPositionChanged({ get_weak(), &TermControl::_CursorPositionChanged });
         _core->RendererEnteredErrorState({ get_weak(), &TermControl::_RendererEnteredErrorState });
+        _core->FontSizeChanged({ get_weak(), &TermControl::_coreFontSizeChanged });
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
@@ -2729,8 +2710,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    // -------------------------------- WinRT Events ---------------------------------
-    // Winrt events need a method for adding a callback to the event and removing the callback.
-    // These macros will define them both for you.
-    DEFINE_EVENT(TermControl, FontSizeChanged, _fontSizeChangedHandlers, Control::FontSizeChangedEventArgs);
+    void TermControl::_coreFontSizeChanged(const int fontWidth,
+                                           const int fontHeight,
+                                           const bool isInitialChange)
+    {
+        _FontSizeChangedHandlers(fontWidth, fontHeight, isInitialChange);
+    }
+
 }

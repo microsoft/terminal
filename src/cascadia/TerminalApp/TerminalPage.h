@@ -225,7 +225,7 @@ namespace winrt::TerminalApp::implementation
 
         void _PasteText();
 
-        void _ControlNoticeRaisedHandler(const IInspectable sender, const Microsoft::Terminal::Control::NoticeEventArgs eventArgs);
+        winrt::fire_and_forget _ControlNoticeRaisedHandler(const IInspectable sender, const Microsoft::Terminal::Control::NoticeEventArgs eventArgs);
         void _ShowControlNoticeDialog(const winrt::hstring& title, const winrt::hstring& message);
 
         fire_and_forget _LaunchSettings(const Microsoft::Terminal::Settings::Model::SettingsTarget target);

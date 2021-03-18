@@ -95,7 +95,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
-        DECLARE_EVENT(FontSizeChanged, _fontSizeChangedHandlers, Control::FontSizeChangedEventArgs);
+        WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);
 
         FORWARDED_TYPED_EVENT(CopyToClipboard,        IInspectable, Control::CopyToClipboardEventArgs, _core, CopyToClipboard);
         FORWARDED_TYPED_EVENT(TitleChanged,           IInspectable, Control::TitleChangedEventArgs, _core, TitleChanged);
@@ -245,6 +245,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::fire_and_forget _RaiseReadOnlyWarning();
         winrt::fire_and_forget _hoveredHyperlinkChanged(const IInspectable& sender, const IInspectable& args);
+
+        void _coreFontSizeChanged(const int fontWidth,
+                                  const int fontHeight,
+                                  const bool isInitialChange);
     };
 }
 

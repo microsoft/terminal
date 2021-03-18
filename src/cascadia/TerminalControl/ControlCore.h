@@ -121,6 +121,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
+        WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);
+
         TYPED_EVENT(CopyToClipboard,           IInspectable, Control::CopyToClipboardEventArgs);
         TYPED_EVENT(TitleChanged,              IInspectable, Control::TitleChangedEventArgs);
         TYPED_EVENT(WarningBell,               IInspectable, IInspectable);
@@ -134,6 +136,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(RendererEnteredErrorState, IInspectable, IInspectable);
         TYPED_EVENT(SwapChainChanged,          IInspectable, IInspectable);
         TYPED_EVENT(RendererWarning,           IInspectable, Control::RendererWarningArgs);
+        TYPED_EVENT(RaiseNotice,               IInspectable, Control::NoticeEventArgs);
         // clang-format on
 
     private:

@@ -524,44 +524,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Arguments:
     // - initialUpdate: whether this font update should be considered as being
     //   concerned with initialization process. Value forwarded to event handler.
-    void ControlCore::_UpdateFont(const bool /*initialUpdate*/)
+    void ControlCore::_UpdateFont(const bool initialUpdate)
     {
         const int newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) *
                                             _compositionScaleX);
 
-        // !TODO!: MSFT:20895307 If the font doesn't exist, this doesn't
+        // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
         //      actually fail. We need a way to gracefully fallback.
         _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
 
         // If the actual font isn't what was requested...
         if (_actualFont.GetFaceName() != _desiredFont.GetFaceName())
         {
-            // !TODO!: We _DO_ want this
-            // // Then warn the user that we picked something because we couldn't find their font.
-            // // Format message with user's choice of font and the font that was chosen instead.
-            // const winrt::hstring message{ fmt::format(std::wstring_view{ RS_(L"NoticeFontNotFound") }, _desiredFont.GetFaceName(), _actualFont.GetFaceName()) };
-            // // Capture what we need to resume later.
-            // [strongThis = get_strong(), message]() -> winrt::fire_and_forget {
-            //     // Take these out of the lambda and store them locally
-            //     // because the coroutine will lose them into space
-            //     // by the time it resumes.
-            //     const auto msg = message;
-            //     const auto strong = strongThis;
-
-            //     // Pop the rest of this function to the tail of the UI thread
-            //     // Just in case someone was holding a lock when they called us and
-            //     // the handlers decide to do something that take another lock
-            //     // (like ShellExecute pumping our messaging thread...GH#7994)
-            //     co_await strong->Dispatcher();
-
-            //     auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(msg));
-            //     strong->_raiseNoticeHandlers(*strong, std::move(noticeArgs));
-            // }();
+            // Then warn the user that we picked something because we couldn't find their font.
+            // Format message with user's choice of font and the font that was chosen instead.
+            const winrt::hstring message{ fmt::format(std::wstring_view{ RS_(L"NoticeFontNotFound") },
+                                                      _desiredFont.GetFaceName(),
+                                                      _actualFont.GetFaceName()) };
+            auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, message);
+            _RaiseNoticeHandlers(*this, std::move(noticeArgs));
         }
 
-        // !TODO!: We _DO_ want this
-        // const auto actualNewSize = _actualFont.GetSize();
-        // _fontSizeChangedHandlers(actualNewSize.X, actualNewSize.Y, initialUpdate);
+        const auto actualNewSize = _actualFont.GetSize();
+        _FontSizeChangedHandlers(actualNewSize.X, actualNewSize.Y, initialUpdate);
     }
 
     // Method Description:
@@ -776,7 +761,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // save location (for rendering) + render
         _terminal->SetSelectionEnd(terminalPosition);
         _renderer->TriggerSelection();
-        // _selectionNeedsToBeCopied = true;
+        // _selectionNeedsToBeCopied = true; // !TODO! why is this commented out?
     }
 
     // Called when the Terminal wants to set something to the clipboard, i.e.

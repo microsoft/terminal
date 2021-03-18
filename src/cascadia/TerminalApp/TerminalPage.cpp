@@ -2290,29 +2290,37 @@ namespace winrt::TerminalApp::implementation
         return false;
     }
 
-    void TerminalPage::_ControlNoticeRaisedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::NoticeEventArgs eventArgs)
+    // Important! Don't take this eventArgs by reference, we need to extend the
+    // lifetime of it to the other side of the co_await!
+    winrt::fire_and_forget TerminalPage::_ControlNoticeRaisedHandler(const IInspectable /*sender*/,
+                                                                     const Microsoft::Terminal::Control::NoticeEventArgs eventArgs)
     {
-        winrt::hstring message = eventArgs.Message();
-
-        winrt::hstring title;
-
-        switch (eventArgs.Level())
+        auto weakThis = get_weak();
+        co_await winrt::resume_foreground(Dispatcher());
+        if (auto page = weakThis.get())
         {
-        case NoticeLevel::Debug:
-            title = RS_(L"NoticeDebug"); //\xebe8
-            break;
-        case NoticeLevel::Info:
-            title = RS_(L"NoticeInfo"); // \xe946
-            break;
-        case NoticeLevel::Warning:
-            title = RS_(L"NoticeWarning"); //\xe7ba
-            break;
-        case NoticeLevel::Error:
-            title = RS_(L"NoticeError"); //\xe783
-            break;
-        }
+            winrt::hstring message = eventArgs.Message();
 
-        _ShowControlNoticeDialog(title, message);
+            winrt::hstring title;
+
+            switch (eventArgs.Level())
+            {
+            case NoticeLevel::Debug:
+                title = RS_(L"NoticeDebug"); //\xebe8
+                break;
+            case NoticeLevel::Info:
+                title = RS_(L"NoticeInfo"); // \xe946
+                break;
+            case NoticeLevel::Warning:
+                title = RS_(L"NoticeWarning"); //\xe7ba
+                break;
+            case NoticeLevel::Error:
+                title = RS_(L"NoticeError"); //\xe783
+                break;
+            }
+
+            page->_ShowControlNoticeDialog(title, message);
+        }
     }
 
     void TerminalPage::_ShowControlNoticeDialog(const winrt::hstring& title, const winrt::hstring& message)
