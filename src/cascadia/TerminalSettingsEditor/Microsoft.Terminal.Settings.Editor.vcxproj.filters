@@ -22,7 +22,7 @@
     </Midl>
   </ItemGroup>
   <ItemGroup>
-    <None Include="TerminalSettingsEditor.def" />
+    <None Include="Microsoft.Terminal.Settings.Editor.def" />
     <None Include="packages.config" />
     <None Include="PropertySheet.props" />
   </ItemGroup>
