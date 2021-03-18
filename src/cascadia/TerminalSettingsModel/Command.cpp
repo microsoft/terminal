@@ -472,9 +472,4 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         return newCommands;
     }
-
-    hstring Command::KeyChordText()
-    {
-        return KeyChordSerialization::ToString(_Keys);
-    }
 }

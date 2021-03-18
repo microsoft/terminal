@@ -31,7 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // Filter out nested commands, and commands that aren't bound to a
             // key. This page is currently just for displaying the actions that
             // _are_ bound to keys.
-            if (command.HasNestedCommands() || command.KeyChordText().empty())
+            if (command.HasNestedCommands() || !command.Keys())
             {
                 continue;
             }

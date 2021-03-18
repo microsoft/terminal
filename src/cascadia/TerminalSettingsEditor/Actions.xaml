@@ -18,6 +18,8 @@ the MIT License. See LICENSE in the project root for license information. -->
             </ResourceDictionary.MergedDictionaries>
 
             <local:StringIsEmptyConverter x:Key="CommandKeyChordVisibilityConverter"/>
+            <local:KeyChordToStringConverter x:Key="KeyChordToStringConverter"/>
+            <local:KeyChordToVisibilityConverter x:Key="KeyChordToVisibilityConverter"/>
 
             <!-- Template for actions. This is _heavily_ copied from the command
             palette, with modifications:
@@ -39,7 +41,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                      to make sure it takes the entire width of the line -->
                 <ListViewItem HorizontalContentAlignment="Stretch"
                               AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
-                              AutomationProperties.AcceleratorKey="{x:Bind KeyChordText, Mode=OneWay}">
+                              AutomationProperties.AcceleratorKey="{x:Bind Keys, Mode=OneWay, Converter={StaticResource KeyChordToStringConverter}}">
 
                     <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" >
                         <Grid.ColumnDefinitions>
@@ -64,9 +66,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                                  AutomationProperties to Raw here, unlike in the
                                  CommandPalette. We're not quite sure why.-->
                         <Border Grid.Column="2"
-                                Visibility="{x:Bind KeyChordText,
+                                Visibility="{x:Bind Keys,
                                              Mode=OneWay,
-                                             Converter={StaticResource CommandKeyChordVisibilityConverter}}"
+                                             Converter={StaticResource KeyChordToVisibilityConverter}}"
                                 Style="{ThemeResource KeyChordBorderStyle}"
                                 Padding="2,0,2,0"
                                 HorizontalAlignment="Right"
@@ -74,7 +76,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                             <TextBlock Style="{ThemeResource KeyChordTextBlockStyle}"
                                        FontSize="12"
-                                       Text="{x:Bind KeyChordText, Mode=OneWay}" />
+                                       Text="{x:Bind Keys, Mode=OneWay, Converter={StaticResource KeyChordToStringConverter}}" />
                         </Border>
                     </Grid>
                 </ListViewItem>
