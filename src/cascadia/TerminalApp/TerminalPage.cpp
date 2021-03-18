@@ -356,6 +356,16 @@ namespace winrt::TerminalApp::implementation
         {
             _startupState = StartupState::InStartup;
             ProcessStartupActions(_startupActions, true);
+
+            // If we were told that the COM server needs to be started to listen for incoming
+            // default application connections, start it now.
+            // This MUST be done after we've registered the event listener for the new connections
+            // or the COM server might start receiving requests on another thread and dispatch
+            // them to nowhere.
+            if (_shouldStartInboundListener)
+            {
+                winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
+            }
         }
     }
 
@@ -2720,6 +2730,19 @@ namespace winrt::TerminalApp::implementation
         // copy into the winrt vector ctor.
         auto listCopy = actions;
         _startupActions = winrt::single_threaded_vector<ActionAndArgs>(std::move(listCopy));
+    }
+
+    // Routine Description:
+    // - Notifies this Terminal Page that it should start the incoming connection
+    //   listener for command-line tools attempting to join this Terminal
+    //   through the default application channel.
+    // Arguments:
+    // - <none> - Implicitly sets to true. Default page state is false.
+    // Return Value:
+    // - <none>
+    void TerminalPage::SetInboundListener()
+    {
+        _shouldStartInboundListener = true;
     }
 
     winrt::TerminalApp::IDialogPresenter TerminalPage::DialogPresenter() const

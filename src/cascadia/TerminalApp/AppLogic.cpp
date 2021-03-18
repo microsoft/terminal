@@ -1168,10 +1168,13 @@ namespace winrt::TerminalApp::implementation
 
             // Check if we were started as a COM server for inbound connections of console sessions
             // coming out of the operating system default application feature. If so,
-            // start the listener so COM has the registrations to receive requests.
+            // tell TerminalPage to start the listener as we have to make sure it has the chance
+            // to register a handler to hear about the requests first and is all ready to receive
+            // them before the COM server registers itself. Otherwise, the request might come
+            // in and be routed to an event with no handlers or a non-ready Page.
             if (_appArgs.IsHandoffListener())
             {
-                winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
+                _root->SetInboundListener();
             }
         }
 
