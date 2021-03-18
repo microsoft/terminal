@@ -1177,11 +1177,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal->GetCursorPosition();
     }
 
-    // This one's really pushing the boundary of "encapsulation". It really
-    // belongs in the "Interactivity" layer, which doesn't yet exist. There's so
-    // many accesses to the selection in the Core though, that I just put this
-    // here. The Control shouldn't be futzing that much with the selection
-    // itself.
+    // This one's really pushing the boundary of what counts as "encapsulation".
+    // It really belongs in the "Interactivity" layer, which doesn't yet exist.
+    // There's so many accesses to the selection in the Core though, that I just
+    // put this here. The Control shouldn't be futzing that much with the
+    // selection itself.
     void ControlCore::LeftClickOnTerminal(const til::point terminalPosition,
                                           const int numberOfClicks,
                                           const bool altEnabled,
@@ -1239,6 +1239,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _renderer->TriggerSelection();
+    }
+
+    void ControlCore::AttachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine)
+    {
+        if (_renderer)
+        {
+            _renderer->AddRenderEngine(pEngine);
+        }
     }
 
 }

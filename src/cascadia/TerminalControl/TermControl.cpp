@@ -493,7 +493,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             auto autoPeer = winrt::make_self<implementation::TermControlAutomationPeer>(this);
 
             _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
-            _core->_renderer->AddRenderEngine(_uiaEngine.get());
+            _core->AttachUiaEngine(_uiaEngine.get());
             return *autoPeer;
         }
         return nullptr;
