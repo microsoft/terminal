@@ -55,12 +55,10 @@ static constexpr std::string_view BackgroundImageKey{ "backgroundImage" };
 static constexpr std::string_view BackgroundImageOpacityKey{ "backgroundImageOpacity" };
 static constexpr std::string_view BackgroundImageStretchModeKey{ "backgroundImageStretchMode" };
 static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageAlignment" };
-static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
 static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 static constexpr std::string_view BellStyleKey{ "bellStyle" };
 static constexpr std::string_view UnfocusedAppearanceKey{ "unfocusedAppearance" };
-static constexpr std::string_view PixelShaderPathKey{ "experimental.pixelShaderPath" };
 
 static constexpr std::wstring_view DesktopWallpaperEnum{ L"desktopWallpaper" };
 
@@ -102,7 +100,7 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
     copyDefaultAppearance->_BackgroundImageOpacity = sourceDefaultAppearance->_BackgroundImageOpacity;
     copyDefaultAppearance->_BackgroundImageStretchMode = sourceDefaultAppearance->_BackgroundImageStretchMode;
     profile->_AntialiasingMode = source->_AntialiasingMode;
-    profile->_RetroTerminalEffect = source->_RetroTerminalEffect;
+    copyDefaultAppearance->_RetroTerminalEffect = sourceDefaultAppearance->_RetroTerminalEffect;
     profile->_ForceFullRepaintRendering = source->_ForceFullRepaintRendering;
     profile->_SoftwareRendering = source->_SoftwareRendering;
     copyDefaultAppearance->_ColorSchemeName = sourceDefaultAppearance->_ColorSchemeName;
@@ -116,7 +114,7 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
     copyDefaultAppearance->_CursorShape = sourceDefaultAppearance->_CursorShape;
     copyDefaultAppearance->_CursorHeight = sourceDefaultAppearance->_CursorHeight;
     profile->_BellStyle = source->_BellStyle;
-    profile->_PixelShaderPath = source->_PixelShaderPath;
+    copyDefaultAppearance->_PixelShaderPath = sourceDefaultAppearance->_PixelShaderPath;
     copyDefaultAppearance->_BackgroundImageAlignment = sourceDefaultAppearance->_BackgroundImageAlignment;
     profile->_ConnectionType = source->_ConnectionType;
     profile->_Origin = source->_Origin;
@@ -357,7 +355,6 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, BackgroundImageOpacityKey, defaultAppearanceImpl->_BackgroundImageOpacity);
     JsonUtils::GetValueForKey(json, BackgroundImageStretchModeKey, defaultAppearanceImpl->_BackgroundImageStretchMode);
     JsonUtils::GetValueForKey(json, BackgroundImageAlignmentKey, defaultAppearanceImpl->_BackgroundImageAlignment);
-    JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::GetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
     JsonUtils::GetValueForKey(json, BellStyleKey, _BellStyle);
@@ -375,7 +372,6 @@ void Profile::LayerJson(const Json::Value& json)
         unfocusedAppearance->LayerJson(json[JsonKey(UnfocusedAppearanceKey)]);
         _UnfocusedAppearance = *unfocusedAppearance;
     }
-    JsonUtils::GetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
 }
 
 // Method Description:
@@ -569,11 +565,9 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, BackgroundImageOpacityKey, defaultAppearanceImpl->_BackgroundImageOpacity);
     JsonUtils::SetValueForKey(json, BackgroundImageStretchModeKey, defaultAppearanceImpl->_BackgroundImageStretchMode);
     JsonUtils::SetValueForKey(json, BackgroundImageAlignmentKey, defaultAppearanceImpl->_BackgroundImageAlignment);
-    JsonUtils::SetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::SetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
     JsonUtils::SetValueForKey(json, TabColorKey, _TabColor);
     JsonUtils::SetValueForKey(json, BellStyleKey, _BellStyle);
-    JsonUtils::SetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
 
     if (_UnfocusedAppearance)
     {

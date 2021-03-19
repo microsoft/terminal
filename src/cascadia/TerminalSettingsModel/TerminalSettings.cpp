@@ -168,6 +168,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _BackgroundImageOpacity = appearance.BackgroundImageOpacity();
         _BackgroundImageStretchMode = appearance.BackgroundImageStretchMode();
         std::tie(_BackgroundImageHorizontalAlignment, _BackgroundImageVerticalAlignment) = ConvertConvergedAlignment(appearance.BackgroundImageAlignment());
+
+        _RetroTerminalEffect = appearance.RetroTerminalEffect();
+        _PixelShaderPath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(appearance.PixelShaderPath().c_str()) };
     }
 
     // Method Description:
@@ -239,9 +242,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         _ScrollState = profile.ScrollState();
-
-        _RetroTerminalEffect = profile.RetroTerminalEffect();
-        _PixelShaderPath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(profile.PixelShaderPath().c_str()) };
 
         _AntialiasingMode = profile.AntialiasingMode();
 

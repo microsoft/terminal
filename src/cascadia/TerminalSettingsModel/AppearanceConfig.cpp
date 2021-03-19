@@ -23,6 +23,8 @@ static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
 static constexpr std::string_view BackgroundImageOpacityKey{ "backgroundImageOpacity" };
 static constexpr std::string_view BackgroundImageStretchModeKey{ "backgroundImageStretchMode" };
 static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageAlignment" };
+static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
+static constexpr std::string_view PixelShaderPathKey{ "experimental.pixelShaderPath" };
 
 AppearanceConfig::AppearanceConfig()
 {
@@ -43,6 +45,8 @@ winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(const winrt::c
     appearance->_CursorShape = sourceAppearance->_CursorShape;
     appearance->_CursorHeight = sourceAppearance->_CursorHeight;
     appearance->_BackgroundImageAlignment = sourceAppearance->_BackgroundImageAlignment;
+    appearance->_RetroTerminalEffect = sourceAppearance->_RetroTerminalEffect;
+    appearance->_PixelShaderPath = sourceAppearance->_PixelShaderPath;
     return appearance;
 }
 
@@ -61,6 +65,8 @@ Json::Value AppearanceConfig::ToJson() const
     JsonUtils::SetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
     JsonUtils::SetValueForKey(json, BackgroundImageStretchModeKey, _BackgroundImageStretchMode);
     JsonUtils::SetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
+    JsonUtils::SetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
+    JsonUtils::SetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
 
     return json;
 }
@@ -89,6 +95,8 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
     JsonUtils::GetValueForKey(json, BackgroundImageStretchModeKey, _BackgroundImageStretchMode);
     JsonUtils::GetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
+    JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
+    JsonUtils::GetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
 }
 
 // Method Description:

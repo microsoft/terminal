@@ -77,7 +77,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), BackgroundImageStretchMode);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_SETTING(_profile, AntialiasingMode);
-        OBSERVABLE_PROJECTED_SETTING(_profile, RetroTerminalEffect);
+        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), RetroTerminalEffect);
         OBSERVABLE_PROJECTED_SETTING(_profile, ForceFullRepaintRendering);
         OBSERVABLE_PROJECTED_SETTING(_profile, SoftwareRendering);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), ColorSchemeName);

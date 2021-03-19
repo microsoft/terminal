@@ -49,6 +49,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::IAppearanceConfig, double, BackgroundImageOpacity, 1.0);
         INHERITABLE_SETTING(Model::IAppearanceConfig, Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::UniformToFill);
 
+        INHERITABLE_SETTING(Model::IAppearanceConfig, bool, RetroTerminalEffect, false);
+        INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, PixelShaderPath, L"");
+
     private:
         friend struct implementation::Profile;
     };

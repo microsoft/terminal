@@ -11,5 +11,9 @@ namespace Microsoft.Terminal.Control
         Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;
         Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;
         Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
+
+        // Experimental settings
+        Boolean RetroTerminalEffect;
+        String PixelShaderPath;
     };
 }

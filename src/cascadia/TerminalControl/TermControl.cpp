@@ -329,8 +329,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Update DxEngine settings under the lock
         _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
 
-        _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-        _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
         _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
         _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
@@ -533,6 +531,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Update DxEngine settings under the lock
         _renderEngine->SetSelectionBackground(newAppearance.SelectionBackground());
+        _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
+        _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
         _renderer->TriggerRedrawAll();
     }
 
