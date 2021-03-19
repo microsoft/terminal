@@ -22,6 +22,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ControlInteractivity(IControlSettings settings,
                              TerminalConnection::ITerminalConnection connection);
 
+        void GainFocus();
+
         /////////////////////// From Control
         winrt::com_ptr<ControlCore> _core{ nullptr };
         unsigned int _rowsToScroll; // Definitely Control/Interactivity
@@ -56,6 +58,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval{ std::nullopt };
 
         unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
+        void _UpdateSystemParameterSettings() noexcept;
     };
 }
 

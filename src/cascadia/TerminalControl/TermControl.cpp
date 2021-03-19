@@ -1695,21 +1695,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _blinkTimer.value().Start();
         }
 
-        _UpdateSystemParameterSettings();
+        _interactivity->GainFocus();
     }
 
-    // Method Description
-    // - Updates internal params based on system parameters
-    void TermControl::_UpdateSystemParameterSettings() noexcept
-    {
-        if (!SystemParametersInfoW(SPI_GETWHEELSCROLLLINES, 0, &_rowsToScroll, 0))
-        {
-            LOG_LAST_ERROR();
-            // If SystemParametersInfoW fails, which it shouldn't, fall back to
-            // Windows' default value.
-            _rowsToScroll = 3;
-        }
-    }
+    // // Method Description
+    // // - Updates internal params based on system parameters
+    // void TermControl::_UpdateSystemParameterSettings() noexcept
+    // {
+    //     if (!SystemParametersInfoW(SPI_GETWHEELSCROLLLINES, 0, &_rowsToScroll, 0))
+    //     {
+    //         LOG_LAST_ERROR();
+    //         // If SystemParametersInfoW fails, which it shouldn't, fall back to
+    //         // Windows' default value.
+    //         _rowsToScroll = 3;
+    //     }
+    // }
 
     // Method Description:
     // - Event handler for the LostFocus event. This is used to...

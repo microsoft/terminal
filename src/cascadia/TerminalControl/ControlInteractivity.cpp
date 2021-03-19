@@ -65,4 +65,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _multiClickCounter;
     }
 
+    void ControlInteractivity::GainFocus()
+    {
+        _UpdateSystemParameterSettings();
+    }
+
+    // Method Description
+    // - Updates internal params based on system parameters
+    void ControlInteractivity::_UpdateSystemParameterSettings() noexcept
+    {
+        if (!SystemParametersInfoW(SPI_GETWHEELSCROLLLINES, 0, &_rowsToScroll, 0))
+        {
+            LOG_LAST_ERROR();
+            // If SystemParametersInfoW fails, which it shouldn't, fall back to
+            // Windows' default value.
+            _rowsToScroll = 3;
+        }
+    }
+
 }

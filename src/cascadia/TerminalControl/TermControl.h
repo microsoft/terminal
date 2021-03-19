@@ -179,7 +179,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _ApplyUISettings(const IControlSettings&);
         void _UpdateSettingsOnUIThread();
-        void _UpdateSystemParameterSettings() noexcept;
+        // void _UpdateSystemParameterSettings() noexcept;
         void _InitializeBackgroundBrush();
         void _BackgroundColorChangedHandler(const IInspectable& sender, const IInspectable& args);
         winrt::fire_and_forget _changeBackgroundColor(til::color bg);
@@ -234,7 +234,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _CanSendVTMouseInput();
 
         const til::point _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
-        const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
+        // const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
         void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
