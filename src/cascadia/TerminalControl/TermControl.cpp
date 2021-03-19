@@ -3259,19 +3259,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (!_invertTimer)
         {
+            auto weakThis{ get_weak() };
             co_await winrt::resume_foreground(Dispatcher());
 
-            auto lock = _terminal->LockForWriting();
-            DispatcherTimer invertTimer;
-            invertTimer.Interval(std::chrono::milliseconds(2000));
-            invertTimer.Tick({ get_weak(), &TermControl::_InvertTimerTick });
-            invertTimer.Start();
-            _invertTimer.emplace(std::move(invertTimer));
+            if (auto control{ weakThis.get() })
+            {
+                auto lock = control->_terminal->LockForWriting();
+                DispatcherTimer invertTimer;
+                invertTimer.Interval(std::chrono::milliseconds(2000));
+                invertTimer.Tick({ get_weak(), &TermControl::_InvertTimerTick });
+                invertTimer.Start();
+                control->_invertTimer.emplace(std::move(invertTimer));
 
-            // stash away the value of the terminal's current screen mode,
-            // we want to return to this once the timer fires
-            _termScreenReversed = _terminal->ScreenMode();
-            _terminal->SetScreenMode(!_termScreenReversed);
+                // stash away the value of the terminal's current screen mode,
+                // we want to return to this once the timer fires
+                control->_termScreenReversed = control->_terminal->ScreenMode();
+                control->_terminal->SetScreenMode(!control->_termScreenReversed);
+            }
         }
     }
 
