@@ -47,7 +47,7 @@
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="TerminalControl.def" />
+    <None Include="$(ProjectName).def" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>

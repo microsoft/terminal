@@ -67,6 +67,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         winrt::Microsoft::Terminal::Remoting::IPeasant _getPeasant(uint64_t peasantID);
         uint64_t _getMostRecentPeasantID(bool limitToCurrentDesktop);
+        uint64_t _lookupPeasantIdForName(std::wstring_view name);
 
         void _peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& sender,
                                      const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args);

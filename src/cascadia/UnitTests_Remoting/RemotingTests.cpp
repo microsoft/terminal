@@ -6,6 +6,7 @@
 #include "../Remoting/CommandlineArgs.h"
 #include "../Remoting/FindTargetWindowArgs.h"
 #include "../Remoting/ProposeCommandlineResult.h"
+#include "../inc/WindowingBehavior.h"
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
@@ -50,6 +51,7 @@ namespace RemotingUnitTests
         DeadPeasant() = default;
         void AssignID(uint64_t /*id*/) { throw winrt::hresult_error{}; };
         uint64_t GetID() { throw winrt::hresult_error{}; };
+        winrt::hstring WindowName() { throw winrt::hresult_error{}; };
         uint64_t GetPID() { throw winrt::hresult_error{}; };
         bool ExecuteCommandline(const Remoting::CommandlineArgs& /*args*/) { throw winrt::hresult_error{}; }
         void ActivateWindow(const Remoting::WindowActivatedArgs& /*args*/) { throw winrt::hresult_error{}; }
@@ -85,6 +87,14 @@ namespace RemotingUnitTests
         TEST_METHOD(GetMostRecentAnyDesktop);
         TEST_METHOD(MostRecentIsDead);
 
+        TEST_METHOD(GetPeasantsByName);
+        TEST_METHOD(AddNamedPeasantsToNewMonarch);
+        TEST_METHOD(LookupNamedPeasantWhenOthersDied);
+        TEST_METHOD(LookupNamedPeasantWhenItDied);
+        TEST_METHOD(GetMruPeasantAfterNameLookupForDeadPeasant);
+
+        TEST_METHOD(ProposeCommandlineForNamedDeadWindow);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             return true;
@@ -95,6 +105,9 @@ namespace RemotingUnitTests
 
         static void _findTargetWindowHelper(const winrt::Windows::Foundation::IInspectable& sender,
                                             const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
+
+        static void _findTargetWindowByNameHelper(const winrt::Windows::Foundation::IInspectable& sender,
+                                                  const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
     };
 
     // Helper to replace the specified peasant in a monarch with a
@@ -123,6 +136,19 @@ namespace RemotingUnitTests
         {
             const auto index = std::stoi(arguments.at(0).c_str());
             args.ResultTargetWindow(index >= 0 ? index : -1);
+        }
+    }
+
+    // Helper to get the first argument out of the commandline, and return it as
+    // a name to use.
+    void RemotingTests::_findTargetWindowByNameHelper(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                      const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args)
+    {
+        const auto arguments = args.Args().Commandline();
+        if (arguments.size() > 0)
+        {
+            args.ResultTargetWindow(WindowingBehaviorUseName);
+            args.ResultTargetWindowName(arguments.at(0));
         }
     }
 
@@ -978,4 +1004,352 @@ namespace RemotingUnitTests
         VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[0].PeasantID());
     }
 
+    void RemotingTests::GetPeasantsByName()
+    {
+        Log::Comment(L"Test that looking up a peasant by name finds the window we expect");
+
+        const auto monarch0PID = 12345u;
+        const auto peasant1PID = 23456u;
+        const auto peasant2PID = 34567u;
+
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+
+        VERIFY_IS_NOT_NULL(m0);
+        VERIFY_IS_NOT_NULL(p1);
+        VERIFY_IS_NOT_NULL(p2);
+
+        p1->WindowName(L"one");
+        p2->WindowName(L"two");
+
+        VERIFY_ARE_EQUAL(0, p1->GetID());
+        VERIFY_ARE_EQUAL(0, p2->GetID());
+        VERIFY_ARE_EQUAL(L"one", p1->WindowName());
+        VERIFY_ARE_EQUAL(L"two", p2->WindowName());
+
+        m0->AddPeasant(*p1);
+        m0->AddPeasant(*p2);
+
+        VERIFY_ARE_EQUAL(1, p1->GetID());
+        VERIFY_ARE_EQUAL(2, p2->GetID());
+        VERIFY_ARE_EQUAL(L"one", p1->WindowName());
+        VERIFY_ARE_EQUAL(L"two", p2->WindowName());
+
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_lookupPeasantIdForName(L"one"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
+
+        Log::Comment(L"Rename p2");
+
+        p2->WindowName(L"foo");
+
+        VERIFY_ARE_EQUAL(0, m0->_lookupPeasantIdForName(L"two"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"foo"));
+    }
+
+    void RemotingTests::AddNamedPeasantsToNewMonarch()
+    {
+        Log::Comment(L"Test that moving peasants to a new monarch persists their original names");
+
+        const auto monarch0PID = 12345u;
+        const auto peasant1PID = 23456u;
+        const auto peasant2PID = 34567u;
+        const auto monarch3PID = 45678u;
+
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+
+        com_ptr<Remoting::implementation::Monarch> m3;
+        m3.attach(new Remoting::implementation::Monarch(monarch3PID));
+
+        VERIFY_IS_NOT_NULL(m0);
+        VERIFY_IS_NOT_NULL(p1);
+        VERIFY_IS_NOT_NULL(p2);
+        VERIFY_IS_NOT_NULL(m3);
+
+        p1->WindowName(L"one");
+        p2->WindowName(L"two");
+
+        VERIFY_ARE_EQUAL(0, p1->GetID());
+        VERIFY_ARE_EQUAL(0, p2->GetID());
+
+        m0->AddPeasant(*p1);
+        m0->AddPeasant(*p2);
+
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_lookupPeasantIdForName(L"one"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
+
+        VERIFY_ARE_EQUAL(1, p1->GetID());
+        VERIFY_ARE_EQUAL(2, p2->GetID());
+        VERIFY_ARE_EQUAL(L"one", p1->WindowName());
+        VERIFY_ARE_EQUAL(L"two", p2->WindowName());
+
+        Log::Comment(L"When the peasants go to a new monarch, make sure they have the same name");
+        m3->AddPeasant(*p1);
+        m3->AddPeasant(*p2);
+
+        VERIFY_ARE_EQUAL(1, p1->GetID());
+        VERIFY_ARE_EQUAL(2, p2->GetID());
+        VERIFY_ARE_EQUAL(L"one", p1->WindowName());
+        VERIFY_ARE_EQUAL(L"two", p2->WindowName());
+
+        VERIFY_ARE_EQUAL(p1->GetID(), m3->_lookupPeasantIdForName(L"one"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m3->_lookupPeasantIdForName(L"two"));
+    }
+
+    void RemotingTests::LookupNamedPeasantWhenOthersDied()
+    {
+        Log::Comment(L"Test that looking for a peasant by name when a different"
+                     L" peasant has died cleans up the corpses of any peasants "
+                     L"we may have tripped over.");
+
+        const auto monarch0PID = 12345u;
+        const auto peasant1PID = 23456u;
+        const auto peasant2PID = 34567u;
+
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+
+        VERIFY_IS_NOT_NULL(m0);
+        VERIFY_IS_NOT_NULL(p1);
+        VERIFY_IS_NOT_NULL(p2);
+        p1->WindowName(L"one");
+        p2->WindowName(L"two");
+
+        VERIFY_ARE_EQUAL(0, p1->GetID());
+        VERIFY_ARE_EQUAL(0, p2->GetID());
+
+        m0->AddPeasant(*p1);
+        m0->AddPeasant(*p2);
+
+        VERIFY_ARE_EQUAL(1, p1->GetID());
+        VERIFY_ARE_EQUAL(2, p2->GetID());
+
+        VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
+
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_lookupPeasantIdForName(L"one"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
+
+        Log::Comment(L"Kill peasant 1. Make sure that it gets removed from the monarch.");
+        RemotingTests::_killPeasant(m0, p1->GetID());
+
+        // By killing 1, then looking for "two", we happen to iterate over the
+        // corpse of 1 when looking for the peasant named "two". This causes us
+        // to remove 1 while looking for "two". Technically, we shouldn't be
+        // relying on any sort of ordering for an unordered_map iterator, but
+        // this one just so happens to work.
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
+
+        Log::Comment(L"Peasant 1 should have been pruned");
+        VERIFY_ARE_EQUAL(1u, m0->_peasants.size());
+    }
+
+    void RemotingTests::LookupNamedPeasantWhenItDied()
+    {
+        Log::Comment(L"Test that looking up a dead peasant by name returns 0, "
+                     L"indicating there's no peasant with that name.");
+
+        const auto monarch0PID = 12345u;
+        const auto peasant1PID = 23456u;
+        const auto peasant2PID = 34567u;
+
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+
+        VERIFY_IS_NOT_NULL(m0);
+        VERIFY_IS_NOT_NULL(p1);
+        VERIFY_IS_NOT_NULL(p2);
+        p1->WindowName(L"one");
+        p2->WindowName(L"two");
+
+        VERIFY_ARE_EQUAL(0, p1->GetID());
+        VERIFY_ARE_EQUAL(0, p2->GetID());
+
+        m0->AddPeasant(*p1);
+        m0->AddPeasant(*p2);
+
+        VERIFY_ARE_EQUAL(1, p1->GetID());
+        VERIFY_ARE_EQUAL(2, p2->GetID());
+
+        VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
+
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_lookupPeasantIdForName(L"one"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
+
+        Log::Comment(L"Kill peasant 1. Make sure that it gets removed from the monarch.");
+        RemotingTests::_killPeasant(m0, p1->GetID());
+
+        VERIFY_ARE_EQUAL(0, m0->_lookupPeasantIdForName(L"one"));
+
+        Log::Comment(L"Peasant 1 should have been pruned");
+        VERIFY_ARE_EQUAL(1u, m0->_peasants.size());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
+    }
+    void RemotingTests::GetMruPeasantAfterNameLookupForDeadPeasant()
+    {
+        // This test is trying to hit the catch in Monarch::_lookupPeasantIdForName.
+        //
+        // We need to:
+        // * add some peasants,
+        // * make one the mru, then make a named two the mru
+        // * then kill two
+        // * then try to get the mru peasant -> it should be one
+
+        const winrt::guid guid1{ Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
+        const auto monarch0PID = 12345u;
+        const auto peasant1PID = 23456u;
+        const auto peasant2PID = 34567u;
+
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+
+        VERIFY_IS_NOT_NULL(m0);
+        VERIFY_IS_NOT_NULL(p1);
+        VERIFY_IS_NOT_NULL(p2);
+        p1->WindowName(L"one");
+        p2->WindowName(L"two");
+
+        VERIFY_ARE_EQUAL(0, p1->GetID());
+        VERIFY_ARE_EQUAL(0, p2->GetID());
+
+        m0->AddPeasant(*p1);
+        m0->AddPeasant(*p2);
+
+        VERIFY_ARE_EQUAL(1, p1->GetID());
+        VERIFY_ARE_EQUAL(2, p2->GetID());
+
+        VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
+
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_lookupPeasantIdForName(L"one"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
+
+        {
+            Log::Comment(L"Activate the first peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p1->GetID(),
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p1->ActivateWindow(activatedArgs);
+        }
+        {
+            Log::Comment(L"Activate the second peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p2->GetID(),
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p2->ActivateWindow(activatedArgs);
+        }
+        Log::Comment(L"Kill peasant 2.");
+        RemotingTests::_killPeasant(m0, p2->GetID());
+
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_getMostRecentPeasantID(false));
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_getMostRecentPeasantID(true));
+    }
+
+    void RemotingTests::ProposeCommandlineForNamedDeadWindow()
+    {
+        Log::Comment(L"Test proposing a commandline for a named window that's "
+                     L"currently dead. This should result in a new window with "
+                     L"the given name.");
+
+        const auto monarch0PID = 12345u;
+        const auto peasant1PID = 23456u;
+        const auto peasant2PID = 34567u;
+
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        VERIFY_IS_NOT_NULL(m0);
+        m0->FindTargetWindowRequested(&RemotingTests::_findTargetWindowByNameHelper);
+
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+
+        VERIFY_IS_NOT_NULL(m0);
+        VERIFY_IS_NOT_NULL(p1);
+        VERIFY_IS_NOT_NULL(p2);
+        p1->WindowName(L"one");
+        p2->WindowName(L"two");
+
+        VERIFY_ARE_EQUAL(0, p1->GetID());
+        VERIFY_ARE_EQUAL(0, p2->GetID());
+
+        p1->ExecuteCommandlineRequested([&](auto&&, const Remoting::CommandlineArgs& cmdlineArgs) {
+            Log::Comment(L"Commandline dispatched to p1");
+            VERIFY_IS_GREATER_THAN(cmdlineArgs.Commandline().size(), 1u);
+            VERIFY_ARE_EQUAL(L"arg[1]", cmdlineArgs.Commandline().at(1));
+        });
+        p2->ExecuteCommandlineRequested([&](auto&&, const Remoting::CommandlineArgs& cmdlineArgs) {
+            Log::Comment(L"Commandline dispatched to p2");
+            VERIFY_IS_GREATER_THAN(cmdlineArgs.Commandline().size(), 1u);
+            VERIFY_ARE_EQUAL(L"this is for p2", cmdlineArgs.Commandline().at(1));
+        });
+
+        p1->WindowName(L"one");
+        p2->WindowName(L"two");
+
+        m0->AddPeasant(*p1);
+        m0->AddPeasant(*p2);
+
+        std::vector<winrt::hstring> p1Args{ L"one", L"arg[1]" };
+        std::vector<winrt::hstring> p2Args{ L"two", L"this is for p2" };
+
+        {
+            Remoting::CommandlineArgs eventArgs{ { p1Args }, { L"" } };
+            auto result = m0->ProposeCommandline(eventArgs);
+            VERIFY_ARE_EQUAL(false, result.ShouldCreateWindow());
+            VERIFY_ARE_EQUAL(false, (bool)result.Id()); // Casting to (bool) checks if the reference has a value
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
+        }
+
+        {
+            Log::Comment(L"Send a commandline to \"two\", which should be p2");
+            Remoting::CommandlineArgs eventArgs{ { p2Args }, { L"" } };
+            auto result = m0->ProposeCommandline(eventArgs);
+            VERIFY_ARE_EQUAL(false, result.ShouldCreateWindow());
+            VERIFY_ARE_EQUAL(false, (bool)result.Id()); // Casting to (bool) checks if the reference has a value
+            VERIFY_ARE_EQUAL(L"", result.WindowName());
+        }
+
+        Log::Comment(L"Kill peasant 2.");
+        RemotingTests::_killPeasant(m0, p2->GetID());
+
+        {
+            Log::Comment(L"Send a commandline to \"two\", who is now dead.");
+            Remoting::CommandlineArgs eventArgs{ { p2Args }, { L"" } };
+            auto result = m0->ProposeCommandline(eventArgs);
+            VERIFY_ARE_EQUAL(true, result.ShouldCreateWindow());
+            VERIFY_ARE_EQUAL(false, (bool)result.Id()); // Casting to (bool) checks if the reference has a value
+            VERIFY_ARE_EQUAL(L"two", result.WindowName());
+        }
+    }
 }
