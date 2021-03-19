@@ -2588,7 +2588,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     if (auto terminalTab = _GetTerminalTabImpl(tab))
                     {
-                        terminalTab->UpdateSettings(settings.DefaultSettings(), profileGuid);
+                        terminalTab->UpdateSettings(settings, profileGuid);
                     }
                 }
             }

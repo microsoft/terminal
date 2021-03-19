@@ -658,10 +658,6 @@ namespace winrt::TerminalApp::implementation
             newTerminalArgs = NewTerminalArgs();
         }
 
-        //auto [profileGuid, settings, _] = TerminalSettings::BuildSettings(_settings,
-        //                                                                  newTerminalArgs,
-        //                                                                  *_bindings);
-
         const auto profileGuid{ _settings.GetProfileForArgs(newTerminalArgs) };
         const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
