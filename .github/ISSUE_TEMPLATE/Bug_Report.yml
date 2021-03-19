@@ -26,26 +26,30 @@ body:
 - type: textarea
   attributes:
     label: Other Software
-    required: false
     description: If you're reporting a bug about our interaction with other software, what software? What versions?
     placeholder: >-
       vim 8.2 (inside WSL)
       OpenSSH_for_Windows_8.1p1
+  validations:
+    required: false
 
 - type: textarea
   attributes:
     label: Steps to reproduce
-    required: true
     placeholder: Tell us the steps required to trigger your bug.
+  validations:
+    required: true
 
 - type: textarea
   attributes:
     label: Expected Behavior
-    required: false
     placeholder: What were you expecting? You can include screenshots and reference material.
+  validations:
+    required: false
 
 - type: textarea
   attributes:
     label: Actual Behavior
-    required: true
     placeholder: What happened instead?
+  validations:
+    required: true
