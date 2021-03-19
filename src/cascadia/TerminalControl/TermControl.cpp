@@ -53,17 +53,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _autoScrollingPointerPoint{ std::nullopt },
         _autoScrollTimer{},
         _lastAutoScrollUpdateTime{ std::nullopt },
-        _touchAnchor{ std::nullopt },
         _cursorTimer{},
         _blinkTimer{},
-        _lastMouseClickTimestamp{},
-        _lastMouseClickPos{},
-        _selectionNeedsToBeCopied{ false },
         _searchBox{ nullptr }
     {
         InitializeComponent();
 
-        _core = winrt::make_self<ControlCore>(settings, connection);
+        _interactivity = winrt::make_self<ControlInteractivity>(settings, connection);
+        _core = _interactivity->_core;
 
         _core->BackgroundColorChanged({ get_weak(), &TermControl::_BackgroundColorChangedHandler });
         _core->ScrollPositionChanged({ get_weak(), &TermControl::_ScrollPositionChanged });
@@ -1069,7 +1066,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             const auto cursorPosition = point.Position();
             const auto terminalPosition = _GetTerminalPosition(cursorPosition);
-            // const auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
 
             // GH#9396: we prioritize hyper-link over VT mouse events
             //
@@ -1078,7 +1074,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (point.Properties().IsLeftButtonPressed() &&
                 ctrlEnabled && !hyperlink.empty())
             {
-                const auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
+                const auto clickCount = _interactivity->_NumberOfClicks(cursorPosition, point.Timestamp());
                 // Handle hyper-link only on the first click to prevent multiple activations
                 if (clickCount == 1)
                 {
@@ -1091,7 +1087,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
             else if (point.Properties().IsLeftButtonPressed())
             {
-                const auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
+                const auto clickCount = _interactivity->_NumberOfClicks(cursorPosition, point.Timestamp());
                 // This formula enables the number of clicks to cycle properly
                 // between single-, double-, and triple-click. To increase the
                 // number of acceptable click states, simply increment
@@ -2367,34 +2363,34 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         eventArgs.FontWeight(weight);
     }
 
-    // Method Description:
-    // - Returns the number of clicks that occurred (double and triple click support).
-    // Every call to this function registers a click.
-    // Arguments:
-    // - clickPos: the (x,y) position of a given cursor (i.e.: mouse cursor).
-    //    NOTE: origin (0,0) is top-left.
-    // - clickTime: the timestamp that the click occurred
-    // Return Value:
-    // - if the click is in the same position as the last click and within the timeout, the number of clicks within that time window
-    // - otherwise, 1
-    const unsigned int TermControl::_NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime)
-    {
-        // if click occurred at a different location or past the multiClickTimer...
-        Timestamp delta;
-        THROW_IF_FAILED(UInt64Sub(clickTime, _lastMouseClickTimestamp, &delta));
-        if (clickPos != _lastMouseClickPos || delta > _multiClickTimer)
-        {
-            _multiClickCounter = 1;
-        }
-        else
-        {
-            _multiClickCounter++;
-        }
+    // // Method Description:
+    // // - Returns the number of clicks that occurred (double and triple click support).
+    // // Every call to this function registers a click.
+    // // Arguments:
+    // // - clickPos: the (x,y) position of a given cursor (i.e.: mouse cursor).
+    // //    NOTE: origin (0,0) is top-left.
+    // // - clickTime: the timestamp that the click occurred
+    // // Return Value:
+    // // - if the click is in the same position as the last click and within the timeout, the number of clicks within that time window
+    // // - otherwise, 1
+    // const unsigned int TermControl::_NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime)
+    // {
+    //     // if click occurred at a different location or past the multiClickTimer...
+    //     Timestamp delta;
+    //     THROW_IF_FAILED(UInt64Sub(clickTime, _lastMouseClickTimestamp, &delta));
+    //     if (clickPos != _lastMouseClickPos || delta > _multiClickTimer)
+    //     {
+    //         _multiClickCounter = 1;
+    //     }
+    //     else
+    //     {
+    //         _multiClickCounter++;
+    //     }
 
-        _lastMouseClickTimestamp = clickTime;
-        _lastMouseClickPos = clickPos;
-        return _multiClickCounter;
-    }
+    //     _lastMouseClickTimestamp = clickTime;
+    //     _lastMouseClickPos = clickPos;
+    //     return _multiClickCounter;
+    // }
 
     // Method Description:
     // - Calculates speed of single axis of auto scrolling. It has to allow for both

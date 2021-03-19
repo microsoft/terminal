@@ -14,7 +14,8 @@
 #include "SearchBoxControl.h"
 #include "ThrottledFunc.h"
 
-#include "ControlCore.h"
+// #include "ControlCore.h"
+#include "ControlInteractivity.h"
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -118,6 +119,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
 
         winrt::com_ptr<ControlCore> _core{ nullptr };
+        winrt::com_ptr<ControlInteractivity> _interactivity{ nullptr };
 
         bool _initializedTerminal;
 
@@ -142,7 +144,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::shared_ptr<ThrottledFunc<ScrollBarUpdate>> _updateScrollBar;
         bool _isInternalScrollBarUpdate;
 
-        unsigned int _rowsToScroll; // Definitely Control/Interactivity
+        // unsigned int _rowsToScroll; // Definitely Control/Interactivity
 
         // Auto scroll occurs when user, while selecting, drags cursor outside viewport. View is then scrolled to 'follow' the cursor.
         double _autoScrollVelocity;
@@ -153,25 +155,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::optional<Windows::UI::Xaml::DispatcherTimer> _cursorTimer;
         std::optional<Windows::UI::Xaml::DispatcherTimer> _blinkTimer;
 
-        // If this is set, then we assume we are in the middle of panning the
-        //      viewport via touch input.
-        std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
+        // // If this is set, then we assume we are in the middle of panning the
+        // //      viewport via touch input.
+        // std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
 
-        using Timestamp = uint64_t;
+        // using Timestamp = uint64_t;
 
-        // imported from WinUser
-        // Used for PointerPoint.Timestamp Property (https://docs.microsoft.com/en-us/uwp/api/windows.ui.input.pointerpoint.timestamp#Windows_UI_Input_PointerPoint_Timestamp)
-        Timestamp _multiClickTimer;
-        unsigned int _multiClickCounter;
-        Timestamp _lastMouseClickTimestamp;
-        std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPos;
-        std::optional<winrt::Windows::Foundation::Point> _singleClickTouchdownPos;
-        std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPosNoSelection;
-        // This field tracks whether the selection has changed meaningfully
-        // since it was last copied. It's generally used to prevent copyOnSelect
-        // from firing when the pointer _just happens_ to be released over the
-        // terminal.
-        bool _selectionNeedsToBeCopied; // ->Interactivity
+        // // imported from WinUser
+        // // Used for PointerPoint.Timestamp Property (https://docs.microsoft.com/en-us/uwp/api/windows.ui.input.pointerpoint.timestamp#Windows_UI_Input_PointerPoint_Timestamp)
+        // Timestamp _multiClickTimer;
+        // unsigned int _multiClickCounter;
+        // Timestamp _lastMouseClickTimestamp;
+        // std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPos;
+        // std::optional<winrt::Windows::Foundation::Point> _singleClickTouchdownPos;
+        // std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPosNoSelection;
+        // // This field tracks whether the selection has changed meaningfully
+        // // since it was last copied. It's generally used to prevent copyOnSelect
+        // // from firing when the pointer _just happens_ to be released over the
+        // // terminal.
+        // bool _selectionNeedsToBeCopied; // ->Interactivity
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 

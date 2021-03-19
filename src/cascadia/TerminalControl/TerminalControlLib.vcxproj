@@ -31,6 +31,9 @@
     <ClInclude Include="ControlCore.h">
       <DependentUpon>ControlCore.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="ControlInteractivity.h">
+      <DependentUpon>ControlInteractivity.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="KeyChord.h">
       <DependentUpon>KeyChord.idl</DependentUpon>
     </ClInclude>
@@ -60,6 +63,9 @@
     <ClCompile Include="ControlCore.cpp">
       <DependentUpon>ControlCore.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="ControlInteractivity.cpp">
+      <DependentUpon>ControlInteractivity.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="EventArgs.cpp">
       <DependentUpon>EventArgs.idl</DependentUpon>
     </ClCompile>
@@ -86,6 +92,7 @@
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
     <Midl Include="ControlCore.idl" />
+    <Midl Include="ControlInteractivity.idl" />
     <Midl Include="ICoreState.idl" />
     <Midl Include="IDirectKeyListener.idl" />
     <Midl Include="KeyChord.idl" />
