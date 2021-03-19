@@ -71,6 +71,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         settings->_ApplyGlobalSettings(globals);
         settings->ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes());
 
+        if (profile.UnfocusedAppearance())
+        {
+            auto child = settings->CreateChild();
+            child->ApplyAppearanceSettings(profile.UnfocusedAppearance(), globals.ColorSchemes());
+            return winrt::make<TerminalSettingsStruct>(*settings, *child);
+        }
+
         return winrt::make<TerminalSettingsStruct>(*settings, nullptr);
     }
 
@@ -126,25 +133,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return settings;
     }
 
-    //Model::TerminalSettingsStruct TerminalSettings::BuildSettings(const CascadiaSettings& appSettings,
-    //                                                                                                            guid profileGuid,
-    //                                                                                                            const IKeyBindings& keybindings)
-    //{
-    //    const auto profile = appSettings.FindProfile(profileGuid);
-    //    THROW_HR_IF_NULL(E_INVALIDARG, profile);
-
-    //    auto settingsImpl{ winrt::make_self<TerminalSettings>(appSettings, profileGuid, keybindings) };
-
-    //    if (profile.UnfocusedAppearance())
-    //    {
-    //        auto child = settingsImpl->CreateChild();
-    //        child->ApplyAppearanceSettings(profile.UnfocusedAppearance(), appSettings.GlobalSettings().ColorSchemes());
-    //        return { *settingsImpl, std::optional<Model::TerminalSettings>(*child) };
-    //    }
-
-    //    return { *settingsImpl, std::nullopt };
-    //}
-
     void TerminalSettings::ApplyAppearanceSettings(const IAppearanceConfig& appearance, const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes)
     {
         _CursorShape = appearance.CursorShape();
@@ -188,12 +176,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - parent: the TerminalSettings object that the newly created TerminalSettings will inherit from
     // Return Value:
     // - a newly created child of the given parent object
-    Model::TerminalSettings TerminalSettings::CreateWithParent(const Model::TerminalSettings& parent)
+    Model::TerminalSettingsStruct TerminalSettings::CreateWithParent(const Model::TerminalSettingsStruct& parent)
     {
         THROW_HR_IF_NULL(E_INVALIDARG, parent);
 
-        auto parentImpl{ get_self<TerminalSettings>(parent) };
-        return *parentImpl->CreateChild();
+        auto defaultImpl{ get_self<TerminalSettings>(parent.DefaultSettings()) };
+        auto defaultChild = defaultImpl->CreateChild();
+        if (parent.UnfocusedSettings())
+        {
+            parent.UnfocusedSettings().SetParent(*defaultChild);
+        }
+        return winrt::make<TerminalSettingsStruct>(*defaultChild, parent.UnfocusedSettings());
     }
 
     // Method Description:

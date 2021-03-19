@@ -761,11 +761,10 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs)
     try
     {
-        //auto [profileGuid, settings, unfocusedSettings] = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
         const auto profileGuid{ _settings.GetProfileForArgs(newTerminalArgs) };
         const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
-        _CreateNewTabFromSettings(profileGuid, settings.DefaultSettings(), std::nullopt);
+        _CreateNewTabFromSettings(profileGuid, settings);
 
         const uint32_t tabCount = _tabs.Size();
         const bool usedManualProfile = (newTerminalArgs != nullptr) &&
@@ -807,12 +806,12 @@ namespace winrt::TerminalApp::implementation
     //      currently displayed, it will be shown.
     // Arguments:
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
-    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, Microsoft::Terminal::Settings::Model::TerminalSettings settings, std::optional<Microsoft::Terminal::Settings::Model::TerminalSettings> unfocusedSettings)
+    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, Microsoft::Terminal::Settings::Model::TerminalSettingsStruct settings)
     {
         // Initialize the new tab
 
         // Create a connection based on the values in our settings object.
-        auto connection = _CreateConnectionFromSettings(profileGuid, settings);
+        auto connection = _CreateConnectionFromSettings(profileGuid, settings.DefaultSettings());
 
         TerminalConnection::ITerminalConnection debugConnection{ nullptr };
         if (_settings.GlobalSettings().DebugFeaturesEnabled())
@@ -828,7 +827,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        auto term = _InitControl(settings, connection, unfocusedSettings);
+        auto term = _InitControl(settings, connection);
 
         auto newTabImpl = winrt::make_self<TerminalTab>(profileGuid, term);
 
@@ -921,7 +920,7 @@ namespace winrt::TerminalApp::implementation
 
         if (debugConnection) // this will only be set if global debugging is on and tap is active
         {
-            auto newControl = _InitControl(settings, debugConnection, unfocusedSettings);
+            auto newControl = _InitControl(settings, debugConnection);
             _RegisterTerminalEvents(newControl, *newTabImpl);
             // Split (auto) with the debug tap.
             newTabImpl->SplitPane(SplitState::Automatic, 0.5f, profileGuid, newControl);
@@ -1307,7 +1306,7 @@ namespace winrt::TerminalApp::implementation
                     settingsStruct.DefaultSettings().StartingDirectory(workingDirectory);
                 }
 
-                _CreateNewTabFromSettings(profileGuid.value(), settingsStruct.DefaultSettings(), settingsStruct.UnfocusedSettings());
+                _CreateNewTabFromSettings(profileGuid.value(), settingsStruct);
             }
         }
         CATCH_LOG();
@@ -1858,8 +1857,7 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
-            TerminalSettings controlSettings;
-            std::optional<TerminalSettings> unfocusedSettings;
+            TerminalSettingsStruct controlSettings{ nullptr };
             GUID realGuid;
             bool profileFound = false;
 
@@ -1869,14 +1867,12 @@ namespace winrt::TerminalApp::implementation
                 if (current_guid)
                 {
                     profileFound = true;
-                    auto settingsStruct = TerminalSettings::CreateWithProfileByID(_settings, current_guid.value(), *_bindings);
-                    controlSettings = settingsStruct.DefaultSettings();
-                    unfocusedSettings = settingsStruct.UnfocusedSettings();
+                    controlSettings = TerminalSettings::CreateWithProfileByID(_settings, current_guid.value(), *_bindings);
                     const auto workingDirectory = focusedTab->GetActiveTerminalControl().WorkingDirectory();
                     const auto validWorkingDirectory = !workingDirectory.empty();
                     if (validWorkingDirectory)
                     {
-                        controlSettings.StartingDirectory(workingDirectory);
+                        controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
                     }
                     realGuid = current_guid.value();
                 }
@@ -1895,13 +1891,11 @@ namespace winrt::TerminalApp::implementation
             }
             if (!profileFound)
             {
-                //std::tie(realGuid, controlSettings, unfocusedSettings) = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
                 realGuid = _settings.GetProfileForArgs(newTerminalArgs);
-                auto settings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
-                controlSettings = settings.DefaultSettings();
+                controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
             }
 
-            const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
+            const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings.DefaultSettings());
 
             const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
             const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
@@ -1919,7 +1913,7 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            auto newControl = _InitControl(controlSettings, controlConnection, unfocusedSettings);
+            auto newControl = _InitControl(controlSettings, controlConnection);
 
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl, *focusedTab);
@@ -2552,16 +2546,16 @@ namespace winrt::TerminalApp::implementation
         _RemoveTabViewItem(tabViewItem);
     }
 
-    TermControl TerminalPage::_InitControl(const TerminalSettings& settings, const ITerminalConnection& connection, std::optional<TerminalSettings> unfocusedAppearance)
+    TermControl TerminalPage::_InitControl(const TerminalSettingsStruct& settings, const ITerminalConnection& connection)
     {
         // Give term control a child of the settings so that any overrides go in the child
         // This way, when we do a settings reload we just update the parent and the overrides remain
         const auto child = TerminalSettings::CreateWithParent(settings);
-        TermControl term{ child, connection };
+        TermControl term{ child.DefaultSettings(), connection };
 
-        if (unfocusedAppearance)
+        if (child.UnfocusedSettings())
         {
-            term.UnfocusedAppearance(unfocusedAppearance.value());
+            term.UnfocusedAppearance(child.UnfocusedSettings());
         }
 
         return term;

@@ -27,7 +27,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         static TerminalSettingsStruct CreateWithProfileByID(CascadiaSettings appSettings, Guid profileGuid, Microsoft.Terminal.TerminalControl.IKeyBindings keybindings);
         static TerminalSettingsStruct CreateWithNewTerminalArgs(CascadiaSettings appSettings, NewTerminalArgs newTerminalArgs, Microsoft.Terminal.TerminalControl.IKeyBindings keybindings);
-        static TerminalSettings CreateWithParent(TerminalSettings parent);
+        static TerminalSettingsStruct CreateWithParent(TerminalSettingsStruct parent);
 
         void SetParent(TerminalSettings parent);
         void ApplyColorScheme(ColorScheme scheme);
