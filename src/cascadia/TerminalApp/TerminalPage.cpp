@@ -76,6 +76,16 @@ namespace winrt::TerminalApp::implementation
         {
             const auto& command = nameAndCmd.Value();
 
+            // If there's a keybinding that's bound to exactly this command,
+            // then get the keychord and display it as a
+            // part of the command in the UI. Each Command's KeyChord is
+            // unset by default, so we don't need to worry about clearing it
+            // if there isn't a key associated with it.
+            // However, if a nested command tries to bind a KeyChord, the
+            // Command records it, but it is never actually bound to the keys.
+            const auto keyChord{ settings.KeyMap().GetKeyBindingForActionWithArgs(command.Action()) };
+            command.Keys(keyChord);
+
             if (command.HasNestedCommands())
             {
                 _recursiveUpdateCommandKeybindingLabels(settings, command.NestedCommands());
