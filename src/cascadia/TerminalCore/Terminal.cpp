@@ -11,9 +11,9 @@
 #include "../../types/inc/utils.hpp"
 #include "../../types/inc/colorTable.hpp"
 
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/Microsoft.Terminal.Core.h>
 
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Core;
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;

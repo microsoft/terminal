@@ -89,7 +89,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         INHERITABLE_SETTING(Model::Profile, bool, UseAcrylic, false);
         INHERITABLE_SETTING(Model::Profile, double, AcrylicOpacity, 0.5);
-        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::TerminalControl::ScrollbarState, ScrollState, Microsoft::Terminal::TerminalControl::ScrollbarState::Visible);
+        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible);
 
         INHERITABLE_SETTING(Model::Profile, hstring, FontFace, DEFAULT_FONT_FACE);
         INHERITABLE_SETTING(Model::Profile, int32_t, FontSize, DEFAULT_FONT_SIZE);
@@ -99,7 +99,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, hstring, Commandline, L"cmd.exe");
         INHERITABLE_SETTING(Model::Profile, hstring, StartingDirectory);
 
-        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
+        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
         INHERITABLE_SETTING(Model::Profile, bool, RetroTerminalEffect, false);
         INHERITABLE_SETTING(Model::Profile, hstring, PixelShaderPath, L"");
         INHERITABLE_SETTING(Model::Profile, bool, ForceFullRepaintRendering, false);

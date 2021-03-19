@@ -253,7 +253,7 @@ namespace winrt::TerminalApp::implementation
         // a really widely used keyboard navigation key.
         if (_currentMode == CommandPaletteMode::TabSwitchMode && _keymap)
         {
-            winrt::Microsoft::Terminal::TerminalControl::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
+            winrt::Microsoft::Terminal::Control::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
             const auto action = _keymap.TryLookup(kc);
             if (action)
             {

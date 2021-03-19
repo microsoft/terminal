@@ -3,7 +3,7 @@
 
 import "..\ICoreAppearance.idl";
 
-namespace Microsoft.Terminal.TerminalControl
+namespace Microsoft.Terminal.Core
 {
     interface ICoreSettings requires ICoreAppearance
     {

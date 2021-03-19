@@ -27,18 +27,18 @@ namespace winrt::TerminalApp::implementation
     void MinMaxCloseControl::_MinimizeClick(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                             RoutedEventArgs const& e)
     {
-        _minimizeClickHandlers(*this, e);
+        _MinimizeClickHandlers(*this, e);
     }
 
     void MinMaxCloseControl::_MaximizeClick(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                             RoutedEventArgs const& e)
     {
-        _maximizeClickHandlers(*this, e);
+        _MaximizeClickHandlers(*this, e);
     }
     void MinMaxCloseControl::_CloseClick(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                          RoutedEventArgs const& e)
     {
-        _closeClickHandlers(*this, e);
+        _CloseClickHandlers(*this, e);
     }
 
     void MinMaxCloseControl::SetWindowVisualState(WindowVisualState visualState)
@@ -95,9 +95,4 @@ namespace winrt::TerminalApp::implementation
             break;
         }
     }
-
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(MinMaxCloseControl, MinimizeClick, _minimizeClickHandlers, TerminalApp::MinMaxCloseControl, RoutedEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(MinMaxCloseControl, MaximizeClick, _maximizeClickHandlers, TerminalApp::MinMaxCloseControl, RoutedEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(MinMaxCloseControl, CloseClick, _closeClickHandlers, TerminalApp::MinMaxCloseControl, RoutedEventArgs);
-
 }

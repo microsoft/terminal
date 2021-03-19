@@ -39,9 +39,9 @@ constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 // The minimum delay between updating the locations of regex patterns
 constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
 
-DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::TerminalControl::CopyFormat);
+DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::CopyFormat);
 
-namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+namespace winrt::Microsoft::Terminal::Control::implementation
 {
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
     // See microsoft/terminal#2066 for more info.
@@ -203,7 +203,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Lazy load the search box control.
         if (auto loadedSearchBox{ FindName(L"SearchBox") })
         {
-            if (auto searchBox{ loadedSearchBox.try_as<::winrt::Microsoft::Terminal::TerminalControl::SearchBoxControl>() })
+            if (auto searchBox{ loadedSearchBox.try_as<::winrt::Microsoft::Terminal::Control::SearchBoxControl>() })
             {
                 // get at its private implementation
                 _searchBox.copy_from(winrt::get_self<implementation::SearchBoxControl>(searchBox));
@@ -705,7 +705,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // create a custom automation peer with this code pattern:
             // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
-            auto autoPeer = winrt::make_self<winrt::Microsoft::Terminal::TerminalControl::implementation::TermControlAutomationPeer>(this);
+            auto autoPeer = winrt::make_self<winrt::Microsoft::Terminal::Control::implementation::TermControlAutomationPeer>(this);
 
             _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
             _renderer->AddRenderEngine(_uiaEngine.get());
@@ -790,7 +790,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
 
             auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(message));
-            control->_raiseNoticeHandlers(*control, std::move(noticeArgs));
+            control->_RaiseNoticeHandlers(*control, std::move(noticeArgs));
         }
     }
 
@@ -2238,7 +2238,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 co_await strong->Dispatcher();
 
                 auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(msg));
-                strong->_raiseNoticeHandlers(*strong, std::move(noticeArgs));
+                strong->_RaiseNoticeHandlers(*strong, std::move(noticeArgs));
             }();
         }
 
@@ -2503,7 +2503,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::_TerminalTitleChanged(const std::wstring_view& wstr)
     {
-        _titleChangedHandlers(winrt::hstring{ wstr });
+        _TitleChangedHandlers(*this, winrt::make<TitleChangedEventArgs>(winrt::hstring{ wstr }));
     }
     void TermControl::_TerminalTabColorChanged(const std::optional<til::color> /*color*/)
     {
@@ -2513,7 +2513,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_CopyToClipboard(const std::wstring_view& wstr)
     {
         auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(wstr));
-        _clipboardCopyHandlers(*this, *copyArgs);
+        _CopyToClipboardHandlers(*this, *copyArgs);
     }
 
     // Method Description:
@@ -2644,7 +2644,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                                    winrt::to_hstring(htmlData),
                                                                    winrt::to_hstring(rtfData),
                                                                    formats);
-        _clipboardCopyHandlers(*this, *copyArgs);
+        _CopyToClipboardHandlers(*this, *copyArgs);
         return true;
     }
 
@@ -2658,7 +2658,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
 
         // send paste event up to TermApp
-        _clipboardPasteHandlers(*this, *pasteArgs);
+        _PasteFromClipboardHandlers(*this, *pasteArgs);
     }
 
     // Method Description:
@@ -3330,7 +3330,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         co_await Dispatcher();
 
         auto hyperlinkArgs = winrt::make_self<OpenHyperlinkEventArgs>(heldUri);
-        _openHyperlinkHandlers(*strongThis, *hyperlinkArgs);
+        _OpenHyperlinkHandlers(*strongThis, *hyperlinkArgs);
     }
 
     // Method Description:
@@ -3375,7 +3375,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     winrt::fire_and_forget TermControl::TaskbarProgressChanged()
     {
         co_await resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
-        _setTaskbarProgressHandlers(*this, nullptr);
+        _SetTaskbarProgressHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -3421,7 +3421,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (auto control{ weakThis.get() })
         {
             auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));
-            control->_raiseNoticeHandlers(*control, std::move(noticeArgs));
+            control->_RaiseNoticeHandlers(*control, std::move(noticeArgs));
         }
     }
 
@@ -3496,14 +3496,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
-    DEFINE_EVENT(TermControl, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
-    DEFINE_EVENT(TermControl, FontSizeChanged, _fontSizeChangedHandlers, TerminalControl::FontSizeChangedEventArgs);
-    DEFINE_EVENT(TermControl, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
-
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, CopyToClipboard, _clipboardCopyHandlers, TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControl, IInspectable);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControl, TerminalControl::NoticeEventArgs);
-    // clang-format on
+    DEFINE_EVENT(TermControl, FontSizeChanged, _fontSizeChangedHandlers, Control::FontSizeChangedEventArgs);
+    DEFINE_EVENT(TermControl, ScrollPositionChanged, _scrollPositionChangedHandlers, Control::ScrollPositionChangedEventArgs);
 }

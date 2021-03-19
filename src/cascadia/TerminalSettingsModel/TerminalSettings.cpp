@@ -7,7 +7,7 @@
 
 #include "TerminalSettings.g.cpp"
 
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace Microsoft::Console::Utils;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
