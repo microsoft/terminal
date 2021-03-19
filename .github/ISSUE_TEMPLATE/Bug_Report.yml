@@ -10,7 +10,7 @@ body:
     value: |
       Please make sure to [search for existing issues](https://github.com/microsoft/terminal/issues) before filing a new one!
 
-      If this is an application crash, please also provide a [Feedback Hub](feedback-hub:?newFeedback=true&ContextId=1089) submission link so we can find your diagnostic data on the backend. Use the category "Apps > Windows Terminal" and choose "Share My Feedback" after submission to get the link.
+      If this is an application crash, please also provide a [Feedback Hub](https://aka.ms/terminal-feedback-hub) submission link so we can find your diagnostic data on the backend. Use the category "Apps > Windows Terminal" and choose "Share My Feedback" after submission to get the link.
 
 - type: input
   attributes:
