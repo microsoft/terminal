@@ -3261,21 +3261,28 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             co_await winrt::resume_foreground(Dispatcher());
 
+            auto lock = _terminal->LockForWriting();
             DispatcherTimer invertTimer;
             invertTimer.Interval(std::chrono::milliseconds(2000));
             invertTimer.Tick({ get_weak(), &TermControl::_InvertTimerTick });
             invertTimer.Start();
             _invertTimer.emplace(std::move(invertTimer));
-            _terminal->SetScreenMode(true);
+
+            // stash away the value of the terminal's current screen mode,
+            // we want to return to this once the timer fires
+            _termScreenReversed = _terminal->ScreenMode();
+            _terminal->SetScreenMode(!_termScreenReversed);
         }
     }
 
     void TermControl::_InvertTimerTick(Windows::Foundation::IInspectable const& /* sender */,
                                        Windows::Foundation::IInspectable const& /* e */)
     {
-        if (_invertTimer)
+        if (_invertTimer && !_closing)
         {
-            _terminal->SetScreenMode(false);
+            auto lock = _terminal->LockForWriting();
+            // revert the terminal's screen mode to the stashed value
+            _terminal->SetScreenMode(_termScreenReversed);
             _invertTimer.value().Stop();
             _invertTimer = std::nullopt;
         }

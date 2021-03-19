@@ -197,6 +197,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
         TerminalConnection::ITerminalConnection _connection;
         bool _initializedTerminal;
+        bool _termScreenReversed;
 
         winrt::com_ptr<SearchBoxControl> _searchBox;
 
