@@ -40,7 +40,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::TerminalSettings DefaultSettings() { return _defaultSettings; };
         Model::TerminalSettings UnfocusedSettings() { return _unfocusedSettings; };
 
-
     private:
         Model::TerminalSettings _defaultSettings;
         Model::TerminalSettings _unfocusedSettings;
