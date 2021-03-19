@@ -21,7 +21,6 @@ namespace Microsoft.Terminal.Settings.Model
         Vertical_Bottom = 0x20
     };
 
-    // [default_interface]
     interface IAppearanceConfig
     {
         INHERITABLE_PROFILE_SETTING(String, ColorSchemeName);
@@ -29,7 +28,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Background);
         INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, SelectionBackground);
         INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, CursorColor);
-        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.TerminalControl.CursorStyle, CursorShape);
+        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
         INHERITABLE_PROFILE_SETTING(UInt32, CursorHeight);
 
         INHERITABLE_PROFILE_SETTING(String, BackgroundImagePath);

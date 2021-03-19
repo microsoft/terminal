@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-namespace Microsoft.Terminal.TerminalControl
+namespace Microsoft.Terminal.Control
 {
-    interface IControlAppearance requires ICoreAppearance
+    interface IControlAppearance requires Microsoft.Terminal.Core.ICoreAppearance
     {
         UInt32 SelectionBackground;
         String BackgroundImage;

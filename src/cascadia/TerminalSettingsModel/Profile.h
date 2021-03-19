@@ -99,7 +99,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, hstring, Commandline, L"cmd.exe");
         INHERITABLE_SETTING(Model::Profile, hstring, StartingDirectory);
 
-        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
+        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
         INHERITABLE_SETTING(Model::Profile, bool, RetroTerminalEffect, false);
         INHERITABLE_SETTING(Model::Profile, hstring, PixelShaderPath, L"");
         INHERITABLE_SETTING(Model::Profile, bool, ForceFullRepaintRendering, false);

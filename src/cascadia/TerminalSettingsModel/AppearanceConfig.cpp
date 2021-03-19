@@ -7,7 +7,7 @@
 #include "TerminalSettingsSerializationHelpers.h"
 #include "JsonUtils.h"
 
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;

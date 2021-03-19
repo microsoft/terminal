@@ -43,7 +43,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Windows::UI::Color, Background, nullptr);
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Windows::UI::Color, SelectionBackground, nullptr);
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Windows::UI::Color, CursorColor, nullptr);
-        INHERITABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle::Bar);
+        INHERITABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::CursorStyle, CursorShape, Microsoft::Terminal::Core::CursorStyle::Bar);
         INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, BackgroundImagePath);
 
         INHERITABLE_SETTING(Model::IAppearanceConfig, double, BackgroundImageOpacity, 1.0);

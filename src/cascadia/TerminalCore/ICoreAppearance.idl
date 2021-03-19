@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-namespace Microsoft.Terminal.TerminalControl
+namespace Microsoft.Terminal.Core
 {
     enum CursorStyle
     {
@@ -13,7 +13,6 @@ namespace Microsoft.Terminal.TerminalControl
         EmptyBox
     };
 
-    // [default_interface]
     interface ICoreAppearance
     {
         UInt32 GetColorTableEntry(Int32 index);
