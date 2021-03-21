@@ -34,8 +34,14 @@ the MIT License. See LICENSE in the project root for license information. -->
             <local:EmptyStringVisibilityConverter x:Key="ParentCommandVisibilityConverter"/>
             <model:IconPathConverter x:Key="IconSourceConverter"/>
 
+            <DataTemplate x:Key="ListItemTemplate" x:DataType="local:FilteredCommand">
+                <ListViewItem HorizontalContentAlignment="Stretch"
+                                  AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
+                                  AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}"/>
+            </DataTemplate>
+
             <DataTemplate x:Key="GeneralItemTemplate" x:DataType="local:FilteredCommand">
-                <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}" AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}">
+                <Grid HorizontalAlignment="Stretch" ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="16"/>
                         <!-- icon -->
@@ -89,7 +95,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </DataTemplate>
 
             <DataTemplate x:Key="NestedItemTemplate" x:DataType="local:FilteredCommand">
-                <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}" AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}">
+                <Grid HorizontalAlignment="Stretch" ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="16"/>
                         <!-- icon -->
@@ -156,7 +162,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </DataTemplate>
 
             <DataTemplate x:Key="TabItemTemplate" x:DataType="local:FilteredCommand">
-                <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}" AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}">
+                <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="16"/>
                         <!-- icon / progress -->

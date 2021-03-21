@@ -566,7 +566,7 @@
   <data name="ClipboardTextHeader.Text" xml:space="preserve">
     <value>Clipboard contents (preview):</value>
   </data>
-  <data name="CommandPalette_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+  <data name="CommandPalette_MoreOptions" xml:space="preserve">
     <value>More options</value>
   </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">

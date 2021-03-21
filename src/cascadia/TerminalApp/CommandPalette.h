@@ -137,6 +137,7 @@ namespace winrt::TerminalApp::implementation
         void _containerContentChanging(Windows::UI::Xaml::Controls::ListViewBase const& sender, Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs const& args);
         winrt::TerminalApp::PaletteItemTemplateSelector _itemTemplateSelector{ nullptr };
         std::unordered_map<Windows::UI::Xaml::DataTemplate, std::unordered_set<Windows::UI::Xaml::Controls::Primitives::SelectorItem>> _listViewItemsCache;
+        Windows::UI::Xaml::DataTemplate _listItemTemplate;
 
         friend class TerminalAppLocalTests::TabTests;
     };

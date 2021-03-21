@@ -27,6 +27,7 @@ namespace winrt::TerminalApp::implementation
         InitializeComponent();
 
         _itemTemplateSelector = Resources().Lookup(winrt::box_value(L"PaletteItemTemplateSelector")).try_as<PaletteItemTemplateSelector>();
+        _listItemTemplate = Resources().Lookup(winrt::box_value(L"ListItemTemplate")).try_as<DataTemplate>();
 
         _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::FilteredCommand>();
         _nestedActionStack = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
@@ -1108,13 +1109,16 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                // We were not able to find an available container in the cache,
-                // let's return a new item
-                Windows::UI::Xaml::Controls::ListViewItem listViewItem;
-
-                // This HorizontalContentAlignment = "Stretch" is important to make sure it takes the entire width of the line
-                listViewItem.HorizontalContentAlignment(HorizontalAlignment::Stretch);
+                ElementFactoryGetArgs factoryArgs{};
+                const auto listViewItem = _listItemTemplate.GetElement(factoryArgs).try_as<Controls::ListViewItem>();
                 listViewItem.ContentTemplate(dataTemplate);
+
+                if (dataTemplate == _itemTemplateSelector.NestedItemTemplate())
+                {
+                    const auto helpText = winrt::box_value(RS_(L"CommandPalette_MoreOptions"));
+                    listViewItem.SetValue(Automation::AutomationProperties::HelpTextProperty(), helpText);
+                }
+
                 args.ItemContainer(listViewItem);
             }
         }
@@ -1136,6 +1140,11 @@ namespace winrt::TerminalApp::implementation
         if (args.InRecycleQueue() && itemContainer && itemContainer.ContentTemplate())
         {
             _listViewItemsCache[itemContainer.ContentTemplate()].insert(itemContainer);
+            itemContainer.DataContext(nullptr);
+        }
+        else
+        {
+            itemContainer.DataContext(args.Item());
         }
     }
 }
