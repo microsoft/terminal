@@ -1339,8 +1339,8 @@ namespace winrt::TerminalApp::implementation
         {
             ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
 
-            // The primary action is canceling the removal
-            if (warningResult == ContentDialogResult::Primary)
+            // If the user didn't explicitly click on close tab - leave
+            if (warningResult != ContentDialogResult::Primary)
             {
                 co_return;
             }
@@ -1736,8 +1736,8 @@ namespace winrt::TerminalApp::implementation
                     {
                         ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
 
-                        // The primary action is canceling the action
-                        if (warningResult == ContentDialogResult::Primary)
+                        // If the user didn't explicitly click on close tab - leave
+                        if (warningResult != ContentDialogResult::Primary)
                         {
                             co_return;
                         }
