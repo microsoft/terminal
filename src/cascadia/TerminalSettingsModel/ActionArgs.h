@@ -28,7 +28,6 @@
 #include "ToggleCommandPaletteArgs.g.h"
 #include "FindMatchArgs.g.h"
 #include "NewWindowArgs.g.h"
-#include "SwitchToAdjacentTabArgs.g.h"
 #include "PrevTabArgs.g.h"
 #include "NextTabArgs.g.h"
 
@@ -927,9 +926,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
-    struct SwitchToAdjacentTabArgs : public SwitchToAdjacentTabArgsT<SwitchToAdjacentTabArgs>
+    struct PrevTabArgs : public PrevTabArgsT<PrevTabArgs>
     {
-        SwitchToAdjacentTabArgs() = default;
+        PrevTabArgs() = default;
         WINRT_PROPERTY(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, nullptr);
         static constexpr std::string_view SwitcherModeKey{ "tabSwitcherMode" };
 
@@ -938,7 +937,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         bool Equals(const IActionArgs& other)
         {
-            auto otherAsUs = other.try_as<SwitchToAdjacentTabArgs>();
+            auto otherAsUs = other.try_as<PrevTabArgs>();
             if (otherAsUs)
             {
                 return otherAsUs->_SwitcherMode == _SwitcherMode;
@@ -948,28 +947,49 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<SwitchToAdjacentTabArgs>();
+            auto args = winrt::make_self<PrevTabArgs>();
             JsonUtils::GetValueForKey(json, SwitcherModeKey, args->_SwitcherMode);
             return { *args, {} };
         }
         IActionArgs Copy() const
         {
-            auto copy{ winrt::make_self<SwitchToAdjacentTabArgs>() };
+            auto copy{ winrt::make_self<PrevTabArgs>() };
             copy->_SwitcherMode = _SwitcherMode;
             return *copy;
         }
     };
 
-    struct PrevTabArgs : public PrevTabArgsT<PrevTabArgs, SwitchToAdjacentTabArgs>
+    struct NextTabArgs : public NextTabArgsT<NextTabArgs>
     {
-    public:
-        hstring GenerateName() const;
-    };
+        NextTabArgs() = default;
+        WINRT_PROPERTY(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, nullptr);
+        static constexpr std::string_view SwitcherModeKey{ "tabSwitcherMode" };
 
-    struct NextTabArgs : public NextTabArgsT<NextTabArgs, SwitchToAdjacentTabArgs>
-    {
     public:
         hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<NextTabArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_SwitcherMode == _SwitcherMode;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<NextTabArgs>();
+            JsonUtils::GetValueForKey(json, SwitcherModeKey, args->_SwitcherMode);
+            return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<NextTabArgs>() };
+            copy->_SwitcherMode = _SwitcherMode;
+            return *copy;
+        }
     };
 }
 

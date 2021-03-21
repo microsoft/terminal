@@ -89,7 +89,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleNextTab(const IInspectable& /*sender*/,
                                       const ActionEventArgs& args)
     {
-        const auto& realArgs = args.ActionArgs().try_as<SwitchToAdjacentTabArgs>();
+        const auto& realArgs = args.ActionArgs().try_as<NextTabArgs>();
         if (realArgs)
         {
             _SelectNextTab(true, realArgs.SwitcherMode());
@@ -100,7 +100,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandlePrevTab(const IInspectable& /*sender*/,
                                       const ActionEventArgs& args)
     {
-        const auto& realArgs = args.ActionArgs().try_as<SwitchToAdjacentTabArgs>();
+        const auto& realArgs = args.ActionArgs().try_as<PrevTabArgs>();
         if (realArgs)
         {
             _SelectNextTab(false, realArgs.SwitcherMode());

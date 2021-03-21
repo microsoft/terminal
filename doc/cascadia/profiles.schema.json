@@ -622,7 +622,7 @@
                 }
               ],
               "default": null,
-              "description": "Got to the previous tab using \"tabSwitcherMode\". If no mode is provided, use the one globally defined one."
+              "description": "Move to the previous tab using \"tabSwitcherMode\". If no mode is provided, use the one globally defined one."
             }
           }
         }
@@ -648,7 +648,7 @@
                 }
               ],
               "default": null,
-              "description": "Got to the next tab using \"tabSwitcherMode\". If no mode is provided, use the one globally defined one."
+              "description": "Move to the next tab using \"tabSwitcherMode\". If no mode is provided, use the one globally defined one."
             }
           }
         }

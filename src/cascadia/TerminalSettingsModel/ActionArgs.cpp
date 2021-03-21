@@ -26,7 +26,6 @@
 #include "FindMatchArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
 #include "NewWindowArgs.g.cpp"
-#include "SwitchToAdjacentTabArgs.g.cpp"
 #include "PrevTabArgs.g.cpp"
 #include "NextTabArgs.g.cpp"
 
@@ -538,34 +537,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         };
     }
 
-    winrt::hstring SwitchToAdjacentTabArgs::GenerateName() const
-    {
-        if (_SwitcherMode && _SwitcherMode.Value() == TabSwitcherMode::MostRecentlyUsed)
-        {
-            return L"most recently used";
-        }
-        return L"in order";
-    }
-
     winrt::hstring PrevTabArgs::GenerateName() const
     {
-        const auto switchToAdjacentTabStr = SwitchToAdjacentTabArgs::GenerateName();
-        if (switchToAdjacentTabStr.empty())
+        if (!_SwitcherMode)
         {
             return RS_(L"PrevTabCommandKey");
         }
 
-        return winrt::hstring(fmt::format(L"{}, {}", RS_(L"PrevTabCommandKey"), switchToAdjacentTabStr));
+        const auto mode = _SwitcherMode.Value() == TabSwitcherMode::MostRecentlyUsed ? L"most recently used" : L"in order";
+        return winrt::hstring(fmt::format(L"{}, {}", RS_(L"PrevTabCommandKey"), mode));
     }
 
     winrt::hstring NextTabArgs::GenerateName() const
     {
-        const auto switchToAdjacentTabStr = SwitchToAdjacentTabArgs::GenerateName();
-        if (switchToAdjacentTabStr.empty())
+        if (!_SwitcherMode)
         {
             return RS_(L"NextTabCommandKey");
         }
 
-        return winrt::hstring(fmt::format(L"{}, {}", RS_(L"NextTabCommandKey"), switchToAdjacentTabStr));
+        const auto mode = _SwitcherMode.Value() == TabSwitcherMode::MostRecentlyUsed ? L"most recently used" : L"in order";
+        return winrt::hstring(fmt::format(L"{}, {}", RS_(L"NextTabCommandKey"), mode));
     }
 }
