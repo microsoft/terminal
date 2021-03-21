@@ -231,6 +231,19 @@
       },
       "type": "object"
     },
+    "SwitchToAdjacentTabArgs" : {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "enum": [
+            "mru",
+            "inOrder",
+            "disabled"
+          ],
+          "type": "string"
+        }
+      ]
+    },
     "ShortcutAction": {
       "properties": {
         "action": {
@@ -610,17 +623,7 @@
           "properties": {
             "action": { "type":"string", "pattern": "prevTab" },
             "tabSwitcherMode": {
-              "oneOf": [
-                { "type": "null" },
-                {
-                  "enum": [
-                    "mru",
-                    "inOrder",
-                    "disabled"
-                  ],
-                  "type": "string"
-                }
-              ],
+              "$ref": "#/definitions/SwitchToAdjacentTabArgs",
               "default": null,
               "description": "Move to the previous tab using \"tabSwitcherMode\". If no mode is provided, use the one globally defined one."
             }
@@ -636,17 +639,7 @@
           "properties": {
             "action": { "type":"string", "pattern": "nextTab" },
             "tabSwitcherMode": {
-              "oneOf": [
-                { "type": "null" },
-                {
-                  "enum": [
-                    "mru",
-                    "inOrder",
-                    "disabled"
-                  ],
-                  "type": "string"
-                }
-              ],
+              "$ref": "#/definitions/SwitchToAdjacentTabArgs",
               "default": null,
               "description": "Move to the next tab using \"tabSwitcherMode\". If no mode is provided, use the one globally defined one."
             }
