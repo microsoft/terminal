@@ -797,7 +797,10 @@ namespace winrt::TerminalApp::implementation
     {
         co_await winrt::resume_foreground(page->_tabView.Dispatcher());
 
-        page->_RemoveTabViewItem(tabViewItem);
+        if (auto tab{ _GetTabByViewItem(tabViewItem) })
+        {
+            _RemoveTab(tab);
+        }
     }
 
     // Method Description:
@@ -897,6 +900,17 @@ namespace winrt::TerminalApp::implementation
         }
 
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
+
+        // When the tab requests close, try to close it (prompt for approval, if required)
+        newTabImpl->CloseRequested([weakTab, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab)
+            {
+                page->_HandleCloseTabRequested(*tab);
+            }
+        });
 
         // When the tab is closed, remove it from our list of tabs.
         newTabImpl->Closed([tabViewItem, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
@@ -1314,26 +1328,10 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Look for the index of the input tabView in the tabs vector,
-    //   and call _RemoveTab
-    // Arguments:
-    // - tabViewItem: the TabViewItem in the TabView that is being removed.
-    void TerminalPage::_RemoveTabViewItem(const MUX::Controls::TabViewItem& tabViewItem)
-    {
-        uint32_t tabIndexFromControl = 0;
-        if (_tabView.TabItems().IndexOf(tabViewItem, tabIndexFromControl))
-        {
-            // If IndexOf returns true, we've actually got an index
-            auto tab{ _tabs.GetAt(tabIndexFromControl) };
-            _RemoveTab(tab);
-        }
-    }
-
-    // Method Description:
-    // - Removes the tab (both TerminalControl and XAML)
+    // - Removes the tab (both TerminalControl and XAML) after prompting for approval
     // Arguments:
     // - tab: the tab to remove
-    winrt::Windows::Foundation::IAsyncAction TerminalPage::_RemoveTab(winrt::TerminalApp::TabBase tab)
+    winrt::Windows::Foundation::IAsyncAction TerminalPage::_HandleCloseTabRequested(winrt::TerminalApp::TabBase tab)
     {
         if (tab.ReadOnly())
         {
@@ -1346,11 +1344,20 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        _RemoveTab(tab);
+    }
+
+    // Method Description:
+    // - Removes the tab (both TerminalControl and XAML)
+    // Arguments:
+    // - tab: the tab to remove
+    void TerminalPage::_RemoveTab(winrt::TerminalApp::TabBase tab)
+    {
         uint32_t tabIndex{};
         if (!_tabs.IndexOf(tab, tabIndex))
         {
             // The tab is already removed
-            co_return;
+            return;
         }
 
         // We use _removing flag to suppress _OnTabSelectionChanged events
@@ -1434,8 +1441,6 @@ namespace winrt::TerminalApp::implementation
             _rearrangeFrom = std::nullopt;
             _rearrangeTo = std::nullopt;
         }
-
-        co_return;
     }
 
     // Method Description:
@@ -1657,7 +1662,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - returns a com_ptr to the currently focused tab. This might return null,
+    // - returns the currently focused tab. This might return null,
     //   so make sure to check the result!
     winrt::TerminalApp::TabBase TerminalPage::_GetFocusedTab() const noexcept
     {
@@ -1676,6 +1681,20 @@ namespace winrt::TerminalApp::implementation
         if (auto tab{ _GetFocusedTab() })
         {
             return _GetTerminalTabImpl(tab);
+        }
+        return nullptr;
+    }
+
+    // Method Description:
+    // - returns a tab corresponding to a view item. This might return null,
+    //   so make sure to check the result!
+    winrt::TerminalApp::TabBase TerminalPage::_GetTabByViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem) const noexcept
+    {
+        uint32_t tabIndexFromControl{};
+        if (_tabView.TabItems().IndexOf(tabViewItem, tabIndexFromControl))
+        {
+            // If IndexOf returns true, we've actually got an index
+            return _tabs.GetAt(tabIndexFromControl);
         }
         return nullptr;
     }
@@ -1712,7 +1731,7 @@ namespace winrt::TerminalApp::implementation
         if (auto index{ _GetFocusedTabIndex() })
         {
             auto tab{ _tabs.GetAt(*index) };
-            _RemoveTab(tab);
+            _HandleCloseTabRequested(tab);
         }
     }
 
@@ -1758,7 +1777,7 @@ namespace winrt::TerminalApp::implementation
             const auto tab{ _tabs.GetAt(*index) };
             if (tab.try_as<TerminalApp::SettingsTab>())
             {
-                _RemoveTab(tab);
+                _HandleCloseTabRequested(tab);
             }
         }
     }
@@ -1780,7 +1799,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // Since _RemoveTab is asynchronous, create a snapshot of the  tabs we want to remove
+        // Since _RemoveTabs is asynchronous, create a snapshot of the  tabs we want to remove
         std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
         std::copy(begin(_tabs), end(_tabs), std::back_inserter(tabsToRemove));
         _RemoveTabs(tabsToRemove);
@@ -1794,7 +1813,7 @@ namespace winrt::TerminalApp::implementation
     {
         for (auto& tab : tabs)
         {
-            co_await _RemoveTab(tab);
+            co_await _HandleCloseTabRequested(tab);
         }
     }
 
@@ -2443,7 +2462,11 @@ namespace winrt::TerminalApp::implementation
     {
         if (eventArgs.GetCurrentPoint(*this).Properties().IsMiddleButtonPressed())
         {
-            _RemoveTabViewItem(sender.as<MUX::Controls::TabViewItem>());
+            const auto tabViewItem = sender.try_as<MUX::Controls::TabViewItem>();
+            if (auto tab{ _GetTabByViewItem(tabViewItem) })
+            {
+                _HandleCloseTabRequested(tab);
+            }
             eventArgs.Handled(true);
         }
         else if (eventArgs.GetCurrentPoint(*this).Properties().IsRightButtonPressed())
@@ -2543,8 +2566,11 @@ namespace winrt::TerminalApp::implementation
     // - eventArgs: the event's constituent arguments
     void TerminalPage::_OnTabCloseRequested(const IInspectable& /*sender*/, const MUX::Controls::TabViewTabCloseRequestedEventArgs& eventArgs)
     {
-        const auto tabViewItem = eventArgs.Tab();
-        _RemoveTabViewItem(tabViewItem);
+		const auto tabViewItem = eventArgs.Tab();
+        if (auto tab{ _GetTabByViewItem(tabViewItem) })
+        {
+            _HandleCloseTabRequested(tab);
+        }
     }
 
     TermControl TerminalPage::_InitControl(const TerminalSettings& settings, const ITerminalConnection& connection)
