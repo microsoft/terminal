@@ -233,10 +233,14 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::CreateNew
 
 // Method Description:
 // - Duplicate a new profile based off another profile's settings
+// Arguments:
+// - source: the Profile object we are duplicating (must not be null)
 // Return Value:
 // - a reference to the new profile
 winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::DuplicateProfile(Model::Profile source)
 {
+    THROW_IF_NULL_ALLOC(source);
+
     auto duplicated{ _userDefaultProfileSettings->CreateChild() };
     _allProfiles.Append(*duplicated);
 
