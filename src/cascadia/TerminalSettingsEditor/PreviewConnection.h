@@ -1,5 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+//
+// Module Name:
+// - PreviewConnection.h
+//
+// Abstract:
+// - This class is used to initialize the preview TermControl in the Settings UI
+//
+// Author:
+// - Pankaj Bhojwani March-2021
 
 #pragma once
 

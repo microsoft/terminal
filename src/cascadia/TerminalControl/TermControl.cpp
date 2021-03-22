@@ -65,7 +65,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     TermControl::TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection) :
         _connection{ connection },
         _initializedTerminal{ false },
-        _settings{ settings },
+        _Settings{ settings },
         _closing{ false },
         _isInternalScrollBarUpdate{ false },
         _autoScrollVelocity{ 0 },
@@ -89,7 +89,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
 
         // GH#8969: pre-seed working directory to prevent potential races
-        _terminal->SetWorkingDirectory(_settings.StartingDirectory());
+        _terminal->SetWorkingDirectory(_Settings.StartingDirectory());
 
         auto pfnWarningBell = std::bind(&TermControl::_TerminalWarningBell, this);
         _terminal->SetWarningBellCallback(pfnWarningBell);
@@ -193,7 +193,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
-        _ApplyUISettings(_settings);
+        _ApplyUISettings(_Settings);
     }
 
     // Method Description:
@@ -314,10 +314,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForWriting();
 
         // Update our control settings
-        _ApplyUISettings(_settings);
+        _ApplyUISettings(_Settings);
 
         // Update the terminal core with its new Core settings
-        _terminal->UpdateSettings(_settings);
+        _terminal->UpdateSettings(_Settings);
 
         if (!_initializedTerminal)
         {
@@ -327,14 +327,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Update DxEngine settings under the lock
-        _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
+        _renderEngine->SetSelectionBackground(_Settings.SelectionBackground());
 
-        _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-        _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
-        _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
-        _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+        _renderEngine->SetRetroTerminalEffect(_Settings.RetroTerminalEffect());
+        _renderEngine->SetPixelShaderPath(_Settings.PixelShaderPath());
+        _renderEngine->SetForceFullRepaintRendering(_Settings.ForceFullRepaintRendering());
+        _renderEngine->SetSoftwareRendering(_Settings.SoftwareRendering());
 
-        switch (_settings.AntialiasingMode())
+        switch (_Settings.AntialiasingMode())
         {
         case TextAntialiasingMode::Cleartype:
             _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
@@ -396,7 +396,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // specify a custom pixel shader, manually enable the legacy retro
         // effect first. This will ensure that a toggle off->on will still work,
         // even if they currently have retro effect off.
-        if (_settings.PixelShaderPath().empty() && !_renderEngine->GetRetroTerminalEffect())
+        if (_Settings.PixelShaderPath().empty() && !_renderEngine->GetRetroTerminalEffect())
         {
             // SetRetroTerminalEffect to true will enable the effect. In this
             // case, the shader effect will already be disabled (because neither
@@ -412,7 +412,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Style our UI elements based on the values in our _settings, and set up
+    // - Style our UI elements based on the values in our _Settings, and set up
     //   other control-specific settings. This method will be called whenever
     //   the settings are reloaded.
     //   * Calls _InitializeBackgroundBrush to set up the Xaml brush responsible
@@ -475,7 +475,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Method Description:
     // - Set up each layer's brush used to display the control's background.
     // - Respects the settings for acrylic, background image and opacity from
-    //   _settings.
+    //   _Settings.
     //   * If acrylic is not enabled, setup a solid color background, otherwise
     //       use bgcolor as acrylic's tint
     // - Avoids image flickering and acrylic brush redraw if settings are changed
@@ -488,7 +488,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::_InitializeBackgroundBrush()
     {
-        if (_settings.UseAcrylic())
+        if (_Settings.UseAcrylic())
         {
             // See if we've already got an acrylic background brush
             // to avoid the flicker when setting up a new one
@@ -503,7 +503,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // see GH#1082: Initialize background color so we don't get a
             // fade/flash when _BackgroundColorChanged is called
-            uint32_t color = _settings.DefaultBackground();
+            uint32_t color = _Settings.DefaultBackground();
             winrt::Windows::UI::Color bgColor{};
             bgColor.R = GetRValue(color);
             bgColor.G = GetGValue(color);
@@ -514,7 +514,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             acrylic.TintColor(bgColor);
 
             // Apply brush settings
-            acrylic.TintOpacity(_settings.TintOpacity());
+            acrylic.TintOpacity(_Settings.TintOpacity());
 
             // Apply brush to control if it's not already there
             if (RootGrid().Background() != acrylic)
@@ -525,7 +525,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // GH#5098: Inform the engine of the new opacity of the default text background.
             if (_renderEngine)
             {
-                _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+                _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_Settings.TintOpacity()));
             }
         }
         else
@@ -540,9 +540,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
         }
 
-        if (!_settings.BackgroundImage().empty())
+        if (!_Settings.BackgroundImage().empty())
         {
-            Windows::Foundation::Uri imageUri{ _settings.BackgroundImage() };
+            Windows::Foundation::Uri imageUri{ _Settings.BackgroundImage() };
 
             // Check if the image brush is already pointing to the image
             // in the modified settings; if it isn't (or isn't there),
@@ -562,10 +562,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             // Apply stretch, opacity and alignment settings
-            BackgroundImage().Stretch(_settings.BackgroundImageStretchMode());
-            BackgroundImage().Opacity(_settings.BackgroundImageOpacity());
-            BackgroundImage().HorizontalAlignment(_settings.BackgroundImageHorizontalAlignment());
-            BackgroundImage().VerticalAlignment(_settings.BackgroundImageVerticalAlignment());
+            BackgroundImage().Stretch(_Settings.BackgroundImageStretchMode());
+            BackgroundImage().Opacity(_Settings.BackgroundImageOpacity());
+            BackgroundImage().HorizontalAlignment(_Settings.BackgroundImageHorizontalAlignment());
+            BackgroundImage().VerticalAlignment(_Settings.BackgroundImageVerticalAlignment());
         }
         else
         {
@@ -691,7 +691,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND) == hr)
             {
                 message = { fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") },
-                                        _settings.PixelShaderPath()) };
+                                        _Settings.PixelShaderPath()) };
             }
             else if (D2DERR_SHADER_COMPILE_FAILED == hr)
             {
@@ -774,7 +774,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             LOG_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
             // Update DxEngine's SelectionBackground
-            dxEngine->SetSelectionBackground(_settings.SelectionBackground());
+            dxEngine->SetSelectionBackground(_Settings.SelectionBackground());
 
             const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
             const auto width = vp.Width();
@@ -782,10 +782,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _connection.Resize(height, width);
 
             // Override the default width and height to match the size of the swapChainPanel
-            _settings.InitialCols(width);
-            _settings.InitialRows(height);
+            _Settings.InitialCols(width);
+            _Settings.InitialRows(height);
 
-            _terminal->CreateFromSettings(_settings, renderTarget);
+            _terminal->CreateFromSettings(_Settings, renderTarget);
 
             // IMPORTANT! Set this callback up sooner than later. If we do it
             // after Enable, then it'll be possible to paint the frame once
@@ -793,13 +793,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // the first paint will be ignored!
             dxEngine->SetWarningCallback(std::bind(&TermControl::_RendererWarning, this, std::placeholders::_1));
 
-            dxEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-            dxEngine->SetPixelShaderPath(_settings.PixelShaderPath());
-            dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
-            dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+            dxEngine->SetRetroTerminalEffect(_Settings.RetroTerminalEffect());
+            dxEngine->SetPixelShaderPath(_Settings.PixelShaderPath());
+            dxEngine->SetForceFullRepaintRendering(_Settings.ForceFullRepaintRendering());
+            dxEngine->SetSoftwareRendering(_Settings.SoftwareRendering());
 
             // Update DxEngine's AntialiasingMode
-            switch (_settings.AntialiasingMode())
+            switch (_Settings.AntialiasingMode())
             {
             case TextAntialiasingMode::Cleartype:
                 dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
@@ -814,9 +814,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             // GH#5098: Inform the engine of the opacity of the default text background.
-            if (_settings.UseAcrylic())
+            if (_Settings.UseAcrylic())
             {
-                dxEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+                dxEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_Settings.TintOpacity()));
             }
 
             THROW_IF_FAILED(dxEngine->Enable());
@@ -944,7 +944,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // Manually generate an F7 event into the key bindings or terminal.
             //   This is required as part of GH#638.
-            auto bindings{ _settings.KeyBindings() };
+            auto bindings{ _Settings.KeyBindings() };
 
             if (bindings)
             {
@@ -1069,7 +1069,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - modifiers: The ControlKeyStates representing the modifier key states.
     bool TermControl::_TryHandleKeyBinding(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const
     {
-        auto bindings = _settings.KeyBindings();
+        auto bindings = _Settings.KeyBindings();
         if (!bindings)
         {
             return false;
@@ -1392,7 +1392,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
             else if (point.Properties().IsRightButtonPressed())
             {
-                if (_settings.CopyOnSelect() || !_terminal->IsSelectionActive())
+                if (_Settings.CopyOnSelect() || !_terminal->IsSelectionActive())
                 {
                     // CopyOnSelect right click always pastes
                     PasteTextFromClipboard();
@@ -1433,7 +1433,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto cursorPosition = point.Position();
         const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
-        if (!_focused && _settings.FocusFollowMouse())
+        if (!_focused && _Settings.FocusFollowMouse())
         {
             _FocusFollowMouseRequestedHandlers(*this, nullptr);
         }
@@ -1559,7 +1559,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // Only a left click release when copy on select is active should perform a copy.
             // Right clicks and middle clicks should not need to do anything when released.
-            if (_settings.CopyOnSelect() && point.Properties().PointerUpdateKind() == Windows::UI::Input::PointerUpdateKind::LeftButtonReleased && _selectionNeedsToBeCopied)
+            if (_Settings.CopyOnSelect() && point.Properties().PointerUpdateKind() == Windows::UI::Input::PointerUpdateKind::LeftButtonReleased && _selectionNeedsToBeCopied)
             {
                 CopySelectionToClipboard(false, nullptr);
             }
@@ -1698,19 +1698,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Transparency is on a scale of [0.0,1.0], so only increment by .01.
         const auto effectiveDelta = mouseDelta < 0 ? -.01 : .01;
 
-        if (_settings.UseAcrylic())
+        if (_Settings.UseAcrylic())
         {
             try
             {
                 auto acrylicBrush = RootGrid().Background().as<Media::AcrylicBrush>();
-                _settings.TintOpacity(acrylicBrush.TintOpacity() + effectiveDelta);
-                acrylicBrush.TintOpacity(_settings.TintOpacity());
+                _Settings.TintOpacity(acrylicBrush.TintOpacity() + effectiveDelta);
+                acrylicBrush.TintOpacity(_Settings.TintOpacity());
 
                 if (acrylicBrush.TintOpacity() == 1.0)
                 {
-                    _settings.UseAcrylic(false);
+                    _Settings.UseAcrylic(false);
                     _InitializeBackgroundBrush();
-                    COLORREF bg = _settings.DefaultBackground();
+                    COLORREF bg = _Settings.DefaultBackground();
                     _BackgroundColorChanged(bg);
                 }
                 else
@@ -1718,7 +1718,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // GH#5098: Inform the engine of the new opacity of the default text background.
                     if (_renderEngine)
                     {
-                        _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+                        _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_Settings.TintOpacity()));
                     }
                 }
             }
@@ -1726,10 +1726,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (mouseDelta < 0)
         {
-            _settings.UseAcrylic(true);
+            _Settings.UseAcrylic(true);
 
             //Setting initial opacity set to 1 to ensure smooth transition to acrylic during mouse scroll
-            _settings.TintOpacity(1.0);
+            _Settings.TintOpacity(1.0);
             _InitializeBackgroundBrush();
         }
     }
@@ -1751,7 +1751,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - none
     void TermControl::ResetFontSize()
     {
-        _SetFontSize(_settings.FontSize());
+        _SetFontSize(_Settings.FontSize());
     }
 
     // Method Description:
@@ -2152,8 +2152,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // Make sure we have a non-zero font size
             const auto newSize = std::max<short>(gsl::narrow_cast<short>(fontSize), 1);
-            const auto fontFace = _settings.FontFace();
-            const auto fontWeight = _settings.FontWeight();
+            const auto fontFace = _Settings.FontFace();
+            const auto fontWeight = _Settings.FontWeight();
             _actualFont = { fontFace, 0, fontWeight.Weight, { 0, newSize }, CP_UTF8, false };
             _desiredFont = { _actualFont };
 
@@ -2467,7 +2467,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     hstring TermControl::GetProfileName() const
     {
-        return _settings.ProfileName();
+        return _Settings.ProfileName();
     }
 
     hstring TermControl::WorkingDirectory() const
@@ -2518,7 +2518,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                   TextBuffer::GenHTML(bufferData,
                                                       _actualFont.GetUnscaledSize().Y,
                                                       _actualFont.GetFaceName(),
-                                                      _settings.DefaultBackground()) :
+                                                      _Settings.DefaultBackground()) :
                                   "";
 
         // convert to RTF format
@@ -2526,10 +2526,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  TextBuffer::GenRTF(bufferData,
                                                     _actualFont.GetUnscaledSize().Y,
                                                     _actualFont.GetFaceName(),
-                                                    _settings.DefaultBackground()) :
+                                                    _Settings.DefaultBackground()) :
                                  "";
 
-        if (!_settings.CopyOnSelect())
+        if (!_Settings.CopyOnSelect())
         {
             _terminal->ClearSelection();
             _renderer->TriggerSelection();
@@ -2782,7 +2782,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             double width = fontSize.X;
             double height = fontSize.Y;
             // Reserve additional space if scrollbar is intended to be visible
-            if (_settings.ScrollState() == ScrollbarState::Visible)
+            if (_Settings.ScrollState() == ScrollbarState::Visible)
             {
                 width += ScrollBar().ActualWidth();
             }
@@ -2804,11 +2804,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
             const auto dpi = ::base::saturated_cast<uint32_t>(USER_DEFAULT_SCREEN_DPI * scaleFactor);
             return GetProposedDimensions(minSize,
-                                         _settings.FontSize(),
-                                         _settings.FontWeight(),
-                                         _settings.FontFace(),
-                                         _settings.ScrollState(),
-                                         _settings.Padding(),
+                                         _Settings.FontSize(),
+                                         _Settings.FontWeight(),
+                                         _Settings.FontFace(),
+                                         _Settings.ScrollState(),
+                                         _Settings.Padding(),
                                          dpi);
         }
     }
@@ -2831,7 +2831,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                            padding.Left + padding.Right :
                                                            padding.Top + padding.Bottom);
 
-        if (widthOrHeight && _settings.ScrollState() == ScrollbarState::Visible)
+        if (widthOrHeight && _Settings.ScrollState() == ScrollbarState::Visible)
         {
             nonTerminalArea += gsl::narrow_cast<float>(ScrollBar().ActualWidth());
         }
@@ -3252,16 +3252,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // It's already loaded if we get here, so just hide it.
         RendererFailedNotice().Visibility(Visibility::Collapsed);
         _renderer->ResetErrorStateAndResume();
-    }
-
-    IControlSettings TermControl::Settings() const
-    {
-        return _settings;
-    }
-
-    void TermControl::Settings(IControlSettings newSettings)
-    {
-        _settings = newSettings;
     }
 
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControl::TabColor() noexcept

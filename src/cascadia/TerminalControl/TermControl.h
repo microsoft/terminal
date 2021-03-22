@@ -150,8 +150,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const Windows::UI::Xaml::Thickness GetPadding();
 
         TerminalConnection::ConnectionState ConnectionState() const;
-        IControlSettings Settings() const;
-        void Settings(IControlSettings newSettings);
 
         static Windows::Foundation::Size GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi);
         static Windows::Foundation::Size GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,
@@ -193,6 +191,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(FocusFollowMouseRequested, IInspectable, IInspectable);
         // clang-format on
 
+        WINRT_PROPERTY(IControlSettings, Settings);
+
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
         TerminalConnection::ITerminalConnection _connection;
@@ -209,7 +209,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
         std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
 
-        IControlSettings _settings;
         bool _focused;
         std::atomic<bool> _closing;
 

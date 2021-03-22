@@ -381,7 +381,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Profiles::Profiles() :
         _ColorSchemeList{ single_threaded_observable_vector<ColorScheme>() },
-        _previewControl{ Microsoft::Terminal::Control::TermControl(Model::TerminalSettings(), make<PreviewConnection>()) }
+        _previewControl{ Control::TermControl(Model::TerminalSettings(), make<PreviewConnection>()) }
     {
         InitializeComponent();
 
