@@ -41,9 +41,6 @@ SOURCES= \
     ..\textBuffer.cpp \
     ..\textBufferCellIterator.cpp \
     ..\textBufferTextIterator.cpp \
-    ..\CharRow.cpp \
-    ..\CharRowCell.cpp \
-    ..\UnicodeStorage.cpp \
 	..\search.cpp \
 
 INCLUDES= \

@@ -27,14 +27,12 @@ public:
     };
 
     DbcsAttribute() noexcept :
-        _attribute{ Attribute::Single },
-        _glyphStored{ false }
+        _attribute{ Attribute::Single }
     {
     }
 
     DbcsAttribute(const Attribute attribute) noexcept :
-        _attribute{ attribute },
-        _glyphStored{ false }
+        _attribute{ attribute }
     {
     }
 
@@ -58,16 +56,6 @@ public:
         return IsLeading() || IsTrailing();
     }
 
-    constexpr bool IsGlyphStored() const noexcept
-    {
-        return _glyphStored;
-    }
-
-    void SetGlyphStored(const bool stored) noexcept
-    {
-        _glyphStored = stored;
-    }
-
     void SetSingle() noexcept
     {
         _attribute = Attribute::Single;
@@ -86,7 +74,6 @@ public:
     void Reset() noexcept
     {
         SetSingle();
-        SetGlyphStored(false);
     }
 
     WORD GeneratePublicApiAttributeFormat() const noexcept
@@ -127,7 +114,6 @@ public:
 
 private:
     Attribute _attribute : 2;
-    bool _glyphStored : 1;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;

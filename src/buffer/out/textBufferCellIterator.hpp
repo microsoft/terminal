@@ -15,12 +15,12 @@ Author(s):
 
 #pragma once
 
-#include "CharRow.hpp"
 #include "AttrRow.hpp"
 #include "OutputCellView.hpp"
 #include "../../types/inc/viewport.hpp"
 
 class TextBuffer;
+class ROW;
 
 class TextBufferCellIterator
 {

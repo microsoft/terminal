@@ -3,7 +3,6 @@
 
 #include "precomp.h"
 #include "Row.hpp"
-#include "CharRow.hpp"
 #include "textBuffer.hpp"
 #include "../types/inc/convert.hpp"
 
@@ -16,15 +15,14 @@
 // - pParent - the text buffer that this row belongs to
 // Return Value:
 // - constructed object
-ROW::ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent) :
-    _id{ rowId },
-    _rowWidth{ rowWidth },
-    _charRow{ rowWidth, this },
+ROW::ROW(const SHORT /*rowId*/, const unsigned short rowWidth, const TextAttribute fillAttribute, TextBuffer* const /*pParent*/) :
     _attrRow{ rowWidth, fillAttribute },
     _lineRendition{ LineRendition::SingleWidth },
     _wrapForced{ false },
     _doubleBytePadded{ false },
-    _pParent{ pParent }
+    _rowWidth(rowWidth),
+    _cwid(_rowWidth, 1),
+    _data(_rowWidth, UNICODE_SPACE)
 {
 }
 
@@ -39,7 +37,13 @@ bool ROW::Reset(const TextAttribute Attr)
     _lineRendition = LineRendition::SingleWidth;
     _wrapForced = false;
     _doubleBytePadded = false;
-    _charRow.Reset();
+#if TIL_RLE_WORKS_LIKE_VECTOR
+    _cwid.replace(0, _rowWidth, _rowWidth, 1);
+#else
+    _cwid.resize(_rowWidth);
+    _cwid.fill(1);
+#endif
+    _data.replace(0, _rowWidth, _rowWidth, UNICODE_SPACE);
     try
     {
         _attrRow.Reset(Attr);
@@ -60,7 +64,13 @@ bool ROW::Reset(const TextAttribute Attr)
 // - S_OK if successful, otherwise relevant error
 [[nodiscard]] HRESULT ROW::Resize(const unsigned short width)
 {
-    RETURN_IF_FAILED(_charRow.Resize(width));
+    _data.resize(width, L' ');
+#if TIL_RLE_WORKS_LIKE_VECTOR
+    _cwid.resize(width, 1);
+#else
+    _cwid.resize(width);
+    _cwid.fill(1);
+#endif
     try
     {
         _attrRow.Resize(width);
@@ -80,18 +90,8 @@ bool ROW::Reset(const TextAttribute Attr)
 // - <none>
 void ROW::ClearColumn(const size_t column)
 {
-    THROW_HR_IF(E_INVALIDARG, column >= _charRow.size());
-    _charRow.ClearCell(column);
-}
-
-UnicodeStorage& ROW::GetUnicodeStorage() noexcept
-{
-    return _pParent->GetUnicodeStorage();
-}
-
-const UnicodeStorage& ROW::GetUnicodeStorage() const noexcept
-{
-    return _pParent->GetUnicodeStorage();
+    THROW_HR_IF(E_INVALIDARG, column >= _rowWidth);
+    WriteGlyphAtMeasured(column, 1, L" ");
 }
 
 // Routine Description:
@@ -105,17 +105,19 @@ const UnicodeStorage& ROW::GetUnicodeStorage() const noexcept
 // - iterator to first cell that was not written to this row.
 OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, const std::optional<bool> wrap, std::optional<size_t> limitRight)
 {
-    THROW_HR_IF(E_INVALIDARG, index >= _charRow.size());
-    THROW_HR_IF(E_INVALIDARG, limitRight.value_or(0) >= _charRow.size());
+    THROW_HR_IF(E_INVALIDARG, index >= _rowWidth);
+    THROW_HR_IF(E_INVALIDARG, limitRight.value_or(0) >= _rowWidth);
 
     // If we're given a right-side column limit, use it. Otherwise, the write limit is the final column index available in the char row.
-    const auto finalColumnInRow = limitRight.value_or(_charRow.size() - 1);
+    const auto finalColumnInRow = limitRight.value_or(_rowWidth - 1);
 
     auto currentColor = it->TextAttr();
     uint16_t colorUses = 0;
     uint16_t colorStarts = gsl::narrow_cast<uint16_t>(index);
     uint16_t currentIndex = colorStarts;
 
+    auto [ibegin, ilen, ioff, icols] = _indicesForCol(currentIndex);
+    auto ihintcol = currentIndex - ioff;
     while (it && currentIndex <= finalColumnInRow)
     {
         // Fill the color if the behavior isn't set to keeping the current color.
@@ -151,23 +153,32 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
             // Don't increment iterator. We'll advance the index and try again with this value on the next round through the loop.
             if (currentIndex == 0 && it->DbcsAttr().IsTrailing())
             {
-                _charRow.ClearCell(currentIndex);
+                ClearColumn(currentIndex);
                 it.AddCellDistanceFault(1); // we couldn't fit a cell here but we skipped a column :|
             }
             // If we're trying to fill the last cell with a leading byte, pad it out instead by clearing it.
             // Don't increment iterator. We'll exit because we couldn't write a lead at the end of a line.
             else if (fillingLastColumn && it->DbcsAttr().IsLeading())
             {
-                _charRow.ClearCell(currentIndex);
+                ClearColumn(currentIndex);
                 it.AddCellDistanceFault(1); // we couldn't fit a cell here but we skipped a column :|
                 SetDoubleBytePadded(true);
             }
             // Otherwise, copy the data given and increment the iterator.
             else
             {
-                _charRow.DbcsAttrAt(currentIndex) = it->DbcsAttr();
-                _charRow.WriteCharsIntoColumn(currentIndex, it->Chars());
-                ++it;
+                    if (!it->DbcsAttr().IsTrailing())
+                    {
+                        auto d = it->DbcsAttr().IsSingle() ? 1 : 2;
+                        std::tie(ibegin, ihintcol) = WriteGlyphAtMeasured(currentIndex, d, it->Chars(), ibegin, ihintcol);
+                        currentIndex += d - 1;
+                        colorUses += d - 1;
+                        while (d > 0)
+                        { // TODO(DH) FFS
+                            ++it;
+                            --d;
+                        }
+                    }
             }
 
             // If we're asked to (un)set the wrap status and we just filled the last column with some text...

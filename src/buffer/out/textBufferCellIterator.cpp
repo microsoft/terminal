@@ -5,7 +5,6 @@
 
 #include "textBufferCellIterator.hpp"
 
-#include "CharRow.hpp"
 #include "textBuffer.hpp"
 #include "../types/inc/convert.hpp"
 #include "../types/inc/viewport.hpp"
@@ -326,8 +325,8 @@ const ROW* TextBufferCellIterator::s_GetRow(const TextBuffer& buffer, const COOR
 // - Updates the internal view. Call after updating row, attribute, or positions.
 void TextBufferCellIterator::_GenerateView()
 {
-    _view = OutputCellView(_pRow->GetCharRow().GlyphDataAt(_pos.X),
-                           _pRow->GetCharRow().DbcsAttrAt(_pos.X),
+    _view = OutputCellView(_pRow->GlyphAt(_pos.X),
+                           _pRow->DbcsAttrAt(_pos.X),
                            *_attrIter,
                            TextAttributeBehavior::Stored);
 }

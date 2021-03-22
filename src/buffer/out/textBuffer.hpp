@@ -54,7 +54,6 @@ filling in the last row, and updating the screen.
 #include "cursor.h"
 #include "Row.hpp"
 #include "TextAttribute.hpp"
-#include "UnicodeStorage.hpp"
 #include "../types/inc/Viewport.hpp"
 
 #include "../buffer/out/textBufferCellIterator.hpp"
@@ -134,9 +133,6 @@ public:
 
     [[nodiscard]] HRESULT ResizeTraditional(const COORD newSize) noexcept;
 
-    const UnicodeStorage& GetUnicodeStorage() const noexcept;
-    UnicodeStorage& GetUnicodeStorage() noexcept;
-
     Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;
 
     const COORD GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode = false) const;
@@ -208,9 +204,6 @@ private:
 
     TextAttribute _currentAttributes;
 
-    // storage location for glyphs that can't fit into the buffer normally
-    UnicodeStorage _unicodeStorage;
-
     std::unordered_map<uint16_t, std::wstring> _hyperlinkMap;
     std::unordered_map<std::wstring, uint16_t> _hyperlinkCustomIdMap;
     uint16_t _currentHyperlinkId;
@@ -229,7 +222,6 @@ private:
     void _NotifyPaint(const Microsoft::Console::Types::Viewport& viewport) const;
 
     ROW& _GetFirstRow();
-    ROW& _GetPrevRowNoWrap(const ROW& row);
 
     void _ExpandTextRow(SMALL_RECT& selectionRow) const;
 

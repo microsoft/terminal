@@ -5,7 +5,6 @@
 
 #include "search.h"
 
-#include "CharRow.hpp"
 #include "textBuffer.hpp"
 #include "../types/inc/Utf16Parser.hpp"
 #include "../types/inc/GlyphWidth.hpp"

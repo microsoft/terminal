@@ -4,7 +4,6 @@
 #include "precomp.h"
 
 #include "textBuffer.hpp"
-#include "CharRow.hpp"
 
 #include "../types/inc/utils.hpp"
 #include "../types/inc/convert.hpp"
@@ -35,7 +34,6 @@ TextBuffer::TextBuffer(const COORD screenBufferSize,
     _currentAttributes{ defaultAttributes },
     _cursor{ cursorSize, *this },
     _storage{},
-    _unicodeStorage{},
     _renderTarget{ renderTarget },
     _size{},
     _currentHyperlinkId{ 1 },
@@ -419,7 +417,7 @@ COORD TextBuffer::GetLastNonSpaceCharacter(std::optional<const Microsoft::Consol
 
     const auto& currRow = GetRowByOffset(coordEndOfText.Y);
     // The X position of the end of the valid text is the Right draw boundary (which is one beyond the final valid character)
-    coordEndOfText.X = gsl::narrow<short>(currRow.GetCharRow().MeasureRight()) - 1;
+    coordEndOfText.X = gsl::narrow<short>(currRow.MeasureRight()) - 1;
 
     // If the X coordinate turns out to be -1, the row was empty, we need to search backwards for the real end of text.
     const auto viewportTop = viewport.Top();
@@ -430,7 +428,7 @@ COORD TextBuffer::GetLastNonSpaceCharacter(std::optional<const Microsoft::Consol
         const auto& backupRow = GetRowByOffset(coordEndOfText.Y);
         // We need to back up to the previous row if this line is empty, AND there are more rows
 
-        coordEndOfText.X = gsl::narrow<short>(backupRow.GetCharRow().MeasureRight()) - 1;
+        coordEndOfText.X = gsl::narrow<short>(backupRow.MeasureRight()) - 1;
         fDoBackUp = (coordEndOfText.X < 0 && coordEndOfText.Y > viewportTop);
     }
 
@@ -590,7 +588,6 @@ void TextBuffer::ScrollRows(const SHORT firstRow, const SHORT size, const SHORT 
     }
 
     // Renumber the IDs now that we've rearranged where the rows sit within the buffer.
-    // Refreshing should also delegate to the UnicodeStorage to re-key all the stored unicode sequences (where applicable).
     _RefreshRowIDs(std::nullopt);
 }
 
@@ -743,8 +740,7 @@ void TextBuffer::Reset()
         }
 
         // Now that we've tampered with the row placement, refresh all the row IDs.
-        // Also take advantage of the row ID refresh loop to resize the rows in the X dimension
-        // and cleanup the UnicodeStorage characters that might fall outside the resized buffer.
+        // Also take advantage of the row ID refresh loop to resize the rows in the X dimension.
         _RefreshRowIDs(newSize.X);
 
         // Update the cached size value
@@ -755,40 +751,16 @@ void TextBuffer::Reset()
     return S_OK;
 }
 
-const UnicodeStorage& TextBuffer::GetUnicodeStorage() const noexcept
-{
-    return _unicodeStorage;
-}
-
-UnicodeStorage& TextBuffer::GetUnicodeStorage() noexcept
-{
-    return _unicodeStorage;
-}
-
 // Routine Description:
 // - Method to help refresh all the Row IDs after manipulating the row
 //   by shuffling pointers around.
-// - This will also update parent pointers that are stored in depth within the buffer
-//   (e.g. it will update CharRow parents pointing at Rows that might have been moved around)
-// - Optionally takes a new row width if we're resizing to perform a resize operation and cleanup
-//   any high unicode (UnicodeStorage) runs while we're already looping through the rows.
+// - Optionally takes a new row width if we're resizing to perform a resize operation
 // Arguments:
 // - newRowWidth - Optional new value for the row width.
 void TextBuffer::_RefreshRowIDs(std::optional<SHORT> newRowWidth)
 {
-    std::unordered_map<SHORT, SHORT> rowMap;
-    SHORT i = 0;
     for (auto& it : _storage)
     {
-        // Build a map so we can update Unicode Storage
-        rowMap.emplace(it.GetId(), i);
-
-        // Update the IDs
-        it.SetId(i++);
-
-        // Also update the char row parent pointers as they can get shuffled up in the rotates.
-        it.GetCharRow().UpdateParent(&it);
-
         // Resize the rows in the X dimension if we have a new width
         if (newRowWidth.has_value())
         {
@@ -796,9 +768,6 @@ void TextBuffer::_RefreshRowIDs(std::optional<SHORT> newRowWidth)
             THROW_IF_FAILED(it.Resize(newRowWidth.value()));
         }
     }
-
-    // Give the new mapping to Unicode Storage
-    _unicodeStorage.Remap(rowMap, newRowWidth);
 }
 
 void TextBuffer::_NotifyPaint(const Viewport& viewport) const
@@ -815,27 +784,6 @@ void TextBuffer::_NotifyPaint(const Viewport& viewport) const
 ROW& TextBuffer::_GetFirstRow()
 {
     return GetRowByOffset(0);
-}
-
-// Routine Description:
-// - Retrieves the row that comes before the given row.
-// - Does not wrap around the screen buffer.
-// Arguments:
-// - The current row.
-// Return Value:
-// - reference to the previous row
-// Note:
-// - will throw exception if called with the first row of the text buffer
-ROW& TextBuffer::_GetPrevRowNoWrap(const ROW& Row)
-{
-    int prevRowIndex = Row.GetId() - 1;
-    if (prevRowIndex < 0)
-    {
-        prevRowIndex = TotalRowCount() - 1;
-    }
-
-    THROW_HR_IF(E_FAIL, Row.GetId() == _firstRow);
-    return _storage.at(prevRowIndex);
 }
 
 // Method Description:
@@ -859,7 +807,7 @@ Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget() noexcep
 // - the delimiter class for the given char
 const DelimiterClass TextBuffer::_GetDelimiterClassAt(const COORD pos, const std::wstring_view wordDelimiters) const
 {
-    return GetRowByOffset(pos.Y).GetCharRow().DelimiterClassAt(pos.X, wordDelimiters);
+    return GetRowByOffset(pos.Y).DelimiterClassAt(pos.X, wordDelimiters);
 }
 
 // Method Description:
@@ -1951,8 +1899,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // Fetch the row and its "right" which is the last printable character.
         const ROW& row = oldBuffer.GetRowByOffset(iOldRow);
         const short cOldColsTotal = oldBuffer.GetLineWidth(iOldRow);
-        const CharRow& charRow = row.GetCharRow();
-        short iRight = gsl::narrow_cast<short>(charRow.MeasureRight());
+        short iRight = gsl::narrow_cast<short>(row.MeasureRight());
         if (iRight == 0 && !row.WasWrapForced())
         {
             // don't beef it if iRight=0 on iterator

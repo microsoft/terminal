@@ -9,7 +9,6 @@
 #include "_output.h"
 #include "misc.h"
 #include "handle.h"
-#include "../buffer/out/CharRow.hpp"
 
 #include <cmath>
 #include "../interactivity/inc/ServiceLocator.hpp"
