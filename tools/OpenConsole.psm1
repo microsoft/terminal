@@ -367,7 +367,7 @@ function Invoke-ClangFormat {
 # run xstyler on xaml files
 function Invoke-XamlFormat() {
     $root = Find-OpenConsoleRoot
-    & dotnet tool restore
+    & dotnet tool restore -source https://api.nuget.org/v3/index.json
 
     dotnet tool run xstyler -- -d "$root\src\cascadia\TerminalApp"
     dotnet tool run xstyler -- -d "$root\src\cascadia\TerminalControl"
