@@ -387,9 +387,9 @@ function Invoke-XamlFormat() {
     dotnet tool run xstyler -- -d "$root\src\cascadia\TerminalControl"
     dotnet tool run xstyler -- -d "$root\src\cascadia\TerminalSettingsEditor"
 
-    Invoke-StripBOM "$root\src\cascadia\TerminalApp"
-    Invoke-StripBOM "$root\src\cascadia\TerminalControl"
-    Invoke-StripBOM "$root\src\cascadia\TerminalSettingsEditor"
+    # Invoke-StripBOM "$root\src\cascadia\TerminalApp"
+    # Invoke-StripBOM "$root\src\cascadia\TerminalControl"
+    # Invoke-StripBOM "$root\src\cascadia\TerminalSettingsEditor"
 }
 
 #.SYNOPSIS
