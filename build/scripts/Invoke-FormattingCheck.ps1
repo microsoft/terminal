@@ -10,7 +10,8 @@ function Invoke-CheckBadCodeFormatting() {
     if ($lastExitCode -eq 1) {
         # Write the list of files that need updating to the log
         $changedFiles = git diff-index --name-only HEAD
-        Write-Error $changedFiles
+        foreach ($file in $changedFiles) { Write-Error $file.Name }
+
         throw "code formatting bad, run Invoke-CodeFormat on branch"
     }
 }

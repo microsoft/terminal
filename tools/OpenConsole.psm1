@@ -383,9 +383,9 @@ function Invoke-XamlFormat() {
     $root = Find-OpenConsoleRoot
     & dotnet tool restore --add-source https://api.nuget.org/v3/index.json
 
-    dotnet tool run xstyler -- -d "$root\src\cascadia\TerminalApp"
-    dotnet tool run xstyler -- -d "$root\src\cascadia\TerminalControl"
-    dotnet tool run xstyler -- -d "$root\src\cascadia\TerminalSettingsEditor"
+    dotnet tool run xstyler -- -c "$root\Settings.XamlStyler" -d "$root\src\cascadia\TerminalApp"
+    dotnet tool run xstyler -- -c "$root\Settings.XamlStyler" -d "$root\src\cascadia\TerminalControl"
+    dotnet tool run xstyler -- -c "$root\Settings.XamlStyler" -d "$root\src\cascadia\TerminalSettingsEditor"
 
     Invoke-StripBOM "$root\src\cascadia\TerminalApp"
     Invoke-StripBOM "$root\src\cascadia\TerminalControl"
