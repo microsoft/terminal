@@ -94,8 +94,8 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
 
     // Copy over the appearance
     winrt::com_ptr<AppearanceConfig> sourceDefaultAppearanceImpl;
-    sourceDefaultAppearanceImpl.copy_from(winrt::get_self<AppearanceConfig>(source->_UnfocusedAppearance.value()));
-    profile->_UnfocusedAppearance = *AppearanceConfig::CopyAppearance(sourceDefaultAppearanceImpl);
+    sourceDefaultAppearanceImpl.copy_from(winrt::get_self<AppearanceConfig>(source->_DefaultAppearance));
+    profile->_DefaultAppearance = *AppearanceConfig::CopyAppearance(sourceDefaultAppearanceImpl);
 
     if (source->_UnfocusedAppearance.has_value())
     {
