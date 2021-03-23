@@ -9,8 +9,8 @@ function Invoke-CheckBadCodeFormatting() {
     git diff-index --quiet HEAD --
     if ($lastExitCode -eq 1) {
         # Write the list of files that need updating to the log
-        git diff-index --name-only HEAD
-
+        # git diff-index --name-only HEAD
+        git diff --stat
         throw "code formatting bad, run Invoke-CodeFormat on branch"
     }
 }
