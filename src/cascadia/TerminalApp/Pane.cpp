@@ -651,6 +651,10 @@ void Pane::UpdateSettings(const TerminalSettingsStruct& settings, const GUID& pr
                 _control.UnfocusedAppearance(settings.UnfocusedSettings());
                 _control.UnfocusedAppearance().as<TerminalSettings>().SetParent(_control.Settings().as<TerminalSettings>());
             }
+            else
+            {
+                _control.UnfocusedAppearance(nullptr);
+            }
             _control.UpdateSettings();
         }
     }

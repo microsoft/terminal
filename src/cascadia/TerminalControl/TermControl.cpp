@@ -295,68 +295,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Given new settings for this profile, applies the settings to the current terminal.
-    // - This method is separate from UpdateSettings because there is an apparent optimizer
-    //   issue that causes one of our hstring -> wstring_view conversions to result in garbage,
-    //   but only from a coroutine context. See GH#8723.
-    // - INVARIANT: This method must be called from the UI thread.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TermControl::_UpdateSettingsOnUIThread()
-    {
-        if (_closing)
-        {
-            return;
-        }
-
-        auto lock = _terminal->LockForWriting();
-
-        // Update our control settings
-        _ApplyUISettings(_settings);
-
-        // Update the terminal core with its new Core settings
-        _terminal->UpdateSettings(_settings);
-
-        if (!_initializedTerminal)
-        {
-            // If we haven't initialized, there's no point in continuing.
-            // Initialization will handle the renderer settings.
-            return;
-        }
-
-        // Update DxEngine settings under the lock
-        _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
-
-        _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
-        _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
-
-        switch (_settings.AntialiasingMode())
-        {
-        case TextAntialiasingMode::Cleartype:
-            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
-            break;
-        case TextAntialiasingMode::Aliased:
-            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
-            break;
-        case TextAntialiasingMode::Grayscale:
-        default:
-            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
-            break;
-        }
-
-        // Refresh our font with the renderer
-        const auto actualFontOldSize = _actualFont.GetSize();
-        _UpdateFont();
-        const auto actualFontNewSize = _actualFont.GetSize();
-        if (actualFontNewSize != actualFontOldSize)
-        {
-            _RefreshSizeUnderLock();
-        }
-    }
-
-    // Method Description:
     // - Given Settings having been updated, applies the settings to the current terminal.
     // Return Value:
     // - <none>
@@ -423,8 +361,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Updates the settings
-    // - This should only be called from the UI thread
+    // - Updates the settings of the current terminal.
+    // - This method is separate from UpdateSettings because there is an apparent optimizer
+    //   issue that causes one of our hstring -> wstring_view conversions to result in garbage,
+    //   but only from a coroutine context. See GH#8723.
+    // - INVARIANT: This method must be called from the UI thread.
     // Arguments:
     // - newSettings: the new settings to set
     void TermControl::_UpdateSettingsFromUIThread(IControlSettings newSettings)
@@ -443,7 +384,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForWriting();
 
         // Update DxEngine settings under the lock
-        _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
         _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
         _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
