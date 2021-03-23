@@ -99,8 +99,12 @@
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
 
-            <x:String x:Key="CaptionButtonPath" />
-            <x:String x:Key="CaptionButtonPathWindowMaximized" />
+            <!--
+                These strings need to be initialized to something, so they're
+                just initialized to the path for the close button. Each specifc button should override them as needed.
+            -->
+            <x:String x:Key="CaptionButtonPath">M 0 0 L 10 10 M 10 0 L 0 10</x:String>
+            <x:String x:Key="CaptionButtonPathWindowMaximized">M 0 0 L 10 10 M 10 0 L 0 10</x:String>
 
             <!--
                 "CaptionButtonHeightWindowed" and
