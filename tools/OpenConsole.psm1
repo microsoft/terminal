@@ -92,7 +92,7 @@ function Set-MsbuildDevEnvironment
     Write-Verbose 'Setting up environment variables'
     Enter-VsDevShell -VsInstallPath $vspath -SkipAutomaticLocation `
         -devCmdArguments "-arch=$arch" | Out-Null
-        
+
     Set-Item -Force -path "Env:\Platform" -Value $arch
 
     Write-Host "Dev environment variables set" -ForegroundColor Green
@@ -364,7 +364,19 @@ function Invoke-ClangFormat {
 }
 
 #.SYNOPSIS
-# runs code formatting on all c++ files
+# run xstyler on xaml files
+function Invoke-XamlFormat() {
+    $root = Find-OpenConsoleRoot
+    & dotnet tool restore
+
+    dotnet tool run xstyler -- -d "$root\src\cascadia\TerminalApp"
+    dotnet tool run xstyler -- -d "$root\src\cascadia\TerminalControl"
+    dotnet tool run xstyler -- -d "$root\src\cascadia\TerminalSettingsEditor"
+
+}
+
+#.SYNOPSIS
+# runs code formatting on all c++ files. Also uses Invoke-XamlFormat to format .xaml files.
 function Invoke-CodeFormat() {
     $root = Find-OpenConsoleRoot
     & "$root\dep\nuget\nuget.exe" restore "$root\tools\packages.config"
@@ -373,6 +385,8 @@ function Invoke-CodeFormat() {
     Get-ChildItem -Recurse "$root\src" -Include *.cpp, *.hpp, *.h |
       Where FullName -NotLike "*Generated Files*" |
       Invoke-ClangFormat -ClangFormatPath $clangFormatPath
+
+    Invoke-XamlFormat
 }
 
-Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat
+Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat,Invoke-XamlFormat
