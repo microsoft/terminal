@@ -473,7 +473,7 @@
   </data>
   <data name="CommandPalette_NestedCommandAnnouncement" xml:space="preserve">
     <value>More options for "{}"</value>
-    <comment>This text will be read aloud using assistive technologies when the user selects a command that has additional options. The {} will be expanded to the name of the command contianing more options.</comment>
+    <comment>This text will be read aloud using assistive technologies when the user selects a command that has additional options. The {} will be expanded to the name of the command containing more options.</comment>
   </data>
   <data name="CommandPalette_ParsedCommandLine" xml:space="preserve">
     <value>Executing command line will invoke the following commands:</value>
