@@ -69,12 +69,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const auto globals = appSettings.GlobalSettings();
         settings->_ApplyProfileSettings(profile);
         settings->_ApplyGlobalSettings(globals);
-        settings->ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes());
+        settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes());
 
         if (profile.UnfocusedAppearance())
         {
             auto child = settings->CreateChild();
-            child->ApplyAppearanceSettings(profile.UnfocusedAppearance(), globals.ColorSchemes());
+            child->_ApplyAppearanceSettings(profile.UnfocusedAppearance(), globals.ColorSchemes());
             return winrt::make<TerminalSettingsStruct>(*settings, *child);
         }
 
@@ -133,7 +133,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return settings;
     }
 
-    void TerminalSettings::ApplyAppearanceSettings(const IAppearanceConfig& appearance, const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes)
+    void TerminalSettings::_ApplyAppearanceSettings(const IAppearanceConfig& appearance, const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes)
     {
         _CursorShape = appearance.CursorShape();
         _CursorHeight = appearance.CursorHeight();

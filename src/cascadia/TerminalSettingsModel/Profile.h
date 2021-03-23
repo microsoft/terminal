@@ -42,8 +42,6 @@ constexpr GUID RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID = { 0xf65ddb7e, 0x706b, 
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct AppearanceConfig;
-
     struct Profile : ProfileT<Profile>, IInheritable<Profile>
     {
     public:

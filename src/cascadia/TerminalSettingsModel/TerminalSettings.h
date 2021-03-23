@@ -61,8 +61,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void SetParent(const Model::TerminalSettings& parent);
 
         void ApplyColorScheme(const Model::ColorScheme& scheme);
-        void ApplyAppearanceSettings(const Microsoft::Terminal::Settings::Model::IAppearanceConfig& appearance,
-                                     const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes);
 
         // --------------------------- Core Settings ---------------------------
         //  All of these settings are defined in ICoreSettings.
@@ -144,6 +142,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         gsl::span<uint32_t> _getColorTableImpl();
         void _ApplyProfileSettings(const Model::Profile& profile);
         void _ApplyGlobalSettings(const Model::GlobalAppSettings& globalSettings) noexcept;
+        void _ApplyAppearanceSettings(const Microsoft::Terminal::Settings::Model::IAppearanceConfig& appearance,
+                                      const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes);
 
         friend class SettingsModelLocalTests::TerminalSettingsTests;
     };

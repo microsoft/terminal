@@ -3,7 +3,7 @@
 
 #include "IInheritable.idl.h"
 
-#define INHERITABLE_PROFILE_SETTING(Type, Name) \
+#define INHERITABLE_APPEARANCE_SETTING(Type, Name) \
     _BASE_INHERITABLE_SETTING(Type, Name);      \
     Microsoft.Terminal.Settings.Model.IAppearanceConfig Name##OverrideSource { get; }
 
@@ -23,22 +23,22 @@ namespace Microsoft.Terminal.Settings.Model
 
     interface IAppearanceConfig
     {
-        INHERITABLE_PROFILE_SETTING(String, ColorSchemeName);
-        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Foreground);
-        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Background);
-        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, SelectionBackground);
-        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, CursorColor);
-        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
-        INHERITABLE_PROFILE_SETTING(UInt32, CursorHeight);
+        INHERITABLE_APPEARANCE_SETTING(String, ColorSchemeName);
+        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Foreground);
+        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Background);
+        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, SelectionBackground);
+        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, CursorColor);
+        INHERITABLE_APPEARANCE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
+        INHERITABLE_APPEARANCE_SETTING(UInt32, CursorHeight);
 
-        INHERITABLE_PROFILE_SETTING(String, BackgroundImagePath);
+        INHERITABLE_APPEARANCE_SETTING(String, BackgroundImagePath);
         String ExpandedBackgroundImagePath { get; };
 
-        INHERITABLE_PROFILE_SETTING(Double, BackgroundImageOpacity);
-        INHERITABLE_PROFILE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
-        INHERITABLE_PROFILE_SETTING(ConvergedAlignment, BackgroundImageAlignment);
+        INHERITABLE_APPEARANCE_SETTING(Double, BackgroundImageOpacity);
+        INHERITABLE_APPEARANCE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
+        INHERITABLE_APPEARANCE_SETTING(ConvergedAlignment, BackgroundImageAlignment);
 
-        INHERITABLE_PROFILE_SETTING(Boolean, RetroTerminalEffect);
-        INHERITABLE_PROFILE_SETTING(String, PixelShaderPath);
+        INHERITABLE_APPEARANCE_SETTING(Boolean, RetroTerminalEffect);
+        INHERITABLE_APPEARANCE_SETTING(String, PixelShaderPath);
     };
 }

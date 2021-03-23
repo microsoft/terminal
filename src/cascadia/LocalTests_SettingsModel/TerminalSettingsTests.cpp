@@ -535,7 +535,7 @@ namespace SettingsModelLocalTests
         auto createTerminalSettings = [&](const auto& profile, const auto& schemes) {
             auto terminalSettings{ winrt::make_self<implementation::TerminalSettings>() };
             terminalSettings->_ApplyProfileSettings(profile);
-            terminalSettings->ApplyAppearanceSettings(profile.DefaultAppearance(), schemes);
+            terminalSettings->_ApplyAppearanceSettings(profile.DefaultAppearance(), schemes);
             return terminalSettings;
         };
 
