@@ -526,6 +526,15 @@ void CascadiaSettings::_ValidateAllSchemesExist()
             profile.DefaultAppearance().ClearColorSchemeName();
             foundInvalidScheme = true;
         }
+        if (profile.UnfocusedAppearance())
+        {
+            const auto unfocusedSchemeName = profile.UnfocusedAppearance().ColorSchemeName();
+            if (!_globals->ColorSchemes().HasKey(unfocusedSchemeName))
+            {
+                profile.UnfocusedAppearance().ClearColorSchemeName();
+                foundInvalidScheme = true;
+            }
+        }
     }
 
     if (foundInvalidScheme)
@@ -565,6 +574,25 @@ void CascadiaSettings::_ValidateMediaResources()
                 // reset background image path
                 profile.DefaultAppearance().BackgroundImagePath(L"");
                 invalidBackground = true;
+            }
+        }
+
+        if (profile.UnfocusedAppearance())
+        {
+            if (!profile.UnfocusedAppearance().BackgroundImagePath().empty())
+            {
+                // Attempt to convert the path to a URI, the ctor will throw if it's invalid/unparseable.
+                // This covers file paths on the machine, app data, URLs, and other resource paths.
+                try
+                {
+                    winrt::Windows::Foundation::Uri imagePath{ profile.UnfocusedAppearance().ExpandedBackgroundImagePath() };
+                }
+                catch (...)
+                {
+                    // reset background image path
+                    profile.UnfocusedAppearance().BackgroundImagePath(L"");
+                    invalidBackground = true;
+                }
             }
         }
 
@@ -888,6 +916,14 @@ void CascadiaSettings::UpdateColorSchemeReferences(const hstring oldName, const 
         if (profile.DefaultAppearance().HasColorSchemeName() && profile.DefaultAppearance().ColorSchemeName() == oldName)
         {
             profile.DefaultAppearance().ColorSchemeName(newName);
+        }
+
+        if (profile.UnfocusedAppearance())
+        {
+            if (profile.UnfocusedAppearance().HasColorSchemeName() && profile.UnfocusedAppearance().ColorSchemeName() == oldName)
+            {
+                profile.UnfocusedAppearance().ColorSchemeName(newName);
+            }
         }
     }
 }
