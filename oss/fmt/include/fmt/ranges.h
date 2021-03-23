@@ -157,6 +157,9 @@ template <class Tuple, class F> void for_each(Tuple&& tup, F&& f) {
   for_each(indexes, std::forward<Tuple>(tup), std::forward<F>(f));
 }
 
+template <typename Range>
+using value_type = remove_cvref_t<decltype(*std::declval<Range>().begin())>;
+
 template <typename Arg, FMT_ENABLE_IF(!is_like_std_string<
                                       typename std::decay<Arg>::type>::value)>
 FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const Arg&) {
@@ -182,7 +185,6 @@ FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const char) {
 FMT_CONSTEXPR const wchar_t* format_str_quoted(bool add_space, const wchar_t) {
   return add_space ? L" '{}'" : L"'{}'";
 }
-
 }  // namespace detail
 
 template <typename T> struct is_tuple_like {
@@ -246,9 +248,18 @@ template <typename T, typename Char> struct is_range {
       !std::is_constructible<detail::std_string_view<Char>, T>::value;
 };
 
-template <typename RangeT, typename Char>
-struct formatter<RangeT, Char,
-                 enable_if_t<fmt::is_range<RangeT, Char>::value>> {
+template <typename T, typename Char>
+struct formatter<
+    T, Char,
+    enable_if_t<fmt::is_range<T, Char>::value
+// Workaround a bug in MSVC 2017 and earlier.
+#if !FMT_MSC_VER || FMT_MSC_VER >= 1927
+                &&
+                (has_formatter<detail::value_type<T>, format_context>::value ||
+                 detail::has_fallback_formatter<detail::value_type<T>,
+                                                format_context>::value)
+#endif
+                >> {
   formatting_range<Char> formatting;
 
   template <typename ParseContext>
@@ -257,8 +268,7 @@ struct formatter<RangeT, Char,
   }
 
   template <typename FormatContext>
-  typename FormatContext::iterator format(const RangeT& values,
-                                          FormatContext& ctx) {
+  typename FormatContext::iterator format(const T& values, FormatContext& ctx) {
     auto out = detail::copy(formatting.prefix, ctx.out());
     size_t i = 0;
     auto it = values.begin();

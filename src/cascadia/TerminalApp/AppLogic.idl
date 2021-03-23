@@ -13,6 +13,12 @@ namespace TerminalApp
         Int64 Y;
     };
 
+    [default_interface] runtimeclass FindTargetWindowResult
+    {
+        Int32 WindowId { get; };
+        String WindowName { get; };
+    };
+
     [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
     {
         AppLogic();
@@ -57,7 +63,7 @@ namespace TerminalApp
         UInt64 GetLastActiveControlTaskbarState();
         UInt64 GetLastActiveControlTaskbarProgress();
 
-        Int32 FindTargetWindow(String[] args);
+        FindTargetWindowResult FindTargetWindow(String[] args);
 
         // See IDialogPresenter and TerminalPage's DialogPresenter for more
         // information.
