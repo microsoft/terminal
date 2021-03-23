@@ -2846,6 +2846,7 @@ XResource
 xsd
 xsi
 xsize
+xstyler
 XSubstantial
 xtended
 xterm
