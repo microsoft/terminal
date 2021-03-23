@@ -19,7 +19,7 @@
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-DWORD const dwAltGrFlags = LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED;
+constexpr DWORD dwAltGrFlags = LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED;
 
 TerminalInput::TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn) :
     _leadingSurrogate{}
