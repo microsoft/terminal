@@ -208,6 +208,33 @@ int CALLBACK wWinMain(
     // set this up appropriately... other things using WRL that aren't us
     // could get messed up by the singleton module and cause unexpected errors.
     _comServerExitEvent.create();
+
+    // We will use a single use server to ensure that each out-of-box console that
+    // gets activated to take over a session from the OS console will only be responsible
+    // for ONE console server session. This ensures that we, as the handoff target, are
+    // responsible for only one session and one server handle to the driver and we maintain
+    // the one-to-one relationship between console sessions and servers just like the inbox
+    // one. Theoretically we could combine them if we had any way of keeping track of all
+    // of the console state separately per server connection... but that's not how this is
+    // all designed (so many globals) and it would potentially risk one session's crash
+    // taking down some completely unrelated command-line clients.
+    // ----
+    // The general flow is...
+    // 1. The in-box console looks up the registered delegation console
+    // 2. An OpenConsole.exe is typically found which is a newer version of the
+    //    same code that is in-box and may have more bug fixes or features (especially
+    //    an improved VT dialect or something of that ilk).
+    // 3. By activating the registered CLSID, the in-box console will be starting `openconsole.exe -Embedding`
+    //    through the OutOfProc COM server infrastructure.
+    // 4. The `openconsole.exe -Embedding` that starts will come through right here and register
+    //    `CConsoleHandoff` to accept ONE connection.
+    // 5. The in-box console will then receive an `IConsoleHandoff` to this `CConsoleHandoff` and the registration
+    //    immediately expires, letting no one else in. The next caller will start another new `openconsole.exe -Embedding` process.
+    // 6. The in-box console invokes the handoff method on the interface and it transfers some data into `CConsoleHandoff`
+    //    of the `OpenConsole.exe` which will then stand up its own server IO thread and handle all console server session
+    //    messages going forward.
+    // 7. The out-of-box `OpenConsole.exe` can then attempt to lookup and invoke a `CTerminalHandoff` to ask a registered
+    //    Terminal to become the UI. This OpenConsole.exe will put itself in PTY mode and let the Terminal handle user interaction.
     auto& module = OutOfProcModuleWithRegistrationFlag<REGCLS_SINGLEUSE>::Create(&_releaseNotifier);
 
     // Register Trace provider by GUID

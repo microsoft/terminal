@@ -270,8 +270,30 @@ void ConsoleCheckDebug()
 #endif
 }
 
+// Routine Description:
+// - Sets up the main driver message packet (I/O) processing
+//   thread that will handle all client requests from all
+//   attached command-line applications for the duration
+//   of this console server session.
+// - The optional arguments are only used when receiving a handoff
+//   from another console server (typically in-box to the Windows OS image)
+//   that has already started processing the console session.
+//   They will be blank and generated internally by this method if this is the first
+//   console server starting in response to a client startup or ConPTY setup
+//   request.
+// Arguments:
+// - Server - Handle to the console driver that represents
+//     our server side of the connection.
+// - args - Command-line arguments from starting this console host
+//    that may affect the way we host the session.
+// - driverInputEvent - (Optional) Event registered with the console driver
+//    that we will use to wake up input read requests that
+//    are blocked because they came in when we had no input ready.
+// - connectMessage - (Optional) A message received from a connecting client
+//    by another console server that is being passed off to us as a part of
+//    the handoff strategy.
 HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
-                              const ConsoleArguments* const args, // this can't stay like this because ConsoleArguments could change...
+                              const ConsoleArguments* const args,
                               HANDLE driverInputEvent,
                               PCONSOLE_API_MSG connectMessage)
 {
@@ -311,6 +333,26 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
     return S_OK;
 }
 
+// Routine Description:
+// - Accepts a console server session from another console server
+//   most commonly from the operating system in-box console to 
+//   a more-up-to-date and out-of-band delivered one.
+// Arguments:
+// - Server - Handle to the console driver that represents our server
+//    side of hosting the console session
+// - driverInputEvent - Handle to an event already registered with the 
+//    driver that clients will implicitly wait on when we don't have
+//    any input to return in the queue when a request is made and is
+//    signaled to unblock them when input finally arrives.
+// - connectMessage - A console driver/server message as received
+//    by the previous console server for us to finish processing in
+//    order to complete the client's initial connection and store
+//    all necessary callback information for all subsequent API calls.
+// Return Value:
+// - COM errors, registry errors, pipe errors, handle manipulation errors,
+//   errors from the creating the thread for the 
+//   standard IO thread loop for the server to process messages
+//   from the driver... or an S_OK success.
 [[nodiscard]] HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
                                               HANDLE driverInputEvent,
                                               PCONSOLE_API_MSG connectMessage)
@@ -383,6 +425,20 @@ try
 }
 CATCH_RETURN()
 
+// Routine Description:
+// - Creates the I/O thread for handling and processing messages from the console driver
+//   as the server side of a console session.
+// - This entrypoint is for all start scenarios that are not receiving a hand-off
+//   from another console server. For example, getting started by kernelbase.dll from
+//   the operating system as a client application realizes it needs a console server,
+//   getting started to be a ConPTY host inside the OS, or being double clicked either  
+//   inside the OS as `conhost.exe` or outside as `OpenConsole.exe`.
+// Arguments:
+// - Server - The server side handle to the console driver to let us pick up messages to process for the clients.
+// - args - A structure of arguments that may have been passed in on the command-line, typically only used to control the ConPTY configuration.
+// Return Value:
+// - S_OK if the thread starts up correctly or any number of thread, registry, windowing, or just about any other
+//   failure that could possibly occur during console server initialization.
 [[nodiscard]] HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, const ConsoleArguments* const args)
 {
     return ConsoleCreateIoThread(Server, args, INVALID_HANDLE_VALUE, nullptr);

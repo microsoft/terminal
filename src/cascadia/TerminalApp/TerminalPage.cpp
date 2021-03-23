@@ -813,13 +813,8 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings, TerminalConnection::ITerminalConnection existingConnection)
     {
         // Initialize the new tab
-        auto connection = existingConnection;
-
-        if (!connection)
-        {
-            // Create a connection based on the values in our settings object.
-            connection = _CreateConnectionFromSettings(profileGuid, settings);
-        }
+        // Create a connection based on the values in our settings object if we weren't given one.
+        const auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profileGuid, settings);
 
         TerminalConnection::ITerminalConnection debugConnection{ nullptr };
         if (_settings.GlobalSettings().DebugFeaturesEnabled())

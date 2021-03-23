@@ -67,14 +67,31 @@ HRESULT CTerminalHandoff::s_StopListening() noexcept
 // - out - Where to place the duplicated value
 // Return Value:
 // - S_OK or Win32 error from `::DuplicateHandle`
-HRESULT _duplicateHandle(const HANDLE in, HANDLE& out) noexcept
+static HRESULT _duplicateHandle(const HANDLE in, HANDLE& out) noexcept
 {
     RETURN_IF_WIN32_BOOL_FALSE(::DuplicateHandle(GetCurrentProcess(), in, GetCurrentProcess(), &out, 0, FALSE, DUPLICATE_SAME_ACCESS));
     return S_OK;
 }
 
+// Routine Description:
+// - Receives the terminal handoff via COM from the other process,
+//   duplicates handles as COM will free those given on the way out,
+//   then fires off an event notifying the rest of the terminal that
+//   a connection is on its way in.
+// Arguments:
+// - in - PTY input handle that we will read from
+// - out - PTY output handle that we will write to
+// - signal - PTY signal handle for out of band messaging
+// - process - Process handle to client so we can track its lifetime and exit appropriately
+// Return Value:
+// - E_NOT_VALID_STATE if a event handler is not registered before calling. `::DuplicateHandle`
+//   error codes if we cannot manage to make our own copy of handles to retain. Or S_OK/error
+//   from the registered handler event function.
 HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE process) noexcept
 {
+    // Report an error if no one registered a handoff function before calling this.
+    RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _pfnHandoff);
+
     // Duplicate the handles from what we received.
     // The contract with COM specifies that any HANDLEs we receive from the caller belong
     // to the caller and will be freed when we leave the scope of this method.
