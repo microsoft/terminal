@@ -813,7 +813,7 @@ namespace winrt::TerminalApp::implementation
     {
         // Initialize the new tab
         // Create a connection based on the values in our settings object if we weren't given one.
-        const auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profileGuid, settings);
+        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profileGuid, settings);
 
         TerminalConnection::ITerminalConnection debugConnection{ nullptr };
         if (_settings.GlobalSettings().DebugFeaturesEnabled())
