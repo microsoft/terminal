@@ -2173,9 +2173,13 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            const auto isNewLineLambda = [](auto c) { return c == L'\n' || c == L'\r'; };
-            const auto hasNewLine = std::find_if(text.cbegin(), text.cend(), isNewLineLambda) != text.cend();
-            const auto warnMultiLine = hasNewLine && _settings.GlobalSettings().WarnAboutMultiLinePaste();
+            bool warnMultiLine = _settings.GlobalSettings().WarnAboutMultiLinePaste();
+            if (warnMultiLine)
+            {
+                const auto isNewLineLambda = [](auto c) { return c == L'\n' || c == L'\r'; };
+                const auto hasNewLine = std::find_if(text.cbegin(), text.cend(), isNewLineLambda) != text.cend();
+                warnMultiLine = hasNewLine;
+            }
 
             constexpr const std::size_t minimumSizeForWarning = 1024 * 5; // 5 KiB
             const bool warnLargeText = text.size() > minimumSizeForWarning &&
@@ -2185,6 +2189,13 @@ namespace winrt::TerminalApp::implementation
             {
                 co_await winrt::resume_foreground(Dispatcher());
 
+                if (warnMultiLine)
+                {
+                    const auto focusedTab = _GetFocusedTabImpl();
+                    // Do not warn about multi line pasting if the current tab has bracketd paste enabled.
+                    warnMultiLine &= !focusedTab->GetActiveTerminalControl().BracketedPasteEnabled();
+                }
+
                 // We have to initialize the dialog here to be able to change the text of the text block within it
                 FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>();
                 ClipboardText().Text(text);
@@ -2192,7 +2203,7 @@ namespace winrt::TerminalApp::implementation
                 // The vertical offset on the scrollbar does not reset automatically, so reset it manually
                 ClipboardContentScrollViewer().ScrollToVerticalOffset(0);
 
-                ContentDialogResult warningResult;
+                ContentDialogResult warningResult = ContentDialogResult::Primary;
                 if (warnMultiLine)
                 {
                     warningResult = co_await _ShowMultiLinePasteWarningDialog();
