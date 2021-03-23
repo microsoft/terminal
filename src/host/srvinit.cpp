@@ -335,12 +335,12 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
 
 // Routine Description:
 // - Accepts a console server session from another console server
-//   most commonly from the operating system in-box console to 
+//   most commonly from the operating system in-box console to
 //   a more-up-to-date and out-of-band delivered one.
 // Arguments:
 // - Server - Handle to the console driver that represents our server
 //    side of hosting the console session
-// - driverInputEvent - Handle to an event already registered with the 
+// - driverInputEvent - Handle to an event already registered with the
 //    driver that clients will implicitly wait on when we don't have
 //    any input to return in the queue when a request is made and is
 //    signaled to unblock them when input finally arrives.
@@ -350,7 +350,7 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
 //    all necessary callback information for all subsequent API calls.
 // Return Value:
 // - COM errors, registry errors, pipe errors, handle manipulation errors,
-//   errors from the creating the thread for the 
+//   errors from the creating the thread for the
 //   standard IO thread loop for the server to process messages
 //   from the driver... or an S_OK success.
 [[nodiscard]] HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
@@ -431,7 +431,7 @@ CATCH_RETURN()
 // - This entrypoint is for all start scenarios that are not receiving a hand-off
 //   from another console server. For example, getting started by kernelbase.dll from
 //   the operating system as a client application realizes it needs a console server,
-//   getting started to be a ConPTY host inside the OS, or being double clicked either  
+//   getting started to be a ConPTY host inside the OS, or being double clicked either
 //   inside the OS as `conhost.exe` or outside as `OpenConsole.exe`.
 // Arguments:
 // - Server - The server side handle to the console driver to let us pick up messages to process for the clients.
