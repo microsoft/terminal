@@ -363,6 +363,20 @@ function Invoke-ClangFormat {
     }
 }
 
+function Invoke-StripBOM {
+    [CmdletBinding()]
+    Param (
+        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+        [string]$Path
+    )
+
+    $files = Get-ChildItem -Path "$Path\*" -Include *.xaml
+    foreach ($file in $files) {
+        $content = Get-Content $file
+        [IO.File]::WriteAllLines($file.FullName, $content)
+    }
+}
+
 #.SYNOPSIS
 # run xstyler on xaml files
 function Invoke-XamlFormat() {
