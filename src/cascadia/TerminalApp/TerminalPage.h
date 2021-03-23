@@ -182,7 +182,7 @@ namespace winrt::TerminalApp::implementation
 
         void _RegisterTerminalEvents(Microsoft::Terminal::Control::TermControl term, TerminalTab& hostingTab);
 
-        void _SelectNextTab(const bool bMoveRight);
+        void _SelectNextTab(const bool bMoveRight, const Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::TabSwitcherMode>& customTabSwitcherMode);
         bool _SelectTab(const uint32_t tabIndex);
         void _MoveFocus(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
 

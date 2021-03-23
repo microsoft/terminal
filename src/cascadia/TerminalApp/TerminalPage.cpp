@@ -1527,10 +1527,10 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Sets focus to the tab to the right or left the currently selected tab.
-    void TerminalPage::_SelectNextTab(const bool bMoveRight)
+    void TerminalPage::_SelectNextTab(const bool bMoveRight, const Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::TabSwitcherMode>& customTabSwitcherMode)
     {
         const auto index{ _GetFocusedTabIndex().value_or(0) };
-        const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
+        const auto tabSwitchMode = customTabSwitcherMode ? customTabSwitcherMode.Value() : _settings.GlobalSettings().TabSwitcherMode();
         if (tabSwitchMode == TabSwitcherMode::Disabled)
         {
             uint32_t tabCount = _tabs.Size();
