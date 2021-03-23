@@ -64,7 +64,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const;
 
         hstring EvaluatedStartingDirectory() const;
-        hstring ExpandedBackgroundImagePath() const;
         static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 
         Model::IAppearanceConfig DefaultAppearance();
