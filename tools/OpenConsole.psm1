@@ -379,7 +379,8 @@ function Invoke-StripBOM {
 
 
 #.SYNOPSIS
-# Check that xaml files are formatted correctly
+# Check that xaml files are formatted correctly. This won't actually
+# format the files - it'll only ensure that they're formatted correctly.
 function Invoke-VerifyXamlFormat() {
     $root = Find-OpenConsoleRoot
     & dotnet tool restore --add-source https://api.nuget.org/v3/index.json
@@ -402,7 +403,8 @@ function Invoke-VerifyXamlFormat() {
 }
 
 #.SYNOPSIS
-# run xstyler on xaml files
+# run xstyler on xaml files. Note that this will `touch` every file,
+# even if there's nothing to do for a given file.
 function Invoke-XamlFormat() {
     $root = Find-OpenConsoleRoot
     & dotnet tool restore --add-source https://api.nuget.org/v3/index.json
@@ -418,6 +420,10 @@ function Invoke-XamlFormat() {
 
 #.SYNOPSIS
 # runs code formatting on all c++ files. Also uses Invoke-XamlFormat to format .xaml files.
+#
+#.PARAMETER IgnoreXaml
+# When set, don't format XAML files. The CI needs this so
+# Invoke-CheckBadCodeFormatting won't touch all the .xaml files.
 function Invoke-CodeFormat() {
 
 
@@ -437,11 +443,10 @@ function Invoke-CodeFormat() {
 
     if ($IgnoreXaml)
     {
-
+        # do nothing
     }
     else {
         Invoke-XamlFormat
-
     }
 }
 

@@ -3,6 +3,9 @@
 # Checks for code formatting errors. Will throw exception if any are found.
 function Invoke-CheckBadCodeFormatting() {
     Import-Module ./tools/OpenConsole.psm1
+
+    # Don't run the XAML formatter in this step - even if it changes nothing,
+    # it'll still touch all the .xaml files.
     Invoke-CodeFormat -IgnoreXaml
 
     # returns a non-zero exit code if there are any diffs in the tracked files in the repo
@@ -15,6 +18,7 @@ function Invoke-CheckBadCodeFormatting() {
         throw "code formatting bad, run Invoke-CodeFormat on branch"
     }
 
+    # Manually check the formatting of our .xaml files, without touching them.
     Invoke-VerifyXamlFormat
 
 }
