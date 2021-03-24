@@ -3,13 +3,13 @@
     the MIT License. See LICENSE in the project root for license information.
 -->
 <Page x:Class="Microsoft.Terminal.Settings.Editor.Actions"
-xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-xmlns:SettingsModel="using:Microsoft.Terminal.Settings.Model"
-xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-xmlns:local="using:Microsoft.Terminal.Settings.Editor"
-xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:SettingsModel="using:Microsoft.Terminal.Settings.Model"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
       mc:Ignorable="d">
 
     <Page.Resources>
@@ -28,7 +28,7 @@ xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
                 * We don't need the chevron for nested commands
                 * We're not displaying the icon
                 * We're binding directly to a Command, not a FilteredCommand
-
+                
                 If we wanted to reuse the command palette's list more directly,
                 that's theoretically possible, but then it would need to be
                 lifted out of TerminalApp and either moved into the

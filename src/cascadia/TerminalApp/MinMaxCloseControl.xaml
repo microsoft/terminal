@@ -3,10 +3,10 @@
     the MIT License. See LICENSE in the project root for license information.
 -->
 <StackPanel x:Class="TerminalApp.MinMaxCloseControl"
-xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+            xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+            xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
             HorizontalAlignment="Left"
             VerticalAlignment="Top"
             d:DesignHeight="36"
@@ -112,7 +112,7 @@ xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                 "CaptionButtonHeightMaximized" define the size we should use
                 for the caption buttons height for the windowed and maximized
                 states, respectively.
-
+                
                 32 was chosen for the Maximized height to match the height of
                 the TabRowControl. This way, when the window is maximized, the
                 tabs will be flush with the top of the window. See GH#2541 for
