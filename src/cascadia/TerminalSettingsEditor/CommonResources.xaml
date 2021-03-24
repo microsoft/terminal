@@ -3,8 +3,8 @@
     the MIT License. See LICENSE in the project root for license information.
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:muxc="using:Microsoft.UI.Xaml.Controls">
+xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+xmlns:muxc="using:Microsoft.UI.Xaml.Controls">
 
     <!--  Merge SettingContainerStyle here to give every page access to the SettingContainer  -->
     <ResourceDictionary.MergedDictionaries>
