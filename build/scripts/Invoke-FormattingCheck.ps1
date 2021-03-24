@@ -6,7 +6,7 @@ function Invoke-CheckBadCodeFormatting() {
     Invoke-CodeFormat
 
     # returns a non-zero exit code if there are any diffs in the tracked files in the repo
-    git diff-index --quiet HEAD --
+    git diff-index HEAD --
     if ($lastExitCode -eq 1) {
 
         git --no-pager diff HEAD
