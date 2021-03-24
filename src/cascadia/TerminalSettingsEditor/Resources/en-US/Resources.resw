@@ -870,8 +870,16 @@
     <comment>An option to choose from for the "bell style" setting. When selected, a combination of the other bell styles is used to notify the user.</comment>
   </data>
   <data name="Profile_BellStyleVisual.Content" xml:space="preserve">
-    <value>Visual (flash taskbar)</value>
+    <value>Visual (flash window and taskbar)</value>
+    <comment>An option to choose from for the "bell style" setting. When selected, both the window and taskbar are flashed to notify the user.</comment>
+  </data>
+  <data name="Profile_BellStyleTaskbar.Content" xml:space="preserve">
+    <value>Flash taskbar</value>
     <comment>An option to choose from for the "bell style" setting. When selected, a visual notification is used to notify the user. In this case, the taskbar is flashed.</comment>
+  </data>
+  <data name="Profile_BellStyleWindow.Content" xml:space="preserve">
+    <value>Flash window</value>
+    <comment>An option to choose from for the "bell style" setting. When selected, a visual notification is used to notify the user. In this case, the window is flashed.</comment>
   </data>
   <data name="ColorScheme_AddNewButton.Text" xml:space="preserve">
     <value>Add new</value>
