@@ -136,7 +136,7 @@ CATCH_LOG_RETURN_FALSE()
 
 bool TerminalDispatch::HorizontalTabSet() noexcept
 {
-    const auto width = _terminalApi.GetTerminalSize().X;
+    const auto width = _terminalApi.GetBufferSize().Dimensions().X;
     const auto column = _terminalApi.GetCursorPosition().X;
 
     _InitTabStopsForWidth(width);
@@ -146,7 +146,7 @@ bool TerminalDispatch::HorizontalTabSet() noexcept
 
 bool TerminalDispatch::ForwardTab(const size_t numTabs) noexcept
 {
-    const auto width = _terminalApi.GetTerminalSize().X;
+    const auto width = _terminalApi.GetBufferSize().Dimensions().X;
     const auto cursorPosition = _terminalApi.GetCursorPosition();
     auto column = cursorPosition.X;
     const auto row = cursorPosition.Y;
@@ -166,7 +166,7 @@ bool TerminalDispatch::ForwardTab(const size_t numTabs) noexcept
 
 bool TerminalDispatch::BackwardsTab(const size_t numTabs) noexcept
 {
-    const auto width = _terminalApi.GetTerminalSize().X;
+    const auto width = _terminalApi.GetBufferSize().Dimensions().X;
     const auto cursorPosition = _terminalApi.GetCursorPosition();
     auto column = cursorPosition.X;
     const auto row = cursorPosition.Y;
@@ -620,7 +620,7 @@ bool TerminalDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, 
 
 bool TerminalDispatch::_ClearSingleTabStop() noexcept
 {
-    const auto width = _terminalApi.GetTerminalSize().X;
+    const auto width = _terminalApi.GetBufferSize().Dimensions().X;
     const auto column = _terminalApi.GetCursorPosition().X;
 
     _InitTabStopsForWidth(width);

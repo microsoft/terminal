@@ -84,7 +84,7 @@ public:
     bool ExecuteChar(wchar_t wch) noexcept override;
     TextAttribute GetTextAttributes() const noexcept override;
     void SetTextAttributes(const TextAttribute& attrs) noexcept override;
-    COORD GetTerminalSize() noexcept override;
+    Microsoft::Console::Types::Viewport GetBufferSize() noexcept override;
     bool SetCursorPosition(short x, short y) noexcept override;
     COORD GetCursorPosition() noexcept override;
     bool SetCursorVisibility(const bool visible) noexcept override;
