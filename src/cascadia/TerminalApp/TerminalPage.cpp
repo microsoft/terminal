@@ -10,7 +10,6 @@
 
 #include "TerminalPage.g.cpp"
 #include <winrt/Windows.Storage.h>
-#include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include "TabRowControl.h"
 #include "ColorHelper.h"
@@ -26,7 +25,7 @@ using namespace winrt::Windows::System;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::TerminalApp;
@@ -93,21 +92,27 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::SetSettings(CascadiaSettings settings, bool needRefreshUI)
     {
         _settings = settings;
-        if (needRefreshUI)
-        {
-            _RefreshUIForSettingsReload();
-        }
-
-        // Upon settings update we reload the system settings for scrolling as well.
-        // TODO: consider reloading this value periodically.
-        _systemRowsToScroll = _ReadSystemRowsToScroll();
 
         auto weakThis{ get_weak() };
         co_await winrt::resume_foreground(Dispatcher());
         if (auto page{ weakThis.get() })
         {
+            // Make sure to _UpdateCommandsForPalette before
+            // _RefreshUIForSettingsReload. _UpdateCommandsForPalette will make
+            // sure the KeyChordText of Commands is updated, which needs to
+            // happen before the Settings UI is reloaded and tries to re-read
+            // those values.
             _UpdateCommandsForPalette();
             CommandPalette().SetKeyMap(_settings.KeyMap());
+
+            if (needRefreshUI)
+            {
+                _RefreshUIForSettingsReload();
+            }
+
+            // Upon settings update we reload the system settings for scrolling as well.
+            // TODO: consider reloading this value periodically.
+            _systemRowsToScroll = _ReadSystemRowsToScroll();
         }
     }
 
@@ -183,7 +188,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Inform the host that our titlebar content has changed.
-            _setTitleBarContentHandlers(*this, _tabRow);
+            _SetTitleBarContentHandlers(*this, _tabRow);
         }
 
         // Hookup our event handlers to the ShortcutActionDispatch
@@ -200,6 +205,13 @@ namespace winrt::TerminalApp::implementation
                 const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
                                         WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
+                const auto shiftState{ window.GetKeyState(VirtualKey::Shift) };
+                const auto rShiftState = window.GetKeyState(VirtualKey::RightShift);
+                const auto lShiftState = window.GetKeyState(VirtualKey::LeftShift);
+                const auto shiftPressed{ WI_IsFlagSet(shiftState, CoreVirtualKeyStates::Down) ||
+                                         WI_IsFlagSet(lShiftState, CoreVirtualKeyStates::Down) ||
+                                         WI_IsFlagSet(rShiftState, CoreVirtualKeyStates::Down) };
+
                 // Check for DebugTap
                 bool debugTap = page->_settings.GlobalSettings().DebugFeaturesEnabled() &&
                                 WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
@@ -211,6 +223,10 @@ namespace winrt::TerminalApp::implementation
                                      SplitType::Manual,
                                      0.5f,
                                      nullptr);
+                }
+                else if (shiftPressed && !debugTap)
+                {
+                    page->_OpenNewWindow(false, NewTerminalArgs());
                 }
                 else
                 {
@@ -580,11 +596,16 @@ namespace winrt::TerminalApp::implementation
             auto newPaneRun = WUX::Documents::Run();
             newPaneRun.Text(RS_(L"NewPaneRun/Text"));
             newPaneRun.FontStyle(FontStyle::Italic);
+            auto newWindowRun = WUX::Documents::Run();
+            newWindowRun.Text(RS_(L"NewWindowRun/Text"));
+            newWindowRun.FontStyle(FontStyle::Italic);
 
             auto textBlock = WUX::Controls::TextBlock{};
             textBlock.Inlines().Append(newTabRun);
             textBlock.Inlines().Append(WUX::Documents::LineBreak{});
             textBlock.Inlines().Append(newPaneRun);
+            textBlock.Inlines().Append(WUX::Documents::LineBreak{});
+            textBlock.Inlines().Append(newWindowRun);
 
             auto toolTip = WUX::Controls::ToolTip{};
             toolTip.Content(textBlock);
@@ -602,6 +623,13 @@ namespace winrt::TerminalApp::implementation
                     const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
                                             WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
+                    const auto shiftState{ window.GetKeyState(VirtualKey::Shift) };
+                    const auto rShiftState = window.GetKeyState(VirtualKey::RightShift);
+                    const auto lShiftState = window.GetKeyState(VirtualKey::LeftShift);
+                    const auto shiftPressed{ WI_IsFlagSet(shiftState, CoreVirtualKeyStates::Down) ||
+                                             WI_IsFlagSet(lShiftState, CoreVirtualKeyStates::Down) ||
+                                             WI_IsFlagSet(rShiftState, CoreVirtualKeyStates::Down) };
+
                     // Check for DebugTap
                     bool debugTap = page->_settings.GlobalSettings().DebugFeaturesEnabled() &&
                                     WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
@@ -613,6 +641,12 @@ namespace winrt::TerminalApp::implementation
                                          SplitType::Manual,
                                          0.5f,
                                          newTerminalArgs);
+                    }
+                    else if (shiftPressed && !debugTap)
+                    {
+                        // Manually fill in the evaluated profile.
+                        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(page->_settings.GetProfileForArgs(newTerminalArgs)));
+                        page->_OpenNewWindow(false, newTerminalArgs);
                     }
                     else
                     {
@@ -652,7 +686,7 @@ namespace winrt::TerminalApp::implementation
                 settingsItem.Click({ this, &TerminalPage::_SettingsButtonOnClick });
                 newTabFlyout.Items().Append(settingsItem);
 
-                Microsoft::Terminal::Settings::Model::OpenSettingsArgs args{ SettingsTarget::SettingsFile };
+                Microsoft::Terminal::Settings::Model::OpenSettingsArgs args{ SettingsTarget::SettingsUI };
                 Microsoft::Terminal::Settings::Model::ActionAndArgs settingsAction{ ShortcutAction::OpenSettings, args };
                 const auto settingsKeyChord{ keyBindings.GetKeyBindingForActionWithArgs(settingsAction) };
                 if (settingsKeyChord)
@@ -722,11 +756,12 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - newTerminalArgs: An object that may contain a blob of parameters to
     //   control which profile is created and with possible other
-    //   configurations. See TerminalSettings::BuildSettings for more details.
+    //   configurations. See TerminalSettings::CreateWithNewTerminalArgs for more details.
     void TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs)
     try
     {
-        auto [profileGuid, settings] = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
+        const auto profileGuid{ _settings.GetProfileForArgs(newTerminalArgs) };
+        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
         _CreateNewTabFromSettings(profileGuid, settings);
 
@@ -770,7 +805,7 @@ namespace winrt::TerminalApp::implementation
     //      currently displayed, it will be shown.
     // Arguments:
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
-    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings)
+    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
     {
         // Initialize the new tab
 
@@ -793,7 +828,7 @@ namespace winrt::TerminalApp::implementation
 
         // Give term control a child of the settings so that any overrides go in the child
         // This way, when we do a settings reload we just update the parent and the overrides remain
-        TermControl term{ *(winrt::get_self<TerminalSettings>(settings)->CreateChild()), connection };
+        auto term = _InitControl(settings, connection);
 
         auto newTabImpl = winrt::make_self<TerminalTab>(profileGuid, term);
 
@@ -837,7 +872,17 @@ namespace winrt::TerminalApp::implementation
 
             if (page && tab)
             {
-                page->_raiseVisualBellHandlers(nullptr, nullptr);
+                page->_RaiseVisualBellHandlers(nullptr, nullptr);
+            }
+        });
+
+        newTabImpl->DuplicateRequested([weakTab, weakThis{ get_weak() }]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab)
+            {
+                page->_DuplicateTab(*tab);
             }
         });
 
@@ -876,7 +921,7 @@ namespace winrt::TerminalApp::implementation
 
         if (debugConnection) // this will only be set if global debugging is on and tap is active
         {
-            TermControl newControl{ settings, debugConnection };
+            auto newControl = _InitControl(settings, debugConnection);
             _RegisterTerminalEvents(newControl, *newTabImpl);
             // Split (auto) with the debug tap.
             newTabImpl->SplitPane(SplitState::Automatic, 0.5f, profileGuid, newControl);
@@ -895,7 +940,7 @@ namespace winrt::TerminalApp::implementation
     // Return value:
     // - the desired connection
     TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(GUID profileGuid,
-                                                                                        TerminalApp::TerminalSettings settings)
+                                                                                        TerminalSettings settings)
     {
         const auto profile = _settings.FindProfile(profileGuid);
 
@@ -983,12 +1028,30 @@ namespace winrt::TerminalApp::implementation
                                               const RoutedEventArgs&)
     {
         const CoreWindow window = CoreWindow::GetForCurrentThread();
-        const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
-        const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
-        const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
-                                WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
-        const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
+        // check alt state
+        const auto rAltState{ window.GetKeyState(VirtualKey::RightMenu) };
+        const auto lAltState{ window.GetKeyState(VirtualKey::LeftMenu) };
+        const bool altPressed{ WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
+                               WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down) };
+
+        // check shift state
+        const auto shiftState{ window.GetKeyState(VirtualKey::Shift) };
+        const auto lShiftState{ window.GetKeyState(VirtualKey::LeftShift) };
+        const auto rShiftState{ window.GetKeyState(VirtualKey::RightShift) };
+        const auto shiftPressed{ WI_IsFlagSet(shiftState, CoreVirtualKeyStates::Down) ||
+                                 WI_IsFlagSet(lShiftState, CoreVirtualKeyStates::Down) ||
+                                 WI_IsFlagSet(rShiftState, CoreVirtualKeyStates::Down) };
+
+        auto target{ SettingsTarget::SettingsUI };
+        if (shiftPressed)
+        {
+            target = SettingsTarget::SettingsFile;
+        }
+        else if (altPressed)
+        {
+            target = SettingsTarget::DefaultsFile;
+        }
         _LaunchSettings(target);
     }
 
@@ -1029,7 +1092,7 @@ namespace winrt::TerminalApp::implementation
         auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
         auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
 
-        winrt::Microsoft::Terminal::TerminalControl::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
+        winrt::Microsoft::Terminal::Control::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
         const auto actionAndArgs = _settings.KeyMap().TryLookup(kc);
         if (actionAndArgs)
         {
@@ -1057,7 +1120,7 @@ namespace winrt::TerminalApp::implementation
         auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
         auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
 
-        winrt::Microsoft::Terminal::TerminalControl::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
+        winrt::Microsoft::Terminal::Control::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
         const auto actionAndArgs = _settings.KeyMap().TryLookup(kc);
         if (actionAndArgs && (actionAndArgs.Action() == ShortcutAction::CloseTab || actionAndArgs.Action() == ShortcutAction::NextTab || actionAndArgs.Action() == ShortcutAction::PrevTab || actionAndArgs.Action() == ShortcutAction::ClosePane))
         {
@@ -1133,6 +1196,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->BreakIntoDebugger({ this, &TerminalPage::_HandleBreakIntoDebugger });
         _actionDispatch->FindMatch({ this, &TerminalPage::_HandleFindMatch });
         _actionDispatch->TogglePaneReadOnly({ this, &TerminalPage::_HandleTogglePaneReadOnly });
+        _actionDispatch->NewWindow({ this, &TerminalPage::_HandleNewWindow });
     }
 
     // Method Description:
@@ -1147,7 +1211,7 @@ namespace winrt::TerminalApp::implementation
 
         if (_settings.GlobalSettings().ShowTitleInTitlebar() && tab == _GetFocusedTab())
         {
-            _titleChangeHandlers(*this, newTabTitle);
+            _TitleChangedHandlers(*this, newTabTitle);
         }
     }
 
@@ -1203,41 +1267,50 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Duplicates the current focused tab
-    void TerminalPage::_DuplicateTabViewItem()
+    void TerminalPage::_DuplicateFocusedTab()
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
-            try
-            {
-                // TODO: GH#5047 - In the future, we should get the Profile of
-                // the focused pane, and use that to build a new instance of the
-                // settings so we can duplicate this tab/pane.
-                //
-                // Currently, if the profile doesn't exist anymore in our
-                // settings, we'll silently do nothing.
-                //
-                // In the future, it will be preferable to just duplicate the
-                // current control's settings, but we can't do that currently,
-                // because we won't be able to create a new instance of the
-                // connection without keeping an instance of the original Profile
-                // object around.
-
-                const auto& profileGuid = terminalTab->GetFocusedProfile();
-                if (profileGuid.has_value())
-                {
-                    const auto settings{ winrt::make<TerminalSettings>(_settings, profileGuid.value(), *_bindings) };
-                    const auto workingDirectory = terminalTab->GetActiveTerminalControl().WorkingDirectory();
-                    const auto validWorkingDirectory = !workingDirectory.empty();
-                    if (validWorkingDirectory)
-                    {
-                        settings.StartingDirectory(workingDirectory);
-                    }
-
-                    _CreateNewTabFromSettings(profileGuid.value(), settings);
-                }
-            }
-            CATCH_LOG();
+            _DuplicateTab(*terminalTab);
         }
+    }
+
+    // Method Description:
+    // - Duplicates specified tab
+    // Arguments:
+    // - tab: tab to duplicate
+    void TerminalPage::_DuplicateTab(const TerminalTab& tab)
+    {
+        try
+        {
+            // TODO: GH#5047 - In the future, we should get the Profile of
+            // the focused pane, and use that to build a new instance of the
+            // settings so we can duplicate this tab/pane.
+            //
+            // Currently, if the profile doesn't exist anymore in our
+            // settings, we'll silently do nothing.
+            //
+            // In the future, it will be preferable to just duplicate the
+            // current control's settings, but we can't do that currently,
+            // because we won't be able to create a new instance of the
+            // connection without keeping an instance of the original Profile
+            // object around.
+
+            const auto& profileGuid = tab.GetFocusedProfile();
+            if (profileGuid.has_value())
+            {
+                const auto settings{ TerminalSettings::CreateWithProfileByID(_settings, profileGuid.value(), *_bindings) };
+                const auto workingDirectory = tab.GetActiveTerminalControl().WorkingDirectory();
+                const auto validWorkingDirectory = !workingDirectory.empty();
+                if (validWorkingDirectory)
+                {
+                    settings.StartingDirectory(workingDirectory);
+                }
+
+                _CreateNewTabFromSettings(profileGuid.value(), settings);
+            }
+        }
+        CATCH_LOG();
     }
 
     // Method Description:
@@ -1266,8 +1339,8 @@ namespace winrt::TerminalApp::implementation
         {
             ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
 
-            // The primary action is canceling the removal
-            if (warningResult == ContentDialogResult::Primary)
+            // If the user didn't explicitly click on close tab - leave
+            if (warningResult != ContentDialogResult::Primary)
             {
                 co_return;
             }
@@ -1304,7 +1377,7 @@ namespace winrt::TerminalApp::implementation
         // To close the window here, we need to close the hosting window.
         if (_tabs.Size() == 0)
         {
-            _lastTabClosedHandlers(*this, nullptr);
+            _LastTabClosedHandlers(*this, nullptr);
         }
         else if (focusedTabIndex.has_value() && focusedTabIndex.value() == gsl::narrow_cast<uint32_t>(tabIndex))
         {
@@ -1454,10 +1527,10 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Sets focus to the tab to the right or left the currently selected tab.
-    void TerminalPage::_SelectNextTab(const bool bMoveRight)
+    void TerminalPage::_SelectNextTab(const bool bMoveRight, const Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::TabSwitcherMode>& customTabSwitcherMode)
     {
         const auto index{ _GetFocusedTabIndex().value_or(0) };
-        const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
+        const auto tabSwitchMode = customTabSwitcherMode ? customTabSwitcherMode.Value() : _settings.GlobalSettings().TabSwitcherMode();
         if (tabSwitchMode == TabSwitcherMode::Disabled)
         {
             uint32_t tabCount = _tabs.Size();
@@ -1663,8 +1736,8 @@ namespace winrt::TerminalApp::implementation
                     {
                         ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
 
-                        // The primary action is canceling the action
-                        if (warningResult == ContentDialogResult::Primary)
+                        // If the user didn't explicitly click on close tab - leave
+                        if (warningResult != ContentDialogResult::Primary)
                         {
                             co_return;
                         }
@@ -1785,7 +1858,7 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
-            TerminalApp::TerminalSettings controlSettings;
+            TerminalSettings controlSettings{ nullptr };
             GUID realGuid;
             bool profileFound = false;
 
@@ -1795,7 +1868,7 @@ namespace winrt::TerminalApp::implementation
                 if (current_guid)
                 {
                     profileFound = true;
-                    controlSettings = { winrt::make<TerminalSettings>(_settings, current_guid.value(), *_bindings) };
+                    controlSettings = TerminalSettings::CreateWithProfileByID(_settings, current_guid.value(), *_bindings);
                     const auto workingDirectory = focusedTab->GetActiveTerminalControl().WorkingDirectory();
                     const auto validWorkingDirectory = !workingDirectory.empty();
                     if (validWorkingDirectory)
@@ -1819,7 +1892,8 @@ namespace winrt::TerminalApp::implementation
             }
             if (!profileFound)
             {
-                std::tie(realGuid, controlSettings) = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
+                realGuid = _settings.GetProfileForArgs(newTerminalArgs);
+                controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
             }
 
             const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
@@ -1840,7 +1914,7 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            TermControl newControl{ controlSettings, controlConnection };
+            auto newControl = _InitControl(controlSettings, controlConnection);
 
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl, *focusedTab);
@@ -2143,12 +2217,12 @@ namespace winrt::TerminalApp::implementation
         CATCH_LOG();
     }
 
-    void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::TerminalControl::OpenHyperlinkEventArgs eventArgs)
+    void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs)
     {
         try
         {
             auto parsed = winrt::Windows::Foundation::Uri(eventArgs.Uri().c_str());
-            if (parsed.SchemeName() == L"http" || parsed.SchemeName() == L"https")
+            if (_IsUriSupported(parsed))
             {
                 ShellExecute(nullptr, L"open", eventArgs.Uri().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
             }
@@ -2185,7 +2259,38 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_ControlNoticeRaisedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::TerminalControl::NoticeEventArgs eventArgs)
+    // Method Description:
+    // - Determines if the given URI is currently supported
+    // Arguments:
+    // - The parsed URI
+    // Return value:
+    // - True if we support it, false otherwise
+    bool TerminalPage::_IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri)
+    {
+        if (parsedUri.SchemeName() == L"http" || parsedUri.SchemeName() == L"https")
+        {
+            return true;
+        }
+        if (parsedUri.SchemeName() == L"file")
+        {
+            const auto host = parsedUri.Host();
+            // If no hostname was provided or if the hostname was "localhost", Host() will return an empty string
+            // and we allow it
+            if (host == L"")
+            {
+                return true;
+            }
+            // TODO: by the OSC 8 spec, if a hostname (other than localhost) is provided, we _should_ be
+            // comparing that value against what is returned by GetComputerNameExW and making sure they match.
+            // However, ShellExecute does not seem to be happy with file URIs of the form
+            //          file://{hostname}/path/to/file.ext
+            // and so while we could do the hostname matching, we do not know how to actually open the URI
+            // if its given in that form. So for now we ignore all hostnames other than localhost
+        }
+        return false;
+    }
+
+    void TerminalPage::_ControlNoticeRaisedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::NoticeEventArgs eventArgs)
     {
         winrt::hstring message = eventArgs.Message();
 
@@ -2193,16 +2298,16 @@ namespace winrt::TerminalApp::implementation
 
         switch (eventArgs.Level())
         {
-        case TerminalControl::NoticeLevel::Debug:
+        case NoticeLevel::Debug:
             title = RS_(L"NoticeDebug"); //\xebe8
             break;
-        case TerminalControl::NoticeLevel::Info:
+        case NoticeLevel::Info:
             title = RS_(L"NoticeInfo"); // \xe946
             break;
-        case TerminalControl::NoticeLevel::Warning:
+        case NoticeLevel::Warning:
             title = RS_(L"NoticeWarning"); //\xe7ba
             break;
-        case TerminalControl::NoticeLevel::Error:
+        case NoticeLevel::Error:
             title = RS_(L"NoticeError"); //\xe783
             break;
         }
@@ -2247,7 +2352,7 @@ namespace winrt::TerminalApp::implementation
     // - eventArgs: the arguments specifying how to set the progress indicator
     void TerminalPage::_SetTaskbarProgressHandler(const IInspectable /*sender*/, const IInspectable /*eventArgs*/)
     {
-        _setTaskbarProgressHandlers(*this, nullptr);
+        _SetTaskbarProgressHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -2385,7 +2490,7 @@ namespace winrt::TerminalApp::implementation
                 // Raise an event that our title changed
                 if (_settings.GlobalSettings().ShowTitleInTitlebar())
                 {
-                    _titleChangeHandlers(*this, tab.Title());
+                    _TitleChangedHandlers(*this, tab.Title());
                 }
             }
             CATCH_LOG();
@@ -2442,6 +2547,11 @@ namespace winrt::TerminalApp::implementation
         _RemoveTabViewItem(tabViewItem);
     }
 
+    TermControl TerminalPage::_InitControl(const TerminalSettings& settings, const ITerminalConnection& connection)
+    {
+        return TermControl{ TerminalSettings::CreateWithParent(settings), connection };
+    }
+
     // Method Description:
     // - Hook up keybindings, and refresh the UI of the terminal.
     //   This includes update the settings of all the tabs according
@@ -2463,7 +2573,7 @@ namespace winrt::TerminalApp::implementation
             {
                 // This can throw an exception if the profileGuid does
                 // not belong to an actual profile in the list of profiles.
-                auto settings{ winrt::make<TerminalSettings>(_settings, profileGuid, *_bindings) };
+                auto settings{ TerminalSettings::CreateWithProfileByID(_settings, profileGuid, *_bindings) };
 
                 for (auto tab : _tabs)
                 {
@@ -2518,7 +2628,7 @@ namespace winrt::TerminalApp::implementation
         // will let the user hot-reload this setting, but any runtime changes to
         // the alwaysOnTop setting will be lost.
         _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
-        _alwaysOnTopChangedHandlers(*this, nullptr);
+        _AlwaysOnTopChangedHandlers(*this, nullptr);
 
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
@@ -2697,7 +2807,7 @@ namespace winrt::TerminalApp::implementation
     {
         _isInFocusMode = !_isInFocusMode;
         _UpdateTabView();
-        _focusModeChangedHandlers(*this, nullptr);
+        _FocusModeChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -2711,7 +2821,7 @@ namespace winrt::TerminalApp::implementation
     {
         _isFullscreen = !_isFullscreen;
         _UpdateTabView();
-        _fullscreenChangedHandlers(*this, nullptr);
+        _FullscreenChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -2723,7 +2833,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::ToggleAlwaysOnTop()
     {
         _isAlwaysOnTop = !_isAlwaysOnTop;
-        _alwaysOnTopChangedHandlers(*this, nullptr);
+        _AlwaysOnTopChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -3230,16 +3340,4 @@ namespace winrt::TerminalApp::implementation
             }
         }
     }
-
-    // -------------------------------- WinRT Events ---------------------------------
-    // Winrt events need a method for adding a callback to the event and removing the callback.
-    // These macros will define them both for you.
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, UIElement);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FocusModeChanged, _focusModeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FullscreenChanged, _fullscreenChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, RaiseVisualBell, _raiseVisualBellHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTaskbarProgress, _setTaskbarProgressHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 }

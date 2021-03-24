@@ -78,6 +78,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                                        ItemsSource="{x:Bind LaunchModeList}"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
                 </local:SettingContainer>
+
+                <!--Launch Mode-->
+                <local:SettingContainer x:Uid="Globals_WindowingBehavior">
+                    <muxc:RadioButtons SelectedItem="{x:Bind CurrentWindowingBehavior, Mode=TwoWay}"
+                                       ItemsSource="{x:Bind WindowingBehaviorList}"
+                                       ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                </local:SettingContainer>
             </StackPanel>
 
             <!--Launch Size-->

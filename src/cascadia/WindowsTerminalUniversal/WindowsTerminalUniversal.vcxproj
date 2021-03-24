@@ -61,7 +61,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj" />
     <ProjectReference Include="..\TerminalApp\dll\TerminalApp.vcxproj">
@@ -70,6 +70,20 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="internal-background.png" />
+  </ItemGroup>
+
+  <!-- Manually add a reference to Core here. We need this so MDMERGE will know
+  where the Core types are defined. However, we need to do it exactly like this,
+  because the Core project is a lib not a dll, so it can't be ProjectReference'd
+  like everything else. It does get built into TerminalControl.dll, so we don't
+  need to worry about that. -->
+  <ItemGroup>
+    <Reference Include="Microsoft.Terminal.Core">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
   </ItemGroup>
 
   <ImportGroup Label="ExtensionTargets">

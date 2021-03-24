@@ -14,7 +14,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml::Media;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::TerminalApp;
 using namespace TerminalApp;
@@ -312,7 +312,7 @@ bool Pane::NavigateFocus(const FocusDirection& direction)
 // - <none>
 // Return Value:
 // - <none>
-void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/,
+void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                  const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     std::unique_lock lock{ _createCloseLock };
@@ -653,10 +653,7 @@ void Pane::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
         {
             // Update the parent of the control's settings object (and not the object itself) so
             // that any overrides made by the control don't get affected by the reload
-            auto child = winrt::get_self<winrt::TerminalApp::implementation::TerminalSettings>(_control.Settings());
-            auto parent = winrt::get_self<winrt::TerminalApp::implementation::TerminalSettings>(settings);
-            child->ClearParents();
-            child->InsertParent(0, parent->get_strong());
+            _control.Settings().as<TerminalSettings>().SetParent(settings);
             _control.UpdateSettings();
         }
     }

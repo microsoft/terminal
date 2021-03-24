@@ -22,6 +22,11 @@ namespace winrt::TerminalApp::implementation
     // - true if we handled the event was handled, else false.
     bool ShortcutActionDispatch::DoAction(const ActionAndArgs& actionAndArgs)
     {
+        if (!actionAndArgs)
+        {
+            return false;
+        }
+
         const auto& action = actionAndArgs.Action();
         const auto& args = actionAndArgs.Args();
         auto eventArgs = args ? ActionEventArgs{ args } :
@@ -58,12 +63,6 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::NewTab:
         {
             _NewTabHandlers(*this, eventArgs);
-            break;
-        }
-
-        case ShortcutAction::NewWindow:
-        {
-            _NewWindowHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::CloseWindow:
@@ -264,6 +263,11 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::TogglePaneReadOnly:
         {
             _TogglePaneReadOnlyHandlers(*this, eventArgs);
+            break;
+        }
+        case ShortcutAction::NewWindow:
+        {
+            _NewWindowHandlers(*this, eventArgs);
             break;
         }
         default:

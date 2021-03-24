@@ -8,7 +8,7 @@
 
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::TerminalApp;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 
 namespace winrt::TerminalApp::implementation
 {

@@ -330,7 +330,7 @@ namespace TerminalAppLocalTests
     {
         // * Create a tab with a profile with GUID 1
         // * Reload the settings so that GUID 1 is no longer in the list of profiles
-        // * Try calling _DuplicateTabViewItem on tab 1
+        // * Try calling _DuplicateFocusedTab on tab 1
         // * No new tab should be created (and more importantly, the app should not crash)
         //
         // Created to test GH#2455
@@ -392,7 +392,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Duplicate the first tab");
         result = RunOnUIThread([&page]() {
-            page->_DuplicateTabViewItem();
+            page->_DuplicateFocusedTab();
             VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
         });
         VERIFY_SUCCEEDED(result);
@@ -407,7 +407,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Duplicate the tab, and don't crash");
         result = RunOnUIThread([&page]() {
-            page->_DuplicateTabViewItem();
+            page->_DuplicateFocusedTab();
             VERIFY_ARE_EQUAL(2u, page->_tabs.Size(), L"We should gracefully do nothing here - the profile no longer exists.");
         });
         VERIFY_SUCCEEDED(result);
@@ -782,8 +782,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Switch to the next MRU tab, which is the fourth tab");
         TestOnUIThread([&page]() {
-            ActionEventArgs eventArgs{};
-            page->_HandleNextTab(nullptr, eventArgs);
+            page->_SelectNextTab(true, nullptr);
         });
 
         Log::Comment(L"Sleep to let events propagate");
@@ -804,8 +803,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Switch to the next MRU tab, which is the second tab");
         TestOnUIThread([&page]() {
-            ActionEventArgs eventArgs{};
-            page->_HandleNextTab(nullptr, eventArgs);
+            page->_SelectNextTab(true, nullptr);
         });
 
         Log::Comment(L"Sleep to let events propagate");
@@ -829,8 +827,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Switch to the next in-order tab, which is the third tab");
         TestOnUIThread([&page]() {
-            ActionEventArgs eventArgs{};
-            page->_HandleNextTab(nullptr, eventArgs);
+            page->_SelectNextTab(true, nullptr);
         });
         TestOnUIThread([&page]() {
             uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
@@ -842,8 +839,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Switch to the next in-order tab, which is the fourth tab");
         TestOnUIThread([&page]() {
-            ActionEventArgs eventArgs{};
-            page->_HandleNextTab(nullptr, eventArgs);
+            page->_SelectNextTab(true, nullptr);
         });
         TestOnUIThread([&page]() {
             uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
@@ -916,7 +912,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Switch to the next MRU tab, which is the third tab");
         RunOnUIThread([&page]() {
-            page->_SelectNextTab(true);
+            page->_SelectNextTab(true, nullptr);
             // In the course of a single tick, the Command Palette will:
             // * open
             // * select the proper tab from the mru's list

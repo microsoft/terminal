@@ -12,8 +12,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         KeyChordSerialization() = default;
 
-        static winrt::Microsoft::Terminal::TerminalControl::KeyChord FromString(const winrt::hstring& str);
-        static winrt::hstring ToString(const winrt::Microsoft::Terminal::TerminalControl::KeyChord& chord);
+        static winrt::Microsoft::Terminal::Control::KeyChord FromString(const winrt::hstring& str);
+        static winrt::hstring ToString(const winrt::Microsoft::Terminal::Control::KeyChord& chord);
     };
 }
 

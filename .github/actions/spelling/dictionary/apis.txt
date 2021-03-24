@@ -14,6 +14,7 @@ DERR
 environstrings
 EXPCMDFLAGS
 EXPCMDSTATE
+FORCEMINIMIZE
 frac
 fullkbd
 futex
@@ -23,6 +24,7 @@ Hashtable
 HIGHCONTRASTON
 HIGHCONTRASTW
 href
+IActivation
 IApp
 IAppearance
 IAsync
@@ -41,9 +43,11 @@ IObject
 IPackage
 IPeasant
 IStorage
+istream
 IStringable
 ITab
 ITaskbar
+IVirtual
 LCID
 llabs
 llu
@@ -57,6 +61,7 @@ NCHITTEST
 NCLBUTTONDBLCLK
 NCRBUTTONDBLCLK
 NOAGGREGATION
+NOASYNC
 NOPROGRESS
 NOREDIRECTIONBITMAP
 ntprivapi
@@ -78,9 +83,11 @@ schandle
 semver
 serializer
 shobjidl
+SHOWMINIMIZED
 SIZENS
 smoothstep
 GETDESKWALLPAPER
+SHELLEXECUTEINFOW
 snprintf
 spsc
 sregex
@@ -105,4 +112,9 @@ wpc
 wsregex
 XDocument
 XElement
+xlocmes
+xlocmon
+xlocnum
+xloctime
 XParse
+xstring
