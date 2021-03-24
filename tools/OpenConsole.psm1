@@ -377,6 +377,30 @@ function Invoke-StripBOM {
     }
 }
 
+
+#.SYNOPSIS
+# Check that xaml files are formatted correctly
+function Invoke-VerifyXamlFormat() {
+    $root = Find-OpenConsoleRoot
+    & dotnet tool restore --add-source https://api.nuget.org/v3/index.json
+
+    dotnet tool run xstyler -- -c "$root\Settings.XamlStyler" -d "$root\src\cascadia\TerminalApp" --passive
+    if ($lastExitCode -eq 1) {
+        throw "Xaml formatting bad, run Invoke-XamlFormat on branch"
+    }
+
+    dotnet tool run xstyler -- -c "$root\Settings.XamlStyler" -d "$root\src\cascadia\TerminalControl" --passive
+    if ($lastExitCode -eq 1) {
+        throw "Xaml formatting bad, run Invoke-XamlFormat on branch"
+    }
+
+    dotnet tool run xstyler -- -c "$root\Settings.XamlStyler" -d "$root\src\cascadia\TerminalSettingsEditor" --passive
+    if ($lastExitCode -eq 1) {
+        throw "Xaml formatting bad, run Invoke-XamlFormat on branch"
+    }
+
+}
+
 #.SYNOPSIS
 # run xstyler on xaml files
 function Invoke-XamlFormat() {
@@ -395,6 +419,14 @@ function Invoke-XamlFormat() {
 #.SYNOPSIS
 # runs code formatting on all c++ files. Also uses Invoke-XamlFormat to format .xaml files.
 function Invoke-CodeFormat() {
+
+
+    [CmdletBinding()]
+    Param (
+        [parameter(Mandatory=$false)]
+        [switch]$IgnoreXaml
+    )
+
     $root = Find-OpenConsoleRoot
     & "$root\dep\nuget\nuget.exe" restore "$root\tools\packages.config"
     $clangPackage = ([xml](Get-Content "$root\tools\packages.config")).packages.package | Where-Object id -like "clang-format*"
@@ -403,7 +435,14 @@ function Invoke-CodeFormat() {
       Where FullName -NotLike "*Generated Files*" |
       Invoke-ClangFormat -ClangFormatPath $clangFormatPath
 
-    Invoke-XamlFormat
+    if ($IgnoreXaml)
+    {
+
+    }
+    else {
+        Invoke-XamlFormat
+
+    }
 }
 
-Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat,Invoke-XamlFormat
+Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat,Invoke-XamlFormat,Invoke-VerifyXamlFormat
