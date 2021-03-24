@@ -2192,7 +2192,7 @@ namespace winrt::TerminalApp::implementation
                 if (warnMultiLine)
                 {
                     const auto focusedTab = _GetFocusedTabImpl();
-                    // Do not warn about multi line pasting if the current tab has bracketd paste enabled.
+                    // Do not warn about multi line pasting if the current tab has bracketed paste enabled.
                     warnMultiLine &= !focusedTab->GetActiveTerminalControl().BracketedPasteEnabled();
                 }
 
