@@ -88,6 +88,7 @@ args
 argv
 ARRAYSIZE
 ARROWKEYS
+asan
 ASBRST
 ASBSET
 ASDF
@@ -830,6 +831,7 @@ FRAMECHANGED
 fre
 freopen
 frontend
+fsanitize
 Fscreen
 FSCTL
 FSINFOCLASS
@@ -842,6 +844,7 @@ fullwidth
 func
 FUNCTIONCALL
 fuzzer
+fuzzmain
 fuzzmap
 fuzzwrapper
 fwdecl
@@ -1254,6 +1257,7 @@ LEFTSHIFT
 len
 lhs
 libpopcnt
+libsancov
 libtickit
 LIMITTEXT
 LINEDOWN

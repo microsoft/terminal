@@ -61,7 +61,7 @@ struct NullDeviceComm : public IDeviceComm
     auto& globals = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
     globals.pDeviceComm = new NullDeviceComm{}; // quickly, before we "connect". Leak this.
 
-    // it is safe to pass INVALID_HANDLE_VAKUE here because the null handle would have been detected
+    // it is safe to pass INVALID_HANDLE_VALUE here because the null handle would have been detected
     // in ConDrvDeviceComm (which has been avoided by setting a global device comm beforehand)
     RETURN_IF_NTSTATUS_FAILED(ConsoleCreateIoThreadLegacy(INVALID_HANDLE_VALUE, args));
 
