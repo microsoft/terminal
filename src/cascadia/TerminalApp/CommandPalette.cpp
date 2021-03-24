@@ -530,6 +530,15 @@ namespace winrt::TerminalApp::implementation
         // which will cause us to refresh the list of filterable commands.
         _searchBox().Text(L"");
         _searchBox().Focus(FocusState::Programmatic);
+
+        if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
+        {
+            automationPeer.RaiseNotificationEvent(
+                Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                Automation::Peers::AutomationNotificationProcessing::CurrentThenMostRecent,
+                fmt::format(std::wstring_view{ RS_(L"CommandPalette_NestedCommandAnnouncement") }, ParentCommandName()),
+                L"CommandPaletteNestingLevelChanged" /* unique name for this notification category */);
+        }
     }
 
     // Method Description:
@@ -768,7 +777,19 @@ namespace winrt::TerminalApp::implementation
 
         if (_currentMode == CommandPaletteMode::TabSearchMode || _currentMode == CommandPaletteMode::ActionMode)
         {
-            _noMatchesText().Visibility(_filteredActions.Size() > 0 ? Visibility::Collapsed : Visibility::Visible);
+            const auto currentNeedleHasResults{ _filteredActions.Size() > 0 };
+            _noMatchesText().Visibility(currentNeedleHasResults ? Visibility::Collapsed : Visibility::Visible);
+            if (!currentNeedleHasResults)
+            {
+                if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
+                {
+                    automationPeer.RaiseNotificationEvent(
+                        Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                        Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
+                        NoMatchesText(), // NoMatchesText contains the right text for the current mode
+                        L"CommandPaletteResultAnnouncement" /* unique name for this notification */);
+                }
+            }
         }
         else
         {
@@ -897,6 +918,9 @@ namespace winrt::TerminalApp::implementation
     {
         _currentMode = mode;
 
+        const auto currentlyVisible{ Visibility() == Visibility::Visible };
+
+        auto modeAnnouncementResourceKey{ USES_RESOURCE(L"CommandPaletteModeAnnouncement_ActionMode") };
         ParsedCommandLineText(L"");
         _searchBox().Text(L"");
         _searchBox().Select(_searchBox().Text().size(), 0);
@@ -912,6 +936,7 @@ namespace winrt::TerminalApp::implementation
             NoMatchesText(RS_(L"TabSwitcher_NoMatchesText"));
             ControlName(RS_(L"TabSwitcherControlName"));
             PrefixCharacter(L"");
+            modeAnnouncementResourceKey = USES_RESOURCE(L"CommandPaletteModeAnnouncement_TabSearchSwitchMode");
             break;
         }
         case CommandPaletteMode::CommandlineMode:
@@ -919,6 +944,7 @@ namespace winrt::TerminalApp::implementation
             NoMatchesText(L"");
             ControlName(RS_(L"CommandPaletteControlName"));
             PrefixCharacter(L"");
+            modeAnnouncementResourceKey = USES_RESOURCE(L"CommandPaletteModeAnnouncement_CommandlineMode");
             break;
         case CommandPaletteMode::ActionMode:
         default:
@@ -926,7 +952,21 @@ namespace winrt::TerminalApp::implementation
             NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
             ControlName(RS_(L"CommandPaletteControlName"));
             PrefixCharacter(L">");
+            // modeAnnouncementResourceKey is already set to _ActionMode
+            // We did this above to deduce the type (and make it easier on ourselves later).
             break;
+        }
+
+        if (currentlyVisible)
+        {
+            if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
+            {
+                automationPeer.RaiseNotificationEvent(
+                    Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                    Automation::Peers::AutomationNotificationProcessing::CurrentThenMostRecent,
+                    GetLibraryResourceString(modeAnnouncementResourceKey),
+                    L"CommandPaletteModeSwitch" /* unique ID for this notification */);
+            }
         }
 
         // The smooth remove/add animations that happen during

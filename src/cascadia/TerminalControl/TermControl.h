@@ -4,12 +4,7 @@
 #pragma once
 
 #include "TermControl.g.h"
-#include "CopyToClipboardEventArgs.g.h"
-#include "PasteFromClipboardEventArgs.g.h"
-#include "OpenHyperlinkEventArgs.g.h"
-#include "NoticeEventArgs.g.h"
-#include <winrt/Microsoft.Terminal.TerminalConnection.h>
-#include <winrt/Microsoft.Terminal.Core.h>
+#include "EventArgs.h"
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../renderer/uia/UiaRenderer.hpp"
@@ -26,79 +21,6 @@ namespace Microsoft::Console::VirtualTerminal
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    struct CopyToClipboardEventArgs :
-        public CopyToClipboardEventArgsT<CopyToClipboardEventArgs>
-    {
-    public:
-        CopyToClipboardEventArgs(hstring text) :
-            _text(text),
-            _html(),
-            _rtf(),
-            _formats(static_cast<CopyFormat>(0)) {}
-
-        CopyToClipboardEventArgs(hstring text, hstring html, hstring rtf, Windows::Foundation::IReference<CopyFormat> formats) :
-            _text(text),
-            _html(html),
-            _rtf(rtf),
-            _formats(formats) {}
-
-        hstring Text() { return _text; };
-        hstring Html() { return _html; };
-        hstring Rtf() { return _rtf; };
-        Windows::Foundation::IReference<CopyFormat> Formats() { return _formats; };
-
-    private:
-        hstring _text;
-        hstring _html;
-        hstring _rtf;
-        Windows::Foundation::IReference<CopyFormat> _formats;
-    };
-
-    struct PasteFromClipboardEventArgs :
-        public PasteFromClipboardEventArgsT<PasteFromClipboardEventArgs>
-    {
-    public:
-        PasteFromClipboardEventArgs(std::function<void(std::wstring)> clipboardDataHandler) :
-            m_clipboardDataHandler(clipboardDataHandler) {}
-
-        void HandleClipboardData(hstring value)
-        {
-            m_clipboardDataHandler(static_cast<std::wstring>(value));
-        };
-
-    private:
-        std::function<void(std::wstring)> m_clipboardDataHandler;
-    };
-
-    struct OpenHyperlinkEventArgs :
-        public OpenHyperlinkEventArgsT<OpenHyperlinkEventArgs>
-    {
-    public:
-        OpenHyperlinkEventArgs(hstring uri) :
-            _uri(uri) {}
-
-        hstring Uri() { return _uri; };
-
-    private:
-        hstring _uri;
-    };
-
-    struct NoticeEventArgs :
-        public NoticeEventArgsT<NoticeEventArgs>
-    {
-    public:
-        NoticeEventArgs(const NoticeLevel level, const hstring& message) :
-            _level(level),
-            _message(message) {}
-
-        NoticeLevel Level() { return _level; };
-        hstring Message() { return _message; };
-
-    private:
-        const NoticeLevel _level;
-        const hstring _message;
-    };
-
     struct TermControl : TermControlT<TermControl>
     {
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
@@ -172,18 +94,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
-        DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              Control::TitleChangedEventArgs);
         DECLARE_EVENT(FontSizeChanged,          _fontSizeChangedHandlers,           Control::FontSizeChangedEventArgs);
         DECLARE_EVENT(ScrollPositionChanged,    _scrollPositionChangedHandlers,     Control::ScrollPositionChangedEventArgs);
 
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard,  _clipboardPasteHandlers,    Control::TermControl, Control::PasteFromClipboardEventArgs);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CopyToClipboard,     _clipboardCopyHandlers,     Control::TermControl, Control::CopyToClipboardEventArgs);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(OpenHyperlink, _openHyperlinkHandlers, Control::TermControl, Control::OpenHyperlinkEventArgs);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTaskbarProgress, _setTaskbarProgressHandlers, Control::TermControl, IInspectable);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RaiseNotice, _raiseNoticeHandlers, Control::TermControl, Control::NoticeEventArgs);
+        TYPED_EVENT(TitleChanged,       IInspectable, Control::TitleChangedEventArgs);
+        TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
+        TYPED_EVENT(CopyToClipboard,    IInspectable, Control::CopyToClipboardEventArgs);
+        TYPED_EVENT(OpenHyperlink,      IInspectable, Control::OpenHyperlinkEventArgs);
+        TYPED_EVENT(SetTaskbarProgress, IInspectable, IInspectable);
+        TYPED_EVENT(RaiseNotice,        IInspectable, Control::NoticeEventArgs);
 
         TYPED_EVENT(WarningBell, IInspectable, IInspectable);
-        TYPED_EVENT(ConnectionStateChanged, Control::TermControl, IInspectable);
+        TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable);
         TYPED_EVENT(Initialized, Control::TermControl, Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(TabColorChanged, IInspectable, IInspectable);
         TYPED_EVENT(HidePointerCursor, IInspectable, IInspectable);
@@ -358,7 +280,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
-    struct TermControl : TermControlT<TermControl, implementation::TermControl>
-    {
-    };
+    BASIC_FACTORY(TermControl);
 }
