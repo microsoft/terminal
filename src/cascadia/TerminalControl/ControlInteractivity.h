@@ -23,6 +23,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                              TerminalConnection::ITerminalConnection connection);
 
         void GainFocus();
+        void UpdateSettings();
 
         /////////////////////// From Control
         winrt::com_ptr<ControlCore> _core{ nullptr };

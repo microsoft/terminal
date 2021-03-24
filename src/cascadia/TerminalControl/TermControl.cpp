@@ -320,7 +320,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             ScrollBar().Visibility(Visibility::Visible);
         }
 
-        _UpdateSystemParameterSettings();
+        _interactivity->UpdateSettings();
     }
 
     // Method Description:

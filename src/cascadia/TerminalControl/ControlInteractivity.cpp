@@ -35,6 +35,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core = winrt::make_self<ControlCore>(settings, connection);
     }
 
+    void ControlInteractivity::UpdateSettings()
+    {
+        _UpdateSystemParameterSettings();
+    }
+
     // Method Description:
     // - Returns the number of clicks that occurred (double and triple click support).
     // Every call to this function registers a click.
