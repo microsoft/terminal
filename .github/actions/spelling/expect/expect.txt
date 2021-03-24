@@ -2055,6 +2055,7 @@ runtests
 runtimeclass
 runuia
 runut
+runxamlformat
 rvalue
 RVERTICAL
 rxvt
