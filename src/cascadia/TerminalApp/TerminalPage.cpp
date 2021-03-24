@@ -274,17 +274,9 @@ namespace winrt::TerminalApp::implementation
 
         _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
 
-        // This lambda is a local because there will be more toasts in the
-        // future that will need the same logic.
-        auto safeRefocus = [weakThis{ get_weak() }](auto&&, auto&&) {
-            if (auto page{ weakThis.get() })
-            {
-                page->_FocusActiveControl(nullptr, nullptr);
-            }
-        };
-
-        _windowIdToast = std::make_unique<Toast>(WindowIdToast());
-        WindowIdToast().Closed(safeRefocus);
+        // DON'T set up Toasts/TeachingTips here. They should be loaded and
+        // initialized the first time they're opened, in whatever method opens
+        // them.
 
         // Setup mouse vanish attributes
         SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &_shouldMouseVanish, false);
@@ -3025,8 +3017,8 @@ namespace winrt::TerminalApp::implementation
         return {};
     }
 
-    void TerminalPage::_FocusActiveControl(const IInspectable& /*sender*/,
-                                           const RoutedEventArgs& /*eventArgs*/)
+    void TerminalPage::_FocusActiveControl(IInspectable /*sender*/,
+                                           IInspectable /*eventArgs*/)
     {
         // We don't want to set focus on the tab if fly-out is open as it will be closed
         // TODO GH#5400: consider checking we are not in the opening state, by hooking both Opening and Open events
@@ -3375,7 +3367,23 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(Dispatcher());
         if (auto page{ weakThis.get() })
         {
-            page->_windowIdToast->Open();
+            // If we haven't ever loaded the TeachingTip, then do so now and
+            // create the toast for it.
+            if (page->_windowIdToast == nullptr)
+            {
+                if (MUX::Controls::TeachingTip tip{ page->FindName(L"WindowIdToast").try_as<MUX::Controls::TeachingTip>() })
+                {
+                    page->_windowIdToast = std::make_shared<Toast>(tip);
+                    // Make sure to use the weak ref when setting up this
+                    // callback.
+                    tip.Closed({ page->get_weak(), &TerminalPage::_FocusActiveControl });
+                }
+            }
+
+            if (page->_windowIdToast != nullptr)
+            {
+                page->_windowIdToast->Open();
+            }
         }
     }
 

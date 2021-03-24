@@ -268,7 +268,7 @@ namespace winrt::TerminalApp::implementation
 
         void _CompleteInitialization();
 
-        void _FocusActiveControl(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+        void _FocusActiveControl(IInspectable sender, IInspectable eventArgs);
 
         void _UnZoomIfNeeded();
 

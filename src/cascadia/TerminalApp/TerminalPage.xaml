@@ -144,6 +144,7 @@ the MIT License. See LICENSE in the project root for license information. -->
         dismiss itself if the window is unfocused (In Xaml Islands). This is
         tracked by MUX#4382-->
         <mux:TeachingTip x:Name="WindowIdToast"
+                         x:Load="False"
                          IsLightDismissEnabled="True"
                          Title="{x:Bind WindowId, Mode=OneWay, Converter={StaticResource WindowIdConverter}}"
                          Subtitle="{x:Bind WindowName, Mode=OneWay, Converter={StaticResource WindowNameConverter}}">
