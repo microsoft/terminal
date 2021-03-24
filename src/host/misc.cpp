@@ -115,7 +115,7 @@ BOOL CheckBisectStringW(_In_reads_bytes_(cBytes) const WCHAR* pwchBuffer,
 // - pwchBuffer - Pointer to Unicode string buffer.
 // - cWords - Number of Unicode string.
 // - cBytes - Number of bisect position by byte counts.
-// - fPrintableControlChars - TRUE if called by Read (echoing characters)
+// - fPrintableControlChars - TRUE if control characters are being expanded (to ^X)
 // Return Value:
 // - TRUE - Bisected character.
 // - FALSE - Correctly.

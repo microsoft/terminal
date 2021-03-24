@@ -317,9 +317,9 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 // - pcb - On input, number of bytes to write.  On output, number of bytes written.
 // - pcSpaces - On output, the number of spaces consumed by the written characters.
 // - dwFlags -
-//      WC_DESTRUCTIVE_BACKSPACE    backspace overwrites characters.
-//      WC_KEEP_CURSOR_VISIBLE      change window origin desirable when hit rt. edge
-//      WC_PRINTABLE_CONTROL_CHARS  if called by Read (echoing characters)
+//      WC_DESTRUCTIVE_BACKSPACE   backspace overwrites characters.
+//      WC_KEEP_CURSOR_VISIBLE     change window origin desirable when hit rt. edge
+//      WC_PRINTABLE_CONTROL_CHARS if control characters should be expanded (as in, to "^X")
 // Return Value:
 // Note:
 // - This routine does not process tabs and backspace properly.  That code will be implemented as part of the line editing services.
@@ -920,7 +920,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 // - dwFlags -
 //      WC_DESTRUCTIVE_BACKSPACE   backspace overwrites characters.
 //      WC_KEEP_CURSOR_VISIBLE     change window origin (viewport) desirable when hit rt. edge
-//      WC_PRINTABLE_CONTROL_CHARS if called by Read (echoing characters)
+//      WC_PRINTABLE_CONTROL_CHARS if control characters should be expanded (as in, to "^X")
 // Return Value:
 // Note:
 // - This routine does not process tabs and backspace properly.  That code will be implemented as part of the line editing services.
