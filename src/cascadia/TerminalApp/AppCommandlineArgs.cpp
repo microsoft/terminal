@@ -422,6 +422,9 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
         _suppressApplicationTitle,
         RS_A(L"CmdSuppressApplicationTitleDesc"));
 
+    subcommand.colorSchemeOption = subcommand.subcommand->add_option("--colorScheme",
+                                                                     _startingColorScheme,
+                                                                     RS_A(L"CmdColorSchemeArgDesc"));
     // Using positionals_at_end allows us to support "wt new-tab -d wsl -d Ubuntu"
     // without CLI11 thinking that we've specified -d twice.
     // There's an alternate construction where we make all subcommands "prefix commands",
@@ -492,6 +495,11 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
     if (*subcommand.suppressApplicationTitleOption)
     {
         args.SuppressApplicationTitle(_suppressApplicationTitle);
+    }
+
+    if (*subcommand.colorSchemeOption)
+    {
+        args.ColorScheme(winrt::to_hstring(_startingColorScheme));
     }
 
     return args;

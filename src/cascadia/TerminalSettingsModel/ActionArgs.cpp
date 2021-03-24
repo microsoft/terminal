@@ -66,6 +66,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             const til::color tabColor{ _TabColor.Value() };
             ss << fmt::format(L"tabColor: {}, ", tabColor.ToHexString(true));
         }
+        if (!_ColorScheme.empty())
+        {
+            ss << fmt::format(L"colorScheme: {}, ", _ColorScheme);
+        }
 
         if (_SuppressApplicationTitle)
         {
@@ -131,6 +135,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 ss << fmt::format(L"--useApplicationTitle ");
             }
+        }
+
+        if (!_ColorScheme.empty())
+        {
+            ss << fmt::format(L"--colorScheme \"{}\" ", _ColorScheme);
         }
 
         if (!_Commandline.empty())
