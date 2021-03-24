@@ -17,6 +17,15 @@ Toast::Toast(const winrt::Microsoft::UI::Xaml::Controls::TeachingTip& tip) :
     _timer.Interval(ToastDuration);
 }
 
+Toast::Toast(const winrt::hstring tipName,
+             const winrt::Windows::Foundation::TypedEventHandler<IInspectable, IInspectable>& onCloseHandler) :
+    _tipName{ tipName },
+    _onCloseHandler{ onCloseHandler },
+    _tip{ nullptr }
+{
+    _timer.Interval(ToastDuration);
+}
+
 // Method Description:
 // - Open() the TeachingTip, and start our timer. When the timer expires, the
 //   tip will be closed.
@@ -26,6 +35,14 @@ Toast::Toast(const winrt::Microsoft::UI::Xaml::Controls::TeachingTip& tip) :
 // - <none>
 void Toast::Open()
 {
+    if (_tip == nullptr)
+    {
+        if (!_tipName.empty())
+        {
+            presenter.ShowDialog(FindName(L"AboutDialog").try_as<WUX::Controls::ContentDialog>());
+        }
+    }
+
     _tip.IsOpen(true);
 
     std::weak_ptr<Toast> weakThis{ shared_from_this() };

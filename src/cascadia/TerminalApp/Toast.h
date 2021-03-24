@@ -30,9 +30,13 @@ class Toast : public std::enable_shared_from_this<Toast>
 {
 public:
     Toast(const winrt::Microsoft::UI::Xaml::Controls::TeachingTip& tip);
+    Toast(const winrt::hstring& tipName,
+          const winrt::Windows::Foundation::TypedEventHandler<IInspectable, IInspectable>& onCloseHandler);
     void Open();
 
 private:
+    winrt::hstring _tipName;
+    winrt::Windows::Foundation::TypedEventHandler<IInspectable, IInspectable> _onCloseHandler;
     winrt::Microsoft::UI::Xaml::Controls::TeachingTip _tip;
     winrt::Windows::UI::Xaml::DispatcherTimer _timer;
 };
