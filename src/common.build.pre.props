@@ -62,6 +62,10 @@
       <Configuration>Release</Configuration>
       <Platform>ARM64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Fuzzing|x64">
+      <Configuration>Fuzzing</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
 
   <PropertyGroup Label="Globals">
@@ -125,12 +129,12 @@
   </ItemDefinitionGroup>
 
   <!-- For Release ONLY -->
-  <PropertyGroup Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='AuditMode'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='AuditMode' Or '$(Configuration)'=='Fuzzing'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
 
-  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='AuditMode'">
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='AuditMode' Or '$(Configuration)'=='Fuzzing'">
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -164,6 +168,23 @@
     <ClCompile>
       <EnablePREfast>true</EnablePREfast>
     </ClCompile>
+  </ItemDefinitionGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Fuzzing'">
+    <OCClangArchitectureName Condition="'$(Platform)'=='x64'">x86_64</OCClangArchitectureName>
+    <OCClangArchitectureName Condition="'$(Platform)'=='Win32'">i386</OCClangArchitectureName>
+    <OCClangArchitectureName Condition="'$(Platform)'=='x86'">i386</OCClangArchitectureName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Fuzzing'">
+    <ClCompile>
+      <!-- Enable all the ASAN and Coverage flags! -->
+      <AdditionalOptions>/fsanitize=address /fsanitize-coverage=inline-bool-flag /fsanitize-coverage=edge /fsanitize-coverage=trace-cmp /fsanitize-coverage=trace-div %(AdditionalOptions)</AdditionalOptions>
+      <!-- The fuzzer requires a static CRT -->
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>libsancov.lib;clang_rt.asan-$(OCClangArchitectureName).lib;clang_rt.fuzzer-$(OCClangArchitectureName).lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
 
   <!-- Sanity check: Make sure the user followed the README and initialized git submodules. -->

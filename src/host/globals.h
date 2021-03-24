@@ -46,7 +46,7 @@ public:
 
     CONSOLE_INFORMATION& getConsoleInformation();
 
-    IDeviceComm* pDeviceComm;
+    IDeviceComm* pDeviceComm{ nullptr };
 
     wil::unique_event_nothrow hInputEvent;
 

@@ -39,7 +39,11 @@ try
 {
     Globals& Globals = ServiceLocator::LocateGlobals();
 
-    Globals.pDeviceComm = new ConDrvDeviceComm(Server);
+    if (!Globals.pDeviceComm)
+    {
+        // in rare circumstances (such as in the fuzzing harness), there will already be a device comm
+        Globals.pDeviceComm = new ConDrvDeviceComm(Server);
+    }
 
     Globals.launchArgs = *args;
 
