@@ -65,7 +65,7 @@ namespace winrt::TerminalApp::implementation
             "TabRenamerOpened",
             TraceLoggingDescription("Event emitted when the tab renamer is opened"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     // Method Description:
@@ -75,6 +75,14 @@ namespace winrt::TerminalApp::implementation
     void TabHeaderControl::RenameBoxLostFocusHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                                      Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
+        // If the context menu associated with the renamer text box is open we know it gained the focus.
+        // In this case we ignore this event (we will regain the focus once the menu will be closed).
+        const auto flyout = HeaderRenamerTextBox().ContextFlyout();
+        if (flyout && flyout.IsOpen())
+        {
+            return;
+        }
+
         // Log the data here, rather than in _CloseRenameBox. If we do it there,
         // it'll get fired twice, once when the key is pressed to commit/cancel,
         // and then again when the focus is lost
@@ -85,7 +93,7 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingDescription("Event emitted when the tab renamer is closed"),
             TraceLoggingBoolean(_renameCancelled, "CancelledRename", "True if the user cancelled the rename, false if they committed."),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
         _CloseRenameBox();
         if (!_renameCancelled)
@@ -98,7 +106,11 @@ namespace winrt::TerminalApp::implementation
     // - Hides the rename box and displays the title text block
     void TabHeaderControl::_CloseRenameBox()
     {
-        HeaderRenamerTextBox().Visibility(Windows::UI::Xaml::Visibility::Collapsed);
-        HeaderTextBlock().Visibility(Windows::UI::Xaml::Visibility::Visible);
+        if (HeaderRenamerTextBox().Visibility() == Windows::UI::Xaml::Visibility::Visible)
+        {
+            HeaderRenamerTextBox().Visibility(Windows::UI::Xaml::Visibility::Collapsed);
+            HeaderTextBlock().Visibility(Windows::UI::Xaml::Visibility::Visible);
+            _RenameEndedHandlers(*this, nullptr);
+        }
     }
 }

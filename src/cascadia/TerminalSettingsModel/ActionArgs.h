@@ -26,6 +26,10 @@
 #include "ScrollDownArgs.g.h"
 #include "MoveTabArgs.g.h"
 #include "ToggleCommandPaletteArgs.g.h"
+#include "FindMatchArgs.g.h"
+#include "NewWindowArgs.g.h"
+#include "PrevTabArgs.g.h"
+#include "NextTabArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
@@ -50,8 +54,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         explicit ActionEventArgs(const Model::IActionArgs& args) :
             _ActionArgs{ args } {};
-        GETSET_PROPERTY(IActionArgs, ActionArgs, nullptr);
-        GETSET_PROPERTY(bool, Handled, false);
+        WINRT_PROPERTY(IActionArgs, ActionArgs, nullptr);
+        WINRT_PROPERTY(bool, Handled, false);
     };
 
     struct NewTerminalArgs : public NewTerminalArgsT<NewTerminalArgs>
@@ -59,12 +63,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         NewTerminalArgs() = default;
         NewTerminalArgs(int32_t& profileIndex) :
             _ProfileIndex{ profileIndex } {};
-        GETSET_PROPERTY(winrt::hstring, Commandline, L"");
-        GETSET_PROPERTY(winrt::hstring, StartingDirectory, L"");
-        GETSET_PROPERTY(winrt::hstring, TabTitle, L"");
-        GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, nullptr);
-        GETSET_PROPERTY(Windows::Foundation::IReference<int32_t>, ProfileIndex, nullptr);
-        GETSET_PROPERTY(winrt::hstring, Profile, L"");
+        WINRT_PROPERTY(winrt::hstring, Commandline, L"");
+        WINRT_PROPERTY(winrt::hstring, StartingDirectory, L"");
+        WINRT_PROPERTY(winrt::hstring, TabTitle, L"");
+        WINRT_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::IReference<int32_t>, ProfileIndex, nullptr);
+        WINRT_PROPERTY(winrt::hstring, Profile, L"");
+        WINRT_PROPERTY(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, nullptr);
 
         static constexpr std::string_view CommandlineKey{ "commandline" };
         static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
@@ -72,9 +77,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static constexpr std::string_view TabColorKey{ "tabColor" };
         static constexpr std::string_view ProfileIndexKey{ "index" };
         static constexpr std::string_view ProfileKey{ "profile" };
+        static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
 
     public:
         hstring GenerateName() const;
+        hstring ToCommandline() const;
 
         bool Equals(const Model::NewTerminalArgs& other)
         {
@@ -83,7 +90,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                    other.TabTitle() == _TabTitle &&
                    other.TabColor() == _TabColor &&
                    other.ProfileIndex() == _ProfileIndex &&
-                   other.Profile() == _Profile;
+                   other.Profile() == _Profile &&
+                   other.SuppressApplicationTitle() == _SuppressApplicationTitle;
         };
         static Model::NewTerminalArgs FromJson(const Json::Value& json)
         {
@@ -95,6 +103,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, ProfileIndexKey, args->_ProfileIndex);
             JsonUtils::GetValueForKey(json, ProfileKey, args->_Profile);
             JsonUtils::GetValueForKey(json, TabColorKey, args->_TabColor);
+            JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, args->_SuppressApplicationTitle);
             return *args;
         }
         Model::NewTerminalArgs Copy() const
@@ -106,6 +115,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_TabColor = _TabColor;
             copy->_ProfileIndex = _ProfileIndex;
             copy->_Profile = _Profile;
+            copy->_SuppressApplicationTitle = _SuppressApplicationTitle;
             return *copy;
         }
     };
@@ -113,8 +123,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct CopyTextArgs : public CopyTextArgsT<CopyTextArgs>
     {
         CopyTextArgs() = default;
-        GETSET_PROPERTY(bool, SingleLine, false);
-        GETSET_PROPERTY(Windows::Foundation::IReference<TerminalControl::CopyFormat>, CopyFormatting, nullptr);
+        WINRT_PROPERTY(bool, SingleLine, false);
+        WINRT_PROPERTY(Windows::Foundation::IReference<Control::CopyFormat>, CopyFormatting, nullptr);
 
         static constexpr std::string_view SingleLineKey{ "singleLine" };
         static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
@@ -155,7 +165,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         NewTabArgs() = default;
         NewTabArgs(const Model::NewTerminalArgs& terminalArgs) :
             _TerminalArgs{ terminalArgs } {};
-        GETSET_PROPERTY(Model::NewTerminalArgs, TerminalArgs, nullptr);
+        WINRT_PROPERTY(Model::NewTerminalArgs, TerminalArgs, nullptr);
 
     public:
         hstring GenerateName() const;
@@ -189,7 +199,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         SwitchToTabArgs() = default;
         SwitchToTabArgs(uint32_t& tabIndex) :
             _TabIndex{ tabIndex } {};
-        GETSET_PROPERTY(uint32_t, TabIndex, 0);
+        WINRT_PROPERTY(uint32_t, TabIndex, 0);
 
         static constexpr std::string_view TabIndexKey{ "index" };
 
@@ -223,7 +233,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct ResizePaneArgs : public ResizePaneArgsT<ResizePaneArgs>
     {
         ResizePaneArgs() = default;
-        GETSET_PROPERTY(Model::ResizeDirection, ResizeDirection, ResizeDirection::None);
+        WINRT_PROPERTY(Model::ResizeDirection, ResizeDirection, ResizeDirection::None);
 
         static constexpr std::string_view DirectionKey{ "direction" };
 
@@ -267,7 +277,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         MoveFocusArgs(Model::FocusDirection direction) :
             _FocusDirection{ direction } {};
 
-        GETSET_PROPERTY(Model::FocusDirection, FocusDirection, FocusDirection::None);
+        WINRT_PROPERTY(Model::FocusDirection, FocusDirection, FocusDirection::None);
 
         static constexpr std::string_view DirectionKey{ "direction" };
 
@@ -308,7 +318,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct AdjustFontSizeArgs : public AdjustFontSizeArgsT<AdjustFontSizeArgs>
     {
         AdjustFontSizeArgs() = default;
-        GETSET_PROPERTY(int32_t, Delta, 0);
+        WINRT_PROPERTY(int32_t, Delta, 0);
 
         static constexpr std::string_view AdjustFontSizeDelta{ "delta" };
 
@@ -342,7 +352,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct SendInputArgs : public SendInputArgsT<SendInputArgs>
     {
         SendInputArgs() = default;
-        GETSET_PROPERTY(winrt::hstring, Input, L"");
+        WINRT_PROPERTY(winrt::hstring, Input, L"");
 
         static constexpr std::string_view InputKey{ "input" };
 
@@ -388,10 +398,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _TerminalArgs{ terminalArgs } {};
         SplitPaneArgs(SplitType splitMode) :
             _SplitMode{ splitMode } {};
-        GETSET_PROPERTY(SplitState, SplitStyle, SplitState::Automatic);
-        GETSET_PROPERTY(Model::NewTerminalArgs, TerminalArgs, nullptr);
-        GETSET_PROPERTY(SplitType, SplitMode, SplitType::Manual);
-        GETSET_PROPERTY(double, SplitSize, .5);
+        WINRT_PROPERTY(SplitState, SplitStyle, SplitState::Automatic);
+        WINRT_PROPERTY(Model::NewTerminalArgs, TerminalArgs, nullptr);
+        WINRT_PROPERTY(SplitType, SplitMode, SplitType::Manual);
+        WINRT_PROPERTY(double, SplitSize, .5);
 
         static constexpr std::string_view SplitKey{ "split" };
         static constexpr std::string_view SplitModeKey{ "splitMode" };
@@ -443,7 +453,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         OpenSettingsArgs() = default;
         OpenSettingsArgs(const SettingsTarget& target) :
             _Target{ target } {}
-        GETSET_PROPERTY(SettingsTarget, Target, SettingsTarget::SettingsFile);
+        WINRT_PROPERTY(SettingsTarget, Target, SettingsTarget::SettingsFile);
 
         static constexpr std::string_view TargetKey{ "target" };
 
@@ -477,7 +487,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct SetColorSchemeArgs : public SetColorSchemeArgsT<SetColorSchemeArgs>
     {
         SetColorSchemeArgs() = default;
-        GETSET_PROPERTY(winrt::hstring, SchemeName, L"");
+        WINRT_PROPERTY(winrt::hstring, SchemeName, L"");
 
         static constexpr std::string_view NameKey{ "colorScheme" };
 
@@ -515,7 +525,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct SetTabColorArgs : public SetTabColorArgsT<SetTabColorArgs>
     {
         SetTabColorArgs() = default;
-        GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, nullptr);
 
         static constexpr std::string_view ColorKey{ "color" };
 
@@ -549,7 +559,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct RenameTabArgs : public RenameTabArgsT<RenameTabArgs>
     {
         RenameTabArgs() = default;
-        GETSET_PROPERTY(winrt::hstring, Title, L"");
+        WINRT_PROPERTY(winrt::hstring, Title, L"");
 
         static constexpr std::string_view TitleKey{ "title" };
 
@@ -585,7 +595,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ExecuteCommandlineArgs() = default;
         ExecuteCommandlineArgs(winrt::hstring commandline) :
             _Commandline{ commandline } {};
-        GETSET_PROPERTY(winrt::hstring, Commandline, L"");
+        WINRT_PROPERTY(winrt::hstring, Commandline, L"");
 
         static constexpr std::string_view CommandlineKey{ "commandline" };
 
@@ -625,7 +635,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         CloseOtherTabsArgs() = default;
         CloseOtherTabsArgs(uint32_t& tabIndex) :
             _Index{ tabIndex } {};
-        GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, Index, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::IReference<uint32_t>, Index, nullptr);
 
         static constexpr std::string_view IndexKey{ "index" };
 
@@ -661,7 +671,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         CloseTabsAfterArgs() = default;
         CloseTabsAfterArgs(uint32_t& tabIndex) :
             _Index{ tabIndex } {};
-        GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, Index, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::IReference<uint32_t>, Index, nullptr);
 
         static constexpr std::string_view IndexKey{ "index" };
 
@@ -697,7 +707,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         MoveTabArgs() = default;
         MoveTabArgs(MoveTabDirection direction) :
             _Direction{ direction } {};
-        GETSET_PROPERTY(MoveTabDirection, Direction, MoveTabDirection::None);
+        WINRT_PROPERTY(MoveTabDirection, Direction, MoveTabDirection::None);
 
         static constexpr std::string_view DirectionKey{ "direction" };
 
@@ -738,7 +748,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct ScrollUpArgs : public ScrollUpArgsT<ScrollUpArgs>
     {
         ScrollUpArgs() = default;
-        GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, RowsToScroll, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::IReference<uint32_t>, RowsToScroll, nullptr);
 
         static constexpr std::string_view RowsToScrollKey{ "rowsToScroll" };
 
@@ -772,7 +782,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct ScrollDownArgs : public ScrollDownArgsT<ScrollDownArgs>
     {
         ScrollDownArgs() = default;
-        GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, RowsToScroll, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::IReference<uint32_t>, RowsToScroll, nullptr);
 
         static constexpr std::string_view RowsToScrollKey{ "rowsToScroll" };
 
@@ -808,7 +818,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ToggleCommandPaletteArgs() = default;
 
         // To preserve backward compatibility the default is Action.
-        GETSET_PROPERTY(CommandPaletteLaunchMode, LaunchMode, CommandPaletteLaunchMode::Action);
+        WINRT_PROPERTY(CommandPaletteLaunchMode, LaunchMode, CommandPaletteLaunchMode::Action);
 
         static constexpr std::string_view LaunchModeKey{ "launchMode" };
 
@@ -838,6 +848,149 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return *copy;
         }
     };
+
+    struct FindMatchArgs : public FindMatchArgsT<FindMatchArgs>
+    {
+        FindMatchArgs() = default;
+        FindMatchArgs(FindMatchDirection direction) :
+            _Direction{ direction } {};
+        WINRT_PROPERTY(FindMatchDirection, Direction, FindMatchDirection::None);
+
+        static constexpr std::string_view DirectionKey{ "direction" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<FindMatchArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Direction == _Direction;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<FindMatchArgs>();
+            JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
+            if (args->_Direction == FindMatchDirection::None)
+            {
+                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
+            }
+            else
+            {
+                return { *args, {} };
+            }
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<FindMatchArgs>() };
+            copy->_Direction = _Direction;
+            return *copy;
+        }
+    };
+
+    struct NewWindowArgs : public NewWindowArgsT<NewWindowArgs>
+    {
+        NewWindowArgs() = default;
+        NewWindowArgs(const Model::NewTerminalArgs& terminalArgs) :
+            _TerminalArgs{ terminalArgs } {};
+        WINRT_PROPERTY(Model::NewTerminalArgs, TerminalArgs, nullptr);
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<NewWindowArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_TerminalArgs.Equals(_TerminalArgs);
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<NewWindowArgs>();
+            args->_TerminalArgs = NewTerminalArgs::FromJson(json);
+            return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<NewWindowArgs>() };
+            copy->_TerminalArgs = _TerminalArgs.Copy();
+            return *copy;
+        }
+    };
+
+    struct PrevTabArgs : public PrevTabArgsT<PrevTabArgs>
+    {
+        PrevTabArgs() = default;
+        WINRT_PROPERTY(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, nullptr);
+        static constexpr std::string_view SwitcherModeKey{ "tabSwitcherMode" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<PrevTabArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_SwitcherMode == _SwitcherMode;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<PrevTabArgs>();
+            JsonUtils::GetValueForKey(json, SwitcherModeKey, args->_SwitcherMode);
+            return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<PrevTabArgs>() };
+            copy->_SwitcherMode = _SwitcherMode;
+            return *copy;
+        }
+    };
+
+    struct NextTabArgs : public NextTabArgsT<NextTabArgs>
+    {
+        NextTabArgs() = default;
+        WINRT_PROPERTY(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, nullptr);
+        static constexpr std::string_view SwitcherModeKey{ "tabSwitcherMode" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<NextTabArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_SwitcherMode == _SwitcherMode;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<NextTabArgs>();
+            JsonUtils::GetValueForKey(json, SwitcherModeKey, args->_SwitcherMode);
+            return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<NextTabArgs>() };
+            copy->_SwitcherMode = _SwitcherMode;
+            return *copy;
+        }
+    };
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
@@ -853,4 +1006,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(CloseTabsAfterArgs);
     BASIC_FACTORY(MoveTabArgs);
     BASIC_FACTORY(OpenSettingsArgs);
+    BASIC_FACTORY(FindMatchArgs);
+    BASIC_FACTORY(NewWindowArgs);
 }

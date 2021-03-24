@@ -12,7 +12,7 @@
   xmlns:desktop5="http://schemas.microsoft.com/appx/manifest/desktop/windows10/5"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
-  IgnorableNamespaces="uap mp rescap">
+  IgnorableNamespaces="uap mp rescap uap3">
 
   <Identity
     Name="WindowsTerminalDev"
@@ -69,21 +69,26 @@
             Enabled="false"
             DisplayName="ms-resource:AppNameDev" />
         </uap5:Extension>
+        <uap3:Extension Category="windows.appExtensionHost">
+              <uap3:AppExtensionHost>
+                <uap3:Name>com.microsoft.windows.terminal.settings</uap3:Name>
+              </uap3:AppExtensionHost>
+        </uap3:Extension>
 
         <com:Extension Category="windows.comServer">
             <com:ComServer>
                 <com:SurrogateServer DisplayName="WindowsTerminalShellExt">
-                    <com:Class Id="9f156763-7844-4dc4-b2b1-901f640f5155" Path="WindowsTerminalShellExt.dll" ThreadingModel="STA"/>
+                    <com:Class Id="52065414-e077-47ec-a3ac-1cc5455e1b54" Path="WindowsTerminalShellExt.dll" ThreadingModel="STA"/>
                 </com:SurrogateServer>
             </com:ComServer>
         </com:Extension>
         <desktop4:Extension Category="windows.fileExplorerContextMenus">
             <desktop4:FileExplorerContextMenus>
                 <desktop5:ItemType Type="Directory">
-                    <desktop5:Verb Id="Command1" Clsid="9f156763-7844-4dc4-b2b1-901f640f5155" />
+                    <desktop5:Verb Id="OpenTerminalDev" Clsid="52065414-e077-47ec-a3ac-1cc5455e1b54" />
                 </desktop5:ItemType>
                 <desktop5:ItemType Type="Directory\Background">
-                  <desktop5:Verb Id="Command2" Clsid="9f156763-7844-4dc4-b2b1-901f640f5155" />
+                  <desktop5:Verb Id="OpenTerminalDev" Clsid="52065414-e077-47ec-a3ac-1cc5455e1b54" />
                 </desktop5:ItemType>                
             </desktop4:FileExplorerContextMenus>
         </desktop4:Extension>

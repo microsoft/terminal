@@ -19,7 +19,7 @@
 #include "CascadiaSettings.g.cpp"
 
 using namespace ::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace Microsoft::Console;
@@ -863,6 +863,33 @@ winrt::Microsoft::Terminal::Settings::Model::ColorScheme CascadiaSettings::GetCo
     }
     const auto schemeName = profile.ColorSchemeName();
     return _globals->ColorSchemes().TryLookup(schemeName);
+}
+
+// Method Description:
+// - updates all references to that color scheme with the new name
+// Arguments:
+// - oldName: the original name for the color scheme
+// - newName: the new name for the color scheme
+// Return Value:
+// - <none>
+void CascadiaSettings::UpdateColorSchemeReferences(const hstring oldName, const hstring newName)
+{
+    // update profiles.defaults, if necessary
+    if (_userDefaultProfileSettings &&
+        _userDefaultProfileSettings->HasColorSchemeName() &&
+        _userDefaultProfileSettings->ColorSchemeName() == oldName)
+    {
+        _userDefaultProfileSettings->ColorSchemeName(newName);
+    }
+
+    // update all profiles referencing this color scheme
+    for (const auto& profile : _allProfiles)
+    {
+        if (profile.HasColorSchemeName() && profile.ColorSchemeName() == oldName)
+        {
+            profile.ColorSchemeName(newName);
+        }
+    }
 }
 
 winrt::hstring CascadiaSettings::ApplicationDisplayName()

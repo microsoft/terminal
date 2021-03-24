@@ -3,7 +3,9 @@
 
 #include "pch.h"
 #include "AppLogic.h"
+#include "../inc/WindowingBehavior.h"
 #include "AppLogic.g.cpp"
+#include "FindTargetWindowResult.g.cpp"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include <LibraryResources.h>
@@ -15,7 +17,7 @@ using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::TerminalApp;
 
@@ -43,7 +45,9 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWar
     USES_RESOURCE(L"FailedToParseCommandJson"),
     USES_RESOURCE(L"FailedToWriteToSettings"),
     USES_RESOURCE(L"InvalidColorSchemeInCmd"),
-    USES_RESOURCE(L"InvalidSplitSize")
+    USES_RESOURCE(L"InvalidSplitSize"),
+    USES_RESOURCE(L"FailedToParseStartupActions"),
+    USES_RESOURCE(L"FailedToParseSubCommands"),
 };
 static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
@@ -171,6 +175,9 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Returns the settings currently in use by the entire Terminal application.
+    // - IMPORTANT! This can throw! Make sure to try/catch this, so that the
+    //   LocalTests don't crash (because their Application::Current() won't be a
+    //   AppLogic)
     // Throws:
     // - HR E_INVALIDARG if the app isn't up and running.
     const CascadiaSettings AppLogic::CurrentAppSettings()
@@ -261,6 +268,14 @@ namespace winrt::TerminalApp::implementation
         if (_isUwp)
         {
             _settings.GlobalSettings().ShowTabsInTitlebar(false);
+        }
+
+        // Pay attention, that even if some command line arguments were parsed (like launch mode),
+        // we will not use the startup actions from settings.
+        // While this simplifies the logic, we might want to reconsider this behavior in the future.
+        if (!_hasCommandLineArguments && _hasSettingsStartupActions)
+        {
+            _root->SetStartupActions(_settingsAppArgs.GetStartupActions());
         }
 
         _root->SetSettings(_settings, false);
@@ -426,8 +441,7 @@ namespace winrt::TerminalApp::implementation
         // Make sure the lines of text wrap
         warningsTextBlock.TextWrapping(TextWrapping::Wrap);
 
-        const auto warnings = _settings.Warnings();
-        for (const auto& warning : warnings)
+        for (const auto& warning : _warnings)
         {
             // Try looking up the warning message key for each warning.
             const auto warningText = _GetWarningText(warning);
@@ -479,11 +493,15 @@ namespace winrt::TerminalApp::implementation
     void AppLogic::_OnLoaded(const IInspectable& /*sender*/,
                              const RoutedEventArgs& /*eventArgs*/)
     {
-        const auto keyboardServiceIsDisabled = !_IsKeyboardServiceEnabled();
-        if (keyboardServiceIsDisabled)
+        if (_settings.GlobalSettings().InputServiceWarning())
         {
-            _root->ShowKeyboardServiceWarning();
+            const auto keyboardServiceIsDisabled = !_IsKeyboardServiceEnabled();
+            if (keyboardServiceIsDisabled)
+            {
+                _root->ShowKeyboardServiceWarning();
+            }
         }
+
         if (FAILED(_settingsLoadedResult))
         {
             const winrt::hstring titleKey = USES_RESOURCE(L"InitialJsonParseErrorTitle");
@@ -559,7 +577,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Use the default profile to determine how big of a window we need.
-        const auto [_, settings] = TerminalSettings::BuildSettings(_settings, nullptr, nullptr);
+        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
 
         auto proposedSize = TermControl::GetProposedDimensions(settings, dpi);
 
@@ -652,6 +670,16 @@ namespace winrt::TerminalApp::implementation
         };
     }
 
+    bool AppLogic::CenterOnLaunch()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+        return _settings.GlobalSettings().CenterOnLaunch();
+    }
+
     winrt::Windows::UI::Xaml::ElementTheme AppLogic::GetRequestedTheme()
     {
         if (!_loadedInitialSettings)
@@ -716,7 +744,34 @@ namespace winrt::TerminalApp::implementation
                 return E_INVALIDARG;
             }
 
-            hr = _settings.Warnings().Size() == 0 ? S_OK : S_FALSE;
+            _warnings.clear();
+            for (uint32_t i = 0; i < _settings.Warnings().Size(); i++)
+            {
+                _warnings.push_back(_settings.Warnings().GetAt(i));
+            }
+
+            _hasSettingsStartupActions = false;
+            const auto startupActions = _settings.GlobalSettings().StartupActions();
+            if (!startupActions.empty())
+            {
+                _settingsAppArgs.FullResetState();
+
+                ExecuteCommandlineArgs args{ _settings.GlobalSettings().StartupActions() };
+                auto result = _settingsAppArgs.ParseArgs(args);
+                if (result == 0)
+                {
+                    _hasSettingsStartupActions = true;
+
+                    // Validation also injects new-tab command if implicit new-tab was provided.
+                    _settingsAppArgs.ValidateStartupCommands();
+                }
+                else
+                {
+                    _warnings.push_back(SettingsLoadWarnings::FailedToParseStartupActions);
+                }
+            }
+
+            hr = _warnings.empty() ? S_OK : S_FALSE;
         }
         catch (const winrt::hresult_error& e)
         {
@@ -806,7 +861,8 @@ namespace winrt::TerminalApp::implementation
                            // editors, who will write a temp file, then rename it to be the
                            // actual file you wrote. So listen for that too.
                            if (!(event == wil::FolderChangeEvent::Modified ||
-                                 event == wil::FolderChangeEvent::RenameNewName))
+                                 event == wil::FolderChangeEvent::RenameNewName ||
+                                 event == wil::FolderChangeEvent::Removed))
                            {
                                return;
                            }
@@ -960,7 +1016,7 @@ namespace winrt::TerminalApp::implementation
     void AppLogic::_ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme)
     {
         // Propagate the event to the host layer, so it can update its own UI
-        _requestedThemeChangedHandlers(*this, newTheme);
+        _RequestedThemeChangedHandlers(*this, newTheme);
     }
 
     UIElement AppLogic::GetRoot() noexcept
@@ -1105,6 +1161,9 @@ namespace winrt::TerminalApp::implementation
         const auto result = _appArgs.ParseArgs(args);
         if (result == 0)
         {
+            // If the size of the arguments list is 1,
+            // then it contains only the executable name and no other arguments.
+            _hasCommandLineArguments = args.size() > 1;
             _appArgs.ValidateStartupCommands();
             _root->SetStartupActions(_appArgs.GetStartupActions());
         }
@@ -1112,17 +1171,156 @@ namespace winrt::TerminalApp::implementation
         return result;
     }
 
-    int32_t AppLogic::ExecuteCommandline(array_view<const winrt::hstring> args)
+    // Method Description:
+    // - Parse the provided commandline arguments into actions, and try to
+    //   perform them immediately.
+    // - This function returns 0, unless a there was a non-zero result from
+    //   trying to parse one of the commands provided. In that case, no commands
+    //   after the failing command will be parsed, and the non-zero code
+    //   returned.
+    // - If a non-empty cwd is provided, the entire terminal exe will switch to
+    //   that CWD while we handle these actions, then return to the original
+    //   CWD.
+    // Arguments:
+    // - args: an array of strings to process as a commandline. These args can contain spaces
+    // - cwd: The directory to use as the CWD while performing these actions.
+    // Return Value:
+    // - the result of the first command who's parsing returned a non-zero code,
+    //   or 0. (see AppLogic::_ParseArgs)
+    int32_t AppLogic::ExecuteCommandline(array_view<const winrt::hstring> args,
+                                         const winrt::hstring& cwd)
     {
         ::TerminalApp::AppCommandlineArgs appArgs;
         auto result = appArgs.ParseArgs(args);
         if (result == 0)
         {
             auto actions = winrt::single_threaded_vector<ActionAndArgs>(std::move(appArgs.GetStartupActions()));
-            _root->ProcessStartupActions(actions, false);
+
+            _root->ProcessStartupActions(actions, false, cwd);
+        }
+        // Return the result of parsing with commandline, though it may or may not be used.
+        return result;
+    }
+
+    // Method Description:
+    // - Parse the given commandline args in an attempt to find the specified
+    //   window. The rest of the args are ignored for now (they'll be handled
+    //   whenever the commandline gets to the window it was intended for).
+    // - Note that this function will only ever be called by the monarch. A
+    //   return value of `0` in this case does not mean "run the commandline in
+    //   _this_ process", rather it means "run the commandline in the current
+    //   process", whoever that may be.
+    // Arguments:
+    // - args: an array of strings to process as a commandline. These args can contain spaces
+    // Return Value:
+    // - 0: We should handle the args "in the current window".
+    // - WindowingBehaviorUseNew: We should handle the args in a new window
+    // - WindowingBehaviorUseExisting: We should handle the args "in
+    //   the current window ON THIS DESKTOP"
+    // - WindowingBehaviorUseAnyExisting: We should handle the args "in the current
+    //   window ON ANY DESKTOP"
+    // - anything else: We should handle the commandline in the window with the given ID.
+    TerminalApp::FindTargetWindowResult AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
         }
 
-        return result; // TODO:MG does a return value make sense
+        return AppLogic::_doFindTargetWindow(args, _settings.GlobalSettings().WindowingBehavior());
+    }
+
+    // The main body of this function is a static helper, to facilitate unit-testing
+    TerminalApp::FindTargetWindowResult AppLogic::_doFindTargetWindow(array_view<const winrt::hstring> args,
+                                                                      const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior)
+    {
+        ::TerminalApp::AppCommandlineArgs appArgs;
+        const auto result = appArgs.ParseArgs(args);
+        if (result == 0)
+        {
+            if (!appArgs.GetExitMessage().empty())
+            {
+                return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew);
+            }
+
+            const std::string parsedTarget{ appArgs.GetTargetWindow() };
+
+            // If the user did not provide any value on the commandline,
+            // then lookup our windowing behavior to determine what to do
+            // now.
+            if (parsedTarget.empty())
+            {
+                int32_t windowId = WindowingBehaviorUseNew;
+                switch (windowingBehavior)
+                {
+                case WindowingMode::UseNew:
+                    windowId = WindowingBehaviorUseNew;
+                    break;
+                case WindowingMode::UseExisting:
+                    windowId = WindowingBehaviorUseExisting;
+                    break;
+                case WindowingMode::UseAnyExisting:
+                    windowId = WindowingBehaviorUseAnyExisting;
+                    break;
+                }
+                return winrt::make<FindTargetWindowResult>(windowId);
+            }
+
+            // Here, the user _has_ provided a window-id on the commandline.
+            // What is it? Let's start by checking if it's an int, for the
+            // window's ID:
+            try
+            {
+                int32_t windowId = ::base::saturated_cast<int32_t>(std::stoi(parsedTarget));
+
+                // If the user provides _any_ negative number, then treat it as
+                // -1, for "use a new window".
+                if (windowId < 0)
+                {
+                    windowId = -1;
+                }
+
+                // Hooray! This is a valid integer. The set of possible values
+                // here is {-1, 0, ℤ+}. Let's return that window ID.
+                return winrt::make<FindTargetWindowResult>(windowId);
+            }
+            catch (...)
+            {
+                // Value was not a valid int. It could be any other string to
+                // use as a title though!
+                //
+                // First, check the reserved keywords:
+                if (parsedTarget == "new")
+                {
+                    return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew);
+                }
+                else if (parsedTarget == "last")
+                {
+                    return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseExisting);
+                }
+                else
+                {
+                    // The string they provided wasn't an int, it wasn't "new"
+                    // or "last", so whatever it is, that's the name they get.
+                    winrt::hstring winrtName{ til::u8u16(parsedTarget) };
+                    return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseName, winrtName);
+                }
+            }
+        }
+
+        // Any unsuccessful parse will be a new window. That new window will try
+        // to handle the commandline itself, and find that the commandline
+        // failed to parse. When that happens, the new window will display the
+        // message box.
+        //
+        // This will also work for the case where the user specifies an invalid
+        // commandline in conjunction with `-w 0`. This function will determine
+        // that the commandline has a  parse error, and indicate that we should
+        // create a new window. Then, in that new window, we'll try to  set the
+        // StartupActions, which will again fail, returning the correct error
+        // message.
+        return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew);
     }
 
     // Method Description:
@@ -1171,8 +1369,4 @@ namespace winrt::TerminalApp::implementation
         return _root ? _root->AlwaysOnTop() : false;
     }
 
-    // -------------------------------- WinRT Events ---------------------------------
-    // Winrt events need a method for adding a callback to the event and removing the callback.
-    // These macros will define them both for you.
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(AppLogic, RequestedThemeChanged, _requestedThemeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::ElementTheme);
 }

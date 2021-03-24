@@ -24,9 +24,6 @@
     <ClCompile Include="ColorHelper.cpp" />
     <ClCompile Include="DebugTapConnection.cpp" />
     <ClCompile Include="Utils.cpp" />
-    <ClCompile Include="TerminalSettings.cpp">
-      <Filter>settings</Filter>
-    </ClCompile>
     <ClCompile Include="Jumplist.cpp" />
     <ClCompile Include="Tab.cpp">
       <Filter>tab</Filter>
@@ -70,10 +67,7 @@
     <ClInclude Include="Commandline.h" />
     <ClInclude Include="DebugTapConnection.h" />
     <ClInclude Include="ColorHelper.h" />
-    <ClInclude Include="TerminalSettings.h">
-      <Filter>settings</Filter>
-    </ClInclude>
-      <ClInclude Include="Jumplist.h" />
+    <ClInclude Include="Jumplist.h" />
     <ClInclude Include="Tab.h">
       <Filter>tab</Filter>
     </ClInclude>
@@ -113,9 +107,6 @@
       <Filter>settings</Filter>
     </Midl>
     <Midl Include="IDirectKeyListener.idl" />
-    <Midl Include="TerminalSettings.idl">
-      <Filter>settings</Filter>
-    </Midl>
     <Midl Include="ITab.idl">
       <Filter>tab</Filter>
     </Midl>
@@ -130,6 +121,9 @@
     </Midl>
     <Midl Include="HighlightedText.idl">
       <Filter>highlightedText</Filter>
+    </Midl>
+    <Midl Include="TerminalTabStatus.idl">
+      <Filter>tab</Filter>
     </Midl>
   </ItemGroup>
   <ItemGroup>

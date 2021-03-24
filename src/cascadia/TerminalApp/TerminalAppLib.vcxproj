@@ -78,6 +78,10 @@
     <ClInclude Include="MinMaxCloseControl.h">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="PaletteItemTemplateSelector.h">
+      <DependentUpon>PaletteItemTemplateSelector.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="SettingsTab.h">
       <DependentUpon>SettingsTab.idl</DependentUpon>
     </ClInclude>
@@ -91,6 +95,10 @@
     </ClInclude>
     <ClInclude Include="TerminalPage.h">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="TerminalTabStatus.h">
+      <DependentUpon>TerminalTabStatus.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="TitlebarControl.h">
@@ -116,14 +124,8 @@
     <ClInclude Include="EmptyStringVisibilityConverter.h">
       <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="HasNestedCommandsVisibilityConverter.h">
-      <DependentUpon>HasNestedCommandsVisibilityConverter.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="Pane.h" />
     <ClInclude Include="ColorHelper.h" />
-    <ClInclude Include="TerminalSettings.h">
-      <DependentUpon>TerminalSettings.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="ShortcutActionDispatch.h">
       <DependentUpon>ShortcutActionDispatch.idl</DependentUpon>
@@ -150,6 +152,10 @@
     <ClCompile Include="MinMaxCloseControl.cpp">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="PaletteItemTemplateSelector.cpp">
+      <DependentUpon>PaletteItemTemplateSelector.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="SettingsTab.cpp">
       <DependentUpon>SettingsTab.idl</DependentUpon>
     </ClCompile>
@@ -163,6 +169,10 @@
     </ClCompile>
     <ClCompile Include="TerminalPage.cpp">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="TerminalTabStatus.cpp">
+      <DependentUpon>TerminalTabStatus.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="TitlebarControl.cpp">
@@ -188,16 +198,10 @@
     <ClCompile Include="EmptyStringVisibilityConverter.cpp">
       <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="HasNestedCommandsVisibilityConverter.cpp">
-      <DependentUpon>HasNestedCommandsVisibilityConverter.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="Pane.cpp" />
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
     <ClCompile Include="ColorHelper.cpp" />
     <ClCompile Include="DebugTapConnection.cpp" />
-    <ClCompile Include="TerminalSettings.cpp">
-      <DependentUpon>TerminalSettings.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -228,6 +232,9 @@
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
     </Midl>
+    <Midl Include="PaletteItemTemplateSelector.idl">
+      <SubType>Designer</SubType>
+    </Midl>
     <Midl Include="SettingsTab.idl" />
     <Midl Include="PaletteItem.idl" />
     <Midl Include="ShortcutActionDispatch.idl" />
@@ -243,6 +250,9 @@
     <Midl Include="TerminalPage.idl">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="TerminalTabStatus.idl">
+      <SubType>Designer</SubType>
     </Midl>
     <Midl Include="TitlebarControl.idl">
       <DependentUpon>TitlebarControl.xaml</DependentUpon>
@@ -271,8 +281,6 @@
     </Midl>
     <Midl Include="FilteredCommand.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
-    <Midl Include="HasNestedCommandsVisibilityConverter.idl" />
-    <Midl Include="TerminalSettings.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
@@ -313,8 +321,8 @@
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
-    <Reference Include="Microsoft.Terminal.TerminalControl">
-      <HintPath>$(OpenConsoleCommonOutDir)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
+    <Reference Include="Microsoft.Terminal.Control">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Control\Microsoft.Terminal.Control.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -327,6 +335,12 @@
     </Reference>
     <Reference Include="Microsoft.Terminal.Settings.Model">
       <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Settings.Model\Microsoft.Terminal.Settings.Model.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.Core">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>

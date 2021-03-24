@@ -211,6 +211,9 @@
   <data name="RenameTabText" xml:space="preserve">
     <value>Rename Tab</value>
   </data>
+  <data name="DuplicateTabText" xml:space="preserve">
+    <value>Duplicate Tab</value>
+  </data>
   <data name="InvalidBackgroundImage" xml:space="preserve">
     <value>Found a profile with an invalid "backgroundImage". Defaulting that profile to have no background image. Make sure that when setting a "backgroundImage", the value is a valid file path to an image.</value>
     <comment>{Locked="\"backgroundImage\""}</comment>
@@ -225,6 +228,9 @@
   <data name="TooManyKeysForChord" xml:space="preserve">
     <value>&#x2022; Found a keybinding with too many strings for the "keys" array. There should only be one string value in the "keys" array.</value>
     <comment>{Locked="\"keys\"","&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="FailedToParseSubCommands" xml:space="preserve">
+    <value>&#x2022; Failed to parse all subcommands of nested command.</value>
   </data>
   <data name="MissingRequiredParameter" xml:space="preserve">
     <value>&#x2022; Found a keybinding that was missing a required parameter value. This keybinding will be ignored.</value>
@@ -252,6 +258,10 @@
   <data name="InvalidSplitSize" xml:space="preserve">
     <value>Found a "splitPane" command with an invalid "size". This command will be ignored. Make sure the size is between 0 and 1, exclusive.</value>
     <comment>{Locked="\"splitPane\"","\"size\""}</comment>
+  </data>
+  <data name="FailedToParseStartupActions" xml:space="preserve">
+    <value>Failed to parse "startupActions".</value>
+    <comment>{Locked="\"startupActions\""}</comment>
   </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>An optional command, with arguments, to be spawned in the new tab or pane</value>
@@ -309,6 +319,10 @@
   <data name="CmdTabColorArgDesc" xml:space="preserve">
     <value>Open the tab with the specified color, in #rrggbb format</value>
   </data>
+  <data name="CmdSuppressApplicationTitleDesc" xml:space="preserve">
+    <value>Open the tab with tabTitle overriding default title and suppressing title change messages from the application</value>
+    <comment>{Locked="\"tabTitle\""}</comment>
+  </data>
   <data name="CmdVersionDesc" xml:space="preserve">
     <value>Display the application version</value>
   </data>
@@ -318,8 +332,21 @@
   <data name="CmdFullscreenDesc" xml:space="preserve">
     <value>Launch the window in fullscreen mode</value>
   </data>
+  <data name="CmdMoveFocusDesc" xml:space="preserve">
+    <value>Move focus to the adjacent pane in the specified direction</value>
+  </data>
+  <data name="CmdMFDesc" xml:space="preserve">
+    <value>An alias for the "move-focus" subcommand.</value>
+    <comment>{Locked="\"move-focus\""}</comment>
+  </data>
+  <data name="CmdMoveFocusDirectionArgDesc" xml:space="preserve">
+    <value>The direction to move focus in</value>
+  </data>
   <data name="CmdFocusDesc" xml:space="preserve">
     <value>Launch the window in focus mode</value>
+  </data>
+  <data name="CmdWindowTargetArgDesc" xml:space="preserve">
+    <value>Specify a terminal window to run the given commandline in. "0" always refers to the current window. </value>
   </data>
   <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Press the button to open a new terminal tab with your default profile. Open the flyout to select which profile you want to open.</value>
@@ -333,6 +360,9 @@
   <data name="NewPaneRun.Text" xml:space="preserve">
     <value>Alt+Click to split the current window</value>
   </data>
+  <data name="NewWindowRun.Text" xml:space="preserve">
+    <value>Shift+Click to open a new window</value>
+  </data>
   <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Close</value>
   </data>
@@ -340,9 +370,6 @@
     <value>Close</value>
   </data>
   <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Maximize</value>
-  </data>
-  <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Maximize</value>
   </data>
   <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -390,6 +417,18 @@
   <data name="CloseAllDialog.Title" xml:space="preserve">
     <value>Do you want to close all tabs?</value>
   </data>
+  <data name="CloseReadOnlyDialog.CloseButtonText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CloseReadOnlyDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Close anyway</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Title" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Content" xml:space="preserve">
+    <value>You are about to close a read-only terminal. Do you wish to continue?</value>
+  </data>
   <data name="LargePasteDialog.CloseButtonText" xml:space="preserve">
     <value>Cancel</value>
   </data>
@@ -405,7 +444,7 @@
   <data name="MultiLinePasteDialog.CloseButtonText" xml:space="preserve">
     <value>Cancel</value>
   </data>
-  <data name="MultiLinePasteDialog.Content" xml:space="preserve">
+  <data name="MultiLineWarningText.Text" xml:space="preserve">
     <value>You are about to paste text that contains multiple lines. If you paste this text into your shell, it may result in the unexpected execution of commands. Do you wish to continue?</value>
   </data>
   <data name="MultiLinePasteDialog.PrimaryButtonText" xml:space="preserve">
@@ -420,9 +459,25 @@
   <data name="CommandPalette_NoMatchesText.Text" xml:space="preserve">
     <value>No matching commands</value>
   </data>
+  <data name="CommandPaletteModeAnnouncement_ActionMode" xml:space="preserve">
+    <value>Action search mode</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into action (command search) mode.</comment>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_TabSearchSwitchMode" xml:space="preserve">
+    <value>Tab title mode</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into a mode that filters tab names.</comment>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_CommandlineMode" xml:space="preserve">
+    <value>Command-line mode</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into the raw commandline parsing mode.</comment>
+  </data>
+  <data name="CommandPalette_NestedCommandAnnouncement" xml:space="preserve">
+    <value>More options for "{}"</value>
+    <comment>This text will be read aloud using assistive technologies when the user selects a command that has additional options. The {} will be expanded to the name of the command containing more options.</comment>
+  </data>
   <data name="CommandPalette_ParsedCommandLine" xml:space="preserve">
     <value>Executing command line will invoke the following commands:</value>
-	<comment>Will be followed by a list of strings describing parsed commands</comment>
+    <comment>Will be followed by a list of strings describing parsed commands</comment>
   </data>
   <data name="CommandPalette_FailedParsingCommandLine" xml:space="preserve">
     <value>Failed parsing command line:</value>
@@ -526,5 +581,17 @@
   </data>
   <data name="NoticeWarning" xml:space="preserve">
     <value>Warning</value>
+  </data>
+  <data name="ClipboardTextHeader.Text" xml:space="preserve">
+    <value>Clipboard contents (preview):</value>
+  </data>
+  <data name="CommandPalette_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>More options</value>
+  </data>
+  <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
+    <value>Maximize</value>
+  </data>
+  <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
+    <value>Restore Down</value>
   </data>
 </root>

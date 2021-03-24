@@ -14,6 +14,7 @@
 #include "../../types/inc/viewport.hpp"
 
 #include "../inc/conint.h"
+#include "../inc/EventSynthesis.hpp"
 #include "../inc/ServiceLocator.hpp"
 
 #pragma hdrstop

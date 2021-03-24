@@ -16,7 +16,12 @@
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
+#include "../types/inc/utils.hpp"
+
+#include "IConsoleHandoff.h"
+
 using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::Utils;
 
 // From ntstatus.h, which we cannot include without causing a bunch of other conflicts. So we just include the one code we need.
 //
@@ -134,6 +139,79 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCloseObject(_In_ PCONSOLE_API_MSG pMessag
 }
 
 // Routine Description:
+// - Uses some information about current console state and
+//   the incoming process state and preferences to determine
+//   whether we should attempt to handoff to a registered console.
+static bool _shouldAttemptHandoff(const Globals& globals,
+                                  const CONSOLE_INFORMATION& gci,
+                                  CONSOLE_API_CONNECTINFO& cac)
+{
+    // This console is already initialized. Do not
+    // attempt handoff to another one.
+    // Note you can have a non-attach secondary connect for a child process
+    // that is supposed to be inheriting the existing console/window from the parent.
+    if (WI_IsFlagSet(gci.Flags, CONSOLE_INITIALIZED))
+    {
+        return false;
+    }
+
+    // If this is an AttachConsole message and not occurring
+    // because of a conclnt!ConsoleInitialize, do not handoff.
+    // ConsoleApp is FALSE for attach.
+    if (!cac.ConsoleApp)
+    {
+        return false;
+    }
+
+    // If it is a PTY session, do not attempt handoff.
+    if (globals.launchArgs.IsHeadless())
+    {
+        return false;
+    }
+
+    // If we do not have a registered handoff, do not attempt.
+    if (!globals.handoffConsoleClsid)
+    {
+        return false;
+    }
+
+    // If we're already a target for receiving another handoff,
+    // do not chain.
+    if (globals.handoffTarget)
+    {
+        return false;
+    }
+
+    // If the client was started with CREATE_NO_WINDOW to CreateProcess,
+    // this function will say that it does NOT deserve a visible window.
+    // Return false.
+    if (!ConsoleConnectionDeservesVisibleWindow(&cac))
+    {
+        return false;
+    }
+
+    // If the process is giving us explicit window show information, we need
+    // to look at which one it is.
+    if (WI_IsFlagSet(cac.ConsoleInfo.GetStartupFlags(), STARTF_USESHOWWINDOW))
+    {
+        switch (cac.ConsoleInfo.GetShowWindow())
+        {
+            // For all hide or minimize actions, do not hand off.
+        case SW_HIDE:
+        case SW_SHOWMINIMIZED:
+        case SW_MINIMIZE:
+        case SW_SHOWMINNOACTIVE:
+        case SW_FORCEMINIMIZE:
+            return false;
+            // Intentionally fall through for all others
+            // like maximize and show to hit the true below.
+        }
+    }
+
+    return true;
+}
+
+// Routine Description:
 // - Used when a client application establishes an initial connection to this console server.
 // - This is supposed to represent accounting for the process, making the appropriate handles, etc.
 // Arguments:
@@ -142,7 +220,8 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCloseObject(_In_ PCONSOLE_API_MSG pMessag
 // - The response data to this request message.
 PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API_MSG pReceiveMsg)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    Globals& Globals = ServiceLocator::LocateGlobals();
+    CONSOLE_INFORMATION& gci = Globals.getConsoleInformation();
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AttachConsole);
 
     ConsoleProcessHandle* ProcessData = nullptr;
@@ -157,6 +236,49 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     if (!NT_SUCCESS(Status))
     {
         goto Error;
+    }
+
+    // If we pass the tests...
+    // then attempt to delegate the startup to the registered replacement.
+    if (_shouldAttemptHandoff(Globals, gci, Cac))
+    {
+        try
+        {
+            // Go get ourselves some COM.
+            auto coinit = wil::CoInitializeEx(COINIT_MULTITHREADED);
+
+            // Get the class/interface to the handoff handler. Local machine only.
+            ::Microsoft::WRL::ComPtr<IConsoleHandoff> handoff;
+            THROW_IF_FAILED(CoCreateInstance(Globals.handoffConsoleClsid.value(), nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&handoff)));
+
+            // Pack up just enough of the attach message for the other console to process it.
+            // NOTE: It can and will pick up the size/title/etc parameters from the driver again.
+            CONSOLE_PORTABLE_ATTACH_MSG msg{};
+            msg.IdHighPart = pReceiveMsg->Descriptor.Identifier.HighPart;
+            msg.IdLowPart = pReceiveMsg->Descriptor.Identifier.LowPart;
+            msg.Process = pReceiveMsg->Descriptor.Process;
+            msg.Object = pReceiveMsg->Descriptor.Object;
+            msg.Function = pReceiveMsg->Descriptor.Function;
+            msg.InputSize = pReceiveMsg->Descriptor.InputSize;
+            msg.OutputSize = pReceiveMsg->Descriptor.OutputSize;
+
+            // Attempt to get server handle out of our own communication stack to pass it on.
+            HANDLE serverHandle;
+            THROW_IF_FAILED(Globals.pDeviceComm->GetServerHandle(&serverHandle));
+
+            // Okay, moment of truth! If they say they successfully took it over, we're going to clean up.
+            // If they fail, we'll throw here and it'll log and we'll just start normally.
+            THROW_IF_FAILED(handoff->EstablishHandoff(serverHandle,
+                                                      Globals.hInputEvent.get(),
+                                                      &msg));
+
+            // Unlock in case anything tries to spool down as we exit.
+            UnlockConsole();
+
+            // We've handed off responsibility. Exit process to clean up any outstanding things we have open.
+            ExitProcess(S_OK);
+        }
+        CATCH_LOG(); // Just log, don't do anything more. We'll move on to launching normally on failure.
     }
 
     Status = NTSTATUS_FROM_HRESULT(gci.ProcessHandleList.AllocProcessData(dwProcessId,

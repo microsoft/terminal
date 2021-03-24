@@ -185,10 +185,15 @@ void AppCommandlineArgs::_buildParser()
     maximized->excludes(fullscreen);
     focus->excludes(fullscreen);
 
+    _app.add_option("-w,--window",
+                    _windowTarget,
+                    RS_A(L"CmdWindowTargetArgDesc"));
+
     // Subcommands
     _buildNewTabParser();
     _buildSplitPaneParser();
     _buildFocusTabParser();
+    _buildMoveFocusParser();
 }
 
 // Method Description:
@@ -342,6 +347,54 @@ void AppCommandlineArgs::_buildFocusTabParser()
 }
 
 // Method Description:
+// - Adds the `move-focus` subcommand and related options to the commandline parser.
+// - Additionally adds the `mf` subcommand, which is just a shortened version of `move-focus`
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppCommandlineArgs::_buildMoveFocusParser()
+{
+    _moveFocusCommand = _app.add_subcommand("move-focus", RS_A(L"CmdMoveFocusDesc"));
+    _moveFocusShort = _app.add_subcommand("mf", RS_A(L"CmdMFDesc"));
+
+    auto setupSubcommand = [this](auto* subcommand) {
+        std::map<std::string, FocusDirection> map = {
+            { "left", FocusDirection::Left },
+            { "right", FocusDirection::Right },
+            { "up", FocusDirection::Up },
+            { "down", FocusDirection::Down }
+        };
+
+        auto* directionOpt = subcommand->add_option("direction",
+                                                    _moveFocusDirection,
+                                                    RS_A(L"CmdMoveFocusDirectionArgDesc"));
+
+        directionOpt->transform(CLI::CheckedTransformer(map, CLI::ignore_case));
+        directionOpt->required();
+        // When ParseCommand is called, if this subcommand was provided, this
+        // callback function will be triggered on the same thread. We can be sure
+        // that `this` will still be safe - this function just lets us know this
+        // command was parsed.
+        subcommand->callback([&, this]() {
+            if (_moveFocusDirection != FocusDirection::None)
+            {
+                MoveFocusArgs args{ _moveFocusDirection };
+
+                ActionAndArgs actionAndArgs{};
+                actionAndArgs.Action(ShortcutAction::MoveFocus);
+                actionAndArgs.Args(args);
+
+                _startupActions.push_back(std::move(actionAndArgs));
+            }
+        });
+    };
+
+    setupSubcommand(_moveFocusCommand);
+    setupSubcommand(_moveFocusShort);
+}
+
+// Method Description:
 // - Add the `NewTerminalArgs` parameters to the given subcommand. This enables
 //   that subcommand to support all the properties in a NewTerminalArgs.
 // Arguments:
@@ -363,6 +416,11 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
     subcommand.tabColorOption = subcommand.subcommand->add_option("--tabColor",
                                                                   _startingTabColor,
                                                                   RS_A(L"CmdTabColorArgDesc"));
+
+    subcommand.suppressApplicationTitleOption = subcommand.subcommand->add_flag(
+        "--suppressApplicationTitle,!--useApplicationTitle",
+        _suppressApplicationTitle,
+        RS_A(L"CmdSuppressApplicationTitleDesc"));
 
     // Using positionals_at_end allows us to support "wt new-tab -d wsl -d Ubuntu"
     // without CLI11 thinking that we've specified -d twice.
@@ -431,6 +489,11 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
         args.TabColor(static_cast<winrt::Windows::UI::Color>(tabColor));
     }
 
+    if (*subcommand.suppressApplicationTitleOption)
+    {
+        args.SuppressApplicationTitle(_suppressApplicationTitle);
+    }
+
     return args;
 }
 
@@ -448,6 +511,8 @@ bool AppCommandlineArgs::_noCommandsProvided()
              *_newTabShort.subcommand ||
              *_focusTabCommand ||
              *_focusTabShort ||
+             *_moveFocusCommand ||
+             *_moveFocusShort ||
              *_newPaneShort.subcommand ||
              *_newPaneCommand.subcommand);
 }
@@ -467,17 +532,21 @@ void AppCommandlineArgs::_resetStateToDefault()
     _startingTitle.clear();
     _startingTabColor.clear();
     _commandline.clear();
+    _suppressApplicationTitle = false;
 
     _splitVertical = false;
     _splitHorizontal = false;
+    _splitPaneSize = 0.5f;
 
     _focusTabIndex = -1;
     _focusNextTab = false;
     _focusPrevTab = false;
 
+    _moveFocusDirection = FocusDirection::None;
     // DON'T clear _launchMode here! This will get called once for every
     // subcommand, so we don't want `wt -F new-tab ; split-pane` clearing out
     // the "global" fullscreen flag (-F).
+    // Same with _windowTarget.
 }
 
 // Function Description:
@@ -795,4 +864,11 @@ void AppCommandlineArgs::FullResetState()
     _startupActions.clear();
     _exitMessage = "";
     _shouldExitEarly = false;
+
+    _windowTarget = {};
+}
+
+std::string_view AppCommandlineArgs::GetTargetWindow() const noexcept
+{
+    return _windowTarget;
 }

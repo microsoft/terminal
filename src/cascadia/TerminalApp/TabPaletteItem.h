@@ -19,9 +19,12 @@ namespace winrt::TerminalApp::implementation
             return _tab.get();
         }
 
+        WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::TerminalTabStatus, TabStatus, _PropertyChangedHandlers);
+
     private:
         winrt::weak_ref<winrt::TerminalApp::TabBase> _tab;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _tabChangedRevoker;
+        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _tabStatusChangedRevoker;
     };
 }
 

@@ -17,66 +17,55 @@ the MIT License. See LICENSE in the project root for license information. -->
             </ResourceDictionary.MergedDictionaries>
 
             <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
-                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"
-                             Style="{StaticResource RadioButtonSettingStyle}"/>
+                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
             </DataTemplate>
+            
+            <local:InvertedBooleanConverter x:Key="InvertedBooleanConverter"/>
         </ResourceDictionary>
     </Page.Resources>
 
     <ScrollViewer>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--Theme-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <muxc:RadioButtons x:Uid="Globals_Theme"
-                                   SelectedItem="{x:Bind CurrentTheme, Mode=TwoWay}"
+            <local:SettingContainer x:Uid="Globals_Theme"
+                                    Margin="0">
+                <muxc:RadioButtons SelectedItem="{x:Bind CurrentTheme, Mode=TwoWay}"
                                    ItemsSource="{x:Bind ThemeList, Mode=OneWay}"
-                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   Style="{StaticResource RadioButtonsSettingStyle}"/>
-            </ContentPresenter>
-
-            <!--Show Titlebar-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_ShowTitlebar"
-                          IsChecked="{x:Bind State.Globals.ShowTabsInTitlebar, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
-            </ContentPresenter>
-
-            <!--Show Title in Titlebar-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_ShowTitleInTitlebar"
-                          IsChecked="{x:Bind State.Globals.ShowTitleInTitlebar, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
-            </ContentPresenter>
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+            </local:SettingContainer>
 
             <!--Always show tabs-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_AlwaysShowTabs"
-                          IsChecked="{x:Bind State.Globals.AlwaysShowTabs, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
-            </ContentPresenter>
+            <local:SettingContainer x:Uid="Globals_AlwaysShowTabs">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.AlwaysShowTabs, Mode=TwoWay}"/>
+            </local:SettingContainer>
+
+            <!--Show Titlebar-->
+            <local:SettingContainer x:Uid="Globals_ShowTitlebar">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.ShowTabsInTitlebar, Mode=TwoWay}"/>
+            </local:SettingContainer>
+
+            <!--Show Title in Titlebar-->
+            <local:SettingContainer x:Uid="Globals_ShowTitleInTitlebar">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.ShowTitleInTitlebar, Mode=TwoWay}"/>
+            </local:SettingContainer>
+
+            <!--Always on Top-->
+            <local:SettingContainer x:Uid="Globals_AlwaysOnTop">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.AlwaysOnTop, Mode=TwoWay}"/>
+            </local:SettingContainer>
 
             <!--Tab Width Mode-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <muxc:RadioButtons x:Uid="Globals_TabWidthMode"
-                                   SelectedItem="{x:Bind CurrentTabWidthMode, Mode=TwoWay}"
+            <local:SettingContainer x:Uid="Globals_TabWidthMode">
+                <muxc:RadioButtons SelectedItem="{x:Bind CurrentTabWidthMode, Mode=TwoWay}"
                                    ItemsSource="{x:Bind TabWidthModeList, Mode=OneWay}"
-                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   Style="{StaticResource RadioButtonsSettingStyle}"/>
-            </ContentPresenter>
-
-            <!--Confirm Close All Tabs-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_ConfirmCloseAllTabs"
-                          IsChecked="{x:Bind State.Globals.ConfirmCloseAllTabs, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
-            </ContentPresenter>
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+            </local:SettingContainer>
 
             <!--Disable Animations-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_DisableAnimations"
-                          IsChecked="{x:Bind State.Globals.DisableAnimations, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
-            </ContentPresenter>
+            <!-- NOTE: the UID is "DisablePaneAnimationsReversed" not "DisablePaneAnimations". See GH#9124 for more details. -->
+            <local:SettingContainer x:Uid="Globals_DisableAnimationsReversed">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.DisableAnimations, Mode=TwoWay, Converter={StaticResource InvertedBooleanConverter}}"/>
+            </local:SettingContainer>
         </StackPanel>
     </ScrollViewer>
 </Page>

@@ -353,7 +353,12 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
     const wchar_t* lpString = pwchRealUnicode;
 
-    const COORD coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
+    COORD coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
+    // In VT mode, the width at which we wrap is determined by the line rendition attribute.
+    if (WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    {
+        coordScreenBufferSize.X = textBuffer.GetLineWidth(CursorPosition.Y);
+    }
 
     while (*pcb < BufferSize)
     {
@@ -371,6 +376,11 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 Status = AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
 
                 CursorPosition = cursor.GetPosition();
+                // In VT mode, we need to recalculate the width when moving to a new line.
+                if (WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+                {
+                    coordScreenBufferSize.X = textBuffer.GetLineWidth(CursorPosition.Y);
+                }
             }
         }
 
@@ -656,7 +666,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
                         // since you just backspaced yourself back up into the previous row, unset the wrap
                         // flag on the prev row if it was set
-                        textBuffer.GetRowByOffset(CursorPosition.Y).GetCharRow().SetWrapForced(false);
+                        textBuffer.GetRowByOffset(CursorPosition.Y).SetWrapForced(false);
                     }
                 }
                 else if (IS_CONTROL_CHAR(LastChar))
@@ -727,7 +737,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
                     // since you just backspaced yourself back up into the previous row, unset the wrap flag
                     // on the prev row if it was set
-                    textBuffer.GetRowByOffset(CursorPosition.Y).GetCharRow().SetWrapForced(false);
+                    textBuffer.GetRowByOffset(CursorPosition.Y).SetWrapForced(false);
 
                     Status = AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 }
@@ -754,7 +764,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 CursorPosition.Y = cursor.GetPosition().Y + 1;
 
                 // since you just tabbed yourself past the end of the row, set the wrap
-                textBuffer.GetRowByOffset(cursor.GetPosition().Y).GetCharRow().SetWrapForced(true);
+                textBuffer.GetRowByOffset(cursor.GetPosition().Y).SetWrapForced(true);
             }
             else
             {
@@ -801,7 +811,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
             {
                 // since we explicitly just moved down a row, clear the wrap status on the row we just came from
-                textBuffer.GetRowByOffset(cursor.GetPosition().Y).GetCharRow().SetWrapForced(false);
+                textBuffer.GetRowByOffset(cursor.GetPosition().Y).SetWrapForced(false);
             }
 
             Status = AdjustCursorPosition(screenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
@@ -817,7 +827,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             {
                 const COORD TargetPoint = cursor.GetPosition();
                 ROW& Row = textBuffer.GetRowByOffset(TargetPoint.Y);
-                CharRow& charRow = Row.GetCharRow();
+                const CharRow& charRow = Row.GetCharRow();
 
                 try
                 {
@@ -845,11 +855,11 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
                 // since you just moved yourself down onto the next row with 1 character, that sounds like a
                 // forced wrap so set the flag
-                charRow.SetWrapForced(true);
+                Row.SetWrapForced(true);
 
                 // Additionally, this padding is only called for IsConsoleFullWidth (a.k.a. when a character
                 // is too wide to fit on the current line).
-                charRow.SetDoubleBytePadded(true);
+                Row.SetDoubleBytePadded(true);
 
                 Status = AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 continue;

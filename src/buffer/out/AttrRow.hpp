@@ -34,8 +34,6 @@ public:
 
     using mybase::mybase; // use base constructor
 
-    void Reset(const TextAttribute attr);
-
     TextAttribute GetAttrByColumn(const size_t column) const;
     TextAttribute GetAttrByColumn(const size_t column,
                                   size_t* const pApplies) const;
@@ -58,4 +56,13 @@ public:
     using mybase::end;
 
     using mybase::operator==;
+
+    friend class ROW;
+
+private:
+    void Reset(const TextAttribute attr);
+
+#ifdef UNIT_TESTING
+    friend class CommonState;
+#endif
 };

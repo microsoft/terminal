@@ -21,10 +21,10 @@ Revision History:
 #pragma once
 
 #include "AttrRow.hpp"
+#include "LineRendition.hpp"
 #include "OutputCell.hpp"
 #include "OutputCellIterator.hpp"
 #include "CharRow.hpp"
-#include "RowCellIterator.hpp"
 #include "UnicodeStorage.hpp"
 
 class TextBuffer;
@@ -37,11 +37,20 @@ public:
 
     size_t size() const noexcept { return _rowWidth; }
 
+    void SetWrapForced(const bool wrap) noexcept { _wrapForced = wrap; }
+    bool WasWrapForced() const noexcept { return _wrapForced; }
+
+    void SetDoubleBytePadded(const bool doubleBytePadded) noexcept { _doubleBytePadded = doubleBytePadded; }
+    bool WasDoubleBytePadded() const noexcept { return _doubleBytePadded; }
+
     const CharRow& GetCharRow() const noexcept { return _charRow; }
     CharRow& GetCharRow() noexcept { return _charRow; }
 
     const ATTR_ROW& GetAttrRow() const noexcept { return _attrRow; }
     ATTR_ROW& GetAttrRow() noexcept { return _attrRow; }
+
+    LineRendition GetLineRendition() const noexcept { return _lineRendition; }
+    void SetLineRendition(const LineRendition lineRendition) noexcept { _lineRendition = lineRendition; }
 
     SHORT GetId() const noexcept { return _id; }
     void SetId(const SHORT id) noexcept { _id = id; }
@@ -52,33 +61,34 @@ public:
     void ClearColumn(const size_t column);
     std::wstring GetText() const { return _charRow.GetText(); }
 
-    RowCellIterator AsCellIter(const size_t startIndex) const { return AsCellIter(startIndex, size() - startIndex); }
-    RowCellIterator AsCellIter(const size_t startIndex, const size_t count) const { return RowCellIterator(*this, startIndex, count); }
-
     UnicodeStorage& GetUnicodeStorage() noexcept;
     const UnicodeStorage& GetUnicodeStorage() const noexcept;
 
     OutputCellIterator WriteCells(OutputCellIterator it, const size_t index, const std::optional<bool> wrap = std::nullopt, std::optional<size_t> limitRight = std::nullopt);
 
-    friend bool operator==(const ROW& a, const ROW& b) noexcept;
-
 #ifdef UNIT_TESTING
+    friend constexpr bool operator==(const ROW& a, const ROW& b) noexcept;
     friend class RowTests;
 #endif
 
 private:
     CharRow _charRow;
     ATTR_ROW _attrRow;
+    LineRendition _lineRendition;
     SHORT _id;
     unsigned short _rowWidth;
+    // Occurs when the user runs out of text in a given row and we're forced to wrap the cursor to the next line
+    bool _wrapForced;
+    // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
+    bool _doubleBytePadded;
     TextBuffer* _pParent; // non ownership pointer
 };
 
-inline bool operator==(const ROW& a, const ROW& b) noexcept
+#ifdef UNIT_TESTING
+constexpr bool operator==(const ROW& a, const ROW& b) noexcept
 {
-    return (a._charRow == b._charRow &&
-            a._attrRow == b._attrRow &&
-            a._rowWidth == b._rowWidth &&
-            a._pParent == b._pParent &&
+    // comparison is only used in the tests; this should suffice.
+    return (a._pParent == b._pParent &&
             a._id == b._id);
 }
+#endif

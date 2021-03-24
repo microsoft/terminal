@@ -276,3 +276,13 @@ bool TerminalDispatch::SetGraphicsRendition(const VTParameters options) noexcept
     _terminalApi.SetTextAttributes(attr);
     return true;
 }
+
+bool TerminalDispatch::PushGraphicsRendition(const VTParameters options) noexcept
+{
+    return _terminalApi.PushGraphicsRendition(options);
+}
+
+bool TerminalDispatch::PopGraphicsRendition() noexcept
+{
+    return _terminalApi.PopGraphicsRendition();
+}

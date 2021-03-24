@@ -64,10 +64,24 @@ namespace Microsoft.Terminal.Settings.Model
         Backward
     };
 
+    enum FindMatchDirection
+    {
+        None = 0,
+        Next,
+        Previous
+    };
+
     enum CommandPaletteLaunchMode
     {
         Action = 0,
         CommandLine
+    };
+
+    enum TabSwitcherMode
+    {
+        MostRecentlyUsed,
+        InOrder,
+        Disabled,
     };
 
     [default_interface] runtimeclass NewTerminalArgs {
@@ -84,8 +98,11 @@ namespace Microsoft.Terminal.Settings.Model
         // a IReference, so it's nullable
         Windows.Foundation.IReference<Int32> ProfileIndex { get; };
 
+        Windows.Foundation.IReference<Boolean> SuppressApplicationTitle;
+
         Boolean Equals(NewTerminalArgs other);
         String GenerateName();
+        String ToCommandline();
     };
 
     [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
@@ -97,7 +114,7 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass CopyTextArgs : IActionArgs
     {
         Boolean SingleLine { get; };
-        Windows.Foundation.IReference<Microsoft.Terminal.TerminalControl.CopyFormat> CopyFormatting { get; };
+        Windows.Foundation.IReference<Microsoft.Terminal.Control.CopyFormat> CopyFormatting { get; };
     };
 
     [default_interface] runtimeclass NewTabArgs : IActionArgs
@@ -203,5 +220,27 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs
     {
         CommandPaletteLaunchMode LaunchMode { get; };
+    };
+
+    [default_interface] runtimeclass FindMatchArgs : IActionArgs
+    {
+        FindMatchArgs(FindMatchDirection direction);
+        FindMatchDirection Direction { get; };
+    };
+
+    [default_interface] runtimeclass NewWindowArgs : IActionArgs
+    {
+        NewWindowArgs(NewTerminalArgs terminalArgs);
+        NewTerminalArgs TerminalArgs { get; };
+    };
+
+    [default_interface] runtimeclass PrevTabArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
+    };
+
+    [default_interface] runtimeclass NextTabArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
     };
 }

@@ -5,6 +5,8 @@
 #include "App.h"
 
 #include "TerminalPage.h"
+#include "../WinRTUtils/inc/WtExeUtils.h"
+#include "../../types/inc/utils.hpp"
 #include "Utils.h"
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -15,7 +17,7 @@ using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::TerminalApp;
 
@@ -37,7 +39,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleDuplicateTab(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {
-        _DuplicateTabViewItem();
+        _DuplicateFocusedTab();
         args.Handled(true);
     }
 
@@ -87,15 +89,23 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleNextTab(const IInspectable& /*sender*/,
                                       const ActionEventArgs& args)
     {
-        _SelectNextTab(true);
-        args.Handled(true);
+        const auto& realArgs = args.ActionArgs().try_as<NextTabArgs>();
+        if (realArgs)
+        {
+            _SelectNextTab(true, realArgs.SwitcherMode());
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandlePrevTab(const IInspectable& /*sender*/,
                                       const ActionEventArgs& args)
     {
-        _SelectNextTab(false);
-        args.Handled(true);
+        const auto& realArgs = args.ActionArgs().try_as<PrevTabArgs>();
+        if (realArgs)
+        {
+            _SelectNextTab(false, realArgs.SwitcherMode());
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleSendInput(const IInspectable& /*sender*/,
@@ -154,6 +164,17 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleTogglePaneReadOnly(const IInspectable& /*sender*/,
+                                                 const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            activeTab->TogglePaneReadOnly();
+        }
+
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleScrollUpPage(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {
@@ -182,6 +203,18 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleFindMatch(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<FindMatchArgs>())
+        {
+            if (const auto& control{ _GetActiveControl() })
+            {
+                control.SearchMatch(realArgs.Direction() == FindMatchDirection::Next);
+                args.Handled(true);
+            }
+        }
+    }
     void TerminalPage::_HandleOpenSettings(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {
@@ -351,8 +384,8 @@ namespace winrt::TerminalApp::implementation
                     if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
                     {
                         auto controlSettings = activeControl.Settings().as<TerminalSettings>();
-                        controlSettings->ApplyColorScheme(scheme);
-                        activeControl.UpdateSettings(*controlSettings);
+                        controlSettings.ApplyColorScheme(scheme);
+                        activeControl.UpdateSettings();
                         args.Handled(true);
                     }
                 }
@@ -465,17 +498,19 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            // Remove tabs after the current one
-            while (_tabs.Size() > index + 1)
+            // Since _RemoveTab is asynchronous, create a snapshot of the  tabs we want to remove
+            std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
+            if (index > 0)
             {
-                _RemoveTabViewItemByIndex(_tabs.Size() - 1);
+                std::copy(begin(_tabs), begin(_tabs) + index, std::back_inserter(tabsToRemove));
             }
 
-            // Remove all of them leading up to the selected tab
-            while (_tabs.Size() > 1)
+            if (index + 1 < _tabs.Size())
             {
-                _RemoveTabViewItemByIndex(0);
+                std::copy(begin(_tabs) + index + 1, end(_tabs), std::back_inserter(tabsToRemove));
             }
+
+            _RemoveTabs(tabsToRemove);
 
             actionArgs.Handled(true);
         }
@@ -502,11 +537,10 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            // Remove tabs after the current one
-            while (_tabs.Size() > index + 1)
-            {
-                _RemoveTabViewItemByIndex(_tabs.Size() - 1);
-            }
+            // Since _RemoveTab is asynchronous, create a snapshot of the  tabs we want to remove
+            std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
+            std::copy(begin(_tabs) + index + 1, end(_tabs), std::back_inserter(tabsToRemove));
+            _RemoveTabs(tabsToRemove);
 
             // TODO:GH#7182 For whatever reason, if you run this action
             // when the tab that's currently focused is _before_ the `index`
@@ -521,13 +555,8 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleOpenTabSearch(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {
-        // Tab search is always in-order.
-        CommandPalette().SetTabs(_tabs, true);
-
-        auto opt = _GetFocusedTabIndex();
-        uint32_t startIdx = opt.value_or(0);
-
-        CommandPalette().EnableTabSwitcherMode(true, startIdx);
+        CommandPalette().SetTabs(_tabs, _mruTabs);
+        CommandPalette().EnableTabSearchMode();
         CommandPalette().Visibility(Visibility::Visible);
 
         args.Handled(true);
@@ -560,6 +589,90 @@ namespace winrt::TerminalApp::implementation
             actionArgs.Handled(true);
             DebugBreak();
         }
+    }
+
+    // Function Description:
+    // - Helper to launch a new WT instance. It can either launch the instance
+    //   elevated or unelevated.
+    // - To launch elevated, it will as the shell to elevate the process for us.
+    //   This might cause a UAC prompt. The elevation is performed on a
+    //   background thread, as to not block the UI thread.
+    // Arguments:
+    // - elevate: If true, launch the new Terminal elevated using `runas`
+    // - newTerminalArgs: A NewTerminalArgs describing the terminal instance
+    //   that should be spawned. The Profile should be filled in with the GUID
+    //   of the profile we want to launch.
+    // Return Value:
+    // - <none>
+    // Important: Don't take the param by reference, since we'll be doing work
+    // on another thread.
+    fire_and_forget TerminalPage::_OpenNewWindow(const bool elevate,
+                                                 const NewTerminalArgs newTerminalArgs)
+    {
+        // Hop to the BG thread
+        co_await winrt::resume_background();
+
+        // This will get us the correct exe for dev/preview/release. If you
+        // don't stick this in a local, it'll get mangled by ShellExecute. I
+        // have no idea why.
+        const auto exePath{ GetWtExePath() };
+
+        // Build the commandline to pass to wt for this set of NewTerminalArgs
+        // `-w -1` will ensure a new window is created.
+        winrt::hstring cmdline{
+            fmt::format(L"-w -1 new-tab {}",
+                        newTerminalArgs ? newTerminalArgs.ToCommandline().c_str() :
+                                          L"")
+        };
+
+        // Build the args to ShellExecuteEx. We need to use ShellExecuteEx so we
+        // can pass the SEE_MASK_NOASYNC flag. That flag allows us to safely
+        // call this on the background thread, and have ShellExecute _not_ call
+        // back to us on the main thread. Without this, if you close the
+        // Terminal quickly after the UAC prompt, the elevated WT will never
+        // actually spawn.
+        SHELLEXECUTEINFOW seInfo{ 0 };
+        seInfo.cbSize = sizeof(seInfo);
+        seInfo.fMask = SEE_MASK_NOASYNC;
+        // `runas` will cause the shell to launch this child process elevated.
+        // `open` will just run the executable normally.
+        seInfo.lpVerb = elevate ? L"runas" : L"open";
+        seInfo.lpFile = exePath.c_str();
+        seInfo.lpParameters = cmdline.c_str();
+        seInfo.nShow = SW_SHOWNORMAL;
+        LOG_IF_WIN32_BOOL_FALSE(ShellExecuteExW(&seInfo));
+
+        co_return;
+    }
+
+    void TerminalPage::_HandleNewWindow(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& actionArgs)
+    {
+        NewTerminalArgs newTerminalArgs{ nullptr };
+        // If the caller provided NewTerminalArgs, then try to use those
+        if (actionArgs)
+        {
+            if (const auto& realArgs = actionArgs.ActionArgs().try_as<NewWindowArgs>())
+            {
+                newTerminalArgs = realArgs.TerminalArgs();
+            }
+        }
+        // Otherwise, if no NewTerminalArgs were provided, then just use a
+        // default-constructed one. The default-constructed one implies that
+        // nothing about the launch should be modified (just use the default
+        // profile).
+        if (!newTerminalArgs)
+        {
+            newTerminalArgs = NewTerminalArgs();
+        }
+
+        const auto profileGuid{ _settings.GetProfileForArgs(newTerminalArgs) };
+        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
+
+        // Manually fill in the evaluated profile.
+        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profileGuid));
+        _OpenNewWindow(false, newTerminalArgs);
+        actionArgs.Handled(true);
     }
 
 }

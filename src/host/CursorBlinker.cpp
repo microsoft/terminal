@@ -67,7 +67,8 @@ void CursorBlinker::FocusStart()
 // - <none>
 void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
 {
-    Cursor& cursor = ScreenInfo.GetTextBuffer().GetCursor();
+    auto& buffer = ScreenInfo.GetTextBuffer();
+    auto& cursor = buffer.GetCursor();
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto* const _pAccessibilityNotifier = ServiceLocator::LocateAccessibilityNotifier();
 
@@ -79,7 +80,9 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
     // Update the cursor pos in USER so accessibility will work.
     if (cursor.HasMoved())
     {
-        const auto position = cursor.GetPosition();
+        // Convert the buffer position to the equivalent screen coordinates
+        // required by the notifier, taking line rendition into account.
+        const auto position = buffer.BufferToScreenPosition(cursor.GetPosition());
         const auto viewport = ScreenInfo.GetViewport();
         const auto fontSize = ScreenInfo.GetScreenFontSize();
         cursor.SetHasMoved(false);

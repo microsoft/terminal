@@ -1,13 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-namespace Microsoft.Terminal.TerminalControl
+namespace Microsoft.Terminal.Core
 {
     enum CursorStyle
     {
         Vintage,
         Bar,
         Underscore,
+        DoubleUnderscore,
         FilledBox,
         EmptyBox
     };

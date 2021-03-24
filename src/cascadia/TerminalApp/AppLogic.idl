@@ -13,6 +13,12 @@ namespace TerminalApp
         Int64 Y;
     };
 
+    [default_interface] runtimeclass FindTargetWindowResult
+    {
+        Int32 WindowId { get; };
+        String WindowName { get; };
+    };
+
     [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
     {
         AppLogic();
@@ -29,7 +35,7 @@ namespace TerminalApp
         Boolean IsElevated();
 
         Int32 SetStartupCommandline(String[] commands);
-        Int32 ExecuteCommandline(String[] commands);
+        Int32 ExecuteCommandline(String[] commands, String cwd);
         String ParseCommandlineMessage { get; };
         Boolean ShouldExitEarly { get; };
 
@@ -43,6 +49,7 @@ namespace TerminalApp
         Boolean AlwaysOnTop { get; };
 
         Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
+        Boolean CenterOnLaunch { get; };
 
         InitialPosition GetInitialPosition(Int64 defaultInitialX, Int64 defaultInitialY);
         Windows.UI.Xaml.ElementTheme GetRequestedTheme();
@@ -55,6 +62,8 @@ namespace TerminalApp
 
         UInt64 GetLastActiveControlTaskbarState();
         UInt64 GetLastActiveControlTaskbarProgress();
+
+        FindTargetWindowResult FindTargetWindow(String[] args);
 
         // See IDialogPresenter and TerminalPage's DialogPresenter for more
         // information.

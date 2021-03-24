@@ -10,7 +10,7 @@
 #include "consoletaeftemplates.hpp"
 #include "TestUtils.h"
 
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Core;
 using namespace Microsoft::Terminal::Core;
 
 using namespace WEX::Common;
@@ -110,10 +110,10 @@ void TerminalBufferTests::TestWrappingCharByChar()
 
     // Verify that we marked the 0th row as _wrapped_
     const auto& row0 = termTb.GetRowByOffset(0);
-    VERIFY_IS_TRUE(row0.GetCharRow().WasWrapForced());
+    VERIFY_IS_TRUE(row0.WasWrapForced());
 
     const auto& row1 = termTb.GetRowByOffset(1);
-    VERIFY_IS_FALSE(row1.GetCharRow().WasWrapForced());
+    VERIFY_IS_FALSE(row1.WasWrapForced());
 
     TestUtils::VerifyExpectedString(termTb, TestUtils::Test100CharsString, { 0, 0 });
 }
@@ -144,10 +144,10 @@ void TerminalBufferTests::TestWrappingALongString()
 
     // Verify that we marked the 0th row as _wrapped_
     const auto& row0 = termTb.GetRowByOffset(0);
-    VERIFY_IS_TRUE(row0.GetCharRow().WasWrapForced());
+    VERIFY_IS_TRUE(row0.WasWrapForced());
 
     const auto& row1 = termTb.GetRowByOffset(1);
-    VERIFY_IS_FALSE(row1.GetCharRow().WasWrapForced());
+    VERIFY_IS_FALSE(row1.WasWrapForced());
 
     TestUtils::VerifyExpectedString(termTb, TestUtils::Test100CharsString, { 0, 0 });
 }

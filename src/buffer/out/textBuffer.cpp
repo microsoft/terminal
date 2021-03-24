@@ -254,7 +254,7 @@ bool TextBuffer::_AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribut
         // Erase previous character into an N type.
         try
         {
-            prevRow.GetCharRow().ClearCell(coordPrevPosition.X);
+            prevRow.ClearColumn(coordPrevPosition.X);
         }
         catch (...)
         {
@@ -290,14 +290,15 @@ bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
     // We only need to compensate for leading bytes
     if (dbcsAttribute.IsLeading())
     {
-        short const sBufferWidth = GetSize().Width();
+        const auto cursorPosition = GetCursor().GetPosition();
+        const auto lineWidth = GetLineWidth(cursorPosition.Y);
 
         // If we're about to lead on the last column in the row, we need to add a padding space
-        if (GetCursor().GetPosition().X == sBufferWidth - 1)
+        if (cursorPosition.X == lineWidth - 1)
         {
             // set that we're wrapping for double byte reasons
-            CharRow& charRow = GetRowByOffset(GetCursor().GetPosition().Y).GetCharRow();
-            charRow.SetDoubleBytePadded(true);
+            auto& row = GetRowByOffset(cursorPosition.Y);
+            row.SetDoubleBytePadded(true);
 
             // then move the cursor forward and onto the next row
             fSuccess = IncrementCursor();
@@ -480,7 +481,7 @@ void TextBuffer::_AdjustWrapOnCurrentRow(const bool fSet)
     const UINT uiCurrentRowOffset = GetCursor().GetPosition().Y;
 
     // Set the wrap status as appropriate
-    GetRowByOffset(uiCurrentRowOffset).GetCharRow().SetWrapForced(fSet);
+    GetRowByOffset(uiCurrentRowOffset).SetWrapForced(fSet);
 }
 
 //Routine Description:
@@ -496,7 +497,7 @@ bool TextBuffer::IncrementCursor()
     // Cursor position is stored as logical array indices (starts at 0) for the window
     // Buffer Size is specified as the "length" of the array. It would say 80 for valid values of 0-79.
     // So subtract 1 from buffer size in each direction to find the index of the final column in the buffer
-    const short iFinalColumnIndex = GetSize().RightInclusive();
+    const short iFinalColumnIndex = GetLineWidth(GetCursor().GetPosition().Y) - 1;
 
     // Move the cursor one position to the right
     GetCursor().IncrementXPosition(1);
@@ -635,7 +636,7 @@ COORD TextBuffer::GetLastNonSpaceCharacter(std::optional<const Microsoft::Consol
 // Return Value:
 // - Coordinate position in screen coordinates of the character just before the cursor.
 // - NOTE: Will return 0,0 if already in the top left corner
-COORD TextBuffer::_GetPreviousFromCursor() const noexcept
+COORD TextBuffer::_GetPreviousFromCursor() const
 {
     COORD coordPosition = GetCursor().GetPosition();
 
@@ -649,11 +650,11 @@ COORD TextBuffer::_GetPreviousFromCursor() const noexcept
         // Otherwise, only if we're not on the top row (e.g. we don't move anywhere in the top left corner. there is no previous)
         if (coordPosition.Y > 0)
         {
-            // move the cursor to the right edge
-            coordPosition.X = GetSize().RightInclusive();
-
-            // and up one line
+            // move the cursor up one line
             coordPosition.Y--;
+
+            // and to the right edge
+            coordPosition.X = GetLineWidth(coordPosition.Y) - 1;
         }
     }
 
@@ -801,6 +802,78 @@ void TextBuffer::SetCurrentAttributes(const TextAttribute& currentAttributes) no
     _currentAttributes = currentAttributes;
 }
 
+void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition)
+{
+    const auto cursorPosition = GetCursor().GetPosition();
+    const auto rowIndex = cursorPosition.Y;
+    auto& row = GetRowByOffset(rowIndex);
+    if (row.GetLineRendition() != lineRendition)
+    {
+        row.SetLineRendition(lineRendition);
+        // If the line rendition has changed, the row can no longer be wrapped.
+        row.SetWrapForced(false);
+        // And if it's no longer single width, the right half of the row should be erased.
+        if (lineRendition != LineRendition::SingleWidth)
+        {
+            const auto fillChar = L' ';
+            auto fillAttrs = GetCurrentAttributes();
+            fillAttrs.SetStandardErase();
+            const size_t fillOffset = GetLineWidth(rowIndex);
+            const size_t fillLength = GetSize().Width() - fillOffset;
+            const auto fillData = OutputCellIterator{ fillChar, fillAttrs, fillLength };
+            row.WriteCells(fillData, fillOffset, false);
+            // We also need to make sure the cursor is clamped within the new width.
+            GetCursor().SetPosition(ClampPositionWithinLine(cursorPosition));
+        }
+        _NotifyPaint(Viewport::FromDimensions({ 0, rowIndex }, { GetSize().Width(), 1 }));
+    }
+}
+
+void TextBuffer::ResetLineRenditionRange(const size_t startRow, const size_t endRow)
+{
+    for (auto row = startRow; row < endRow; row++)
+    {
+        GetRowByOffset(row).SetLineRendition(LineRendition::SingleWidth);
+    }
+}
+
+LineRendition TextBuffer::GetLineRendition(const size_t row) const
+{
+    return GetRowByOffset(row).GetLineRendition();
+}
+
+bool TextBuffer::IsDoubleWidthLine(const size_t row) const
+{
+    return GetLineRendition(row) != LineRendition::SingleWidth;
+}
+
+SHORT TextBuffer::GetLineWidth(const size_t row) const
+{
+    // Use shift right to quickly divide the width by 2 for double width lines.
+    const auto scale = IsDoubleWidthLine(row) ? 1 : 0;
+    return GetSize().Width() >> scale;
+}
+
+COORD TextBuffer::ClampPositionWithinLine(const COORD position) const
+{
+    const SHORT rightmostColumn = GetLineWidth(position.Y) - 1;
+    return { std::min(position.X, rightmostColumn), position.Y };
+}
+
+COORD TextBuffer::ScreenToBufferPosition(const COORD position) const
+{
+    // Use shift right to quickly divide the X pos by 2 for double width lines.
+    const auto scale = IsDoubleWidthLine(position.Y) ? 1 : 0;
+    return { position.X >> scale, position.Y };
+}
+
+COORD TextBuffer::BufferToScreenPosition(const COORD position) const
+{
+    // Use shift left to quickly multiply the X pos by 2 for double width lines.
+    const auto scale = IsDoubleWidthLine(position.Y) ? 1 : 0;
+    return { position.X << scale, position.Y };
+}
+
 // Routine Description:
 // - Resets the text contents of this buffer with the default character
 //   and the default current color attributes
@@ -810,8 +883,7 @@ void TextBuffer::Reset()
 
     for (auto& row : _storage)
     {
-        row.GetCharRow().Reset();
-        row.GetAttrRow().Reset(attr);
+        row.Reset(attr);
     }
 }
 
@@ -1426,9 +1498,11 @@ bool TextBuffer::MoveToPreviousGlyph(til::point& pos) const
 // - blockSelection: when enabled, only get the rectangular text region,
 //                   as opposed to the text extending to the left/right
 //                   buffer margins
+// - bufferCoordinates: when enabled, treat the coordinates as relative to
+//                      the buffer rather than the screen.
 // Return Value:
 // - the delimiter class for the given char
-const std::vector<SMALL_RECT> TextBuffer::GetTextRects(COORD start, COORD end, bool blockSelection) const
+const std::vector<SMALL_RECT> TextBuffer::GetTextRects(COORD start, COORD end, bool blockSelection, bool bufferCoordinates) const
 {
     std::vector<SMALL_RECT> textRects;
 
@@ -1460,6 +1534,13 @@ const std::vector<SMALL_RECT> TextBuffer::GetTextRects(COORD start, COORD end, b
         {
             textRow.Left = (row == higherCoord.Y) ? higherCoord.X : bufferSize.Left();
             textRow.Right = (row == lowerCoord.Y) ? lowerCoord.X : bufferSize.RightInclusive();
+        }
+
+        // If we were passed screen coordinates, convert the given range into
+        // equivalent buffer offsets, taking line rendition into account.
+        if (!bufferCoordinates)
+        {
+            textRow = ScreenToBufferLine(textRow, GetLineRendition(row));
         }
 
         _ExpandTextRow(textRow);
@@ -1588,7 +1669,7 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
         }
 
         // We apply formatting to rows if the row was NOT wrapped or formatting of wrapped rows is allowed
-        const bool shouldFormatRow = formatWrappedRows || !GetRowByOffset(iRow).GetCharRow().WasWrapForced();
+        const bool shouldFormatRow = formatWrappedRows || !GetRowByOffset(iRow).WasWrapForced();
 
         if (trimTrailingWhitespace)
         {
@@ -2045,7 +2126,6 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
     const COORD cOldLastChar = oldBuffer.GetLastNonSpaceCharacter(lastCharacterViewport);
 
     const short cOldRowsTotal = cOldLastChar.Y + 1;
-    const short cOldColsTotal = oldBuffer.GetSize().Width();
 
     COORD cNewCursorPos = { 0 };
     bool fFoundCursorPos = false;
@@ -2057,8 +2137,18 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
     {
         // Fetch the row and its "right" which is the last printable character.
         const ROW& row = oldBuffer.GetRowByOffset(iOldRow);
+        const short cOldColsTotal = oldBuffer.GetLineWidth(iOldRow);
         const CharRow& charRow = row.GetCharRow();
         short iRight = gsl::narrow_cast<short>(charRow.MeasureRight());
+
+        // If we're starting a new row, try and preserve the line rendition
+        // from the row in the original buffer.
+        const auto newBufferPos = newBuffer.GetCursor().GetPosition();
+        if (newBufferPos.X == 0)
+        {
+            auto& newRow = newBuffer.GetRowByOffset(newBufferPos.Y);
+            newRow.SetLineRendition(row.GetLineRendition());
+        }
 
         // There is a special case here. If the row has a "wrap"
         // flag on it, but the right isn't equal to the width (one
@@ -2069,7 +2159,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // included.)
         // As such, adjust the "right" to be the width of the row
         // to capture all these spaces
-        if (charRow.WasWrapForced())
+        if (row.WasWrapForced())
         {
             iRight = cOldColsTotal;
 
@@ -2078,7 +2168,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             // piece of padding because of a double byte LEADING
             // character, then remove one from the "right" to
             // leave this padding out of the copy process.
-            if (charRow.WasDoubleBytePadded())
+            if (row.WasDoubleBytePadded())
             {
                 iRight--;
             }
@@ -2142,7 +2232,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             // Only do so if we were not forced to wrap. If we did
             // force a word wrap, then the existing line break was
             // only because we ran out of space.
-            if (iRight < cOldColsTotal && !charRow.WasWrapForced())
+            if (iRight < cOldColsTotal && !row.WasWrapForced())
             {
                 if (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
                 {
@@ -2186,7 +2276,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                     const COORD coordNewCursor = newCursor.GetPosition();
                     if (coordNewCursor.X == 0 && coordNewCursor.Y > 0)
                     {
-                        if (newBuffer.GetRowByOffset(gsl::narrow_cast<size_t>(coordNewCursor.Y) - 1).GetCharRow().WasWrapForced())
+                        if (newBuffer.GetRowByOffset(gsl::narrow_cast<size_t>(coordNewCursor.Y) - 1).WasWrapForced())
                         {
                             hr = newBuffer.NewlineCursor() ? hr : E_OUTOFMEMORY;
                         }
@@ -2219,7 +2309,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
 
             // If the last row of the new buffer wrapped, there's going to be one less newline needed,
             //   because the cursor is already on the next line
-            if (newBuffer.GetRowByOffset(cNewLastChar.Y).GetCharRow().WasWrapForced())
+            if (newBuffer.GetRowByOffset(cNewLastChar.Y).WasWrapForced())
             {
                 iNewlines = std::max(iNewlines - 1, 0);
             }
@@ -2227,7 +2317,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             {
                 // if this buffer didn't wrap, but the old one DID, then the d(columns) of the
                 //   old buffer will be one more than in this buffer, so new need one LESS.
-                if (oldBuffer.GetRowByOffset(cOldLastChar.Y).GetCharRow().WasWrapForced())
+                if (oldBuffer.GetRowByOffset(cOldLastChar.Y).WasWrapForced())
                 {
                     iNewlines = std::max(iNewlines - 1, 0);
                 }
@@ -2417,7 +2507,7 @@ PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) c
     for (auto i = firstRow; i <= lastRow; ++i)
     {
         auto& row = GetRowByOffset(i);
-        concatAll += row.GetCharRow().GetText();
+        concatAll += row.GetText();
     }
 
     // for each pattern we know of, iterate through the string
