@@ -317,9 +317,9 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 // - pcb - On input, number of bytes to write.  On output, number of bytes written.
 // - pcSpaces - On output, the number of spaces consumed by the written characters.
 // - dwFlags -
-//      WC_DESTRUCTIVE_BACKSPACE backspace overwrites characters.
-//      WC_KEEP_CURSOR_VISIBLE   change window origin desirable when hit rt. edge
-//      WC_ECHO                  if called by Read (echoing characters)
+//      WC_DESTRUCTIVE_BACKSPACE    backspace overwrites characters.
+//      WC_KEEP_CURSOR_VISIBLE      change window origin desirable when hit rt. edge
+//      WC_PRINTABLE_CONTROL_CHARS  if called by Read (echoing characters)
 // Return Value:
 // Note:
 // - This routine does not process tabs and backspace properly.  That code will be implemented as part of the line editing services.
@@ -430,7 +430,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 switch (RealUnicodeChar)
                 {
                 case UNICODE_BELL:
-                    if (dwFlags & WC_ECHO)
+                    if (dwFlags & WC_PRINTABLE_CONTROL_CHARS)
                     {
                         goto CtrlChar;
                     }
@@ -474,7 +474,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 default:
 
                     // if char is ctrl char, write ^char.
-                    if ((dwFlags & WC_ECHO) && (IS_CONTROL_CHAR(RealUnicodeChar)))
+                    if ((dwFlags & WC_PRINTABLE_CONTROL_CHARS) && (IS_CONTROL_CHAR(RealUnicodeChar)))
                     {
                     CtrlChar:
                         if (i < (LOCAL_BUFFER_SIZE - 1))
@@ -523,7 +523,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                             {
                                 // WCL-NOTE: We should never hit this.
                                 // WCL-NOTE: 1. Normal characters are handled via the early check for IS_GLYPH_CHAR
-                                // WCL-NOTE: 2. Control characters are handled via the CtrlChar label (if WC_ECHO is on)
+                                // WCL-NOTE: 2. Control characters are handled via the CtrlChar label (if WC_PRINTABLE_CONTROL_CHARS is on)
                                 // WCL-NOTE:    And if they are control characters they will trigger the C1_CNTRL check above.
                                 *LocalBufPtr = Char;
                             }
@@ -598,7 +598,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         }
         else if (*pcb >= BufferSize)
         {
-            // WCL-NOTE: This case looks like it is never encountered, but it *is* if WC_ECHO is off.
+            // WCL-NOTE: This case looks like it is never encountered, but it *is* if WC_PRINTABLE_CONTROL_CHARS is off.
             // WCL-NOTE: If the string is entirely nonprinting control characters, there will be
             // WCL-NOTE: no output in the buffer (LocalBuffer; i == 0) but we will have processed
             // WCL-NOTE: "every" character. We can just bail out and report the number of spaces consumed.
@@ -750,7 +750,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                                         pwchBuffer + 1 - pwchBufferBackupLimit,
                                         gsl::narrow_cast<size_t>(coordScreenBufferSize.X) - sOriginalXPosition,
                                         sOriginalXPosition,
-                                        dwFlags & WC_ECHO))
+                                        dwFlags & WC_PRINTABLE_CONTROL_CHARS))
                 {
                     CursorPosition.X = coordScreenBufferSize.X - 1;
                     CursorPosition.Y = (SHORT)(cursor.GetPosition().Y - 1);
@@ -918,9 +918,9 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 // - pcb - On input, number of bytes to write.  On output, number of bytes written.
 // - pcSpaces - On output, the number of spaces consumed by the written characters.
 // - dwFlags -
-//      WC_DESTRUCTIVE_BACKSPACE backspace overwrites characters.
-//      WC_KEEP_CURSOR_VISIBLE   change window origin (viewport) desirable when hit rt. edge
-//      WC_ECHO                  if called by Read (echoing characters)
+//      WC_DESTRUCTIVE_BACKSPACE   backspace overwrites characters.
+//      WC_KEEP_CURSOR_VISIBLE     change window origin (viewport) desirable when hit rt. edge
+//      WC_PRINTABLE_CONTROL_CHARS if called by Read (echoing characters)
 // Return Value:
 // Note:
 // - This routine does not process tabs and backspace properly.  That code will be implemented as part of the line editing services.
