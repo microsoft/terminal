@@ -664,8 +664,8 @@ namespace TerminalAppLocalTests
         }
         {
             AppCommandlineArgs appArgs{};
-            std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand, L"--colorScheme", L"Monokai" };
-            const winrt::hstring expectedScheme{ L"Monokai" };
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand, L"--colorScheme", L"Vintage" };
+            const winrt::hstring expectedScheme{ L"Vintage" };
 
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
