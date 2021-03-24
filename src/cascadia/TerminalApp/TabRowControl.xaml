@@ -3,12 +3,12 @@
     the MIT License. See LICENSE in the project root for license information.
 -->
 <ContentPresenter x:Class="TerminalApp.TabRowControl"
-                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-                  xmlns:local="using:TerminalApp"
-                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-                  xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+xmlns:local="using:TerminalApp"
+xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+xmlns:mux="using:Microsoft.UI.Xaml.Controls"
                   mc:Ignorable="d">
 
     <mux:TabView x:Name="TabView"
