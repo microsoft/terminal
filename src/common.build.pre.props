@@ -42,12 +42,20 @@
       <Configuration>AuditMode</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Fuzzing|Win32">
+      <Configuration>Fuzzing</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|x64">
       <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Fuzzing|x64">
+      <Configuration>Fuzzing</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="AuditMode|ARM64">
@@ -62,9 +70,9 @@
       <Configuration>Release</Configuration>
       <Platform>ARM64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Fuzzing|x64">
+    <ProjectConfiguration Include="Fuzzing|ARM64">
       <Configuration>Fuzzing</Configuration>
-      <Platform>x64</Platform>
+      <Platform>ARM64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
 
