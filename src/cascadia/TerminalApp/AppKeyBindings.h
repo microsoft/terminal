@@ -19,7 +19,7 @@ namespace winrt::TerminalApp::implementation
     {
         AppKeyBindings() = default;
 
-        bool TryKeyChord(winrt::Microsoft::Terminal::TerminalControl::KeyChord const& kc);
+        bool TryKeyChord(winrt::Microsoft::Terminal::Control::KeyChord const& kc);
 
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
         void SetKeyMapping(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap);

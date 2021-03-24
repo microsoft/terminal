@@ -34,11 +34,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static Model::TerminalSettings CreateWithProfileByID(const Model::CascadiaSettings& appSettings,
                                                              guid profileGuid,
-                                                             const TerminalControl::IKeyBindings& keybindings);
+                                                             const Control::IKeyBindings& keybindings);
 
         static Model::TerminalSettings CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
                                                                  const Model::NewTerminalArgs& newTerminalArgs,
-                                                                 const TerminalControl::IKeyBindings& keybindings);
+                                                                 const Control::IKeyBindings& keybindings);
 
         static Model::TerminalSettings CreateWithParent(const Model::TerminalSettings& parent);
         void SetParent(const Model::TerminalSettings& parent);
@@ -64,7 +64,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, SnapOnInput, true);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, AltGrAliasing, true);
         INHERITABLE_SETTING(Model::TerminalSettings, uint32_t, CursorColor, DEFAULT_CURSOR_COLOR);
-        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, TerminalControl::CursorStyle::Vintage);
+        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Core::CursorStyle, CursorShape, Core::CursorStyle::Vintage);
         INHERITABLE_SETTING(Model::TerminalSettings, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, CopyOnSelect, false);
@@ -101,7 +101,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Xaml::HorizontalAlignment, BackgroundImageHorizontalAlignment, winrt::Windows::UI::Xaml::HorizontalAlignment::Center);
         INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Xaml::VerticalAlignment, BackgroundImageVerticalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment::Center);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::TerminalControl::IKeyBindings, KeyBindings, nullptr);
+        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::IKeyBindings, KeyBindings, nullptr);
 
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, Commandline);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, StartingDirectory);
@@ -109,9 +109,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, SuppressApplicationTitle);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, EnvironmentVariables);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::TerminalControl::ScrollbarState, ScrollState, Microsoft::Terminal::TerminalControl::ScrollbarState::Visible);
+        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
+        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
 
         INHERITABLE_SETTING(Model::TerminalSettings, bool, RetroTerminalEffect, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, ForceFullRepaintRendering, false);

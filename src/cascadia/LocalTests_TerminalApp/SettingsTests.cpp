@@ -12,7 +12,7 @@ using namespace WEX::TestExecution;
 using namespace WEX::Common;
 using namespace winrt::TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 
 namespace TerminalAppLocalTests
 {

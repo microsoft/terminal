@@ -502,7 +502,7 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
         for (const auto& e : elems)
         {
             // If that element has implemented IMouseWheelListener, call OnMouseWheel on that element.
-            if (auto control{ e.try_as<winrt::Microsoft::Terminal::TerminalControl::IMouseWheelListener>() })
+            if (auto control{ e.try_as<winrt::Microsoft::Terminal::Control::IMouseWheelListener>() })
             {
                 try
                 {
@@ -566,7 +566,8 @@ void AppHost::_FindTargetWindow(const winrt::Windows::Foundation::IInspectable& 
                                 const Remoting::FindTargetWindowArgs& args)
 {
     const auto targetWindow = _logic.FindTargetWindow(args.Args().Commandline());
-    args.ResultTargetWindow(targetWindow);
+    args.ResultTargetWindow(targetWindow.WindowId());
+    args.ResultTargetWindowName(targetWindow.WindowName());
 }
 
 winrt::fire_and_forget AppHost::_WindowActivated()

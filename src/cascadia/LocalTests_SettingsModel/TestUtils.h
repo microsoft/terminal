@@ -24,18 +24,18 @@ public:
     // Return Value:
     // - The ActionAndArgs bound to the given key, or nullptr if nothing is bound to it.
     static const winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs GetActionAndArgs(const winrt::Microsoft::Terminal::Settings::Model::KeyMapping& keymap,
-                                                                                             const winrt::Microsoft::Terminal::TerminalControl::KeyChord& kc)
+                                                                                             const winrt::Microsoft::Terminal::Control::KeyChord& kc)
     {
         std::wstring buffer{ L"" };
-        if (WI_IsFlagSet(kc.Modifiers(), winrt::Microsoft::Terminal::TerminalControl::KeyModifiers::Ctrl))
+        if (WI_IsFlagSet(kc.Modifiers(), winrt::Microsoft::Terminal::Control::KeyModifiers::Ctrl))
         {
             buffer += L"Ctrl+";
         }
-        if (WI_IsFlagSet(kc.Modifiers(), winrt::Microsoft::Terminal::TerminalControl::KeyModifiers::Shift))
+        if (WI_IsFlagSet(kc.Modifiers(), winrt::Microsoft::Terminal::Control::KeyModifiers::Shift))
         {
             buffer += L"Shift+";
         }
-        if (WI_IsFlagSet(kc.Modifiers(), winrt::Microsoft::Terminal::TerminalControl::KeyModifiers::Alt))
+        if (WI_IsFlagSet(kc.Modifiers(), winrt::Microsoft::Terminal::Control::KeyModifiers::Alt))
         {
             buffer += L"Alt+";
         }
