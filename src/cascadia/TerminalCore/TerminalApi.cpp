@@ -38,7 +38,7 @@ void Terminal::SetTextAttributes(const TextAttribute& attrs) noexcept
 
 COORD Terminal::GetTerminalSize() noexcept
 {
-    return {_buffer->GetSize().Width(), _buffer->GetSize().Height()};
+    return _buffer->GetSize().Dimensions();
 }
 
 bool Terminal::SetCursorPosition(short x, short y) noexcept
