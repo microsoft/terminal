@@ -6,6 +6,7 @@
 #include "../../types/inc/colorTable.hpp"
 
 #include "TerminalSettings.g.cpp"
+#include "TerminalSettingsStruct.g.cpp"
 
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace Microsoft::Console::Utils;

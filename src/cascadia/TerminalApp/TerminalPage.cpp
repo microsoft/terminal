@@ -256,6 +256,7 @@ namespace winrt::TerminalApp::implementation
         CommandPalette().DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
         CommandPalette().CommandLineExecutionRequested({ this, &TerminalPage::_OnCommandLineExecutionRequested });
         CommandPalette().SwitchToTabRequested({ this, &TerminalPage::_OnSwitchToTabRequested });
+        CommandPalette().PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
 
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
@@ -3348,4 +3349,91 @@ namespace winrt::TerminalApp::implementation
             }
         }
     }
+
+    void TerminalPage::_EndPreview()
+    {
+        if (_lastPreviewedCommand == nullptr || _lastPreviewedCommand.Action() == nullptr)
+        {
+            return;
+        }
+        switch (_lastPreviewedCommand.Action().Action())
+        {
+        case ShortcutAction::SetColorScheme:
+        {
+            _EndPreviewColorScheme();
+            break;
+        }
+        }
+        _lastPreviewedCommand = nullptr;
+    }
+
+    void TerminalPage::_EndPreviewColorScheme()
+    {
+        // Get the focused control
+        // Get the settings of the focused control
+        // Set the original settings as the parent of the control's settings
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            if (auto activeControl = activeTab->GetActiveTerminalControl())
+            {
+                auto controlCurrentSettings = activeControl.Settings().as<TerminalSettings>();
+
+                // if (controlCurrentSettings.Parents().size() == 1 && controlCurrentSettings.Parents().at(0) == _originalSettings)
+                // {
+                activeControl.Settings().as<TerminalSettings>().SetParent(_originalSettings);
+                activeControl.UpdateSettings();
+                // }
+            }
+        }
+        _originalSettings = nullptr;
+    }
+
+    void TerminalPage::_PreviewColorScheme(const Settings::Model::SetColorSchemeArgs& args)
+    {
+        // Get the focused control
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            if (auto activeControl = activeTab->GetActiveTerminalControl())
+            {
+                if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(args.SchemeName()))
+                {
+                    // Get the settings of the focused control and stash them
+                    _originalSettings = activeControl.Settings().as<TerminalSettings>();
+                    // Create a new child for those settings
+                    // auto childImpl = _originalSettings.CreateChild();
+                    TerminalSettingsStruct fake{ _originalSettings, nullptr };
+                    auto childStruct = TerminalSettings::CreateWithParent(fake);
+                    // Modify the child to have the applied color scheme
+                    // childImpl->ApplyColorScheme(scheme);
+                    childStruct.DefaultSettings().ApplyColorScheme(scheme);
+
+                    // Insert that new child as the parent of the control's settings
+                    activeControl.Settings().as<TerminalSettings>().SetParent(childStruct.DefaultSettings());
+                    activeControl.UpdateSettings();
+                }
+            }
+        }
+    }
+
+    void TerminalPage::_PreviewActionHandler(const IInspectable& /*sender*/,
+                                             const Microsoft::Terminal::Settings::Model::Command& args)
+    {
+        if (args == nullptr || args.Action() == nullptr)
+        {
+            _EndPreview();
+        }
+        else
+        {
+            switch (args.Action().Action())
+            {
+            case ShortcutAction::SetColorScheme:
+            {
+                _PreviewColorScheme(args.Action().Args().try_as<SetColorSchemeArgs>());
+                break;
+            }
+            }
+            _lastPreviewedCommand = args;
+        }
+    }
+
 }

@@ -151,5 +151,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
+    BASIC_FACTORY(TerminalSettingsStruct);
     BASIC_FACTORY(TerminalSettings);
 }
