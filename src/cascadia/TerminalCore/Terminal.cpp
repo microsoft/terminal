@@ -453,7 +453,6 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 // - The position
 std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
 {
-    auto lock = LockForReading();
     auto attr = _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr();
     if (attr.IsHyperlink())
     {
@@ -487,7 +486,6 @@ std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
 // - The hyperlink ID
 uint16_t Terminal::GetHyperlinkIdAtPosition(const COORD position)
 {
-    auto lock = LockForReading();
     return _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr().GetHyperlinkId();
 }
 
@@ -499,7 +497,6 @@ uint16_t Terminal::GetHyperlinkIdAtPosition(const COORD position)
 // - The interval representing the start and end coordinates
 std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromPosition(const COORD position)
 {
-    auto lock = LockForReading();
     const auto results = _patternIntervalTree.findOverlapping(COORD{ position.X + 1, position.Y }, position);
     if (results.size() > 0)
     {

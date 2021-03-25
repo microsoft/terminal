@@ -1819,7 +1819,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // We're taking the lock here instead of in ClearPatternTree because ClearPatternTree is
             // sometimes called from an already-locked context. Here, we are sure we are not
             // already under lock (since it is not an internal scroll bar update)
-            // GH#XXXX refine locking around pattern tree
+            // TODO GH#9617: refine locking around pattern tree
             auto lock = _terminal->LockForWriting();
             _terminal->ClearPatternTree();
         }
@@ -2443,7 +2443,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Clear the regex pattern tree so the renderer does not try to render them while scrolling
         // We're **NOT** taking the lock here unlike _ScrollbarChangeHandler because
         // we are already under lock (since this usually happens as a result of writing).
-        // GH#XXXX refine locking around pattern tree
+        // TODO GH#9617: refine locking around pattern tree
         _terminal->ClearPatternTree();
 
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
