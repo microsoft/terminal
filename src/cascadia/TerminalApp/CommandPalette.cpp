@@ -1115,7 +1115,7 @@ namespace winrt::TerminalApp::implementation
 
                 if (dataTemplate == _itemTemplateSelector.NestedItemTemplate())
                 {
-                    const auto helpText = winrt::box_value(RS_(L"CommandPalette_MoreOptions"));
+                    const auto helpText = winrt::box_value(RS_(L"CommandPalette_MoreOptions/[using:Windows.UI.Xaml.Automation]AutomationProperties/HelpText"));
                     listViewItem.SetValue(Automation::AutomationProperties::HelpTextProperty(), helpText);
                 }
 
