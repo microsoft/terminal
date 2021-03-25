@@ -254,19 +254,18 @@ namespace winrt::TerminalApp::implementation
         // Only give anchored tab switcher the ability to cycle through tabs with the tab button.
         // For unanchored mode, accessibility becomes an issue when we try to hijack tab since it's
         // a really widely used keyboard navigation key.
-        if (_currentMode == CommandPaletteMode::TabSwitchMode && _keymap)
+        if (_currentMode == CommandPaletteMode::TabSwitchMode && _actionMap)
         {
             winrt::Microsoft::Terminal::Control::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
-            const auto action = _keymap.TryLookup(kc);
-            if (action)
+            if (const auto cmd{ _actionMap.GetActionByKeyChord(kc) })
             {
-                if (action.Action() == ShortcutAction::PrevTab)
+                if (cmd.Action().Action() == ShortcutAction::PrevTab)
                 {
                     SelectNextItem(false);
                     e.Handled(true);
                     return;
                 }
-                else if (action.Action() == ShortcutAction::NextTab)
+                else if (cmd.Action().Action() == ShortcutAction::NextTab)
                 {
                     SelectNextItem(true);
                     e.Handled(true);
@@ -857,9 +856,9 @@ namespace winrt::TerminalApp::implementation
         return _filteredActions;
     }
 
-    void CommandPalette::SetKeyMap(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap)
+    void CommandPalette::SetActionMap(const Microsoft::Terminal::Settings::Model::ActionMap& actionMap)
     {
-        _keymap = keymap;
+        _actionMap = actionMap;
     }
 
     void CommandPalette::SetCommands(Collections::IVector<Command> const& actions)

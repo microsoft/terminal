@@ -26,7 +26,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _State = e.Parameter().as<Editor::ActionsPageNavigationState>();
 
-        for (const auto& [k, command] : _State.Settings().GlobalSettings().Commands())
+        for (const auto& [k, command] : _State.Settings().GlobalSettings().ActionMap().NameMap())
         {
             // Filter out nested commands, and commands that aren't bound to a
             // key. This page is currently just for displaying the actions that

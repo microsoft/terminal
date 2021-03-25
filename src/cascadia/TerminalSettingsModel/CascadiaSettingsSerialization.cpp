@@ -248,57 +248,6 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
         // If this throws, the app will catch it and use the default settings
         resultPtr->_ValidateSettings();
 
-        // GH 3855 - Gathering Data on custom profiles to inform better defaults
-        // Do it after everything else so it won't happen unless validation passed.
-        // Also, avoid processing unless someone's listening for measures. The keybindings work, at least,
-        // is a lot of computation we can skip if no one cares.
-        if (TraceLoggingProviderEnabled(g_hSettingsModelProvider, 0, MICROSOFT_KEYWORD_MEASURES))
-        {
-            const auto guid = resultPtr->GlobalSettings().DefaultProfile();
-
-            // Compare to the defaults.json one that we set on install.
-            // If it's different, log what the user chose.
-            if (hardcodedDefaultGuid != guid)
-            {
-                TraceLoggingWrite(
-                    g_hSettingsModelProvider, // handle to TerminalApp tracelogging provider
-                    "CustomDefaultProfile",
-                    TraceLoggingDescription("Event emitted when user has chosen a different default profile than hardcoded one on load/reload"),
-                    TraceLoggingGuid(guid, "DefaultProfile", "ID of user-chosen default profile"),
-                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-            }
-
-            // If the user had keybinding settings preferences, we want to learn from them to make better defaults
-            auto userKeybindings = resultPtr->_userSettings[JsonKey(LegacyKeybindingsKey)];
-            if (!userKeybindings.empty())
-            {
-                // If there are custom key bindings, let's understand what they are because maybe the defaults aren't good enough
-
-                // Run it through the object so we can parse it apart and then only serialize the fields we're interested in
-                // and avoid extraneous data.
-                auto km = winrt::make_self<implementation::KeyMapping>();
-                km->LayerJson(userKeybindings);
-                auto value = km->ToJson();
-
-                // Reserialize the keybindings
-                Json::StreamWriterBuilder wbuilder;
-                // Use 4 spaces to indent instead of \t
-                wbuilder.settings_["indentation"] = "    ";
-                wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
-
-                const auto keybindingsString = Json::writeString(wbuilder, value);
-
-                TraceLoggingWrite(
-                    g_hSettingsModelProvider, // handle to TerminalApp tracelogging provider
-                    "CustomKeybindings",
-                    TraceLoggingDescription("Event emitted when custom keybindings are identified on load/reload"),
-                    TraceLoggingUtf8String(keybindingsString.c_str(), "Keybindings", "Keybindings as JSON"),
-                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-            }
-        }
-
         return *resultPtr;
     }
     catch (const SettingsException& ex)

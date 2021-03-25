@@ -43,6 +43,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto command{ winrt::make_self<Command>() };
         command->_Name = _Name;
+
+        // TODO GH#6900: We probably want ActionAndArgs::Copy here
+        //              This is fine for now because SUI can't actually
+        //              modify the copy yet.
         command->_Action = _Action;
         command->_Keys = _Keys;
         command->_IconPath = _IconPath;
@@ -175,11 +179,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // { "name": "foo", "commands": null } will land in this case, which
             // should also be used for unbinding.
-            return nullptr;
+
+            // create an "invalid" ActionAndArgs
+            result->Action(make<ActionAndArgs>());
+            return result;
         }
 
         JsonUtils::GetValueForKey(json, IconKey, result->_IconPath);
-        JsonUtils::GetValueForKey(json, KeysKey, result->_Keys);
 
         // If we're a nested command, we can ignore the current action.
         if (!nested)
@@ -196,8 +202,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 {
                     // Something like
                     //      { name: "foo", action: "unbound" }
-                    // will _remove_ the "foo" command, by returning null here.
-                    return nullptr;
+                    // will _remove_ the "foo" command, by returning an "invalid" action here.
+                    result->Action(make<ActionAndArgs>());
+                    return result;
                 }
 
                 // If an iterable command doesn't have a name set, we'll still just
@@ -211,7 +218,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 // { name: "foo", action: null } will land in this case, which
                 // should also be used for unbinding.
-                return nullptr;
+                
+                // create an "invalid" ActionAndArgs
+                result->Action(make<ActionAndArgs>());
+                return result;
+            }
+
+            // GH#4239 - If the user provided more than one key
+            // chord to a "keys" array, warn the user here.
+            // TODO: GH#1334 - remove this check.
+            const auto keysJson{ json[JsonKey(KeysKey)] };
+            if (keysJson.isArray() && keysJson.size() > 1)
+            {
+                warnings.push_back(SettingsLoadWarnings::TooManyKeysForChord);
+            }
+            else
+            {
+                JsonUtils::GetValueForKey(json, KeysKey, result->_Keys);
             }
         }
         else
@@ -223,11 +246,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // iterable, we'll need to re-parse it later, once we know what all the
         // values we can iterate on are.
         result->_originalJson = json;
-
-        if (result->_Name.empty())
-        {
-            return nullptr;
-        }
 
         return result;
     }
