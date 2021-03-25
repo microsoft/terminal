@@ -52,7 +52,8 @@ Terminal::Terminal() :
     _blockSelection{ false },
     _selection{ std::nullopt },
     _taskbarState{ 0 },
-    _taskbarProgress{ 0 }
+    _taskbarProgress{ 0 },
+    _minimumWidth{ 0 }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -96,7 +97,8 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 void Terminal::CreateFromSettings(ICoreSettings settings,
                                   IRenderTarget& renderTarget)
 {
-    const COORD viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), 1),
+    const auto minWidth = settings.MinimumCols() > 0 ? settings.MinimumCols() : settings.InitialCols();
+    const COORD viewportSize{ Utils::ClampToShortMax(minWidth, 1),
                               Utils::ClampToShortMax(settings.InitialRows(), 1) };
 
     // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
@@ -188,6 +190,9 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     // size is smaller than where the mutable viewport currently is, we'll want
     // to make sure to rotate the buffer contents upwards, so the mutable viewport
     // remains at the bottom of the buffer.
+
+    _minimumWidth = settings.MinimumCols();
+    UserResize(GetViewport().Dimensions());
 }
 
 // Method Description:
@@ -198,8 +203,10 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 // - S_OK if we successfully resized the terminal, S_FALSE if there was
 //      nothing to do (the viewportSize is the same as our current size), or an
 //      appropriate HRESULT for failing to resize.
-[[nodiscard]] HRESULT Terminal::UserResize(const COORD viewportSize) noexcept
+[[nodiscard]] HRESULT Terminal::UserResize(const COORD paramViewportSize) noexcept
 {
+    const COORD viewportSize{ std::max(_minimumWidth, paramViewportSize.X), paramViewportSize.Y };
+
     const auto oldDimensions = _mutableViewport.Dimensions();
     if (viewportSize == oldDimensions)
     {
@@ -212,7 +219,8 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 
     const short newBufferHeight = ::base::ClampAdd(viewportSize.Y, _scrollbackLines);
 
-    COORD bufferSize{ viewportSize.X, newBufferHeight };
+    const auto newBufferWidth = ::base::saturated_cast<short>(std::max(viewportSize.X, _minimumWidth));
+    COORD bufferSize{ newBufferWidth, newBufferHeight };
 
     // Save cursor's relative height versus the viewport
     const short sCursorHeightInViewportBefore = ::base::ClampSub(_buffer->GetCursor().GetPosition().Y, _mutableViewport.Top());

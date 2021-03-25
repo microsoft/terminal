@@ -267,6 +267,9 @@ private:
     size_t _hyperlinkPatternId;
 
     std::wstring _workingDirectory;
+
+    short _minimumWidth;
+    short _actualViewWidth;
 #pragma region Text Selection
     // a selection is represented as a range between two COORDs (start and end)
     // the pivot is the COORD that remains selected when you extend a selection in any direction

@@ -37,6 +37,9 @@ namespace Microsoft.Terminal.Core
 
         Windows.Foundation.IReference<UInt32> TabColor;
         Windows.Foundation.IReference<UInt32> StartingTabColor;
+
+        Int32 MinimumCols;
+
     };
 
 }
