@@ -411,6 +411,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         //using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
+        static const S npos = std::numeric_limits<S>::max();
+
         rle() :
             _size(static_cast<S>(0))
         {
@@ -442,7 +444,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return _at(position, applies)->first;
         }
 
-        [[nodiscard]] rle<T, S> substr(const S offset = 0, const S count = std::numeric_limits<S>::max()) const
+        [[nodiscard]] rle<T, S> substr(const S offset = 0, const S count = npos) const
         {
             // TODO: validate params
             const S startIndex = offset;
