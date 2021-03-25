@@ -188,7 +188,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return false;
     }
 
-    void MainPage::AddProfileHandler(winrt::guid profileGuid)
+    // Method Description:
+    // - Creates a new profile and navigates to it in the Settings UI
+    // Arguments:
+    // - profileGuid: the guid of the profile we want to duplicate,
+    //                can be empty to indicate that we should create a fresh profile
+    void MainPage::_AddProfileHandler(winrt::guid profileGuid)
     {
         uint32_t insertIndex;
         auto selectedItem{ SettingsNav().SelectedItem() };
@@ -308,7 +313,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (clickedItemTag == addProfileTag)
         {
             auto addProfileState{ winrt::make<AddProfilePageNavigationState>(_settingsClone) };
-            addProfileState.AddNew({ get_weak(), &MainPage::AddProfileHandler });
+            addProfileState.AddNew({ get_weak(), &MainPage::_AddProfileHandler });
             contentFrame().Navigate(xaml_typename<Editor::AddProfile>(), addProfileState);
         }
     }

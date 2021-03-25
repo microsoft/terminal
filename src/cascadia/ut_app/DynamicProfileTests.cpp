@@ -55,6 +55,8 @@ namespace TerminalAppUnitTests
         TEST_METHOD(UserProfilesWithInvalidSourcesAreIgnored);
         // This does the same, but by disabling a profile source
         TEST_METHOD(UserProfilesFromDisabledSourcesDontAppear);
+
+        TEST_METHOD(TestDuplicateDynamicProfile);
     };
 
     void DynamicProfileTests::TestSimpleGenerate()
@@ -670,4 +672,29 @@ namespace TerminalAppUnitTests
         VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
     }
 
+    void DynamicProfileTests::TestDuplicateDynamicProfile()
+    {
+        auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
+        gen0->pfnGenerate = []() {
+            std::vector<Profile> profiles;
+            Profile p0;
+            p0.Name(L"profile0");
+            p0.BackgroundImagePath(L"some//path");
+            profiles.push_back(p0);
+            return profiles;
+        };
+
+        auto settings = winrt::make_self<implementation::CascadiaSettings>(false);
+        settings->_profileGenerators.emplace_back(std::move(gen0));
+
+        settings->_LoadDynamicProfiles();
+        VERIFY_ARE_EQUAL(1u, settings->_allProfiles.Size());
+        VERIFY_ARE_EQUAL(L"profile0", settings->_allProfiles.GetAt(0).Name());
+
+        const auto originalProfile = settings->_allProfiles.GetAt(0);
+        auto duplicatedProfile = settings->DuplicateProfile(originalProfile);
+
+        VERIFY_ARE_EQUAL(L"profile0 (Copy)", duplicatedProfile.Name());
+        VERIFY_ARE_EQUAL(originalProfile.BackgroundImagePath(), duplicatedProfile.BackgroundImagePath());
+    }
 };
