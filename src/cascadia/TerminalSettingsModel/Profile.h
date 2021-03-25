@@ -64,8 +64,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const;
 
         hstring EvaluatedStartingDirectory() const;
-        hstring ExpandedBackgroundImagePath() const;
         static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
+
+        Model::IAppearanceConfig DefaultAppearance();
 
         WINRT_PROPERTY(OriginTag, Origin, OriginTag::Custom);
 
@@ -95,34 +96,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, hstring, Commandline, L"cmd.exe");
         INHERITABLE_SETTING(Model::Profile, hstring, StartingDirectory);
 
-        INHERITABLE_SETTING(Model::Profile, hstring, BackgroundImagePath);
-        INHERITABLE_SETTING(Model::Profile, double, BackgroundImageOpacity, 1.0);
-        INHERITABLE_SETTING(Model::Profile, Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::UniformToFill);
-        INHERITABLE_SETTING(Model::Profile, ConvergedAlignment, BackgroundImageAlignment, ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center);
-
         INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
-        INHERITABLE_SETTING(Model::Profile, bool, RetroTerminalEffect, false);
-        INHERITABLE_SETTING(Model::Profile, hstring, PixelShaderPath, L"");
         INHERITABLE_SETTING(Model::Profile, bool, ForceFullRepaintRendering, false);
         INHERITABLE_SETTING(Model::Profile, bool, SoftwareRendering, false);
-
-        INHERITABLE_SETTING(Model::Profile, hstring, ColorSchemeName, L"Campbell");
-
-        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, Foreground, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, Background, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, SelectionBackground, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, CursorColor, nullptr);
 
         INHERITABLE_SETTING(Model::Profile, int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
         INHERITABLE_SETTING(Model::Profile, bool, SnapOnInput, true);
         INHERITABLE_SETTING(Model::Profile, bool, AltGrAliasing, true);
 
-        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::CursorStyle, CursorShape, Microsoft::Terminal::Core::CursorStyle::Bar);
-        INHERITABLE_SETTING(Model::Profile, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
-
         INHERITABLE_SETTING(Model::Profile, Model::BellStyle, BellStyle, BellStyle::Audible);
 
+        INHERITABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
+
     private:
+        Model::IAppearanceConfig _DefaultAppearance{ Model::AppearanceConfig() };
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
         static guid _GenerateGuidForProfile(const hstring& name, const hstring& source) noexcept;

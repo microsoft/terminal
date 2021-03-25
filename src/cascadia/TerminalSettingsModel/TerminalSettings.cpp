@@ -58,7 +58,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - appSettings: the set of settings being used to construct the new terminal
     // - profileGuid: the unique identifier (guid) of the profile
     // - keybindings: the keybinding handler
-    Model::TerminalSettings TerminalSettings::CreateWithProfileByID(const Model::CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings)
+    Model::TerminalSettingsStruct TerminalSettings::CreateWithProfileByID(const Model::CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings)
     {
         auto settings{ winrt::make_self<TerminalSettings>() };
         settings->_KeyBindings = keybindings;
@@ -67,10 +67,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         THROW_HR_IF_NULL(E_INVALIDARG, profile);
 
         const auto globals = appSettings.GlobalSettings();
-        settings->_ApplyProfileSettings(profile, globals.ColorSchemes());
+        settings->_ApplyProfileSettings(profile);
         settings->_ApplyGlobalSettings(globals);
+        settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes());
 
-        return *settings;
+        if (profile.UnfocusedAppearance())
+        {
+            auto child = settings->CreateChild();
+            child->_ApplyAppearanceSettings(profile.UnfocusedAppearance(), globals.ColorSchemes());
+            return winrt::make<TerminalSettingsStruct>(*settings, *child);
+        }
+
+        return winrt::make<TerminalSettingsStruct>(*settings, nullptr);
     }
 
     // Method Description:
@@ -88,39 +96,81 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //     StartingDirectory) in this object to override the settings directly from
     //     the profile.
     // - keybindings: the keybinding handler
-    Model::TerminalSettings TerminalSettings::CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
-                                                                        const Model::NewTerminalArgs& newTerminalArgs,
-                                                                        const IKeyBindings& keybindings)
+    // Return Value:
+    // - the GUID of the created profile, and a fully initialized TerminalSettings object
+    Model::TerminalSettingsStruct TerminalSettings::CreateWithNewTerminalArgs(const CascadiaSettings& appSettings,
+                                                                              const NewTerminalArgs& newTerminalArgs,
+                                                                              const IKeyBindings& keybindings)
     {
         const guid profileGuid = appSettings.GetProfileForArgs(newTerminalArgs);
-        auto settings{ CreateWithProfileByID(appSettings, profileGuid, keybindings) };
+        auto settings = CreateWithProfileByID(appSettings, profileGuid, keybindings);
 
         if (newTerminalArgs)
         {
             // Override commandline, starting directory if they exist in newTerminalArgs
             if (!newTerminalArgs.Commandline().empty())
             {
-                settings.Commandline(newTerminalArgs.Commandline());
+                settings.DefaultSettings().Commandline(newTerminalArgs.Commandline());
             }
             if (!newTerminalArgs.StartingDirectory().empty())
             {
-                settings.StartingDirectory(newTerminalArgs.StartingDirectory());
+                settings.DefaultSettings().StartingDirectory(newTerminalArgs.StartingDirectory());
             }
             if (!newTerminalArgs.TabTitle().empty())
             {
-                settings.StartingTitle(newTerminalArgs.TabTitle());
+                settings.DefaultSettings().StartingTitle(newTerminalArgs.TabTitle());
             }
             if (newTerminalArgs.TabColor())
             {
-                settings.StartingTabColor(static_cast<uint32_t>(til::color(newTerminalArgs.TabColor().Value())));
+                settings.DefaultSettings().StartingTabColor(static_cast<uint32_t>(til::color(newTerminalArgs.TabColor().Value())));
             }
             if (newTerminalArgs.SuppressApplicationTitle())
             {
-                settings.SuppressApplicationTitle(newTerminalArgs.SuppressApplicationTitle().Value());
+                settings.DefaultSettings().SuppressApplicationTitle(newTerminalArgs.SuppressApplicationTitle().Value());
             }
         }
 
         return settings;
+    }
+
+    void TerminalSettings::_ApplyAppearanceSettings(const IAppearanceConfig& appearance, const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes)
+    {
+        _CursorShape = appearance.CursorShape();
+        _CursorHeight = appearance.CursorHeight();
+        if (!appearance.ColorSchemeName().empty())
+        {
+            if (const auto scheme = schemes.TryLookup(appearance.ColorSchemeName()))
+            {
+                ApplyColorScheme(scheme);
+            }
+        }
+        if (appearance.Foreground())
+        {
+            _DefaultForeground = til::color{ appearance.Foreground().Value() };
+        }
+        if (appearance.Background())
+        {
+            _DefaultBackground = til::color{ appearance.Background().Value() };
+        }
+        if (appearance.SelectionBackground())
+        {
+            _SelectionBackground = til::color{ appearance.SelectionBackground().Value() };
+        }
+        if (appearance.CursorColor())
+        {
+            _CursorColor = til::color{ appearance.CursorColor().Value() };
+        }
+        if (!appearance.BackgroundImagePath().empty())
+        {
+            _BackgroundImage = appearance.ExpandedBackgroundImagePath();
+        }
+
+        _BackgroundImageOpacity = appearance.BackgroundImageOpacity();
+        _BackgroundImageStretchMode = appearance.BackgroundImageStretchMode();
+        std::tie(_BackgroundImageHorizontalAlignment, _BackgroundImageVerticalAlignment) = ConvertConvergedAlignment(appearance.BackgroundImageAlignment());
+
+        _RetroTerminalEffect = appearance.RetroTerminalEffect();
+        _PixelShaderPath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(appearance.PixelShaderPath().c_str()) };
     }
 
     // Method Description:
@@ -129,12 +179,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - parent: the TerminalSettings object that the newly created TerminalSettings will inherit from
     // Return Value:
     // - a newly created child of the given parent object
-    Model::TerminalSettings TerminalSettings::CreateWithParent(const Model::TerminalSettings& parent)
+    Model::TerminalSettingsStruct TerminalSettings::CreateWithParent(const Model::TerminalSettingsStruct& parent)
     {
         THROW_HR_IF_NULL(E_INVALIDARG, parent);
 
-        auto parentImpl{ get_self<TerminalSettings>(parent) };
-        return *parentImpl->CreateChild();
+        auto defaultImpl{ get_self<TerminalSettings>(parent.DefaultSettings()) };
+        auto defaultChild = defaultImpl->CreateChild();
+        if (parent.UnfocusedSettings())
+        {
+            parent.UnfocusedSettings().SetParent(*defaultChild);
+        }
+        return winrt::make<TerminalSettingsStruct>(*defaultChild, parent.UnfocusedSettings());
     }
 
     // Method Description:
@@ -156,14 +211,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - schemes: a map of schemes to look for our color scheme in, if we have one.
     // Return Value:
     // - <none>
-    void TerminalSettings::_ApplyProfileSettings(const Model::Profile& profile, const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes)
+    void TerminalSettings::_ApplyProfileSettings(const Profile& profile)
     {
         // Fill in the Terminal Setting's CoreSettings from the profile
         _HistorySize = profile.HistorySize();
         _SnapOnInput = profile.SnapOnInput();
         _AltGrAliasing = profile.AltGrAliasing();
-        _CursorHeight = profile.CursorHeight();
-        _CursorShape = profile.CursorShape();
 
         // Fill in the remaining properties from the profile
         _ProfileName = profile.Name();
@@ -188,43 +241,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _SuppressApplicationTitle = profile.SuppressApplicationTitle();
         }
 
-        if (!profile.ColorSchemeName().empty())
-        {
-            if (const auto scheme = schemes.TryLookup(profile.ColorSchemeName()))
-            {
-                ApplyColorScheme(scheme);
-            }
-        }
-        if (profile.Foreground())
-        {
-            _DefaultForeground = til::color{ profile.Foreground().Value() };
-        }
-        if (profile.Background())
-        {
-            _DefaultBackground = til::color{ profile.Background().Value() };
-        }
-        if (profile.SelectionBackground())
-        {
-            _SelectionBackground = til::color{ profile.SelectionBackground().Value() };
-        }
-        if (profile.CursorColor())
-        {
-            _CursorColor = til::color{ profile.CursorColor().Value() };
-        }
-
         _ScrollState = profile.ScrollState();
-
-        if (!profile.BackgroundImagePath().empty())
-        {
-            _BackgroundImage = profile.ExpandedBackgroundImagePath();
-        }
-
-        _BackgroundImageOpacity = profile.BackgroundImageOpacity();
-        _BackgroundImageStretchMode = profile.BackgroundImageStretchMode();
-        std::tie(_BackgroundImageHorizontalAlignment, _BackgroundImageVerticalAlignment) = ConvertConvergedAlignment(profile.BackgroundImageAlignment());
-
-        _RetroTerminalEffect = profile.RetroTerminalEffect();
-        _PixelShaderPath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(profile.PixelShaderPath().c_str()) };
 
         _AntialiasingMode = profile.AntialiasingMode();
 

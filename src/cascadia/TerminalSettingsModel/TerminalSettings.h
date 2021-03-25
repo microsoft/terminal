@@ -15,6 +15,7 @@ Author(s):
 #pragma once
 
 #include "TerminalSettings.g.h"
+#include "TerminalSettingsStruct.g.h"
 #include "IInheritable.h"
 #include "../inc/cppwinrt_utils.h"
 #include <DefaultSettings.h>
@@ -28,19 +29,35 @@ namespace SettingsModelLocalTests
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    struct TerminalSettingsStruct :
+        public TerminalSettingsStructT<TerminalSettingsStruct>
+    {
+    public:
+        TerminalSettingsStruct(Model::TerminalSettings defaultSettings, Model::TerminalSettings unfocusedSettings) :
+            _defaultSettings(defaultSettings),
+            _unfocusedSettings(unfocusedSettings) {}
+
+        Model::TerminalSettings DefaultSettings() { return _defaultSettings; };
+        Model::TerminalSettings UnfocusedSettings() { return _unfocusedSettings; };
+
+    private:
+        Model::TerminalSettings _defaultSettings;
+        Model::TerminalSettings _unfocusedSettings;
+    };
+
     struct TerminalSettings : TerminalSettingsT<TerminalSettings>, IInheritable<TerminalSettings>
     {
         TerminalSettings() = default;
 
-        static Model::TerminalSettings CreateWithProfileByID(const Model::CascadiaSettings& appSettings,
-                                                             guid profileGuid,
-                                                             const Control::IKeyBindings& keybindings);
+        static Model::TerminalSettingsStruct CreateWithProfileByID(const Model::CascadiaSettings& appSettings,
+                                                                   guid profileGuid,
+                                                                   const Control::IKeyBindings& keybindings);
 
-        static Model::TerminalSettings CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
-                                                                 const Model::NewTerminalArgs& newTerminalArgs,
-                                                                 const Control::IKeyBindings& keybindings);
+        static Model::TerminalSettingsStruct CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
+                                                                       const Model::NewTerminalArgs& newTerminalArgs,
+                                                                       const Control::IKeyBindings& keybindings);
 
-        static Model::TerminalSettings CreateWithParent(const Model::TerminalSettings& parent);
+        static Model::TerminalSettingsStruct CreateWithParent(const Model::TerminalSettingsStruct& parent);
         void SetParent(const Model::TerminalSettings& parent);
 
         void ApplyColorScheme(const Model::ColorScheme& scheme);
@@ -123,8 +140,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         std::optional<std::array<uint32_t, COLOR_TABLE_SIZE>> _ColorTable;
         gsl::span<uint32_t> _getColorTableImpl();
-        void _ApplyProfileSettings(const Model::Profile& profile, const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes);
+        void _ApplyProfileSettings(const Model::Profile& profile);
         void _ApplyGlobalSettings(const Model::GlobalAppSettings& globalSettings) noexcept;
+        void _ApplyAppearanceSettings(const Microsoft::Terminal::Settings::Model::IAppearanceConfig& appearance,
+                                      const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes);
 
         friend class SettingsModelLocalTests::TerminalSettingsTests;
     };

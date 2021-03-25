@@ -579,7 +579,7 @@ namespace winrt::TerminalApp::implementation
         // Use the default profile to determine how big of a window we need.
         const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
 
-        auto proposedSize = TermControl::GetProposedDimensions(settings, dpi);
+        auto proposedSize = TermControl::GetProposedDimensions(settings.DefaultSettings(), dpi);
 
         const float scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
 

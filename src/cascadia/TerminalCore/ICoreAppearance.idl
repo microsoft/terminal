@@ -1,0 +1,25 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Core
+{
+    enum CursorStyle
+    {
+        Vintage,
+        Bar,
+        Underscore,
+        DoubleUnderscore,
+        FilledBox,
+        EmptyBox
+    };
+
+    interface ICoreAppearance
+    {
+        UInt32 GetColorTableEntry(Int32 index);
+        UInt32 DefaultForeground { get; set; };
+        UInt32 DefaultBackground { get; set; };
+        UInt32 CursorColor { get; set; };
+        CursorStyle CursorShape;
+        UInt32 CursorHeight;
+    };
+}

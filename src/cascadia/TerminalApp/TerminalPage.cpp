@@ -784,9 +784,9 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingUInt32(tabCount, "TabCount", "Count of tabs currently opened in TerminalApp"),
             TraceLoggingBool(usedManualProfile, "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
             TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
-            TraceLoggingBool(settings.UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
-            TraceLoggingFloat64(settings.TintOpacity(), "TintOpacity", "Opacity preference from the settings"),
-            TraceLoggingWideString(settings.FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
+            TraceLoggingBool(settings.DefaultSettings().UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
+            TraceLoggingFloat64(settings.DefaultSettings().TintOpacity(), "TintOpacity", "Opacity preference from the settings"),
+            TraceLoggingWideString(settings.DefaultSettings().FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
             TraceLoggingWideString(schemeName.data(), "SchemeName", "Color scheme set in the settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
@@ -805,12 +805,12 @@ namespace winrt::TerminalApp::implementation
     //      currently displayed, it will be shown.
     // Arguments:
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
-    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
+    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, Microsoft::Terminal::Settings::Model::TerminalSettingsStruct settings)
     {
         // Initialize the new tab
 
         // Create a connection based on the values in our settings object.
-        auto connection = _CreateConnectionFromSettings(profileGuid, settings);
+        auto connection = _CreateConnectionFromSettings(profileGuid, settings.DefaultSettings());
 
         TerminalConnection::ITerminalConnection debugConnection{ nullptr };
         if (_settings.GlobalSettings().DebugFeaturesEnabled())
@@ -826,8 +826,6 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // Give term control a child of the settings so that any overrides go in the child
-        // This way, when we do a settings reload we just update the parent and the overrides remain
         auto term = _InitControl(settings, connection);
 
         auto newTabImpl = winrt::make_self<TerminalTab>(profileGuid, term);
@@ -1299,15 +1297,15 @@ namespace winrt::TerminalApp::implementation
             const auto& profileGuid = tab.GetFocusedProfile();
             if (profileGuid.has_value())
             {
-                const auto settings{ TerminalSettings::CreateWithProfileByID(_settings, profileGuid.value(), *_bindings) };
+                const auto settingsStruct = TerminalSettings::CreateWithProfileByID(_settings, profileGuid.value(), *_bindings);
                 const auto workingDirectory = tab.GetActiveTerminalControl().WorkingDirectory();
                 const auto validWorkingDirectory = !workingDirectory.empty();
                 if (validWorkingDirectory)
                 {
-                    settings.StartingDirectory(workingDirectory);
+                    settingsStruct.DefaultSettings().StartingDirectory(workingDirectory);
                 }
 
-                _CreateNewTabFromSettings(profileGuid.value(), settings);
+                _CreateNewTabFromSettings(profileGuid.value(), settingsStruct);
             }
         }
         CATCH_LOG();
@@ -1858,7 +1856,7 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
-            TerminalSettings controlSettings{ nullptr };
+            TerminalSettingsStruct controlSettings{ nullptr };
             GUID realGuid;
             bool profileFound = false;
 
@@ -1873,7 +1871,7 @@ namespace winrt::TerminalApp::implementation
                     const auto validWorkingDirectory = !workingDirectory.empty();
                     if (validWorkingDirectory)
                     {
-                        controlSettings.StartingDirectory(workingDirectory);
+                        controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
                     }
                     realGuid = current_guid.value();
                 }
@@ -1896,7 +1894,7 @@ namespace winrt::TerminalApp::implementation
                 controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
             }
 
-            const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
+            const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings.DefaultSettings());
 
             const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
             const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
@@ -2547,9 +2545,19 @@ namespace winrt::TerminalApp::implementation
         _RemoveTabViewItem(tabViewItem);
     }
 
-    TermControl TerminalPage::_InitControl(const TerminalSettings& settings, const ITerminalConnection& connection)
+    TermControl TerminalPage::_InitControl(const TerminalSettingsStruct& settings, const ITerminalConnection& connection)
     {
-        return TermControl{ TerminalSettings::CreateWithParent(settings), connection };
+        // Give term control a child of the settings so that any overrides go in the child
+        // This way, when we do a settings reload we just update the parent and the overrides remain
+        const auto child = TerminalSettings::CreateWithParent(settings);
+        TermControl term{ child.DefaultSettings(), connection };
+
+        if (child.UnfocusedSettings())
+        {
+            term.UnfocusedAppearance(child.UnfocusedSettings());
+        }
+
+        return term;
     }
 
     // Method Description:

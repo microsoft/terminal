@@ -12,7 +12,7 @@ using namespace winrt::Microsoft::Terminal::Core;
 
 namespace TerminalCoreUnitTests
 {
-    class MockTermSettings : public winrt::implements<MockTermSettings, ICoreSettings>
+    class MockTermSettings : public winrt::implements<MockTermSettings, ICoreSettings, ICoreAppearance>
     {
     public:
         MockTermSettings(int32_t historySize, int32_t initialRows, int32_t initialCols) :
@@ -40,6 +40,7 @@ namespace TerminalCoreUnitTests
         bool SuppressApplicationTitle() { return _suppressApplicationTitle; }
         uint32_t SelectionBackground() { return COLOR_WHITE; }
         bool ForceVTInput() { return false; }
+        ICoreAppearance UnfocusedAppearance() { return {}; };
 
         // other implemented methods
         uint32_t GetColorTableEntry(int32_t) const { return 123; }
@@ -62,6 +63,7 @@ namespace TerminalCoreUnitTests
         void SuppressApplicationTitle(bool suppressApplicationTitle) { _suppressApplicationTitle = suppressApplicationTitle; }
         void SelectionBackground(uint32_t) {}
         void ForceVTInput(bool) {}
+        void UnfocusedAppearance(ICoreAppearance) {}
 
         WINRT_PROPERTY(winrt::Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
         WINRT_PROPERTY(winrt::Windows::Foundation::IReference<uint32_t>, StartingTabColor, nullptr);

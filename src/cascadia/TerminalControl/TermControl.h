@@ -26,6 +26,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
         winrt::fire_and_forget UpdateSettings();
+        winrt::fire_and_forget UpdateAppearance(IControlAppearance newAppearance);
 
         hstring Title();
         hstring GetProfileName() const;
@@ -114,6 +115,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(FocusFollowMouseRequested, IInspectable, IInspectable);
         // clang-format on
 
+        WINRT_PROPERTY(IControlAppearance, UnfocusedAppearance);
+
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
         TerminalConnection::ITerminalConnection _connection;
@@ -194,6 +197,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
+        void _UpdateSettingsFromUIThread(IControlSettings newSettings);
+        void _UpdateAppearanceFromUIThread(IControlAppearance newAppearance);
         bool _isReadOnly{ false };
 
         void _ApplyUISettings(const IControlSettings&);

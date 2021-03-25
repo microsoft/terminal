@@ -8,7 +8,7 @@ import "MainPage.idl";
 
 #define OBSERVABLE_PROJECTED_PROFILE_SETTING(Type, Name) \
     OBSERVABLE_PROJECTED_SETTING(Type, Name);            \
-    Microsoft.Terminal.Settings.Model.Profile Name##OverrideSource { get; }
+    Object Name##OverrideSource { get; }
 
 namespace Microsoft.Terminal.Settings.Editor
 {
