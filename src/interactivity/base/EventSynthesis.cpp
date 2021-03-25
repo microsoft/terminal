@@ -33,7 +33,7 @@ std::deque<std::unique_ptr<KeyEvent>> Microsoft::Console::Interactivity::CharToK
 
         if (c3Applicable)
         {
-            if (WI_IsFlagSet(CharType, C3_ALPHA) || WI_IsFlagSet(CharType, C3_FULLWIDTH) || WI_IsFlagSet(CharType, C3_SYMBOL) || GetQuickCharWidth(wch) == CodepointWidth::Wide)
+            if (WI_IsFlagSet(CharType, C3_ALPHA) || WI_IsFlagSet(CharType, C3_FULLWIDTH) || WI_IsFlagSet(CharType, C3_SYMBOL))
             {
                 keyState = 0;
             }
@@ -41,7 +41,7 @@ std::deque<std::unique_ptr<KeyEvent>> Microsoft::Console::Interactivity::CharToK
         else
         {
             GetStringTypeW(CT_CTYPE1, &wch, 1, &CharType);
-            if (WI_IsFlagSet(CharType, C1_PUNCT) || GetQuickCharWidth(wch) == CodepointWidth::Wide)
+            if (WI_IsFlagSet(CharType, C1_PUNCT))
             {
                 keyState = 0;
             }
