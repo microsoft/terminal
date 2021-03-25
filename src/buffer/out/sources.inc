@@ -30,7 +30,6 @@ PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES= \
     ..\AttrRow.cpp \
-    ..\AttrRowIterator.cpp \
     ..\cursor.cpp    \
     ..\OutputCell.cpp \
     ..\OutputCellIterator.cpp \

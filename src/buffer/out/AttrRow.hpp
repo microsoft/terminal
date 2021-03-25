@@ -24,10 +24,10 @@ Revision History:
 
 #include "TextAttributeRun.hpp"
 
-class ATTR_ROW final : public til::rle<TextAttribute, UINT>
+class ATTR_ROW final : public til::rle<TextAttribute, unsigned int>
 {
 public:
-    using mybase = til::rle<TextAttribute, UINT>;
+    using mybase = til::rle<TextAttribute, unsigned int>;
 
     using const_iterator = mybase::const_iterator;
     using const_reverse_iterator = mybase::const_reverse_iterator;
@@ -40,7 +40,7 @@ public:
 
     std::vector<uint16_t> GetHyperlinks();
 
-    bool SetAttrToEnd(const UINT iStart, const TextAttribute attr);
+    bool SetAttrToEnd(const unsigned int iStart, const TextAttribute attr);
     void ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAttribute& replaceWith) noexcept;
 
     void Resize(const size_t newWidth);

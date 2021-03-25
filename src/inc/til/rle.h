@@ -198,7 +198,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 // Hold the accumulation.
                 difference_type accumulation = 0;
 
-                // Make ourselves a copy of the right side. We'll
+                // Make ourselves a copy of the right side.
                 auto tmp = right;
 
                 // While we're pointing to a run that is RIGHT of tmp...
@@ -387,14 +387,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         };
     };
 
-    template<typename T, typename S = size_t>
+    // Run Length Encoded data storage
+    // T = The type you wish to store
+    // S = The type of the counter value to use (max run length)
+    // N = (optional, default 1) The count of runs to store internally before heap alloc
+    template<typename T, typename S = size_t, unsigned int N = 1>
     class rle
     {
     private:
-        boost::container::small_vector<std::pair<T, S>, 1> _list;
+        boost::container::small_vector<std::pair<T, S>, N> _list;
         S _size;
 
-        rle(boost::container::small_vector<std::pair<T, S>, 1> list, S size) :
+        rle(boost::container::small_vector<std::pair<T, S>, N> list, S size) :
             _list(list),
             _size(size)
         {
@@ -407,13 +411,16 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         //using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
+        rle() :
+            _size(static_cast<S>(0))
+        {
+        }
+
         rle(const S size, const T value) :
             _size(size)
         {
             fill(value);
         }
-
-        
 
         // Returns the total length of all runs as encoded.
         S size() const noexcept

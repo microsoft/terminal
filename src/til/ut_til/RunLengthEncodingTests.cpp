@@ -13,15 +13,34 @@ class RunLengthEncodingTests
 {
     TEST_CLASS(RunLengthEncodingTests);
 
+    // NOTE: In some cases, these tests are also about ensuring that the various scenarios
+    // for template usage can compile correctly and will have minimal exercised functionality
+    // at unit test runtime.
+
+    TEST_METHOD(ConstructEmpty)
+    {
+        til::rle<unsigned int> rle;
+        VERIFY_ARE_EQUAL(0, rle.size());
+        VERIFY_ARE_EQUAL(rle.cbegin(), rle.cend());
+    }
+
     TEST_METHOD(ConstructDefaultLength)
     {
         til::rle<unsigned int> rle(86, 9);
-        auto foo = rle.begin();
+        VERIFY_ARE_EQUAL(86, rle.size());
     }
 
     TEST_METHOD(ConstructVerySmall)
     {
         const til::rle<unsigned short, unsigned char> rle(12, 37);
+        VERIFY_ARE_EQUAL(12, rle.size());
+    }
+
+    TEST_METHOD(ConstructWithMinimumLoadSize)
+    {
+        const til::rle<unsigned short, unsigned short> def;
+        const til::rle<unsigned short, unsigned short, 3> bigger;
+        VERIFY_IS_GREATER_THAN(sizeof(bigger), sizeof(def));
     }
 
     TEST_METHOD(Size)
@@ -162,6 +181,8 @@ class RunLengthEncodingTests
         expected.insert(49, 10, 5);
         expected.insert(11, 15, 2);
         expected.insert(81, 17, 3);
+
+        VERIFY_ARE_EQUAL(expected, actual);
     }
 
     TEST_METHOD(ResizeShrink)
