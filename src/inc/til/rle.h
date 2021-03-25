@@ -298,7 +298,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         public:
             // This looks like a lot, but seriously... we're defining nothing here.
-            // It's literally just stripping consts off of the const iterator and
+            // It's literally just stripping const off of the const iterator and
             // making those accessible.
             // If you use this as a sample, all you have to change is:
             // 1. Make it inherit correctly and align that with the template.
