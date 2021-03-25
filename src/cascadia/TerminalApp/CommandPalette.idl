@@ -25,7 +25,7 @@ namespace TerminalApp
 
         void SetTabs(Windows.Foundation.Collections.IObservableVector<TabBase> tabs, Windows.Foundation.Collections.IObservableVector<TabBase> mruTabs);
 
-        void SetKeyMap(Microsoft.Terminal.Settings.Model.KeyMapping keymap);
+        void SetActionMap(Microsoft.Terminal.Settings.Model.ActionMap actionMap);
 
         void SelectNextItem(Boolean moveDown);
 

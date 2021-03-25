@@ -70,7 +70,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::GlobalAppSettings GlobalSettings() const;
         Windows::Foundation::Collections::IObservableVector<Model::Profile> AllProfiles() const noexcept;
         Windows::Foundation::Collections::IObservableVector<Model::Profile> ActiveProfiles() const noexcept;
-        Model::KeyMapping KeyMap() const noexcept;
+        Model::ActionMap ActionMap() const noexcept;
 
         static com_ptr<CascadiaSettings> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);

@@ -148,9 +148,9 @@ namespace winrt::TerminalApp::implementation
         _dispatch = dispatch;
     }
 
-    void TabBase::SetKeyMap(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap)
+    void TabBase::SetActionMap(const Microsoft::Terminal::Settings::Model::ActionMap& actionMap)
     {
-        _keymap = keymap;
+        _actionMap = actionMap;
         _UpdateSwitchToTabKeyChord();
     }
 
@@ -163,9 +163,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     winrt::fire_and_forget TabBase::_UpdateSwitchToTabKeyChord()
     {
-        SwitchToTabArgs args{ _TabViewIndex };
-        ActionAndArgs switchToTab{ ShortcutAction::SwitchToTab, args };
-        const auto keyChord = _keymap ? _keymap.GetKeyBindingForActionWithArgs(switchToTab) : nullptr;
+        const auto keyChord = _actionMap ? _actionMap.GetKeyBindingForAction(ShortcutAction::SwitchToTab, SwitchToTabArgs{ _TabViewIndex }) : nullptr;
         const auto keyChordText = keyChord ? KeyChordSerialization::ToString(keyChord) : L"";
 
         if (_keyChord == keyChordText)

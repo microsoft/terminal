@@ -4,8 +4,7 @@
 #include "IInheritable.idl.h"
 
 import "ColorScheme.idl";
-import "KeyMapping.idl";
-import "Command.idl";
+import "ActionMap.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
@@ -73,8 +72,6 @@ namespace Microsoft.Terminal.Settings.Model
         void AddColorScheme(ColorScheme scheme);
         void RemoveColorScheme(String schemeName);
 
-        KeyMapping KeyMap();
-
-        Windows.Foundation.Collections.IMapView<String, Command> Commands();
+        ActionMap ActionMap { get; };
     }
 }

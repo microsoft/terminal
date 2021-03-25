@@ -186,9 +186,9 @@ IObservableVector<winrt::Microsoft::Terminal::Settings::Model::Profile> Cascadia
 // - <none>
 // Return Value:
 // - the globally configured keybindings
-winrt::Microsoft::Terminal::Settings::Model::KeyMapping CascadiaSettings::KeyMap() const noexcept
+winrt::Microsoft::Terminal::Settings::Model::ActionMap CascadiaSettings::ActionMap() const noexcept
 {
-    return _globals->KeyMap();
+    return _globals->ActionMap();
 }
 
 // Method Description:
@@ -780,7 +780,7 @@ void CascadiaSettings::_ValidateKeybindings()
 void CascadiaSettings::_ValidateColorSchemesInCommands()
 {
     bool foundInvalidScheme{ false };
-    for (const auto& nameAndCmd : _globals->Commands())
+    for (const auto& nameAndCmd : _globals->ActionMap().NameMap())
     {
         if (_HasInvalidColorScheme(nameAndCmd.Value()))
         {
