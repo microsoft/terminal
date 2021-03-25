@@ -182,6 +182,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         enum DcsActionCodes : uint64_t
         {
+            SIXEL_DefineImage = VTID("q"),
             DECDLD_DownloadDRCS = VTID("{"),
             DECAUPSS_AssignUserPreferenceSupplementalSet = VTID("!u"),
             DECDMAC_DefineMacro = VTID("!z"),

@@ -3972,6 +3972,22 @@ bool AdaptDispatch::DoVsCodeAction(const std::wstring_view string)
 }
 
 // Method Description:
+// - SIXEL - Defines an image transmitted in sixel format via the returned
+//   StringHandler function.
+// Arguments:
+// - macroParameter - Selects one a of set of predefined aspect ratios.
+// - backgroundSelect - Whether the background should be transparent or opaque.
+// - backgroundColor - The color number used for the background (VT240).
+// Return Value:
+// - a function to receive the pixel data or nullptr if parameters are invalid
+ITermDispatch::StringHandler AdaptDispatch::DefineSixelImage(const VTInt /*macroParameter*/,
+                                                             const DispatchTypes::SixelBackground /*backgroundSelect*/,
+                                                             const VTParameter /*backgroundColor*/) noexcept
+{
+    return nullptr;
+}
+
+// Method Description:
 // - DECDLD - Downloads one or more characters of a dynamically redefinable
 //   character set (DRCS) with a specified pixel pattern. The pixel array is
 //   transmitted in sixel format via the returned StringHandler function.

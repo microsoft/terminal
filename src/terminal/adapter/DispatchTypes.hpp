@@ -605,6 +605,13 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         DependsOnMode
     };
 
+    enum class SixelBackground : VTInt
+    {
+        Default = 0,
+        Transparent = 1,
+        Opaque = 2
+    };
+
     enum class DrcsEraseControl : VTInt
     {
         AllChars = 0,
