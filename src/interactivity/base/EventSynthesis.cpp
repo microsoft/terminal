@@ -33,7 +33,7 @@ std::deque<std::unique_ptr<KeyEvent>> Microsoft::Console::Interactivity::CharToK
 
         if (c3Applicable)
         {
-            if (WI_IsFlagSet(CharType, C3_ALPHA) || WI_IsFlagSet(CharType, C3_FULLWIDTH) || WI_IsFlagSet(CharType, C3_SYMBOL))
+            if (WI_IsFlagSet(CharType, C3_ALPHA) || WI_IsFlagSet(CharType, C3_FULLWIDTH) || WI_IsFlagSet(CharType, C3_SYMBOL) || WI_IsFlagSet(CharType, C3_LEXICAL))
             {
                 keyState = 0;
             }
