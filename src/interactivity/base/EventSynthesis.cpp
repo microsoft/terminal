@@ -29,10 +29,22 @@ std::deque<std::unique_ptr<KeyEvent>> Microsoft::Console::Interactivity::CharToK
         // not include symbolic character for DBCS.
         WORD CharType = 0;
         GetStringTypeW(CT_CTYPE3, &wch, 1, &CharType);
+        bool c3Applicable = CharType != C3_NOTAPPLICABLE;
 
-        if (WI_IsFlagSet(CharType, C3_ALPHA) || GetQuickCharWidth(wch) == CodepointWidth::Wide)
+        if (c3Applicable)
         {
-            keyState = 0;
+            if (WI_IsFlagSet(CharType, C3_ALPHA) || WI_IsFlagSet(CharType, C3_FULLWIDTH) || WI_IsFlagSet(CharType, C3_SYMBOL) || GetQuickCharWidth(wch) == CodepointWidth::Wide)
+            {
+                keyState = 0;
+            }
+        }
+        else
+        {
+            GetStringTypeW(CT_CTYPE1, &wch, 1, &CharType);
+            if (WI_IsFlagSet(CharType, C1_PUNCT) || GetQuickCharWidth(wch) == CodepointWidth::Wide)
+            {
+                keyState = 0;
+            }
         }
     }
 
