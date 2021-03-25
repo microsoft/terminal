@@ -3345,7 +3345,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _lastHoveredCell = terminalPosition;
 
         uint16_t newId{ 0u };
-        // we can't use auto here becuase we're pre-declaring newInterval.
+        // we can't use auto here because we're pre-declaring newInterval.
         decltype(_terminal->GetHyperlinkIntervalFromPosition(COORD{})) newInterval{ std::nullopt };
         if (terminalPosition.has_value())
         {
