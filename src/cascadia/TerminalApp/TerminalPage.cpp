@@ -3398,7 +3398,9 @@ namespace winrt::TerminalApp::implementation
                 if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(args.SchemeName()))
                 {
                     // Get the settings of the focused control and stash them
-                    _originalSettings = activeControl.Settings().as<TerminalSettings>();
+                    auto controlSettings = activeControl.Settings().as<TerminalSettings>();
+
+                    _originalSettings = controlSettings.GetParent();
                     // Create a new child for those settings
                     // auto childImpl = _originalSettings.CreateChild();
                     TerminalSettingsStruct fake{ _originalSettings, nullptr };
@@ -3408,7 +3410,7 @@ namespace winrt::TerminalApp::implementation
                     childStruct.DefaultSettings().ApplyColorScheme(scheme);
 
                     // Insert that new child as the parent of the control's settings
-                    activeControl.Settings().as<TerminalSettings>().SetParent(childStruct.DefaultSettings());
+                    controlSettings.SetParent(childStruct.DefaultSettings());
                     activeControl.UpdateSettings();
                 }
             }

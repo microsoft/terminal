@@ -205,6 +205,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         InsertParent(parentImpl);
     }
 
+    Model::TerminalSettings TerminalSettings::GetParent()
+    {
+        if (_parents.size() > 0)
+        {
+            return *_parents.at(0);
+        }
+        return nullptr;
+    }
+
     // Method Description:
     // - Apply Profile settings, as well as any colors from our color scheme, if we have one.
     // Arguments:
