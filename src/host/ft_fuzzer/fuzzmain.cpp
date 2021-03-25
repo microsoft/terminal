@@ -117,7 +117,11 @@ extern "C" __declspec(dllexport) HRESULT RunConhost()
     return hr;
 }
 
+#ifdef FUZZING_BUILD
 extern "C" __declspec(dllexport) int LLVMFuzzerInitialize(int* /*argc*/, char*** /*argv*/)
+#else
+int main(int /*argc*/, char** /*argv*/)
+#endif
 {
     RETURN_IF_FAILED(RunConhost());
     return 0;

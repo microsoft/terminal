@@ -189,9 +189,10 @@
       <AdditionalOptions>/fsanitize=address /fsanitize-coverage=inline-bool-flag /fsanitize-coverage=edge /fsanitize-coverage=trace-cmp /fsanitize-coverage=trace-div %(AdditionalOptions)</AdditionalOptions>
       <!-- The fuzzer requires a static CRT -->
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>FUZZING_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libsancov.lib;clang_rt.asan-$(OCClangArchitectureName).lib;clang_rt.fuzzer-$(OCClangArchitectureName).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libsancov.lib;clang_rt.asan-$(OCClangArchitectureName).lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 
