@@ -400,6 +400,7 @@ namespace winrt::TerminalApp::implementation
                             parentSettings = controlSettings.GetParent();
                         }
 
+                        // ApplyColorScheme(nullptr) will clear the old color scheme.
                         controlSettings.ApplyColorScheme(nullptr);
                         parentSettings.ApplyColorScheme(scheme);
 

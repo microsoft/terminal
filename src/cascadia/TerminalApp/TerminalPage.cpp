@@ -3350,6 +3350,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Stop previewing the currently previewed action. We can use this to
+    //   clean up any state from that action's preview.
+    // - We use _lastPreviewedCommand to determine what type of action to clean up.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TerminalPage::_EndPreview()
     {
         if (_lastPreviewedCommand == nullptr || _lastPreviewedCommand.Action() == nullptr)
@@ -3367,27 +3375,62 @@ namespace winrt::TerminalApp::implementation
         _lastPreviewedCommand = nullptr;
     }
 
+    // Method Description:
+    // - Revert any changes from the preview on a SetColorScheme action. This
+    //   will remove the preview TerminalSettings we inserted into the control's
+    //   TerminalSettings graph, and update the control.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TerminalPage::_EndPreviewColorScheme()
     {
         // Get the focused control
-        // Get the settings of the focused control
-        // Set the original settings as the parent of the control's settings
         if (const auto activeTab{ _GetFocusedTabImpl() })
         {
             if (auto activeControl = activeTab->GetActiveTerminalControl())
             {
-                auto controlCurrentSettings = activeControl.Settings().as<TerminalSettings>();
+                // Get the runtime settings of the focused control
+                auto controlSettings = activeControl.Settings().as<TerminalSettings>();
 
-                // if (controlCurrentSettings.Parents().size() == 1 && controlCurrentSettings.Parents().at(0) == _originalSettings)
-                // {
-                activeControl.Settings().as<TerminalSettings>().SetParent(_originalSettings);
+                // Get the control's root settings, the ones that we actually
+                // assigned to it.
+                auto parentSettings = controlSettings.GetParent();
+                while (parentSettings.GetParent() != nullptr)
+                {
+                    parentSettings = parentSettings.GetParent();
+                }
+
+                // If the root settings are the same as the ones we stashed,
+                // then reset the parent of the runtime settings to the stashed
+                // settings. This condition might be false if the settings
+                // hot-reloaded while the palette was open. In that case, we
+                // don't want to reset the settings to what they were _before_
+                // the hot-reload.
+                if (_originalSettings == parentSettings)
+                {
+                    // Set the original settings as the parent of the control's settings
+                    activeControl.Settings().as<TerminalSettings>().SetParent(_originalSettings);
+                }
+
                 activeControl.UpdateSettings();
-                // }
             }
         }
         _originalSettings = nullptr;
     }
 
+    // Method Description:
+    // - Preview handler for the SetColorScheme action.
+    // - This method will stash the settings of the current control in
+    //   _originalSettings. Then it will create a new TerminalSettings object
+    //   with only the properties from the ColorScheme set. It'll _insert_ a
+    //   TerminalSettings between the control's root settings (built from
+    //   CascadiaSettings) and the control's runtime settings. That'll cause the
+    //   control to use _that_ table as the active color scheme.
+    // Arguments:
+    // - args: The SetColorScheme args with the name of the scheme to use.
+    // Return Value:
+    // - <none>
     void TerminalPage::_PreviewColorScheme(const Settings::Model::SetColorSchemeArgs& args)
     {
         // Get the focused control
@@ -3399,6 +3442,11 @@ namespace winrt::TerminalApp::implementation
                 {
                     // Get the settings of the focused control and stash them
                     auto controlSettings = activeControl.Settings().as<TerminalSettings>();
+                    // Make sure to recurse up to the root - if you're doing
+                    // this while you're currently previewing a SetColorScheme
+                    // action, then the parent of the control's settings is _the
+                    // last preview TerminalSettings we inserted! we don't want
+                    // to save that one!
                     _originalSettings = controlSettings.GetParent();
                     while (_originalSettings.GetParent() != nullptr)
                     {
@@ -3418,6 +3466,21 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Handler for the CommandPalette::PreviewAction event. The Command
+    //   Palette will raise this even when an action is selected, but _not_
+    //   committed. This gives the Terminal a chance to display a "preview" of
+    //   the action.
+    // - This will be called with a null args before an action is dispatched, or
+    //   when the palette is dismissed.
+    // - For any actions that are to be previewed here, MAKE SURE TO RESTORE THE
+    //   STATE IN `TerminalPage::_EndPreview`. That method is called to revert
+    //   the terminal to the state it was in at the start of the preview.
+    // - Currently, only SetColorScheme actions are previewable.
+    // Arguments:
+    // - args: The Command that's trying to be previewed, or nullptr if we should stop the preview.
+    // Return Value:
+    // - <none>
     void TerminalPage::_PreviewActionHandler(const IInspectable& /*sender*/,
                                              const Microsoft::Terminal::Settings::Model::Command& args)
     {
@@ -3435,6 +3498,15 @@ namespace winrt::TerminalApp::implementation
                 break;
             }
             }
+
+            // Other ideas for actions that could be previewable:
+            // * Set Font size
+            // * Set acrylic true/false/opactity?
+            // * SetPixelShaderPath?
+            // * SetWindowTheme (light/dark/system/<some theme from #3327>)?
+
+            // Stash this action, so we know what to do when we're done
+            // previewing.
             _lastPreviewedCommand = args;
         }
     }

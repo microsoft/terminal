@@ -290,6 +290,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - <none>
     void TerminalSettings::ApplyColorScheme(const Model::ColorScheme& scheme)
     {
+        // If the scheme was nullptr, then just clear out the current color
+        // settings.
         if (scheme == nullptr)
         {
             ClearDefaultForeground();
