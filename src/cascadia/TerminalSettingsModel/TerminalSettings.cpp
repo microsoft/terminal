@@ -290,17 +290,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - <none>
     void TerminalSettings::ApplyColorScheme(const Model::ColorScheme& scheme)
     {
-        _DefaultForeground = til::color{ scheme.Foreground() };
-        _DefaultBackground = til::color{ scheme.Background() };
-        _SelectionBackground = til::color{ scheme.SelectionBackground() };
-        _CursorColor = til::color{ scheme.CursorColor() };
+        if (scheme == nullptr)
+        {
+            ClearDefaultForeground();
+            ClearDefaultBackground();
+            ClearSelectionBackground();
+            ClearCursorColor();
+            _ColorTable = std::nullopt;
+        }
+        else
+        {
+            _DefaultForeground = til::color{ scheme.Foreground() };
+            _DefaultBackground = til::color{ scheme.Background() };
+            _SelectionBackground = til::color{ scheme.SelectionBackground() };
+            _CursorColor = til::color{ scheme.CursorColor() };
 
-        const auto table = scheme.Table();
-        std::array<uint32_t, COLOR_TABLE_SIZE> colorTable{};
-        std::transform(table.cbegin(), table.cend(), colorTable.begin(), [](auto&& color) {
-            return static_cast<uint32_t>(til::color{ color });
-        });
-        ColorTable(colorTable);
+            const auto table = scheme.Table();
+            std::array<uint32_t, COLOR_TABLE_SIZE> colorTable{};
+            std::transform(table.cbegin(), table.cend(), colorTable.begin(), [](auto&& color) {
+                return static_cast<uint32_t>(til::color{ color });
+            });
+            ColorTable(colorTable);
+        }
     }
 
     uint32_t TerminalSettings::GetColorTableEntry(int32_t index) noexcept

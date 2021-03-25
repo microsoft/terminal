@@ -3399,14 +3399,15 @@ namespace winrt::TerminalApp::implementation
                 {
                     // Get the settings of the focused control and stash them
                     auto controlSettings = activeControl.Settings().as<TerminalSettings>();
-
                     _originalSettings = controlSettings.GetParent();
+                    while (_originalSettings.GetParent() != nullptr)
+                    {
+                        _originalSettings = _originalSettings.GetParent();
+                    }
                     // Create a new child for those settings
-                    // auto childImpl = _originalSettings.CreateChild();
                     TerminalSettingsStruct fake{ _originalSettings, nullptr };
                     auto childStruct = TerminalSettings::CreateWithParent(fake);
                     // Modify the child to have the applied color scheme
-                    // childImpl->ApplyColorScheme(scheme);
                     childStruct.DefaultSettings().ApplyColorScheme(scheme);
 
                     // Insert that new child as the parent of the control's settings
