@@ -805,7 +805,7 @@ namespace winrt::TerminalApp::implementation
     //      currently displayed, it will be shown.
     // Arguments:
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
-    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, Microsoft::Terminal::Settings::Model::TerminalSettingsStruct settings)
+    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, const Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings)
     {
         // Initialize the new tab
 
@@ -1856,7 +1856,7 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
-            TerminalSettingsStruct controlSettings{ nullptr };
+            TerminalSettingsCreateResult controlSettings{ nullptr };
             GUID realGuid;
             bool profileFound = false;
 
@@ -2545,17 +2545,14 @@ namespace winrt::TerminalApp::implementation
         _RemoveTabViewItem(tabViewItem);
     }
 
-    TermControl TerminalPage::_InitControl(const TerminalSettingsStruct& settings, const ITerminalConnection& connection)
+    TermControl TerminalPage::_InitControl(const TerminalSettingsCreateResult& settings, const ITerminalConnection& connection)
     {
         // Give term control a child of the settings so that any overrides go in the child
         // This way, when we do a settings reload we just update the parent and the overrides remain
         const auto child = TerminalSettings::CreateWithParent(settings);
         TermControl term{ child.DefaultSettings(), connection };
 
-        if (child.UnfocusedSettings())
-        {
-            term.UnfocusedAppearance(child.UnfocusedSettings());
-        }
+        term.UnfocusedAppearance(child.UnfocusedSettings()); // It is okay for the unfocused settings to be null
 
         return term;
     }

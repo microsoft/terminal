@@ -26,7 +26,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
         winrt::fire_and_forget UpdateSettings();
-        winrt::fire_and_forget UpdateAppearance(IControlAppearance newAppearance);
+        winrt::fire_and_forget UpdateAppearance(const IControlAppearance newAppearance);
 
         hstring Title();
         hstring GetProfileName() const;

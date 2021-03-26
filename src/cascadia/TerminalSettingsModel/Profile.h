@@ -68,6 +68,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         Model::IAppearanceConfig DefaultAppearance();
 
+        void _FinalizeInheritance() override;
+
         WINRT_PROPERTY(OriginTag, Origin, OriginTag::Custom);
 
         INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));

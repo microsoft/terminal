@@ -58,7 +58,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - appSettings: the set of settings being used to construct the new terminal
     // - profileGuid: the unique identifier (guid) of the profile
     // - keybindings: the keybinding handler
-    Model::TerminalSettingsStruct TerminalSettings::CreateWithProfileByID(const Model::CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings)
+    Model::TerminalSettingsCreateResult TerminalSettings::CreateWithProfileByID(const Model::CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings)
     {
         auto settings{ winrt::make_self<TerminalSettings>() };
         settings->_KeyBindings = keybindings;
@@ -75,10 +75,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto child = settings->CreateChild();
             child->_ApplyAppearanceSettings(profile.UnfocusedAppearance(), globals.ColorSchemes());
-            return winrt::make<TerminalSettingsStruct>(*settings, *child);
+            return winrt::make<TerminalSettingsCreateResult>(*settings, *child);
         }
 
-        return winrt::make<TerminalSettingsStruct>(*settings, nullptr);
+        return winrt::make<TerminalSettingsCreateResult>(*settings, nullptr);
     }
 
     // Method Description:
@@ -98,39 +98,40 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - keybindings: the keybinding handler
     // Return Value:
     // - the GUID of the created profile, and a fully initialized TerminalSettings object
-    Model::TerminalSettingsStruct TerminalSettings::CreateWithNewTerminalArgs(const CascadiaSettings& appSettings,
+    Model::TerminalSettingsCreateResult TerminalSettings::CreateWithNewTerminalArgs(const CascadiaSettings& appSettings,
                                                                               const NewTerminalArgs& newTerminalArgs,
                                                                               const IKeyBindings& keybindings)
     {
         const guid profileGuid = appSettings.GetProfileForArgs(newTerminalArgs);
-        auto settings = CreateWithProfileByID(appSettings, profileGuid, keybindings);
+        auto settingsPair = CreateWithProfileByID(appSettings, profileGuid, keybindings);
+        auto defaultSettings = settingsPair.DefaultSettings();
 
         if (newTerminalArgs)
         {
             // Override commandline, starting directory if they exist in newTerminalArgs
             if (!newTerminalArgs.Commandline().empty())
             {
-                settings.DefaultSettings().Commandline(newTerminalArgs.Commandline());
+                defaultSettings.Commandline(newTerminalArgs.Commandline());
             }
             if (!newTerminalArgs.StartingDirectory().empty())
             {
-                settings.DefaultSettings().StartingDirectory(newTerminalArgs.StartingDirectory());
+                defaultSettings.StartingDirectory(newTerminalArgs.StartingDirectory());
             }
             if (!newTerminalArgs.TabTitle().empty())
             {
-                settings.DefaultSettings().StartingTitle(newTerminalArgs.TabTitle());
+                defaultSettings.StartingTitle(newTerminalArgs.TabTitle());
             }
             if (newTerminalArgs.TabColor())
             {
-                settings.DefaultSettings().StartingTabColor(static_cast<uint32_t>(til::color(newTerminalArgs.TabColor().Value())));
+                defaultSettings.StartingTabColor(static_cast<uint32_t>(til::color(newTerminalArgs.TabColor().Value())));
             }
             if (newTerminalArgs.SuppressApplicationTitle())
             {
-                settings.DefaultSettings().SuppressApplicationTitle(newTerminalArgs.SuppressApplicationTitle().Value());
+                defaultSettings.SuppressApplicationTitle(newTerminalArgs.SuppressApplicationTitle().Value());
             }
         }
 
-        return settings;
+        return settingsPair;
     }
 
     void TerminalSettings::_ApplyAppearanceSettings(const IAppearanceConfig& appearance, const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes)
@@ -179,7 +180,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - parent: the TerminalSettings object that the newly created TerminalSettings will inherit from
     // Return Value:
     // - a newly created child of the given parent object
-    Model::TerminalSettingsStruct TerminalSettings::CreateWithParent(const Model::TerminalSettingsStruct& parent)
+    Model::TerminalSettingsCreateResult TerminalSettings::CreateWithParent(const Model::TerminalSettingsCreateResult& parent)
     {
         THROW_HR_IF_NULL(E_INVALIDARG, parent);
 
@@ -189,7 +190,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             parent.UnfocusedSettings().SetParent(*defaultChild);
         }
-        return winrt::make<TerminalSettingsStruct>(*defaultChild, parent.UnfocusedSettings());
+        return winrt::make<TerminalSettingsCreateResult>(*defaultChild, parent.UnfocusedSettings());
     }
 
     // Method Description:

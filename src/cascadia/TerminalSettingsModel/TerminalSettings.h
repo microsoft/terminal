@@ -15,7 +15,7 @@ Author(s):
 #pragma once
 
 #include "TerminalSettings.g.h"
-#include "TerminalSettingsStruct.g.h"
+#include "TerminalSettingsCreateResult.g.h"
 #include "IInheritable.h"
 #include "../inc/cppwinrt_utils.h"
 #include <DefaultSettings.h>
@@ -29,11 +29,11 @@ namespace SettingsModelLocalTests
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct TerminalSettingsStruct :
-        public TerminalSettingsStructT<TerminalSettingsStruct>
+    struct TerminalSettingsCreateResult :
+        public TerminalSettingsCreateResultT<TerminalSettingsCreateResult>
     {
     public:
-        TerminalSettingsStruct(Model::TerminalSettings defaultSettings, Model::TerminalSettings unfocusedSettings) :
+        TerminalSettingsCreateResult(Model::TerminalSettings defaultSettings, Model::TerminalSettings unfocusedSettings) :
             _defaultSettings(defaultSettings),
             _unfocusedSettings(unfocusedSettings) {}
 
@@ -49,15 +49,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         TerminalSettings() = default;
 
-        static Model::TerminalSettingsStruct CreateWithProfileByID(const Model::CascadiaSettings& appSettings,
+        static Model::TerminalSettingsCreateResult CreateWithProfileByID(const Model::CascadiaSettings& appSettings,
                                                                    guid profileGuid,
                                                                    const Control::IKeyBindings& keybindings);
 
-        static Model::TerminalSettingsStruct CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
+        static Model::TerminalSettingsCreateResult CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
                                                                        const Model::NewTerminalArgs& newTerminalArgs,
                                                                        const Control::IKeyBindings& keybindings);
 
-        static Model::TerminalSettingsStruct CreateWithParent(const Model::TerminalSettingsStruct& parent);
+        static Model::TerminalSettingsCreateResult CreateWithParent(const Model::TerminalSettingsCreateResult& parent);
         void SetParent(const Model::TerminalSettings& parent);
 
         void ApplyColorScheme(const Model::ColorScheme& scheme);

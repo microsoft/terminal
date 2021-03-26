@@ -95,7 +95,8 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
     // Copy over the appearance
     winrt::com_ptr<AppearanceConfig> sourceDefaultAppearanceImpl;
     sourceDefaultAppearanceImpl.copy_from(winrt::get_self<AppearanceConfig>(source->_DefaultAppearance));
-    profile->_DefaultAppearance = *AppearanceConfig::CopyAppearance(sourceDefaultAppearanceImpl);
+    auto copiedDefaultAppearance = AppearanceConfig::CopyAppearance(sourceDefaultAppearanceImpl);
+    profile->_DefaultAppearance = *copiedDefaultAppearance;
 
     if (source->_UnfocusedAppearance.has_value())
     {
@@ -108,7 +109,11 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
             // Copy over the unfocused appearance
             winrt::com_ptr<AppearanceConfig> sourceUnfocusedAppearanceImpl;
             sourceUnfocusedAppearanceImpl.copy_from(winrt::get_self<AppearanceConfig>(source->_UnfocusedAppearance.value()));
-            profile->_UnfocusedAppearance = *AppearanceConfig::CopyAppearance(sourceUnfocusedAppearanceImpl);
+            auto copiedUnfocusedAppearance = AppearanceConfig::CopyAppearance(sourceUnfocusedAppearanceImpl);
+
+            // Make sure to add the default appearance as a parent
+            copiedUnfocusedAppearance->InsertParent(copiedDefaultAppearance);
+            profile->_UnfocusedAppearance = *copiedUnfocusedAppearance;
         }
     }
 
@@ -351,6 +356,17 @@ winrt::hstring Profile::EvaluatedStartingDirectory() const
     }
     // treated as "inherit directory from parent process"
     return path;
+}
+
+void Profile::_FinalizeInheritance()
+{
+    if (auto defaultAppearanceImpl = get_self<AppearanceConfig>(_DefaultAppearance))
+    {
+        if (auto parentDefaultAppearanceImpl = _parents.at(0)->_DefaultAppearance.try_as<AppearanceConfig>())
+        {
+            defaultAppearanceImpl->InsertParent(0, parentDefaultAppearanceImpl);
+        }
+    }
 }
 
 winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig Profile::DefaultAppearance()

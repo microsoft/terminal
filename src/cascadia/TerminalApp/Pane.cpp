@@ -631,7 +631,7 @@ void Pane::_FocusFirstChild()
 // - profile: The GUID of the profile these settings should apply to.
 // Return Value:
 // - <none>
-void Pane::UpdateSettings(const TerminalSettingsStruct& settings, const GUID& profile)
+void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const GUID& profile)
 {
     if (!_IsLeaf())
     {
@@ -645,16 +645,12 @@ void Pane::UpdateSettings(const TerminalSettingsStruct& settings, const GUID& pr
             // Update the parent of the control's settings object (and not the object itself) so
             // that any overrides made by the control don't get affected by the reload
             _control.Settings().as<TerminalSettings>().SetParent(settings.DefaultSettings());
-            if (settings.UnfocusedSettings())
+            auto unfocusedSettings{ settings.UnfocusedSettings() };
+            if (unfocusedSettings)
             {
-                // Update the control's unfocused appearance, and make sure to maintain the parentage
-                _control.UnfocusedAppearance(settings.UnfocusedSettings());
-                _control.UnfocusedAppearance().as<TerminalSettings>().SetParent(_control.Settings().as<TerminalSettings>());
+                unfocusedSettings.SetParent(_control.Settings().as<TerminalSettings>());
             }
-            else
-            {
-                _control.UnfocusedAppearance(nullptr);
-            }
+            _control.UnfocusedAppearance(unfocusedSettings);
             _control.UpdateSettings();
         }
     }

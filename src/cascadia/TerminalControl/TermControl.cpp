@@ -319,7 +319,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Dispatches a call to the UI thread and updates the appearance
     // Arguments:
     // - newAppearance: the new appearance to set
-    winrt::fire_and_forget TermControl::UpdateAppearance(IControlAppearance newAppearance)
+    winrt::fire_and_forget TermControl::UpdateAppearance(const IControlAppearance newAppearance)
     {
         // Dispatch a call to the UI thread
         co_await winrt::resume_foreground(Dispatcher());
