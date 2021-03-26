@@ -191,10 +191,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
     CATCH_RETURN();
 
-    ConptyConnection::ConptyConnection(const uint64_t hSig,
-                                       const uint64_t hIn,
-                                       const uint64_t hOut,
-                                       const uint64_t hClientProcess) :
+    ConptyConnection::ConptyConnection(const HANDLE hSig,
+                                       const HANDLE hIn,
+                                       const HANDLE hOut,
+                                       const HANDLE hClientProcess) :
         _initialRows{ 25 },
         _initialCols{ 80 },
         _commandline{ L"" },
@@ -205,8 +205,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _u8State{},
         _u16Str{},
         _buffer{},
-        _inPipe{ (HANDLE)hIn },
-        _outPipe{ (HANDLE)hOut }
+        _inPipe{ hIn },
+        _outPipe{ hOut }
     {
         hSig; // TODO: GH 9464 this needs to be packed into the hpcon
         if (_guid == guid{})
@@ -214,12 +214,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _guid = Utils::CreateGuid();
         }
 
-        // We are knowingly doing a semi-dangerous repack
-        // of a HANDLE in a 64-bit number for this interface.
-        // Reinterpret and C-cast are really our options for
-        // getting the data out and both need an audit suppress.
-#pragma warning(suppress : 26493)
-        _piClient.hProcess = (HANDLE)(hClientProcess);
+        _piClient.hProcess = hClientProcess;
     }
 
     ConptyConnection::ConptyConnection(const hstring& commandline,
@@ -494,7 +489,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE process) noexcept
     try
     {
-        auto conn = winrt::make<ConptyConnection>((uint64_t)signal, (uint64_t)in, (uint64_t)out, (uint64_t)process);
+        auto conn = winrt::make<implementation::ConptyConnection>(signal, in, out, process);
         _newConnectionHandlers(conn);
 
         return S_OK;

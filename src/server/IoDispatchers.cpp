@@ -146,19 +146,18 @@ static bool _shouldAttemptHandoff(const Globals& globals,
                                   const CONSOLE_INFORMATION& gci,
                                   CONSOLE_API_CONNECTINFO& cac)
 {
-#ifdef __INSIDE_WINDOWS
-    const bool insideWindows = true;
-#else
-    const bool insideWindows = false;
-#endif
+#ifndef __INSIDE_WINDOWS
+
+    UNREFERENCED_PARAMETER(globals);
+    UNREFERENCED_PARAMETER(gci);
+    UNREFERENCED_PARAMETER(cac);
 
     // If we are outside of Windows, do not attempt a handoff
     // to another target as handoff is an inbox escape mechanism
     // to get to this copy!
-    if (!insideWindows)
-    {
-        return false;
-    }
+    return false;
+
+#else
 
     // This console is already initialized. Do not
     // attempt handoff to another one.
@@ -223,6 +222,7 @@ static bool _shouldAttemptHandoff(const Globals& globals,
     }
 
     return true;
+#endif
 }
 
 // Routine Description:

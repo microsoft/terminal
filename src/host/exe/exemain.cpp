@@ -177,7 +177,7 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
 
 // Routine Description:
 // - Called back when COM says there is nothing left for our server to do and we can tear down.
-void _releaseNotifier() noexcept
+static void _releaseNotifier() noexcept
 {
     _comServerExitEvent.SetEvent();
 }

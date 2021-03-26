@@ -416,7 +416,7 @@ try
     outPipeTheirSide.release();
     signalPipeTheirSide.release();
 
-    const auto commandLine = fmt::format(L" --headless --signal {:#x}", (int64_t)signalPipeOurSide.release());
+    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --signal {:#x}"), (int64_t)signalPipeOurSide.release());
 
     ConsoleArguments consoleArgs(commandLine, inPipeOurSide.release(), outPipeOurSide.release());
     RETURN_IF_FAILED(consoleArgs.ParseCommandline());

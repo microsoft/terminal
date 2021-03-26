@@ -363,7 +363,20 @@ namespace winrt::TerminalApp::implementation
             // them to nowhere.
             if (_shouldStartInboundListener)
             {
-                winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
+                try
+                {
+                   winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
+                }
+                // If we failed to start the listener, it will throw.
+                // We should fail fast here or the Terminal will be in a very strange state.
+                // We only start the listener if the Terminal was started with the COM server
+                // `-Embedding` flag and we make no tabs as a result.
+                // Therefore, if the listener cannot start itself up to make that tab with
+                // the inbound connection that caused the COM activation in the first place...
+                // we would be left with an empty terminal frame with no tabs.
+                // Instead, crash out so COM sees the server die and things unwind
+                // without a weird empty frame window.
+                CATCH_FAIL_FAST()
             }
         }
     }

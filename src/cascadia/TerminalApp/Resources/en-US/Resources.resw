@@ -588,10 +588,6 @@
   <data name="CommandPalette_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>More options</value>
   </data>
-  <data name="CmdEmbeddingDesc" xml:space="preserve">
-    <value>Listens for inbound connections from the operating system for command-line tools that do not yet have a window</value>
-    <comment>Description of how one of the command line arguments works. This is `wt.exe -Embedding`. While typically only called by the operating system as it attempts to find a suitable Terminal application that could host the window for a command-line app that is starting up, a user COULD technically call it manually. Thus the need to describe how it works.</comment>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>Maximize</value>
   </data>

@@ -19,10 +19,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     struct ConptyConnection : ConptyConnectionT<ConptyConnection>, ConnectionStateHolder<ConptyConnection>
     {
-        ConptyConnection(const uint64_t hSig,
-                         const uint64_t hIn,
-                         const uint64_t hOut,
-                         const uint64_t hClientProcess);
+        ConptyConnection(const HANDLE hSig,
+                         const HANDLE hIn,
+                         const HANDLE hOut,
+                         const HANDLE hClientProcess);
 
         ConptyConnection(
             const hstring& cmdline,

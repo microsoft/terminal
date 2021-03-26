@@ -5,8 +5,10 @@
 
 #include "CTerminalHandoff.h"
 
+using namespace Microsoft::WRL;
+
 // The callback function when a connection is received
-static NewHandoff _pfnHandoff = nullptr;
+static NewHandoffFunction _pfnHandoff = nullptr;
 // The registration ID of the class object for clean up later
 static DWORD g_cTerminalHandoffRegistration = 0;
 
@@ -17,7 +19,7 @@ static DWORD g_cTerminalHandoffRegistration = 0;
 // - pfnHandoff - Function to callback when a handoff is received
 // Return Value:
 // - S_OK, E_NOT_VALID_STATE (start called when already started) or relevant COM registration error.
-HRESULT CTerminalHandoff::s_StartListening(NewHandoff pfnHandoff) noexcept
+HRESULT CTerminalHandoff::s_StartListening(NewHandoffFunction pfnHandoff) noexcept
 try
 {
     RETURN_HR_IF(E_NOT_VALID_STATE, _pfnHandoff != nullptr);
@@ -52,7 +54,7 @@ HRESULT CTerminalHandoff::s_StopListening() noexcept
 
     if (g_cTerminalHandoffRegistration)
     {
-        RETURN_IF_FAILED(CoRevokeClassObject(g_cTerminalHandoffRegistration));
+        LOG_IF_FAILED(CoRevokeClassObject(g_cTerminalHandoffRegistration));
         g_cTerminalHandoffRegistration = 0;
     }
 
