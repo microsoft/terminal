@@ -67,6 +67,16 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </ComboBox>
                 </local:SettingContainer>
 
+                <!-- Default Terminal -->
+                <local:SettingContainer x:Uid="Globals_DefaultTerminal">
+                    <ComboBox x:Name="DefaultTerminal"
+                              x:Load="False"
+                              ItemsSource="{x:Bind DefaultTerminals, Mode=OneWay}"
+                              SelectedItem="{x:Bind CurrentDefaultTerminal, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}">
+                    </ComboBox>
+                </local:SettingContainer>
+
                 <!--Start on User Login-->
                 <local:SettingContainer x:Uid="Globals_StartOnUserLogin">
                     <ToggleSwitch IsOn="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}"/>
