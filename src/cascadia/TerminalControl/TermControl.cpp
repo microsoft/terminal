@@ -1815,7 +1815,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Clear the regex pattern tree so the renderer does not try to render them while scrolling
-        _terminal->ClearPatternTree();
+        {
+            // We're taking the lock here instead of in ClearPatternTree because ClearPatternTree is
+            // sometimes called from an already-locked context. Here, we are sure we are not
+            // already under lock (since it is not an internal scroll bar update)
+            // TODO GH#9617: refine locking around pattern tree
+            auto lock = _terminal->LockForWriting();
+            _terminal->ClearPatternTree();
+        }
 
         const auto newValue = static_cast<int>(args.NewValue());
 
@@ -2434,6 +2441,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Clear the regex pattern tree so the renderer does not try to render them while scrolling
+        // We're **NOT** taking the lock here unlike _ScrollbarChangeHandler because
+        // we are already under lock (since this usually happens as a result of writing).
+        // TODO GH#9617: refine locking around pattern tree
         _terminal->ClearPatternTree();
 
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
@@ -3334,8 +3344,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _lastHoveredCell = terminalPosition;
 
+        uint16_t newId{ 0u };
+        // we can't use auto here because we're pre-declaring newInterval.
+        decltype(_terminal->GetHyperlinkIntervalFromPosition(COORD{})) newInterval{ std::nullopt };
         if (terminalPosition.has_value())
         {
+            auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
+
             const auto uri = _terminal->GetHyperlinkAtPosition(*terminalPosition);
             if (!uri.empty())
             {
@@ -3361,15 +3376,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
                 OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
             }
-        }
 
-        const uint16_t newId = terminalPosition.has_value() ? _terminal->GetHyperlinkIdAtPosition(*terminalPosition) : 0u;
-        const auto newInterval = terminalPosition.has_value() ? _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition) : std::nullopt;
+            newId = _terminal->GetHyperlinkIdAtPosition(*terminalPosition);
+            newInterval = _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition);
+        }
 
         // If the hyperlink ID changed or the interval changed, trigger a redraw all
         // (so this will happen both when we move onto a link and when we move off a link)
         if (newId != _lastHoveredId || (newInterval != _lastHoveredInterval))
         {
+            auto lock = _terminal->LockForWriting();
             _lastHoveredId = newId;
             _lastHoveredInterval = newInterval;
             _renderEngine->UpdateHyperlinkHoveredId(newId);
