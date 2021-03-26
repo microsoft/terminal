@@ -10,13 +10,6 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Page.Resources>
-        <ResourceDictionary>
-            <local:WindowIdConverter x:Key="WindowIdConverter"/>
-            <local:WindowNameConverter x:Key="WindowNameConverter"/>
-        </ResourceDictionary>
-    </Page.Resources>
-
     <Grid x:Name="Root" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -146,8 +139,8 @@ the MIT License. See LICENSE in the project root for license information. -->
         <mux:TeachingTip x:Name="WindowIdToast"
                          x:Load="False"
                          IsLightDismissEnabled="True"
-                         Title="{x:Bind WindowId, Mode=OneWay, Converter={StaticResource WindowIdConverter}}"
-                         Subtitle="{x:Bind WindowName, Mode=OneWay, Converter={StaticResource WindowNameConverter}}">
+                         Title="{x:Bind WindowIdForDisplay}"
+                         Subtitle="{x:Bind WindowNameForDisplay}">
         </mux:TeachingTip>
     </Grid>
 </Page>

@@ -86,9 +86,17 @@ namespace winrt::TerminalApp::implementation
                                                      const bool initial,
                                                      const winrt::hstring cwd = L"");
 
+        // Normally, WindowName and WindowId would be
+        // WINRT_OBSERVABLE_PROPERTY's, but we want them to raise
+        // WindowNameForDisplay and WindowIdForDisplay instead
+        winrt::hstring WindowName() const noexcept;
+        void WindowName(const winrt::hstring& value);
+        uint64_t WindowId() const noexcept;
+        void WindowId(const uint64_t& value);
+        winrt::hstring WindowIdForDisplay() const noexcept;
+        winrt::hstring WindowNameForDisplay() const noexcept;
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, WindowName, _PropertyChangedHandlers);
-        WINRT_OBSERVABLE_PROPERTY(uint64_t, WindowId, _PropertyChangedHandlers);
 
         // -------------------------------- WinRT Events ---------------------------------
         TYPED_EVENT(TitleChanged, IInspectable, winrt::hstring);
@@ -130,6 +138,8 @@ namespace winrt::TerminalApp::implementation
         bool _isInFocusMode{ false };
         bool _isFullscreen{ false };
         bool _isAlwaysOnTop{ false };
+        winrt::hstring _WindowName{};
+        uint64_t _WindowId{ 0 };
 
         bool _rearranging;
         std::optional<int> _rearrangeFrom;

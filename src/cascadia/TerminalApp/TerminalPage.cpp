@@ -3387,4 +3387,61 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // WindowName is a otherwise generic WINRT_OBSERVABLE_PROPERTY, but it needs
+    // to raise a PropertyChanged for WindowNameForDisplay, instead of
+    // WindowName.
+    winrt::hstring TerminalPage::WindowName() const noexcept
+    {
+        return _WindowName;
+    }
+    void TerminalPage::WindowName(const winrt::hstring& value)
+    {
+        if (_WindowName != value)
+        {
+            _WindowName = value;
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+        }
+    }
+
+    // WindowId is a otherwise generic WINRT_OBSERVABLE_PROPERTY, but it needs
+    // to raise a PropertyChanged for WindowIdForDisplay, instead of
+    // WindowId.
+    uint64_t TerminalPage::WindowId() const noexcept
+    {
+        return _WindowId;
+    }
+    void TerminalPage::WindowId(const uint64_t& value)
+    {
+        if (_WindowId != value)
+        {
+            _WindowId = value;
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
+        }
+    }
+
+    // Method Description:
+    // - Returns a label like "Window: 1234" for the ID of this window
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a string for displaying the name of the window.
+    winrt::hstring TerminalPage::WindowIdForDisplay() const noexcept
+    {
+        return winrt::hstring{ fmt::format(L"{}: {}",
+                                           std::wstring_view(RS_(L"WindowIdLabel")),
+                                           _WindowId) };
+    }
+
+    // Method Description:
+    // - Returns a label like "<unnamed window>" when the window has no name, or the name of the window.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a string for displaying the name of the window.
+    winrt::hstring TerminalPage::WindowNameForDisplay() const noexcept
+    {
+        return _WindowName.empty() ?
+                   winrt::hstring{ fmt::format(L"<{}>", RS_(L"UnnamedWindowName")) } :
+                   _WindowName;
+    }
 }
