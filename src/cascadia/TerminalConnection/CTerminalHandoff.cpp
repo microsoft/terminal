@@ -54,7 +54,7 @@ HRESULT CTerminalHandoff::s_StopListening() noexcept
 
     if (g_cTerminalHandoffRegistration)
     {
-        LOG_IF_FAILED(CoRevokeClassObject(g_cTerminalHandoffRegistration));
+        RETURN_IF_FAILED(CoRevokeClassObject(g_cTerminalHandoffRegistration));
         g_cTerminalHandoffRegistration = 0;
     }
 
