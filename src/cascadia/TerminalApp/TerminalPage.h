@@ -230,6 +230,9 @@ namespace winrt::TerminalApp::implementation
 
         fire_and_forget _LaunchSettings(const Microsoft::Terminal::Settings::Model::SettingsTarget target);
 
+        void _TabDragStarted(const IInspectable& sender, const IInspectable& eventArgs);
+        void _TabDragCompleted(const IInspectable& sender, const IInspectable& eventArgs);
+
         void _OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
         void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);

@@ -143,36 +143,8 @@ namespace winrt::TerminalApp::implementation
         _tabRow.PointerMoved({ get_weak(), &TerminalPage::_RestorePointerCursorHandler });
         _tabView.CanReorderTabs(!isElevated);
         _tabView.CanDragTabs(!isElevated);
-
-        _tabView.TabDragStarting([weakThis{ get_weak() }](auto&& /*o*/, auto&& /*a*/) {
-            if (auto page{ weakThis.get() })
-            {
-                page->_rearranging = true;
-                page->_rearrangeFrom = std::nullopt;
-                page->_rearrangeTo = std::nullopt;
-            }
-        });
-
-        _tabView.TabDragCompleted([weakThis{ get_weak() }](auto&& /*o*/, auto&& /*a*/) {
-            if (auto page{ weakThis.get() })
-            {
-                auto& from{ page->_rearrangeFrom };
-                auto& to{ page->_rearrangeTo };
-
-                if (from.has_value() && to.has_value() && to != from)
-                {
-                    auto& tabs{ page->_tabs };
-                    auto tab = tabs.GetAt(from.value());
-                    tabs.RemoveAt(from.value());
-                    tabs.InsertAt(to.value(), tab);
-                    page->_UpdateTabIndices();
-                }
-
-                page->_rearranging = false;
-                from = std::nullopt;
-                to = std::nullopt;
-            }
-        });
+        _tabView.TabDragStarting({ get_weak(), &TerminalPage::_TabDragStarted });
+        _tabView.TabDragCompleted({ get_weak(), &TerminalPage::_TabDragCompleted });
 
         auto tabRowImpl = winrt::get_self<implementation::TabRowControl>(_tabRow);
         _newTabButton = tabRowImpl->NewTabButton();

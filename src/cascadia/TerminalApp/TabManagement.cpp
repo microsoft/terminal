@@ -799,4 +799,31 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_TabDragStarted(const IInspectable& /*sender*/,
+                                       const IInspectable& /*eventArgs*/)
+    {
+        _rearranging = true;
+        _rearrangeFrom = std::nullopt;
+        _rearrangeTo = std::nullopt;
+    }
+
+    void TerminalPage::_TabDragCompleted(const IInspectable& /*sender*/,
+                                         const IInspectable& /*eventArgs*/)
+    {
+        auto& from{ _rearrangeFrom };
+        auto& to{ _rearrangeTo };
+
+        if (from.has_value() && to.has_value() && to != from)
+        {
+            auto& tabs{ _tabs };
+            auto tab = tabs.GetAt(from.value());
+            tabs.RemoveAt(from.value());
+            tabs.InsertAt(to.value(), tab);
+            _UpdateTabIndices();
+        }
+
+        _rearranging = false;
+        from = std::nullopt;
+        to = std::nullopt;
+    }
 }
