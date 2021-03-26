@@ -365,7 +365,7 @@ namespace winrt::TerminalApp::implementation
             {
                 try
                 {
-                   winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
+                    winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
                 }
                 // If we failed to start the listener, it will throw.
                 // We should fail fast here or the Terminal will be in a very strange state.
