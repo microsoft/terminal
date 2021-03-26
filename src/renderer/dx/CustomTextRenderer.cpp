@@ -260,17 +260,6 @@ try
     // TODO GH#6338: Add support for `"cursorTextColor": null` for letting the
     // cursor draw on top again.
 
-    // Only draw the filled box in the first pass. All the other cursors should
-    // be drawn in the second pass.
-    //           | type==FullBox |
-    // firstPass |   T   |   F   |
-    //    T      | draw  |  skip |
-    //    F      | skip  |  draw |
-    if ((options.cursorType == CursorType::FullBox) != firstPass)
-    {
-        return S_FALSE;
-    }
-
     const til::size glyphSize{ til::math::flooring,
                                drawingContext.cellSize.width,
                                drawingContext.cellSize.height };
@@ -294,15 +283,6 @@ try
     }
 
     CursorPaintType paintType = CursorPaintType::Fill;
-    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush{ drawingContext.foregroundBrush };
-
-    if (options.fUseColor)
-    {
-        // Make sure to make the cursor opaque
-        RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(til::color{ OPACITY_OPAQUE | options.cursorColor },
-                                                           &brush));
-    }
-
     switch (options.cursorType)
     {
     case CursorType::Legacy:
@@ -332,12 +312,6 @@ try
     {
         // Use rect for lower line.
         rect.top = rect.bottom - 1;
-
-        // Draw upper line directly.
-        D2D1_RECT_F upperLine = rect;
-        upperLine.top -= 2;
-        upperLine.bottom -= 2;
-        d2dContext->FillRectangle(upperLine, brush.Get());
         break;
     }
     case CursorType::EmptyBox:
@@ -353,11 +327,61 @@ try
         return E_NOTIMPL;
     }
 
+    bool fInvert = (options.cursorType == CursorType::FullBox ||
+                    options.cursorType == CursorType::Legacy) &&
+                   !options.fUseColor;
+    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush{ drawingContext.foregroundBrush };
+
+    // Only draw the filled box in the first pass. All the other cursors should
+    // be drawn in the second pass.
+    //           | type==FullBox |
+    // firstPass |   T   |   F   |
+    //    T      | draw  |  skip |
+    //    F      | skip  |  draw |
+    //if (firstPass) //(options.cursorType == CursorType::FullBox) != firstPass)
+    //{
+    //return S_FALSE;
+    //}
+    if (firstPass)
+    {
+        if (fInvert)
+        {
+            // Draw a backplate behind the cursor in the *background* color so that we can invert it later.
+            til::color color{ drawingContext.backgroundBrush->GetColor() };
+            RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(color.with_alpha(255),
+                                                               &brush));
+        }
+        else
+        {
+            // All other cursors are drawn in the second pass.
+            return S_FALSE;
+        }
+    }
+
+    // **DRAW** PHASE
+    if (options.fUseColor)
+    {
+        // Make sure to make the cursor opaque
+        RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(til::color{ OPACITY_OPAQUE | options.cursorColor },
+                                                           &brush));
+    }
+
     switch (paintType)
     {
     case CursorPaintType::Fill:
     {
-        d2dContext->FillRectangle(rect, brush.Get());
+        if (!fInvert || firstPass)
+        {
+            d2dContext->FillRectangle(rect, brush.Get());
+        }
+        else
+        {
+            Microsoft::WRL::ComPtr<ID2D1Effect> floodEffect;
+            constexpr GUID CLSID_D2D1FloodLocal{ 0x61c23c20, 0xae69, 0x4d8e, 0x94, 0xcf, 0x50, 0x07, 0x8d, 0xf6, 0x38, 0xf2 };
+            d2dContext->CreateEffect(CLSID_D2D1FloodLocal, &floodEffect);
+            floodEffect->SetValue(D2D1_FLOOD_PROP_COLOR, D2D1::Vector4F(1, 1, 1, 1));
+            d2dContext->DrawImage(floodEffect.Get(), D2D1::Point2F(rect.left, rect.top), rect, D2D1_INTERPOLATION_MODE_LINEAR, D2D1_COMPOSITE_MODE_MASK_INVERT);
+        }
         break;
     }
     case CursorPaintType::Outline:
@@ -374,6 +398,15 @@ try
     }
     default:
         return E_NOTIMPL;
+    }
+
+    if (options.cursorType == CursorType::DoubleUnderscore)
+    {
+        // Draw upper line directly.
+        D2D1_RECT_F upperLine = rect;
+        upperLine.top -= 2;
+        upperLine.bottom -= 2;
+        d2dContext->FillRectangle(upperLine, brush.Get());
     }
 
     return S_OK;
