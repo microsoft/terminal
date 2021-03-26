@@ -1,5 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+//
+// This file contains much of the code related to tab management for the
+// TerminalPage. Things like opening new tabs, selecting different tabs,
+// switching tabs, should all be handled in this file. Hypothetically, in the
+// future, the contents of this file could be moved to a separate class
+// entirely.
+//
 
 #include "pch.h"
 #include "TerminalPage.h"
@@ -191,13 +198,7 @@ namespace winrt::TerminalApp::implementation
         newTabImpl->TabRenamerDeactivated([weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
             if (const auto page{ weakThis.get() })
             {
-                if (!page->_newTabButton.Flyout().IsOpen())
-                {
-                    if (const auto tab{ page->_GetFocusedTab() })
-                    {
-                        tab.Focus(FocusState::Programmatic);
-                    }
-                }
+                page->_FocusCurrentTab(false);
             }
         });
 
@@ -493,6 +494,22 @@ namespace winrt::TerminalApp::implementation
             return true;
         }
         return false;
+    }
+
+    // Method Description:
+    // - This method is called once a tab was selected in tab switcher
+    //   We'll use this event to select the relevant tab
+    // Arguments:
+    // - tab - tab to select
+    // Return Value:
+    // - <none>
+    void TerminalPage::_OnSwitchToTabRequested(const IInspectable& /*sender*/, const winrt::TerminalApp::TabBase& tab)
+    {
+        uint32_t index{};
+        if (_tabs.IndexOf(tab, index))
+        {
+            _SelectTab(index);
+        }
     }
 
     // Method Description:
@@ -825,5 +842,56 @@ namespace winrt::TerminalApp::implementation
         _rearranging = false;
         from = std::nullopt;
         to = std::nullopt;
+    }
+
+    void TerminalPage::_DismissTabContextMenus()
+    {
+        for (const auto& tab : _tabs)
+        {
+            if (tab.TabViewItem().ContextFlyout())
+            {
+                tab.TabViewItem().ContextFlyout().Hide();
+            }
+        }
+    }
+
+    void TerminalPage::_FocusCurrentTab(const bool focusAlways)
+    {
+        // We don't want to set focus on the tab if fly-out is open as it will
+        // be closed TODO GH#5400: consider checking we are not in the opening
+        // state, by hooking both Opening and Open events
+        if (focusAlways || !_newTabButton.Flyout().IsOpen())
+        {
+            // Return focus to the active control
+            if (auto index{ _GetFocusedTabIndex() })
+            {
+                _tabs.GetAt(*index).Focus(FocusState::Programmatic);
+                _UpdateMRUTab(index.value());
+            }
+        }
+    }
+
+    bool TerminalPage::_HasMultipleTabs() const
+    {
+        return _tabs.Size() > 1;
+    }
+
+    void TerminalPage::_RemoveAllTabs()
+    {
+        // Since _RemoveTab is asynchronous, create a snapshot of the  tabs we want to remove
+        std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
+        std::copy(begin(_tabs), end(_tabs), std::back_inserter(tabsToRemove));
+        _RemoveTabs(tabsToRemove);
+    }
+
+    void TerminalPage::_ResizeTabContent(const winrt::Windows::Foundation::Size& newSize)
+    {
+        for (auto tab : _tabs)
+        {
+            if (auto terminalTab = _GetTerminalTabImpl(tab))
+            {
+                terminalTab->ResizeContent(newSize);
+            }
+        }
     }
 }

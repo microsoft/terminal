@@ -283,22 +283,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - This method is called once a tab was selected in tab switcher
-    //   We'll use this event to select the relevant tab
-    // Arguments:
-    // - tab - tab to select
-    // Return Value:
-    // - <none>
-    void TerminalPage::_OnSwitchToTabRequested(const IInspectable& /*sender*/, const winrt::TerminalApp::TabBase& tab)
-    {
-        uint32_t index{};
-        if (_tabs.IndexOf(tab, index))
-        {
-            _SelectTab(index);
-        }
-    }
-
-    // Method Description:
     // - This method is called once on startup, on the first LayoutUpdated event.
     //   We'll use this event to know that we have an ActualWidth and
     //   ActualHeight, so we can now attempt to process our list of startup
@@ -700,11 +684,7 @@ namespace winrt::TerminalApp::implementation
         // e.g., the command palette will be dismissed by the menu,
         // and then closing the fly-out will move the focus to wrong location.
         newTabFlyout.Opening([this](auto&&, auto&&) {
-            if (auto index{ _GetFocusedTabIndex() })
-            {
-                _tabs.GetAt(*index).Focus(FocusState::Programmatic);
-                _UpdateMRUTab(index.value());
-            }
+            _FocusCurrentTab(true);
         });
         _newTabButton.Flyout(newTabFlyout);
     }
@@ -1158,7 +1138,9 @@ namespace winrt::TerminalApp::implementation
     //   than one tab opened, show a warning dialog.
     fire_and_forget TerminalPage::CloseWindow()
     {
-        if (_tabs.Size() > 1 && _settings.GlobalSettings().ConfirmCloseAllTabs() && !_displayingCloseDialog)
+        if (_HasMultipleTabs() &&
+            _settings.GlobalSettings().ConfirmCloseAllTabs() &&
+            !_displayingCloseDialog)
         {
             _displayingCloseDialog = true;
             ContentDialogResult warningResult = co_await _ShowCloseWarningDialog();
@@ -1170,10 +1152,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // Since _RemoveTab is asynchronous, create a snapshot of the  tabs we want to remove
-        std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
-        std::copy(begin(_tabs), end(_tabs), std::back_inserter(tabsToRemove));
-        _RemoveTabs(tabsToRemove);
+        _RemoveAllTabs();
     }
 
     // Method Description:
@@ -1794,13 +1773,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_OnContentSizeChanged(const IInspectable& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e)
     {
         const auto newSize = e.NewSize();
-        for (auto tab : _tabs)
-        {
-            if (auto terminalTab = _GetTerminalTabImpl(tab))
-            {
-                terminalTab->ResizeContent(newSize);
-            }
-        }
+        _ResizeTabContent(newSize);
     }
 
     // Method Description:
@@ -2042,14 +2015,7 @@ namespace winrt::TerminalApp::implementation
         {
             _newTabButton.Flyout().Hide();
         }
-
-        for (const auto& tab : _tabs)
-        {
-            if (tab.TabViewItem().ContextFlyout())
-            {
-                tab.TabViewItem().ContextFlyout().Hide();
-            }
-        }
+        _DismissTabContextMenus();
     }
 
     // Method Description:
@@ -2281,17 +2247,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_CommandPaletteClosed(const IInspectable& /*sender*/,
                                              const RoutedEventArgs& /*eventArgs*/)
     {
-        // We don't want to set focus on the tab if fly-out is open as it will be closed
-        // TODO GH#5400: consider checking we are not in the opening state, by hooking both Opening and Open events
-        if (!_newTabButton.Flyout().IsOpen())
-        {
-            // Return focus to the active control
-            if (auto index{ _GetFocusedTabIndex() })
-            {
-                _tabs.GetAt(*index).Focus(FocusState::Programmatic);
-                _UpdateMRUTab(index.value());
-            }
-        }
+        _FocusCurrentTab(false);
     }
 
     bool TerminalPage::FocusMode() const
