@@ -16,6 +16,7 @@ TRACELOGGING_DEFINE_PROVIDER(
     (0x770aa552, 0x671a, 0x5e97, 0x57, 0x9b, 0x15, 0x17, 0x09, 0xec, 0x0d, 0xbd),
     TraceLoggingOptionMicrosoftTelemetry());
 
+static bool useV2 = true;
 static bool ConhostV2ForcedInRegistry()
 {
     // If the registry value doesn't exist, or exists and is non-zero, we should default to using the v2 console.
@@ -23,6 +24,9 @@ static bool ConhostV2ForcedInRegistry()
     bool fShouldUseConhostV2 = true;
     PCSTR pszErrorDescription = nullptr;
     bool fIgnoreError = false;
+    DWORD dwValue;
+    DWORD dwType;
+    DWORD cbValue = sizeof(dwValue);
 
     // open HKCU\Console
     wil::unique_hkey hConsoleSubKey;
@@ -30,9 +34,7 @@ static bool ConhostV2ForcedInRegistry()
     if (ERROR_SUCCESS == lStatus)
     {
         // now get the value of the ForceV2 reg value, if it exists
-        DWORD dwValue;
-        DWORD dwType;
-        DWORD cbValue = sizeof(dwValue);
+        cbValue = sizeof(dwValue);
         lStatus = RegQueryValueExW(hConsoleSubKey.get(),
                                    L"ForceV2",
                                    nullptr,
@@ -132,6 +134,8 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
     {
         // setup status error
         hr = HRESULT_FROM_WIN32(GetLastError());
+        // fallback to V2 if conhostv1.dll cannot be loaded.
+        useV2 = true;
     }
 
     if (SUCCEEDED(hr))
@@ -177,6 +181,7 @@ int CALLBACK wWinMain(
     {
         if (ShouldUseLegacyConhost(args))
         {
+            useV2 = false;
             if (args.ShouldCreateServerHandle())
             {
                 hr = E_INVALIDARG;
@@ -191,7 +196,7 @@ int CALLBACK wWinMain(
                 }
             }
         }
-        else
+        if(useV2)
         {
             if (args.ShouldCreateServerHandle())
             {
