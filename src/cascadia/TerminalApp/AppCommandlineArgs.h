@@ -35,6 +35,7 @@ public:
 
     void ValidateStartupCommands();
     std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& GetStartupActions();
+    bool IsHandoffListener() const noexcept;
     const std::string& GetExitMessage();
     bool ShouldExitEarly() const noexcept;
 
@@ -104,6 +105,7 @@ private:
 
     const Commandline* _currentCommandline{ nullptr };
     std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> _launchMode{ std::nullopt };
+    bool _isHandoffListener{ false };
     std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _startupActions;
     std::string _exitMessage;
     bool _shouldExitEarly{ false };

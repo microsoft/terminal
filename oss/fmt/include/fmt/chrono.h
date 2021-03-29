@@ -72,43 +72,27 @@ FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
   static_assert(F::is_integer, "From must be integral");
   static_assert(T::is_integer, "To must be integral");
 
-  if (F::is_signed && !T::is_signed) {
+  if (detail::const_check(F::is_signed && !T::is_signed)) {
     // From may be negative, not allowed!
     if (fmt::detail::is_negative(from)) {
       ec = 1;
       return {};
     }
-
     // From is positive. Can it always fit in To?
-    if (F::digits <= T::digits) {
-      // yes, From always fits in To.
-    } else {
-      // from may not fit in To, we have to do a dynamic check
-      if (from > static_cast<From>((T::max)())) {
-        ec = 1;
-        return {};
-      }
+    if (F::digits > T::digits &&
+        from > static_cast<From>(detail::max_value<To>())) {
+      ec = 1;
+      return {};
     }
   }
 
-  if (!F::is_signed && T::is_signed) {
-    // can from be held in To?
-    if (F::digits < T::digits) {
-      // yes, From always fits in To.
-    } else {
-      // from may not fit in To, we have to do a dynamic check
-      if (from > static_cast<From>((T::max)())) {
-        // outside range.
-        ec = 1;
-        return {};
-      }
-    }
+  if (!F::is_signed && T::is_signed && F::digits >= T::digits &&
+      from > static_cast<From>(detail::max_value<To>())) {
+    ec = 1;
+    return {};
   }
-
-  // reaching here means all is ok for lossless conversion.
-  return static_cast<To>(from);
-
-}  // function
+  return static_cast<To>(from);  // Lossless conversion.
+}
 
 template <typename To, typename From,
           FMT_ENABLE_IF(std::is_same<From, To>::value)>
@@ -190,11 +174,9 @@ To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
   // safe conversion to IntermediateRep
   IntermediateRep count =
       lossless_integral_conversion<IntermediateRep>(from.count(), ec);
-  if (ec) {
-    return {};
-  }
+  if (ec) return {};
   // multiply with Factor::num without overflow or underflow
-  if (Factor::num != 1) {
+  if (detail::const_check(Factor::num != 1)) {
     const auto max1 = detail::max_value<IntermediateRep>() / Factor::num;
     if (count > max1) {
       ec = 1;
@@ -209,17 +191,9 @@ To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
     count *= Factor::num;
   }
 
-  // this can't go wrong, right? den>0 is checked earlier.
-  if (Factor::den != 1) {
-    count /= Factor::den;
-  }
-  // convert to the to type, safely
-  using ToRep = typename To::rep;
-  const ToRep tocount = lossless_integral_conversion<ToRep>(count, ec);
-  if (ec) {
-    return {};
-  }
-  return To{tocount};
+  if (detail::const_check(Factor::den != 1)) count /= Factor::den;
+  auto tocount = lossless_integral_conversion<typename To::rep>(count, ec);
+  return ec ? To() : To(tocount);
 }
 
 /**
@@ -351,6 +325,11 @@ inline std::tm localtime(std::time_t time) {
   return lt.tm_;
 }
 
+inline std::tm localtime(
+    std::chrono::time_point<std::chrono::system_clock> time_point) {
+  return localtime(std::chrono::system_clock::to_time_t(time_point));
+}
+
 // Thread-safe replacement for std::gmtime
 inline std::tm gmtime(std::time_t time) {
   struct dispatcher {
@@ -387,6 +366,11 @@ inline std::tm gmtime(std::time_t time) {
   return gt.tm_;
 }
 
+inline std::tm gmtime(
+    std::chrono::time_point<std::chrono::system_clock> time_point) {
+  return gmtime(std::chrono::system_clock::to_time_t(time_point));
+}
+
 namespace detail {
 inline size_t strftime(char* str, size_t count, const char* format,
                        const std::tm* time) {
@@ -398,6 +382,17 @@ inline size_t strftime(wchar_t* str, size_t count, const wchar_t* format,
   return std::wcsftime(str, count, format, time);
 }
 }  // namespace detail
+
+template <typename Char>
+struct formatter<std::chrono::time_point<std::chrono::system_clock>, Char>
+    : formatter<std::tm, Char> {
+  template <typename FormatContext>
+  auto format(std::chrono::time_point<std::chrono::system_clock> val,
+              FormatContext& ctx) -> decltype(ctx.out()) {
+    std::tm time = localtime(val);
+    return formatter<std::tm, Char>::format(time, ctx);
+  }
+};
 
 template <typename Char> struct formatter<std::tm, Char> {
   template <typename ParseContext>

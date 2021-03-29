@@ -782,8 +782,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Switch to the next MRU tab, which is the fourth tab");
         TestOnUIThread([&page]() {
-            ActionEventArgs eventArgs{};
-            page->_HandleNextTab(nullptr, eventArgs);
+            page->_SelectNextTab(true, nullptr);
         });
 
         Log::Comment(L"Sleep to let events propagate");
@@ -804,8 +803,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Switch to the next MRU tab, which is the second tab");
         TestOnUIThread([&page]() {
-            ActionEventArgs eventArgs{};
-            page->_HandleNextTab(nullptr, eventArgs);
+            page->_SelectNextTab(true, nullptr);
         });
 
         Log::Comment(L"Sleep to let events propagate");
@@ -829,8 +827,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Switch to the next in-order tab, which is the third tab");
         TestOnUIThread([&page]() {
-            ActionEventArgs eventArgs{};
-            page->_HandleNextTab(nullptr, eventArgs);
+            page->_SelectNextTab(true, nullptr);
         });
         TestOnUIThread([&page]() {
             uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
@@ -842,8 +839,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Switch to the next in-order tab, which is the fourth tab");
         TestOnUIThread([&page]() {
-            ActionEventArgs eventArgs{};
-            page->_HandleNextTab(nullptr, eventArgs);
+            page->_SelectNextTab(true, nullptr);
         });
         TestOnUIThread([&page]() {
             uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
@@ -916,7 +912,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Switch to the next MRU tab, which is the third tab");
         RunOnUIThread([&page]() {
-            page->_SelectNextTab(true);
+            page->_SelectNextTab(true, nullptr);
             // In the course of a single tick, the Command Palette will:
             // * open
             // * select the proper tab from the mru's list
