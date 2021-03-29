@@ -1800,13 +1800,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    // Method Description:
-    // - Pre-process text pasted (presumably from the clipboard)
-    //   before sending it over the terminal's connection.
-    void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
-    {
-        _core->PasteText(winrt::hstring{ wstr });
-    }
+    // // Method Description:
+    // // - Pre-process text pasted (presumably from the clipboard)
+    // //   before sending it over the terminal's connection.
+    // void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
+    // {
+    //     _core->PasteText(winrt::hstring{ wstr });
+    // }
 
     // Method Description:
     // - Triggered when the swapchain changes size. We use this to resize the
@@ -1971,34 +1971,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return false;
         }
 
-        if (_core)
-        {
-            // Note to future self: This should return false if there's no
-            // selection to copy. If there's no selection, returning false will
-            // indicate that the actions that trigered this should _not_ be
-            // marked as handled, so ctrl+c without a selection can still send
-            // ^C
-
-            // Mark the current selection as copied
-            _selectionNeedsToBeCopied = false;
-
-            return _core->CopySelectionToClipboard(singleLine, formats);
-        }
-
-        return false;
+        return _interactivity->CopySelectionToClipboard(singleLine, formats);
     }
 
     // Method Description:
     // - Initiate a paste operation.
     void TermControl::PasteTextFromClipboard()
     {
-        // attach TermControl::_SendInputToConnection() as the clipboardDataHandler.
-        // This is called when the clipboard data is loaded.
-        auto clipboardDataHandler = std::bind(&TermControl::_SendPastedTextToConnection, this, std::placeholders::_1);
-        auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
+        // // attach TermControl::_SendInputToConnection() as the clipboardDataHandler.
+        // // This is called when the clipboard data is loaded.
+        // auto clipboardDataHandler = std::bind(&TermControl::_SendPastedTextToConnection, this, std::placeholders::_1);
+        // auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
 
-        // send paste event up to TermApp
-        _PasteFromClipboardHandlers(*this, *pasteArgs);
+        // // send paste event up to TermApp
+        // _PasteFromClipboardHandlers(*this, *pasteArgs);
+        _interactivity->PasteTextFromClipboard();
     }
 
     void TermControl::Close()
@@ -2488,7 +2475,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             try
             {
                 Windows::Foundation::Uri link{ co_await e.DataView().GetApplicationLinkAsync() };
-                _SendPastedTextToConnection(std::wstring{ link.AbsoluteUri() });
+                _core->PasteText(link.AbsoluteUri());
             }
             CATCH_LOG();
         }
@@ -2497,7 +2484,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             try
             {
                 Windows::Foundation::Uri link{ co_await e.DataView().GetWebLinkAsync() };
-                _SendPastedTextToConnection(std::wstring{ link.AbsoluteUri() });
+                _core->PasteText(link.AbsoluteUri());
             }
             CATCH_LOG();
         }
@@ -2505,8 +2492,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             try
             {
-                std::wstring text{ co_await e.DataView().GetTextAsync() };
-                _SendPastedTextToConnection(text);
+                auto text{ co_await e.DataView().GetTextAsync() };
+                _core->PasteText(text);
             }
             CATCH_LOG();
         }
@@ -2547,7 +2534,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                     allPaths += fullPath;
                 }
-                _SendPastedTextToConnection(allPaths);
+                _core->PasteText(winrt::hstring{ allPaths });
             }
         }
     }

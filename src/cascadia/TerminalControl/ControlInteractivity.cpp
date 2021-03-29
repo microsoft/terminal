@@ -94,6 +94,55 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    // // Method Description:
+    // // - Given a copy-able selection, get the selected text from the buffer and send it to the
+    // //     Windows Clipboard (CascadiaWin32:main.cpp).
+    // // - CopyOnSelect does NOT clear the selection
+    // // Arguments:
+    // // - singleLine: collapse all of the text to one line
+    // // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
+    // //             if we should defer which formats are copied to the global setting
+    bool ControlInteractivity::CopySelectionToClipboard(bool singleLine,
+                                                        const Windows::Foundation::IReference<CopyFormat>& formats)
+    {
+        if (_core)
+        {
+            // Note to future self: This should return false if there's no
+            // selection to copy. If there's no selection, returning false will
+            // indicate that the actions that trigered this should _not_ be
+            // marked as handled, so ctrl+c without a selection can still send
+            // ^C
+
+            // Mark the current selection as copied
+            _selectionNeedsToBeCopied = false;
+
+            return _core->CopySelectionToClipboard(singleLine, formats);
+        }
+
+        return false;
+    }
+
+    // Method Description:
+    // - Initiate a paste operation.
+    void ControlInteractivity::PasteTextFromClipboard()
+    {
+        // attach TermControl::_SendInputToConnection() as the clipboardDataHandler.
+        // This is called when the clipboard data is loaded.
+        auto clipboardDataHandler = std::bind(&ControlInteractivity::_SendPastedTextToConnection, this, std::placeholders::_1);
+        auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
+
+        // send paste event up to TermApp
+        _PasteFromClipboardHandlers(*this, *pasteArgs);
+    }
+
+    // Method Description:
+    // - Pre-process text pasted (presumably from the clipboard)
+    //   before sending it over the terminal's connection.
+    void ControlInteractivity::_SendPastedTextToConnection(const std::wstring& wstr)
+    {
+        _core->PasteText(winrt::hstring{ wstr });
+    }
+
     // TODO: Don't take a Windows::UI::Input::PointerPoint here. No WInUI here.
     void ControlInteractivity::PointerPressed(const winrt::Windows::UI::Input::PointerPoint point,
                                               const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
@@ -128,9 +177,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     _HyperlinkHandler(hyperlink);
                 }
             }
-            else if (_CanSendVTMouseInput(modifiers, terminalPosition))
+            else if (_CanSendVTMouseInput(modifiers))
             {
-                _TrySendMouseEvent(point);
+                _TrySendMouseEvent(point, modifiers, terminalPosition);
             }
             else if (point.Properties().IsLeftButtonPressed())
             {
@@ -194,7 +243,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Short-circuit isReadOnly check to avoid warning dialog
             if (focused && !_core->IsInReadOnlyMode() && _CanSendVTMouseInput(modifiers))
             {
-                _TrySendMouseEvent(point, terminalPosition);
+                _TrySendMouseEvent(point, modifiers, terminalPosition);
             }
             else if (focused && point.Properties().IsLeftButtonPressed())
             {
@@ -274,6 +323,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto currentOffset = ::base::ClampedNumeric<double>(_core->ScrollOffset());
                 const auto newValue = numRows + currentOffset;
 
+                // !TODO! - Very worried about using UserScrollViewport as
+                // opposed to the ScrollBar().Value() setter. Originally setting
+                // the scrollbar value would raise a event handled in
+                // _ScrollbarChangeHandler, which would _then_ scroll the core,
+                // and start the _updateScrollBar ThrottledFunc to update the
+                // scroll position. I'm worried that won't work like this.
                 _core->UserScrollViewport(newValue);
                 // ScrollBar().Value(newValue);
 
@@ -295,7 +350,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Short-circuit isReadOnly check to avoid warning dialog
             if (!_core->IsInReadOnlyMode() && _CanSendVTMouseInput(modifiers))
             {
-                _TrySendMouseEvent(point, terminalPosition);
+                _TrySendMouseEvent(point, modifiers, terminalPosition);
                 // args.Handled(true);
                 return;
             }
@@ -324,6 +379,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Arguments:
     // - point: the PointerPoint object representing a mouse event from our XAML input handler
     bool ControlInteractivity::_TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point,
+                                                  const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                                   const til::point terminalPosition)
     {
         const auto props = point.Properties();
@@ -365,7 +421,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             uiButton = WM_MOUSEWHEEL;
         }
 
-        const auto modifiers = _GetPressedModifierKeys();
+        // const auto modifiers = _GetPressedModifierKeys();
         const TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(),
                                                      props.IsMiddleButtonPressed(),
                                                      props.IsRightButtonPressed() };

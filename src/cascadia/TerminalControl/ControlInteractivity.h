@@ -40,7 +40,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                              const bool focused,
                              const til::point terminalPosition,
                              const winrt::Windows::Devices::Input::PointerDeviceType type);
-
+        bool CopySelectionToClipboard(bool singleLine,
+                                      const Windows::Foundation::IReference<CopyFormat>& formats);
+        void PasteTextFromClipboard();
         /////////////////////// From Control
         winrt::com_ptr<ControlCore> _core{ nullptr };
         unsigned int _rowsToScroll; // Definitely Control/Interactivity
@@ -78,12 +80,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
         void _UpdateSystemParameterSettings() noexcept;
         bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point,
+                                const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                 const til::point terminalPosition);
         void _HyperlinkHandler(const std::wstring_view uri);
         bool _CanSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
         void _SetEndSelectionPoint(const til::point terminalPosition);
 
+        void _SendPastedTextToConnection(const std::wstring& wstr);
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
+        TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
     };
 }
 
