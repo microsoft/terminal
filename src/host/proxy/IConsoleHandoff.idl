@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import "oaidl.idl";
 import "ocidl.idl";
 
@@ -24,3 +27,4 @@ typedef const CONSOLE_PORTABLE_ATTACH_MSG* PCCONSOLE_PORTABLE_ATTACH_MSG;
                              [in, system_handle(sh_event)] HANDLE inputEvent,
                              [in, ref] PCCONSOLE_PORTABLE_ATTACH_MSG msg);
 };
+

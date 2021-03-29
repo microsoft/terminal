@@ -1861,6 +1861,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_ScrollPositionChanged(const IInspectable& /*sender*/,
                                              const Control::ScrollPositionChangedArgs& args)
     {
+        // Since this callback fires from non-UI thread, we might be already
+        // closed/closing.
+        if (_closing.load())
+        {
+            return;
+        }
+
         ScrollBarUpdate update;
         const auto hiddenContent = args.BufferSize() - args.ViewHeight();
         update.newMaximum = hiddenContent;

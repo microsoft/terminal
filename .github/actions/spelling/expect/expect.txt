@@ -433,6 +433,7 @@ cstring
 cstyle
 csv
 CSwitch
+CTerminal
 CText
 ctime
 ctl
@@ -571,6 +572,7 @@ defaultsettings
 DEFAULTTONEAREST
 DEFAULTTONULL
 DEFAULTTOPRIMARY
+DEFCON
 defectdefs
 DEFERERASE
 deff

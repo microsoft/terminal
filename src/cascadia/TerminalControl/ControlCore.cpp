@@ -406,18 +406,26 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
+        // GH#9618 - lock while we're reading from the terminal, and if we need
+        // to update something, then lock again to write the terminal.
         _lastHoveredCell = terminalPosition;
-
-        const uint16_t newId = terminalPosition.has_value() ? _terminal->GetHyperlinkIdAtPosition(*terminalPosition) :
-                                                              0u;
-        const auto newInterval = terminalPosition.has_value() ? _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition) :
-                                                                std::nullopt;
+        uint16_t newId{ 0u };
+        // we can't use auto here because we're pre-declaring newInterval.
+        decltype(_terminal->GetHyperlinkIntervalFromPosition(COORD{})) newInterval{ std::nullopt };
+        if (terminalPosition.has_value())
+        {
+            auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
+            newId = _terminal->GetHyperlinkIdAtPosition(*terminalPosition);
+            newInterval = _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition);
+        }
 
         // If the hyperlink ID changed or the interval changed, trigger a redraw all
         // (so this will happen both when we move onto a link and when we move off a link)
         if (newId != _lastHoveredId ||
             (newInterval != _lastHoveredInterval))
         {
+            auto lock = _terminal->LockForWriting();
+
             _lastHoveredId = newId;
             _lastHoveredInterval = newInterval;
             _renderEngine->UpdateHyperlinkHoveredId(newId);
@@ -440,6 +448,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     winrt::hstring ControlCore::GetHoveredUriText() const
     {
+        auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
         if (_lastHoveredCell.has_value())
         {
             const winrt::hstring uri{ _terminal->GetHyperlinkAtPosition(*_lastHoveredCell) };
@@ -959,8 +968,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                      const int viewHeight,
                                                      const int bufferSize)
     {
-        // Clear the regex pattern tree so the renderer does not try to render
-        // them while scrolling
+        // Clear the regex pattern tree so the renderer does not try to render them while scrolling
+        // We're **NOT** taking the lock here unlike _ScrollbarChangeHandler because
+        // we are already under lock (since this usually happens as a result of writing).
+        // TODO GH#9617: refine locking around pattern tree
         _terminal->ClearPatternTree();
 
         auto scrollArgs = winrt::make_self<ScrollPositionChangedArgs>(viewTop, viewHeight, bufferSize);

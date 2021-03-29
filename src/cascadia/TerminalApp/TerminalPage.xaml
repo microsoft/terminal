@@ -57,7 +57,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             x:Load="False"
             x:Name="CloseReadOnlyDialog"
             x:Uid="CloseReadOnlyDialog"
-            DefaultButton="Primary">
+            DefaultButton="Close">
         </ContentDialog>
 
         <ContentDialog
