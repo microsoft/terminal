@@ -302,8 +302,9 @@ try
 
     RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_OpenConsoleKey(&currentUserKey, &consoleKey));
 
+    // Create method for registry is a "create if not exists, otherwise open" function.
     wil::unique_hkey startupKey;
-    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_OpenKey(consoleKey.get(), L"%%Startup", &startupKey));
+    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_CreateKey(consoleKey.get(), L"%%Startup", &startupKey));
 
     wil::unique_cotaskmem_string str;
     RETURN_IF_FAILED(StringFromCLSID(clsid, &str));
