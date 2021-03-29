@@ -18,7 +18,7 @@ namespace winrt::TerminalApp::implementation
         // We'll only process the KeyUp event if we received an initial KeyDown event first.
         // Avoids issue immediately closing the tab rename when we see the enter KeyUp event that was
         // sent to the command palette to trigger the openTabRenamer action in the first place.
-        HeaderRenamerTextBox().KeyDown([&](auto&&, auto e) {
+        HeaderRenamerTextBox().KeyDown([&](auto&&, auto&& e) {
             _receivedKeyDown = true;
 
             // GH#9632 - mark navigation buttons as handled.
