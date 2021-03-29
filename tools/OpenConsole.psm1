@@ -363,7 +363,7 @@ function Invoke-ClangFormat {
     }
 }
 
-function Invoke-StripBOM {
+function StripBOM {
     [CmdletBinding()]
     Param (
         [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
@@ -381,21 +381,21 @@ function Invoke-StripBOM {
 #.SYNOPSIS
 # Check that xaml files are formatted correctly. This won't actually
 # format the files - it'll only ensure that they're formatted correctly.
-function Invoke-VerifyXamlFormat() {
+function Verify-XamlFormat() {
     $root = Find-OpenConsoleRoot
     & dotnet tool restore --add-source https://api.nuget.org/v3/index.json
 
-    dotnet tool run xstyler -- -c "$root\Settings.XamlStyler" -d "$root\src\cascadia\TerminalApp" --passive
+    dotnet tool run xstyler -- -c "$root\XamlStyler.json" -d "$root\src\cascadia\TerminalApp" --passive
     if ($lastExitCode -eq 1) {
         throw "Xaml formatting bad, run Invoke-XamlFormat on branch"
     }
 
-    dotnet tool run xstyler -- -c "$root\Settings.XamlStyler" -d "$root\src\cascadia\TerminalControl" --passive
+    dotnet tool run xstyler -- -c "$root\XamlStyler.json" -d "$root\src\cascadia\TerminalControl" --passive
     if ($lastExitCode -eq 1) {
         throw "Xaml formatting bad, run Invoke-XamlFormat on branch"
     }
 
-    dotnet tool run xstyler -- -c "$root\Settings.XamlStyler" -d "$root\src\cascadia\TerminalSettingsEditor" --passive
+    dotnet tool run xstyler -- -c "$root\XamlStyler.json" -d "$root\src\cascadia\TerminalSettingsEditor" --passive
     if ($lastExitCode -eq 1) {
         throw "Xaml formatting bad, run Invoke-XamlFormat on branch"
     }
@@ -409,23 +409,22 @@ function Invoke-XamlFormat() {
     $root = Find-OpenConsoleRoot
     & dotnet tool restore --add-source https://api.nuget.org/v3/index.json
 
-    dotnet tool run xstyler -- -c "$root\Settings.XamlStyler" -d "$root\src\cascadia\TerminalApp"
-    dotnet tool run xstyler -- -c "$root\Settings.XamlStyler" -d "$root\src\cascadia\TerminalControl"
-    dotnet tool run xstyler -- -c "$root\Settings.XamlStyler" -d "$root\src\cascadia\TerminalSettingsEditor"
+    dotnet tool run xstyler -- -c "$root\XamlStyler.json" -d "$root\src\cascadia\TerminalApp"
+    dotnet tool run xstyler -- -c "$root\XamlStyler.json" -d "$root\src\cascadia\TerminalControl"
+    dotnet tool run xstyler -- -c "$root\XamlStyler.json" -d "$root\src\cascadia\TerminalSettingsEditor"
 
-    Invoke-StripBOM "$root\src\cascadia\TerminalApp"
-    Invoke-StripBOM "$root\src\cascadia\TerminalControl"
-    Invoke-StripBOM "$root\src\cascadia\TerminalSettingsEditor"
+    StripBOM "$root\src\cascadia\TerminalApp"
+    StripBOM "$root\src\cascadia\TerminalControl"
+    StripBOM "$root\src\cascadia\TerminalSettingsEditor"
 }
 
 #.SYNOPSIS
-# runs code formatting on all c++ files. Also uses Invoke-XamlFormat to format .xaml files.
+# runs code formatting on all c++ and .xaml files.
 #
 #.PARAMETER IgnoreXaml
 # When set, don't format XAML files. The CI needs this so
 # Invoke-CheckBadCodeFormatting won't touch all the .xaml files.
 function Invoke-CodeFormat() {
-
 
     [CmdletBinding()]
     Param (
@@ -441,8 +440,7 @@ function Invoke-CodeFormat() {
       Where FullName -NotLike "*Generated Files*" |
       Invoke-ClangFormat -ClangFormatPath $clangFormatPath
 
-    if ($IgnoreXaml)
-    {
+    if ($IgnoreXaml) {
         # do nothing
     }
     else {

@@ -50,7 +50,7 @@ support for automatically running clang-format on save.
 
 Our XAML code is formatted with
 [XamlStyler](https://github.com/Xavalon/XamlStyler). I don't have a good way of
-running this on save, but you can add a got hook to format before committing
+running this on save, but you can add a `git` hook to format before committing
 `.xaml` files. To do so, add the following to your `.git/hooks/pre-commit` file:
 
 ```sh
@@ -62,7 +62,7 @@ running this on save, but you can add a got hook to format before committing
 XSTYLER_PATH="dotnet tool run xstyler --"
 
 # Define path to XAML Styler configuration
-XSTYLER_CONFIG=
+XSTYLER_CONFIG="../../XamlStyler.json"
 
 echo "Running XAML Styler on committed XAML files"
 git diff --cached --name-only --diff-filter=ACM  | grep -e '\.xaml$' | \
