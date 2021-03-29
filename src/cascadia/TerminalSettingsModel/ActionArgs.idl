@@ -154,6 +154,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
+        SplitPaneArgs(SplitType splitMode, SplitState split, Double size, NewTerminalArgs terminalArgs);
         SplitPaneArgs(SplitState split, Double size, NewTerminalArgs terminalArgs);
         SplitPaneArgs(SplitState split, NewTerminalArgs terminalArgs);
         SplitPaneArgs(SplitType splitMode);
