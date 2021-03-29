@@ -77,7 +77,6 @@ struct NullDeviceComm : public IDeviceComm
                                                             nullptr,
                                                             &pProcessHandle));
     pProcessHandle->fRootProcess = true;
-    gci.UnlockConsole();
 
     constexpr static std::wstring_view fakeTitle{ L"Fuzzing Harness" };
 
@@ -96,7 +95,7 @@ struct NullDeviceComm : public IDeviceComm
 
     CommandHistory::s_Allocate(fakeTitle, (HANDLE)pProcessHandle);
 
-    gci.UnlockConsole(); // Locked in CAC
+    gci.UnlockConsole();
 
     return S_OK;
 }
@@ -130,11 +129,6 @@ int main(int /*argc*/, char** /*argv*/)
 
 extern "C" __declspec(dllexport) int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    if (size < 1)
-    {
-        return 0;
-    }
-
     auto& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
 
     const auto u16String{ til::u8u16(std::string_view{ reinterpret_cast<const char*>(data), size }) };
