@@ -1,45 +1,47 @@
-﻿<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
-the MIT License. See LICENSE in the project root for license information. -->
-<Grid
-    x:Class="TerminalApp.TitlebarControl"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:TerminalApp"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    x:Name="Root"
-    HorizontalAlignment="Stretch"
-    VerticalAlignment="Top"
-    SizeChanged="Root_SizeChanged"
-    d:DesignHeight="36"
-    Background="{ThemeResource TabViewBackground}"
-    d:DesignWidth="400">
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Grid x:Class="TerminalApp.TitlebarControl"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:TerminalApp"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      x:Name="Root"
+      HorizontalAlignment="Stretch"
+      VerticalAlignment="Top"
+      d:DesignHeight="36"
+      d:DesignWidth="400"
+      Background="{ThemeResource TabViewBackground}"
+      SizeChanged="Root_SizeChanged"
+      mc:Ignorable="d">
 
-    <!-- TODO:GH#1988
-    This xaml should probably be a template thing, where the background is a
-    resource that the app hosting this control can override. Then, it App.xaml,
-    we'd make sure to set the resource for our background to the appropriate
-    color. SystemControlForegroundAccentBrush also works nicely, to use the
-    accent color. (which is GH#1963)-->
+    <!--
+        TODO:GH#1988
+        This xaml should probably be a template thing, where the background is a
+        resource that the app hosting this control can override. Then, it App.xaml,
+        we'd make sure to set the resource for our background to the appropriate
+        color. SystemControlForegroundAccentBrush also works nicely, to use the
+        accent color. (which is GH#1963)
+    -->
 
     <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="Auto"/>
-        <ColumnDefinition Width="*"/>
-        <ColumnDefinition Width="Auto"/>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
     </Grid.ColumnDefinitions>
 
-    <ContentPresenter x:Name="ContentRoot" Grid.Column="0" />
+    <ContentPresenter x:Name="ContentRoot"
+                      Grid.Column="0" />
 
-    <Border
-        x:Name="DragBar"
-        Grid.Column="1"
-        MinWidth="45.0"
-        DoubleTapped="DragBar_DoubleTapped"/>
+    <Border x:Name="DragBar"
+            Grid.Column="1"
+            MinWidth="45.0"
+            DoubleTapped="DragBar_DoubleTapped" />
 
-    <local:MinMaxCloseControl
-        Grid.Column="2"
-        x:Name="MinMaxCloseControl"
-        HorizontalAlignment="Right" />
+    <local:MinMaxCloseControl x:Name="MinMaxCloseControl"
+                              Grid.Column="2"
+                              HorizontalAlignment="Right" />
 </Grid>
 
