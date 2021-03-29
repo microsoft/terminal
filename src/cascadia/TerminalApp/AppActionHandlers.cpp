@@ -89,15 +89,23 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleNextTab(const IInspectable& /*sender*/,
                                       const ActionEventArgs& args)
     {
-        _SelectNextTab(true);
-        args.Handled(true);
+        const auto& realArgs = args.ActionArgs().try_as<NextTabArgs>();
+        if (realArgs)
+        {
+            _SelectNextTab(true, realArgs.SwitcherMode());
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandlePrevTab(const IInspectable& /*sender*/,
                                       const ActionEventArgs& args)
     {
-        _SelectNextTab(false);
-        args.Handled(true);
+        const auto& realArgs = args.ActionArgs().try_as<PrevTabArgs>();
+        if (realArgs)
+        {
+            _SelectNextTab(false, realArgs.SwitcherMode());
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleSendInput(const IInspectable& /*sender*/,
