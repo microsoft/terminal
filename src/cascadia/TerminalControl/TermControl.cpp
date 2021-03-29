@@ -68,6 +68,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->RendererEnteredErrorState({ get_weak(), &TermControl::_RendererEnteredErrorState });
         _core->FontSizeChanged({ get_weak(), &TermControl::_coreFontSizeChanged });
 
+        _interactivity->OpenHyperlink({ get_weak(), &TermControl::_HyperlinkHandler });
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
         _layoutUpdatedRevoker = SwapChainPanel().LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
@@ -658,8 +659,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _blinkTimer = std::nullopt;
         }
 
-        // import value from WinUser (convert from milli-seconds to micro-seconds)
-        _multiClickTimer = GetDoubleClickTime() * 1000;
+        // // import value from WinUser (convert from milli-seconds to micro-seconds)
+        // _multiClickTimer = GetDoubleClickTime() * 1000;
 
         // Focus the control here. If we do it during control initialization, then
         //      focus won't actually get passed to us. I believe this is because
@@ -955,58 +956,58 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         e.Handled(true);
     }
 
-    // Method Description:
-    // - Send this particular mouse event to the terminal.
-    //   See Terminal::SendMouseEvent for more information.
-    // Arguments:
-    // - point: the PointerPoint object representing a mouse event from our XAML input handler
-    bool TermControl::_TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point)
-    {
-        const auto props = point.Properties();
+    // // Method Description:
+    // // - Send this particular mouse event to the terminal.
+    // //   See Terminal::SendMouseEvent for more information.
+    // // Arguments:
+    // // - point: the PointerPoint object representing a mouse event from our XAML input handler
+    // bool TermControl::_TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point)
+    // {
+    //     const auto props = point.Properties();
 
-        // Get the terminal position relative to the viewport
-        const auto terminalPosition = _GetTerminalPosition(point.Position());
+    //     // Get the terminal position relative to the viewport
+    //     const auto terminalPosition = _GetTerminalPosition(point.Position());
 
-        // Which mouse button changed state (and how)
-        unsigned int uiButton{};
-        switch (props.PointerUpdateKind())
-        {
-        case PointerUpdateKind::LeftButtonPressed:
-            uiButton = WM_LBUTTONDOWN;
-            break;
-        case PointerUpdateKind::LeftButtonReleased:
-            uiButton = WM_LBUTTONUP;
-            break;
-        case PointerUpdateKind::MiddleButtonPressed:
-            uiButton = WM_MBUTTONDOWN;
-            break;
-        case PointerUpdateKind::MiddleButtonReleased:
-            uiButton = WM_MBUTTONUP;
-            break;
-        case PointerUpdateKind::RightButtonPressed:
-            uiButton = WM_RBUTTONDOWN;
-            break;
-        case PointerUpdateKind::RightButtonReleased:
-            uiButton = WM_RBUTTONUP;
-            break;
-        default:
-            uiButton = WM_MOUSEMOVE;
-        }
+    //     // Which mouse button changed state (and how)
+    //     unsigned int uiButton{};
+    //     switch (props.PointerUpdateKind())
+    //     {
+    //     case PointerUpdateKind::LeftButtonPressed:
+    //         uiButton = WM_LBUTTONDOWN;
+    //         break;
+    //     case PointerUpdateKind::LeftButtonReleased:
+    //         uiButton = WM_LBUTTONUP;
+    //         break;
+    //     case PointerUpdateKind::MiddleButtonPressed:
+    //         uiButton = WM_MBUTTONDOWN;
+    //         break;
+    //     case PointerUpdateKind::MiddleButtonReleased:
+    //         uiButton = WM_MBUTTONUP;
+    //         break;
+    //     case PointerUpdateKind::RightButtonPressed:
+    //         uiButton = WM_RBUTTONDOWN;
+    //         break;
+    //     case PointerUpdateKind::RightButtonReleased:
+    //         uiButton = WM_RBUTTONUP;
+    //         break;
+    //     default:
+    //         uiButton = WM_MOUSEMOVE;
+    //     }
 
-        // Mouse wheel data
-        const short sWheelDelta = ::base::saturated_cast<short>(props.MouseWheelDelta());
-        if (sWheelDelta != 0 && !props.IsHorizontalMouseWheel())
-        {
-            // if we have a mouse wheel delta and it wasn't a horizontal wheel motion
-            uiButton = WM_MOUSEWHEEL;
-        }
+    //     // Mouse wheel data
+    //     const short sWheelDelta = ::base::saturated_cast<short>(props.MouseWheelDelta());
+    //     if (sWheelDelta != 0 && !props.IsHorizontalMouseWheel())
+    //     {
+    //         // if we have a mouse wheel delta and it wasn't a horizontal wheel motion
+    //         uiButton = WM_MOUSEWHEEL;
+    //     }
 
-        const auto modifiers = _GetPressedModifierKeys();
-        const TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(),
-                                                     props.IsMiddleButtonPressed(),
-                                                     props.IsRightButtonPressed() };
-        return _core->SendMouseEvent(terminalPosition, uiButton, modifiers, sWheelDelta, state);
-    }
+    //     const auto modifiers = _GetPressedModifierKeys();
+    //     const TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(),
+    //                                                  props.IsMiddleButtonPressed(),
+    //                                                  props.IsRightButtonPressed() };
+    //     return _core->SendMouseEvent(terminalPosition, uiButton, modifiers, sWheelDelta, state);
+    // }
 
     // Method Description:
     // - Checks if we can send vt mouse input.
@@ -1054,82 +1055,87 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             Focus(FocusState::Pointer);
         }
+        const auto cursorPosition = point.Position();
 
-        if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
-        {
-            const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
-            // static_cast to a uint32_t because we can't use the WI_IsFlagSet
-            // macro directly with a VirtualKeyModifiers
-            const auto altEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Menu));
-            const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
-            const auto ctrlEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Control));
+        _interactivity->PointerPressed(point,
+                                       static_cast<uint32_t>(args.KeyModifiers()),
+                                       _GetTerminalPosition(cursorPosition),
+                                       ptr.PointerDeviceType());
+        // if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
+        // {
+        //     const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
+        //     // static_cast to a uint32_t because we can't use the WI_IsFlagSet
+        //     // macro directly with a VirtualKeyModifiers
+        //     const auto altEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Menu));
+        //     const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
+        //     const auto ctrlEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Control));
 
-            const auto cursorPosition = point.Position();
-            const auto terminalPosition = _GetTerminalPosition(cursorPosition);
+        //     const auto cursorPosition = point.Position();
+        //     const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
-            // GH#9396: we prioritize hyper-link over VT mouse events
-            //
-            // !TODO! Before we'd lock the terminal before getting the hyperlink. Do we still need to?
-            auto hyperlink = _core->GetHyperlink(terminalPosition);
-            if (point.Properties().IsLeftButtonPressed() &&
-                ctrlEnabled && !hyperlink.empty())
-            {
-                const auto clickCount = _interactivity->_NumberOfClicks(cursorPosition, point.Timestamp());
-                // Handle hyper-link only on the first click to prevent multiple activations
-                if (clickCount == 1)
-                {
-                    _HyperlinkHandler(hyperlink);
-                }
-            }
-            else if (_CanSendVTMouseInput())
-            {
-                _TrySendMouseEvent(point);
-            }
-            else if (point.Properties().IsLeftButtonPressed())
-            {
-                const auto clickCount = _interactivity->_NumberOfClicks(cursorPosition, point.Timestamp());
-                // This formula enables the number of clicks to cycle properly
-                // between single-, double-, and triple-click. To increase the
-                // number of acceptable click states, simply increment
-                // MAX_CLICK_COUNT and add another if-statement
-                const unsigned int MAX_CLICK_COUNT = 3;
-                const auto multiClickMapper = clickCount > MAX_CLICK_COUNT ? ((clickCount + MAX_CLICK_COUNT - 1) % MAX_CLICK_COUNT) + 1 : clickCount;
+        //     // GH#9396: we prioritize hyper-link over VT mouse events
+        //     //
+        //     // !TODO! Before we'd lock the terminal before getting the hyperlink. Do we still need to?
+        //     auto hyperlink = _core->GetHyperlink(terminalPosition);
+        //     if (point.Properties().IsLeftButtonPressed() &&
+        //         ctrlEnabled && !hyperlink.empty())
+        //     {
+        //         const auto clickCount = _interactivity->_NumberOfClicks(cursorPosition, point.Timestamp());
+        //         // Handle hyper-link only on the first click to prevent multiple activations
+        //         if (clickCount == 1)
+        //         {
+        //             _HyperlinkHandler(hyperlink);
+        //         }
+        //     }
+        //     else if (_CanSendVTMouseInput())
+        //     {
+        //         _TrySendMouseEvent(point);
+        //     }
+        //     else if (point.Properties().IsLeftButtonPressed())
+        //     {
+        //         const auto clickCount = _interactivity->_NumberOfClicks(cursorPosition, point.Timestamp());
+        //         // This formula enables the number of clicks to cycle properly
+        //         // between single-, double-, and triple-click. To increase the
+        //         // number of acceptable click states, simply increment
+        //         // MAX_CLICK_COUNT and add another if-statement
+        //         const unsigned int MAX_CLICK_COUNT = 3;
+        //         const auto multiClickMapper = clickCount > MAX_CLICK_COUNT ? ((clickCount + MAX_CLICK_COUNT - 1) % MAX_CLICK_COUNT) + 1 : clickCount;
 
-                // Capture the position of the first click when no selection is active
-                if (multiClickMapper == 1 &&
-                    !_core->HasSelection())
-                {
-                    _singleClickTouchdownPos = cursorPosition;
-                    _lastMouseClickPosNoSelection = cursorPosition;
-                }
-                const bool isOnOriginalPosition = _lastMouseClickPosNoSelection == cursorPosition;
+        //         // Capture the position of the first click when no selection is active
+        //         if (multiClickMapper == 1 &&
+        //             !_core->HasSelection())
+        //         {
+        //             _singleClickTouchdownPos = cursorPosition;
+        //             _lastMouseClickPosNoSelection = cursorPosition;
+        //         }
+        //         const bool isOnOriginalPosition = _lastMouseClickPosNoSelection == cursorPosition;
 
-                _core->LeftClickOnTerminal(terminalPosition,
-                                           multiClickMapper,
-                                           altEnabled,
-                                           shiftEnabled,
-                                           isOnOriginalPosition,
-                                           _selectionNeedsToBeCopied);
-            }
-            else if (point.Properties().IsRightButtonPressed())
-            {
-                // CopyOnSelect right click always pastes
-                if (_settings.CopyOnSelect() || !_core->HasSelection())
-                {
-                    PasteTextFromClipboard();
-                }
-                else
-                {
-                    CopySelectionToClipboard(shiftEnabled, nullptr);
-                }
-            }
-        }
-        else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
-        {
-            const auto contactRect = point.Properties().ContactRect();
-            // Set our touch rect, to start a pan.
-            _touchAnchor = winrt::Windows::Foundation::Point{ contactRect.X, contactRect.Y };
-        }
+        //         _core->LeftClickOnTerminal(terminalPosition,
+        //                                    multiClickMapper,
+        //                                    altEnabled,
+        //                                    shiftEnabled,
+        //                                    isOnOriginalPosition,
+        //                                    _selectionNeedsToBeCopied);
+        //     }
+        //     else if (point.Properties().IsRightButtonPressed())
+        //     {
+        //         // CopyOnSelect right click always pastes
+        //         if (_settings.CopyOnSelect() || !_core->HasSelection())
+        //         {
+        //             PasteTextFromClipboard();
+        //         }
+        //         else
+        //         {
+        //             CopySelectionToClipboard(shiftEnabled, nullptr);
+        //         }
+        //     }
+        // }
+        // else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
+        // {
+        //     const auto contactRect = point.Properties().ContactRect();
+        //     // Set our touch rect, to start a pan.
+        //     _touchAnchor = winrt::Windows::Foundation::Point{ contactRect.X, contactRect.Y };
+        // }
 
         args.Handled(true);
     }
@@ -1164,7 +1170,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Short-circuit isReadOnly check to avoid warning dialog
             if (_focused && !_core->IsInReadOnlyMode() && _CanSendVTMouseInput())
             {
-                _TrySendMouseEvent(point);
+                _interactivity->_TrySendMouseEvent(point, terminalPosition);
             }
             else if (_focused && point.Properties().IsLeftButtonPressed())
             {
@@ -1271,7 +1277,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Short-circuit isReadOnly check to avoid warning dialog
             if (!_core->IsInReadOnlyMode() && _CanSendVTMouseInput())
             {
-                _TrySendMouseEvent(point);
+                const auto cursorPosition = point.Position();
+                const auto terminalPosition = _GetTerminalPosition(cursorPosition);
+                _interactivity->_TrySendMouseEvent(point, terminalPosition);
                 args.Handled(true);
                 return;
             }
@@ -2553,10 +2561,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Checks if the uri is valid and sends an event if so
     // Arguments:
     // - The uri
-    winrt::fire_and_forget TermControl::_HyperlinkHandler(const std::wstring_view uri)
+    winrt::fire_and_forget TermControl::_HyperlinkHandler(const IInspectable& /*sender*/,
+                                                          const Control::OpenHyperlinkEventArgs& args)
     {
         // Save things we need to resume later.
-        winrt::hstring heldUri{ uri };
+        Control::OpenHyperlinkEventArgs heldargs = args;
         auto strongThis{ get_strong() };
 
         // Pop the rest of this function to the tail of the UI thread
@@ -2565,8 +2574,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // (like ShellExecute pumping our messaging thread...GH#7994)
         co_await Dispatcher();
 
-        auto hyperlinkArgs = winrt::make_self<OpenHyperlinkEventArgs>(heldUri);
-        _OpenHyperlinkHandlers(*strongThis, *hyperlinkArgs);
+        _OpenHyperlinkHandlers(*strongThis, args);
     }
 
     // Method Description:

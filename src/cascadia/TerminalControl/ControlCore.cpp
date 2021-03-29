@@ -993,6 +993,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal->IsSelectionActive();
     }
 
+    bool ControlCore::CopyOnSelect() const
+    {
+        return _settings.CopyOnSelect();
+    }
+
     std::vector<std::wstring> ControlCore::SelectedText(bool trimTrailingWhitespace) const
     {
         const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);

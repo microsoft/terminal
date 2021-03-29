@@ -199,7 +199,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _LostFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         winrt::fire_and_forget _DragDropHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const e);
         void _DragOverHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const& e);
-        winrt::fire_and_forget _HyperlinkHandler(const std::wstring_view uri);
+        winrt::fire_and_forget _HyperlinkHandler(Windows::Foundation::IInspectable const& sender, Control::OpenHyperlinkEventArgs const& e);
 
         void _CursorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _BlinkTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
@@ -230,7 +230,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _TryHandleKeyBinding(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const;
         void _ClearKeyboardState(const WORD vkey, const WORD scanCode) const noexcept;
         bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
-        bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point);
+        // bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point);
         bool _CanSendVTMouseInput();
 
         const til::point _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);

@@ -24,6 +24,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void GainFocus();
         void UpdateSettings();
+        void Initialize();
+        void PointerPressed(const winrt::Windows::UI::Input::PointerPoint point,
+                            const uint32_t modifiers,
+                            const til::point terminalPosition,
+                            const winrt::Windows::Devices::Input::PointerDeviceType type);
 
         /////////////////////// From Control
         winrt::com_ptr<ControlCore> _core{ nullptr };
@@ -60,6 +65,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
         void _UpdateSystemParameterSettings() noexcept;
+        bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point,
+                                const til::point terminalPosition);
+        void _HyperlinkHandler(const std::wstring_view uri);
+
+        TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
     };
 }
 

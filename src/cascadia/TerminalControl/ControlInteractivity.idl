@@ -9,7 +9,7 @@ import "EventArgs.idl";
 namespace Microsoft.Terminal.Control
 {
 
-    [default_interface] runtimeclass ControlInteractivity : ICoreState
+    [default_interface] runtimeclass ControlInteractivity
     {
         ControlInteractivity(Microsoft.Terminal.Control.IControlSettings settings,
                              Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);

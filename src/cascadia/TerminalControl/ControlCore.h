@@ -53,9 +53,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::hstring GetHoveredUriText() const;
         std::optional<COORD> GetHoveredCell() const;
 
-        void SetSelectionAnchor(winrt::Windows::Foundation::Point const& position);
-        void SetEndSelectionPoint(winrt::Windows::Foundation::Point const& position);
-
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
 
         winrt::fire_and_forget _AsyncCloseConnection();
@@ -101,7 +98,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::point CursorPosition() const;
 
         bool HasSelection() const;
+        bool CopyOnSelect() const;
         std::vector<std::wstring> SelectedText(bool trimTrailingWhitespace) const;
+        void SetSelectionAnchor(winrt::Windows::Foundation::Point const& position);
+        void SetEndSelectionPoint(winrt::Windows::Foundation::Point const& position);
 
         void Search(const winrt::hstring& text,
                     const bool goForward,
