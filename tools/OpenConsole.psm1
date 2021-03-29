@@ -430,4 +430,4 @@ function Invoke-CodeFormat() {
     }
 }
 
-Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat,Invoke-XamlFormat,Invoke-VerifyXamlFormat
+Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat,Invoke-XamlFormat,Verify-XamlFormat
