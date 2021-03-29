@@ -70,7 +70,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(Windows::Foundation::IReference<int32_t>, ProfileIndex, nullptr);
         WINRT_PROPERTY(winrt::hstring, Profile, L"");
         WINRT_PROPERTY(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, nullptr);
-        WINRT_PROPERTY(winrt::hstring, ColorScheme, L"");
+        WINRT_PROPERTY(winrt::hstring, ColorScheme);
 
         static constexpr std::string_view CommandlineKey{ "commandline" };
         static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };

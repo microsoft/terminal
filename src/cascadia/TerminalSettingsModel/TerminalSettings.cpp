@@ -121,7 +121,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (!newTerminalArgs.ColorScheme().empty())
             {
                 const auto schemes = appSettings.GlobalSettings().ColorSchemes();
-                if (const auto scheme = schemes.TryLookup(newTerminalArgs.ColorScheme()))
+                if (const auto& scheme = schemes.TryLookup(newTerminalArgs.ColorScheme()))
                 {
                     settings.ApplyColorScheme(scheme);
                 }
