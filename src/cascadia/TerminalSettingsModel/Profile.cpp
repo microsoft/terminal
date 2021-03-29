@@ -93,28 +93,27 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
     profile->_Origin = source->_Origin;
 
     // Copy over the appearance
+    const auto weakRefToProfile = weak_ref<Model::Profile>(*profile);
     winrt::com_ptr<AppearanceConfig> sourceDefaultAppearanceImpl;
     sourceDefaultAppearanceImpl.copy_from(winrt::get_self<AppearanceConfig>(source->_DefaultAppearance));
-    auto copiedDefaultAppearance = AppearanceConfig::CopyAppearance(sourceDefaultAppearanceImpl);
+    auto copiedDefaultAppearance = AppearanceConfig::CopyAppearance(sourceDefaultAppearanceImpl, weakRefToProfile);
     profile->_DefaultAppearance = *copiedDefaultAppearance;
 
     if (source->_UnfocusedAppearance.has_value())
     {
-        if (source->_UnfocusedAppearance.value() == nullptr)
-        {
-            profile->_UnfocusedAppearance = nullptr;
-        }
-        else
+        Model::AppearanceConfig unfocused{ nullptr };
+        if (source->_UnfocusedAppearance.value() != nullptr)
         {
             // Copy over the unfocused appearance
             winrt::com_ptr<AppearanceConfig> sourceUnfocusedAppearanceImpl;
             sourceUnfocusedAppearanceImpl.copy_from(winrt::get_self<AppearanceConfig>(source->_UnfocusedAppearance.value()));
-            auto copiedUnfocusedAppearance = AppearanceConfig::CopyAppearance(sourceUnfocusedAppearanceImpl);
+            auto copiedUnfocusedAppearance = AppearanceConfig::CopyAppearance(sourceUnfocusedAppearanceImpl, weakRefToProfile);
 
             // Make sure to add the default appearance as a parent
             copiedUnfocusedAppearance->InsertParent(copiedDefaultAppearance);
-            profile->_UnfocusedAppearance = *copiedUnfocusedAppearance;
+            unfocused = *copiedUnfocusedAppearance;
         }
+        profile->_UnfocusedAppearance = unfocused;
     }
 
     return profile;
@@ -334,7 +333,7 @@ void Profile::LayerJson(const Json::Value& json)
 
     if (json.isMember(JsonKey(UnfocusedAppearanceKey)))
     {
-        auto unfocusedAppearance{ winrt::make_self<implementation::AppearanceConfig>() };
+        auto unfocusedAppearance{ winrt::make_self<implementation::AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
 
         // If an unfocused appearance is defined in this profile, any undefined parameters are
         // taken from this profile's default appearance, so add it as a parent

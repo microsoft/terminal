@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "Profile.idl";
 #include "IInheritable.idl.h"
 
 #define INHERITABLE_APPEARANCE_SETTING(Type, Name) \
@@ -23,6 +24,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     interface IAppearanceConfig
     {
+        Microsoft.Terminal.Settings.Model.Profile SourceProfile { get; };
         INHERITABLE_APPEARANCE_SETTING(String, ColorSchemeName);
         INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Foreground);
         INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Background);

@@ -28,11 +28,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct AppearanceConfig : AppearanceConfigT<AppearanceConfig>, IInheritable<AppearanceConfig>
     {
     public:
-        AppearanceConfig() = default;
-        static winrt::com_ptr<AppearanceConfig> CopyAppearance(const winrt::com_ptr<AppearanceConfig> source);
+        AppearanceConfig(const winrt::weak_ref<Profile> sourceProfile);
+        static winrt::com_ptr<AppearanceConfig> CopyAppearance(const winrt::com_ptr<AppearanceConfig> source, const winrt::weak_ref<Profile> sourceProfile);
         Json::Value ToJson() const;
-
         void LayerJson(const Json::Value& json);
+
+        Model::Profile SourceProfile();
+
         winrt::hstring ExpandedBackgroundImagePath();
 
         INHERITABLE_SETTING(Model::IAppearanceConfig, ConvergedAlignment, BackgroundImageAlignment, ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center);
@@ -51,5 +53,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         INHERITABLE_SETTING(Model::IAppearanceConfig, bool, RetroTerminalEffect, false);
         INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, PixelShaderPath, L"");
+
+    private:
+        winrt::weak_ref<Profile> _sourceProfile;
     };
 }

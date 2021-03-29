@@ -26,9 +26,14 @@ static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageA
 static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
 static constexpr std::string_view PixelShaderPathKey{ "experimental.pixelShaderPath" };
 
-winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(const winrt::com_ptr<AppearanceConfig> source)
+winrt::Microsoft::Terminal::Settings::Model::implementation::AppearanceConfig::AppearanceConfig(const winrt::weak_ref<Profile> sourceProfile) :
+    _sourceProfile(sourceProfile)
 {
-    auto appearance{ winrt::make_self<AppearanceConfig>() };
+}
+
+winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(const winrt::com_ptr<AppearanceConfig> source, const winrt::weak_ref<Profile> sourceProfile)
+{
+    auto appearance{ winrt::make_self<AppearanceConfig>(sourceProfile) };
     auto const sourceAppearance = source.try_as<AppearanceConfig>();
     appearance->_BackgroundImagePath = sourceAppearance->_BackgroundImagePath;
     appearance->_BackgroundImageOpacity = sourceAppearance->_BackgroundImageOpacity;
@@ -93,6 +98,11 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
     JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::GetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
+}
+
+winrt::Microsoft::Terminal::Settings::Model::Profile AppearanceConfig::SourceProfile()
+{
+    return _sourceProfile.get();
 }
 
 // Method Description:
