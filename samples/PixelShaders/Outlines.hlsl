@@ -33,16 +33,16 @@ float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
     // blurrier.
 
     //left, right, top, bottom:
-    float4 lcolor = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2( 1.0,  0.0)/Resolution.y);
-    float4 rcolor = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2(-1.0,  0.0)/Resolution.y);
-    float4 tcolor = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2( 0.0,  1.0)/Resolution.y);
-    float4 bcolor = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2( 0.0, -1.0)/Resolution.y);
+    float4 leftColor   = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2( 1.0,  0.0)/Resolution.y);
+    float4 rightColor  = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2(-1.0,  0.0)/Resolution.y);
+    float4 topColor    = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2( 0.0,  1.0)/Resolution.y);
+    float4 bottomColor = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2( 0.0, -1.0)/Resolution.y);
 
     // Corners
-    float4 tlcolor = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2( 1.0,  1.0)/Resolution.y);
-    float4 trcolor = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2(-1.0,  1.0)/Resolution.y);
-    float4 blcolor = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2( 1.0, -1.0)/Resolution.y);
-    float4 brcolor = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2(-1.0, -1.0)/Resolution.y);
+    float4 topLeftColor     = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2( 1.0,  1.0)/Resolution.y);
+    float4 topRightColor    = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2(-1.0,  1.0)/Resolution.y);
+    float4 bottomLeftColor  = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2( 1.0, -1.0)/Resolution.y);
+    float4 bottomRightColor = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2(-1.0, -1.0)/Resolution.y);
 
 
     // Now, if any of those adjacent cells has text in it, then the *color vec4
@@ -53,14 +53,14 @@ float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
     // background images (for example) untouched.
     float3 outlineColor = float3(0, 0, 0);
     float4 result = color;
-    result = result + float4(outlineColor, tlcolor.w);
-    result = result + float4(outlineColor, trcolor.w);
-    result = result + float4(outlineColor, blcolor.w);
-    result = result + float4(outlineColor, brcolor.w);
+    result = result + float4(outlineColor, leftColor.w);
+    result = result + float4(outlineColor, rightColor.w);
+    result = result + float4(outlineColor, topColor.w);
+    result = result + float4(outlineColor, bottomColor.w);
 
-    result = result + float4(outlineColor, lcolor.w);
-    result = result + float4(outlineColor, rcolor.w);
-    result = result + float4(outlineColor, tcolor.w);
-    result = result + float4(outlineColor, bcolor.w);
+    result = result + float4(outlineColor, topLeftColor.w);
+    result = result + float4(outlineColor, topRightColor.w);
+    result = result + float4(outlineColor, bottomLeftColor.w);
+    result = result + float4(outlineColor, bottomRightColor.w);
     return result;
 }
