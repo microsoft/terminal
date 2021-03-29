@@ -64,3 +64,4 @@ SUMS$
 ^\.github/actions/spelling/
 ^\.gitignore$
 ^doc/reference/master-sequence-list.csv$
+^\XamlStyler.json$
