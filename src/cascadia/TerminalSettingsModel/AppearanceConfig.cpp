@@ -26,10 +26,6 @@ static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageA
 static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
 static constexpr std::string_view PixelShaderPathKey{ "experimental.pixelShaderPath" };
 
-AppearanceConfig::AppearanceConfig()
-{
-}
-
 winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(const winrt::com_ptr<AppearanceConfig> source)
 {
     auto appearance{ winrt::make_self<AppearanceConfig>() };

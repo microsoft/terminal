@@ -50,7 +50,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
-    // - Create a TerminalSettings object for the provided profile guid. We'll
+    // - Create a TerminalSettingsCreateResult for the provided profile guid. We'll
     //   use the guid to look up the profile that should be used to
     //   create these TerminalSettings. Then, we'll apply settings contained in the
     //   global and profile settings to the instance.
@@ -58,6 +58,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - appSettings: the set of settings being used to construct the new terminal
     // - profileGuid: the unique identifier (guid) of the profile
     // - keybindings: the keybinding handler
+    // Return Value:
+    // - A TerminalSettingsCreateResult, which contains a pair of TerminalSettings objects,
+    //   one for when the terminal is focused and the other for when the terminal is unfocused
     Model::TerminalSettingsCreateResult TerminalSettings::CreateWithProfileByID(const Model::CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings)
     {
         auto settings{ winrt::make_self<TerminalSettings>() };
@@ -97,13 +100,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //     the profile.
     // - keybindings: the keybinding handler
     // Return Value:
-    // - the GUID of the created profile, and a fully initialized TerminalSettings object
+    // - A TerminalSettingsCreateResult object, which contains a pair of TerminalSettings
+    //   objects. One for when the terminal is focused and one for when the terminal is unfocused.
     Model::TerminalSettingsCreateResult TerminalSettings::CreateWithNewTerminalArgs(const CascadiaSettings& appSettings,
                                                                               const NewTerminalArgs& newTerminalArgs,
                                                                               const IKeyBindings& keybindings)
     {
         const guid profileGuid = appSettings.GetProfileForArgs(newTerminalArgs);
-        auto settingsPair = CreateWithProfileByID(appSettings, profileGuid, keybindings);
+        auto settingsPair{ CreateWithProfileByID(appSettings, profileGuid, keybindings) };
         auto defaultSettings = settingsPair.DefaultSettings();
 
         if (newTerminalArgs)
@@ -175,11 +179,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
-    // - Creates a TerminalSettings object that inherits from a parent TerminalSettings
-    // Arguments::
-    // - parent: the TerminalSettings object that the newly created TerminalSettings will inherit from
+    // - Creates a TerminalSettingsCreateResult from a parent TerminalSettingsCreateResult
+    // - The returned defaultSettings inherits from the parent's defaultSettings, and the
+    //   returned unfocusedSettings inherits from the returned defaultSettings
+    // Arguments:
+    // - parent: the TerminalSettingsCreateResult that we create a new one from
     // Return Value:
-    // - a newly created child of the given parent object
+    // - A TerminalSettingsCreateResult object that contains a defaultSettings that inherits
+    //   from parent's defaultSettings, and contains an unfocusedSettings that inherits from
+    //   its defaultSettings
     Model::TerminalSettingsCreateResult TerminalSettings::CreateWithParent(const Model::TerminalSettingsCreateResult& parent)
     {
         THROW_HR_IF_NULL(E_INVALIDARG, parent);

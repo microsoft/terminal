@@ -28,7 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct AppearanceConfig : AppearanceConfigT<AppearanceConfig>, IInheritable<AppearanceConfig>
     {
     public:
-        AppearanceConfig();
+        AppearanceConfig() = default;
         static winrt::com_ptr<AppearanceConfig> CopyAppearance(const winrt::com_ptr<AppearanceConfig> source);
         Json::Value ToJson() const;
 
