@@ -50,6 +50,7 @@ Author(s):
 #include "../inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
 #include <DefaultSettings.h>
+#include "AppearanceConfig.h"
 
 // fwdecl unittest classes
 namespace SettingsModelLocalTests
@@ -140,7 +141,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
 
     private:
-        Model::IAppearanceConfig _DefaultAppearance{ Model::AppearanceConfig() };
+        Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>() };
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
         static guid _GenerateGuidForProfile(const hstring& name, const hstring& source) noexcept;

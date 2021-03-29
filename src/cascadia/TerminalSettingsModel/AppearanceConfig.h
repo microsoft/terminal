@@ -21,7 +21,7 @@ Author(s):
 #include "JsonUtils.h"
 #include "../inc/cppwinrt_utils.h"
 #include "IInheritable.h"
-#include "Profile.h"
+#include <DefaultSettings.h>
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -51,13 +51,5 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         INHERITABLE_SETTING(Model::IAppearanceConfig, bool, RetroTerminalEffect, false);
         INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, PixelShaderPath, L"");
-
-    private:
-        friend struct implementation::Profile;
     };
-}
-
-namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
-{
-    BASIC_FACTORY(AppearanceConfig);
 }
