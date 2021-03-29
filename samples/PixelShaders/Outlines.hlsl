@@ -1,4 +1,4 @@
-// A minimal pixel shader that shows some raster bars
+// A minimal pixel shader that outlines text
 
 // The terminal graphics as a texture
 Texture2D shaderTexture;
@@ -25,44 +25,42 @@ float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
     //  float4 is tuple of 4 floats, rgba
     float4 color = shaderTexture.Sample(samplerState, tex);
 
-    // Read the color value at some offset, will be used as shadow
-    // float4 ocolor = shaderTexture.Sample(samplerState, tex+2.0*Scale*float2(-1.0, -1.0)/Resolution.y);
-    float4 ocolor = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2(-1.0, -1.0)/Resolution.y);
+    // Read the color value at some offset, will be used as shadow. For the best
+    // effect, read the colors offset on the left, right, top, bottom of this
+    // fragment, as well as on the corners of this fragment.
+    //
+    // You could get away with fewer samples, but the resulting outlines will be
+    // blurrier.
 
-    // // Thickness of raster
-    // const float thickness = 0.1;
+    //left, right, top, bottom:
+    float4 lcolor = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2( 1.0,  0.0)/Resolution.y);
+    float4 rcolor = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2(-1.0,  0.0)/Resolution.y);
+    float4 tcolor = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2( 0.0,  1.0)/Resolution.y);
+    float4 bcolor = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2( 0.0, -1.0)/Resolution.y);
 
-    // float ny = floor(tex.y/thickness);
-    // float my = tex.y%thickness;
-    // const float pi = 3.141592654;
+    // Corners
+    float4 tlcolor = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2( 1.0,  1.0)/Resolution.y);
+    float4 trcolor = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2(-1.0,  1.0)/Resolution.y);
+    float4 blcolor = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2( 1.0, -1.0)/Resolution.y);
+    float4 brcolor = shaderTexture.Sample(samplerState, tex+1.0*Scale*float2(-1.0, -1.0)/Resolution.y);
 
 
-    // // ny is used to compute the rasterbar base color
-    // float cola = ny*2.0*pi;
-    // float3 col = 0.75+0.25*float3(sin(cola*0.111), sin(cola*0.222), sin(cola*0.333));
+    // Now, if any of those adjacent cells has text in it, then the *color vec4
+    // will have a non-zero .w (which is used for alpha). Use that alpha value
+    // to add some black to the current fragment.
+    //
+    // This will result in only coloring fragments adjacent to text, but leaving
+    // background images (for example) untouched.
+    float3 outlineColor = float3(0, 0, 0);
+    float4 result = color;
+    result = result + float4(outlineColor, tlcolor.w);
+    result = result + float4(outlineColor, trcolor.w);
+    result = result + float4(outlineColor, blcolor.w);
+    result = result + float4(outlineColor, brcolor.w);
 
-    // my is used to compute the rasterbar brightness
-    //  smoothstep is a great little function: https://en.wikipedia.org/wiki/Smoothstep
-    // float brightness = 1.0-smoothstep(0.0, thickness*0.5, abs(my - 0.5*thickness));
-
-    // float3 rasterColor = col*brightness;
-
-    // lerp(x, y, a) is another very useful function: https://en.wikipedia.org/wiki/Linear_interpolation
-    // float3 final = rasterColor;
-    float3 final = color;
-    // Create the drop shadow of the terminal graphics
-    //  .w is the alpha channel, 0 is fully transparent and 1 is fully opaque
-    final = lerp(final, float(0.0), ocolor.w);
-    // final = lerp(final, float(0.0), ocolor.w);
-    // Draw the terminal graphics
-    final = lerp(final, color.xyz, color.w);
-
-    // Return the final color, set alpha to 1 (ie opaque)
-    // return float4(final, 1.0);
-    // float3 um = lerp(color.xyz, ocolor.xyz, 1.0-ocolor.w);
-    // float3 um = color.xyz + ocolor.xyz;
-    // float4 result = float4(um, 1.0);
-    // float4 result = color+ocolor;
-    float4 result = color + float4(0,0,0,ocolor.w);
+    result = result + float4(outlineColor, lcolor.w);
+    result = result + float4(outlineColor, rcolor.w);
+    result = result + float4(outlineColor, tcolor.w);
+    result = result + float4(outlineColor, bcolor.w);
     return result;
 }
