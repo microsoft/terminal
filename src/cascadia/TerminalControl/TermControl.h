@@ -231,7 +231,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _ClearKeyboardState(const WORD vkey, const WORD scanCode) const noexcept;
         bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
         // bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point);
-        bool _CanSendVTMouseInput();
+        // bool _CanSendVTMouseInput();
 
         const til::point _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
         // const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);

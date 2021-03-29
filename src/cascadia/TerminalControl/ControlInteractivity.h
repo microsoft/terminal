@@ -26,9 +26,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void UpdateSettings();
         void Initialize();
         void PointerPressed(const winrt::Windows::UI::Input::PointerPoint point,
-                            const uint32_t modifiers,
+                            const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+                            const bool focused,
                             const til::point terminalPosition,
                             const winrt::Windows::Devices::Input::PointerDeviceType type);
+        void PointerMoved(const winrt::Windows::UI::Input::PointerPoint point,
+                          const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+                          const bool focused,
+                          const til::point terminalPosition,
+                          const winrt::Windows::Devices::Input::PointerDeviceType type);
+        void PointerReleased(const winrt::Windows::UI::Input::PointerPoint point,
+                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+                             const bool focused,
+                             const til::point terminalPosition,
+                             const winrt::Windows::Devices::Input::PointerDeviceType type);
 
         /////////////////////// From Control
         winrt::com_ptr<ControlCore> _core{ nullptr };
@@ -47,6 +58,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Timestamp _lastMouseClickTimestamp;
         std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPos;
         std::optional<winrt::Windows::Foundation::Point> _singleClickTouchdownPos;
+        std::optional<til::point> _singleClickTouchdownTerminalPos;
         std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPosNoSelection;
         // This field tracks whether the selection has changed meaningfully
         // since it was last copied. It's generally used to prevent copyOnSelect
@@ -68,6 +80,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point,
                                 const til::point terminalPosition);
         void _HyperlinkHandler(const std::wstring_view uri);
+        bool _CanSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+        void _SetEndSelectionPoint(const til::point terminalPosition);
 
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
     };

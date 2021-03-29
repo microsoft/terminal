@@ -1009,21 +1009,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //     return _core->SendMouseEvent(terminalPosition, uiButton, modifiers, sWheelDelta, state);
     // }
 
-    // Method Description:
-    // - Checks if we can send vt mouse input.
-    // Arguments:
-    // - point: the PointerPoint object representing a mouse event from our XAML input handler
-    bool TermControl::_CanSendVTMouseInput()
-    {
-        // If the user is holding down Shift, suppress mouse events
-        // TODO GH#4875: disable/customize this functionality
-        const auto modifiers = _GetPressedModifierKeys();
-        if (modifiers.IsShiftPressed())
-        {
-            return false;
-        }
-        return _core->IsVtMouseModeEnabled();
-    }
+    // // Method Description:
+    // // - Checks if we can send vt mouse input.
+    // // Arguments:
+    // // - point: the PointerPoint object representing a mouse event from our XAML input handler
+    // bool TermControl::_CanSendVTMouseInput()
+    // {
+    //     // If the user is holding down Shift, suppress mouse events
+    //     // TODO GH#4875: disable/customize this functionality
+    //     const auto modifiers = _GetPressedModifierKeys();
+    //     if (modifiers.IsShiftPressed())
+    //     {
+    //         return false;
+    //     }
+    //     return _core->IsVtMouseModeEnabled();
+    // }
 
     // Method Description:
     // - handle a mouse click event. Begin selection process.
@@ -1058,7 +1058,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto cursorPosition = point.Position();
 
         _interactivity->PointerPressed(point,
-                                       static_cast<uint32_t>(args.KeyModifiers()),
+                                       ControlKeyStates(args.KeyModifiers()),
+                                       _focused,
                                        _GetTerminalPosition(cursorPosition),
                                        ptr.PointerDeviceType());
         // if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
@@ -1159,97 +1160,129 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto point = args.GetCurrentPoint(*this);
         const auto cursorPosition = point.Position();
         const auto terminalPosition = _GetTerminalPosition(cursorPosition);
+        const auto type = ptr.PointerDeviceType();
 
         if (!_focused && _settings.FocusFollowMouse())
         {
             _FocusFollowMouseRequestedHandlers(*this, nullptr);
         }
 
-        if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
+        _interactivity->PointerMoved(point,
+                                     ControlKeyStates(args.KeyModifiers()),
+                                     _focused,
+                                     terminalPosition,
+                                     type);
+
+        if (_focused && point.Properties().IsLeftButtonPressed())
         {
-            // Short-circuit isReadOnly check to avoid warning dialog
-            if (_focused && !_core->IsInReadOnlyMode() && _CanSendVTMouseInput())
+            const double cursorBelowBottomDist = cursorPosition.Y - SwapChainPanel().Margin().Top - SwapChainPanel().ActualHeight();
+            const double cursorAboveTopDist = -1 * cursorPosition.Y + SwapChainPanel().Margin().Top;
+
+            constexpr double MinAutoScrollDist = 2.0; // Arbitrary value
+            double newAutoScrollVelocity = 0.0;
+            if (cursorBelowBottomDist > MinAutoScrollDist)
             {
-                _interactivity->_TrySendMouseEvent(point, terminalPosition);
+                newAutoScrollVelocity = _GetAutoScrollSpeed(cursorBelowBottomDist);
             }
-            else if (_focused && point.Properties().IsLeftButtonPressed())
+            else if (cursorAboveTopDist > MinAutoScrollDist)
             {
-                if (_singleClickTouchdownPos)
-                {
-                    // Figure out if the user's moved a quarter of a cell's smaller axis away from the clickdown point
-                    auto& touchdownPoint{ *_singleClickTouchdownPos };
-                    auto distance{ std::sqrtf(std::powf(cursorPosition.X - touchdownPoint.X, 2) + std::powf(cursorPosition.Y - touchdownPoint.Y, 2)) };
-                    const til::size fontSize{ _core->GetFont().GetSize() };
-
-                    const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _core->RendererScale());
-                    if (distance >= (std::min(fontSizeInDips.width(), fontSizeInDips.height()) / 4.f))
-                    {
-                        _core->SetSelectionAnchor(_GetTerminalPosition(touchdownPoint));
-                        // stop tracking the touchdown point
-                        _singleClickTouchdownPos = std::nullopt;
-                    }
-                }
-
-                _SetEndSelectionPointAtCursor(cursorPosition);
-
-                const double cursorBelowBottomDist = cursorPosition.Y - SwapChainPanel().Margin().Top - SwapChainPanel().ActualHeight();
-                const double cursorAboveTopDist = -1 * cursorPosition.Y + SwapChainPanel().Margin().Top;
-
-                constexpr double MinAutoScrollDist = 2.0; // Arbitrary value
-                double newAutoScrollVelocity = 0.0;
-                if (cursorBelowBottomDist > MinAutoScrollDist)
-                {
-                    newAutoScrollVelocity = _GetAutoScrollSpeed(cursorBelowBottomDist);
-                }
-                else if (cursorAboveTopDist > MinAutoScrollDist)
-                {
-                    newAutoScrollVelocity = -1.0 * _GetAutoScrollSpeed(cursorAboveTopDist);
-                }
-
-                if (newAutoScrollVelocity != 0)
-                {
-                    _TryStartAutoScroll(point, newAutoScrollVelocity);
-                }
-                else
-                {
-                    _TryStopAutoScroll(ptr.PointerId());
-                }
+                newAutoScrollVelocity = -1.0 * _GetAutoScrollSpeed(cursorAboveTopDist);
             }
 
-            _core->UpdateHoveredCell(terminalPosition);
-        }
-        else if (_focused && ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
-        {
-            const auto contactRect = point.Properties().ContactRect();
-            winrt::Windows::Foundation::Point newTouchPoint{ contactRect.X, contactRect.Y };
-            const auto anchor = _touchAnchor.value();
-
-            // Our actualFont's size is in pixels, convert to DIPs, which the
-            // rest of the Points here are in.
-            const til::size fontSize{ _core->GetFont().GetSize() };
-            const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _core->RendererScale());
-
-            // Get the difference between the point we've dragged to and the start of the touch.
-            const float dy = newTouchPoint.Y - anchor.Y;
-
-            // Start viewport scroll after we've moved more than a half row of text
-            if (std::abs(dy) > (fontSizeInDips.height<float>() / 2.0f))
+            if (newAutoScrollVelocity != 0)
             {
-                // Multiply by -1, because moving the touch point down will
-                // create a positive delta, but we want the viewport to move up,
-                // so we'll need a negative scroll amount (and the inverse for
-                // panning down)
-                const float numRows = -1.0f * (dy / fontSizeInDips.height<float>());
-
-                const auto currentOffset = ::base::ClampedNumeric<double>(ScrollBar().Value());
-                const auto newValue = numRows + currentOffset;
-
-                ScrollBar().Value(newValue);
-
-                // Use this point as our new scroll anchor.
-                _touchAnchor = newTouchPoint;
+                _TryStartAutoScroll(point, newAutoScrollVelocity);
+            }
+            else
+            {
+                _TryStopAutoScroll(ptr.PointerId());
             }
         }
+        // if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
+        // {
+        //     // Short-circuit isReadOnly check to avoid warning dialog
+        //     if (_focused && !_core->IsInReadOnlyMode() && _CanSendVTMouseInput())
+        //     {
+        //         _interactivity->_TrySendMouseEvent(point, terminalPosition);
+        //     }
+        //     else if (_focused && point.Properties().IsLeftButtonPressed())
+        //     {
+        //         if (_singleClickTouchdownPos)
+        //         {
+        //             // Figure out if the user's moved a quarter of a cell's smaller axis away from the clickdown point
+        //             auto& touchdownPoint{ *_singleClickTouchdownPos };
+        //             auto distance{ std::sqrtf(std::powf(cursorPosition.X - touchdownPoint.X, 2) + std::powf(cursorPosition.Y - touchdownPoint.Y, 2)) };
+        //             const til::size fontSize{ _core->GetFont().GetSize() };
+
+        //             const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _core->RendererScale());
+        //             if (distance >= (std::min(fontSizeInDips.width(), fontSizeInDips.height()) / 4.f))
+        //             {
+        //                 _core->SetSelectionAnchor(_GetTerminalPosition(touchdownPoint));
+        //                 // stop tracking the touchdown point
+        //                 _singleClickTouchdownPos = std::nullopt;
+        //             }
+        //         }
+
+        //         _SetEndSelectionPointAtCursor(cursorPosition);
+
+        //         const double cursorBelowBottomDist = cursorPosition.Y - SwapChainPanel().Margin().Top - SwapChainPanel().ActualHeight();
+        //         const double cursorAboveTopDist = -1 * cursorPosition.Y + SwapChainPanel().Margin().Top;
+
+        //         constexpr double MinAutoScrollDist = 2.0; // Arbitrary value
+        //         double newAutoScrollVelocity = 0.0;
+        //         if (cursorBelowBottomDist > MinAutoScrollDist)
+        //         {
+        //             newAutoScrollVelocity = _GetAutoScrollSpeed(cursorBelowBottomDist);
+        //         }
+        //         else if (cursorAboveTopDist > MinAutoScrollDist)
+        //         {
+        //             newAutoScrollVelocity = -1.0 * _GetAutoScrollSpeed(cursorAboveTopDist);
+        //         }
+
+        //         if (newAutoScrollVelocity != 0)
+        //         {
+        //             _TryStartAutoScroll(point, newAutoScrollVelocity);
+        //         }
+        //         else
+        //         {
+        //             _TryStopAutoScroll(ptr.PointerId());
+        //         }
+        //     }
+
+        //     _core->UpdateHoveredCell(terminalPosition);
+        // }
+        // else if (_focused && ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
+        // {
+        //     const auto contactRect = point.Properties().ContactRect();
+        //     winrt::Windows::Foundation::Point newTouchPoint{ contactRect.X, contactRect.Y };
+        //     const auto anchor = _touchAnchor.value();
+
+        //     // Our actualFont's size is in pixels, convert to DIPs, which the
+        //     // rest of the Points here are in.
+        //     const til::size fontSize{ _core->GetFont().GetSize() };
+        //     const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _core->RendererScale());
+
+        //     // Get the difference between the point we've dragged to and the start of the touch.
+        //     const float dy = newTouchPoint.Y - anchor.Y;
+
+        //     // Start viewport scroll after we've moved more than a half row of text
+        //     if (std::abs(dy) > (fontSizeInDips.height<float>() / 2.0f))
+        //     {
+        //         // Multiply by -1, because moving the touch point down will
+        //         // create a positive delta, but we want the viewport to move up,
+        //         // so we'll need a negative scroll amount (and the inverse for
+        //         // panning down)
+        //         const float numRows = -1.0f * (dy / fontSizeInDips.height<float>());
+
+        //         const auto currentOffset = ::base::ClampedNumeric<double>(ScrollBar().Value());
+        //         const auto newValue = numRows + currentOffset;
+
+        //         ScrollBar().Value(newValue);
+
+        //         // Use this point as our new scroll anchor.
+        //         _touchAnchor = newTouchPoint;
+        //     }
+        // }
         args.Handled(true);
     }
 
@@ -1269,34 +1302,42 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
+        const auto cursorPosition = point.Position();
+        const auto terminalPosition = _GetTerminalPosition(cursorPosition);
+        const auto type = ptr.PointerDeviceType();
 
         _ReleasePointerCapture(sender, args);
+        _interactivity->PointerReleased(point,
+                                        ControlKeyStates(args.KeyModifiers()),
+                                        _focused,
+                                        terminalPosition,
+                                        type);
 
-        if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
-        {
-            // Short-circuit isReadOnly check to avoid warning dialog
-            if (!_core->IsInReadOnlyMode() && _CanSendVTMouseInput())
-            {
-                const auto cursorPosition = point.Position();
-                const auto terminalPosition = _GetTerminalPosition(cursorPosition);
-                _interactivity->_TrySendMouseEvent(point, terminalPosition);
-                args.Handled(true);
-                return;
-            }
+        // if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
+        // {
+        //     // Short-circuit isReadOnly check to avoid warning dialog
+        //     if (!_core->IsInReadOnlyMode() && _CanSendVTMouseInput())
+        //     {
+        //         const auto cursorPosition = point.Position();
+        //         const auto terminalPosition = _GetTerminalPosition(cursorPosition);
+        //         _interactivity->_TrySendMouseEvent(point, terminalPosition);
+        //         args.Handled(true);
+        //         return;
+        //     }
 
-            // Only a left click release when copy on select is active should perform a copy.
-            // Right clicks and middle clicks should not need to do anything when released.
-            if (_settings.CopyOnSelect() && point.Properties().PointerUpdateKind() == Windows::UI::Input::PointerUpdateKind::LeftButtonReleased && _selectionNeedsToBeCopied)
-            {
-                CopySelectionToClipboard(false, nullptr);
-            }
-        }
-        else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
-        {
-            _touchAnchor = std::nullopt;
-        }
+        //     // Only a left click release when copy on select is active should perform a copy.
+        //     // Right clicks and middle clicks should not need to do anything when released.
+        //     if (_settings.CopyOnSelect() && point.Properties().PointerUpdateKind() == Windows::UI::Input::PointerUpdateKind::LeftButtonReleased && _selectionNeedsToBeCopied)
+        //     {
+        //         CopySelectionToClipboard(false, nullptr);
+        //     }
+        // }
+        // else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
+        // {
+        //     _touchAnchor = std::nullopt;
+        // }
 
-        _singleClickTouchdownPos = std::nullopt;
+        // _singleClickTouchdownPos = std::nullopt;
 
         _TryStopAutoScroll(ptr.PointerId());
 
@@ -1354,7 +1395,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                     const TerminalInput::MouseButtonState state)
     {
         // Short-circuit isReadOnly check to avoid warning dialog
-        if (!_core->IsInReadOnlyMode() && _CanSendVTMouseInput())
+        if (!_core->IsInReadOnlyMode() && _interactivity->_CanSendVTMouseInput(modifiers))
         {
             // Most mouse event handlers call
             //      _TrySendMouseEvent(point);
@@ -1586,7 +1627,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_TryStartAutoScroll(Windows::UI::Input::PointerPoint const& pointerPoint, const double scrollVelocity)
     {
         // Allow only one pointer at the time
-        if (!_autoScrollingPointerPoint.has_value() || _autoScrollingPointerPoint.value().PointerId() == pointerPoint.PointerId())
+        if (!_autoScrollingPointerPoint.has_value() ||
+            _autoScrollingPointerPoint.value().PointerId() == pointerPoint.PointerId())
         {
             _autoScrollingPointerPoint = pointerPoint;
             _autoScrollVelocity = scrollVelocity;
@@ -1612,7 +1654,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - pointerId: id of pointer for which to stop auto scroll
     void TermControl::_TryStopAutoScroll(const uint32_t pointerId)
     {
-        if (_autoScrollingPointerPoint.has_value() && pointerId == _autoScrollingPointerPoint.value().PointerId())
+        if (_autoScrollingPointerPoint.has_value() &&
+            pointerId == _autoScrollingPointerPoint.value().PointerId())
         {
             _autoScrollingPointerPoint = std::nullopt;
             _autoScrollVelocity = 0;
