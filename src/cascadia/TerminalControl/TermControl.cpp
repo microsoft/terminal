@@ -704,7 +704,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(message));
-            control->_raiseNoticeHandlers(*control, std::move(noticeArgs));
+            control->_RaiseNoticeHandlers(*control, std::move(noticeArgs));
         }
     }
 
@@ -1815,7 +1815,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Clear the regex pattern tree so the renderer does not try to render them while scrolling
-        _terminal->ClearPatternTree();
+        {
+            // We're taking the lock here instead of in ClearPatternTree because ClearPatternTree is
+            // sometimes called from an already-locked context. Here, we are sure we are not
+            // already under lock (since it is not an internal scroll bar update)
+            // TODO GH#9617: refine locking around pattern tree
+            auto lock = _terminal->LockForWriting();
+            _terminal->ClearPatternTree();
+        }
 
         const auto newValue = static_cast<int>(args.NewValue());
 
@@ -2134,7 +2141,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 co_await strong->Dispatcher();
 
                 auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(msg));
-                strong->_raiseNoticeHandlers(*strong, std::move(noticeArgs));
+                strong->_RaiseNoticeHandlers(*strong, std::move(noticeArgs));
             }();
         }
 
@@ -2399,7 +2406,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::_TerminalTitleChanged(const std::wstring_view& wstr)
     {
-        _titleChangedHandlers(winrt::hstring{ wstr });
+        _TitleChangedHandlers(*this, winrt::make<TitleChangedEventArgs>(winrt::hstring{ wstr }));
     }
     void TermControl::_TerminalTabColorChanged(const std::optional<til::color> /*color*/)
     {
@@ -2409,7 +2416,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_CopyToClipboard(const std::wstring_view& wstr)
     {
         auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(wstr));
-        _clipboardCopyHandlers(*this, *copyArgs);
+        _CopyToClipboardHandlers(*this, *copyArgs);
     }
 
     // Method Description:
@@ -2434,6 +2441,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Clear the regex pattern tree so the renderer does not try to render them while scrolling
+        // We're **NOT** taking the lock here unlike _ScrollbarChangeHandler because
+        // we are already under lock (since this usually happens as a result of writing).
+        // TODO GH#9617: refine locking around pattern tree
         _terminal->ClearPatternTree();
 
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
@@ -2540,7 +2550,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                                    winrt::to_hstring(htmlData),
                                                                    winrt::to_hstring(rtfData),
                                                                    formats);
-        _clipboardCopyHandlers(*this, *copyArgs);
+        _CopyToClipboardHandlers(*this, *copyArgs);
         return true;
     }
 
@@ -2554,7 +2564,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
 
         // send paste event up to TermApp
-        _clipboardPasteHandlers(*this, *pasteArgs);
+        _PasteFromClipboardHandlers(*this, *pasteArgs);
     }
 
     // Method Description:
@@ -3226,7 +3236,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         co_await Dispatcher();
 
         auto hyperlinkArgs = winrt::make_self<OpenHyperlinkEventArgs>(heldUri);
-        _openHyperlinkHandlers(*strongThis, *hyperlinkArgs);
+        _OpenHyperlinkHandlers(*strongThis, *hyperlinkArgs);
     }
 
     // Method Description:
@@ -3271,7 +3281,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     winrt::fire_and_forget TermControl::TaskbarProgressChanged()
     {
         co_await resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
-        _setTaskbarProgressHandlers(*this, nullptr);
+        _SetTaskbarProgressHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -3317,7 +3327,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (auto control{ weakThis.get() })
         {
             auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));
-            control->_raiseNoticeHandlers(*control, std::move(noticeArgs));
+            control->_RaiseNoticeHandlers(*control, std::move(noticeArgs));
         }
     }
 
@@ -3334,8 +3344,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _lastHoveredCell = terminalPosition;
 
+        uint16_t newId{ 0u };
+        // we can't use auto here because we're pre-declaring newInterval.
+        decltype(_terminal->GetHyperlinkIntervalFromPosition(COORD{})) newInterval{ std::nullopt };
         if (terminalPosition.has_value())
         {
+            auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
+
             const auto uri = _terminal->GetHyperlinkAtPosition(*terminalPosition);
             if (!uri.empty())
             {
@@ -3361,15 +3376,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
                 OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
             }
-        }
 
-        const uint16_t newId = terminalPosition.has_value() ? _terminal->GetHyperlinkIdAtPosition(*terminalPosition) : 0u;
-        const auto newInterval = terminalPosition.has_value() ? _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition) : std::nullopt;
+            newId = _terminal->GetHyperlinkIdAtPosition(*terminalPosition);
+            newInterval = _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition);
+        }
 
         // If the hyperlink ID changed or the interval changed, trigger a redraw all
         // (so this will happen both when we move onto a link and when we move off a link)
         if (newId != _lastHoveredId || (newInterval != _lastHoveredInterval))
         {
+            auto lock = _terminal->LockForWriting();
             _lastHoveredId = newId;
             _lastHoveredInterval = newInterval;
             _renderEngine->UpdateHyperlinkHoveredId(newId);
@@ -3392,14 +3408,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
-    DEFINE_EVENT(TermControl, TitleChanged, _titleChangedHandlers, Control::TitleChangedEventArgs);
     DEFINE_EVENT(TermControl, FontSizeChanged, _fontSizeChangedHandlers, Control::FontSizeChangedEventArgs);
     DEFINE_EVENT(TermControl, ScrollPositionChanged, _scrollPositionChangedHandlers, Control::ScrollPositionChangedEventArgs);
-
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, Control::TermControl, Control::PasteFromClipboardEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, CopyToClipboard, _clipboardCopyHandlers, Control::TermControl, Control::CopyToClipboardEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, OpenHyperlink, _openHyperlinkHandlers, Control::TermControl, Control::OpenHyperlinkEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, SetTaskbarProgress, _setTaskbarProgressHandlers, Control::TermControl, IInspectable);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, RaiseNotice, _raiseNoticeHandlers, Control::TermControl, Control::NoticeEventArgs);
-    // clang-format on
 }

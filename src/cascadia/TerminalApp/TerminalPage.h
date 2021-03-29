@@ -6,9 +6,6 @@
 #include "TerminalPage.g.h"
 #include "TerminalTab.h"
 #include "AppKeyBindings.h"
-
-#include <winrt/Microsoft.Terminal.Control.h>
-
 #include "AppCommandlineArgs.h"
 
 static constexpr uint32_t DefaultRowsToScroll{ 3 };
@@ -69,6 +66,7 @@ namespace winrt::TerminalApp::implementation
         bool AlwaysOnTop() const;
 
         void SetStartupActions(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
+        void SetInboundListener();
         static std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> ConvertExecuteCommandlineToActions(const Microsoft::Terminal::Settings::Model::ExecuteCommandlineArgs& args);
 
         winrt::TerminalApp::IDialogPresenter DialogPresenter() const;
@@ -85,15 +83,15 @@ namespace winrt::TerminalApp::implementation
                                                      const winrt::hstring cwd = L"");
 
         // -------------------------------- WinRT Events ---------------------------------
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(FocusModeChanged, _focusModeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(FullscreenChanged, _fullscreenChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RaiseVisualBell, _raiseVisualBellHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTaskbarProgress, _setTaskbarProgressHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(Initialized, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
+        TYPED_EVENT(TitleChanged, IInspectable, winrt::hstring);
+        TYPED_EVENT(LastTabClosed, IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
+        TYPED_EVENT(SetTitleBarContent, IInspectable, winrt::Windows::UI::Xaml::UIElement);
+        TYPED_EVENT(FocusModeChanged, IInspectable, IInspectable);
+        TYPED_EVENT(FullscreenChanged, IInspectable, IInspectable);
+        TYPED_EVENT(AlwaysOnTopChanged, IInspectable, IInspectable);
+        TYPED_EVENT(RaiseVisualBell, IInspectable, IInspectable);
+        TYPED_EVENT(SetTaskbarProgress, IInspectable, IInspectable);
+        TYPED_EVENT(Initialized, IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
@@ -141,6 +139,7 @@ namespace winrt::TerminalApp::implementation
         StartupState _startupState{ StartupState::NotInitialized };
 
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> _startupActions;
+        bool _shouldStartInboundListener{ false };
 
         void _ShowAboutDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseWarningDialog();
@@ -150,8 +149,8 @@ namespace winrt::TerminalApp::implementation
 
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
-        void _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs);
-        void _CreateNewTabFromSettings(GUID profileGuid, Microsoft::Terminal::Settings::Model::TerminalSettings settings);
+        void _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
+        void _CreateNewTabFromSettings(GUID profileGuid, Microsoft::Terminal::Settings::Model::TerminalSettings settings, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, Microsoft::Terminal::Settings::Model::TerminalSettings settings);
 
         winrt::fire_and_forget _OpenNewWindow(const bool elevate, const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
@@ -185,7 +184,13 @@ namespace winrt::TerminalApp::implementation
 
         void _RegisterTerminalEvents(Microsoft::Terminal::Control::TermControl term, TerminalTab& hostingTab);
 
-        void _SelectNextTab(const bool bMoveRight);
+        void _DismissTabContextMenus();
+        void _FocusCurrentTab(const bool focusAlways);
+        bool _HasMultipleTabs() const;
+        void _RemoveAllTabs();
+        void _ResizeTabContent(const winrt::Windows::Foundation::Size& newSize);
+
+        void _SelectNextTab(const bool bMoveRight, const Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::TabSwitcherMode>& customTabSwitcherMode);
         bool _SelectTab(const uint32_t tabIndex);
         void _MoveFocus(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
 
@@ -200,8 +205,6 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget _RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page);
 
-        // Todo: add more event implementations here
-        // MSFT:20641986: Add keybindings for New Window
         void _Scroll(ScrollDirection scrollDirection, const Windows::Foundation::IReference<uint32_t>& rowsToScroll);
 
         void _SplitPane(const Microsoft::Terminal::Settings::Model::SplitState splitType,
@@ -232,6 +235,9 @@ namespace winrt::TerminalApp::implementation
         void _ShowControlNoticeDialog(const winrt::hstring& title, const winrt::hstring& message);
 
         fire_and_forget _LaunchSettings(const Microsoft::Terminal::Settings::Model::SettingsTarget target);
+
+        void _TabDragStarted(const IInspectable& sender, const IInspectable& eventArgs);
+        void _TabDragCompleted(const IInspectable& sender, const IInspectable& eventArgs);
 
         void _OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
@@ -277,6 +283,8 @@ namespace winrt::TerminalApp::implementation
         Windows::UI::Core::CoreCursor _defaultPointerCursor{ nullptr };
         void _HidePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
         void _RestorePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
+
+        void _OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
@@ -325,6 +333,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleFindMatch(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleTogglePaneReadOnly(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleNewWindow(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleToggleInboundPty(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
 
         // Make sure to hook new actions up in _RegisterActionCallbacks!
 #pragma endregion
@@ -336,7 +345,5 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct TerminalPage : TerminalPageT<TerminalPage, implementation::TerminalPage>
-    {
-    };
+    BASIC_FACTORY(TerminalPage);
 }
