@@ -812,7 +812,7 @@ namespace winrt::TerminalApp::implementation
     {
         co_await winrt::resume_foreground(page->_tabView.Dispatcher());
 
-        if (auto tab{ _GetTabByViewItem(tabViewItem) })
+        if (auto tab{ _GetTabByTabViewItem(tabViewItem) })
         {
             _RemoveTab(tab);
         }
@@ -1367,7 +1367,7 @@ namespace winrt::TerminalApp::implementation
     // - Removes the tab (both TerminalControl and XAML)
     // Arguments:
     // - tab: the tab to remove
-    void TerminalPage::_RemoveTab(winrt::TerminalApp::TabBase tab)
+    void TerminalPage::_RemoveTab(const winrt::TerminalApp::TabBase& tab)
     {
         uint32_t tabIndex{};
         if (!_tabs.IndexOf(tab, tabIndex))
@@ -1704,7 +1704,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - returns a tab corresponding to a view item. This might return null,
     //   so make sure to check the result!
-    winrt::TerminalApp::TabBase TerminalPage::_GetTabByViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem) const noexcept
+    winrt::TerminalApp::TabBase TerminalPage::_GetTabByTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem) const noexcept
     {
         uint32_t tabIndexFromControl{};
         if (_tabView.TabItems().IndexOf(tabViewItem, tabIndexFromControl))
@@ -2479,7 +2479,7 @@ namespace winrt::TerminalApp::implementation
         if (eventArgs.GetCurrentPoint(*this).Properties().IsMiddleButtonPressed())
         {
             const auto tabViewItem = sender.try_as<MUX::Controls::TabViewItem>();
-            if (auto tab{ _GetTabByViewItem(tabViewItem) })
+            if (auto tab{ _GetTabByTabViewItem(tabViewItem) })
             {
                 _HandleCloseTabRequested(tab);
             }
@@ -2582,8 +2582,8 @@ namespace winrt::TerminalApp::implementation
     // - eventArgs: the event's constituent arguments
     void TerminalPage::_OnTabCloseRequested(const IInspectable& /*sender*/, const MUX::Controls::TabViewTabCloseRequestedEventArgs& eventArgs)
     {
-		const auto tabViewItem = eventArgs.Tab();
-        if (auto tab{ _GetTabByViewItem(tabViewItem) })
+        const auto tabViewItem = eventArgs.Tab();
+        if (auto tab{ _GetTabByTabViewItem(tabViewItem) })
         {
             _HandleCloseTabRequested(tab);
         }
