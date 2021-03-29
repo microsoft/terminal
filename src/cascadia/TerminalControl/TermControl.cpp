@@ -1895,8 +1895,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // // - cursorPosition: in pixels, relative to the origin of the control
     void TermControl::_SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition)
     {
-        _core->SetEndSelectionPoint(_GetTerminalPosition(cursorPosition));
-        _selectionNeedsToBeCopied = true;
+        _interactivity->_SetEndSelectionPoint(_GetTerminalPosition(cursorPosition));
     }
 
     // Method Description:
