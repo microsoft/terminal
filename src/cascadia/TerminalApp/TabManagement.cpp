@@ -53,13 +53,16 @@ namespace winrt::TerminalApp::implementation
     // - newTerminalArgs: An object that may contain a blob of parameters to
     //   control which profile is created and with possible other
     //   configurations. See TerminalSettings::CreateWithNewTerminalArgs for more details.
-    void TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs)
+    // - existingConnection: An optional connection that is already established to a PTY
+    //   for this tab to host instead of creating one.
+    //   If not defined, the tab will create the connection.
+    void TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection)
     try
     {
         const auto profileGuid{ _settings.GetProfileForArgs(newTerminalArgs) };
         const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
-        _CreateNewTabFromSettings(profileGuid, settings);
+        _CreateNewTabFromSettings(profileGuid, settings, existingConnection);
 
         const uint32_t tabCount = _tabs.Size();
         const bool usedManualProfile = (newTerminalArgs != nullptr) &&
@@ -93,13 +96,14 @@ namespace winrt::TerminalApp::implementation
     // - Creates a new tab with the given settings. If the tab bar is not being
     //      currently displayed, it will be shown.
     // Arguments:
+    // - profileGuid: ID to use to lookup profile settings for this connection
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
-    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
+    // - existingConnection: optionally receives a connection from the outside world instead of attempting to create one
+    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings, TerminalConnection::ITerminalConnection existingConnection)
     {
         // Initialize the new tab
-
-        // Create a connection based on the values in our settings object.
-        auto connection = _CreateConnectionFromSettings(profileGuid, settings);
+        // Create a connection based on the values in our settings object if we weren't given one.
+        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profileGuid, settings);
 
         TerminalConnection::ITerminalConnection debugConnection{ nullptr };
         if (_settings.GlobalSettings().DebugFeaturesEnabled())

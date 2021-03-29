@@ -166,6 +166,9 @@ namespace winrt::TerminalApp::implementation
         // Hookup our event handlers to the ShortcutActionDispatch
         _RegisterActionCallbacks();
 
+        // Hook up inbound connection event handler
+        TerminalConnection::ConptyConnection::NewConnection({ this, &TerminalPage::_OnNewConnection });
+
         //Event Bindings (Early)
         _newTabButton.Click([weakThis{ get_weak() }](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
@@ -307,15 +310,29 @@ namespace winrt::TerminalApp::implementation
         if (_startupState == StartupState::NotInitialized)
         {
             _startupState = StartupState::InStartup;
-            if (_startupActions.Size() == 0)
-            {
-                _OpenNewTab(nullptr);
+            ProcessStartupActions(_startupActions, true);
 
-                _CompleteInitialization();
-            }
-            else
+            // If we were told that the COM server needs to be started to listen for incoming
+            // default application connections, start it now.
+            // This MUST be done after we've registered the event listener for the new connections
+            // or the COM server might start receiving requests on another thread and dispatch
+            // them to nowhere.
+            if (_shouldStartInboundListener)
             {
-                ProcessStartupActions(_startupActions, true);
+                try
+                {
+                    winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
+                }
+                // If we failed to start the listener, it will throw.
+                // We should fail fast here or the Terminal will be in a very strange state.
+                // We only start the listener if the Terminal was started with the COM server
+                // `-Embedding` flag and we make no tabs as a result.
+                // Therefore, if the listener cannot start itself up to make that tab with
+                // the inbound connection that caused the COM activation in the first place...
+                // we would be left with an empty terminal frame with no tabs.
+                // Instead, crash out so COM sees the server die and things unwind
+                // without a weird empty frame window.
+                CATCH_FAIL_FAST()
             }
         }
     }
@@ -338,11 +355,6 @@ namespace winrt::TerminalApp::implementation
                                                                const bool initial,
                                                                const winrt::hstring cwd)
     {
-        // If there are no actions left, do nothing.
-        if (actions.Size() == 0)
-        {
-            return;
-        }
         auto weakThis{ get_weak() };
 
         // Handle it on a subsequent pass of the UI thread.
@@ -1966,6 +1978,19 @@ namespace winrt::TerminalApp::implementation
         _startupActions = winrt::single_threaded_vector<ActionAndArgs>(std::move(listCopy));
     }
 
+    // Routine Description:
+    // - Notifies this Terminal Page that it should start the incoming connection
+    //   listener for command-line tools attempting to join this Terminal
+    //   through the default application channel.
+    // Arguments:
+    // - <none> - Implicitly sets to true. Default page state is false.
+    // Return Value:
+    // - <none>
+    void TerminalPage::SetInboundListener()
+    {
+        _shouldStartInboundListener = true;
+    }
+
     winrt::TerminalApp::IDialogPresenter TerminalPage::DialogPresenter() const
     {
         return _dialogPresenter.get();
@@ -2259,6 +2284,7 @@ namespace winrt::TerminalApp::implementation
     {
         return _isFullscreen;
     }
+
     // Method Description:
     // - Returns true if we're currently in "Always on top" mode. When we're in
     //   always on top mode, the window should be on top of all other windows.
@@ -2271,6 +2297,12 @@ namespace winrt::TerminalApp::implementation
     bool TerminalPage::AlwaysOnTop() const
     {
         return _isAlwaysOnTop;
+    }
+
+    void TerminalPage::_OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection)
+    {
+        // TODO: GH 9458 will give us more context so we can try to choose a better profile.
+        _OpenNewTab(nullptr, connection);
     }
 
     // Method Description:
@@ -2364,7 +2396,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // Method Description:
     // Method Description:
     // - Computes the delta for scrolling the tab's viewport.
     // Arguments:

@@ -1,26 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProjectGuid>{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}</ProjectGuid>
+    <ProjectGuid>{05d9052f-d78f-478f-968a-2de38a6db996}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>HostEXE</RootNamespace>
-    <ProjectName>Host.EXE</ProjectName>
-    <TargetName>OpenConsole</TargetName>
+    <RootNamespace>Host.FuzzWrapper</RootNamespace>
+    <ProjectName>Host.FuzzWrapper</ProjectName>
+    <TargetName>OpenConsoleFuzzer</TargetName>
     <ConfigurationType>Application</ConfigurationType>
   </PropertyGroup>
-  <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <Import Project="..\..\common.build.pre.props" />
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />
-    <ClInclude Include="CConsoleHandoff.h" />
-    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
-    <ClCompile Include="CConsoleHandoff.cpp" />
-    <ClCompile Include="exemain.cpp" />
+    <ClCompile Include="fuzzmain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\buffer\out\lib\bufferout.vcxproj">
@@ -69,24 +66,19 @@
       <Project>{06ec74cb-9a12-429c-b551-8562ec954746}</Project>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="Host.EXE.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <Manifest Include="openconsole.exe.manifest" />
-  </ItemGroup>
-  <PropertyGroup>
-    <EmbedManifest>
-    </EmbedManifest>
-    <GenerateManifest>true</GenerateManifest>
-  </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..;$(IntDir)..\OpenConsoleProxy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AllowIsolation>true</AllowIsolation>
-      <AdditionalDependencies>WinMM.Lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Fuzzing'">
+    <!-- In theory, we may want to build with a normal main() when Fuzzing is not enabled. -->
+    <!-- So, let's only add the fuzzer to the link line when we're building for Fuzzing. -->
+    <Link>
+      <AdditionalDependencies>clang_rt.fuzzer-$(OCClangArchitectureName).lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
