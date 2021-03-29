@@ -184,6 +184,12 @@ namespace winrt::TerminalApp::implementation
 
         void _RegisterTerminalEvents(Microsoft::Terminal::Control::TermControl term, TerminalTab& hostingTab);
 
+        void _DismissTabContextMenus();
+        void _FocusCurrentTab(const bool focusAlways);
+        bool _HasMultipleTabs() const;
+        void _RemoveAllTabs();
+        void _ResizeTabContent(const winrt::Windows::Foundation::Size& newSize);
+
         void _SelectNextTab(const bool bMoveRight, const Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::TabSwitcherMode>& customTabSwitcherMode);
         bool _SelectTab(const uint32_t tabIndex);
         void _MoveFocus(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
@@ -199,8 +205,6 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget _RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page);
 
-        // Todo: add more event implementations here
-        // MSFT:20641986: Add keybindings for New Window
         void _Scroll(ScrollDirection scrollDirection, const Windows::Foundation::IReference<uint32_t>& rowsToScroll);
 
         void _SplitPane(const Microsoft::Terminal::Settings::Model::SplitState splitType,
@@ -231,6 +235,9 @@ namespace winrt::TerminalApp::implementation
         void _ShowControlNoticeDialog(const winrt::hstring& title, const winrt::hstring& message);
 
         fire_and_forget _LaunchSettings(const Microsoft::Terminal::Settings::Model::SettingsTarget target);
+
+        void _TabDragStarted(const IInspectable& sender, const IInspectable& eventArgs);
+        void _TabDragCompleted(const IInspectable& sender, const IInspectable& eventArgs);
 
         void _OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
