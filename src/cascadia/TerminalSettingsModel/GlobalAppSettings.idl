@@ -28,13 +28,6 @@ namespace Microsoft.Terminal.Settings.Model
         MaximizedFocusMode,
     };
 
-    enum TabSwitcherMode
-    {
-        MostRecentlyUsed,
-        InOrder,
-        Disabled,
-    };
-
     enum WindowingMode
     {
         UseNew,

@@ -16,7 +16,9 @@
               "${workspaceFolder}\\OpenConsole.sln",
               "/p:Configuration=${input:configChoice}",
               "/p:Platform=${input:platformChoice}",
+              "/p:AppxSymbolPackageEnabled=false", // This takes a long time, so false if we don't really need it.
               "/t:$target",
+              "/m", // Parallel builds
               "/verbosity:minimal"
             ],
             "problemMatcher": ["$msCompile"],
@@ -46,8 +48,7 @@
             ],
             "problemMatcher": ["$msCompile"],
             "group": {
-              "kind": "build",
-              "isDefault": true
+              "kind": "build"
             }
         },
         {
@@ -55,6 +56,18 @@
             "label": "Run Windows Terminal Dev",
             "command": "wtd.exe",
             "args": [
+            ],
+            "problemMatcher": ["$msCompile"],
+        },
+        {
+            "type": "process",
+            "label": "Run Code Format",
+            "command": "powershell.exe",
+            "args": [
+              "-Command",
+              "Import-Module ${workspaceFolder}\\tools\\OpenConsole.psm1;",
+              "Set-MsBuildDevEnvironment;",
+              "Invoke-CodeFormat",
             ],
             "problemMatcher": ["$msCompile"],
         }
