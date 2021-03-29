@@ -32,7 +32,8 @@ CETCOMPAT=1
 
 SOURCES = \
     $(SOURCES) \
-    ..\exemain.cpp \
+    .\CConsoleHandoff.cpp \
+    .\exemain.cpp \
     ..\res.rc \
 
 # -------------------------------------

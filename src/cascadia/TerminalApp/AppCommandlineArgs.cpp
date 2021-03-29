@@ -685,6 +685,18 @@ std::vector<ActionAndArgs>& AppCommandlineArgs::GetStartupActions()
 }
 
 // Method Description:
+// - Returns whether we should start listening for inbound PTY connections
+//   coming from the operating system default application feature.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if the listener should be started. False otherwise.
+bool AppCommandlineArgs::IsHandoffListener() const noexcept
+{
+    return _isHandoffListener;
+}
+
+// Method Description:
 // - Get the string of text that should be displayed to the user on exit. This
 //   is usually helpful for cases where the user entered some sort of invalid
 //   commandline. It's additionally also used when the user has requested the
@@ -726,17 +738,23 @@ bool AppCommandlineArgs::ShouldExitEarly() const noexcept
 // - <none>
 void AppCommandlineArgs::ValidateStartupCommands()
 {
-    // If we parsed no commands, or the first command we've parsed is not a new
-    // tab action, prepend a new-tab command to the front of the list.
-    if (_startupActions.empty() ||
-        _startupActions.front().Action() != ShortcutAction::NewTab)
+    // Only check over the actions list for the potential to add a new-tab
+    // command if we are not starting for the purposes of receiving an inbound
+    // handoff connection from the operating system.
+    if (!_isHandoffListener)
     {
-        // Build the NewTab action from the values we've parsed on the commandline.
-        NewTerminalArgs newTerminalArgs{};
-        NewTabArgs args{ newTerminalArgs };
-        ActionAndArgs newTabAction{ ShortcutAction::NewTab, args };
-        // push the arg onto the front
-        _startupActions.insert(_startupActions.begin(), 1, newTabAction);
+        // If we parsed no commands, or the first command we've parsed is not a new
+        // tab action, prepend a new-tab command to the front of the list.
+        if (_startupActions.empty() ||
+            _startupActions.front().Action() != ShortcutAction::NewTab)
+        {
+            // Build the NewTab action from the values we've parsed on the commandline.
+            NewTerminalArgs newTerminalArgs{};
+            NewTabArgs args{ newTerminalArgs };
+            ActionAndArgs newTabAction{ ShortcutAction::NewTab, args };
+            // push the arg onto the front
+            _startupActions.insert(_startupActions.begin(), 1, newTabAction);
+        }
     }
 }
 
@@ -760,6 +778,15 @@ std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> AppComman
 // - 0 if the commandline was successfully parsed
 int AppCommandlineArgs::ParseArgs(winrt::array_view<const winrt::hstring>& args)
 {
+    for (const auto& arg : args)
+    {
+        if (arg == L"-Embedding")
+        {
+            _isHandoffListener = true;
+            return 0;
+        }
+    }
+
     auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(args);
 
     for (auto& cmdBlob : commands)
@@ -864,6 +891,7 @@ void AppCommandlineArgs::FullResetState()
     _startupActions.clear();
     _exitMessage = "";
     _shouldExitEarly = false;
+    _isHandoffListener = false;
 
     _windowTarget = {};
 }

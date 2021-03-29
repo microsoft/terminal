@@ -34,221 +34,201 @@ the MIT License. See LICENSE in the project root for license information. -->
             <local:EmptyStringVisibilityConverter x:Key="ParentCommandVisibilityConverter"/>
             <model:IconPathConverter x:Key="IconSourceConverter"/>
 
-            <DataTemplate x:Key="GeneralItemTemplate" x:DataType="local:FilteredCommand">
-
-                <!-- This HorizontalContentAlignment="Stretch" is important
-                        to make sure it takes the entire width of the line -->
+            <DataTemplate x:Key="ListItemTemplate" x:DataType="local:FilteredCommand">
                 <ListViewItem HorizontalContentAlignment="Stretch"
                                   AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
-                                  AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}">
+                                  AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}"/>
+            </DataTemplate>
 
-                    <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" >
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="16"/>
-                            <!-- icon -->
-                            <ColumnDefinition Width="Auto"/>
-                            <!-- command label -->
-                            <ColumnDefinition Width="*"/>
-                            <!-- key chord -->
-                            <ColumnDefinition Width="16"/>
-                            <!-- gutter for scrollbar -->
-                        </Grid.ColumnDefinitions>
+            <DataTemplate x:Key="GeneralItemTemplate" x:DataType="local:FilteredCommand">
+                <Grid HorizontalAlignment="Stretch" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="16"/>
+                        <!-- icon -->
+                        <ColumnDefinition Width="Auto"/>
+                        <!-- command label -->
+                        <ColumnDefinition Width="*"/>
+                        <!-- key chord -->
+                        <ColumnDefinition Width="16"/>
+                        <!-- gutter for scrollbar -->
+                    </Grid.ColumnDefinitions>
 
-                        <IconSourceElement
-                                    Grid.Column="0"
-                                    Width="16"
-                                    Height="16"
-                                    IconSource="{x:Bind Item.Icon,
-                                                        Mode=OneWay,
-                                                        Converter={StaticResource IconSourceConverter}}"/>
+                    <IconSourceElement
+                                Grid.Column="0"
+                                Width="16"
+                                Height="16"
+                                IconSource="{x:Bind Item.Icon,
+                                                    Mode=OneWay,
+                                                    Converter={StaticResource IconSourceConverter}}"/>
 
-                        <local:HighlightedTextControl
-                                    Grid.Column="1"
-                                    HorizontalAlignment="Left"
-                                    Text="{x:Bind HighlightedName, Mode=OneWay}"/>
+                    <local:HighlightedTextControl
+                                Grid.Column="1"
+                                HorizontalAlignment="Left"
+                                Text="{x:Bind HighlightedName, Mode=OneWay}"/>
 
-                        <!-- The block for the key chord is only visible
-                                when there's actual text set as the label. See
-                                CommandKeyChordVisibilityConverter for details.
-                             We're setting the accessibility view on the
-                                border and text block to Raw because otherwise,
-                                Narrator will read out the key chord. Problem is,
-                                it already did that because it was the list item's
-                                "AcceleratorKey". It's redundant. -->
-                        <Border
-                                    Grid.Column="2"
-                                    Visibility="{x:Bind Item.KeyChordText,
-                                                 Mode=OneWay,
-                                                 Converter={StaticResource CommandKeyChordVisibilityConverter}}"
-                                    Style="{ThemeResource KeyChordBorderStyle}"
-                                    Padding="2,0,2,0"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    AutomationProperties.AccessibilityView="Raw">
+                    <!-- The block for the key chord is only visible
+                            when there's actual text set as the label. See
+                            CommandKeyChordVisibilityConverter for details.
+                            We're setting the accessibility view on the
+                            border and text block to Raw because otherwise,
+                            Narrator will read out the key chord. Problem is,
+                            it already did that because it was the list item's
+                            "AcceleratorKey". It's redundant. -->
+                    <Border
+                                Grid.Column="2"
+                                Visibility="{x:Bind Item.KeyChordText,
+                                                Mode=OneWay,
+                                                Converter={StaticResource CommandKeyChordVisibilityConverter}}"
+                                Style="{ThemeResource KeyChordBorderStyle}"
+                                Padding="2,0,2,0"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                AutomationProperties.AccessibilityView="Raw">
 
-                            <TextBlock
-                                        Style="{ThemeResource KeyChordTextBlockStyle}"
-                                        FontSize="12"
-                                        Text="{x:Bind Item.KeyChordText, Mode=OneWay}"
-                                        AutomationProperties.AccessibilityView="Raw" />
-                        </Border>
-
-                    </Grid>
-                </ListViewItem>
+                        <TextBlock
+                                    Style="{ThemeResource KeyChordTextBlockStyle}"
+                                    FontSize="12"
+                                    Text="{x:Bind Item.KeyChordText, Mode=OneWay}"
+                                    AutomationProperties.AccessibilityView="Raw" />
+                    </Border>
+                </Grid>
             </DataTemplate>
 
             <DataTemplate x:Key="NestedItemTemplate" x:DataType="local:FilteredCommand">
+                <Grid HorizontalAlignment="Stretch" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="16"/>
+                        <!-- icon -->
+                        <ColumnDefinition Width="Auto"/>
+                        <!-- command label -->
+                        <ColumnDefinition Width="*"/>
+                        <!-- key chord -->
+                        <ColumnDefinition Width="16"/>
+                        <!-- gutter for scrollbar -->
+                    </Grid.ColumnDefinitions>
 
-                <!-- This HorizontalContentAlignment="Stretch" is important
-                        to make sure it takes the entire width of the line -->
-                <ListViewItem x:Uid="CommandPalette_MoreOptions"
-                              HorizontalContentAlignment="Stretch"
-                              AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
-                              AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}">
+                    <IconSourceElement
+                                Grid.Column="0"
+                                Width="16"
+                                Height="16"
+                                IconSource="{x:Bind Item.Icon,
+                                                    Mode=OneWay,
+                                                    Converter={StaticResource IconSourceConverter}}"/>
 
-                    <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" >
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="16"/>
-                            <!-- icon -->
-                            <ColumnDefinition Width="Auto"/>
-                            <!-- command label -->
-                            <ColumnDefinition Width="*"/>
-                            <!-- key chord -->
-                            <ColumnDefinition Width="16"/>
-                            <!-- gutter for scrollbar -->
-                        </Grid.ColumnDefinitions>
+                    <local:HighlightedTextControl
+                                Grid.Column="1"
+                                HorizontalAlignment="Left"
+                                Text="{x:Bind HighlightedName, Mode=OneWay}"/>
 
-                        <IconSourceElement
-                                    Grid.Column="0"
-                                    Width="16"
-                                    Height="16"
-                                    IconSource="{x:Bind Item.Icon,
-                                                        Mode=OneWay,
-                                                        Converter={StaticResource IconSourceConverter}}"/>
+                    <!-- The block for the key chord is only visible
+                            when there's actual text set as the label. See
+                            CommandKeyChordVisibilityConverter for details.
+                            We're setting the accessibility view on the
+                            border and text block to Raw because otherwise,
+                            Narrator will read out the key chord. Problem is,
+                            it already did that because it was the list item's
+                            "AcceleratorKey". It's redundant. -->
+                    <Border
+                                Grid.Column="2"
+                                Visibility="{x:Bind Item.KeyChordText,
+                                                Mode=OneWay,
+                                                Converter={StaticResource CommandKeyChordVisibilityConverter}}"
+                                Style="{ThemeResource KeyChordBorderStyle}"
+                                Padding="2,0,2,0"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                AutomationProperties.AccessibilityView="Raw">
 
-                        <local:HighlightedTextControl
-                                    Grid.Column="1"
-                                    HorizontalAlignment="Left"
-                                    Text="{x:Bind HighlightedName, Mode=OneWay}"/>
+                        <TextBlock
+                                    Style="{ThemeResource KeyChordTextBlockStyle}"
+                                    FontSize="12"
+                                    Text="{x:Bind Item.KeyChordText, Mode=OneWay}"
+                                    AutomationProperties.AccessibilityView="Raw" />
+                    </Border>
 
-                        <!-- The block for the key chord is only visible
-                                when there's actual text set as the label. See
-                                CommandKeyChordVisibilityConverter for details.
-                             We're setting the accessibility view on the
-                                border and text block to Raw because otherwise,
-                                Narrator will read out the key chord. Problem is,
-                                it already did that because it was the list item's
-                                "AcceleratorKey". It's redundant. -->
-                        <Border
-                                    Grid.Column="2"
-                                    Visibility="{x:Bind Item.KeyChordText,
-                                                 Mode=OneWay,
-                                                 Converter={StaticResource CommandKeyChordVisibilityConverter}}"
-                                    Style="{ThemeResource KeyChordBorderStyle}"
-                                    Padding="2,0,2,0"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    AutomationProperties.AccessibilityView="Raw">
+                    <!-- xE70E is ChevronUp. Rotated 90 degrees, it's _ChevronRight_ -->
+                    <FontIcon
+                                FontFamily="Segoe MDL2 Assets"
+                                Glyph="&#xE70E;"
+                                HorizontalAlignment="Right"
+                                Grid.Column="2">
 
-                            <TextBlock
-                                        Style="{ThemeResource KeyChordTextBlockStyle}"
-                                        FontSize="12"
-                                        Text="{x:Bind Item.KeyChordText, Mode=OneWay}"
-                                        AutomationProperties.AccessibilityView="Raw" />
-                        </Border>
+                        <FontIcon.RenderTransform>
+                            <RotateTransform CenterX="0.5" CenterY="0.5" Angle="90"/>
+                        </FontIcon.RenderTransform>
+                    </FontIcon>
 
-                        <!-- xE70E is ChevronUp. Rotated 90 degrees, it's _ChevronRight_ -->
-                        <FontIcon
-                                    FontFamily="Segoe MDL2 Assets"
-                                    Glyph="&#xE70E;"
-                                    HorizontalAlignment="Right"
-                                    Grid.Column="2">
-
-                            <FontIcon.RenderTransform>
-                                <RotateTransform CenterX="0.5" CenterY="0.5" Angle="90"/>
-                            </FontIcon.RenderTransform>
-                        </FontIcon>
-
-                    </Grid>
-                </ListViewItem>
+                </Grid>
             </DataTemplate>
 
             <DataTemplate x:Key="TabItemTemplate" x:DataType="local:FilteredCommand">
+                <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="16"/>
+                        <!-- icon / progress -->
+                        <ColumnDefinition Width="Auto"/>
+                        <!-- command label -->
+                        <ColumnDefinition Width="*"/>
+                        <!-- gutter for indicators -->
+                        <ColumnDefinition Width="Auto"/>
+                        <!-- Indicators -->
+                        <ColumnDefinition Width="16"/>
+                        <!-- gutter for scrollbar -->
+                    </Grid.ColumnDefinitions>
 
-                <!-- This HorizontalContentAlignment="Stretch" is important
-                        to make sure it takes the entire width of the line -->
-                <ListViewItem HorizontalContentAlignment="Stretch"
-                                  AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
-                                  AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}">
+                    <mux:ProgressRing
+                        Grid.Column="0"
+                        IsActive="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsProgressRingActive, Mode=OneWay}"
+                        Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsProgressRingActive, Mode=OneWay}"
+                        IsIndeterminate="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsProgressRingIndeterminate, Mode=OneWay}"
+                        Value="{x:Bind Item.(local:TabPaletteItem.TabStatus).ProgressValue, Mode=OneWay}"
+                        MinHeight="0"
+                        MinWidth="0"
+                        Height="15"
+                        Width="15"/>
 
-                    <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" >
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="16"/>
-                            <!-- icon / progress -->
-                            <ColumnDefinition Width="Auto"/>
-                            <!-- command label -->
-                            <ColumnDefinition Width="*"/>
-                            <!-- gutter for indicators -->
-                            <ColumnDefinition Width="Auto"/>
-                            <!-- Indicators -->
-                            <ColumnDefinition Width="16"/>
-                            <!-- gutter for scrollbar -->
-                        </Grid.ColumnDefinitions>
+                    <IconSourceElement
+                                Grid.Column="0"
+                                Width="16"
+                                Height="16"
+                                IconSource="{x:Bind Item.Icon,
+                                                    Mode=OneWay,
+                                                    Converter={StaticResource IconSourceConverter}}"/>
 
-                        <mux:ProgressRing
-                            Grid.Column="0"
-                            IsActive="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsProgressRingActive, Mode=OneWay}"
-                            Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsProgressRingActive, Mode=OneWay}"
-                            IsIndeterminate="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsProgressRingIndeterminate, Mode=OneWay}"
-                            Value="{x:Bind Item.(local:TabPaletteItem.TabStatus).ProgressValue, Mode=OneWay}"
-                            MinHeight="0"
-                            MinWidth="0"
-                            Height="15"
-                            Width="15"/>
+                    <local:HighlightedTextControl
+                                Grid.Column="1"
+                                HorizontalAlignment="Left"
+                                Text="{x:Bind HighlightedName, Mode=OneWay}"/>
 
-                        <IconSourceElement
-                                    Grid.Column="0"
-                                    Width="16"
-                                    Height="16"
-                                    IconSource="{x:Bind Item.Icon,
-                                                        Mode=OneWay,
-                                                        Converter={StaticResource IconSourceConverter}}"/>
+                    <StackPanel
+                        Grid.Column="2"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Right"
+                        Orientation="Horizontal">
 
-                        <local:HighlightedTextControl
-                                    Grid.Column="1"
-                                    HorizontalAlignment="Left"
-                                    Text="{x:Bind HighlightedName, Mode=OneWay}"/>
+                        <FontIcon
+                            FontFamily="Segoe MDL2 Assets"
+                            Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).BellIndicator, Mode=OneWay}"
+                            Glyph="&#xEA8F;"
+                            FontSize="12"
+                            Margin="0,0,8,0"/>
 
-                        <StackPanel
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
-                            HorizontalAlignment="Right"
-                            Orientation="Horizontal">
+                        <FontIcon
+                            FontFamily="Segoe MDL2 Assets"
+                            Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsPaneZoomed, Mode=OneWay}"
+                            Glyph="&#xE8A3;"
+                            FontSize="12"
+                            Margin="0,0,8,0"/>
 
-                            <FontIcon
-                                FontFamily="Segoe MDL2 Assets"
-                                Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).BellIndicator, Mode=OneWay}"
-                                Glyph="&#xEA8F;"
-                                FontSize="12"
-                                Margin="0,0,8,0"/>
+                        <FontIcon x:Name="HeaderLockIcon"
+                            FontFamily="Segoe MDL2 Assets"
+                            Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsReadOnlyActive, Mode=OneWay}"
+                            Glyph="&#xE72E;"
+                            FontSize="12"
+                            Margin="0,0,8,0"/>
 
-                            <FontIcon
-                                FontFamily="Segoe MDL2 Assets"
-                                Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsPaneZoomed, Mode=OneWay}"
-                                Glyph="&#xE8A3;"
-                                FontSize="12"
-                                Margin="0,0,8,0"/>
-
-                            <FontIcon x:Name="HeaderLockIcon"
-                                FontFamily="Segoe MDL2 Assets"
-                                Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsReadOnlyActive, Mode=OneWay}"
-                                Glyph="&#xE72E;"
-                                FontSize="12"
-                                Margin="0,0,8,0"/>
-
-                        </StackPanel>
-                    </Grid>
-                </ListViewItem>
+                    </StackPanel>
+                </Grid>
             </DataTemplate>
 
             <local:PaletteItemTemplateSelector x:Key="PaletteItemTemplateSelector"
@@ -498,8 +478,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                 AllowDrop="False"
                 IsItemClickEnabled="True"
                 ItemClick="_listItemClicked"
-                ItemsSource="{x:Bind FilteredActions}"
-                ItemTemplateSelector="{StaticResource PaletteItemTemplateSelector}">
+                ChoosingItemContainer="_choosingItemContainer"
+                ContainerContentChanging="_containerContentChanging"
+                ItemsSource="{x:Bind FilteredActions}">
             </ListView>
 
         </Grid>
