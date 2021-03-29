@@ -363,21 +363,6 @@ function Invoke-ClangFormat {
     }
 }
 
-function StripBOM {
-    [CmdletBinding()]
-    Param (
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
-        [string]$Path
-    )
-
-    $files = Get-ChildItem -Path "$Path\*" -Include *.xaml
-    foreach ($file in $files) {
-        $content = Get-Content $file
-        [IO.File]::WriteAllLines($file.FullName, $content)
-    }
-}
-
-
 #.SYNOPSIS
 # Check that xaml files are formatted correctly. This won't actually
 # format the files - it'll only ensure that they're formatted correctly.
@@ -385,17 +370,9 @@ function Verify-XamlFormat() {
     $root = Find-OpenConsoleRoot
     & dotnet tool restore --add-source https://api.nuget.org/v3/index.json
 
-    dotnet tool run xstyler -- -c "$root\XamlStyler.json" -d "$root\src\cascadia\TerminalApp" --passive
-    if ($lastExitCode -eq 1) {
-        throw "Xaml formatting bad, run Invoke-XamlFormat on branch"
-    }
+    $xamlsForStyler = (git ls-files **/*.xaml) -join ","
+    dotnet tool run xstyler -- -c "$root\XamlStyler.json" -f "$xamlsForStyler" --passive
 
-    dotnet tool run xstyler -- -c "$root\XamlStyler.json" -d "$root\src\cascadia\TerminalControl" --passive
-    if ($lastExitCode -eq 1) {
-        throw "Xaml formatting bad, run Invoke-XamlFormat on branch"
-    }
-
-    dotnet tool run xstyler -- -c "$root\XamlStyler.json" -d "$root\src\cascadia\TerminalSettingsEditor" --passive
     if ($lastExitCode -eq 1) {
         throw "Xaml formatting bad, run Invoke-XamlFormat on branch"
     }
@@ -409,13 +386,18 @@ function Invoke-XamlFormat() {
     $root = Find-OpenConsoleRoot
     & dotnet tool restore --add-source https://api.nuget.org/v3/index.json
 
-    dotnet tool run xstyler -- -c "$root\XamlStyler.json" -d "$root\src\cascadia\TerminalApp"
-    dotnet tool run xstyler -- -c "$root\XamlStyler.json" -d "$root\src\cascadia\TerminalControl"
-    dotnet tool run xstyler -- -c "$root\XamlStyler.json" -d "$root\src\cascadia\TerminalSettingsEditor"
+    # xstyler lets you pass multiple xaml files in the -f param if they're all
+    # joined by commas. The `git ls-files` command will only get us the .xaml
+    # files actually in the git repo, ignoring ones in "Generated Files/"
+    $xamlsForStyler = (git ls-files **/*.xaml) -join ","
+    dotnet tool run xstyler -- -c "$root\XamlStyler.json" -f "$xamlsForStyler"
 
-    StripBOM "$root\src\cascadia\TerminalApp"
-    StripBOM "$root\src\cascadia\TerminalControl"
-    StripBOM "$root\src\cascadia\TerminalSettingsEditor"
+    # Strip BOMs from all the .xaml files
+    $xamls = (git ls-files **/*.xaml)
+    foreach ($file in $xamls ) {
+        $content = Get-Content $file
+        [IO.File]::WriteAllLines("$root/$file", $content)
+    }
 }
 
 #.SYNOPSIS
