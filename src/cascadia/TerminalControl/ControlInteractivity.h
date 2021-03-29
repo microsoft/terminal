@@ -25,6 +25,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void GainFocus();
         void UpdateSettings();
         void Initialize();
+        ////////////////////////////////////////////////////////////////////////
         void PointerPressed(const winrt::Windows::UI::Input::PointerPoint point,
                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                             const bool focused,
@@ -40,6 +41,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                              const bool focused,
                              const til::point terminalPosition,
                              const winrt::Windows::Devices::Input::PointerDeviceType type);
+        bool MouseWheel(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+                        const int32_t delta,
+                        const til::point terminalPosition,
+                        const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
+        ////////////////////////////////////////////////////////////////////////
+
         bool CopySelectionToClipboard(bool singleLine,
                                       const Windows::Foundation::IReference<CopyFormat>& formats);
         void PasteTextFromClipboard();
@@ -82,6 +89,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point,
                                 const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                 const til::point terminalPosition);
+
+        void _MouseTransparencyHandler(const double mouseDelta);
+        void _MouseZoomHandler(const double mouseDelta);
+        void _MouseScrollHandler(const double mouseDelta,
+                                 const til::point terminalPosition,
+                                 const bool isLeftButtonPressed);
+
         void _HyperlinkHandler(const std::wstring_view uri);
         bool _CanSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
         void _SetEndSelectionPoint(const til::point terminalPosition);

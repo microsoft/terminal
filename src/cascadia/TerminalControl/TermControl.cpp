@@ -1367,65 +1367,71 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(),
                                                      props.IsMiddleButtonPressed(),
                                                      props.IsRightButtonPressed() };
-        auto result = _DoMouseWheel(point.Position(),
-                                    ControlKeyStates{ args.KeyModifiers() },
-                                    point.Properties().MouseWheelDelta(),
-                                    state);
+        // auto result = _DoMouseWheel(point.Position(),
+        //                             ControlKeyStates{ args.KeyModifiers() },
+        //                             point.Properties().MouseWheelDelta(),
+        //                             state);
+        auto mousePosition = point.Position();
+
+        auto result = _interactivity->MouseWheel(ControlKeyStates{ args.KeyModifiers() },
+                                                 point.Properties().MouseWheelDelta(),
+                                                 _GetTerminalPosition(mousePosition),
+                                                 state);
         if (result)
         {
             args.Handled(true);
         }
     }
 
-    // Method Description:
-    // - Actually handle a scrolling event, whether from a mouse wheel or a
-    //   touchpad scroll. Depending upon what modifier keys are pressed,
-    //   different actions will take place.
-    //   * Attempts to first dispatch the mouse scroll as a VT event
-    //   * If Ctrl+Shift are pressed, then attempts to change our opacity
-    //   * If just Ctrl is pressed, we'll attempt to "zoom" by changing our font size
-    //   * Otherwise, just scrolls the content of the viewport
-    // Arguments:
-    // - point: the location of the mouse during this event
-    // - modifiers: The modifiers pressed during this event, in the form of a VirtualKeyModifiers
-    // - delta: the mouse wheel delta that triggered this event.
-    bool TermControl::_DoMouseWheel(const Windows::Foundation::Point point,
-                                    const ControlKeyStates modifiers,
-                                    const int32_t delta,
-                                    const TerminalInput::MouseButtonState state)
-    {
-        // Short-circuit isReadOnly check to avoid warning dialog
-        if (!_core->IsInReadOnlyMode() && _interactivity->_CanSendVTMouseInput(modifiers))
-        {
-            // Most mouse event handlers call
-            //      _TrySendMouseEvent(point);
-            // here with a PointerPoint. However, as of #979, we don't have a
-            // PointerPoint to work with. So, we're just going to do a
-            // mousewheel event manually
-            return _core->SendMouseEvent(_GetTerminalPosition(point),
-                                         WM_MOUSEWHEEL,
-                                         _GetPressedModifierKeys(),
-                                         ::base::saturated_cast<short>(delta),
-                                         state);
-        }
+    // // Method Description:
+    // // - Actually handle a scrolling event, whether from a mouse wheel or a
+    // //   touchpad scroll. Depending upon what modifier keys are pressed,
+    // //   different actions will take place.
+    // //   * Attempts to first dispatch the mouse scroll as a VT event
+    // //   * If Ctrl+Shift are pressed, then attempts to change our opacity
+    // //   * If just Ctrl is pressed, we'll attempt to "zoom" by changing our font size
+    // //   * Otherwise, just scrolls the content of the viewport
+    // // Arguments:
+    // // - point: the location of the mouse during this event
+    // // - modifiers: The modifiers pressed during this event, in the form of a VirtualKeyModifiers
+    // // - delta: the mouse wheel delta that triggered this event.
+    // bool TermControl::_DoMouseWheel(const Windows::Foundation::Point point,
+    //                                 const ControlKeyStates modifiers,
+    //                                 const int32_t delta,
+    //                                 const TerminalInput::MouseButtonState state)
+    // {
+    //     // Short-circuit isReadOnly check to avoid warning dialog
+    //     if (!_core->IsInReadOnlyMode() && _interactivity->_CanSendVTMouseInput(modifiers))
+    //     {
+    //         // Most mouse event handlers call
+    //         //      _TrySendMouseEvent(point);
+    //         // here with a PointerPoint. However, as of #979, we don't have a
+    //         // PointerPoint to work with. So, we're just going to do a
+    //         // mousewheel event manually
+    //         return _core->SendMouseEvent(_GetTerminalPosition(point),
+    //                                      WM_MOUSEWHEEL,
+    //                                      _GetPressedModifierKeys(),
+    //                                      ::base::saturated_cast<short>(delta),
+    //                                      state);
+    //     }
 
-        const auto ctrlPressed = modifiers.IsCtrlPressed();
-        const auto shiftPressed = modifiers.IsShiftPressed();
+    //     const auto ctrlPressed = modifiers.IsCtrlPressed();
+    //     const auto shiftPressed = modifiers.IsShiftPressed();
 
-        if (ctrlPressed && shiftPressed)
-        {
-            _MouseTransparencyHandler(delta);
-        }
-        else if (ctrlPressed)
-        {
-            _MouseZoomHandler(delta);
-        }
-        else
-        {
-            _MouseScrollHandler(delta, point, state.isLeftButtonDown);
-        }
-        return false;
-    }
+    //     if (ctrlPressed && shiftPressed)
+    //     {
+    //         _MouseTransparencyHandler(delta);
+    //     }
+    //     else if (ctrlPressed)
+    //     {
+    //         _MouseZoomHandler(delta);
+    //     }
+    //     else
+    //     {
+    //         _MouseScrollHandler(delta, point, state.isLeftButtonDown);
+    //     }
+    //     return false;
+    // }
 
     // Method Description:
     // - This is part of the solution to GH#979
@@ -1450,59 +1456,59 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _DoMouseWheel(location, modifiers, delta, state);
     }
 
-    // Method Description:
-    // - Adjust the opacity of the acrylic background in response to a mouse
-    //   scrolling event.
-    // Arguments:
-    // - mouseDelta: the mouse wheel delta that triggered this event.
-    void TermControl::_MouseTransparencyHandler(const double mouseDelta)
-    {
-        // Transparency is on a scale of [0.0,1.0], so only increment by .01.
-        const auto effectiveDelta = mouseDelta < 0 ? -.01 : .01;
+    // // Method Description:
+    // // - Adjust the opacity of the acrylic background in response to a mouse
+    // //   scrolling event.
+    // // Arguments:
+    // // - mouseDelta: the mouse wheel delta that triggered this event.
+    // void TermControl::_MouseTransparencyHandler(const double mouseDelta)
+    // {
+    //     // Transparency is on a scale of [0.0,1.0], so only increment by .01.
+    //     const auto effectiveDelta = mouseDelta < 0 ? -.01 : .01;
 
-        if (_settings.UseAcrylic())
-        {
-            try
-            {
-                auto acrylicBrush = RootGrid().Background().as<Media::AcrylicBrush>();
-                _settings.TintOpacity(acrylicBrush.TintOpacity() + effectiveDelta);
-                acrylicBrush.TintOpacity(_settings.TintOpacity());
+    //     if (_settings.UseAcrylic())
+    //     {
+    //         try
+    //         {
+    //             auto acrylicBrush = RootGrid().Background().as<Media::AcrylicBrush>();
+    //             _settings.TintOpacity(acrylicBrush.TintOpacity() + effectiveDelta);
+    //             acrylicBrush.TintOpacity(_settings.TintOpacity());
 
-                if (acrylicBrush.TintOpacity() == 1.0)
-                {
-                    _settings.UseAcrylic(false);
-                    _InitializeBackgroundBrush();
-                    COLORREF bg = _settings.DefaultBackground();
-                    _changeBackgroundColor(bg);
-                }
-                else
-                {
-                    // GH#5098: Inform the engine of the new opacity of the default text background.
-                    _core->SetBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
-                }
-            }
-            CATCH_LOG();
-        }
-        else if (mouseDelta < 0)
-        {
-            _settings.UseAcrylic(true);
+    //             if (acrylicBrush.TintOpacity() == 1.0)
+    //             {
+    //                 _settings.UseAcrylic(false);
+    //                 _InitializeBackgroundBrush();
+    //                 COLORREF bg = _settings.DefaultBackground();
+    //                 _changeBackgroundColor(bg);
+    //             }
+    //             else
+    //             {
+    //                 // GH#5098: Inform the engine of the new opacity of the default text background.
+    //                 _core->SetBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+    //             }
+    //         }
+    //         CATCH_LOG();
+    //     }
+    //     else if (mouseDelta < 0)
+    //     {
+    //         _settings.UseAcrylic(true);
 
-            //Setting initial opacity set to 1 to ensure smooth transition to acrylic during mouse scroll
-            _settings.TintOpacity(1.0);
-            _InitializeBackgroundBrush();
-        }
-    }
+    //         //Setting initial opacity set to 1 to ensure smooth transition to acrylic during mouse scroll
+    //         _settings.TintOpacity(1.0);
+    //         _InitializeBackgroundBrush();
+    //     }
+    // }
 
-    // Method Description:
-    // - Adjust the font size of the terminal in response to a mouse scrolling
-    //   event.
-    // Arguments:
-    // - mouseDelta: the mouse wheel delta that triggered this event.
-    void TermControl::_MouseZoomHandler(const double mouseDelta)
-    {
-        const auto fontDelta = mouseDelta < 0 ? -1 : 1;
-        AdjustFontSize(fontDelta);
-    }
+    // // Method Description:
+    // // - Adjust the font size of the terminal in response to a mouse scrolling
+    // //   event.
+    // // Arguments:
+    // // - mouseDelta: the mouse wheel delta that triggered this event.
+    // void TermControl::_MouseZoomHandler(const double mouseDelta)
+    // {
+    //     const auto fontDelta = mouseDelta < 0 ? -1 : 1;
+    //     AdjustFontSize(fontDelta);
+    // }
 
     // Method Description:
     // - Reset the font size of the terminal to its default size.
@@ -1522,41 +1528,41 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->AdjustFontSize(fontSizeDelta);
     }
 
-    // Method Description:
-    // - Scroll the visible viewport in response to a mouse wheel event.
-    // Arguments:
-    // - mouseDelta: the mouse wheel delta that triggered this event.
-    // - point: the location of the mouse during this event
-    // - isLeftButtonPressed: true iff the left mouse button was pressed during this event.
-    void TermControl::_MouseScrollHandler(const double mouseDelta,
-                                          const Windows::Foundation::Point point,
-                                          const bool isLeftButtonPressed)
-    {
-        const auto currentOffset = ScrollBar().Value();
+    // // Method Description:
+    // // - Scroll the visible viewport in response to a mouse wheel event.
+    // // Arguments:
+    // // - mouseDelta: the mouse wheel delta that triggered this event.
+    // // - point: the location of the mouse during this event
+    // // - isLeftButtonPressed: true iff the left mouse button was pressed during this event.
+    // void TermControl::_MouseScrollHandler(const double mouseDelta,
+    //                                       const Windows::Foundation::Point point,
+    //                                       const bool isLeftButtonPressed)
+    // {
+    //     const auto currentOffset = ScrollBar().Value();
 
-        // negative = down, positive = up
-        // However, for us, the signs are flipped.
-        // With one of the precision mice, one click is always a multiple of 120 (WHEEL_DELTA),
-        // but the "smooth scrolling" mode results in non-int values
-        const auto rowDelta = mouseDelta / (-1.0 * WHEEL_DELTA);
+    //     // negative = down, positive = up
+    //     // However, for us, the signs are flipped.
+    //     // With one of the precision mice, one click is always a multiple of 120 (WHEEL_DELTA),
+    //     // but the "smooth scrolling" mode results in non-int values
+    //     const auto rowDelta = mouseDelta / (-1.0 * WHEEL_DELTA);
 
-        // WHEEL_PAGESCROLL is a Win32 constant that represents the "scroll one page
-        // at a time" setting. If we ignore it, we will scroll a truly absurd number
-        // of rows.
-        const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? ViewHeight() : _rowsToScroll };
-        double newValue = (rowsToScroll * rowDelta) + (currentOffset);
+    //     // WHEEL_PAGESCROLL is a Win32 constant that represents the "scroll one page
+    //     // at a time" setting. If we ignore it, we will scroll a truly absurd number
+    //     // of rows.
+    //     const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? ViewHeight() : _rowsToScroll };
+    //     double newValue = (rowsToScroll * rowDelta) + (currentOffset);
 
-        // The scroll bar's ValueChanged handler will actually move the viewport
-        //      for us.
-        ScrollBar().Value(newValue);
+    //     // The scroll bar's ValueChanged handler will actually move the viewport
+    //     //      for us.
+    //     ScrollBar().Value(newValue);
 
-        if (isLeftButtonPressed)
-        {
-            // If user is mouse selecting and scrolls, they then point at new character.
-            //      Make sure selection reflects that immediately.
-            _SetEndSelectionPointAtCursor(point);
-        }
-    }
+    //     if (isLeftButtonPressed)
+    //     {
+    //         // If user is mouse selecting and scrolls, they then point at new character.
+    //         //      Make sure selection reflects that immediately.
+    //         _SetEndSelectionPointAtCursor(point);
+    //     }
+    // }
 
     void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                               Controls::Primitives::RangeBaseValueChangedEventArgs const& args)

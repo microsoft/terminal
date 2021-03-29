@@ -428,6 +428,155 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core->SendMouseEvent(terminalPosition, uiButton, modifiers, sWheelDelta, state);
     }
 
+    // Method Description:
+    // - Actually handle a scrolling event, whether from a mouse wheel or a
+    //   touchpad scroll. Depending upon what modifier keys are pressed,
+    //   different actions will take place.
+    //   * Attempts to first dispatch the mouse scroll as a VT event
+    //   * If Ctrl+Shift are pressed, then attempts to change our opacity
+    //   * If just Ctrl is pressed, we'll attempt to "zoom" by changing our font size
+    //   * Otherwise, just scrolls the content of the viewport
+    // Arguments:
+    // - point: the location of the mouse during this event
+    // - modifiers: The modifiers pressed during this event, in the form of a VirtualKeyModifiers
+    // - delta: the mouse wheel delta that triggered this event.
+    bool ControlInteractivity::MouseWheel(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+                                          const int32_t delta,
+                                          const til::point terminalPosition,
+                                          const TerminalInput::MouseButtonState state)
+    {
+        // Short-circuit isReadOnly check to avoid warning dialog
+        if (!_core->IsInReadOnlyMode() && _CanSendVTMouseInput(modifiers))
+        {
+            // Most mouse event handlers call
+            //      _TrySendMouseEvent(point);
+            // here with a PointerPoint. However, as of #979, we don't have a
+            // PointerPoint to work with. So, we're just going to do a
+            // mousewheel event manually
+            return _core->SendMouseEvent(terminalPosition,
+                                         WM_MOUSEWHEEL,
+                                         modifiers,
+                                         ::base::saturated_cast<short>(delta),
+                                         state);
+        }
+
+        const auto ctrlPressed = modifiers.IsCtrlPressed();
+        const auto shiftPressed = modifiers.IsShiftPressed();
+
+        if (ctrlPressed && shiftPressed)
+        {
+            _MouseTransparencyHandler(delta);
+        }
+        else if (ctrlPressed)
+        {
+            _MouseZoomHandler(delta);
+        }
+        else
+        {
+            _MouseScrollHandler(delta, terminalPosition, state.isLeftButtonDown);
+        }
+        return false;
+    }
+
+    // Method Description:
+    // - Adjust the opacity of the acrylic background in response to a mouse
+    //   scrolling event.
+    // Arguments:
+    // - mouseDelta: the mouse wheel delta that triggered this event.
+    void ControlInteractivity::_MouseTransparencyHandler(const double mouseDelta)
+    {
+        // Transparency is on a scale of [0.0,1.0], so only increment by .01.
+        const auto effectiveDelta = mouseDelta < 0 ? -.01 : .01;
+
+        if (_settings.UseAcrylic())
+        {
+            try
+            {
+                auto acrylicBrush = RootGrid().Background().as<Media::AcrylicBrush>();
+                _settings.TintOpacity(acrylicBrush.TintOpacity() + effectiveDelta);
+                acrylicBrush.TintOpacity(_settings.TintOpacity());
+
+                if (acrylicBrush.TintOpacity() == 1.0)
+                {
+                    _settings.UseAcrylic(false);
+                    _InitializeBackgroundBrush();
+                    COLORREF bg = _settings.DefaultBackground();
+                    _changeBackgroundColor(bg);
+                }
+                else
+                {
+                    // GH#5098: Inform the engine of the new opacity of the default text background.
+                    _core->SetBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+                }
+            }
+            CATCH_LOG();
+        }
+        else if (mouseDelta < 0)
+        {
+            _settings.UseAcrylic(true);
+
+            //Setting initial opacity set to 1 to ensure smooth transition to acrylic during mouse scroll
+            _settings.TintOpacity(1.0);
+            _InitializeBackgroundBrush();
+        }
+    }
+
+    // Method Description:
+    // - Adjust the font size of the terminal in response to a mouse scrolling
+    //   event.
+    // Arguments:
+    // - mouseDelta: the mouse wheel delta that triggered this event.
+    void ControlInteractivity::_MouseZoomHandler(const double mouseDelta)
+    {
+        const auto fontDelta = mouseDelta < 0 ? -1 : 1;
+        _core->AdjustFontSize(fontDelta);
+    }
+
+    // Method Description:
+    // - Scroll the visible viewport in response to a mouse wheel event.
+    // Arguments:
+    // - mouseDelta: the mouse wheel delta that triggered this event.
+    // - point: the location of the mouse during this event
+    // - isLeftButtonPressed: true iff the left mouse button was pressed during this event.
+    void ControlInteractivity::_MouseScrollHandler(const double mouseDelta,
+                                                   const til::point terminalPosition,
+                                                   const bool isLeftButtonPressed)
+    {
+        const auto currentOffset = _core->ScrollOffset();
+        // const auto currentOffset = ScrollBar().Value();
+
+        // negative = down, positive = up
+        // However, for us, the signs are flipped.
+        // With one of the precision mice, one click is always a multiple of 120 (WHEEL_DELTA),
+        // but the "smooth scrolling" mode results in non-int values
+        const auto rowDelta = mouseDelta / (-1.0 * WHEEL_DELTA);
+
+        // WHEEL_PAGESCROLL is a Win32 constant that represents the "scroll one page
+        // at a time" setting. If we ignore it, we will scroll a truly absurd number
+        // of rows.
+        const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? _core->ViewHeight() : _rowsToScroll };
+        double newValue = (rowsToScroll * rowDelta) + (currentOffset);
+
+        // The scroll bar's ValueChanged handler will actually move the viewport
+        //      for us.
+        // ScrollBar().Value(newValue);
+
+        // !TODO! - Very worried about using UserScrollViewport as
+        // opposed to the ScrollBar().Value() setter. Originally setting
+        // the scrollbar value would raise a event handled in
+        // _ScrollbarChangeHandler, which would _then_ scroll the core,
+        // and start the _updateScrollBar ThrottledFunc to update the
+        // scroll position. I'm worried that won't work like this.
+        _core->UserScrollViewport(::base::saturated_cast<int>(newValue));
+
+        if (isLeftButtonPressed)
+        {
+            // If user is mouse selecting and scrolls, they then point at new character.
+            //      Make sure selection reflects that immediately.
+            _SetEndSelectionPoint(terminalPosition);
+        }
+    }
+
     void ControlInteractivity::_HyperlinkHandler(const std::wstring_view uri)
     {
         // Save things we need to resume later.
