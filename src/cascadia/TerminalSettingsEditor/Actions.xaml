@@ -18,8 +18,9 @@
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <local:KeyChordToStringConverter x:Key="KeyChordToStringConverter"/>
-            <local:KeyChordToVisibilityConverter x:Key="KeyChordToVisibilityConverter"/>
+            <local:StringIsEmptyConverter x:Key="CommandKeyChordVisibilityConverter" />
+            <local:KeyChordToStringConverter x:Key="KeyChordToStringConverter" />
+            <local:KeyChordToVisibilityConverter x:Key="KeyChordToVisibilityConverter" />
 
             <!--
                 Template for actions. This is _heavily_ copied from the command
@@ -44,8 +45,8 @@
                     to make sure it takes the entire width of the line
                 -->
                 <ListViewItem HorizontalContentAlignment="Stretch"
-                              AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
-                              AutomationProperties.AcceleratorKey="{x:Bind Keys, Mode=OneWay, Converter={StaticResource KeyChordToStringConverter}}">
+                              AutomationProperties.AcceleratorKey="{x:Bind Keys, Mode=OneWay, Converter={StaticResource KeyChordToStringConverter}}"
+                              AutomationProperties.Name="{x:Bind Name, Mode=OneWay}">
 
                     <Grid HorizontalAlignment="Stretch"
                           ColumnSpacing="8">
@@ -77,8 +78,8 @@
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Center">
 
-                            <TextBlock Style="{ThemeResource KeyChordTextBlockStyle}"
-                                       FontSize="12"
+                            <TextBlock FontSize="12"
+                                       Style="{ThemeResource KeyChordTextBlockStyle}"
                                        Text="{x:Bind Keys, Mode=OneWay, Converter={StaticResource KeyChordToStringConverter}}" />
                         </Border>
                     </Grid>
