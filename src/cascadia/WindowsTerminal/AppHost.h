@@ -58,8 +58,5 @@ private:
     winrt::fire_and_forget _RenameWindowRequested(const winrt::Windows::Foundation::IInspectable sender,
                                                   const winrt::TerminalApp::RenameWindowRequestedArgs args);
 
-    // void _RenameWindow(const winrt::hstring newName);
-    // void _FailToRenameWindow();
-
     GUID _CurrentDesktopGuid();
 };

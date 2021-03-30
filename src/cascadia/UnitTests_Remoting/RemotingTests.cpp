@@ -59,10 +59,12 @@ namespace RemotingUnitTests
         void DisplayWindowId() { throw winrt::hresult_error{}; };
         Remoting::CommandlineArgs InitialArgs() { throw winrt::hresult_error{}; }
         Remoting::WindowActivatedArgs GetLastActivatedArgs() { throw winrt::hresult_error{}; }
+        void RequestRename(const Remoting::RenameRequestArgs& /*args*/) { throw winrt::hresult_error{}; }
         TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, Remoting::WindowActivatedArgs);
         TYPED_EVENT(ExecuteCommandlineRequested, winrt::Windows::Foundation::IInspectable, Remoting::CommandlineArgs);
         TYPED_EVENT(IdentifyWindowsRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(DisplayWindowIdRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(RenameRequested, winrt::Windows::Foundation::IInspectable, Remoting::RenameRequestArgs);
     };
 
     class RemotingTests

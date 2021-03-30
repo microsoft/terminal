@@ -633,6 +633,18 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _forAllPeasantsIgnoringTheDead(callback, onError);
     }
 
+    // Method Description:
+    // - This is an event handler for the RenameRequested event. A
+    //   Peasant may raise that event when they want to be renamed to something else.
+    // - We will check if there are any other windows with this name. If there
+    //   are, then we'll reject the rename by setting args.Succeeded=false.
+    // - If there aren't any other windows with this name, then we'll set
+    //   args.Succeeded=true, allowing the window to keep this name.
+    // Arguments:
+    // - args: Contains the requested window name and a boolean (Succeeded)
+    //   indicating if the request was successful.
+    // Return Value:
+    // - <none>
     void Monarch::_renameRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                    const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args)
     {

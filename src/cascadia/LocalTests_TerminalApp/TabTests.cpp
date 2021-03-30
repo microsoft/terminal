@@ -85,6 +85,9 @@ namespace TerminalAppLocalTests
         TEST_METHOD(NextMRUTab);
         TEST_METHOD(VerifyCommandPaletteTabSwitcherOrder);
 
+        TEST_METHOD(TestWindowRenameSuccessful);
+        TEST_METHOD(TestWindowRenameFailure);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             return true;
@@ -276,8 +279,9 @@ namespace TerminalAppLocalTests
             // In the real app, this isn't a problem, but doesn't happen
             // reliably in the unit tests.
             Log::Comment(L"Ensure we set the first tab as the selected one.");
-            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
-            page->_tabView.SelectedItem(tab->TabViewItem());
+            auto tab = page->_tabs.GetAt(0);
+            auto tabImpl = page->_GetTerminalTabImpl(tab);
+            page->_tabView.SelectedItem(tabImpl->TabViewItem());
             page->_UpdatedSelectedTab(0);
         });
         VERIFY_SUCCEEDED(result);
@@ -938,5 +942,26 @@ namespace TerminalAppLocalTests
         // in TerminalPage::_SelectNextTab, but as we saw before, the palette
         // will also dismiss itself immediately when that's called. So we can't
         // really inspect the contents of the list in this test, unfortunately.
+    }
+
+    void TabTests::TestWindowRenameSuccessful()
+    {
+        auto page = _commonSetup();
+        page->RenameWindowRequested([&page](auto&&, const winrt::TerminalApp::RenameWindowRequestedArgs args) {
+            // In the real terminal, this would bounce up to the monarch and
+            // come back down. Instead, immediately call back and set the name.
+            page->WindowName(args.ProposedName());
+        });
+        VERIFY_IS_TRUE(false);
+    }
+    void TabTests::TestWindowRenameFailure()
+    {
+        auto page = _commonSetup();
+        page->RenameWindowRequested([&page](auto&&, auto&&) {
+            // In the real terminal, this would bounce up to the monarch and
+            // come back down. Instead, immediately call back to tell the terminal it failed.
+            page->RenameFailed();
+        });
+        VERIFY_IS_TRUE(false);
     }
 }

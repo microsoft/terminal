@@ -323,6 +323,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleToggleInboundPty(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
 
         void _WindowRenamerActionClick(const IInspectable& sender, const IInspectable& eventArgs);
+        void _RequestWindowRename(const winrt::hstring& newName);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
