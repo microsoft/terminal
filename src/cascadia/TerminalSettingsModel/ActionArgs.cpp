@@ -26,11 +26,13 @@
 #include "FindMatchArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
 #include "NewWindowArgs.g.cpp"
+#include "PrevTabArgs.g.cpp"
+#include "NextTabArgs.g.cpp"
 #include "RenameWindowArgs.g.cpp"
 
 #include <LibraryResources.h>
 
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -534,6 +536,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring{
             fmt::format(L"{}, {}", RS_(L"NewWindowCommandKey"), newTerminalArgsStr)
         };
+    }
+
+    winrt::hstring PrevTabArgs::GenerateName() const
+    {
+        if (!_SwitcherMode)
+        {
+            return RS_(L"PrevTabCommandKey");
+        }
+
+        const auto mode = _SwitcherMode.Value() == TabSwitcherMode::MostRecentlyUsed ? L"most recently used" : L"in order";
+        return winrt::hstring(fmt::format(L"{}, {}", RS_(L"PrevTabCommandKey"), mode));
+    }
+
+    winrt::hstring NextTabArgs::GenerateName() const
+    {
+        if (!_SwitcherMode)
+        {
+            return RS_(L"NextTabCommandKey");
+        }
+
+        const auto mode = _SwitcherMode.Value() == TabSwitcherMode::MostRecentlyUsed ? L"most recently used" : L"in order";
+        return winrt::hstring(fmt::format(L"{}, {}", RS_(L"NextTabCommandKey"), mode));
     }
 
     winrt::hstring RenameWindowArgs::GenerateName() const

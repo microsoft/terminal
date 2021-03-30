@@ -54,7 +54,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hSettingsModelProvider);
 
 #include <shellapi.h>
 
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/Microsoft.Terminal.Control.h>
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers

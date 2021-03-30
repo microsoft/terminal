@@ -27,7 +27,7 @@ namespace XamlAutomation
     using winrt::Windows::UI::Xaml::Automation::Text::TextUnit;
 }
 
-namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+namespace winrt::Microsoft::Terminal::Control::implementation
 {
     XamlAutomation::ITextRangeProvider XamlUiaTextRange::Clone() const
     {

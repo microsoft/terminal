@@ -10,7 +10,6 @@
 
 #include "TerminalPage.g.cpp"
 #include <winrt/Windows.Storage.h>
-#include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include "TabRowControl.h"
 #include "ColorHelper.h"
@@ -27,7 +26,7 @@ using namespace winrt::Windows::System;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::TerminalApp;
@@ -193,7 +192,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Inform the host that our titlebar content has changed.
-            _setTitleBarContentHandlers(*this, _tabRow);
+            _SetTitleBarContentHandlers(*this, _tabRow);
         }
 
         // Hookup our event handlers to the ShortcutActionDispatch
@@ -276,22 +275,11 @@ namespace winrt::TerminalApp::implementation
 
         _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
 
-        auto safeRefocus = [weakThis{ get_weak() }](auto&&, auto&&) {
-            if (auto page{ weakThis.get() })
-            {
-                page->_FocusActiveControl(nullptr, nullptr);
-            }
-        };
-
-        WindowIdToast().Closed(safeRefocus);
-        RenameFailedToast().Closed(safeRefocus);
-        WindowRenamer().Closed(safeRefocus);
-
-        // Wrap the Window ID and RenameFailed TeachingTip's in Toasts. The
-        // renamer doesn't need that, we want it to stay open till the user
-        // explicitly dismisses it.
-        _windowIdToast = std::make_shared<Toast>(WindowIdToast());
-        _windowRenameFailedToast = std::make_shared<Toast>(RenameFailedToast());
+        // DON'T set up Toasts/TeachingTips here. They should be loaded and
+        // initialized the first time they're opened, in whatever method opens
+        // them.
+        // TODO!
+        WindowRenamer().Closed({ get_weak(), &TerminalPage::_FocusActiveControl });
 
         // Setup mouse vanish attributes
         SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &_shouldMouseVanish, false);
@@ -894,7 +882,7 @@ namespace winrt::TerminalApp::implementation
 
             if (page && tab)
             {
-                page->_raiseVisualBellHandlers(nullptr, nullptr);
+                page->_RaiseVisualBellHandlers(nullptr, nullptr);
             }
         });
 
@@ -1114,7 +1102,7 @@ namespace winrt::TerminalApp::implementation
         auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
         auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
 
-        winrt::Microsoft::Terminal::TerminalControl::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
+        winrt::Microsoft::Terminal::Control::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
         const auto actionAndArgs = _settings.KeyMap().TryLookup(kc);
         if (actionAndArgs)
         {
@@ -1142,7 +1130,7 @@ namespace winrt::TerminalApp::implementation
         auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
         auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
 
-        winrt::Microsoft::Terminal::TerminalControl::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
+        winrt::Microsoft::Terminal::Control::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
         const auto actionAndArgs = _settings.KeyMap().TryLookup(kc);
         if (actionAndArgs && (actionAndArgs.Action() == ShortcutAction::CloseTab || actionAndArgs.Action() == ShortcutAction::NextTab || actionAndArgs.Action() == ShortcutAction::PrevTab || actionAndArgs.Action() == ShortcutAction::ClosePane))
         {
@@ -1237,7 +1225,7 @@ namespace winrt::TerminalApp::implementation
 
         if (_settings.GlobalSettings().ShowTitleInTitlebar() && tab == _GetFocusedTab())
         {
-            _titleChangeHandlers(*this, newTabTitle);
+            _TitleChangedHandlers(*this, newTabTitle);
         }
     }
 
@@ -1365,8 +1353,8 @@ namespace winrt::TerminalApp::implementation
         {
             ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
 
-            // The primary action is canceling the removal
-            if (warningResult == ContentDialogResult::Primary)
+            // If the user didn't explicitly click on close tab - leave
+            if (warningResult != ContentDialogResult::Primary)
             {
                 co_return;
             }
@@ -1403,7 +1391,7 @@ namespace winrt::TerminalApp::implementation
         // To close the window here, we need to close the hosting window.
         if (_tabs.Size() == 0)
         {
-            _lastTabClosedHandlers(*this, nullptr);
+            _LastTabClosedHandlers(*this, nullptr);
         }
         else if (focusedTabIndex.has_value() && focusedTabIndex.value() == gsl::narrow_cast<uint32_t>(tabIndex))
         {
@@ -1553,10 +1541,10 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Sets focus to the tab to the right or left the currently selected tab.
-    void TerminalPage::_SelectNextTab(const bool bMoveRight)
+    void TerminalPage::_SelectNextTab(const bool bMoveRight, const Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::TabSwitcherMode>& customTabSwitcherMode)
     {
         const auto index{ _GetFocusedTabIndex().value_or(0) };
-        const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
+        const auto tabSwitchMode = customTabSwitcherMode ? customTabSwitcherMode.Value() : _settings.GlobalSettings().TabSwitcherMode();
         if (tabSwitchMode == TabSwitcherMode::Disabled)
         {
             uint32_t tabCount = _tabs.Size();
@@ -1762,8 +1750,8 @@ namespace winrt::TerminalApp::implementation
                     {
                         ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
 
-                        // The primary action is canceling the action
-                        if (warningResult == ContentDialogResult::Primary)
+                        // If the user didn't explicitly click on close tab - leave
+                        if (warningResult != ContentDialogResult::Primary)
                         {
                             co_return;
                         }
@@ -2243,7 +2231,7 @@ namespace winrt::TerminalApp::implementation
         CATCH_LOG();
     }
 
-    void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::TerminalControl::OpenHyperlinkEventArgs eventArgs)
+    void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs)
     {
         try
         {
@@ -2316,7 +2304,7 @@ namespace winrt::TerminalApp::implementation
         return false;
     }
 
-    void TerminalPage::_ControlNoticeRaisedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::TerminalControl::NoticeEventArgs eventArgs)
+    void TerminalPage::_ControlNoticeRaisedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::NoticeEventArgs eventArgs)
     {
         winrt::hstring message = eventArgs.Message();
 
@@ -2324,16 +2312,16 @@ namespace winrt::TerminalApp::implementation
 
         switch (eventArgs.Level())
         {
-        case TerminalControl::NoticeLevel::Debug:
+        case NoticeLevel::Debug:
             title = RS_(L"NoticeDebug"); //\xebe8
             break;
-        case TerminalControl::NoticeLevel::Info:
+        case NoticeLevel::Info:
             title = RS_(L"NoticeInfo"); // \xe946
             break;
-        case TerminalControl::NoticeLevel::Warning:
+        case NoticeLevel::Warning:
             title = RS_(L"NoticeWarning"); //\xe7ba
             break;
-        case TerminalControl::NoticeLevel::Error:
+        case NoticeLevel::Error:
             title = RS_(L"NoticeError"); //\xe783
             break;
         }
@@ -2378,7 +2366,7 @@ namespace winrt::TerminalApp::implementation
     // - eventArgs: the arguments specifying how to set the progress indicator
     void TerminalPage::_SetTaskbarProgressHandler(const IInspectable /*sender*/, const IInspectable /*eventArgs*/)
     {
-        _setTaskbarProgressHandlers(*this, nullptr);
+        _SetTaskbarProgressHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -2516,7 +2504,7 @@ namespace winrt::TerminalApp::implementation
                 // Raise an event that our title changed
                 if (_settings.GlobalSettings().ShowTitleInTitlebar())
                 {
-                    _titleChangeHandlers(*this, tab.Title());
+                    _TitleChangedHandlers(*this, tab.Title());
                 }
             }
             CATCH_LOG();
@@ -2654,7 +2642,7 @@ namespace winrt::TerminalApp::implementation
         // will let the user hot-reload this setting, but any runtime changes to
         // the alwaysOnTop setting will be lost.
         _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
-        _alwaysOnTopChangedHandlers(*this, nullptr);
+        _AlwaysOnTopChangedHandlers(*this, nullptr);
 
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
@@ -2833,7 +2821,7 @@ namespace winrt::TerminalApp::implementation
     {
         _isInFocusMode = !_isInFocusMode;
         _UpdateTabView();
-        _focusModeChangedHandlers(*this, nullptr);
+        _FocusModeChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -2847,7 +2835,7 @@ namespace winrt::TerminalApp::implementation
     {
         _isFullscreen = !_isFullscreen;
         _UpdateTabView();
-        _fullscreenChangedHandlers(*this, nullptr);
+        _FullscreenChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -2859,7 +2847,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::ToggleAlwaysOnTop()
     {
         _isAlwaysOnTop = !_isAlwaysOnTop;
-        _alwaysOnTopChangedHandlers(*this, nullptr);
+        _AlwaysOnTopChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -3034,8 +3022,8 @@ namespace winrt::TerminalApp::implementation
         return {};
     }
 
-    void TerminalPage::_FocusActiveControl(const IInspectable& /*sender*/,
-                                           const RoutedEventArgs& /*eventArgs*/)
+    void TerminalPage::_FocusActiveControl(IInspectable /*sender*/,
+                                           IInspectable /*eventArgs*/)
     {
         // We don't want to set focus on the tab if fly-out is open as it will be closed
         // TODO GH#5400: consider checking we are not in the opening state, by hooking both Opening and Open events
@@ -3384,8 +3372,82 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(Dispatcher());
         if (auto page{ weakThis.get() })
         {
-            page->_windowIdToast->Open();
+            // If we haven't ever loaded the TeachingTip, then do so now and
+            // create the toast for it.
+            if (page->_windowIdToast == nullptr)
+            {
+                if (MUX::Controls::TeachingTip tip{ page->FindName(L"WindowIdToast").try_as<MUX::Controls::TeachingTip>() })
+                {
+                    page->_windowIdToast = std::make_shared<Toast>(tip);
+                    // Make sure to use the weak ref when setting up this
+                    // callback.
+                    tip.Closed({ page->get_weak(), &TerminalPage::_FocusActiveControl });
+                }
+            }
+
+            if (page->_windowIdToast != nullptr)
+            {
+                page->_windowIdToast->Open();
+            }
         }
+    }
+
+    // WindowName is a otherwise generic WINRT_OBSERVABLE_PROPERTY, but it needs
+    // to raise a PropertyChanged for WindowNameForDisplay, instead of
+    // WindowName.
+    winrt::hstring TerminalPage::WindowName() const noexcept
+    {
+        return _WindowName;
+    }
+    void TerminalPage::WindowName(const winrt::hstring& value)
+    {
+        if (_WindowName != value)
+        {
+            _WindowName = value;
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+        }
+    }
+
+    // WindowId is a otherwise generic WINRT_OBSERVABLE_PROPERTY, but it needs
+    // to raise a PropertyChanged for WindowIdForDisplay, instead of
+    // WindowId.
+    uint64_t TerminalPage::WindowId() const noexcept
+    {
+        return _WindowId;
+    }
+    void TerminalPage::WindowId(const uint64_t& value)
+    {
+        if (_WindowId != value)
+        {
+            _WindowId = value;
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
+        }
+    }
+
+    // Method Description:
+    // - Returns a label like "Window: 1234" for the ID of this window
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a string for displaying the name of the window.
+    winrt::hstring TerminalPage::WindowIdForDisplay() const noexcept
+    {
+        return winrt::hstring{ fmt::format(L"{}: {}",
+                                           std::wstring_view(RS_(L"WindowIdLabel")),
+                                           _WindowId) };
+    }
+
+    // Method Description:
+    // - Returns a label like "<unnamed window>" when the window has no name, or the name of the window.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a string for displaying the name of the window.
+    winrt::hstring TerminalPage::WindowNameForDisplay() const noexcept
+    {
+        return _WindowName.empty() ?
+                   winrt::hstring{ fmt::format(L"<{}>", RS_(L"UnnamedWindowName")) } :
+                   _WindowName;
     }
 
     winrt::fire_and_forget TerminalPage::RenameFailed()
@@ -3394,7 +3456,23 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(Dispatcher());
         if (auto page{ weakThis.get() })
         {
-            page->RenameFailedToast().IsOpen(true);
+            // If we haven't ever loaded the TeachingTip, then do so now and
+            // create the toast for it.
+            if (page->_windowRenameFailedToast == nullptr)
+            {
+                if (MUX::Controls::TeachingTip tip{ page->FindName(L"RenameFailedToast").try_as<MUX::Controls::TeachingTip>() })
+                {
+                    page->_windowRenameFailedToast = std::make_shared<Toast>(tip);
+                    // Make sure to use the weak ref when setting up this
+                    // callback.
+                    tip.Closed({ page->get_weak(), &TerminalPage::_FocusActiveControl });
+                }
+            }
+
+            if (page->_windowRenameFailedToast != nullptr)
+            {
+                page->_windowRenameFailedToast->Open();
+            }
         }
     }
 
@@ -3407,15 +3485,4 @@ namespace winrt::TerminalApp::implementation
         _RenameWindowRequestedHandlers(*this, *request);
     }
 
-    // -------------------------------- WinRT Events ---------------------------------
-    // Winrt events need a method for adding a callback to the event and removing the callback.
-    // These macros will define them both for you.
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, UIElement);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FocusModeChanged, _focusModeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FullscreenChanged, _fullscreenChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, RaiseVisualBell, _raiseVisualBellHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTaskbarProgress, _setTaskbarProgressHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 }

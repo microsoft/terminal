@@ -4,22 +4,21 @@
 #include "pch.h"
 #include "OpenTerminalHere.h"
 
-// For reference, see:
-// * https://docs.microsoft.com/en-us/cpp/cppcx/wrl/how-to-create-a-classic-com-component-using-wrl?view=vs-2019
-// * https://docs.microsoft.com/en-us/windows/uwp/cpp-and-winrt-apis/move-to-winrt-from-wrl#porting-a-wrl-module-microsoftwrlmodule
-//
-// We don't need to implement DllGetActivationFactory or DllCanUnloadNow
-// manually, since the generated module.g.cpp will handle it for us, and will
-// handle our WRL types appropriately.
-//
-// We DO need to implement DllGetClassObject, because that's what explorer.exe
-// will call to attempt to create a class factory for our shell extension. The
-// CoCreatableClass macro in OpenTerminalHere.h will create the factory for us,
-// so that the GetClassObject call will work like magic.
+using namespace Microsoft::WRL;
 
-STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, _COM_Outptr_ void** ppv)
+STDAPI DllCanUnloadNow()
 {
-    return Microsoft::WRL::Module<Microsoft::WRL::InProc>::GetModule().GetClassObject(rclsid, riid, ppv);
+    return Module<InProc>::GetModule().Terminate() ? S_OK : S_FALSE;
+}
+
+STDAPI DllGetActivationFactory(_In_ HSTRING activatableClassId, _COM_Outptr_ IActivationFactory** factory)
+{
+    return Module<InProc>::GetModule().GetActivationFactory(activatableClassId, factory);
+}
+
+STDAPI DllGetClassObject(_In_ REFCLSID rclsid, _In_ REFIID riid, _COM_Outptr_ void** ppv)
+{
+    return Module<InProc>::GetModule().GetClassObject(rclsid, riid, ppv);
 }
 
 STDAPI_(BOOL)

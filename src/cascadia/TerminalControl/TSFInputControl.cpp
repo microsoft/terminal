@@ -14,7 +14,7 @@ using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Text::Core;
 using namespace winrt::Windows::UI::Xaml;
 
-namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+namespace winrt::Microsoft::Terminal::Control::implementation
 {
     TSFInputControl::TSFInputControl() :
         _editContext{ nullptr },
@@ -469,5 +469,5 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
     }
 
-    DEFINE_EVENT(TSFInputControl, CompositionCompleted, _compositionCompletedHandlers, TerminalControl::CompositionCompletedEventArgs);
+    DEFINE_EVENT(TSFInputControl, CompositionCompleted, _compositionCompletedHandlers, Control::CompositionCompletedEventArgs);
 }

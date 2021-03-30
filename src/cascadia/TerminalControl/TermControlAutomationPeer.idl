@@ -3,7 +3,7 @@
 
 import "TermControl.idl";
 
-namespace Microsoft.Terminal.TerminalControl
+namespace Microsoft.Terminal.Control
 {
     [default_interface] runtimeclass TermControlAutomationPeer :
         Windows.UI.Xaml.Automation.Peers.FrameworkElementAutomationPeer,

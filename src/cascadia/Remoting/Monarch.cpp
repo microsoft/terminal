@@ -575,6 +575,39 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     }
 
     // Method Description:
+    // - Helper for doing something on each and every peasant, with no regard
+    //   for if the peasant is living or dead.
+    // - We'll try calling callback on every peasant.
+    // - If any single peasant is dead, then we'll call errorCallback, and move on.
+    // - We're taking an errorCallback here, because the thing we usually want
+    //   to do is TraceLog a message, but TraceLoggingWrite is actually a macro
+    //   that _requires_ the second arg to be a string literal. It can't just be
+    //   a variable.
+    // Arguments:
+    // - callback: The function to call on each peasant
+    // - errorCallback: The function to call if a peasant is dead.
+    // Return Value:
+    // - <none>
+    void Monarch::_forAllPeasantsIgnoringTheDead(std::function<void(const Remoting::IPeasant&, const uint64_t)> callback,
+                                                 std::function<void(const uint64_t)> errorCallback)
+    {
+        for (const auto& [id, p] : _peasants)
+        {
+            try
+            {
+                callback(p, id);
+            }
+            catch (...)
+            {
+                LOG_CAUGHT_EXCEPTION();
+                // If this fails, we don't _really_ care. Just move on to the
+                // next one. Someone else will clean up the dead peasant.
+                errorCallback(id);
+            }
+        }
+    }
+
+    // Method Description:
     // - This is an event handler for the IdentifyWindowsRequested event. A
     //   Peasant may raise that event if they want _all_ windows to identify
     //   themselves.
@@ -588,24 +621,18 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                    const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
         // Notify all the peasants to display their ID.
-        for (const auto& [id, p] : _peasants)
-        {
-            try
-            {
-                p.DisplayWindowId();
-            }
-            catch (...)
-            {
-                LOG_CAUGHT_EXCEPTION();
-                // If this fails, we don't _really_ care. Just move on to the
-                // next one. Someone else will clean up the dead peasant.
-                TraceLoggingWrite(g_hRemotingProvider,
-                                  "Monarch_identifyWindows_Failed",
-                                  TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not identify"),
-                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
-            }
-        }
+        auto callback = [](auto&& p, auto&& /*id*/) {
+            p.DisplayWindowId();
+        };
+        auto onError = [](auto&& id) {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_identifyWindows_Failed",
+                              TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not identify"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+        };
+        _forAllPeasantsIgnoringTheDead(callback, onError);
     }
+
     void Monarch::_renameRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                    const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args)
     {
