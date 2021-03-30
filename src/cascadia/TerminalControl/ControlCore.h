@@ -45,6 +45,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
 
         void ToggleShaderEffects();
+        void AdjustOpacity(const double adjustment);
         void ResumeRendering();
 
         void UpdatePatternLocations();
@@ -137,6 +138,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(SwapChainChanged,          IInspectable, IInspectable);
         TYPED_EVENT(RendererWarning,           IInspectable, Control::RendererWarningArgs);
         TYPED_EVENT(RaiseNotice,               IInspectable, Control::NoticeEventArgs);
+        TYPED_EVENT(TransparencyChanged,       IInspectable, Control::TransparencyChangedEventArgs);
         // clang-format on
 
     private:

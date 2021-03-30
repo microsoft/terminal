@@ -487,38 +487,39 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // Transparency is on a scale of [0.0,1.0], so only increment by .01.
         const auto effectiveDelta = mouseDelta < 0 ? -.01 : .01;
+        _core->AdjustOpacity(effectiveDelta);
 
-        if (_settings.UseAcrylic())
-        {
-            try
-            {
-                auto acrylicBrush = RootGrid().Background().as<Media::AcrylicBrush>();
-                _settings.TintOpacity(acrylicBrush.TintOpacity() + effectiveDelta);
-                acrylicBrush.TintOpacity(_settings.TintOpacity());
+        // if (_settings.UseAcrylic())
+        // {
+        //     try
+        //     {
+        //         auto acrylicBrush = RootGrid().Background().as<Media::AcrylicBrush>();
+        //         _settings.TintOpacity(acrylicBrush.TintOpacity() + effectiveDelta);
+        //         acrylicBrush.TintOpacity(_settings.TintOpacity());
 
-                if (acrylicBrush.TintOpacity() == 1.0)
-                {
-                    _settings.UseAcrylic(false);
-                    _InitializeBackgroundBrush();
-                    COLORREF bg = _settings.DefaultBackground();
-                    _changeBackgroundColor(bg);
-                }
-                else
-                {
-                    // GH#5098: Inform the engine of the new opacity of the default text background.
-                    _core->SetBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
-                }
-            }
-            CATCH_LOG();
-        }
-        else if (mouseDelta < 0)
-        {
-            _settings.UseAcrylic(true);
+        //         if (acrylicBrush.TintOpacity() == 1.0)
+        //         {
+        //             _settings.UseAcrylic(false);
+        //             _InitializeBackgroundBrush();
+        //             COLORREF bg = _settings.DefaultBackground();
+        //             _changeBackgroundColor(bg);
+        //         }
+        //         else
+        //         {
+        //             // GH#5098: Inform the engine of the new opacity of the default text background.
+        //             _core->SetBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+        //         }
+        //     }
+        //     CATCH_LOG();
+        // }
+        // else if (mouseDelta < 0)
+        // {
+        //     _settings.UseAcrylic(true);
 
-            //Setting initial opacity set to 1 to ensure smooth transition to acrylic during mouse scroll
-            _settings.TintOpacity(1.0);
-            _InitializeBackgroundBrush();
-        }
+        //     //Setting initial opacity set to 1 to ensure smooth transition to acrylic during mouse scroll
+        //     _settings.TintOpacity(1.0);
+        //     _InitializeBackgroundBrush();
+        // }
     }
 
     // Method Description:
