@@ -26,6 +26,7 @@ namespace winrt::TerminalApp::implementation
         void SetKeyMap(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap);
 
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
+        WINRT_CALLBACK(CloseRequested, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
         // The TabViewIndex is the index this Tab object resides in TerminalPage's _tabs vector.

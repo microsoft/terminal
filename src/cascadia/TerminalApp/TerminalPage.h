@@ -178,8 +178,9 @@ namespace winrt::TerminalApp::implementation
 
         void _DuplicateFocusedTab();
         void _DuplicateTab(const TerminalTab& tab);
-        void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
-        winrt::Windows::Foundation::IAsyncAction _RemoveTab(winrt::TerminalApp::TabBase tab);
+
+        winrt::Windows::Foundation::IAsyncAction _HandleCloseTabRequested(winrt::TerminalApp::TabBase tab);
+        void _RemoveTab(const winrt::TerminalApp::TabBase& tab);
         winrt::fire_and_forget _RemoveTabs(const std::vector<winrt::TerminalApp::TabBase> tabs);
 
         void _RegisterTerminalEvents(Microsoft::Terminal::Control::TermControl term, TerminalTab& hostingTab);
@@ -198,6 +199,7 @@ namespace winrt::TerminalApp::implementation
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
         TerminalApp::TabBase _GetFocusedTab() const noexcept;
         winrt::com_ptr<TerminalTab> _GetFocusedTabImpl() const noexcept;
+        TerminalApp::TabBase _GetTabByTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem) const noexcept;
 
         winrt::fire_and_forget _SetFocusedTabIndex(const uint32_t tabIndex);
         void _CloseFocusedTab();
