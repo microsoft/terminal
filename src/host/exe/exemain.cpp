@@ -67,8 +67,6 @@ static bool ConhostV2ForcedInRegistry()
     if (ERROR_SUCCESS == lStatus)
     {
         // now get the value of the ForceV2 reg value, if it exists
-        DWORD dwValue;
-        DWORD dwType;
         cbValue = sizeof(dwValue);
         lStatus = RegQueryValueExW(hConsoleSubKey.get(),
                                    L"ForceV2",
