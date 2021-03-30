@@ -736,7 +736,7 @@ namespace winrt::TerminalApp::implementation
         // click on the text box manually.
         //
         // We're also not using a ContentDialog for this, because in Xaml
-        // Islands a text box in a ContentDialog won't recieve _any_ keypresses.
+        // Islands a text box in a ContentDialog won't receive _any_ keypresses.
         // Fun!
         // WindowRenamerTextBox().Focus(FocusState::Programmatic);
 
