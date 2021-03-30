@@ -153,10 +153,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         // sort and save the lists
-        std::sort(begin(fontList), end(fontList));
+        std::sort(begin(fontList), end(fontList), FontComparator());
         _FontList = single_threaded_observable_vector<Editor::Font>(std::move(fontList));
 
-        std::sort(begin(monospaceFontList), end(monospaceFontList));
+        std::sort(begin(monospaceFontList), end(monospaceFontList), FontComparator());
         _MonospaceFontList = single_threaded_observable_vector<Editor::Font>(std::move(monospaceFontList));
     }
     CATCH_LOG();

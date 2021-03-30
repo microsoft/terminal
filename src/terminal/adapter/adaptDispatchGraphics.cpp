@@ -14,26 +14,26 @@ using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::VirtualTerminal::DispatchTypes;
 
 // clang-format off
-const BYTE BLUE_ATTR      = 0x01;
-const BYTE GREEN_ATTR     = 0x02;
-const BYTE RED_ATTR       = 0x04;
-const BYTE BRIGHT_ATTR    = 0x08;
-const BYTE DARK_BLACK     = 0;
-const BYTE DARK_RED       = RED_ATTR;
-const BYTE DARK_GREEN     = GREEN_ATTR;
-const BYTE DARK_YELLOW    = RED_ATTR | GREEN_ATTR;
-const BYTE DARK_BLUE      = BLUE_ATTR;
-const BYTE DARK_MAGENTA   = RED_ATTR | BLUE_ATTR;
-const BYTE DARK_CYAN      = GREEN_ATTR | BLUE_ATTR;
-const BYTE DARK_WHITE     = RED_ATTR | GREEN_ATTR | BLUE_ATTR;
-const BYTE BRIGHT_BLACK   = BRIGHT_ATTR;
-const BYTE BRIGHT_RED     = BRIGHT_ATTR | RED_ATTR;
-const BYTE BRIGHT_GREEN   = BRIGHT_ATTR | GREEN_ATTR;
-const BYTE BRIGHT_YELLOW  = BRIGHT_ATTR | RED_ATTR | GREEN_ATTR;
-const BYTE BRIGHT_BLUE    = BRIGHT_ATTR | BLUE_ATTR;
-const BYTE BRIGHT_MAGENTA = BRIGHT_ATTR | RED_ATTR | BLUE_ATTR;
-const BYTE BRIGHT_CYAN    = BRIGHT_ATTR | GREEN_ATTR | BLUE_ATTR;
-const BYTE BRIGHT_WHITE   = BRIGHT_ATTR | RED_ATTR | GREEN_ATTR | BLUE_ATTR;
+constexpr BYTE BLUE_ATTR      = 0x01;
+constexpr BYTE GREEN_ATTR     = 0x02;
+constexpr BYTE RED_ATTR       = 0x04;
+constexpr BYTE BRIGHT_ATTR    = 0x08;
+constexpr BYTE DARK_BLACK     = 0;
+constexpr BYTE DARK_RED       = RED_ATTR;
+constexpr BYTE DARK_GREEN     = GREEN_ATTR;
+constexpr BYTE DARK_YELLOW    = RED_ATTR | GREEN_ATTR;
+constexpr BYTE DARK_BLUE      = BLUE_ATTR;
+constexpr BYTE DARK_MAGENTA   = RED_ATTR | BLUE_ATTR;
+constexpr BYTE DARK_CYAN      = GREEN_ATTR | BLUE_ATTR;
+constexpr BYTE DARK_WHITE     = RED_ATTR | GREEN_ATTR | BLUE_ATTR;
+constexpr BYTE BRIGHT_BLACK   = BRIGHT_ATTR;
+constexpr BYTE BRIGHT_RED     = BRIGHT_ATTR | RED_ATTR;
+constexpr BYTE BRIGHT_GREEN   = BRIGHT_ATTR | GREEN_ATTR;
+constexpr BYTE BRIGHT_YELLOW  = BRIGHT_ATTR | RED_ATTR | GREEN_ATTR;
+constexpr BYTE BRIGHT_BLUE    = BRIGHT_ATTR | BLUE_ATTR;
+constexpr BYTE BRIGHT_MAGENTA = BRIGHT_ATTR | RED_ATTR | BLUE_ATTR;
+constexpr BYTE BRIGHT_CYAN    = BRIGHT_ATTR | GREEN_ATTR | BLUE_ATTR;
+constexpr BYTE BRIGHT_WHITE   = BRIGHT_ATTR | RED_ATTR | GREEN_ATTR | BLUE_ATTR;
 // clang-format on
 
 // Routine Description:

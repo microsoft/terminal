@@ -12,9 +12,9 @@ Use the [TAEF Verify Macros for C++](https://docs.microsoft.com/en-us/windows-ha
 
 ### Running Tests
 
-If you have Visual Studio and related C++ components installed, and you have successfully restored NuGets, you should have the TAEF test runner `te.exe` available locally as part of the `Taef.Redist.Wlk` package.
+If you have Visual Studio and related C++ components installed, and you have successfully restored NuGets, you should have the TAEF test runner `te.exe` available locally as part of the `Microsoft.Taef` package.
 
-> Note that you cannot easily run TAEF tests directly through Visual Studio. The `Taef.Redist.Wlk` NuGet package comes with an adapter that will let you browse and execute TAEF tests inside of Visual Studio, but its performance and reliability prevent us from recommending it here.
+> Note that you cannot easily run TAEF tests directly through Visual Studio. The `Microsoft.Taef` NuGet package comes with an adapter that will let you browse and execute TAEF tests inside of Visual Studio, but its performance and reliability prevent us from recommending it here.
 
 In a "normal" CMD environment, `te.exe` may not be directly available. Try the following command to set up the development enviroment first:
 

@@ -32,6 +32,8 @@ void EdpPolicy::AuditClipboard(const std::wstring_view /*destinationName*/) noex
 
 [[nodiscard]] HRESULT DefaultApp::CheckDefaultAppPolicy(bool& isEnabled) noexcept
 {
-    isEnabled = false;
+    // True so propsheet will show configuration options but be sure that
+    // the open one won't attempt handoff from double click of OpenConsole.exe
+    isEnabled = true;
     return S_OK;
 }

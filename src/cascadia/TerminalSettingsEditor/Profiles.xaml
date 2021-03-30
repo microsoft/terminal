@@ -1,152 +1,159 @@
-﻿<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
-the MIT License. See LICENSE in the project root for license information. -->
-<Page
-    x:Class="Microsoft.Terminal.Settings.Editor.Profiles"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:Microsoft.Terminal.Settings.Editor"
-    xmlns:model="using:Microsoft.Terminal.Settings.Model"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-    mc:Ignorable="d">
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.Profiles"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
 
     <Page.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="CommonResources.xaml"/>
+                <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
-                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
+            <DataTemplate x:Key="EnumRadioButtonTemplate"
+                          x:DataType="local:EnumEntry">
+                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}" />
             </DataTemplate>
 
-            <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumComboBoxItemTemplate">
-                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}"/>
+            <DataTemplate x:Key="EnumComboBoxItemTemplate"
+                          x:DataType="local:EnumEntry">
+                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
             </DataTemplate>
 
-            <DataTemplate x:DataType="local:Font" x:Key="FontFaceComboBoxItemTemplate">
-                <TextBlock Text="{x:Bind LocalizedName}" FontFamily="{x:Bind Name}"/>
+            <DataTemplate x:Key="FontFaceComboBoxItemTemplate"
+                          x:DataType="local:Font">
+                <TextBlock FontFamily="{x:Bind Name}"
+                           Text="{x:Bind LocalizedName}" />
             </DataTemplate>
 
-            <local:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
-            <local:PercentageConverter x:Key="PercentageConverter"/>
-            <local:FontWeightConverter x:Key="FontWeightConverter"/>
-            <local:InvertedBooleanToVisibilityConverter x:Key="InvertedBooleanToVisibilityConverter"/>
-            <local:StringIsEmptyConverter x:Key="StringIsEmptyConverter"/>
-            <local:PaddingConverter x:Key="PaddingConverter"/>
-            <local:StringIsNotDesktopConverter x:Key="StringIsNotDesktopConverter"/>
-            <local:DesktopWallpaperToEmptyStringConverter x:Key="DesktopWallpaperToEmptyStringConverter"/>
+            <local:ColorToBrushConverter x:Key="ColorToBrushConverter" />
+            <local:PercentageConverter x:Key="PercentageConverter" />
+            <local:FontWeightConverter x:Key="FontWeightConverter" />
+            <local:InvertedBooleanToVisibilityConverter x:Key="InvertedBooleanToVisibilityConverter" />
+            <local:StringIsEmptyConverter x:Key="StringIsEmptyConverter" />
+            <local:PaddingConverter x:Key="PaddingConverter" />
+            <local:StringIsNotDesktopConverter x:Key="StringIsNotDesktopConverter" />
+            <local:DesktopWallpaperToEmptyStringConverter x:Key="DesktopWallpaperToEmptyStringConverter" />
 
         </ResourceDictionary>
     </Page.Resources>
 
-    <!--Use a Grid instead of a StackPanel. StackPanel suppresses the inner ScrollViewer.-->
+    <!--  Use a Grid instead of a StackPanel. StackPanel suppresses the inner ScrollViewer.  -->
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <TextBlock x:Uid="Profile_BaseLayerDisclaimer"
                    Grid.Row="0"
                    Margin="{StaticResource StandardIndentMargin}"
                    Style="{StaticResource DisclaimerStyle}"
-                   Visibility="{x:Bind State.Profile.IsBaseLayer}"/>
+                   Visibility="{x:Bind State.Profile.IsBaseLayer}" />
 
         <Pivot x:Name="ProfilesPivot"
-               HorizontalAlignment="Left"
                Grid.Row="1"
-               SelectionChanged="Pivot_SelectionChanged"
-               Margin="1,0,0,0">
-            <!-- General Tab -->
+               Margin="1,0,0,0"
+               HorizontalAlignment="Left"
+               SelectionChanged="Pivot_SelectionChanged">
+            <!--  General Tab  -->
             <PivotItem x:Uid="Profile_General">
                 <ScrollViewer>
                     <StackPanel Style="{StaticResource PivotStackStyle}">
 
-                        <!--Name-->
-                        <!--NOTE: Has/Clear is not bound because we don't want the reset button & override text to appear.
-                                  Additionally, the JSON stubs generated by auto-generated profiles come with a name,
-                                  so the name will always be overridden.-->
+                        <!--  Name  -->
+                        <!--
+                            NOTE: Has/Clear is not bound because we don't want the reset button & override text to appear.
+                            Additionally, the JSON stubs generated by auto-generated profiles come with a name,
+                            so the name will always be overridden.
+                        -->
                         <local:SettingContainer x:Uid="Profile_Name"
-                                                Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}"
-                                                Margin="0,0,0,24">
-                            <TextBox Text="{x:Bind State.Profile.Name, Mode=TwoWay}"
-                                     Style="{StaticResource TextBoxSettingStyle}"/>
+                                                Margin="0,0,0,24"
+                                                Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
+                            <TextBox Style="{StaticResource TextBoxSettingStyle}"
+                                     Text="{x:Bind State.Profile.Name, Mode=TwoWay}" />
                         </local:SettingContainer>
 
-                        <!--Commandline-->
-                        <local:SettingContainer x:Uid="Profile_Commandline"
-                                                x:Name="CommandlineContainer"
-                                                HasSettingValue="{x:Bind State.Profile.HasCommandline, Mode=OneWay}"
+                        <!--  Commandline  -->
+                        <local:SettingContainer x:Name="CommandlineContainer"
+                                                x:Uid="Profile_Commandline"
+                                                Margin="0,0,0,24"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearCommandline}"
+                                                HasSettingValue="{x:Bind State.Profile.HasCommandline, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.CommandlineOverrideSource, Mode=OneWay}"
-                                                Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}"
-                                                Margin="0,0,0,24">
+                                                Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
                             <StackPanel Orientation="Horizontal">
-                                <TextBox Text="{x:Bind State.Profile.Commandline, Mode=TwoWay}"
-                                         Style="{StaticResource TextBoxSettingStyle}"/>
+                                <TextBox Style="{StaticResource TextBoxSettingStyle}"
+                                         Text="{x:Bind State.Profile.Commandline, Mode=TwoWay}" />
                                 <Button x:Uid="Profile_CommandlineBrowse"
                                         Click="Commandline_Click"
-                                        Style="{StaticResource BrowseButtonStyle}"/>
+                                        Style="{StaticResource BrowseButtonStyle}" />
                             </StackPanel>
                         </local:SettingContainer>
 
-                        <!--Starting Directory-->
-                        <local:SettingContainer x:Uid="Profile_StartingDirectory"
-                                                x:Name="StartingDirectoryContainer"
-                                                HasSettingValue="{x:Bind State.Profile.HasStartingDirectory, Mode=OneWay}"
+                        <!--  Starting Directory  -->
+                        <local:SettingContainer x:Name="StartingDirectoryContainer"
+                                                x:Uid="Profile_StartingDirectory"
+                                                Margin="0"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearStartingDirectory}"
-                                                SettingOverrideSource="{x:Bind State.Profile.StartingDirectoryOverrideSource, Mode=OneWay}"
-                                                Margin="0">
+                                                HasSettingValue="{x:Bind State.Profile.HasStartingDirectory, Mode=OneWay}"
+                                                SettingOverrideSource="{x:Bind State.Profile.StartingDirectoryOverrideSource, Mode=OneWay}">
                             <StackPanel Orientation="Vertical">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBox Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}"
-                                             IsEnabled="{x:Bind State.Profile.UseCustomStartingDirectory, Mode=OneWay}"
-                                             Style="{StaticResource TextBoxSettingStyle}"/>
-                                    <Button x:Uid="Profile_StartingDirectoryBrowse"
-                                            x:Name="StartingDirectoryBrowse"
+                                    <TextBox IsEnabled="{x:Bind State.Profile.UseCustomStartingDirectory, Mode=OneWay}"
+                                             Style="{StaticResource TextBoxSettingStyle}"
+                                             Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}" />
+                                    <Button x:Name="StartingDirectoryBrowse"
+                                            x:Uid="Profile_StartingDirectoryBrowse"
                                             Click="StartingDirectory_Click"
                                             IsEnabled="{x:Bind State.Profile.UseCustomStartingDirectory, Mode=OneWay}"
-                                            Style="{StaticResource BrowseButtonStyle}"/>
+                                            Style="{StaticResource BrowseButtonStyle}" />
                                 </StackPanel>
-                                <CheckBox x:Uid="Profile_StartingDirectoryUseParentCheckbox"
-                                          x:Name="StartingDirectoryUseParentCheckbox"
-                                          IsChecked="{x:Bind State.Profile.UseParentProcessDirectory, Mode=TwoWay}"/>
+                                <CheckBox x:Name="StartingDirectoryUseParentCheckbox"
+                                          x:Uid="Profile_StartingDirectoryUseParentCheckbox"
+                                          IsChecked="{x:Bind State.Profile.UseParentProcessDirectory, Mode=TwoWay}" />
                             </StackPanel>
                         </local:SettingContainer>
 
-                        <!--Icon-->
+                        <!--  Icon  -->
                         <local:SettingContainer x:Uid="Profile_Icon"
-                                                HasSettingValue="{x:Bind State.Profile.HasIcon, Mode=OneWay}"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearIcon}"
+                                                HasSettingValue="{x:Bind State.Profile.HasIcon, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.IconOverrideSource, Mode=OneWay}">
                             <StackPanel Orientation="Horizontal">
-                                <TextBox Text="{x:Bind State.Profile.Icon, Mode=TwoWay}"
-                                         FontFamily="Segoe UI, Segoe MDL2 Assets"
-                                         Style="{StaticResource TextBoxSettingStyle}"/>
+                                <TextBox FontFamily="Segoe UI, Segoe MDL2 Assets"
+                                         Style="{StaticResource TextBoxSettingStyle}"
+                                         Text="{x:Bind State.Profile.Icon, Mode=TwoWay}" />
                                 <Button x:Uid="Profile_IconBrowse"
                                         Click="Icon_Click"
-                                        Style="{StaticResource BrowseButtonStyle}"/>
+                                        Style="{StaticResource BrowseButtonStyle}" />
                             </StackPanel>
                         </local:SettingContainer>
 
-                        <!--Tab Title-->
+                        <!--  Tab Title  -->
                         <local:SettingContainer x:Uid="Profile_TabTitle"
-                                                HasSettingValue="{x:Bind State.Profile.HasTabTitle, Mode=OneWay}"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearTabTitle}"
+                                                HasSettingValue="{x:Bind State.Profile.HasTabTitle, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.TabTitleOverrideSource, Mode=OneWay}">
-                            <TextBox Text="{x:Bind State.Profile.TabTitle, Mode=TwoWay}"
-                                     Style="{StaticResource TextBoxSettingStyle}"/>
+                            <TextBox Style="{StaticResource TextBoxSettingStyle}"
+                                     Text="{x:Bind State.Profile.TabTitle, Mode=TwoWay}" />
                         </local:SettingContainer>
 
-                        <!--Hidden-->
+                        <!--  Hidden  -->
                         <local:SettingContainer x:Uid="Profile_Hidden"
                                                 Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
-                            <ToggleSwitch IsOn="{x:Bind State.Profile.Hidden, Mode=TwoWay}"/>
+                            <ToggleSwitch IsOn="{x:Bind State.Profile.Hidden, Mode=TwoWay}" />
                         </local:SettingContainer>
 
-                        <!--Delete Button-->
+                        <!--  Delete Button  -->
                         <StackPanel Margin="{StaticResource StandardControlMargin}">
                             <Button x:Name="DeleteButton"
                                     IsEnabled="{x:Bind State.Profile.CanDeleteProfile}"
@@ -155,569 +162,616 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     <ResourceDictionary>
                                         <ResourceDictionary.ThemeDictionaries>
                                             <ResourceDictionary x:Key="Light">
-                                                <SolidColorBrush x:Key="ButtonBackground" Color="Firebrick"/>
-                                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#C23232"/>
-                                                <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#A21212"/>
-                                                <SolidColorBrush x:Key="ButtonForeground" Color="White"/>
-                                                <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="White"/>
-                                                <SolidColorBrush x:Key="ButtonForegroundPressed" Color="White"/>
+                                                <SolidColorBrush x:Key="ButtonBackground"
+                                                                 Color="Firebrick" />
+                                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                                                 Color="#C23232" />
+                                                <SolidColorBrush x:Key="ButtonBackgroundPressed"
+                                                                 Color="#A21212" />
+                                                <SolidColorBrush x:Key="ButtonForeground"
+                                                                 Color="White" />
+                                                <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                                 Color="White" />
+                                                <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                                 Color="White" />
                                             </ResourceDictionary>
                                             <ResourceDictionary x:Key="Dark">
-                                                <SolidColorBrush x:Key="ButtonBackground" Color="Firebrick"/>
-                                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#C23232"/>
-                                                <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#A21212"/>
-                                                <SolidColorBrush x:Key="ButtonForeground" Color="White"/>
-                                                <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="White"/>
-                                                <SolidColorBrush x:Key="ButtonForegroundPressed" Color="White"/>
+                                                <SolidColorBrush x:Key="ButtonBackground"
+                                                                 Color="Firebrick" />
+                                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                                                 Color="#C23232" />
+                                                <SolidColorBrush x:Key="ButtonBackgroundPressed"
+                                                                 Color="#A21212" />
+                                                <SolidColorBrush x:Key="ButtonForeground"
+                                                                 Color="White" />
+                                                <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                                 Color="White" />
+                                                <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                                 Color="White" />
                                             </ResourceDictionary>
                                             <ResourceDictionary x:Key="HighContrast">
-                                                <SolidColorBrush x:Key="ButtonBackground" Color="{ThemeResource SystemColorButtonFaceColor}"/>
-                                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{ThemeResource SystemColorHighlightColor}"/>
-                                                <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="{ThemeResource SystemColorHighlightColor}"/>
-                                                <SolidColorBrush x:Key="ButtonForeground" Color="{ThemeResource SystemColorButtonTextColor}"/>
-                                                <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="{ThemeResource SystemColorHighlightTextColor}"/>
-                                                <SolidColorBrush x:Key="ButtonForegroundPressed" Color="{ThemeResource SystemColorHighlightTextColor}"/>
+                                                <SolidColorBrush x:Key="ButtonBackground"
+                                                                 Color="{ThemeResource SystemColorButtonFaceColor}" />
+                                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                                                 Color="{ThemeResource SystemColorHighlightColor}" />
+                                                <SolidColorBrush x:Key="ButtonBackgroundPressed"
+                                                                 Color="{ThemeResource SystemColorHighlightColor}" />
+                                                <SolidColorBrush x:Key="ButtonForeground"
+                                                                 Color="{ThemeResource SystemColorButtonTextColor}" />
+                                                <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                                 Color="{ThemeResource SystemColorHighlightTextColor}" />
+                                                <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                                 Color="{ThemeResource SystemColorHighlightTextColor}" />
                                             </ResourceDictionary>
                                         </ResourceDictionary.ThemeDictionaries>
                                     </ResourceDictionary>
                                 </Button.Resources>
                                 <Button.Content>
                                     <StackPanel Orientation="Horizontal">
-                                        <FontIcon Glyph="&#xE74D;"
-                                                  FontSize="{StaticResource StandardIconSize}"/>
+                                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                                  Glyph="&#xE74D;" />
                                         <TextBlock x:Uid="Profile_DeleteButton"
-                                                   Margin="10,0,0,0"/>
+                                                   Margin="10,0,0,0" />
                                     </StackPanel>
                                 </Button.Content>
                                 <Button.Flyout>
                                     <Flyout>
                                         <StackPanel>
                                             <TextBlock x:Uid="Profile_DeleteConfirmationMessage"
-                                                       Style="{StaticResource CustomFlyoutTextStyle}"/>
+                                                       Style="{StaticResource CustomFlyoutTextStyle}" />
                                             <Button x:Uid="Profile_DeleteConfirmationButton"
-                                                    Click="DeleteConfirmation_Click"/>
+                                                    Click="DeleteConfirmation_Click" />
                                         </StackPanel>
                                     </Flyout>
                                 </Button.Flyout>
                             </Button>
                             <TextBlock x:Name="DeleteButtonDisclaimer"
-                                       Style="{StaticResource DisclaimerStyle}"
-                                       VerticalAlignment="Center"/>
+                                       VerticalAlignment="Center"
+                                       Style="{StaticResource DisclaimerStyle}" />
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
             </PivotItem>
 
-            <!-- Appearance Tab -->
+            <!--  Appearance Tab  -->
             <PivotItem x:Uid="Profile_Appearance">
                 <ScrollViewer>
                     <StackPanel>
                         <StackPanel Style="{StaticResource PivotStackStyle}">
-                            <!--Grouping: Text-->
-                            <TextBlock x:Uid="Profile_TextHeader" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                            <!--  Grouping: Text  -->
+                            <TextBlock x:Uid="Profile_TextHeader"
+                                       Style="{StaticResource SubtitleTextBlockStyle}" />
 
-                            <!--Color Scheme-->
+                            <!--  Color Scheme  -->
                             <local:SettingContainer x:Uid="Profile_ColorScheme"
-                                                    HasSettingValue="{x:Bind State.Profile.HasColorSchemeName, Mode=OneWay}"
+                                                    Margin="0"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearColorSchemeName}"
-                                                    SettingOverrideSource="{x:Bind State.Profile.ColorSchemeNameOverrideSource, Mode=OneWay}"
-                                                    Margin="0">
+                                                    HasSettingValue="{x:Bind State.Profile.HasColorSchemeName, Mode=OneWay}"
+                                                    SettingOverrideSource="{x:Bind State.Profile.ColorSchemeNameOverrideSource, Mode=OneWay}">
                                 <ComboBox ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
                                           SelectedItem="{x:Bind CurrentColorScheme, Mode=TwoWay}"
                                           Style="{StaticResource ComboBoxSettingStyle}">
                                     <ComboBox.ItemTemplate>
                                         <DataTemplate x:DataType="model:ColorScheme">
-                                            <TextBlock Text="{x:Bind Name, Mode=OneWay}"/>
+                                            <TextBlock Text="{x:Bind Name, Mode=OneWay}" />
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
                             </local:SettingContainer>
 
-                            <!--Font Face-->
+                            <!--  Font Face  -->
                             <local:SettingContainer x:Uid="Profile_FontFace"
-                                                    HasSettingValue="{x:Bind State.Profile.HasFontFace, Mode=OneWay}"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearFontFace}"
+                                                    HasSettingValue="{x:Bind State.Profile.HasFontFace, Mode=OneWay}"
                                                     SettingOverrideSource="{x:Bind State.Profile.FontFaceOverrideSource, Mode=OneWay}">
                                 <StackPanel>
-                                    <!--Binding the ItemsSource to a separate variable that switches between the
-                                          two font lists causes a crash within the ComboBox code.
-                                        As a workaround, introduce two ComboBox controls and only display one at a time.-->
-                                    <ComboBox ItemsSource="{x:Bind State.Profile.MonospaceFontList, Mode=OneWay}"
+                                    <!--
+                                        Binding the ItemsSource to a separate variable that switches between the
+                                        two font lists causes a crash within the ComboBox code.
+                                        As a workaround, introduce two ComboBox controls and only display one at a time.
+                                    -->
+                                    <ComboBox ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
+                                              ItemsSource="{x:Bind State.Profile.MonospaceFontList, Mode=OneWay}"
                                               SelectedItem="{x:Bind CurrentFontFace, Mode=OneWay}"
                                               SelectionChanged="FontFace_SelectionChanged"
                                               Style="{StaticResource ComboBoxSettingStyle}"
-                                              ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
-                                              Visibility="{x:Bind State.Profile.ShowAllFonts, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}"/>
-                                    <ComboBox ItemsSource="{x:Bind State.Profile.CompleteFontList, Mode=OneWay}"
+                                              Visibility="{x:Bind State.Profile.ShowAllFonts, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}" />
+                                    <ComboBox ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
+                                              ItemsSource="{x:Bind State.Profile.CompleteFontList, Mode=OneWay}"
                                               SelectedItem="{x:Bind CurrentFontFace, Mode=OneWay}"
                                               SelectionChanged="FontFace_SelectionChanged"
                                               Style="{StaticResource ComboBoxSettingStyle}"
-                                              ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
-                                              Visibility="{x:Bind State.Profile.ShowAllFonts, Mode=OneWay}"/>
-                                    <CheckBox x:Uid="Profile_FontFaceShowAllFonts"
-                                              x:Name="ShowAllFontsCheckbox"
+                                              Visibility="{x:Bind State.Profile.ShowAllFonts, Mode=OneWay}" />
+                                    <CheckBox x:Name="ShowAllFontsCheckbox"
+                                              x:Uid="Profile_FontFaceShowAllFonts"
                                               IsChecked="{x:Bind State.Profile.ShowAllFonts, Mode=TwoWay}"
-                                              IsEnabled="{x:Bind State.Profile.UsingMonospaceFont, Mode=OneWay}"/>
+                                              IsEnabled="{x:Bind State.Profile.UsingMonospaceFont, Mode=OneWay}" />
                                 </StackPanel>
                             </local:SettingContainer>
 
-                            <!--Font Size-->
+                            <!--  Font Size  -->
                             <local:SettingContainer x:Uid="Profile_FontSize"
-                                                    HasSettingValue="{x:Bind State.Profile.HasFontSize, Mode=OneWay}"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearFontSize}"
+                                                    HasSettingValue="{x:Bind State.Profile.HasFontSize, Mode=OneWay}"
                                                     SettingOverrideSource="{x:Bind State.Profile.FontSizeOverrideSource, Mode=OneWay}">
-                                <muxc:NumberBox Value="{x:Bind State.Profile.FontSize, Mode=TwoWay}"
-                                                Style="{StaticResource NumberBoxSettingStyle}"
-                                                AcceptsExpression="False"
-                                                Minimum="1"
+                                <muxc:NumberBox AcceptsExpression="False"
+                                                LargeChange="10"
                                                 Maximum="128"
+                                                Minimum="1"
                                                 SmallChange="1"
-                                                LargeChange="10"/>
+                                                Style="{StaticResource NumberBoxSettingStyle}"
+                                                Value="{x:Bind State.Profile.FontSize, Mode=TwoWay}" />
                             </local:SettingContainer>
 
-                            <!--Font Weight-->
-                            <local:SettingContainer x:Uid="Profile_FontWeight"
-                                                    x:Name="FontWeightContainer"
-                                                    HasSettingValue="{x:Bind State.Profile.HasFontWeight, Mode=OneWay}"
+                            <!--  Font Weight  -->
+                            <local:SettingContainer x:Name="FontWeightContainer"
+                                                    x:Uid="Profile_FontWeight"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearFontWeight}"
+                                                    HasSettingValue="{x:Bind State.Profile.HasFontWeight, Mode=OneWay}"
                                                     SettingOverrideSource="{x:Bind State.Profile.FontWeightOverrideSource, Mode=OneWay}">
                                 <StackPanel>
                                     <ComboBox x:Name="FontWeightComboBox"
+                                              ItemTemplate="{StaticResource EnumComboBoxItemTemplate}"
                                               ItemsSource="{x:Bind FontWeightList, Mode=OneWay}"
                                               SelectedItem="{x:Bind CurrentFontWeight, Mode=TwoWay}"
-                                              ItemTemplate="{StaticResource EnumComboBoxItemTemplate}"
-                                              Style="{StaticResource ComboBoxSettingStyle}"/>
+                                              Style="{StaticResource ComboBoxSettingStyle}" />
 
-                                    <!--Custom Font Weight Control-->
+                                    <!--  Custom Font Weight Control  -->
                                     <Grid Margin="0,10,0,0"
-                                          Visibility="{x:Bind IsCustomFontWeight, Mode=OneWay}"
-                                          Style="{StaticResource CustomSliderControlGridStyle}">
+                                          Style="{StaticResource CustomSliderControlGridStyle}"
+                                          Visibility="{x:Bind IsCustomFontWeight, Mode=OneWay}">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <Slider x:Name="FontWeightSlider"
                                                 Grid.Column="0"
-                                                Minimum="0" Maximum="1000"
-                                                TickFrequency="50" TickPlacement="Outside"
-                                                Value="{x:Bind State.Profile.FontWeight,
-                                                        Converter={StaticResource FontWeightConverter},
-                                                        Mode=TwoWay}"/>
+                                                Maximum="1000"
+                                                Minimum="0"
+                                                TickFrequency="50"
+                                                TickPlacement="Outside"
+                                                Value="{x:Bind State.Profile.FontWeight, Converter={StaticResource FontWeightConverter}, Mode=TwoWay}" />
                                         <TextBlock Grid.Column="1"
-                                                   Text="{Binding ElementName=FontWeightSlider, Path=Value, Mode=OneWay}"
+                                                   Margin="10,0,0,0"
                                                    Style="{StaticResource SliderValueLabelStyle}"
-                                                   Margin="10,0,0,0"/>
+                                                   Text="{Binding ElementName=FontWeightSlider, Path=Value, Mode=OneWay}" />
                                     </Grid>
                                 </StackPanel>
                             </local:SettingContainer>
 
-                            <!--Retro Terminal Effect-->
+                            <!--  Retro Terminal Effect  -->
                             <local:SettingContainer x:Uid="Profile_RetroTerminalEffect"
-                                                    HasSettingValue="{x:Bind State.Profile.HasRetroTerminalEffect, Mode=OneWay}"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearRetroTerminalEffect}"
+                                                    HasSettingValue="{x:Bind State.Profile.HasRetroTerminalEffect, Mode=OneWay}"
                                                     SettingOverrideSource="{x:Bind State.Profile.RetroTerminalEffectOverrideSource, Mode=OneWay}">
-                                <ToggleSwitch IsOn="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}"/>
+                                <ToggleSwitch IsOn="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}" />
                             </local:SettingContainer>
                         </StackPanel>
 
-                        <!--Grouping: Cursor-->
+                        <!--  Grouping: Cursor  -->
                         <StackPanel Style="{StaticResource PivotStackStyle}">
-                            <TextBlock x:Uid="Profile_CursorHeader" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                            <TextBlock x:Uid="Profile_CursorHeader"
+                                       Style="{StaticResource SubtitleTextBlockStyle}" />
 
-                            <!--Cursor Shape-->
+                            <!--  Cursor Shape  -->
                             <local:SettingContainer x:Uid="Profile_CursorShape"
-                                                    HasSettingValue="{x:Bind State.Profile.HasCursorShape, Mode=OneWay}"
+                                                    Margin="0"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearCursorShape}"
-                                                    SettingOverrideSource="{x:Bind State.Profile.CursorShapeOverrideSource, Mode=OneWay}"
-                                                    Margin="0">
-                                <muxc:RadioButtons ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
-                                                   SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
-                                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                                                    HasSettingValue="{x:Bind State.Profile.HasCursorShape, Mode=OneWay}"
+                                                    SettingOverrideSource="{x:Bind State.Profile.CursorShapeOverrideSource, Mode=OneWay}">
+                                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                                   ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
+                                                   SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}" />
                             </local:SettingContainer>
 
-                            <!--Cursor Height-->
+                            <!--  Cursor Height  -->
                             <local:SettingContainer x:Uid="Profile_CursorHeight"
-                                                    HasSettingValue="{x:Bind State.Profile.HasCursorHeight, Mode=OneWay}"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearCursorHeight}"
+                                                    HasSettingValue="{x:Bind State.Profile.HasCursorHeight, Mode=OneWay}"
                                                     SettingOverrideSource="{x:Bind State.Profile.CursorHeightOverrideSource, Mode=OneWay}"
                                                     Visibility="{x:Bind IsVintageCursor, Mode=OneWay}">
                                 <Grid Style="{StaticResource CustomSliderControlGridStyle}">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <Slider x:Name="CursorHeightSlider"
                                             Grid.Column="0"
-                                            Minimum="1"
                                             Maximum="100"
-                                            Value="{x:Bind State.Profile.CursorHeight, Mode=TwoWay}"/>
+                                            Minimum="1"
+                                            Value="{x:Bind State.Profile.CursorHeight, Mode=TwoWay}" />
                                     <TextBlock Grid.Column="1"
-                                               Text="{Binding ElementName=CursorHeightSlider, Path=Value, Mode=OneWay}"
-                                               Style="{StaticResource SliderValueLabelStyle}"/>
+                                               Style="{StaticResource SliderValueLabelStyle}"
+                                               Text="{Binding ElementName=CursorHeightSlider, Path=Value, Mode=OneWay}" />
                                 </Grid>
                             </local:SettingContainer>
                         </StackPanel>
 
-                        <!--Grouping: Background-->
+                        <!--  Grouping: Background  -->
                         <StackPanel Style="{StaticResource PivotStackStyle}">
-                            <TextBlock x:Uid="Profile_BackgroundHeader" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                            <TextBlock x:Uid="Profile_BackgroundHeader"
+                                       Style="{StaticResource SubtitleTextBlockStyle}" />
 
-                            <!--Background Image-->
-                            <local:SettingContainer x:Uid="Profile_BackgroundImage"
-                                                    x:Name="BackgroundImageContainer"
-                                                    HasSettingValue="{x:Bind State.Profile.HasBackgroundImagePath, Mode=OneWay}"
+                            <!--  Background Image  -->
+                            <local:SettingContainer x:Name="BackgroundImageContainer"
+                                                    x:Uid="Profile_BackgroundImage"
+                                                    Margin="0"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearBackgroundImagePath}"
-                                                    SettingOverrideSource="{x:Bind State.Profile.BackgroundImagePathOverrideSource, Mode=OneWay}"
-                                                    Margin="0">
+                                                    HasSettingValue="{x:Bind State.Profile.HasBackgroundImagePath, Mode=OneWay}"
+                                                    SettingOverrideSource="{x:Bind State.Profile.BackgroundImagePathOverrideSource, Mode=OneWay}">
                                 <StackPanel Orientation="Vertical">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBox Text="{x:Bind State.Profile.BackgroundImagePath, Mode=TwoWay, Converter={StaticResource DesktopWallpaperToEmptyStringConverter}}"
-                                                 IsEnabled="{x:Bind State.Profile.BackgroundImagePath, Mode=OneWay, Converter={StaticResource StringIsNotDesktopConverter}}"
-                                                 Style="{StaticResource TextBoxSettingStyle}"/>
+                                        <TextBox IsEnabled="{x:Bind State.Profile.BackgroundImagePath, Mode=OneWay, Converter={StaticResource StringIsNotDesktopConverter}}"
+                                                 Style="{StaticResource TextBoxSettingStyle}"
+                                                 Text="{x:Bind State.Profile.BackgroundImagePath, Mode=TwoWay, Converter={StaticResource DesktopWallpaperToEmptyStringConverter}}" />
                                         <Button x:Uid="Profile_BackgroundImageBrowse"
                                                 Click="BackgroundImage_Click"
                                                 IsEnabled="{x:Bind State.Profile.BackgroundImagePath, Mode=OneWay, Converter={StaticResource StringIsNotDesktopConverter}}"
-                                                Style="{StaticResource BrowseButtonStyle}"/>
+                                                Style="{StaticResource BrowseButtonStyle}" />
                                     </StackPanel>
-                                    <CheckBox x:Uid="Profile_UseDesktopImage"
-                                              x:Name="UseDesktopImageCheckBox"
-                                              IsChecked="{x:Bind State.Profile.UseDesktopBGImage, Mode=TwoWay}"/>
+                                    <CheckBox x:Name="UseDesktopImageCheckBox"
+                                              x:Uid="Profile_UseDesktopImage"
+                                              IsChecked="{x:Bind State.Profile.UseDesktopBGImage, Mode=TwoWay}" />
                                 </StackPanel>
                             </local:SettingContainer>
 
-                            <!--Background Image Stretch Mode-->
+                            <!--  Background Image Stretch Mode  -->
                             <local:SettingContainer x:Uid="Profile_BackgroundImageStretchMode"
-                                                    HasSettingValue="{x:Bind State.Profile.HasBackgroundImageStretchMode, Mode=OneWay}"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearBackgroundImageStretchMode}"
+                                                    HasSettingValue="{x:Bind State.Profile.HasBackgroundImageStretchMode, Mode=OneWay}"
                                                     SettingOverrideSource="{x:Bind State.Profile.BackgroundImageStretchModeOverrideSource, Mode=OneWay}"
                                                     Visibility="{x:Bind State.Profile.BackgroundImageSettingsVisible, Mode=OneWay}">
-                                <muxc:RadioButtons ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
-                                                   SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
-                                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                                   ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
+                                                   SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}" />
                             </local:SettingContainer>
 
-                            <!--Background Image Alignment-->
+                            <!--  Background Image Alignment  -->
                             <local:SettingContainer x:Uid="Profile_BackgroundImageAlignment"
-                                                    HasSettingValue="{x:Bind State.Profile.HasBackgroundImageAlignment, Mode=OneWay}"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearBackgroundImageAlignment}"
+                                                    HasSettingValue="{x:Bind State.Profile.HasBackgroundImageAlignment, Mode=OneWay}"
                                                     SettingOverrideSource="{x:Bind State.Profile.BackgroundImageAlignmentOverrideSource, Mode=OneWay}"
                                                     Visibility="{x:Bind State.Profile.BackgroundImageSettingsVisible, Mode=OneWay}">
                                 <Grid HorizontalAlignment="Left">
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
 
                                     <Grid.Resources>
-                                        <Style TargetType="ToggleButton" BasedOn="{StaticResource DefaultToggleButtonStyle}">
-                                            <Setter Property="Margin" Value="2"/>
-                                            <Setter Property="Width" Value="40"/>
-                                            <Setter Property="Height" Value="40"/>
-                                            <Setter Property="ToolTipService.Placement" Value="Mouse"/>
+                                        <Style BasedOn="{StaticResource DefaultToggleButtonStyle}"
+                                               TargetType="ToggleButton">
+                                            <Setter Property="Margin" Value="2" />
+                                            <Setter Property="Width" Value="40" />
+                                            <Setter Property="Height" Value="40" />
+                                            <Setter Property="ToolTipService.Placement" Value="Mouse" />
                                         </Style>
                                     </Grid.Resources>
 
-                                    <!--Top Row-->
-                                    <ToggleButton x:Uid="Profile_BackgroundImageAlignmentTopLeft"
-                                                  x:Name="BIAlign_TopLeft"
-                                                  Grid.Row="0" Grid.Column="0"
+                                    <!--  Top Row  -->
+                                    <ToggleButton x:Name="BIAlign_TopLeft"
+                                                  x:Uid="Profile_BackgroundImageAlignmentTopLeft"
+                                                  Grid.Row="0"
+                                                  Grid.Column="0"
                                                   Click="BIAlignment_Click">
                                         <ToggleButton.Tag>
-                                            <!--ConvergedAlignment: Vertical_Top (0x10) | Horizontal_Left (0x01)-->
+                                            <!--  ConvergedAlignment: Vertical_Top (0x10) | Horizontal_Left (0x01)  -->
                                             <x:Int32>17</x:Int32>
                                         </ToggleButton.Tag>
                                         <ToggleButton.Content>
-                                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE744;" RenderTransformOrigin="0.5,0.5">
+                                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                                                      Glyph="&#xE744;"
+                                                      RenderTransformOrigin="0.5,0.5">
                                                 <FontIcon.RenderTransform>
-                                                    <RotateTransform Angle="90"/>
+                                                    <RotateTransform Angle="90" />
                                                 </FontIcon.RenderTransform>
                                             </FontIcon>
                                         </ToggleButton.Content>
                                     </ToggleButton>
-                                    <ToggleButton x:Uid="Profile_BackgroundImageAlignmentTop"
-                                                  x:Name="BIAlign_Top"
-                                                  Grid.Row="0" Grid.Column="1"
+                                    <ToggleButton x:Name="BIAlign_Top"
+                                                  x:Uid="Profile_BackgroundImageAlignmentTop"
+                                                  Grid.Row="0"
+                                                  Grid.Column="1"
                                                   Click="BIAlignment_Click">
                                         <ToggleButton.Tag>
-                                            <!--ConvergedAlignment: Vertical_Top (0x10) | Horizontal_Center (0x00)-->
+                                            <!--  ConvergedAlignment: Vertical_Top (0x10) | Horizontal_Center (0x00)  -->
                                             <x:Int32>16</x:Int32>
                                         </ToggleButton.Tag>
                                         <ToggleButton.Content>
-                                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE745;" RenderTransformOrigin="0.5,0.5">
+                                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                                                      Glyph="&#xE745;"
+                                                      RenderTransformOrigin="0.5,0.5">
                                                 <FontIcon.RenderTransform>
-                                                    <RotateTransform Angle="180"/>
+                                                    <RotateTransform Angle="180" />
                                                 </FontIcon.RenderTransform>
                                             </FontIcon>
                                         </ToggleButton.Content>
                                     </ToggleButton>
-                                    <ToggleButton x:Uid="Profile_BackgroundImageAlignmentTopRight"
-                                                  x:Name="BIAlign_TopRight"
-                                                  Grid.Row="0" Grid.Column="2"
+                                    <ToggleButton x:Name="BIAlign_TopRight"
+                                                  x:Uid="Profile_BackgroundImageAlignmentTopRight"
+                                                  Grid.Row="0"
+                                                  Grid.Column="2"
                                                   Click="BIAlignment_Click">
                                         <ToggleButton.Tag>
-                                            <!--ConvergedAlignment: Vertical_Top (0x10) | Horizontal_Right (0x02)-->
+                                            <!--  ConvergedAlignment: Vertical_Top (0x10) | Horizontal_Right (0x02)  -->
                                             <x:Int32>18</x:Int32>
                                         </ToggleButton.Tag>
                                         <ToggleButton.Content>
-                                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xEA5F;" RenderTransformOrigin="0.5,0.5">
+                                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                                                      Glyph="&#xEA5F;"
+                                                      RenderTransformOrigin="0.5,0.5">
                                                 <FontIcon.RenderTransform>
-                                                    <RotateTransform Angle="270"/>
+                                                    <RotateTransform Angle="270" />
                                                 </FontIcon.RenderTransform>
                                             </FontIcon>
                                         </ToggleButton.Content>
                                     </ToggleButton>
 
-                                    <!--Middle Row-->
-                                    <ToggleButton x:Uid="Profile_BackgroundImageAlignmentLeft"
-                                                  x:Name="BIAlign_Left"
-                                                  Grid.Row="1" Grid.Column="0"
+                                    <!--  Middle Row  -->
+                                    <ToggleButton x:Name="BIAlign_Left"
+                                                  x:Uid="Profile_BackgroundImageAlignmentLeft"
+                                                  Grid.Row="1"
+                                                  Grid.Column="0"
                                                   Click="BIAlignment_Click">
                                         <ToggleButton.Tag>
-                                            <!--ConvergedAlignment: Vertical_Center (0x00) | Horizontal_Left (0x01)-->
+                                            <!--  ConvergedAlignment: Vertical_Center (0x00) | Horizontal_Left (0x01)  -->
                                             <x:Int32>1</x:Int32>
                                         </ToggleButton.Tag>
                                         <ToggleButton.Content>
-                                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE746;"/>
+                                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                                                      Glyph="&#xE746;" />
                                         </ToggleButton.Content>
                                     </ToggleButton>
-                                    <ToggleButton x:Uid="Profile_BackgroundImageAlignmentCenter"
-                                                  x:Name="BIAlign_Center"
-                                                  Grid.Row="1" Grid.Column="1"
+                                    <ToggleButton x:Name="BIAlign_Center"
+                                                  x:Uid="Profile_BackgroundImageAlignmentCenter"
+                                                  Grid.Row="1"
+                                                  Grid.Column="1"
                                                   Click="BIAlignment_Click">
                                         <ToggleButton.Tag>
-                                            <!--ConvergedAlignment: Vertical_Center (0x00) | Horizontal_Center (0x00)-->
+                                            <!--  ConvergedAlignment: Vertical_Center (0x00) | Horizontal_Center (0x00)  -->
                                             <x:Int32>0</x:Int32>
                                         </ToggleButton.Tag>
                                         <ToggleButton.Content>
-                                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xF16E;"/>
+                                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                                                      Glyph="&#xF16E;" />
                                         </ToggleButton.Content>
                                     </ToggleButton>
-                                    <ToggleButton x:Uid="Profile_BackgroundImageAlignmentRight"
-                                                  x:Name="BIAlign_Right"
-                                                  Grid.Row="1" Grid.Column="2"
+                                    <ToggleButton x:Name="BIAlign_Right"
+                                                  x:Uid="Profile_BackgroundImageAlignmentRight"
+                                                  Grid.Row="1"
+                                                  Grid.Column="2"
                                                   Click="BIAlignment_Click">
                                         <ToggleButton.Tag>
-                                            <!--ConvergedAlignment: Vertical_Center (0x00) | Horizontal_Right (0x02)-->
+                                            <!--  ConvergedAlignment: Vertical_Center (0x00) | Horizontal_Right (0x02)  -->
                                             <x:Int32>2</x:Int32>
                                         </ToggleButton.Tag>
                                         <ToggleButton.Content>
-                                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xEA61;"/>
+                                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                                                      Glyph="&#xEA61;" />
                                         </ToggleButton.Content>
                                     </ToggleButton>
 
-                                    <!--Bottom Row-->
-                                    <ToggleButton x:Uid="Profile_BackgroundImageAlignmentBottomLeft"
-                                                  x:Name="BIAlign_BottomLeft"
-                                                  Grid.Row="2" Grid.Column="0"
+                                    <!--  Bottom Row  -->
+                                    <ToggleButton x:Name="BIAlign_BottomLeft"
+                                                  x:Uid="Profile_BackgroundImageAlignmentBottomLeft"
+                                                  Grid.Row="2"
+                                                  Grid.Column="0"
                                                   Click="BIAlignment_Click">
                                         <ToggleButton.Tag>
-                                            <!--ConvergedAlignment: Vertical_Bottom (0x20) | Horizontal_Left (0x01)-->
+                                            <!--  ConvergedAlignment: Vertical_Bottom (0x20) | Horizontal_Left (0x01)  -->
                                             <x:Int32>33</x:Int32>
                                         </ToggleButton.Tag>
                                         <ToggleButton.Content>
-                                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE744;"/>
+                                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                                                      Glyph="&#xE744;" />
                                         </ToggleButton.Content>
                                     </ToggleButton>
-                                    <ToggleButton x:Uid="Profile_BackgroundImageAlignmentBottom"
-                                                  x:Name="BIAlign_Bottom"
-                                                  Grid.Row="2" Grid.Column="1"
+                                    <ToggleButton x:Name="BIAlign_Bottom"
+                                                  x:Uid="Profile_BackgroundImageAlignmentBottom"
+                                                  Grid.Row="2"
+                                                  Grid.Column="1"
                                                   Click="BIAlignment_Click">
                                         <ToggleButton.Tag>
-                                            <!--ConvergedAlignment: Vertical_Bottom (0x20) | Horizontal_Center (0x00)-->
+                                            <!--  ConvergedAlignment: Vertical_Bottom (0x20) | Horizontal_Center (0x00)  -->
                                             <x:Int32>32</x:Int32>
                                         </ToggleButton.Tag>
                                         <ToggleButton.Content>
-                                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE745;"/>
+                                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                                                      Glyph="&#xE745;" />
                                         </ToggleButton.Content>
                                     </ToggleButton>
-                                    <ToggleButton x:Uid="Profile_BackgroundImageAlignmentBottomRight"
-                                                  x:Name="BIAlign_BottomRight"
-                                                  Grid.Row="2" Grid.Column="2"
+                                    <ToggleButton x:Name="BIAlign_BottomRight"
+                                                  x:Uid="Profile_BackgroundImageAlignmentBottomRight"
+                                                  Grid.Row="2"
+                                                  Grid.Column="2"
                                                   Click="BIAlignment_Click">
                                         <ToggleButton.Tag>
-                                            <!--ConvergedAlignment: Vertical_Top (0x20) | Horizontal_Right (0x02)-->
+                                            <!--  ConvergedAlignment: Vertical_Top (0x20) | Horizontal_Right (0x02)  -->
                                             <x:Int32>34</x:Int32>
                                         </ToggleButton.Tag>
                                         <ToggleButton.Content>
-                                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xEA5F;"/>
+                                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                                                      Glyph="&#xEA5F;" />
                                         </ToggleButton.Content>
                                     </ToggleButton>
                                 </Grid>
                             </local:SettingContainer>
 
-                            <!--Background Image Opacity-->
-                            <local:SettingContainer x:Uid="Profile_BackgroundImageOpacity"
-                                                    x:Name="BackgroundImageOpacityContainer"
-                                                    HasSettingValue="{x:Bind State.Profile.HasBackgroundImageOpacity, Mode=OneWay}"
+                            <!--  Background Image Opacity  -->
+                            <local:SettingContainer x:Name="BackgroundImageOpacityContainer"
+                                                    x:Uid="Profile_BackgroundImageOpacity"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearBackgroundImageOpacity}"
+                                                    HasSettingValue="{x:Bind State.Profile.HasBackgroundImageOpacity, Mode=OneWay}"
                                                     SettingOverrideSource="{x:Bind State.Profile.BackgroundImageOpacityOverrideSource, Mode=OneWay}"
                                                     Visibility="{x:Bind State.Profile.BackgroundImageSettingsVisible, Mode=OneWay}">
                                 <Grid Style="{StaticResource CustomSliderControlGridStyle}">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <Slider x:Name="BIOpacitySlider"
                                             Grid.Column="0"
-                                            Value="{x:Bind State.Profile.BackgroundImageOpacity, Converter={StaticResource PercentageConverter}, Mode=TwoWay}"/>
+                                            Value="{x:Bind State.Profile.BackgroundImageOpacity, Converter={StaticResource PercentageConverter}, Mode=TwoWay}" />
                                     <TextBlock Grid.Column="1"
-                                               Text="{Binding ElementName=BIOpacitySlider, Path=Value, Mode=OneWay}"
-                                               Style="{StaticResource SliderValueLabelStyle}"/>
+                                               Style="{StaticResource SliderValueLabelStyle}"
+                                               Text="{Binding ElementName=BIOpacitySlider, Path=Value, Mode=OneWay}" />
                                 </Grid>
                             </local:SettingContainer>
                         </StackPanel>
 
-                        <!--Grouping: Acrylic-->
+                        <!--  Grouping: Acrylic  -->
                         <StackPanel Style="{StaticResource PivotStackStyle}">
-                            <TextBlock x:Uid="Profile_AcrylicHeader" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                            <TextBlock x:Uid="Profile_AcrylicHeader"
+                                       Style="{StaticResource SubtitleTextBlockStyle}" />
 
-                            <!--Use Acrylic-->
+                            <!--  Use Acrylic  -->
                             <local:SettingContainer x:Uid="Profile_UseAcrylic"
-                                                    HasSettingValue="{x:Bind State.Profile.HasUseAcrylic, Mode=OneWay}"
+                                                    Margin="0"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearUseAcrylic}"
-                                                    SettingOverrideSource="{x:Bind State.Profile.UseAcrylicOverrideSource, Mode=OneWay}"
-                                                    Margin="0">
+                                                    HasSettingValue="{x:Bind State.Profile.HasUseAcrylic, Mode=OneWay}"
+                                                    SettingOverrideSource="{x:Bind State.Profile.UseAcrylicOverrideSource, Mode=OneWay}">
                                 <ToggleSwitch x:Name="UseAcrylicToggleSwitch"
-                                              IsOn="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}"/>
+                                              IsOn="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}" />
                             </local:SettingContainer>
 
-                            <!--Acrylic Opacity-->
-                            <local:SettingContainer x:Uid="Profile_AcrylicOpacity"
-                                                    x:Name="AcrylicOpacityContainer"
-                                                    HasSettingValue="{x:Bind State.Profile.HasAcrylicOpacity, Mode=OneWay}"
+                            <!--  Acrylic Opacity  -->
+                            <local:SettingContainer x:Name="AcrylicOpacityContainer"
+                                                    x:Uid="Profile_AcrylicOpacity"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearAcrylicOpacity}"
+                                                    HasSettingValue="{x:Bind State.Profile.HasAcrylicOpacity, Mode=OneWay}"
                                                     SettingOverrideSource="{x:Bind State.Profile.AcrylicOpacityOverrideSource, Mode=OneWay}"
                                                     Visibility="{Binding ElementName=UseAcrylicToggleSwitch, Path=IsOn, Mode=OneWay}">
                                 <StackPanel x:Name="AcrylicOpacityControl">
                                     <Grid Style="{StaticResource CustomSliderControlGridStyle}">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <Slider x:Name="AcrylicOpacitySlider"
                                                 Grid.Column="0"
-                                                Value="{x:Bind State.Profile.AcrylicOpacity, Converter={StaticResource PercentageConverter}, Mode=TwoWay}"/>
+                                                Value="{x:Bind State.Profile.AcrylicOpacity, Converter={StaticResource PercentageConverter}, Mode=TwoWay}" />
                                         <TextBlock Grid.Column="1"
-                                                   Text="{Binding ElementName=AcrylicOpacitySlider, Path=Value, Mode=OneWay}"
-                                                   Style="{StaticResource SliderValueLabelStyle}"/>
+                                                   Style="{StaticResource SliderValueLabelStyle}"
+                                                   Text="{Binding ElementName=AcrylicOpacitySlider, Path=Value, Mode=OneWay}" />
                                     </Grid>
                                 </StackPanel>
                             </local:SettingContainer>
                         </StackPanel>
 
-                        <!--Grouping: Window-->
+                        <!--  Grouping: Window  -->
                         <StackPanel Style="{StaticResource PivotStackStyle}">
-                            <TextBlock x:Uid="Profile_WindowHeader" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                            <TextBlock x:Uid="Profile_WindowHeader"
+                                       Style="{StaticResource SubtitleTextBlockStyle}" />
 
-                            <!--Padding-->
+                            <!--  Padding  -->
                             <local:SettingContainer x:Uid="Profile_Padding"
-                                                    HasSettingValue="{x:Bind State.Profile.HasPadding, Mode=OneWay}"
+                                                    Margin="0"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearPadding}"
-                                                    SettingOverrideSource="{x:Bind State.Profile.PaddingOverrideSource, Mode=OneWay}"
-                                                    Margin="0">
+                                                    HasSettingValue="{x:Bind State.Profile.HasPadding, Mode=OneWay}"
+                                                    SettingOverrideSource="{x:Bind State.Profile.PaddingOverrideSource, Mode=OneWay}">
                                 <Grid Style="{StaticResource CustomSliderControlGridStyle}">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <Slider x:Name="PaddingSlider"
                                             Grid.Column="0"
-                                            Value="{x:Bind State.Profile.Padding, Converter={StaticResource PaddingConverter}, Mode=TwoWay}"/>
+                                            Value="{x:Bind State.Profile.Padding, Converter={StaticResource PaddingConverter}, Mode=TwoWay}" />
                                     <TextBlock Grid.Column="1"
-                                               Text="{Binding ElementName=PaddingSlider, Path=Value, Mode=OneWay}"
-                                               Style="{StaticResource SliderValueLabelStyle}"/>
+                                               Style="{StaticResource SliderValueLabelStyle}"
+                                               Text="{Binding ElementName=PaddingSlider, Path=Value, Mode=OneWay}" />
                                 </Grid>
                             </local:SettingContainer>
 
-                            <!--Scrollbar Visibility-->
+                            <!--  Scrollbar Visibility  -->
                             <local:SettingContainer x:Uid="Profile_ScrollbarVisibility"
-                                                    HasSettingValue="{x:Bind State.Profile.HasScrollState, Mode=OneWay}"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearScrollState}"
+                                                    HasSettingValue="{x:Bind State.Profile.HasScrollState, Mode=OneWay}"
                                                     SettingOverrideSource="{x:Bind State.Profile.ScrollStateOverrideSource, Mode=OneWay}">
-                                <muxc:RadioButtons ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
-                                                   SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}"
-                                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                                   ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
+                                                   SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}" />
                             </local:SettingContainer>
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
             </PivotItem>
 
-            <!-- Advanced Tab -->
+            <!--  Advanced Tab  -->
             <PivotItem x:Uid="Profile_Advanced">
                 <ScrollViewer>
                     <StackPanel Style="{StaticResource PivotStackStyle}">
-                        <!--Suppress Application Title-->
+                        <!--  Suppress Application Title  -->
                         <local:SettingContainer x:Uid="Profile_SuppressApplicationTitle"
-                                                HasSettingValue="{x:Bind State.Profile.HasSuppressApplicationTitle, Mode=OneWay}"
+                                                Margin="0"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearSuppressApplicationTitle}"
-                                                SettingOverrideSource="{x:Bind State.Profile.SuppressApplicationTitleOverrideSource, Mode=OneWay}"
-                                                Margin="0">
-                            <ToggleSwitch IsOn="{x:Bind State.Profile.SuppressApplicationTitle, Mode=TwoWay}"/>
+                                                HasSettingValue="{x:Bind State.Profile.HasSuppressApplicationTitle, Mode=OneWay}"
+                                                SettingOverrideSource="{x:Bind State.Profile.SuppressApplicationTitleOverrideSource, Mode=OneWay}">
+                            <ToggleSwitch IsOn="{x:Bind State.Profile.SuppressApplicationTitle, Mode=TwoWay}" />
                         </local:SettingContainer>
 
-                        <!--Antialiasing Mode-->
+                        <!--  Antialiasing Mode  -->
                         <local:SettingContainer x:Uid="Profile_AntialiasingMode"
-                                                HasSettingValue="{x:Bind State.Profile.HasAntialiasingMode, Mode=OneWay}"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearAntialiasingMode}"
+                                                HasSettingValue="{x:Bind State.Profile.HasAntialiasingMode, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.AntialiasingModeOverrideSource, Mode=OneWay}">
-                            <muxc:RadioButtons ItemsSource="{x:Bind AntiAliasingModeList, Mode=OneWay}"
-                                               SelectedItem="{x:Bind CurrentAntiAliasingMode, Mode=TwoWay}"
-                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                            <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                               ItemsSource="{x:Bind AntiAliasingModeList, Mode=OneWay}"
+                                               SelectedItem="{x:Bind CurrentAntiAliasingMode, Mode=TwoWay}" />
                         </local:SettingContainer>
 
-                        <!--AltGr Aliasing-->
+                        <!--  AltGr Aliasing  -->
                         <local:SettingContainer x:Uid="Profile_AltGrAliasing"
-                                                HasSettingValue="{x:Bind State.Profile.HasAltGrAliasing, Mode=OneWay}"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearAltGrAliasing}"
+                                                HasSettingValue="{x:Bind State.Profile.HasAltGrAliasing, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.AltGrAliasingOverrideSource, Mode=OneWay}">
-                            <ToggleSwitch IsOn="{x:Bind State.Profile.AltGrAliasing, Mode=TwoWay}"/>
+                            <ToggleSwitch IsOn="{x:Bind State.Profile.AltGrAliasing, Mode=TwoWay}" />
                         </local:SettingContainer>
 
-                        <!--Snap On Input-->
+                        <!--  Snap On Input  -->
                         <local:SettingContainer x:Uid="Profile_SnapOnInput"
-                                                HasSettingValue="{x:Bind State.Profile.HasSnapOnInput, Mode=OneWay}"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearSnapOnInput}"
+                                                HasSettingValue="{x:Bind State.Profile.HasSnapOnInput, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.SnapOnInputOverrideSource, Mode=OneWay}">
-                            <ToggleSwitch IsOn="{x:Bind State.Profile.SnapOnInput, Mode=TwoWay}"/>
+                            <ToggleSwitch IsOn="{x:Bind State.Profile.SnapOnInput, Mode=TwoWay}" />
                         </local:SettingContainer>
 
-                        <!--History Size-->
+                        <!--  History Size  -->
                         <local:SettingContainer x:Uid="Profile_HistorySize"
-                                                HasSettingValue="{x:Bind State.Profile.HasHistorySize, Mode=OneWay}"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearHistorySize}"
+                                                HasSettingValue="{x:Bind State.Profile.HasHistorySize, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.HistorySizeOverrideSource, Mode=OneWay}">
-                            <muxc:NumberBox Value="{x:Bind State.Profile.HistorySize, Mode=TwoWay}"
-                                            Style="{StaticResource NumberBoxSettingStyle}"
+                            <muxc:NumberBox LargeChange="100"
                                             Minimum="0"
                                             SmallChange="10"
-                                            LargeChange="100"/>
+                                            Style="{StaticResource NumberBoxSettingStyle}"
+                                            Value="{x:Bind State.Profile.HistorySize, Mode=TwoWay}" />
                         </local:SettingContainer>
 
-                        <!--Close On Exit-->
+                        <!--  Close On Exit  -->
                         <local:SettingContainer x:Uid="Profile_CloseOnExit"
-                                                HasSettingValue="{x:Bind State.Profile.HasCloseOnExit, Mode=OneWay}"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearCloseOnExit}"
+                                                HasSettingValue="{x:Bind State.Profile.HasCloseOnExit, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.CloseOnExitOverrideSource, Mode=OneWay}">
-                            <muxc:RadioButtons ItemsSource="{x:Bind CloseOnExitModeList, Mode=OneWay}"
-                                               SelectedItem="{x:Bind CurrentCloseOnExitMode, Mode=TwoWay}"
-                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                            <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                               ItemsSource="{x:Bind CloseOnExitModeList, Mode=OneWay}"
+                                               SelectedItem="{x:Bind CurrentCloseOnExitMode, Mode=TwoWay}" />
                         </local:SettingContainer>
 
-                        <!--Bell Style-->
+                        <!--  Bell Style  -->
                         <local:SettingContainer x:Uid="Profile_BellStyle"
-                                                HasSettingValue="{x:Bind State.Profile.HasBellStyle, Mode=OneWay}"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearBellStyle}"
+                                                HasSettingValue="{x:Bind State.Profile.HasBellStyle, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.BellStyleOverrideSource, Mode=OneWay}">
-                            <muxc:RadioButtons ItemsSource="{x:Bind BellStyleList, Mode=OneWay}"
-                                               SelectedItem="{x:Bind CurrentBellStyle, Mode=TwoWay}"
-                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                            <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                               ItemsSource="{x:Bind BellStyleList, Mode=OneWay}"
+                                               SelectedItem="{x:Bind CurrentBellStyle, Mode=TwoWay}" />
                         </local:SettingContainer>
                     </StackPanel>
                 </ScrollViewer>
