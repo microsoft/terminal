@@ -50,12 +50,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         TerminalSettings() = default;
 
         static Model::TerminalSettingsCreateResult CreateWithProfileByID(const Model::CascadiaSettings& appSettings,
-                                                                   guid profileGuid,
-                                                                   const Control::IKeyBindings& keybindings);
+                                                                         guid profileGuid,
+                                                                         const Control::IKeyBindings& keybindings);
 
         static Model::TerminalSettingsCreateResult CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
-                                                                       const Model::NewTerminalArgs& newTerminalArgs,
-                                                                       const Control::IKeyBindings& keybindings);
+                                                                             const Model::NewTerminalArgs& newTerminalArgs,
+                                                                             const Control::IKeyBindings& keybindings);
 
         static Model::TerminalSettingsCreateResult CreateWithParent(const Model::TerminalSettingsCreateResult& parent);
         void SetParent(const Model::TerminalSettings& parent);

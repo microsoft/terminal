@@ -103,8 +103,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - A TerminalSettingsCreateResult object, which contains a pair of TerminalSettings
     //   objects. One for when the terminal is focused and one for when the terminal is unfocused.
     Model::TerminalSettingsCreateResult TerminalSettings::CreateWithNewTerminalArgs(const CascadiaSettings& appSettings,
-                                                                              const NewTerminalArgs& newTerminalArgs,
-                                                                              const IKeyBindings& keybindings)
+                                                                                    const NewTerminalArgs& newTerminalArgs,
+                                                                                    const IKeyBindings& keybindings)
     {
         const guid profileGuid = appSettings.GetProfileForArgs(newTerminalArgs);
         auto settingsPair{ CreateWithProfileByID(appSettings, profileGuid, keybindings) };

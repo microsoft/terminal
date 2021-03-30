@@ -465,9 +465,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TSFInputControl().Foreground(foregroundBrush);
 
         // Update the terminal core with its new Core settings
-        _terminal->UpdateAppearance(newAppearance);
-
         auto lock = _terminal->LockForWriting();
+        _terminal->UpdateAppearance(newAppearance);
 
         // Update DxEngine settings under the lock
         _renderEngine->SetSelectionBackground(newAppearance.SelectionBackground());
