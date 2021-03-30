@@ -36,6 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             com_ptr<T> parent;
             winrt::copy_from_abi(parent, const_cast<T*>(static_cast<const T*>(this)));
             child->InsertParent(parent);
+            child->_FinalizeInheritance();
 
             return child;
         }
@@ -48,14 +49,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void InsertParent(com_ptr<T> parent)
         {
             _parents.push_back(parent);
-            _FinalizeInheritance();
         }
 
         void InsertParent(size_t index, com_ptr<T> parent)
         {
             auto pos{ _parents.begin() + index };
             _parents.insert(pos, parent);
-            _FinalizeInheritance();
         }
 
         const std::vector<com_ptr<T>>& Parents()

@@ -85,6 +85,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static com_ptr<Profile> CloneInheritanceGraph(com_ptr<Profile> oldProfile, com_ptr<Profile> newProfile, std::unordered_map<void*, com_ptr<Profile>>& visited);
         static com_ptr<Profile> CopySettings(com_ptr<Profile> source);
+        static void InsertParentHelper(com_ptr<Profile> child, com_ptr<Profile> parent, std::optional<size_t> index = std::nullopt);
 
         Json::Value GenerateStub() const;
         static com_ptr<Profile> FromJson(const Json::Value& json);
