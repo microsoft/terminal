@@ -164,7 +164,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
-        operator winrt::Microsoft::Terminal::Core::Color() const
+        operator winrt::Microsoft::Terminal::Core::Color() const noexcept
         {
             winrt::Microsoft::Terminal::Core::Color ret;
             ret.R = r;
