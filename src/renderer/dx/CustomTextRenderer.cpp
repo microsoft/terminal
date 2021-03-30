@@ -372,15 +372,40 @@ try
     {
         if (!fInvert || firstPass)
         {
-            d2dContext->FillRectangle(rect, brush.Get());
-        }
-        else
-        {
             Microsoft::WRL::ComPtr<ID2D1Effect> floodEffect;
             constexpr GUID CLSID_D2D1FloodLocal{ 0x61c23c20, 0xae69, 0x4d8e, 0x94, 0xcf, 0x50, 0x07, 0x8d, 0xf6, 0x38, 0xf2 };
             d2dContext->CreateEffect(CLSID_D2D1FloodLocal, &floodEffect);
-            floodEffect->SetValue(D2D1_FLOOD_PROP_COLOR, D2D1::Vector4F(1, 1, 1, 1));
-            d2dContext->DrawImage(floodEffect.Get(), D2D1::Point2F(rect.left, rect.top), rect, D2D1_INTERPOLATION_MODE_LINEAR, D2D1_COMPOSITE_MODE_MASK_INVERT);
+            floodEffect->SetValue(D2D1_FLOOD_PROP_COLOR, D2D1::Vector4F(1.,1.,1.,1.));
+            d2dContext->DrawImage(floodEffect.Get(),
+                                  D2D1::Point2F(rect.left, rect.top),
+                                  rect,
+                                  D2D1_INTERPOLATION_MODE_LINEAR,
+                                  D2D1_COMPOSITE_MODE_DESTINATION_OUT);
+            //d2dContext->Clear();
+            //d2dContext->FillRectangle(rect, brush.Get());
+        }
+        else
+        {
+            d2dContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+            Microsoft::WRL::ComPtr<ID2D1Effect> floodEffect;
+            constexpr GUID CLSID_D2D1FloodLocal{ 0x61c23c20, 0xae69, 0x4d8e, 0x94, 0xcf, 0x50, 0x07, 0x8d, 0xf6, 0x38, 0xf2 };
+            d2dContext->CreateEffect(CLSID_D2D1FloodLocal, &floodEffect);
+            floodEffect->SetValue(D2D1_FLOOD_PROP_COLOR, D2D1::Vector4F(1.,0.,0.,1.));
+            d2dContext->DrawImage(floodEffect.Get(),
+                                  D2D1::Point2F(rect.left, rect.top),
+                                  rect,
+                                  D2D1_INTERPOLATION_MODE_LINEAR,
+                                  D2D1_COMPOSITE_MODE_SOURCE_ATOP);
+
+            d2dContext->CreateEffect(CLSID_D2D1FloodLocal, &floodEffect);
+            D2D1::ColorF col{ til::color{ options.cursorColor } };
+            floodEffect->SetValue(D2D1_FLOOD_PROP_COLOR, D2D1::Vector4F(col.r, col.g, col.b, col.a));
+            d2dContext->DrawImage(floodEffect.Get(),
+                                  D2D1::Point2F(rect.left, rect.top),
+                                  rect,
+                                  D2D1_INTERPOLATION_MODE_LINEAR,
+                                  D2D1_COMPOSITE_MODE_DESTINATION_ATOP);
+            d2dContext->PopAxisAlignedClip();
         }
         break;
     }
