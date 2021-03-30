@@ -27,6 +27,9 @@
     <ClCompile Include="..\FontInfoDesired.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\FontResource.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -63,6 +66,9 @@
       <Filter>Header Files\inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\FontInfoDesired.hpp">
+      <Filter>Header Files\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\FontResource.hpp">
       <Filter>Header Files\inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\IFontDefaultList.hpp">
