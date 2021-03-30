@@ -15,15 +15,38 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(IntDir)\dlldata.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(IntDir)\IConsoleHandoff_i.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(IntDir)\IConsoleHandoff_p.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(IntDir)\ITerminalHandoff_i.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(IntDir)\ITerminalHandoff_p.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="IConsoleHandoff_h.h">
+    <ClInclude Include="$(IntDir)\IConsoleHandoff.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(IntDir)\ITerminalHandoff.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="IConsoleHandoff.idl">
+      <Filter>Source Files</Filter>
+    </Midl>
+    <Midl Include="ITerminalHandoff.idl">
       <Filter>Source Files</Filter>
     </Midl>
   </ItemGroup>

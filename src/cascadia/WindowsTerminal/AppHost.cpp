@@ -611,10 +611,6 @@ GUID AppHost::_CurrentDesktopGuid()
     return currentDesktopGuid;
 }
 
-<<<<<<< HEAD
-winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
-                                                          const winrt::Windows::Foundation::IInspectable /*args*/)
-=======
 // Method Description:
 // - Called when this window wants _all_ windows to display their
 //   identification. We'll hop to the BG thread, and raise an event (eventually
@@ -623,9 +619,8 @@ winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const winrt::Windows::
 // - <unused>
 // Return Value:
 // - <none>
-winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                                          const winrt::Windows::Foundation::IInspectable& /*args*/)
->>>>>>> dev/migrie/f/identifyWindows
+winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
+                                                          const winrt::Windows::Foundation::IInspectable /*args*/)
 {
     // We'll be raising an event that may result in a RPC call to the monarch -
     // make sure we're on the background thread, or this will silently fail
