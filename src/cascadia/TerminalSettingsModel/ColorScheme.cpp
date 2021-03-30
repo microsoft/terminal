@@ -53,7 +53,7 @@ ColorScheme::ColorScheme(winrt::hstring name) :
     Utils::InitializeCampbellColorTable(_table);
 }
 
-ColorScheme::ColorScheme(winrt::hstring name, COLORREF defaultFg, COLORREF defaultBg, COLORREF cursorColor) :
+ColorScheme::ColorScheme(winrt::hstring name, til::color defaultFg, til::color defaultBg, til::color cursorColor) :
     _Name{ name },
     _Foreground{ defaultFg },
     _Background{ defaultBg },
@@ -153,10 +153,10 @@ Json::Value ColorScheme::ToJson() const
     return json;
 }
 
-winrt::com_array<Color> ColorScheme::Table() const noexcept
+winrt::com_array<winrt::Microsoft::Terminal::Core::Color> ColorScheme::Table() const noexcept
 {
-    winrt::com_array<Color> result{ base::checked_cast<uint32_t>(_table.size()) };
-    std::transform(_table.begin(), _table.end(), result.begin(), [](til::color c) -> Color { return c; });
+    winrt::com_array<winrt::Microsoft::Terminal::Core::Color> result{ base::checked_cast<uint32_t>(_table.size()) };
+    std::transform(_table.begin(), _table.end(), result.begin(), [](til::color c) -> winrt::Microsoft::Terminal::Core::Color { return c; });
     return result;
 }
 
@@ -167,7 +167,7 @@ winrt::com_array<Color> ColorScheme::Table() const noexcept
 // - value: the color value we are setting the color table color to
 // Return Value:
 // - none
-void ColorScheme::SetColorTableEntry(uint8_t index, const winrt::Windows::UI::Color& value) noexcept
+void ColorScheme::SetColorTableEntry(uint8_t index, const winrt::Microsoft::Terminal::Core::Color& value) noexcept
 {
     THROW_HR_IF(E_INVALIDARG, index > _table.size() - 1);
     _table[index] = value;
