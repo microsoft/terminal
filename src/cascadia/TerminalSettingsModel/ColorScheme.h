@@ -27,6 +27,18 @@ namespace SettingsModelLocalTests
     class ColorSchemeTests;
 };
 
+// Use this macro to quick implement both the getter and setter for a color property.
+// This should only be used for color types where there's no logic in the
+// getter/setter beyond just accessing/updating the value.
+// This takes advantage of til::color
+#define WINRT_TERMINAL_COLOR_PROPERTY(name, ...)                                                  \
+public:                                                                                           \
+    winrt::Microsoft::Terminal::Core::Color name() const noexcept { return _##name; }             \
+    void name(const winrt::Microsoft::Terminal::Core::Color& value) noexcept { _##name = value; } \
+                                                                                                  \
+private:                                                                                          \
+    til::color _##name{ __VA_ARGS__ };
+
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     struct ColorScheme : ColorSchemeT<ColorScheme>
@@ -34,7 +46,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         ColorScheme();
         ColorScheme(hstring name);
-        ColorScheme(hstring name, COLORREF defaultFg, COLORREF defaultBg, COLORREF cursorColor);
+        ColorScheme(hstring name, til::color defaultFg, til::color defaultBg, til::color cursorColor);
         com_ptr<ColorScheme> Copy() const;
 
         hstring ToString()
@@ -50,16 +62,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static std::optional<std::wstring> GetNameFromJson(const Json::Value& json);
 
-        com_array<Windows::UI::Color> Table() const noexcept;
-        void SetColorTableEntry(uint8_t index, const winrt::Windows::UI::Color& value) noexcept;
+        com_array<winrt::Microsoft::Terminal::Core::Color> Table() const noexcept;
+        void SetColorTableEntry(uint8_t index, const winrt::Microsoft::Terminal::Core::Color& value) noexcept;
 
         static bool ValidateColorScheme(const Json::Value& scheme);
 
         WINRT_PROPERTY(winrt::hstring, Name);
-        GETSET_COLORPROPERTY(Foreground); // defined in constructor
-        GETSET_COLORPROPERTY(Background); // defined in constructor
-        GETSET_COLORPROPERTY(SelectionBackground); // defined in constructor
-        GETSET_COLORPROPERTY(CursorColor); // defined in constructor
+        WINRT_TERMINAL_COLOR_PROPERTY(Foreground); // defined in constructor
+        WINRT_TERMINAL_COLOR_PROPERTY(Background); // defined in constructor
+        WINRT_TERMINAL_COLOR_PROPERTY(SelectionBackground); // defined in constructor
+        WINRT_TERMINAL_COLOR_PROPERTY(CursorColor); // defined in constructor
 
     private:
         std::array<til::color, COLOR_TABLE_SIZE> _table;

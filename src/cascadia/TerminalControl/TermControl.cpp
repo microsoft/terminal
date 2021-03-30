@@ -327,7 +327,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Update DxEngine settings under the lock
-        _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
+        _renderEngine->SetSelectionBackground(til::color{ _settings.SelectionBackground() });
 
         _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
         _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
@@ -427,7 +427,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _InitializeBackgroundBrush();
 
-        COLORREF bg = newSettings.DefaultBackground();
+        const auto bg = newSettings.DefaultBackground();
         _BackgroundColorChanged(bg);
 
         // Apply padding as swapChainPanel's margin
@@ -503,12 +503,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // see GH#1082: Initialize background color so we don't get a
             // fade/flash when _BackgroundColorChanged is called
-            uint32_t color = _settings.DefaultBackground();
-            winrt::Windows::UI::Color bgColor{};
-            bgColor.R = GetRValue(color);
-            bgColor.G = GetGValue(color);
-            bgColor.B = GetBValue(color);
-            bgColor.A = 255;
+            auto bgColor = til::color{ _settings.DefaultBackground() }.with_alpha(0xff);
 
             acrylic.FallbackColor(bgColor);
             acrylic.TintColor(bgColor);
@@ -579,7 +574,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - color: The background color to use as a uint32 (aka DWORD COLORREF)
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::_BackgroundColorChanged(const COLORREF color)
+    winrt::fire_and_forget TermControl::_BackgroundColorChanged(const til::color color)
     {
         til::color newBgColor{ color };
 
@@ -774,7 +769,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             LOG_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
             // Update DxEngine's SelectionBackground
-            dxEngine->SetSelectionBackground(_settings.SelectionBackground());
+            dxEngine->SetSelectionBackground(til::color{ _settings.SelectionBackground() });
 
             const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
             const auto width = vp.Width();
@@ -1710,7 +1705,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 {
                     _settings.UseAcrylic(false);
                     _InitializeBackgroundBrush();
-                    COLORREF bg = _settings.DefaultBackground();
+                    const auto bg = _settings.DefaultBackground();
                     _BackgroundColorChanged(bg);
                 }
                 else
@@ -2528,7 +2523,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                   TextBuffer::GenHTML(bufferData,
                                                       _actualFont.GetUnscaledSize().Y,
                                                       _actualFont.GetFaceName(),
-                                                      _settings.DefaultBackground()) :
+                                                      til::color{ _settings.DefaultBackground() }) :
                                   "";
 
         // convert to RTF format
@@ -2536,7 +2531,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  TextBuffer::GenRTF(bufferData,
                                                     _actualFont.GetUnscaledSize().Y,
                                                     _actualFont.GetFaceName(),
-                                                    _settings.DefaultBackground()) :
+                                                    til::color{ _settings.DefaultBackground() }) :
                                  "";
 
         if (!_settings.CopyOnSelect())
@@ -3272,7 +3267,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControl::TabColor() noexcept
     {
         auto coreColor = _terminal->GetTabColor();
-        return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(coreColor.value()) : nullptr;
+        return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(til::color{ coreColor.value() }) : nullptr;
     }
 
     // Method Description:

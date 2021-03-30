@@ -8,15 +8,15 @@ namespace Microsoft.Terminal.Settings.Model
 
         String Name;
 
-        Windows.UI.Color Foreground;
-        Windows.UI.Color Background;
-        Windows.UI.Color SelectionBackground;
-        Windows.UI.Color CursorColor;
+        Microsoft.Terminal.Core.Color Foreground;
+        Microsoft.Terminal.Core.Color Background;
+        Microsoft.Terminal.Core.Color SelectionBackground;
+        Microsoft.Terminal.Core.Color CursorColor;
 
         // winrt::com_arrays prevent data binding.
         // Instead of representing Table as a property,
         // we expose the getter as a function.
-        Windows.UI.Color[] Table();
-        void SetColorTableEntry(UInt8 index, Windows.UI.Color value);
+        Microsoft.Terminal.Core.Color[] Table();
+        void SetColorTableEntry(UInt8 index, Microsoft.Terminal.Core.Color value);
     }
 }
