@@ -244,6 +244,12 @@
   <data name="NewWindowCommandKey" xml:space="preserve">
     <value>New window</value>
   </data>
+  <data name="IdentifyWindowCommandKey" xml:space="preserve">
+    <value>Identify window</value>
+  </data>
+  <data name="IdentifyWindowsCommandKey" xml:space="preserve">
+    <value>Identify windows</value>
+  </data>
   <data name="NextTabCommandKey" xml:space="preserve">
     <value>Next tab</value>
   </data>

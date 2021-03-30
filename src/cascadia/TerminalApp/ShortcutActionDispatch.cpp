@@ -10,6 +10,13 @@ using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::TerminalApp;
 
+#define ACTION_CASE(action)                    \
+    case ShortcutAction::action:               \
+    {                                          \
+        _##action##Handlers(*this, eventArgs); \
+        break;                                 \
+    }
+
 namespace winrt::TerminalApp::implementation
 {
     // Method Description:
@@ -34,99 +41,24 @@ namespace winrt::TerminalApp::implementation
 
         switch (action)
         {
-        case ShortcutAction::CopyText:
-        {
-            _CopyTextHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::PasteText:
-        {
-            _PasteTextHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::OpenNewTabDropdown:
-        {
-            _OpenNewTabDropdownHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::DuplicateTab:
-        {
-            _DuplicateTabHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::OpenSettings:
-        {
-            _OpenSettingsHandlers(*this, eventArgs);
-            break;
-        }
-
-        case ShortcutAction::NewTab:
-        {
-            _NewTabHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::CloseWindow:
-        {
-            _CloseWindowHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::CloseTab:
-        {
-            _CloseTabHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::ClosePane:
-        {
-            _ClosePaneHandlers(*this, eventArgs);
-            break;
-        }
-
-        case ShortcutAction::ScrollUp:
-        {
-            _ScrollUpHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::ScrollDown:
-        {
-            _ScrollDownHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::ScrollUpPage:
-        {
-            _ScrollUpPageHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::ScrollDownPage:
-        {
-            _ScrollDownPageHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::ScrollToTop:
-        {
-            _ScrollToTopHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::ScrollToBottom:
-        {
-            _ScrollToBottomHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::NextTab:
-        {
-            _NextTabHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::PrevTab:
-        {
-            _PrevTabHandlers(*this, eventArgs);
-            break;
-        }
-
-        case ShortcutAction::SendInput:
-        {
-            _SendInputHandlers(*this, eventArgs);
-            break;
-        }
+            ACTION_CASE(CopyText);
+            ACTION_CASE(PasteText);
+            ACTION_CASE(OpenNewTabDropdown);
+            ACTION_CASE(DuplicateTab);
+            ACTION_CASE(OpenSettings);
+            ACTION_CASE(NewTab);
+            ACTION_CASE(CloseWindow);
+            ACTION_CASE(CloseTab);
+            ACTION_CASE(ClosePane);
+            ACTION_CASE(ScrollUp);
+            ACTION_CASE(ScrollDown);
+            ACTION_CASE(ScrollUpPage);
+            ACTION_CASE(ScrollDownPage);
+            ACTION_CASE(ScrollToTop);
+            ACTION_CASE(ScrollToBottom);
+            ACTION_CASE(NextTab);
+            ACTION_CASE(PrevTab);
+            ACTION_CASE(SendInput);
 
         case ShortcutAction::SplitVertical:
         case ShortcutAction::SplitHorizontal:
@@ -136,140 +68,34 @@ namespace winrt::TerminalApp::implementation
             break;
         }
 
-        case ShortcutAction::TogglePaneZoom:
-        {
-            _TogglePaneZoomHandlers(*this, eventArgs);
-            break;
-        }
-
-        case ShortcutAction::SwitchToTab:
-        {
-            _SwitchToTabHandlers(*this, eventArgs);
-            break;
-        }
-
-        case ShortcutAction::ResizePane:
-        {
-            _ResizePaneHandlers(*this, eventArgs);
-            break;
-        }
-
-        case ShortcutAction::MoveFocus:
-        {
-            _MoveFocusHandlers(*this, eventArgs);
-            break;
-        }
-
-        case ShortcutAction::AdjustFontSize:
-        {
-            _AdjustFontSizeHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::Find:
-        {
-            _FindHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::ResetFontSize:
-        {
-            _ResetFontSizeHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::ToggleShaderEffects:
-        {
-            _ToggleShaderEffectsHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::ToggleFocusMode:
-        {
-            _ToggleFocusModeHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::ToggleFullscreen:
-        {
-            _ToggleFullscreenHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::ToggleAlwaysOnTop:
-        {
-            _ToggleAlwaysOnTopHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::ToggleCommandPalette:
-        {
-            _ToggleCommandPaletteHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::SetColorScheme:
-        {
-            _SetColorSchemeHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::SetTabColor:
-        {
-            _SetTabColorHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::OpenTabColorPicker:
-        {
-            _OpenTabColorPickerHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::RenameTab:
-        {
-            _RenameTabHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::OpenTabRenamer:
-        {
-            _OpenTabRenamerHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::ExecuteCommandline:
-        {
-            _ExecuteCommandlineHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::CloseOtherTabs:
-        {
-            _CloseOtherTabsHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::CloseTabsAfter:
-        {
-            _CloseTabsAfterHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::MoveTab:
-        {
-            _MoveTabHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::TabSearch:
-        {
-            _TabSearchHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::BreakIntoDebugger:
-        {
-            _BreakIntoDebuggerHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::FindMatch:
-        {
-            _FindMatchHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::TogglePaneReadOnly:
-        {
-            _TogglePaneReadOnlyHandlers(*this, eventArgs);
-            break;
-        }
-        case ShortcutAction::NewWindow:
-        {
-            _NewWindowHandlers(*this, eventArgs);
-            break;
-        }
+            ACTION_CASE(TogglePaneZoom);
+            ACTION_CASE(SwitchToTab);
+            ACTION_CASE(ResizePane);
+            ACTION_CASE(MoveFocus);
+            ACTION_CASE(AdjustFontSize);
+            ACTION_CASE(Find);
+            ACTION_CASE(ResetFontSize);
+            ACTION_CASE(ToggleShaderEffects);
+            ACTION_CASE(ToggleFocusMode);
+            ACTION_CASE(ToggleFullscreen);
+            ACTION_CASE(ToggleAlwaysOnTop);
+            ACTION_CASE(ToggleCommandPalette);
+            ACTION_CASE(SetColorScheme);
+            ACTION_CASE(SetTabColor);
+            ACTION_CASE(OpenTabColorPicker);
+            ACTION_CASE(RenameTab);
+            ACTION_CASE(OpenTabRenamer);
+            ACTION_CASE(ExecuteCommandline);
+            ACTION_CASE(CloseOtherTabs);
+            ACTION_CASE(CloseTabsAfter);
+            ACTION_CASE(MoveTab);
+            ACTION_CASE(TabSearch);
+            ACTION_CASE(BreakIntoDebugger);
+            ACTION_CASE(FindMatch);
+            ACTION_CASE(TogglePaneReadOnly);
+            ACTION_CASE(NewWindow);
+            ACTION_CASE(IdentifyWindow);
+            ACTION_CASE(IdentifyWindows);
         default:
             return false;
         }

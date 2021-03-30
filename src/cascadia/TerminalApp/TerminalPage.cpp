@@ -30,6 +30,9 @@ using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::TerminalApp;
 using namespace ::Microsoft::Console;
+using namespace std::chrono_literals;
+
+#define HOOKUP_ACTION(action) _actionDispatch->action({ this, &TerminalPage::_Handle##action });
 
 namespace winrt
 {
@@ -225,7 +228,7 @@ namespace winrt::TerminalApp::implementation
         CommandPalette().RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
             if (CommandPalette().Visibility() == Visibility::Collapsed)
             {
-                _CommandPaletteClosed(nullptr, nullptr);
+                _FocusActiveControl(nullptr, nullptr);
             }
         });
         CommandPalette().DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
@@ -245,6 +248,10 @@ namespace winrt::TerminalApp::implementation
         _layoutUpdatedRevoker = _tabContent.LayoutUpdated(winrt::auto_revoke, { this, &TerminalPage::_OnFirstLayout });
 
         _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
+
+        // DON'T set up Toasts/TeachingTips here. They should be loaded and
+        // initialized the first time they're opened, in whatever method opens
+        // them.
 
         // Setup mouse vanish attributes
         SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &_shouldMouseVanish, false);
@@ -942,51 +949,53 @@ namespace winrt::TerminalApp::implementation
         // Hook up the ShortcutActionDispatch object's events to our handlers.
         // They should all be hooked up here, regardless of whether or not
         // there's an actual keychord for them.
-        _actionDispatch->OpenNewTabDropdown({ this, &TerminalPage::_HandleOpenNewTabDropdown });
-        _actionDispatch->DuplicateTab({ this, &TerminalPage::_HandleDuplicateTab });
-        _actionDispatch->CloseTab({ this, &TerminalPage::_HandleCloseTab });
-        _actionDispatch->ClosePane({ this, &TerminalPage::_HandleClosePane });
-        _actionDispatch->CloseWindow({ this, &TerminalPage::_HandleCloseWindow });
-        _actionDispatch->ScrollUp({ this, &TerminalPage::_HandleScrollUp });
-        _actionDispatch->ScrollDown({ this, &TerminalPage::_HandleScrollDown });
-        _actionDispatch->NextTab({ this, &TerminalPage::_HandleNextTab });
-        _actionDispatch->PrevTab({ this, &TerminalPage::_HandlePrevTab });
-        _actionDispatch->SendInput({ this, &TerminalPage::_HandleSendInput });
-        _actionDispatch->SplitPane({ this, &TerminalPage::_HandleSplitPane });
-        _actionDispatch->TogglePaneZoom({ this, &TerminalPage::_HandleTogglePaneZoom });
-        _actionDispatch->ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });
-        _actionDispatch->ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
-        _actionDispatch->ScrollToTop({ this, &TerminalPage::_HandleScrollToTop });
-        _actionDispatch->ScrollToBottom({ this, &TerminalPage::_HandleScrollToBottom });
-        _actionDispatch->OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
-        _actionDispatch->PasteText({ this, &TerminalPage::_HandlePasteText });
-        _actionDispatch->NewTab({ this, &TerminalPage::_HandleNewTab });
-        _actionDispatch->SwitchToTab({ this, &TerminalPage::_HandleSwitchToTab });
-        _actionDispatch->ResizePane({ this, &TerminalPage::_HandleResizePane });
-        _actionDispatch->MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
-        _actionDispatch->CopyText({ this, &TerminalPage::_HandleCopyText });
-        _actionDispatch->AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
-        _actionDispatch->Find({ this, &TerminalPage::_HandleFind });
-        _actionDispatch->ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
-        _actionDispatch->ToggleShaderEffects({ this, &TerminalPage::_HandleToggleShaderEffects });
-        _actionDispatch->ToggleFocusMode({ this, &TerminalPage::_HandleToggleFocusMode });
-        _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
-        _actionDispatch->ToggleAlwaysOnTop({ this, &TerminalPage::_HandleToggleAlwaysOnTop });
-        _actionDispatch->ToggleCommandPalette({ this, &TerminalPage::_HandleToggleCommandPalette });
-        _actionDispatch->SetColorScheme({ this, &TerminalPage::_HandleSetColorScheme });
-        _actionDispatch->SetTabColor({ this, &TerminalPage::_HandleSetTabColor });
-        _actionDispatch->OpenTabColorPicker({ this, &TerminalPage::_HandleOpenTabColorPicker });
-        _actionDispatch->RenameTab({ this, &TerminalPage::_HandleRenameTab });
-        _actionDispatch->OpenTabRenamer({ this, &TerminalPage::_HandleOpenTabRenamer });
-        _actionDispatch->ExecuteCommandline({ this, &TerminalPage::_HandleExecuteCommandline });
-        _actionDispatch->CloseOtherTabs({ this, &TerminalPage::_HandleCloseOtherTabs });
-        _actionDispatch->CloseTabsAfter({ this, &TerminalPage::_HandleCloseTabsAfter });
-        _actionDispatch->TabSearch({ this, &TerminalPage::_HandleOpenTabSearch });
-        _actionDispatch->MoveTab({ this, &TerminalPage::_HandleMoveTab });
-        _actionDispatch->BreakIntoDebugger({ this, &TerminalPage::_HandleBreakIntoDebugger });
-        _actionDispatch->FindMatch({ this, &TerminalPage::_HandleFindMatch });
-        _actionDispatch->TogglePaneReadOnly({ this, &TerminalPage::_HandleTogglePaneReadOnly });
-        _actionDispatch->NewWindow({ this, &TerminalPage::_HandleNewWindow });
+        HOOKUP_ACTION(OpenNewTabDropdown);
+        HOOKUP_ACTION(DuplicateTab);
+        HOOKUP_ACTION(CloseTab);
+        HOOKUP_ACTION(ClosePane);
+        HOOKUP_ACTION(CloseWindow);
+        HOOKUP_ACTION(ScrollUp);
+        HOOKUP_ACTION(ScrollDown);
+        HOOKUP_ACTION(NextTab);
+        HOOKUP_ACTION(PrevTab);
+        HOOKUP_ACTION(SendInput);
+        HOOKUP_ACTION(SplitPane);
+        HOOKUP_ACTION(TogglePaneZoom);
+        HOOKUP_ACTION(ScrollUpPage);
+        HOOKUP_ACTION(ScrollDownPage);
+        HOOKUP_ACTION(ScrollToTop);
+        HOOKUP_ACTION(ScrollToBottom);
+        HOOKUP_ACTION(OpenSettings);
+        HOOKUP_ACTION(PasteText);
+        HOOKUP_ACTION(NewTab);
+        HOOKUP_ACTION(SwitchToTab);
+        HOOKUP_ACTION(ResizePane);
+        HOOKUP_ACTION(MoveFocus);
+        HOOKUP_ACTION(CopyText);
+        HOOKUP_ACTION(AdjustFontSize);
+        HOOKUP_ACTION(Find);
+        HOOKUP_ACTION(ResetFontSize);
+        HOOKUP_ACTION(ToggleShaderEffects);
+        HOOKUP_ACTION(ToggleFocusMode);
+        HOOKUP_ACTION(ToggleFullscreen);
+        HOOKUP_ACTION(ToggleAlwaysOnTop);
+        HOOKUP_ACTION(ToggleCommandPalette);
+        HOOKUP_ACTION(SetColorScheme);
+        HOOKUP_ACTION(SetTabColor);
+        HOOKUP_ACTION(OpenTabColorPicker);
+        HOOKUP_ACTION(RenameTab);
+        HOOKUP_ACTION(OpenTabRenamer);
+        HOOKUP_ACTION(ExecuteCommandline);
+        HOOKUP_ACTION(CloseOtherTabs);
+        HOOKUP_ACTION(CloseTabsAfter);
+        HOOKUP_ACTION(TabSearch);
+        HOOKUP_ACTION(MoveTab);
+        HOOKUP_ACTION(BreakIntoDebugger);
+        HOOKUP_ACTION(FindMatch);
+        HOOKUP_ACTION(TogglePaneReadOnly);
+        HOOKUP_ACTION(NewWindow);
+        HOOKUP_ACTION(IdentifyWindow);
+        HOOKUP_ACTION(IdentifyWindows);
     }
 
     // Method Description:
@@ -2275,8 +2284,8 @@ namespace winrt::TerminalApp::implementation
         return {};
     }
 
-    void TerminalPage::_CommandPaletteClosed(const IInspectable& /*sender*/,
-                                             const RoutedEventArgs& /*eventArgs*/)
+    void TerminalPage::_FocusActiveControl(IInspectable /*sender*/,
+                                           IInspectable /*eventArgs*/)
     {
         _FocusCurrentTab(false);
     }
@@ -2552,5 +2561,100 @@ namespace winrt::TerminalApp::implementation
                 CATCH_LOG();
             }
         }
+    }
+
+    // Method Description:
+    // - Display the name and ID of this window in a TeachingTip. If the window
+    //   has no name, the name will be presented as "<unnamed-window>".
+    // - This can be invoked by either:
+    //   * An identifyWindow action, that displays the info only for the current
+    //     window
+    //   * An identifyWindows action, that displays the info for all windows.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget TerminalPage::IdentifyWindow()
+    {
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_foreground(Dispatcher());
+        if (auto page{ weakThis.get() })
+        {
+            // If we haven't ever loaded the TeachingTip, then do so now and
+            // create the toast for it.
+            if (page->_windowIdToast == nullptr)
+            {
+                if (MUX::Controls::TeachingTip tip{ page->FindName(L"WindowIdToast").try_as<MUX::Controls::TeachingTip>() })
+                {
+                    page->_windowIdToast = std::make_shared<Toast>(tip);
+                    // Make sure to use the weak ref when setting up this
+                    // callback.
+                    tip.Closed({ page->get_weak(), &TerminalPage::_FocusActiveControl });
+                }
+            }
+
+            if (page->_windowIdToast != nullptr)
+            {
+                page->_windowIdToast->Open();
+            }
+        }
+    }
+
+    // WindowName is a otherwise generic WINRT_OBSERVABLE_PROPERTY, but it needs
+    // to raise a PropertyChanged for WindowNameForDisplay, instead of
+    // WindowName.
+    winrt::hstring TerminalPage::WindowName() const noexcept
+    {
+        return _WindowName;
+    }
+    void TerminalPage::WindowName(const winrt::hstring& value)
+    {
+        if (_WindowName != value)
+        {
+            _WindowName = value;
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+        }
+    }
+
+    // WindowId is a otherwise generic WINRT_OBSERVABLE_PROPERTY, but it needs
+    // to raise a PropertyChanged for WindowIdForDisplay, instead of
+    // WindowId.
+    uint64_t TerminalPage::WindowId() const noexcept
+    {
+        return _WindowId;
+    }
+    void TerminalPage::WindowId(const uint64_t& value)
+    {
+        if (_WindowId != value)
+        {
+            _WindowId = value;
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
+        }
+    }
+
+    // Method Description:
+    // - Returns a label like "Window: 1234" for the ID of this window
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a string for displaying the name of the window.
+    winrt::hstring TerminalPage::WindowIdForDisplay() const noexcept
+    {
+        return winrt::hstring{ fmt::format(L"{}: {}",
+                                           std::wstring_view(RS_(L"WindowIdLabel")),
+                                           _WindowId) };
+    }
+
+    // Method Description:
+    // - Returns a label like "<unnamed window>" when the window has no name, or the name of the window.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a string for displaying the name of the window.
+    winrt::hstring TerminalPage::WindowNameForDisplay() const noexcept
+    {
+        return _WindowName.empty() ?
+                   winrt::hstring{ fmt::format(L"<{}>", RS_(L"UnnamedWindowName")) } :
+                   _WindowName;
     }
 }

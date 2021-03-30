@@ -595,6 +595,14 @@
   <data name="CommandPalette_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>More options</value>
   </data>
+  <data name="WindowIdLabel" xml:space="preserve">
+    <value>Window</value>
+    <comment>This is displayed as a label for a number, like "Window: 10"</comment>
+  </data>
+  <data name="UnnamedWindowName" xml:space="preserve">
+    <value>unnamed window</value>
+    <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
+  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>Maximize</value>
   </data>

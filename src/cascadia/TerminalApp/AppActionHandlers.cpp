@@ -552,8 +552,8 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleOpenTabSearch(const IInspectable& /*sender*/,
-                                            const ActionEventArgs& args)
+    void TerminalPage::_HandleTabSearch(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
     {
         CommandPalette().SetTabs(_tabs, _mruTabs);
         CommandPalette().EnableTabSearchMode();
@@ -675,4 +675,37 @@ namespace winrt::TerminalApp::implementation
         actionArgs.Handled(true);
     }
 
+    // Method Description:
+    // - Raise a IdentifyWindowsRequested event. This will bubble up to the
+    //   AppLogic, to the AppHost, to the Peasant, to the Monarch, then get
+    //   distributed down to _all_ the Peasants, as to display info about the
+    //   window in _every_ Peasant window.
+    // - This action is also buggy right now, because TeachingTips behave
+    //   weird in XAML Islands. See microsoft-ui-xaml#4382
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_HandleIdentifyWindows(const IInspectable& /*sender*/,
+                                              const ActionEventArgs& args)
+    {
+        _IdentifyWindowsRequestedHandlers(*this, nullptr);
+        args.Handled(true);
+    }
+
+    // Method Description:
+    // - Display the "Toast" with the name and ID of this window.
+    // - Unlike _HandleIdentifyWindow**s**, this event just displays the window
+    //   ID and name in the current window. It does not involve any bubbling
+    //   up/down the page/logic/host/manager/peasant/monarch.
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_HandleIdentifyWindow(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        IdentifyWindow();
+        args.Handled(true);
+    }
 }
