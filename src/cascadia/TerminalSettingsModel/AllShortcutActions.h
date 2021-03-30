@@ -15,7 +15,7 @@
 //
 //    #define ON_ALL_ACTIONS(action) void action##Handler();
 //
-// 3. Then, use the ALL_SHORTCUT_ACTIONS macro to get the ON_ALL_ACTIONS marcro
+// 3. Then, use the ALL_SHORTCUT_ACTIONS macro to get the ON_ALL_ACTIONS macro
 //    repeated once for every ShortcutAction
 //
 // This is used in KeyMapping.idl, ShortcutAction.*, TerminalPage.*, etc. to
