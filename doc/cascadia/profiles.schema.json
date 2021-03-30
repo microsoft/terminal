@@ -227,9 +227,26 @@
           "type": "boolean",
           "default": "false",
           "description": "When set to true, tabTitle overrides the default title of the tab and any title change messages from the application will be suppressed. When set to false, tabTitle behaves as normal"
+        },
+        "colorScheme": {
+          "description": "The name of a color scheme to use, instead of the one specified by the profile",
+          "type": "string"
         }
       },
       "type": "object"
+    },
+    "SwitchToAdjacentTabArgs" : {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "enum": [
+            "mru",
+            "inOrder",
+            "disabled"
+          ],
+          "type": "string"
+        }
+      ]
     },
     "ShortcutAction": {
       "properties": {
@@ -602,6 +619,38 @@
         }
       ]
     },
+    "PrevTabAction": {
+      "description": "Arguments corresponding to a Previous Tab Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type":"string", "pattern": "prevTab" },
+            "tabSwitcherMode": {
+              "$ref": "#/definitions/SwitchToAdjacentTabArgs",
+              "default": null,
+              "description": "Move to the previous tab using \"tabSwitcherMode\". If no mode is provided, use the one globally defined one."
+            }
+          }
+        }
+      ]
+    },
+    "NextTabAction": {
+      "description": "Arguments corresponding to a Next Tab Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type":"string", "pattern": "nextTab" },
+            "tabSwitcherMode": {
+              "$ref": "#/definitions/SwitchToAdjacentTabArgs",
+              "default": null,
+              "description": "Move to the next tab using \"tabSwitcherMode\". If no mode is provided, use the one globally defined one."
+            }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -628,6 +677,8 @@
               { "$ref": "#/definitions/MoveTabAction" },
               { "$ref": "#/definitions/FindMatchAction" },
               { "$ref": "#/definitions/NewWindowAction" },
+              { "$ref": "#/definitions/NextTabAction" },
+              { "$ref": "#/definitions/PrevTabAction" },
               { "type": "null" }
             ]
         },

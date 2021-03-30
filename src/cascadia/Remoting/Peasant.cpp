@@ -117,4 +117,51 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return _lastActivatedArgs;
     }
 
+    // Method Description:
+    // - Tell this window to display it's window ID. We'll raise a
+    //   DisplayWindowIdRequested event, which will get handled in the AppHost,
+    //   and used to tell the app to display the ID toast.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Peasant::DisplayWindowId()
+    {
+        // Not worried about try/catching this. The handler is in AppHost, which
+        // is in-proc for us.
+        _DisplayWindowIdRequestedHandlers(*this, nullptr);
+    }
+
+    // Method Description:
+    // - Raises an event to ask that all windows be identified. This will come
+    //   back to us when the Monarch handles the event and calls our
+    //   DisplayWindowId method.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Peasant::RequestIdentifyWindows()
+    {
+        bool successfullyNotified = false;
+
+        try
+        {
+            // Try/catch this, because the other side of this event is handled
+            // by the monarch. The monarch might have died. If they have, this
+            // will throw an exception. Just eat it, the election thread will
+            // handle hooking up the new one.
+            _IdentifyWindowsRequestedHandlers(*this, nullptr);
+            successfullyNotified = true;
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+        }
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Peasant_RequestIdentifyWindows",
+                          TraceLoggingUInt64(GetID(), "peasantID", "Our ID"),
+                          TraceLoggingBoolean(successfullyNotified, "successfullyNotified", "true if we successfully notified the monarch"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+    }
+
 }

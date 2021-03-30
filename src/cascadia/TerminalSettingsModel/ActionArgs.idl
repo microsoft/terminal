@@ -77,6 +77,13 @@ namespace Microsoft.Terminal.Settings.Model
         CommandLine
     };
 
+    enum TabSwitcherMode
+    {
+        MostRecentlyUsed,
+        InOrder,
+        Disabled,
+    };
+
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
@@ -92,6 +99,8 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.IReference<Int32> ProfileIndex { get; };
 
         Windows.Foundation.IReference<Boolean> SuppressApplicationTitle;
+
+        String ColorScheme;
 
         Boolean Equals(NewTerminalArgs other);
         String GenerateName();
@@ -145,6 +154,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
+        SplitPaneArgs(SplitType splitMode, SplitState split, Double size, NewTerminalArgs terminalArgs);
         SplitPaneArgs(SplitState split, Double size, NewTerminalArgs terminalArgs);
         SplitPaneArgs(SplitState split, NewTerminalArgs terminalArgs);
         SplitPaneArgs(SplitType splitMode);
@@ -225,5 +235,15 @@ namespace Microsoft.Terminal.Settings.Model
     {
         NewWindowArgs(NewTerminalArgs terminalArgs);
         NewTerminalArgs TerminalArgs { get; };
+    };
+
+    [default_interface] runtimeclass PrevTabArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
+    };
+
+    [default_interface] runtimeclass NextTabArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
     };
 }

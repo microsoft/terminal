@@ -3,6 +3,24 @@
 
 namespace Microsoft.Terminal.Core
 {
+    // TerminalCore declares its own Color struct to avoid depending
+    // on Windows.UI.Color and to avoid passing around unclothed uint32s.
+    // It is supported by til::color for conversions in and out of WinRT land.
+    struct Color
+    {
+        UInt8 R;
+        UInt8 G;
+        UInt8 B;
+        UInt8 A;
+    };
+
+    declare
+    {
+        // Forward declare this parameterized specialization so that it lives
+        // in TerminalCore instead of being flung to the winds of all IDL dependents.
+        interface Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>;
+    }
+
     enum CursorStyle
     {
         Vintage,
@@ -15,9 +33,9 @@ namespace Microsoft.Terminal.Core
 
     interface ICoreSettings
     {
-        UInt32 DefaultForeground;
-        UInt32 DefaultBackground;
-        UInt32 GetColorTableEntry(Int32 index);
+        Microsoft.Terminal.Core.Color DefaultForeground;
+        Microsoft.Terminal.Core.Color DefaultBackground;
+        Microsoft.Terminal.Core.Color GetColorTableEntry(Int32 index);
         // TODO:MSFT:20642297 - define a sentinel for Infinite Scrollback
         Int32 HistorySize;
         Int32 InitialRows;
@@ -26,7 +44,7 @@ namespace Microsoft.Terminal.Core
         Boolean SnapOnInput;
         Boolean AltGrAliasing;
 
-        UInt32 CursorColor;
+        Microsoft.Terminal.Core.Color CursorColor;
         CursorStyle CursorShape;
         UInt32 CursorHeight;
         String StartingTitle;
@@ -35,8 +53,8 @@ namespace Microsoft.Terminal.Core
 
         Boolean ForceVTInput;
 
-        Windows.Foundation.IReference<UInt32> TabColor;
-        Windows.Foundation.IReference<UInt32> StartingTabColor;
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> TabColor;
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> StartingTabColor;
     };
 
 }

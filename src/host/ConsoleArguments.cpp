@@ -22,6 +22,7 @@ const std::wstring_view ConsoleArguments::RESIZE_QUIRK = L"--resizeQuirk";
 const std::wstring_view ConsoleArguments::WIN32_INPUT_MODE = L"--win32input";
 const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
+const std::wstring_view ConsoleArguments::COM_SERVER_ARG = L"-Embedding";
 
 std::wstring EscapeArgument(std::wstring_view ac)
 {
@@ -109,6 +110,7 @@ ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
     _clientCommandline = L"";
     _vtMode = L"";
     _headless = false;
+    _runAsComServer = false;
     _createServerHandle = true;
     _serverHandle = 0;
     _signalHandle = 0;
@@ -141,6 +143,7 @@ ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments& other)
         _height = other._height;
         _inheritCursor = other._inheritCursor;
         _receivedEarlySizeChange = other._receivedEarlySizeChange;
+        _runAsComServer = other._runAsComServer;
     }
 
     return *this;
@@ -446,6 +449,12 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
             s_ConsumeArg(args, i);
             hr = S_OK;
         }
+        else if (arg == COM_SERVER_ARG)
+        {
+            _runAsComServer = true;
+            s_ConsumeArg(args, i);
+            hr = S_OK;
+        }
         else if (arg.substr(0, FILEPATH_LEADER_PREFIX.length()) == FILEPATH_LEADER_PREFIX)
         {
             // beginning of command line -- includes file path
@@ -576,6 +585,11 @@ bool ConsoleArguments::ShouldCreateServerHandle() const
     return _createServerHandle;
 }
 
+bool ConsoleArguments::ShouldRunAsComServer() const
+{
+    return _runAsComServer;
+}
+
 HANDLE ConsoleArguments::GetServerHandle() const
 {
     return ULongToHandle(_serverHandle);
@@ -594,6 +608,11 @@ HANDLE ConsoleArguments::GetVtInHandle() const
 HANDLE ConsoleArguments::GetVtOutHandle() const
 {
     return _vtOutHandle;
+}
+
+std::wstring ConsoleArguments::GetOriginalCommandLine() const
+{
+    return _commandline;
 }
 
 std::wstring ConsoleArguments::GetClientCommandline() const

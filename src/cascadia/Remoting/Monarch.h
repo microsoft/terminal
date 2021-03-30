@@ -74,6 +74,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void _doHandleActivatePeasant(const winrt::com_ptr<winrt::Microsoft::Terminal::Remoting::implementation::WindowActivatedArgs>& args);
         void _clearOldMruEntries(const uint64_t peasantID);
 
+        void _identifyWindows(const winrt::Windows::Foundation::IInspectable& sender,
+                              const winrt::Windows::Foundation::IInspectable& args);
+
+        void _forAllPeasantsIgnoringTheDead(std::function<void(const winrt::Microsoft::Terminal::Remoting::IPeasant&, const uint64_t)> callback,
+                                            std::function<void(const uint64_t)> errorCallback);
         friend class RemotingUnitTests::RemotingTests;
     };
 }
