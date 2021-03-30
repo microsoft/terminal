@@ -204,5 +204,5 @@
     <Error Condition="!Exists('$(SolutionDir)\dep\wil\README.md') Or !Exists('$(SolutionDir)\dep\gsl\README.md')" Text="$([System.String]::Format('$(ErrorText)'))" />
   </Target>
 
-  <Import Project="$(OpenConsoleDir)\build\rules\Branding.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)..\build\rules\Branding.targets" />
 </Project>
