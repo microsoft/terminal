@@ -22,6 +22,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         bool ExecuteCommandline(const winrt::Microsoft::Terminal::Remoting::CommandlineArgs& args);
         void ActivateWindow(const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args);
+        void RequestIdentifyWindows();
+        void DisplayWindowId();
 
         winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs GetLastActivatedArgs();
 
@@ -30,6 +32,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs);
         TYPED_EVENT(ExecuteCommandlineRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::CommandlineArgs);
+        TYPED_EVENT(IdentifyWindowsRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(DisplayWindowIdRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 
     private:
         Peasant(const uint64_t testPID);

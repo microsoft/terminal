@@ -13,6 +13,14 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    struct FontComparator
+    {
+        bool operator()(const Font& lhs, const Font& rhs) const
+        {
+            return lhs.LocalizedName() < rhs.LocalizedName();
+        }
+    };
+
     struct Font : FontT<Font>
     {
     public:

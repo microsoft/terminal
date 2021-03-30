@@ -13,6 +13,8 @@ namespace TerminalAppLocalTests
     class KeyBindingsTests;
 }
 
+#define DECLARE_ACTION(action) TYPED_EVENT(action, TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
+
 namespace winrt::TerminalApp::implementation
 {
     struct ShortcutActionDispatch : ShortcutActionDispatchT<ShortcutActionDispatch>
@@ -22,51 +24,53 @@ namespace winrt::TerminalApp::implementation
         bool DoAction(const Microsoft::Terminal::Settings::Model::ActionAndArgs& actionAndArgs);
 
         // clang-format off
-        TYPED_EVENT(CopyText,             TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(PasteText,            TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(OpenNewTabDropdown,   TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(DuplicateTab,         TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(NewTab,               TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(CloseWindow,          TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(CloseTab,             TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(ClosePane,            TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(SwitchToTab,          TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(NextTab,              TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(PrevTab,              TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(SendInput,            TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(SplitPane,            TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(TogglePaneZoom,       TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(AdjustFontSize,       TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(ResetFontSize,        TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(ScrollUp,             TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(ScrollDown,           TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(ScrollUpPage,         TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(ScrollDownPage,       TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(ScrollToTop,          TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(ScrollToBottom,       TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(OpenSettings,         TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(ResizePane,           TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(Find,                 TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(MoveFocus,            TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(ToggleShaderEffects,  TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(ToggleFocusMode,      TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(ToggleFullscreen,     TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(ToggleAlwaysOnTop,    TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(ToggleCommandPalette, TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(SetColorScheme,       TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(SetTabColor,          TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(OpenTabColorPicker,   TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(RenameTab,            TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(OpenTabRenamer,       TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(ExecuteCommandline,   TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(CloseOtherTabs,       TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(CloseTabsAfter,       TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(TabSearch,            TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(MoveTab,              TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(BreakIntoDebugger,    TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(FindMatch,            TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(TogglePaneReadOnly,   TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
-        TYPED_EVENT(NewWindow,            TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
+        DECLARE_ACTION(CopyText);
+        DECLARE_ACTION(PasteText);
+        DECLARE_ACTION(OpenNewTabDropdown);
+        DECLARE_ACTION(DuplicateTab);
+        DECLARE_ACTION(NewTab);
+        DECLARE_ACTION(CloseWindow);
+        DECLARE_ACTION(CloseTab);
+        DECLARE_ACTION(ClosePane);
+        DECLARE_ACTION(SwitchToTab);
+        DECLARE_ACTION(NextTab);
+        DECLARE_ACTION(PrevTab);
+        DECLARE_ACTION(SendInput);
+        DECLARE_ACTION(SplitPane);
+        DECLARE_ACTION(TogglePaneZoom);
+        DECLARE_ACTION(AdjustFontSize);
+        DECLARE_ACTION(ResetFontSize);
+        DECLARE_ACTION(ScrollUp);
+        DECLARE_ACTION(ScrollDown);
+        DECLARE_ACTION(ScrollUpPage);
+        DECLARE_ACTION(ScrollDownPage);
+        DECLARE_ACTION(ScrollToTop);
+        DECLARE_ACTION(ScrollToBottom);
+        DECLARE_ACTION(OpenSettings);
+        DECLARE_ACTION(ResizePane);
+        DECLARE_ACTION(Find);
+        DECLARE_ACTION(MoveFocus);
+        DECLARE_ACTION(ToggleShaderEffects);
+        DECLARE_ACTION(ToggleFocusMode);
+        DECLARE_ACTION(ToggleFullscreen);
+        DECLARE_ACTION(ToggleAlwaysOnTop);
+        DECLARE_ACTION(ToggleCommandPalette);
+        DECLARE_ACTION(SetColorScheme);
+        DECLARE_ACTION(SetTabColor);
+        DECLARE_ACTION(OpenTabColorPicker);
+        DECLARE_ACTION(RenameTab);
+        DECLARE_ACTION(OpenTabRenamer);
+        DECLARE_ACTION(ExecuteCommandline);
+        DECLARE_ACTION(CloseOtherTabs);
+        DECLARE_ACTION(CloseTabsAfter);
+        DECLARE_ACTION(TabSearch);
+        DECLARE_ACTION(MoveTab);
+        DECLARE_ACTION(BreakIntoDebugger);
+        DECLARE_ACTION(FindMatch);
+        DECLARE_ACTION(TogglePaneReadOnly);
+        DECLARE_ACTION(NewWindow);
+        DECLARE_ACTION(IdentifyWindow);
+        DECLARE_ACTION(IdentifyWindows);
         // clang-format on
 
     private:

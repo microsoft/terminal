@@ -55,10 +55,14 @@ namespace RemotingUnitTests
         uint64_t GetPID() { throw winrt::hresult_error{}; };
         bool ExecuteCommandline(const Remoting::CommandlineArgs& /*args*/) { throw winrt::hresult_error{}; }
         void ActivateWindow(const Remoting::WindowActivatedArgs& /*args*/) { throw winrt::hresult_error{}; }
+        void RequestIdentifyWindows() { throw winrt::hresult_error{}; };
+        void DisplayWindowId() { throw winrt::hresult_error{}; };
         Remoting::CommandlineArgs InitialArgs() { throw winrt::hresult_error{}; }
         Remoting::WindowActivatedArgs GetLastActivatedArgs() { throw winrt::hresult_error{}; }
         TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, Remoting::WindowActivatedArgs);
         TYPED_EVENT(ExecuteCommandlineRequested, winrt::Windows::Foundation::IInspectable, Remoting::CommandlineArgs);
+        TYPED_EVENT(IdentifyWindowsRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(DisplayWindowIdRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
     };
 
     class RemotingTests

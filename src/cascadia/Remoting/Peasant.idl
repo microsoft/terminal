@@ -34,9 +34,13 @@ namespace Microsoft.Terminal.Remoting
         void ActivateWindow(WindowActivatedArgs args);
         WindowActivatedArgs GetLastActivatedArgs();
         String WindowName { get; };
+        void RequestIdentifyWindows(); // Tells us to raise a IdentifyWindowsRequested
+        void DisplayWindowId(); // Tells us to display its own ID (which causes a DisplayWindowIdRequested to be raised)
 
         event Windows.Foundation.TypedEventHandler<Object, WindowActivatedArgs> WindowActivated;
         event Windows.Foundation.TypedEventHandler<Object, CommandlineArgs> ExecuteCommandlineRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> DisplayWindowIdRequested;
     };
 
     [default_interface] runtimeclass Peasant : IPeasant
