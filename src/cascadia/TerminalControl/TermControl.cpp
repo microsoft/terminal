@@ -327,7 +327,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Update DxEngine settings under the lock
-        _renderEngine->SetSelectionBackground(til::color{_settings.SelectionBackground()});
+        _renderEngine->SetSelectionBackground(til::color{ _settings.SelectionBackground() });
 
         _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
         _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
@@ -503,7 +503,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // see GH#1082: Initialize background color so we don't get a
             // fade/flash when _BackgroundColorChanged is called
-            auto bgColor = til::color{_settings.DefaultBackground()}.with_alpha(0xff);
+            auto bgColor = til::color{ _settings.DefaultBackground() }.with_alpha(0xff);
 
             acrylic.FallbackColor(bgColor);
             acrylic.TintColor(bgColor);
@@ -769,7 +769,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             LOG_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
             // Update DxEngine's SelectionBackground
-            dxEngine->SetSelectionBackground(til::color{_settings.SelectionBackground()});
+            dxEngine->SetSelectionBackground(til::color{ _settings.SelectionBackground() });
 
             const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
             const auto width = vp.Width();
@@ -2523,7 +2523,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                   TextBuffer::GenHTML(bufferData,
                                                       _actualFont.GetUnscaledSize().Y,
                                                       _actualFont.GetFaceName(),
-                                                      til::color{_settings.DefaultBackground()}) :
+                                                      til::color{ _settings.DefaultBackground() }) :
                                   "";
 
         // convert to RTF format
@@ -2531,7 +2531,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  TextBuffer::GenRTF(bufferData,
                                                     _actualFont.GetUnscaledSize().Y,
                                                     _actualFont.GetFaceName(),
-                                                      til::color{_settings.DefaultBackground()}) :
+                                                    til::color{ _settings.DefaultBackground() }) :
                                  "";
 
         if (!_settings.CopyOnSelect())
@@ -3267,7 +3267,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControl::TabColor() noexcept
     {
         auto coreColor = _terminal->GetTabColor();
-        return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(til::color{coreColor.value()}) : nullptr;
+        return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(til::color{ coreColor.value() }) : nullptr;
     }
 
     // Method Description:

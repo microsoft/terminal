@@ -31,12 +31,12 @@ namespace SettingsModelLocalTests
 // This should only be used for color types where there's no logic in the
 // getter/setter beyond just accessing/updating the value.
 // This takes advantage of til::color
-#define WINRT_TERMINAL_COLOR_PROPERTY(name, ...)                                             \
-public:                                                                             \
+#define WINRT_TERMINAL_COLOR_PROPERTY(name, ...)                                                  \
+public:                                                                                           \
     winrt::Microsoft::Terminal::Core::Color name() const noexcept { return _##name; }             \
     void name(const winrt::Microsoft::Terminal::Core::Color& value) noexcept { _##name = value; } \
-                                                                                    \
-private:                                                                            \
+                                                                                                  \
+private:                                                                                          \
     til::color _##name{ __VA_ARGS__ };
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation

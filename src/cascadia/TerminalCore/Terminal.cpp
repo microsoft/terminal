@@ -145,7 +145,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     if (_buffer)
     {
         _buffer->GetCursor().SetStyle(settings.CursorHeight(),
-                                      til::color{settings.CursorColor()},
+                                      til::color{ settings.CursorColor() },
                                       cursorShape);
     }
 
@@ -170,12 +170,12 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     }
     else
     {
-        _tabColor = til::color{settings.TabColor().Value()}.with_alpha(0xff);
+        _tabColor = til::color{ settings.TabColor().Value() }.with_alpha(0xff);
     }
 
     if (!_startingTabColor && settings.StartingTabColor())
     {
-        _startingTabColor = til::color{settings.StartingTabColor().Value()}.with_alpha(0xff);
+        _startingTabColor = til::color{ settings.StartingTabColor().Value() }.with_alpha(0xff);
     }
 
     if (_pfnTabColorChanged)

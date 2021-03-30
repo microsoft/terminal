@@ -112,7 +112,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
             if (newTerminalArgs.TabColor())
             {
-                settings.StartingTabColor(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>{til::color{ newTerminalArgs.TabColor().Value() }});
+                settings.StartingTabColor(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>{ til::color{ newTerminalArgs.TabColor().Value() } });
             }
             if (newTerminalArgs.SuppressApplicationTitle())
             {

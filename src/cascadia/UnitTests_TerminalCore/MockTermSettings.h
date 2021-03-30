@@ -26,11 +26,11 @@ namespace TerminalCoreUnitTests
         int32_t HistorySize() { return _historySize; }
         int32_t InitialRows() { return _initialRows; }
         int32_t InitialCols() { return _initialCols; }
-	til::color DefaultForeground() { return COLOR_WHITE; }
-	til::color DefaultBackground() { return COLOR_BLACK; }
+        til::color DefaultForeground() { return COLOR_WHITE; }
+        til::color DefaultBackground() { return COLOR_BLACK; }
         bool SnapOnInput() { return false; }
         bool AltGrAliasing() { return true; }
-	til::color CursorColor() { return COLOR_WHITE; }
+        til::color CursorColor() { return COLOR_WHITE; }
         CursorStyle CursorShape() const noexcept { return CursorStyle::Vintage; }
         uint32_t CursorHeight() { return 42UL; }
         winrt::hstring WordDelimiters() { return winrt::hstring(DEFAULT_WORD_DELIMITERS); }
@@ -38,13 +38,13 @@ namespace TerminalCoreUnitTests
         bool FocusFollowMouse() { return _focusFollowMouse; }
         winrt::hstring StartingTitle() { return _startingTitle; }
         bool SuppressApplicationTitle() { return _suppressApplicationTitle; }
-	til::color SelectionBackground() { return COLOR_WHITE; }
+        til::color SelectionBackground() { return COLOR_WHITE; }
         bool ForceVTInput() { return false; }
         winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color> TabColor() { return nullptr; }
         winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color> StartingTabColor() { return nullptr; }
 
         // other implemented methods
-	til::color GetColorTableEntry(int32_t) const { return 123; }
+        til::color GetColorTableEntry(int32_t) const { return 123; }
 
         // property setters - all unimplemented
         void HistorySize(int32_t) {}
@@ -64,9 +64,8 @@ namespace TerminalCoreUnitTests
         void SuppressApplicationTitle(bool suppressApplicationTitle) { _suppressApplicationTitle = suppressApplicationTitle; }
         void SelectionBackground(til::color) {}
         void ForceVTInput(bool) {}
-        void TabColor(const IInspectable&) { }
-        void StartingTabColor(const IInspectable&) { }
-
+        void TabColor(const IInspectable&) {}
+        void StartingTabColor(const IInspectable&) {}
 
     private:
         int32_t _historySize;

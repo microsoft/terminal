@@ -249,10 +249,10 @@ private:
     std::optional<til::color> _tabColor;
     std::optional<til::color> _startingTabColor;
 
-	// This is still stored as a COLORREF because it interacts with some code in ConTypes
+    // This is still stored as a COLORREF because it interacts with some code in ConTypes
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
-	til::color _defaultFg;
-	til::color _defaultBg;
+    til::color _defaultFg;
+    til::color _defaultBg;
     CursorType _defaultCursorShape;
     bool _screenReversed;
     mutable Microsoft::Console::Render::BlinkingState _blinkingState;

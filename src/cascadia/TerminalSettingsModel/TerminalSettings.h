@@ -50,7 +50,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // GetColorTableEntry needs to be implemented manually, to get a
         // particular value from the array.
-	Microsoft::Terminal::Core::Color GetColorTableEntry(int32_t index) noexcept;
+        Microsoft::Terminal::Core::Color GetColorTableEntry(int32_t index) noexcept;
         void ColorTable(std::array<Microsoft::Terminal::Core::Color, 16> colors);
         std::array<Microsoft::Terminal::Core::Color, 16> ColorTable();
 
