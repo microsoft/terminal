@@ -66,7 +66,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(String, Icon);
         INHERITABLE_PROFILE_SETTING(CloseOnExitMode, CloseOnExit);
         INHERITABLE_PROFILE_SETTING(String, TabTitle);
-        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, TabColor);
+        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, TabColor);
         INHERITABLE_PROFILE_SETTING(Boolean, SuppressApplicationTitle);
         INHERITABLE_PROFILE_SETTING(Boolean, UseAcrylic);
         INHERITABLE_PROFILE_SETTING(Double, AcrylicOpacity);
@@ -92,10 +92,10 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Boolean, ForceFullRepaintRendering);
         INHERITABLE_PROFILE_SETTING(Boolean, SoftwareRendering);
         INHERITABLE_PROFILE_SETTING(String, ColorSchemeName);
-        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Foreground);
-        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Background);
-        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, SelectionBackground);
-        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, CursorColor);
+        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Foreground);
+        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Background);
+        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, SelectionBackground);
+        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, CursorColor);
         INHERITABLE_PROFILE_SETTING(Int32, HistorySize);
         INHERITABLE_PROFILE_SETTING(Boolean, SnapOnInput);
         INHERITABLE_PROFILE_SETTING(Boolean, AltGrAliasing);

@@ -182,7 +182,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // void _UpdateSystemParameterSettings() noexcept;
         void _InitializeBackgroundBrush();
         void _BackgroundColorChangedHandler(const IInspectable& sender, const IInspectable& args);
-        winrt::fire_and_forget _changeBackgroundColor(til::color bg);
+        winrt::fire_and_forget _changeBackgroundColor(const til::color bg);
+
         bool _InitializeTerminal();
         void _SetFontSize(int fontSize);
         void _TappedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& e);

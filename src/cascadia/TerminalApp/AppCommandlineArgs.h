@@ -63,12 +63,14 @@ private:
         CLI::Option* titleOption;
         CLI::Option* tabColorOption;
         CLI::Option* suppressApplicationTitleOption;
+        CLI::Option* colorSchemeOption;
     };
 
     struct NewPaneSubcommand : public NewTerminalSubcommand
     {
         CLI::Option* _horizontalOption;
         CLI::Option* _verticalOption;
+        CLI::Option* _duplicateOption;
     };
 
     // --- Subcommands ---
@@ -87,6 +89,7 @@ private:
     std::string _startingDirectory;
     std::string _startingTitle;
     std::string _startingTabColor;
+    std::string _startingColorScheme;
     bool _suppressApplicationTitle{ false };
 
     winrt::Microsoft::Terminal::Settings::Model::FocusDirection _moveFocusDirection{ winrt::Microsoft::Terminal::Settings::Model::FocusDirection::None };
@@ -96,6 +99,7 @@ private:
 
     bool _splitVertical{ false };
     bool _splitHorizontal{ false };
+    bool _splitDuplicate{ false };
     float _splitPaneSize{ 0.5f };
 
     int _focusTabIndex{ -1 };

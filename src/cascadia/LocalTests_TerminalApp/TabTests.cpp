@@ -260,6 +260,15 @@ namespace TerminalAppLocalTests
             page->Create();
             Log::Comment(L"Create()'d the page successfully");
 
+            // Build a NewTab action, to make sure we start with one. The real
+            // Terminal will always get one from AppCommandlineArgs.
+            NewTerminalArgs newTerminalArgs{};
+            NewTabArgs args{ newTerminalArgs };
+            ActionAndArgs newTabAction{ ShortcutAction::NewTab, args };
+            // push the arg onto the front
+            page->_startupActions.Append(newTabAction);
+            Log::Comment(L"Added a single newTab action");
+
             auto app = ::winrt::Windows::UI::Xaml::Application::Current();
 
             winrt::TerminalApp::TerminalPage pp = *page;
@@ -276,8 +285,9 @@ namespace TerminalAppLocalTests
             // In the real app, this isn't a problem, but doesn't happen
             // reliably in the unit tests.
             Log::Comment(L"Ensure we set the first tab as the selected one.");
-            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
-            page->_tabView.SelectedItem(tab->TabViewItem());
+            auto tab = page->_tabs.GetAt(0);
+            auto tabImpl = page->_GetTerminalTabImpl(tab);
+            page->_tabView.SelectedItem(tabImpl->TabViewItem());
             page->_UpdatedSelectedTab(0);
         });
         VERIFY_SUCCEEDED(result);
@@ -601,7 +611,6 @@ namespace TerminalAppLocalTests
         auto result = RunOnUIThread([&page]() {
             SplitPaneArgs args{ SplitType::Duplicate };
             ActionEventArgs eventArgs{ args };
-            // eventArgs.Args(args);
             page->_HandleSplitPane(nullptr, eventArgs);
             auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
 

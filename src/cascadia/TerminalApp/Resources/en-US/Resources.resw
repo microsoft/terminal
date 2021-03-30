@@ -308,6 +308,9 @@
   <data name="CmdSplitPaneVerticalArgDesc" xml:space="preserve">
     <value>Create the new pane as a vertical split (think [|])</value>
   </data>
+  <data name="CmdSplitPaneDuplicateArgDesc" xml:space="preserve">
+    <value>Create the new pane by duplicating the profile of the focused pane</value>
+  </data>
   <data name="CmdStartingDirArgDesc" xml:space="preserve">
     <value>Open in the given directory instead of the profile's set "startingDirectory"</value>
     <comment>{Locked="\"startingDirectory\""}</comment>
@@ -322,6 +325,10 @@
   <data name="CmdSuppressApplicationTitleDesc" xml:space="preserve">
     <value>Open the tab with tabTitle overriding default title and suppressing title change messages from the application</value>
     <comment>{Locked="\"tabTitle\""}</comment>
+  </data>
+  <data name="CmdColorSchemeArgDesc" xml:space="preserve">
+    <value>Open the tab with the specified color scheme, instead of the profile's set "colorScheme"</value>
+    <comment>{Locked="\"colorScheme\""}</comment>
   </data>
   <data name="CmdVersionDesc" xml:space="preserve">
     <value>Display the application version</value>
@@ -587,6 +594,14 @@
   </data>
   <data name="CommandPalette_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>More options</value>
+  </data>
+  <data name="WindowIdLabel" xml:space="preserve">
+    <value>Window</value>
+    <comment>This is displayed as a label for a number, like "Window: 10"</comment>
+  </data>
+  <data name="UnnamedWindowName" xml:space="preserve">
+    <value>unnamed window</value>
+    <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
   </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>Maximize</value>

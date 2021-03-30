@@ -54,7 +54,7 @@ namespace winrt::TerminalApp::implementation
         closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_ClosedHandlers(nullptr, nullptr);
+                tab->_CloseRequestedHandlers(nullptr, nullptr);
             }
         });
         closeTabMenuItem.Text(RS_(L"TabClose"));

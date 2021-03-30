@@ -158,6 +158,23 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
+#ifdef WINRT_Microsoft_Terminal_Core_H
+        constexpr color(const winrt::Microsoft::Terminal::Core::Color& coreColor) :
+            color(coreColor.R, coreColor.G, coreColor.B, coreColor.A)
+        {
+        }
+
+        operator winrt::Microsoft::Terminal::Core::Color() const noexcept
+        {
+            winrt::Microsoft::Terminal::Core::Color ret;
+            ret.R = r;
+            ret.G = g;
+            ret.B = b;
+            ret.A = a;
+            return ret;
+        }
+#endif
+
         constexpr bool operator==(const til::color& other) const
         {
             return abgr == other.abgr;

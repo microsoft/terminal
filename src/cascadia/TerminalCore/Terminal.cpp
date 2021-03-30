@@ -114,7 +114,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 {
     // Set the default background as transparent to prevent the
     // DX layer from overwriting the background image or acrylic effect
-    til::color newBackgroundColor{ static_cast<COLORREF>(settings.DefaultBackground()) };
+    til::color newBackgroundColor{ settings.DefaultBackground() };
     _defaultBg = newBackgroundColor.with_alpha(0);
     _defaultFg = settings.DefaultForeground();
 
@@ -145,7 +145,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     if (_buffer)
     {
         _buffer->GetCursor().SetStyle(settings.CursorHeight(),
-                                      settings.CursorColor(),
+                                      til::color{ settings.CursorColor() },
                                       cursorShape);
     }
 
@@ -153,7 +153,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 
     for (int i = 0; i < 16; i++)
     {
-        _colorTable.at(i) = settings.GetColorTableEntry(i);
+        _colorTable.at(i) = til::color{ settings.GetColorTableEntry(i) };
     }
 
     _snapOnInput = settings.SnapOnInput();
@@ -170,12 +170,12 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     }
     else
     {
-        _tabColor = til::color(settings.TabColor().Value() | 0xff000000);
+        _tabColor = til::color{ settings.TabColor().Value() }.with_alpha(0xff);
     }
 
     if (!_startingTabColor && settings.StartingTabColor())
     {
-        _startingTabColor = til::color(settings.StartingTabColor().Value() | 0xff000000);
+        _startingTabColor = til::color{ settings.StartingTabColor().Value() }.with_alpha(0xff);
     }
 
     if (_pfnTabColorChanged)
@@ -1128,8 +1128,8 @@ void Terminal::SetCursorPositionChangedCallback(std::function<void()> pfn) noexc
 // Method Description:
 // - Allows setting a callback for when the background color is changed
 // Arguments:
-// - pfn: a function callback that takes a uint32 (DWORD COLORREF) color in the format 0x00BBGGRR
-void Terminal::SetBackgroundCallback(std::function<void(const COLORREF)> pfn) noexcept
+// - pfn: a function callback that takes a color
+void Terminal::SetBackgroundCallback(std::function<void(const til::color)> pfn) noexcept
 {
     _pfnBackgroundColorChanged.swap(pfn);
 }

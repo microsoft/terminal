@@ -292,7 +292,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _InitializeBackgroundBrush();
 
-        COLORREF bg = newSettings.DefaultBackground();
+        const auto bg = newSettings.DefaultBackground();
         _changeBackgroundColor(bg);
 
         // Apply padding as swapChainPanel's margin
@@ -355,12 +355,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // see GH#1082: Initialize background color so we don't get a
             // fade/flash when _BackgroundColorChanged is called
-            uint32_t color = _settings.DefaultBackground();
-            winrt::Windows::UI::Color bgColor{};
-            bgColor.R = GetRValue(color);
-            bgColor.G = GetGValue(color);
-            bgColor.B = GetBValue(color);
-            bgColor.A = 255;
+            auto bgColor = til::color{ _settings.DefaultBackground() }.with_alpha(0xff);
 
             acrylic.FallbackColor(bgColor);
             acrylic.TintColor(bgColor);
@@ -432,7 +427,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _changeBackgroundColor(newBgColor);
     }
 
-    winrt::fire_and_forget TermControl::_changeBackgroundColor(til::color bg)
+    winrt::fire_and_forget TermControl::_changeBackgroundColor(const til::color bg)
     {
         auto weakThis{ get_weak() };
         co_await winrt::resume_foreground(Dispatcher());
@@ -1478,13 +1473,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //             {
     //                 _settings.UseAcrylic(false);
     //                 _InitializeBackgroundBrush();
-    //                 COLORREF bg = _settings.DefaultBackground();
-    //                 _changeBackgroundColor(bg);
+    //                 const auto bg = _settings.DefaultBackground();
+    //                 _BackgroundColorChanged(bg);
     //             }
     //             else
     //             {
     //                 // GH#5098: Inform the engine of the new opacity of the default text background.
-    //                 _core->SetBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+    //                 if (_renderEngine)
+    //                 {
+    //                     _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+    //                 }
     //             }
     //         }
     //         CATCH_LOG();
