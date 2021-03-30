@@ -173,4 +173,6 @@
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\dep\wil') Or !Exists('$(SolutionDir)\dep\gsl')" Text="$([System.String]::Format('$(ErrorText)'))" />
   </Target>
+
+  <Import Project="$(MSBuildThisFileDirectory)..\build\rules\Branding.targets" />
 </Project>

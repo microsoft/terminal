@@ -49,7 +49,6 @@
     </ProjectReference>
   </ItemGroup>
 
-  <Import Project="$(OpenConsoleDir)\build\rules\Branding.targets" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
   <!-- Override GetPackagingOutputs to roll up our DLL.
