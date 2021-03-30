@@ -255,6 +255,10 @@ void AppCommandlineArgs::_buildSplitPaneParser()
         auto* sizeOpt = subcommand.subcommand->add_option("-s,--size",
                                                           _splitPaneSize,
                                                           RS_A(L"CmdSplitPaneSizeArgDesc"));
+
+        subcommand._duplicateOption = subcommand.subcommand->add_flag("-D,--duplicate",
+                                                                      _splitDuplicate,
+                                                                      RS_A(L"CmdSplitPaneDuplicateArgDesc"));
         sizeOpt->check(CLI::Range(0.01f, 0.99f));
 
         // When ParseCommand is called, if this subcommand was provided, this
@@ -283,7 +287,8 @@ void AppCommandlineArgs::_buildSplitPaneParser()
                     style = SplitState::Vertical;
                 }
             }
-            SplitPaneArgs args{ style, _splitPaneSize, terminalArgs };
+            const auto splitMode{ subcommand._duplicateOption && _splitDuplicate ? SplitType::Duplicate : SplitType::Manual };
+            SplitPaneArgs args{ splitMode, style, _splitPaneSize, terminalArgs };
             splitPaneActionAndArgs.Args(args);
             _startupActions.push_back(splitPaneActionAndArgs);
         });
@@ -422,6 +427,9 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
         _suppressApplicationTitle,
         RS_A(L"CmdSuppressApplicationTitleDesc"));
 
+    subcommand.colorSchemeOption = subcommand.subcommand->add_option("--colorScheme",
+                                                                     _startingColorScheme,
+                                                                     RS_A(L"CmdColorSchemeArgDesc"));
     // Using positionals_at_end allows us to support "wt new-tab -d wsl -d Ubuntu"
     // without CLI11 thinking that we've specified -d twice.
     // There's an alternate construction where we make all subcommands "prefix commands",
@@ -494,6 +502,11 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
         args.SuppressApplicationTitle(_suppressApplicationTitle);
     }
 
+    if (*subcommand.colorSchemeOption)
+    {
+        args.ColorScheme(winrt::to_hstring(_startingColorScheme));
+    }
+
     return args;
 }
 
@@ -537,6 +550,7 @@ void AppCommandlineArgs::_resetStateToDefault()
     _splitVertical = false;
     _splitHorizontal = false;
     _splitPaneSize = 0.5f;
+    _splitDuplicate = false;
 
     _focusTabIndex = -1;
     _focusNextTab = false;

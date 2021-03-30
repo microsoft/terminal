@@ -118,6 +118,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 settings.SuppressApplicationTitle(newTerminalArgs.SuppressApplicationTitle().Value());
             }
+            if (!newTerminalArgs.ColorScheme().empty())
+            {
+                const auto schemes = appSettings.GlobalSettings().ColorSchemes();
+                if (const auto& scheme = schemes.TryLookup(newTerminalArgs.ColorScheme()))
+                {
+                    settings.ApplyColorScheme(scheme);
+                }
+            }
         }
 
         return settings;
