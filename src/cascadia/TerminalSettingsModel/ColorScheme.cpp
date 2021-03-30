@@ -42,13 +42,13 @@ static constexpr std::array<std::string_view, 16> TableColors = {
 };
 
 ColorScheme::ColorScheme() :
-    ColorScheme(L"", DEFAULT_FOREGROUND_WITH_ALPHA, DEFAULT_BACKGROUND_WITH_ALPHA, DEFAULT_CURSOR_COLOR)
+    ColorScheme(L"", DEFAULT_FOREGROUND, DEFAULT_BACKGROUND, DEFAULT_CURSOR_COLOR)
 {
     Utils::InitializeCampbellColorTable(_table);
 }
 
 ColorScheme::ColorScheme(winrt::hstring name) :
-    ColorScheme(name, DEFAULT_FOREGROUND_WITH_ALPHA, DEFAULT_BACKGROUND_WITH_ALPHA, DEFAULT_CURSOR_COLOR)
+    ColorScheme(name, DEFAULT_FOREGROUND, DEFAULT_BACKGROUND, DEFAULT_CURSOR_COLOR)
 {
     Utils::InitializeCampbellColorTable(_table);
 }

@@ -54,8 +54,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void ColorTable(std::array<Microsoft::Terminal::Core::Color, 16> colors);
         std::array<Microsoft::Terminal::Core::Color, 16> ColorTable();
 
-        INHERITABLE_SETTING(Model::TerminalSettings, til::color, DefaultForeground, DEFAULT_FOREGROUND_WITH_ALPHA);
-        INHERITABLE_SETTING(Model::TerminalSettings, til::color, DefaultBackground, DEFAULT_BACKGROUND_WITH_ALPHA);
+        INHERITABLE_SETTING(Model::TerminalSettings, til::color, DefaultForeground, DEFAULT_FOREGROUND);
+        INHERITABLE_SETTING(Model::TerminalSettings, til::color, DefaultBackground, DEFAULT_BACKGROUND);
         INHERITABLE_SETTING(Model::TerminalSettings, til::color, SelectionBackground, DEFAULT_FOREGROUND);
         INHERITABLE_SETTING(Model::TerminalSettings, int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
         INHERITABLE_SETTING(Model::TerminalSettings, int32_t, InitialRows, 30);
