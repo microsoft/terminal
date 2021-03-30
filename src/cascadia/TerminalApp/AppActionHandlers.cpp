@@ -498,7 +498,7 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            // Since _RemoveTab is asynchronous, create a snapshot of the  tabs we want to remove
+            // Since _RemoveTabs is asynchronous, create a snapshot of the  tabs we want to remove
             std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
             if (index > 0)
             {
@@ -537,7 +537,7 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            // Since _RemoveTab is asynchronous, create a snapshot of the  tabs we want to remove
+            // Since _RemoveTabs is asynchronous, create a snapshot of the  tabs we want to remove
             std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
             std::copy(begin(_tabs) + index + 1, end(_tabs), std::back_inserter(tabsToRemove));
             _RemoveTabs(tabsToRemove);

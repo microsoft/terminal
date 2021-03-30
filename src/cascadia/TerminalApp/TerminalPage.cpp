@@ -726,7 +726,10 @@ namespace winrt::TerminalApp::implementation
     {
         co_await winrt::resume_foreground(page->_tabView.Dispatcher());
 
-        page->_RemoveTabViewItem(tabViewItem);
+        if (auto tab{ _GetTabByTabViewItem(tabViewItem) })
+        {
+            _RemoveTab(tab);
+        }
     }
 
     // Method Description:
@@ -1813,7 +1816,10 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_OnTabCloseRequested(const IInspectable& /*sender*/, const MUX::Controls::TabViewTabCloseRequestedEventArgs& eventArgs)
     {
         const auto tabViewItem = eventArgs.Tab();
-        _RemoveTabViewItem(tabViewItem);
+        if (auto tab{ _GetTabByTabViewItem(tabViewItem) })
+        {
+            _HandleCloseTabRequested(tab);
+        }
     }
 
     TermControl TerminalPage::_InitControl(const TerminalSettings& settings, const ITerminalConnection& connection)
@@ -2366,6 +2372,17 @@ namespace winrt::TerminalApp::implementation
             _tabView.TabItems().Append(tabViewItem);
 
             tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
+
+            // When the tab requests close, try to close it (prompt for approval, if required)
+            newTabImpl->CloseRequested([weakTab, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+                auto page{ weakThis.get() };
+                auto tab{ weakTab.get() };
+
+                if (page && tab)
+                {
+                    page->_HandleCloseTabRequested(*tab);
+                }
+            });
 
             // When the tab is closed, remove it from our list of tabs.
             newTabImpl->Closed([tabViewItem, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
