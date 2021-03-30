@@ -370,7 +370,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             try
             {
                 // auto acrylicBrush = RootGrid().Background().as<Media::AcrylicBrush>();
-                auto newOpacity = _settings.TintOpacity() + effectiveDelta;
+                auto newOpacity = _settings.TintOpacity() + adjustment;
                 _settings.TintOpacity(newOpacity);
                 // acrylicBrush.TintOpacity(_settings.TintOpacity());
 
@@ -384,7 +384,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 else
                 {
                     // GH#5098: Inform the engine of the new opacity of the default text background.
-                    _core->SetBackgroundOpacity(::base::saturated_cast<float>(newOpacity));
+                    SetBackgroundOpacity(::base::saturated_cast<float>(newOpacity));
                 }
 
                 auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);

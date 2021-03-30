@@ -212,10 +212,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _ScrollPositionChanged(const IInspectable& sender, const Control::ScrollPositionChangedArgs& args);
         void _CursorPositionChanged(const IInspectable& sender, const IInspectable& args);
 
-        void _MouseScrollHandler(const double mouseDelta, const Windows::Foundation::Point point, const bool isLeftButtonPressed);
-        void _MouseZoomHandler(const double delta);
-        void _MouseTransparencyHandler(const double delta);
-        bool _DoMouseWheel(const Windows::Foundation::Point point, const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const int32_t delta, const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
+        // void _MouseScrollHandler(const double mouseDelta, const Windows::Foundation::Point point, const bool isLeftButtonPressed);
+        // void _MouseZoomHandler(const double delta);
+        // void _MouseTransparencyHandler(const double delta);
+        // bool _DoMouseWheel(const Windows::Foundation::Point point, const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const int32_t delta, const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
 
         bool _CapturePointer(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         bool _ReleasePointerCapture(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
@@ -252,6 +252,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _coreFontSizeChanged(const int fontWidth,
                                   const int fontHeight,
                                   const bool isInitialChange);
+        winrt::fire_and_forget _coreTransparencyChanged(const IInspectable& sender, const Control::TransparencyChangedEventArgs& args);
     };
 }
 

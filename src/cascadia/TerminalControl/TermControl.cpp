@@ -67,6 +67,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->CursorPositionChanged({ get_weak(), &TermControl::_CursorPositionChanged });
         _core->RendererEnteredErrorState({ get_weak(), &TermControl::_RendererEnteredErrorState });
         _core->FontSizeChanged({ get_weak(), &TermControl::_coreFontSizeChanged });
+        _core->TransparencyChanged({ get_weak(), &TermControl::_coreTransparencyChanged });
 
         _interactivity->OpenHyperlink({ get_weak(), &TermControl::_HyperlinkHandler });
         // Initialize the terminal only once the swapchainpanel is loaded - that
@@ -1448,7 +1449,51 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TerminalInput::MouseButtonState state{ leftButtonDown,
                                                midButtonDown,
                                                rightButtonDown };
-        return _DoMouseWheel(location, modifiers, delta, state);
+        return _interactivity->MouseWheel(modifiers, delta, _GetTerminalPosition(location), state);
+    }
+
+    winrt::fire_and_forget TermControl::_coreTransparencyChanged(const IInspectable& sender,
+                                                                 const Control::TransparencyChangedEventArgs& args)
+    {
+        const auto newOpacity = args.Opacity();
+        co_await resume_foreground(Dispatcher());
+        // if (_settings.UseAcrylic())
+        // {
+        try
+        {
+            auto acrylicBrush = RootGrid().Background().as<Media::AcrylicBrush>();
+            acrylicBrush.TintOpacity(newOpacity);
+
+            if (newOpacity == 1.0)
+            {
+                _settings.UseAcrylic(false);
+                _InitializeBackgroundBrush();
+                const auto bg = _settings.DefaultBackground();
+                _changeBackgroundColor(bg);
+            }
+            // else
+            // {
+            //     // GH#5098: Inform the engine of the new opacity of the default text background.
+            //     if (_renderEngine)
+            //     {
+            //         _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+            //     }
+            // }
+        }
+        CATCH_LOG();
+        // }
+        // else
+        // {
+
+        //     _InitializeBackgroundBrush();
+        // }
+        // else if (mouseDelta < 0)
+        // {
+        //     _settings.UseAcrylic(true);
+
+        //     //Setting initial opacity set to 1 to ensure smooth transition to acrylic during mouse scroll
+        //     _settings.TintOpacity(1.0);
+        // }
     }
 
     // // Method Description:
