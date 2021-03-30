@@ -227,7 +227,8 @@ NTSTATUS RegistrySerialization::s_OpenConsoleKey(_Out_ HKEY* phCurrentUserKey, _
 }
 
 // Routine Description:
-// - Opens a subkey of the given key
+// - Opens a subkey of the given key. Fails if it doesn't exist.
+// - NOTE: To create if it doesn't exist and open otherwise, try `s_CreateKey`.
 // Arguments:
 // - hKey - Handle to a registry key
 // - pwszSubKey - String name of sub key
@@ -256,6 +257,7 @@ NTSTATUS RegistrySerialization::s_DeleteValue(const HKEY hKey, _In_ PCWSTR const
 // Routine Description:
 // - Creates a subkey of the given key
 //   This function creates keys with read/write access.
+// - If key already exists, opens existing.
 // Arguments:
 // - hKey - Handle to a registry key
 // - pwszSubKey - String name of sub key
