@@ -130,8 +130,7 @@
 
         <mux:TeachingTip x:Name="RenameFailedToast"
                          x:Uid="RenameFailedToast"
-                         IsLightDismissEnabled="True">
-        </mux:TeachingTip>
+                         IsLightDismissEnabled="True" />
 
         <mux:TeachingTip x:Name="WindowRenamer"
                          x:Uid="WindowRenamer"
@@ -139,8 +138,7 @@
                          ActionButtonClick="_WindowRenamerActionClick">
             <mux:TeachingTip.Content>
                 <TextBox x:Name="WindowRenamerTextBox"
-                         Text="{x:Bind WindowName, Mode=OneWay}">
-                </TextBox>
+                         Text="{x:Bind WindowName, Mode=OneWay}" />
             </mux:TeachingTip.Content>
         </mux:TeachingTip>
     </Grid>
