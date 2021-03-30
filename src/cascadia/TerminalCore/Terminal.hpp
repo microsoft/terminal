@@ -198,7 +198,7 @@ public:
     void SetCopyToClipboardCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
-    void SetBackgroundCallback(std::function<void(const COLORREF)> pfn) noexcept;
+    void SetBackgroundCallback(std::function<void(const til::color)> pfn) noexcept;
     void TaskbarProgressChangedCallback(std::function<void()> pfn) noexcept;
 
     void SetCursorOn(const bool isOn);
@@ -236,7 +236,7 @@ private:
     std::function<void(const std::wstring_view&)> _pfnTitleChanged;
     std::function<void(const std::wstring_view&)> _pfnCopyToClipboard;
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
-    std::function<void(const COLORREF)> _pfnBackgroundColorChanged;
+    std::function<void(const til::color)> _pfnBackgroundColorChanged;
     std::function<void()> _pfnCursorPositionChanged;
     std::function<void(const std::optional<til::color>)> _pfnTabColorChanged;
     std::function<void()> _pfnTaskbarProgressChanged;
@@ -249,9 +249,10 @@ private:
     std::optional<til::color> _tabColor;
     std::optional<til::color> _startingTabColor;
 
+    // This is still stored as a COLORREF because it interacts with some code in ConTypes
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
-    COLORREF _defaultFg;
-    COLORREF _defaultBg;
+    til::color _defaultFg;
+    til::color _defaultBg;
     CursorType _defaultCursorShape;
     bool _screenReversed;
     mutable Microsoft::Console::Render::BlinkingState _blinkingState;
