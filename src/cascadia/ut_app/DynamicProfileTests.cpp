@@ -669,4 +669,5 @@ namespace TerminalAppUnitTests
         settings->LayerJson(settings->_userSettings);
         VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
     }
+
 };
