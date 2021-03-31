@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "../TerminalControl/EventArgs.h"
+#include "MockControlSettings.h"
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
@@ -19,13 +20,27 @@ namespace ControlUnitTests
         BEGIN_TEST_CLASS(ControlCoreTests)
         END_TEST_CLASS()
 
-        TEST_METHOD(PlaceholderTest);
+        TEST_METHOD(OnStackSettings);
+        TEST_METHOD(ComPtrSettings);
     };
 
-    void ControlCoreTests::PlaceholderTest()
+    void ControlCoreTests::OnStackSettings()
     {
-        Log::Comment(L"This test is a placeholder while the rest of this test library is being authored.");
-        VERIFY_IS_TRUE(true);
+        Log::Comment(L"Just make sure we can instantiate a settings obj on the stack");
+
+        MockControlSettings settings;
+
+        Log::Comment(L"Verify literally any setting, it doesn't matter");
+        VERIFY_ARE_EQUAL(DEFAULT_FOREGROUND, settings.DefaultForeground());
+    }
+    void ControlCoreTests::ComPtrSettings()
+    {
+        Log::Comment(L"Just make sure we can instantiate a settings obj in a com_ptr");
+        winrt::com_ptr<MockControlSettings> settings;
+        settings.attach(new MockControlSettings());
+
+        Log::Comment(L"Verify literally any setting, it doesn't matter");
+        VERIFY_ARE_EQUAL(DEFAULT_FOREGROUND, settings->DefaultForeground());
     }
 
 }
