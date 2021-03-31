@@ -311,9 +311,11 @@ winrt::hstring KeyChordSerialization::ToString(const KeyChord& chord)
 
 KeyChord ConversionTrait<KeyChord>::FromJson(const Json::Value& json)
 {
-    const std::string keyChordText{ json.asString() };
     try
     {
+        const std::string keyChordText{ json.isString() ?
+                                            json.asString() :
+                                            json[0].asString() };
         return _FromString(til::u8u16(keyChordText));
     }
     catch (winrt::hresult_invalid_argument)
@@ -324,7 +326,7 @@ KeyChord ConversionTrait<KeyChord>::FromJson(const Json::Value& json)
 
 bool ConversionTrait<KeyChord>::CanConvert(const Json::Value& json)
 {
-    return json.isString();
+    return json.isString() || (json.isArray() && json.size() == 1);
 }
 
 Json::Value ConversionTrait<KeyChord>::ToJson(const KeyChord& val)
