@@ -162,6 +162,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // It's possible that the nested commands have some warnings
             warnings.insert(warnings.end(), nestedWarnings.begin(), nestedWarnings.end());
 
+            if (result->_subcommands.Size() == 0)
+            {
+                warnings.push_back(SettingsLoadWarnings::FailedToParseSubCommands);
+                return nullptr;
+            }
+
             nested = true;
         }
         else if (json.isMember(JsonKey(CommandsKey)))

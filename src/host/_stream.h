@@ -57,9 +57,9 @@ Arguments:
         bytes written.
     NumSpaces - On output, the number of spaces consumed by the written characters.
     dwFlags -
-      WC_DESTRUCTIVE_BACKSPACE backspace overwrites characters.
-      WC_KEEP_CURSOR_VISIBLE   change window origin desirable when hit rt. edge
-      WC_ECHO                  if called by Read (echoing characters)
+      WC_DESTRUCTIVE_BACKSPACE   backspace overwrites characters.
+      WC_KEEP_CURSOR_VISIBLE     change window origin desirable when hit rt. edge
+      WC_PRINTABLE_CONTROL_CHARS if control characters should be expanded (as in, to "^X")
 
 Return Value:
 

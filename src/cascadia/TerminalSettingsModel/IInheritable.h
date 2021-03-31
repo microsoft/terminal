@@ -145,7 +145,7 @@ private:                                                                    \
                                                                             \
         /*user set value was not set*/                                      \
         /*iterate through parents to find a value*/                         \
-        for (auto parent : _parents)                                        \
+        for (const auto& parent : _parents)                                 \
         {                                                                   \
             if (auto val{ parent->_get##name##Impl() })                     \
             {                                                               \
@@ -166,7 +166,7 @@ private:                                                                    \
                                                                             \
         /*user set value was not set*/                                      \
         /*iterate through parents to find one with a value*/                \
-        for (auto& parent : _parents)                                       \
+        for (const auto& parent : _parents)                                 \
         {                                                                   \
             if (auto source{ parent->_get##name##OverrideSourceImpl() })    \
             {                                                               \
@@ -194,7 +194,7 @@ public:                                                                     \
     {                                                                       \
         /*user set value was not set*/                                      \
         /*iterate through parents to find one with a value*/                \
-        for (auto parent : _parents)                                        \
+        for (const auto& parent : _parents)                                 \
         {                                                                   \
             if (auto source{ parent->_get##name##OverrideSourceImpl() })    \
             {                                                               \
@@ -254,7 +254,7 @@ private:                                                                    \
                                                                             \
         /*user set value was not set*/                                      \
         /*iterate through parents to find a value*/                         \
-        for (auto parent : _parents)                                        \
+        for (const auto& parent : _parents)                                 \
         {                                                                   \
             if (auto val{ parent->_get##name##Impl() })                     \
             {                                                               \
@@ -275,7 +275,7 @@ private:                                                                    \
                                                                             \
         /*user set value was not set*/                                      \
         /*iterate through parents to find one with a value*/                \
-        for (auto& parent : _parents)                                       \
+        for (const auto& parent : _parents)                                 \
         {                                                                   \
             if (auto source{ parent->_get##name##OverrideSourceImpl() })    \
             {                                                               \

@@ -88,6 +88,7 @@ args
 argv
 ARRAYSIZE
 ARROWKEYS
+asan
 ASBRST
 ASBSET
 ASDF
@@ -433,6 +434,7 @@ cstring
 cstyle
 csv
 CSwitch
+CTerminal
 CText
 ctime
 ctl
@@ -571,6 +573,7 @@ defaultsettings
 DEFAULTTONEAREST
 DEFAULTTONULL
 DEFAULTTOPRIMARY
+DEFCON
 defectdefs
 DEFERERASE
 deff
@@ -756,6 +759,7 @@ failfast
 FAILIFTHERE
 fallthrough
 FARPROC
+fastlink
 fcb
 fcharset
 fclose
@@ -829,6 +833,7 @@ FRAMECHANGED
 fre
 freopen
 frontend
+fsanitize
 Fscreen
 FSCTL
 FSINFOCLASS
@@ -841,6 +846,7 @@ fullwidth
 func
 FUNCTIONCALL
 fuzzer
+fuzzmain
 fuzzmap
 fuzzwrapper
 fwdecl
@@ -1253,6 +1259,7 @@ LEFTSHIFT
 len
 lhs
 libpopcnt
+libsancov
 libtickit
 LIMITTEXT
 LINEDOWN
@@ -2054,6 +2061,7 @@ runtests
 runtimeclass
 runuia
 runut
+runxamlformat
 rvalue
 RVERTICAL
 rxvt
@@ -2845,6 +2853,7 @@ XResource
 xsd
 xsi
 xsize
+xstyler
 XSubstantial
 xtended
 xterm

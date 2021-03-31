@@ -11,6 +11,7 @@ CYICON
 D2DERR_SHADER_COMPILE_FAILED
 dataobject
 DERR
+dlldata
 environstrings
 EXPCMDFLAGS
 EXPCMDSTATE
@@ -24,6 +25,7 @@ Hashtable
 HIGHCONTRASTON
 HIGHCONTRASTW
 href
+IActivation
 IApp
 IAppearance
 IAsync
@@ -82,6 +84,7 @@ schandle
 semver
 serializer
 shobjidl
+SINGLEUSE
 SHOWMINIMIZED
 SIZENS
 smoothstep
@@ -92,6 +95,8 @@ spsc
 sregex
 STDCPP
 strchr
+STDMETHOD
+Stubless
 Subheader
 Subpage
 UPDATEINIFILE
@@ -107,8 +112,10 @@ UPDATEINIFILE
 userenv
 wcsstr
 wcstoui
+winmain
 wpc
 wsregex
+wwinmain
 XDocument
 XElement
 xlocmes

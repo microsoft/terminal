@@ -296,6 +296,8 @@
         { "command": "openTabRenamer" },
         { "command": "commandPalette", "keys":"ctrl+shift+p" },
 
+        { "command": "identifyWindow" },
+
         // Tab Management
         // "command": "closeTab" is unbound by default.
         //   The closeTab command closes a tab without confirmation, even if it has multiple panes.
