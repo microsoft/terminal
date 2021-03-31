@@ -949,53 +949,9 @@ namespace winrt::TerminalApp::implementation
         // Hook up the ShortcutActionDispatch object's events to our handlers.
         // They should all be hooked up here, regardless of whether or not
         // there's an actual keychord for them.
-        HOOKUP_ACTION(OpenNewTabDropdown);
-        HOOKUP_ACTION(DuplicateTab);
-        HOOKUP_ACTION(CloseTab);
-        HOOKUP_ACTION(ClosePane);
-        HOOKUP_ACTION(CloseWindow);
-        HOOKUP_ACTION(ScrollUp);
-        HOOKUP_ACTION(ScrollDown);
-        HOOKUP_ACTION(NextTab);
-        HOOKUP_ACTION(PrevTab);
-        HOOKUP_ACTION(SendInput);
-        HOOKUP_ACTION(SplitPane);
-        HOOKUP_ACTION(TogglePaneZoom);
-        HOOKUP_ACTION(ScrollUpPage);
-        HOOKUP_ACTION(ScrollDownPage);
-        HOOKUP_ACTION(ScrollToTop);
-        HOOKUP_ACTION(ScrollToBottom);
-        HOOKUP_ACTION(OpenSettings);
-        HOOKUP_ACTION(PasteText);
-        HOOKUP_ACTION(NewTab);
-        HOOKUP_ACTION(SwitchToTab);
-        HOOKUP_ACTION(ResizePane);
-        HOOKUP_ACTION(MoveFocus);
-        HOOKUP_ACTION(CopyText);
-        HOOKUP_ACTION(AdjustFontSize);
-        HOOKUP_ACTION(Find);
-        HOOKUP_ACTION(ResetFontSize);
-        HOOKUP_ACTION(ToggleShaderEffects);
-        HOOKUP_ACTION(ToggleFocusMode);
-        HOOKUP_ACTION(ToggleFullscreen);
-        HOOKUP_ACTION(ToggleAlwaysOnTop);
-        HOOKUP_ACTION(ToggleCommandPalette);
-        HOOKUP_ACTION(SetColorScheme);
-        HOOKUP_ACTION(SetTabColor);
-        HOOKUP_ACTION(OpenTabColorPicker);
-        HOOKUP_ACTION(RenameTab);
-        HOOKUP_ACTION(OpenTabRenamer);
-        HOOKUP_ACTION(ExecuteCommandline);
-        HOOKUP_ACTION(CloseOtherTabs);
-        HOOKUP_ACTION(CloseTabsAfter);
-        HOOKUP_ACTION(TabSearch);
-        HOOKUP_ACTION(MoveTab);
-        HOOKUP_ACTION(BreakIntoDebugger);
-        HOOKUP_ACTION(FindMatch);
-        HOOKUP_ACTION(TogglePaneReadOnly);
-        HOOKUP_ACTION(NewWindow);
-        HOOKUP_ACTION(IdentifyWindow);
-        HOOKUP_ACTION(IdentifyWindows);
+#define ON_ALL_ACTIONS(action) HOOKUP_ACTION(action);
+        ALL_SHORTCUT_ACTIONS
+#undef ON_ALL_ACTIONS
     }
 
     // Method Description:
