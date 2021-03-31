@@ -356,10 +356,10 @@ try
         // CURSOR INVERSION
         // We're trying to invert the cursor and the character underneath it without redrawing the text (as
         // doing so would break up the run if it were part of a ligature). To do that, we're going to try
-        // to XOR the content of the screen where the cursor would have been.
+        // to invert the content of the screen where the cursor would have been.
         //
         // This renderer, however, supports transparency. In fact, in its default configuration it will not
-        // have a background at all (it delegates background handling to somebody else.) You can't XOR what
+        // have a background at all (it delegates background handling to somebody else.) You can't invert what
         // isn't there.
         //
         // To properly invert the cursor in such a configuration, then, we have to play some tricks. Examples
@@ -384,7 +384,7 @@ try
         // A   A      A===A
         // A===A      A===A
         //
-        // Last, we'll draw the cursor again in all white and use that as the *mask* for XORing the already-
+        // Last, we'll draw the cursor again in all white and use that as the *mask* for inverting the already-
         // drawn pixels. (firstPass == false) (# = mask, a = inverted A)
         //
         // EMPTY BOX  FILLED BOX
@@ -404,7 +404,7 @@ try
         else
         {
             // When we're drawing an inverted cursor on the second pass (foreground), we want to draw it into a
-            // command list, which we will then draw down as an XOR Mask. We'll draw it in white,
+            // command list, which we will then draw down with MASK_INVERT. We'll draw it in white,
             // which will ensure that every component is masked.
             RETURN_IF_FAILED(d2dContext->CreateCommandList(&commandList));
             d2dContext->GetTarget(&originalTarget);
@@ -448,7 +448,7 @@ try
     if (commandList)
     {
         // We drew the entire cursor in a command list
-        // so now we MASK XOR that command list with the existing image
+        // so now we draw that command list using MASK_INVERT over the existing image
         RETURN_IF_FAILED(commandList->Close());
         d2dContext->SetTarget(originalTarget.Get());
         d2dContext->DrawImage(commandList.Get(), D2D1_INTERPOLATION_MODE_LINEAR, D2D1_COMPOSITE_MODE_MASK_INVERT);
