@@ -14,6 +14,12 @@
 #include "cppwinrt_utils.h"
 #include "ThrottledFunc.h"
 
+namespace ControlUnitTests
+{
+    class ControlCoreTests;
+    class ControlInteractivityTests;
+};
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct ControlCore : ControlCoreT<ControlCore>
@@ -21,6 +27,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     public:
         ControlCore(IControlSettings settings,
                     TerminalConnection::ITerminalConnection connection);
+        ~ControlCore();
 
         bool InitializeTerminal(const double actualWidth,
                                 const double actualHeight,
@@ -173,7 +180,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         double _panelHeight{ 0 };
         double _compositionScaleX{ 0 };
         double _compositionScaleY{ 0 };
-        til::color _backgroundColor; // This is _in_ Terminal already!
+        til::color _backgroundColor; // !TODO! This is _in_ Terminal already!
 
         void _SetFontSize(int fontSize);
         void _UpdateFont(const bool initialUpdate = false);
@@ -202,11 +209,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void RenderEngineSwapChainChanged();
 #pragma endregion
 
-    public:
-        ////////////////////////////////////////////////////////////////////////
-        // These methods are new
-
         void _raiseHoveredHyperlinkChanged();
+
+        friend class ControlUnitTests::ControlCoreTests;
+        friend class ControlUnitTests::ControlInteractivityTests;
     };
 }
 

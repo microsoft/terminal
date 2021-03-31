@@ -106,6 +106,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _terminal->UpdateSettings(settings);
     }
 
+    ControlCore::~ControlCore()
+    {
+        Close();
+    }
+
     bool ControlCore::InitializeTerminal(const double actualWidth,
                                          const double actualHeight,
                                          const double compositionScaleX,
@@ -365,12 +370,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::AdjustOpacity(const double adjustment)
     {
+        auto newOpacity = std::clamp(_settings.TintOpacity() + adjustment,
+                                     0.0,
+                                     1.0);
         if (_settings.UseAcrylic())
         {
             try
             {
                 // auto acrylicBrush = RootGrid().Background().as<Media::AcrylicBrush>();
-                auto newOpacity = _settings.TintOpacity() + adjustment;
                 _settings.TintOpacity(newOpacity);
                 // acrylicBrush.TintOpacity(_settings.TintOpacity());
 
@@ -397,9 +404,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _settings.UseAcrylic(true);
 
             //Setting initial opacity set to 1 to ensure smooth transition to acrylic during mouse scroll
-            _settings.TintOpacity(1.0);
+            newOpacity = std::clamp(1.0 + adjustment, 0.0, 1.0);
+            _settings.TintOpacity(newOpacity);
 
-            auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(1.0);
+            auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
             _TransparencyChangedHandlers(*this, *eventArgs);
         }
     }

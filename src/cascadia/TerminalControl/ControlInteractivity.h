@@ -15,6 +15,12 @@ namespace Microsoft::Console::VirtualTerminal
     struct MouseButtonState;
 }
 
+namespace ControlUnitTests
+{
+    class ControlCoreTests;
+    class ControlInteractivityTests;
+};
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct ControlInteractivity : ControlInteractivityT<ControlInteractivity>
@@ -103,6 +109,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _SendPastedTextToConnection(const std::wstring& wstr);
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
+
+        friend class ControlUnitTests::ControlCoreTests;
+        friend class ControlUnitTests::ControlInteractivityTests;
     };
 }
 

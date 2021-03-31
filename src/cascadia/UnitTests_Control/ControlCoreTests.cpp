@@ -25,6 +25,8 @@ namespace ControlUnitTests
         TEST_METHOD(OnStackSettings);
         TEST_METHOD(ComPtrSettings);
         TEST_METHOD(InstantiateCore);
+        TEST_METHOD(TestInitialize);
+        TEST_METHOD(TestAdjustAcrylic);
 
         TEST_CLASS_SETUP(ModuleSetup)
         {
@@ -67,6 +69,102 @@ namespace ControlUnitTests
         Log::Comment(L"Create ControlCore object");
         auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
         VERIFY_IS_NOT_NULL(core);
+    }
+
+    void ControlCoreTests::TestInitialize()
+    {
+        Log::Comment(L"Create settings object");
+        winrt::com_ptr<MockControlSettings> settings;
+        settings.attach(new MockControlSettings());
+
+        Log::Comment(L"Create connection object");
+        winrt::com_ptr<MockConnection> conn;
+        conn.attach(new MockConnection());
+        VERIFY_IS_NOT_NULL(conn);
+
+        Log::Comment(L"Create ControlCore object");
+        auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+
+        VERIFY_IS_FALSE(core->_initializedTerminal);
+        // "Cascadia Mono" ends up with an actual size of 9x19 at 96DPI. So
+        // let's just arbitrarily start with a 270x380px (30x20 chars) window
+        core->InitializeTerminal(270, 380, 1.0, 1.0);
+        VERIFY_IS_TRUE(core->_initializedTerminal);
+        VERIFY_ARE_EQUAL(30, core->_terminal->GetViewport().Width());
+    }
+
+    void ControlCoreTests::TestAdjustAcrylic()
+    {
+        winrt::com_ptr<MockControlSettings> settings;
+        settings.attach(new MockControlSettings());
+        winrt::com_ptr<MockConnection> conn;
+        conn.attach(new MockConnection());
+
+        settings->UseAcrylic(true);
+        settings->TintOpacity(0.5f);
+
+        Log::Comment(L"Create ControlCore object");
+        auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+
+        // A callback to make sure that we're raising TransparencyChanged events
+        double expectedOpacity = 0.5;
+        auto opacityCallback = [&](auto&&, Control::TransparencyChangedEventArgs args) mutable {
+            VERIFY_ARE_EQUAL(expectedOpacity, args.Opacity());
+            VERIFY_ARE_EQUAL(expectedOpacity, settings->TintOpacity());
+            VERIFY_ARE_EQUAL(expectedOpacity, core->_settings.TintOpacity());
+
+            if (expectedOpacity < 1.0)
+            {
+                VERIFY_IS_TRUE(settings->UseAcrylic());
+                VERIFY_IS_TRUE(core->_settings.UseAcrylic());
+            }
+            VERIFY_ARE_EQUAL(expectedOpacity < 1.0, settings->UseAcrylic());
+            VERIFY_ARE_EQUAL(expectedOpacity < 1.0, core->_settings.UseAcrylic());
+        };
+        core->TransparencyChanged(opacityCallback);
+
+        VERIFY_IS_FALSE(core->_initializedTerminal);
+        // "Cascadia Mono" ends up with an actual size of 9x19 at 96DPI. So
+        // let's just arbitrarily start with a 270x380px (30x20 chars) window
+        core->InitializeTerminal(270, 380, 1.0, 1.0);
+        VERIFY_IS_TRUE(core->_initializedTerminal);
+
+        Log::Comment(L"Increasing opacity till fully opaque");
+        expectedOpacity += 0.1; // = 0.6;
+        core->AdjustOpacity(0.1);
+        expectedOpacity += 0.1; // = 0.7;
+        core->AdjustOpacity(0.1);
+        expectedOpacity += 0.1; // = 0.8;
+        core->AdjustOpacity(0.1);
+        expectedOpacity += 0.1; // = 0.9;
+        core->AdjustOpacity(0.1);
+        expectedOpacity += 0.1; // = 1.0;
+        // cast to float because floating point numbers are mean
+        VERIFY_ARE_EQUAL(1.0f, base::saturated_cast<float>(expectedOpacity));
+        core->AdjustOpacity(0.1);
+
+        Log::Comment(L"Increasing opacity more doesn't actually change it to be >1.0");
+        // DebugBreak();
+        expectedOpacity = 1.0;
+        core->AdjustOpacity(0.1);
+
+        Log::Comment(L"Decrease opacity");
+        expectedOpacity -= 0.25; // = 0.75;
+        core->AdjustOpacity(-0.25);
+        expectedOpacity -= 0.25; // = 0.5;
+        core->AdjustOpacity(-0.25);
+        expectedOpacity -= 0.25; // = 0.25;
+        core->AdjustOpacity(-0.25);
+        expectedOpacity -= 0.25; // = 0.05;
+        // cast to float because floating point numbers are mean
+        VERIFY_ARE_EQUAL(0.0f, base::saturated_cast<float>(expectedOpacity));
+        core->AdjustOpacity(-0.25);
+
+        Log::Comment(L"Decreasing opacity more doesn't actually change it to be < 0");
+        expectedOpacity = 0.0;
+        core->AdjustOpacity(-0.25);
     }
 
 }
