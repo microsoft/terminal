@@ -24,6 +24,7 @@ call %TAEF% ^
     %OPENCON%\bin\%PLATFORM%\%_LAST_BUILD_CONF%\til.unit.tests.dll ^
     %OPENCON%\bin\%PLATFORM%\%_LAST_BUILD_CONF%\UnitTests_TerminalApp\Terminal.App.Unit.Tests.dll ^
     %OPENCON%\bin\%PLATFORM%\%_LAST_BUILD_CONF%\UnitTests_Remoting\Remoting.UnitTests.dll ^
+    %OPENCON%\bin\%PLATFORM%\%_LAST_BUILD_CONF%\UnitTests_Control\Control.UnitTests.dll ^
     %_TestHostAppPath%\TerminalApp.LocalTests.dll ^
     %_TestHostAppPath%\SettingsModel.LocalTests.dll ^
     %*
