@@ -447,8 +447,8 @@ try
 
     if (commandList)
     {
-        // We drew the entire cursor in a commandlist
-        // so now we MASK XOR that commandlist with the existing image
+        // We drew the entire cursor in a command list
+        // so now we MASK XOR that command list with the existing image
         RETURN_IF_FAILED(commandList->Close());
         d2dContext->SetTarget(originalTarget.Get());
         d2dContext->DrawImage(commandList.Get(), D2D1_INTERPOLATION_MODE_LINEAR, D2D1_COMPOSITE_MODE_MASK_INVERT);
