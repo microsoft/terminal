@@ -14,7 +14,6 @@
 #include "SearchBoxControl.h"
 #include "ThrottledFunc.h"
 
-// #include "ControlCore.h"
 #include "ControlInteractivity.h"
 
 namespace Microsoft::Console::VirtualTerminal
@@ -144,8 +143,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::shared_ptr<ThrottledFunc<ScrollBarUpdate>> _updateScrollBar;
         bool _isInternalScrollBarUpdate;
 
-        // unsigned int _rowsToScroll; // Definitely Control/Interactivity
-
         // Auto scroll occurs when user, while selecting, drags cursor outside viewport. View is then scrolled to 'follow' the cursor.
         double _autoScrollVelocity;
         std::optional<Windows::UI::Input::PointerPoint> _autoScrollingPointerPoint;
@@ -155,31 +152,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::optional<Windows::UI::Xaml::DispatcherTimer> _cursorTimer;
         std::optional<Windows::UI::Xaml::DispatcherTimer> _blinkTimer;
 
-        // // If this is set, then we assume we are in the middle of panning the
-        // //      viewport via touch input.
-        // std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
-
-        // using Timestamp = uint64_t;
-
-        // // imported from WinUser
-        // // Used for PointerPoint.Timestamp Property (https://docs.microsoft.com/en-us/uwp/api/windows.ui.input.pointerpoint.timestamp#Windows_UI_Input_PointerPoint_Timestamp)
-        // Timestamp _multiClickTimer;
-        // unsigned int _multiClickCounter;
-        // Timestamp _lastMouseClickTimestamp;
-        // std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPos;
-        // std::optional<winrt::Windows::Foundation::Point> _singleClickTouchdownPos;
-        // std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPosNoSelection;
-        // // This field tracks whether the selection has changed meaningfully
-        // // since it was last copied. It's generally used to prevent copyOnSelect
-        // // from firing when the pointer _just happens_ to be released over the
-        // // terminal.
-        // bool _selectionNeedsToBeCopied; // ->Interactivity
-
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
         void _ApplyUISettings(const IControlSettings&);
         void _UpdateSettingsOnUIThread();
-        // void _UpdateSystemParameterSettings() noexcept;
+
         void _InitializeBackgroundBrush();
         void _BackgroundColorChangedHandler(const IInspectable& sender, const IInspectable& args);
         winrt::fire_and_forget _changeBackgroundColor(const til::color bg);
@@ -196,26 +173,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _PointerExitedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _MouseWheelHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs const& e);
+
         void _GotFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void _LostFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
+
         winrt::fire_and_forget _DragDropHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const e);
         void _DragOverHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const& e);
+
         winrt::fire_and_forget _HyperlinkHandler(Windows::Foundation::IInspectable const& sender, Control::OpenHyperlinkEventArgs const& e);
 
         void _CursorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _BlinkTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
+
         void _SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition);
-        // void _SendPastedTextToConnection(const std::wstring& wstr);
+
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);
+
         void _TerminalTabColorChanged(const std::optional<til::color> color);
+
         void _ScrollPositionChanged(const IInspectable& sender, const Control::ScrollPositionChangedArgs& args);
         void _CursorPositionChanged(const IInspectable& sender, const IInspectable& args);
-
-        // void _MouseScrollHandler(const double mouseDelta, const Windows::Foundation::Point point, const bool isLeftButtonPressed);
-        // void _MouseZoomHandler(const double delta);
-        // void _MouseTransparencyHandler(const double delta);
-        // bool _DoMouseWheel(const Windows::Foundation::Point point, const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const int32_t delta, const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
 
         bool _CapturePointer(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         bool _ReleasePointerCapture(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
@@ -231,11 +209,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _TryHandleKeyBinding(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const;
         void _ClearKeyboardState(const WORD vkey, const WORD scanCode) const noexcept;
         bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
-        // bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point);
-        // bool _CanSendVTMouseInput();
 
         const til::point _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
-        // const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
         void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);

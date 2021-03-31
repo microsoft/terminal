@@ -94,14 +94,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    // // Method Description:
-    // // - Given a copy-able selection, get the selected text from the buffer and send it to the
-    // //     Windows Clipboard (CascadiaWin32:main.cpp).
-    // // - CopyOnSelect does NOT clear the selection
-    // // Arguments:
-    // // - singleLine: collapse all of the text to one line
-    // // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
-    // //             if we should defer which formats are copied to the global setting
+    // Method Description:
+    // - Given a copy-able selection, get the selected text from the buffer and send it to the
+    //     Windows Clipboard (CascadiaWin32:main.cpp).
+    // - CopyOnSelect does NOT clear the selection
+    // Arguments:
+    // - singleLine: collapse all of the text to one line
+    // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
+    //             if we should defer which formats are copied to the global setting
     bool ControlInteractivity::CopySelectionToClipboard(bool singleLine,
                                                         const Windows::Foundation::IReference<CopyFormat>& formats)
     {
@@ -153,15 +153,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (type == Windows::Devices::Input::PointerDeviceType::Mouse ||
             type == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            // const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
-            // static_cast to a uint32_t because we can't use the WI_IsFlagSet
-            // macro directly with a VirtualKeyModifiers
-            const auto altEnabled = modifiers.IsAltPressed(); // WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Menu));
-            const auto shiftEnabled = modifiers.IsShiftPressed(); // WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
-            const auto ctrlEnabled = modifiers.IsCtrlPressed(); // WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Control));
+            const auto altEnabled = modifiers.IsAltPressed();
+            const auto shiftEnabled = modifiers.IsShiftPressed();
+            const auto ctrlEnabled = modifiers.IsCtrlPressed();
 
             const auto cursorPosition = point.Position();
-            // const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
             // GH#9396: we prioritize hyper-link over VT mouse events
             //

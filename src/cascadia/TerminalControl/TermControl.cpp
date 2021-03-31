@@ -185,15 +185,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    // // Method Description:
-    // // - Search text in text buffer. This is triggered if the user click
-    // //   search button or press enter.
-    // // Arguments:
-    // // - text: the text to search
-    // // - goForward: boolean that represents if the current search direction is forward
-    // // - caseSensitive: boolean that represents if the current search is case sensitive
-    // // Return Value:
-    // // - <none>
+    // Method Description:
+    // - Search text in text buffer. This is triggered if the user click
+    //   search button or press enter.
+    // Arguments:
+    // - text: the text to search
+    // - goForward: boolean that represents if the current search direction is forward
+    // - caseSensitive: boolean that represents if the current search is case sensitive
+    // Return Value:
+    // - <none>
     void TermControl::_Search(const winrt::hstring& text,
                               const bool goForward,
                               const bool caseSensitive)
@@ -655,9 +655,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _blinkTimer = std::nullopt;
         }
 
-        // // import value from WinUser (convert from milli-seconds to micro-seconds)
-        // _multiClickTimer = GetDoubleClickTime() * 1000;
-
         // Focus the control here. If we do it during control initialization, then
         //      focus won't actually get passed to us. I believe this is because
         //      we're not technically a part of the UI tree yet, so focusing us
@@ -952,75 +949,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         e.Handled(true);
     }
 
-    // // Method Description:
-    // // - Send this particular mouse event to the terminal.
-    // //   See Terminal::SendMouseEvent for more information.
-    // // Arguments:
-    // // - point: the PointerPoint object representing a mouse event from our XAML input handler
-    // bool TermControl::_TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point)
-    // {
-    //     const auto props = point.Properties();
-
-    //     // Get the terminal position relative to the viewport
-    //     const auto terminalPosition = _GetTerminalPosition(point.Position());
-
-    //     // Which mouse button changed state (and how)
-    //     unsigned int uiButton{};
-    //     switch (props.PointerUpdateKind())
-    //     {
-    //     case PointerUpdateKind::LeftButtonPressed:
-    //         uiButton = WM_LBUTTONDOWN;
-    //         break;
-    //     case PointerUpdateKind::LeftButtonReleased:
-    //         uiButton = WM_LBUTTONUP;
-    //         break;
-    //     case PointerUpdateKind::MiddleButtonPressed:
-    //         uiButton = WM_MBUTTONDOWN;
-    //         break;
-    //     case PointerUpdateKind::MiddleButtonReleased:
-    //         uiButton = WM_MBUTTONUP;
-    //         break;
-    //     case PointerUpdateKind::RightButtonPressed:
-    //         uiButton = WM_RBUTTONDOWN;
-    //         break;
-    //     case PointerUpdateKind::RightButtonReleased:
-    //         uiButton = WM_RBUTTONUP;
-    //         break;
-    //     default:
-    //         uiButton = WM_MOUSEMOVE;
-    //     }
-
-    //     // Mouse wheel data
-    //     const short sWheelDelta = ::base::saturated_cast<short>(props.MouseWheelDelta());
-    //     if (sWheelDelta != 0 && !props.IsHorizontalMouseWheel())
-    //     {
-    //         // if we have a mouse wheel delta and it wasn't a horizontal wheel motion
-    //         uiButton = WM_MOUSEWHEEL;
-    //     }
-
-    //     const auto modifiers = _GetPressedModifierKeys();
-    //     const TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(),
-    //                                                  props.IsMiddleButtonPressed(),
-    //                                                  props.IsRightButtonPressed() };
-    //     return _core->SendMouseEvent(terminalPosition, uiButton, modifiers, sWheelDelta, state);
-    // }
-
-    // // Method Description:
-    // // - Checks if we can send vt mouse input.
-    // // Arguments:
-    // // - point: the PointerPoint object representing a mouse event from our XAML input handler
-    // bool TermControl::_CanSendVTMouseInput()
-    // {
-    //     // If the user is holding down Shift, suppress mouse events
-    //     // TODO GH#4875: disable/customize this functionality
-    //     const auto modifiers = _GetPressedModifierKeys();
-    //     if (modifiers.IsShiftPressed())
-    //     {
-    //         return false;
-    //     }
-    //     return _core->IsVtMouseModeEnabled();
-    // }
-
     // Method Description:
     // - handle a mouse click event. Begin selection process.
     // Arguments:
@@ -1058,81 +986,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                        _focused,
                                        _GetTerminalPosition(cursorPosition),
                                        ptr.PointerDeviceType());
-        // if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
-        // {
-        //     const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
-        //     // static_cast to a uint32_t because we can't use the WI_IsFlagSet
-        //     // macro directly with a VirtualKeyModifiers
-        //     const auto altEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Menu));
-        //     const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
-        //     const auto ctrlEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Control));
-
-        //     const auto cursorPosition = point.Position();
-        //     const auto terminalPosition = _GetTerminalPosition(cursorPosition);
-
-        //     // GH#9396: we prioritize hyper-link over VT mouse events
-        //     //
-        //     // !TODO! Before we'd lock the terminal before getting the hyperlink. Do we still need to?
-        //     auto hyperlink = _core->GetHyperlink(terminalPosition);
-        //     if (point.Properties().IsLeftButtonPressed() &&
-        //         ctrlEnabled && !hyperlink.empty())
-        //     {
-        //         const auto clickCount = _interactivity->_NumberOfClicks(cursorPosition, point.Timestamp());
-        //         // Handle hyper-link only on the first click to prevent multiple activations
-        //         if (clickCount == 1)
-        //         {
-        //             _HyperlinkHandler(hyperlink);
-        //         }
-        //     }
-        //     else if (_CanSendVTMouseInput())
-        //     {
-        //         _TrySendMouseEvent(point);
-        //     }
-        //     else if (point.Properties().IsLeftButtonPressed())
-        //     {
-        //         const auto clickCount = _interactivity->_NumberOfClicks(cursorPosition, point.Timestamp());
-        //         // This formula enables the number of clicks to cycle properly
-        //         // between single-, double-, and triple-click. To increase the
-        //         // number of acceptable click states, simply increment
-        //         // MAX_CLICK_COUNT and add another if-statement
-        //         const unsigned int MAX_CLICK_COUNT = 3;
-        //         const auto multiClickMapper = clickCount > MAX_CLICK_COUNT ? ((clickCount + MAX_CLICK_COUNT - 1) % MAX_CLICK_COUNT) + 1 : clickCount;
-
-        //         // Capture the position of the first click when no selection is active
-        //         if (multiClickMapper == 1 &&
-        //             !_core->HasSelection())
-        //         {
-        //             _singleClickTouchdownPos = cursorPosition;
-        //             _lastMouseClickPosNoSelection = cursorPosition;
-        //         }
-        //         const bool isOnOriginalPosition = _lastMouseClickPosNoSelection == cursorPosition;
-
-        //         _core->LeftClickOnTerminal(terminalPosition,
-        //                                    multiClickMapper,
-        //                                    altEnabled,
-        //                                    shiftEnabled,
-        //                                    isOnOriginalPosition,
-        //                                    _selectionNeedsToBeCopied);
-        //     }
-        //     else if (point.Properties().IsRightButtonPressed())
-        //     {
-        //         // CopyOnSelect right click always pastes
-        //         if (_settings.CopyOnSelect() || !_core->HasSelection())
-        //         {
-        //             PasteTextFromClipboard();
-        //         }
-        //         else
-        //         {
-        //             CopySelectionToClipboard(shiftEnabled, nullptr);
-        //         }
-        //     }
-        // }
-        // else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
-        // {
-        //     const auto contactRect = point.Properties().ContactRect();
-        //     // Set our touch rect, to start a pan.
-        //     _touchAnchor = winrt::Windows::Foundation::Point{ contactRect.X, contactRect.Y };
-        // }
 
         args.Handled(true);
     }
@@ -1194,91 +1047,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _TryStopAutoScroll(ptr.PointerId());
             }
         }
-        // if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
-        // {
-        //     // Short-circuit isReadOnly check to avoid warning dialog
-        //     if (_focused && !_core->IsInReadOnlyMode() && _CanSendVTMouseInput())
-        //     {
-        //         _interactivity->_TrySendMouseEvent(point, terminalPosition);
-        //     }
-        //     else if (_focused && point.Properties().IsLeftButtonPressed())
-        //     {
-        //         if (_singleClickTouchdownPos)
-        //         {
-        //             // Figure out if the user's moved a quarter of a cell's smaller axis away from the clickdown point
-        //             auto& touchdownPoint{ *_singleClickTouchdownPos };
-        //             auto distance{ std::sqrtf(std::powf(cursorPosition.X - touchdownPoint.X, 2) + std::powf(cursorPosition.Y - touchdownPoint.Y, 2)) };
-        //             const til::size fontSize{ _core->GetFont().GetSize() };
-
-        //             const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _core->RendererScale());
-        //             if (distance >= (std::min(fontSizeInDips.width(), fontSizeInDips.height()) / 4.f))
-        //             {
-        //                 _core->SetSelectionAnchor(_GetTerminalPosition(touchdownPoint));
-        //                 // stop tracking the touchdown point
-        //                 _singleClickTouchdownPos = std::nullopt;
-        //             }
-        //         }
-
-        //         _SetEndSelectionPointAtCursor(cursorPosition);
-
-        //         const double cursorBelowBottomDist = cursorPosition.Y - SwapChainPanel().Margin().Top - SwapChainPanel().ActualHeight();
-        //         const double cursorAboveTopDist = -1 * cursorPosition.Y + SwapChainPanel().Margin().Top;
-
-        //         constexpr double MinAutoScrollDist = 2.0; // Arbitrary value
-        //         double newAutoScrollVelocity = 0.0;
-        //         if (cursorBelowBottomDist > MinAutoScrollDist)
-        //         {
-        //             newAutoScrollVelocity = _GetAutoScrollSpeed(cursorBelowBottomDist);
-        //         }
-        //         else if (cursorAboveTopDist > MinAutoScrollDist)
-        //         {
-        //             newAutoScrollVelocity = -1.0 * _GetAutoScrollSpeed(cursorAboveTopDist);
-        //         }
-
-        //         if (newAutoScrollVelocity != 0)
-        //         {
-        //             _TryStartAutoScroll(point, newAutoScrollVelocity);
-        //         }
-        //         else
-        //         {
-        //             _TryStopAutoScroll(ptr.PointerId());
-        //         }
-        //     }
-
-        //     _core->UpdateHoveredCell(terminalPosition);
-        // }
-        // else if (_focused && ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
-        // {
-        //     const auto contactRect = point.Properties().ContactRect();
-        //     winrt::Windows::Foundation::Point newTouchPoint{ contactRect.X, contactRect.Y };
-        //     const auto anchor = _touchAnchor.value();
-
-        //     // Our actualFont's size is in pixels, convert to DIPs, which the
-        //     // rest of the Points here are in.
-        //     const til::size fontSize{ _core->GetFont().GetSize() };
-        //     const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _core->RendererScale());
-
-        //     // Get the difference between the point we've dragged to and the start of the touch.
-        //     const float dy = newTouchPoint.Y - anchor.Y;
-
-        //     // Start viewport scroll after we've moved more than a half row of text
-        //     if (std::abs(dy) > (fontSizeInDips.height<float>() / 2.0f))
-        //     {
-        //         // Multiply by -1, because moving the touch point down will
-        //         // create a positive delta, but we want the viewport to move up,
-        //         // so we'll need a negative scroll amount (and the inverse for
-        //         // panning down)
-        //         const float numRows = -1.0f * (dy / fontSizeInDips.height<float>());
-
-        //         const auto currentOffset = ::base::ClampedNumeric<double>(ScrollBar().Value());
-        //         const auto newValue = numRows + currentOffset;
-
-        //         ScrollBar().Value(newValue);
-
-        //         // Use this point as our new scroll anchor.
-        //         _touchAnchor = newTouchPoint;
-        //     }
-        // }
         args.Handled(true);
     }
 
@@ -1309,32 +1077,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                         terminalPosition,
                                         type);
 
-        // if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
-        // {
-        //     // Short-circuit isReadOnly check to avoid warning dialog
-        //     if (!_core->IsInReadOnlyMode() && _CanSendVTMouseInput())
-        //     {
-        //         const auto cursorPosition = point.Position();
-        //         const auto terminalPosition = _GetTerminalPosition(cursorPosition);
-        //         _interactivity->_TrySendMouseEvent(point, terminalPosition);
-        //         args.Handled(true);
-        //         return;
-        //     }
-
-        //     // Only a left click release when copy on select is active should perform a copy.
-        //     // Right clicks and middle clicks should not need to do anything when released.
-        //     if (_settings.CopyOnSelect() && point.Properties().PointerUpdateKind() == Windows::UI::Input::PointerUpdateKind::LeftButtonReleased && _selectionNeedsToBeCopied)
-        //     {
-        //         CopySelectionToClipboard(false, nullptr);
-        //     }
-        // }
-        // else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
-        // {
-        //     _touchAnchor = std::nullopt;
-        // }
-
-        // _singleClickTouchdownPos = std::nullopt;
-
         _TryStopAutoScroll(ptr.PointerId());
 
         args.Handled(true);
@@ -1363,10 +1105,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(),
                                                      props.IsMiddleButtonPressed(),
                                                      props.IsRightButtonPressed() };
-        // auto result = _DoMouseWheel(point.Position(),
-        //                             ControlKeyStates{ args.KeyModifiers() },
-        //                             point.Properties().MouseWheelDelta(),
-        //                             state);
         auto mousePosition = point.Position();
 
         auto result = _interactivity->MouseWheel(ControlKeyStates{ args.KeyModifiers() },
@@ -1378,56 +1116,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             args.Handled(true);
         }
     }
-
-    // // Method Description:
-    // // - Actually handle a scrolling event, whether from a mouse wheel or a
-    // //   touchpad scroll. Depending upon what modifier keys are pressed,
-    // //   different actions will take place.
-    // //   * Attempts to first dispatch the mouse scroll as a VT event
-    // //   * If Ctrl+Shift are pressed, then attempts to change our opacity
-    // //   * If just Ctrl is pressed, we'll attempt to "zoom" by changing our font size
-    // //   * Otherwise, just scrolls the content of the viewport
-    // // Arguments:
-    // // - point: the location of the mouse during this event
-    // // - modifiers: The modifiers pressed during this event, in the form of a VirtualKeyModifiers
-    // // - delta: the mouse wheel delta that triggered this event.
-    // bool TermControl::_DoMouseWheel(const Windows::Foundation::Point point,
-    //                                 const ControlKeyStates modifiers,
-    //                                 const int32_t delta,
-    //                                 const TerminalInput::MouseButtonState state)
-    // {
-    //     // Short-circuit isReadOnly check to avoid warning dialog
-    //     if (!_core->IsInReadOnlyMode() && _interactivity->_CanSendVTMouseInput(modifiers))
-    //     {
-    //         // Most mouse event handlers call
-    //         //      _TrySendMouseEvent(point);
-    //         // here with a PointerPoint. However, as of #979, we don't have a
-    //         // PointerPoint to work with. So, we're just going to do a
-    //         // mousewheel event manually
-    //         return _core->SendMouseEvent(_GetTerminalPosition(point),
-    //                                      WM_MOUSEWHEEL,
-    //                                      _GetPressedModifierKeys(),
-    //                                      ::base::saturated_cast<short>(delta),
-    //                                      state);
-    //     }
-
-    //     const auto ctrlPressed = modifiers.IsCtrlPressed();
-    //     const auto shiftPressed = modifiers.IsShiftPressed();
-
-    //     if (ctrlPressed && shiftPressed)
-    //     {
-    //         _MouseTransparencyHandler(delta);
-    //     }
-    //     else if (ctrlPressed)
-    //     {
-    //         _MouseZoomHandler(delta);
-    //     }
-    //     else
-    //     {
-    //         _MouseScrollHandler(delta, point, state.isLeftButtonDown);
-    //     }
-    //     return false;
-    // }
 
     // Method Description:
     // - This is part of the solution to GH#979
@@ -1471,87 +1159,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto bg = _settings.DefaultBackground();
                 _changeBackgroundColor(bg);
             }
-            // else
-            // {
-            //     // GH#5098: Inform the engine of the new opacity of the default text background.
-            //     if (_renderEngine)
-            //     {
-            //         _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
-            //     }
-            // }
         }
         CATCH_LOG();
-        // }
-        // else
-        // {
-
-        //     _InitializeBackgroundBrush();
-        // }
-        // else if (mouseDelta < 0)
-        // {
-        //     _settings.UseAcrylic(true);
-
-        //     //Setting initial opacity set to 1 to ensure smooth transition to acrylic during mouse scroll
-        //     _settings.TintOpacity(1.0);
-        // }
     }
-
-    // // Method Description:
-    // // - Adjust the opacity of the acrylic background in response to a mouse
-    // //   scrolling event.
-    // // Arguments:
-    // // - mouseDelta: the mouse wheel delta that triggered this event.
-    // void TermControl::_MouseTransparencyHandler(const double mouseDelta)
-    // {
-    //     // Transparency is on a scale of [0.0,1.0], so only increment by .01.
-    //     const auto effectiveDelta = mouseDelta < 0 ? -.01 : .01;
-
-    //     if (_settings.UseAcrylic())
-    //     {
-    //         try
-    //         {
-    //             auto acrylicBrush = RootGrid().Background().as<Media::AcrylicBrush>();
-    //             _settings.TintOpacity(acrylicBrush.TintOpacity() + effectiveDelta);
-    //             acrylicBrush.TintOpacity(_settings.TintOpacity());
-
-    //             if (acrylicBrush.TintOpacity() == 1.0)
-    //             {
-    //                 _settings.UseAcrylic(false);
-    //                 _InitializeBackgroundBrush();
-    //                 const auto bg = _settings.DefaultBackground();
-    //                 _BackgroundColorChanged(bg);
-    //             }
-    //             else
-    //             {
-    //                 // GH#5098: Inform the engine of the new opacity of the default text background.
-    //                 if (_renderEngine)
-    //                 {
-    //                     _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
-    //                 }
-    //             }
-    //         }
-    //         CATCH_LOG();
-    //     }
-    //     else if (mouseDelta < 0)
-    //     {
-    //         _settings.UseAcrylic(true);
-
-    //         //Setting initial opacity set to 1 to ensure smooth transition to acrylic during mouse scroll
-    //         _settings.TintOpacity(1.0);
-    //         _InitializeBackgroundBrush();
-    //     }
-    // }
-
-    // // Method Description:
-    // // - Adjust the font size of the terminal in response to a mouse scrolling
-    // //   event.
-    // // Arguments:
-    // // - mouseDelta: the mouse wheel delta that triggered this event.
-    // void TermControl::_MouseZoomHandler(const double mouseDelta)
-    // {
-    //     const auto fontDelta = mouseDelta < 0 ? -1 : 1;
-    //     AdjustFontSize(fontDelta);
-    // }
 
     // Method Description:
     // - Reset the font size of the terminal to its default size.
@@ -1570,42 +1180,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _core->AdjustFontSize(fontSizeDelta);
     }
-
-    // // Method Description:
-    // // - Scroll the visible viewport in response to a mouse wheel event.
-    // // Arguments:
-    // // - mouseDelta: the mouse wheel delta that triggered this event.
-    // // - point: the location of the mouse during this event
-    // // - isLeftButtonPressed: true iff the left mouse button was pressed during this event.
-    // void TermControl::_MouseScrollHandler(const double mouseDelta,
-    //                                       const Windows::Foundation::Point point,
-    //                                       const bool isLeftButtonPressed)
-    // {
-    //     const auto currentOffset = ScrollBar().Value();
-
-    //     // negative = down, positive = up
-    //     // However, for us, the signs are flipped.
-    //     // With one of the precision mice, one click is always a multiple of 120 (WHEEL_DELTA),
-    //     // but the "smooth scrolling" mode results in non-int values
-    //     const auto rowDelta = mouseDelta / (-1.0 * WHEEL_DELTA);
-
-    //     // WHEEL_PAGESCROLL is a Win32 constant that represents the "scroll one page
-    //     // at a time" setting. If we ignore it, we will scroll a truly absurd number
-    //     // of rows.
-    //     const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? ViewHeight() : _rowsToScroll };
-    //     double newValue = (rowsToScroll * rowDelta) + (currentOffset);
-
-    //     // The scroll bar's ValueChanged handler will actually move the viewport
-    //     //      for us.
-    //     ScrollBar().Value(newValue);
-
-    //     if (isLeftButtonPressed)
-    //     {
-    //         // If user is mouse selecting and scrolls, they then point at new character.
-    //         //      Make sure selection reflects that immediately.
-    //         _SetEndSelectionPointAtCursor(point);
-    //     }
-    // }
 
     void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                               Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
@@ -1798,19 +1372,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _interactivity->GainFocus();
     }
 
-    // // Method Description
-    // // - Updates internal params based on system parameters
-    // void TermControl::_UpdateSystemParameterSettings() noexcept
-    // {
-    //     if (!SystemParametersInfoW(SPI_GETWHEELSCROLLLINES, 0, &_rowsToScroll, 0))
-    //     {
-    //         LOG_LAST_ERROR();
-    //         // If SystemParametersInfoW fails, which it shouldn't, fall back to
-    //         // Windows' default value.
-    //         _rowsToScroll = 3;
-    //     }
-    // }
-
     // Method Description:
     // - Event handler for the LostFocus event. This is used to...
     //   - disable accessibility notifications for this TermControl
@@ -1848,14 +1409,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _blinkTimer.value().Stop();
         }
     }
-
-    // // Method Description:
-    // // - Pre-process text pasted (presumably from the clipboard)
-    // //   before sending it over the terminal's connection.
-    // void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
-    // {
-    //     _core->PasteText(winrt::hstring{ wstr });
-    // }
 
     // Method Description:
     // - Triggered when the swapchain changes size. We use this to resize the
@@ -2004,14 +1557,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core->WorkingDirectory();
     }
 
-    // // Method Description:
-    // // - Given a copy-able selection, get the selected text from the buffer and send it to the
-    // //     Windows Clipboard (CascadiaWin32:main.cpp).
-    // // - CopyOnSelect does NOT clear the selection
-    // // Arguments:
-    // // - singleLine: collapse all of the text to one line
-    // // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
-    // //             if we should defer which formats are copied to the global setting
+    // Method Description:
+    // - Given a copy-able selection, get the selected text from the buffer and send it to the
+    //     Windows Clipboard (CascadiaWin32:main.cpp).
+    // - CopyOnSelect does NOT clear the selection
+    // Arguments:
+    // - singleLine: collapse all of the text to one line
+    // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
+    //             if we should defer which formats are copied to the global setting
     bool TermControl::CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
     {
         if (_closing)
@@ -2026,13 +1579,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Initiate a paste operation.
     void TermControl::PasteTextFromClipboard()
     {
-        // // attach TermControl::_SendInputToConnection() as the clipboardDataHandler.
-        // // This is called when the clipboard data is loaded.
-        // auto clipboardDataHandler = std::bind(&TermControl::_SendPastedTextToConnection, this, std::placeholders::_1);
-        // auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
-
-        // // send paste event up to TermApp
-        // _PasteFromClipboardHandlers(*this, *pasteArgs);
         _interactivity->PasteTextFromClipboard();
     }
 
@@ -2455,35 +2001,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         weight.Weight = static_cast<uint16_t>(_core->GetFont().GetWeight());
         eventArgs.FontWeight(weight);
     }
-
-    // // Method Description:
-    // // - Returns the number of clicks that occurred (double and triple click support).
-    // // Every call to this function registers a click.
-    // // Arguments:
-    // // - clickPos: the (x,y) position of a given cursor (i.e.: mouse cursor).
-    // //    NOTE: origin (0,0) is top-left.
-    // // - clickTime: the timestamp that the click occurred
-    // // Return Value:
-    // // - if the click is in the same position as the last click and within the timeout, the number of clicks within that time window
-    // // - otherwise, 1
-    // const unsigned int TermControl::_NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime)
-    // {
-    //     // if click occurred at a different location or past the multiClickTimer...
-    //     Timestamp delta;
-    //     THROW_IF_FAILED(UInt64Sub(clickTime, _lastMouseClickTimestamp, &delta));
-    //     if (clickPos != _lastMouseClickPos || delta > _multiClickTimer)
-    //     {
-    //         _multiClickCounter = 1;
-    //     }
-    //     else
-    //     {
-    //         _multiClickCounter++;
-    //     }
-
-    //     _lastMouseClickTimestamp = clickTime;
-    //     _lastMouseClickPos = clickPos;
-    //     return _multiClickCounter;
-    // }
 
     // Method Description:
     // - Calculates speed of single axis of auto scrolling. It has to allow for both
