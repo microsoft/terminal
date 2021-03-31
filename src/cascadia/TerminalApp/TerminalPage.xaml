@@ -116,5 +116,16 @@
                      IsOpen="False"
                      Message="{x:Bind KeyboardServiceDisabledText, Mode=OneWay}"
                      Severity="Warning" />
+
+        <!--
+            A TeachingTip with IsLightDismissEnabled="True" will immediately
+            dismiss itself if the window is unfocused (In Xaml Islands). This is
+            tracked by MUX#4382
+        -->
+        <mux:TeachingTip x:Name="WindowIdToast"
+                         Title="{x:Bind WindowIdForDisplay}"
+                         x:Load="False"
+                         IsLightDismissEnabled="True"
+                         Subtitle="{x:Bind WindowNameForDisplay}" />
     </Grid>
 </Page>

@@ -54,6 +54,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hSettingsModelProvider);
 
 #include <shellapi.h>
 
+#include <winrt/Microsoft.Terminal.Core.h>
 #include <winrt/Microsoft.Terminal.Control.h>
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
