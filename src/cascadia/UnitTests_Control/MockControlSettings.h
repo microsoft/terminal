@@ -10,7 +10,7 @@ Licensed under the MIT license.
 
 namespace ControlUnitTests
 {
-    class MockControlSettings : public winrt::implements<MockControlSettings, winrt::Microsoft::Terminal::Control::IControlSettings>
+    class MockControlSettings : public winrt::implements<MockControlSettings, winrt::Microsoft::Terminal::Core::ICoreSettings, winrt::Microsoft::Terminal::Control::IControlSettings>
     {
     public:
         MockControlSettings() = default;

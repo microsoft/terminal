@@ -3,7 +3,9 @@
 
 #include "pch.h"
 #include "../TerminalControl/EventArgs.h"
+#include "../TerminalControl/ControlCore.h"
 #include "MockControlSettings.h"
+#include "MockConnection.h"
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
@@ -22,6 +24,14 @@ namespace ControlUnitTests
 
         TEST_METHOD(OnStackSettings);
         TEST_METHOD(ComPtrSettings);
+        TEST_METHOD(InstantiateCore);
+
+        TEST_CLASS_SETUP(ModuleSetup)
+        {
+            winrt::init_apartment(winrt::apartment_type::single_threaded);
+
+            return true;
+        }
     };
 
     void ControlCoreTests::OnStackSettings()
@@ -41,6 +51,22 @@ namespace ControlUnitTests
 
         Log::Comment(L"Verify literally any setting, it doesn't matter");
         VERIFY_ARE_EQUAL(DEFAULT_FOREGROUND, settings->DefaultForeground());
+    }
+
+    void ControlCoreTests::InstantiateCore()
+    {
+        Log::Comment(L"Create settings object");
+        winrt::com_ptr<MockControlSettings> settings;
+        settings.attach(new MockControlSettings());
+
+        Log::Comment(L"Create connection object");
+        winrt::com_ptr<MockConnection> conn;
+        conn.attach(new MockConnection());
+        VERIFY_IS_NOT_NULL(conn);
+
+        Log::Comment(L"Create ControlCore object");
+        auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
     }
 
 }

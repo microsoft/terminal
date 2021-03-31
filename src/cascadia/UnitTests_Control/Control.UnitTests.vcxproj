@@ -18,6 +18,8 @@
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="MockControlSettings.h" />
+    <ClInclude Include="MockConnection.h" />
   </ItemGroup>
 
   <!-- ========================= Cpp Files ======================== -->
