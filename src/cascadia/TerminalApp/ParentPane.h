@@ -108,7 +108,7 @@ namespace winrt::TerminalApp::implementation
 
         void _OnChildSplitOrCollapse(const bool isFirstChild, IPane newChild);
 
-        std::function<void(winrt::Windows::UI::Xaml::FrameworkElement const&, int32_t)> _GetGridSetColOrRowFunc() const noexcept;
+        void _GridLayoutHelper() const noexcept;
 
         std::pair<float, float> _CalcChildrenSizes(const float fullSize) const;
         SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;

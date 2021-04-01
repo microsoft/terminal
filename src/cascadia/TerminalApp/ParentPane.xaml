@@ -12,9 +12,6 @@ the MIT License. See LICENSE in the project root for license information. -->
     mc:Ignorable="d"
     MinHeight="16">
 
-    <Grid x:Name="Root">
-        <ContentPresenter x:Name="FirstChild_Root"/>
-        <ContentPresenter x:Name="SecondChild_Root"/>
-    </Grid>
+    <Grid x:Name="Root"/>
 
 </UserControl>

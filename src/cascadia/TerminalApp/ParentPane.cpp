@@ -36,8 +36,7 @@ namespace winrt::TerminalApp::implementation
 
         _CreateRowColDefinitions();
 
-        _GetGridSetColOrRowFunc()(FirstChild_Root(), 0);
-        _GetGridSetColOrRowFunc()(SecondChild_Root(), 1);
+        _GridLayoutHelper();
 
         _firstLayoutRevoker = firstChild.TerminalControl().LayoutUpdated(winrt::auto_revoke, [&](auto /*s*/, auto /*e*/) {
             _ChildrenLayoutUpdatedHelper(true);
@@ -130,8 +129,8 @@ namespace winrt::TerminalApp::implementation
     // - Animates our children
     void ParentPane::InitializeChildren()
     {
-        FirstChild_Root().Content(_firstChild);
-        SecondChild_Root().Content(_secondChild);
+        Root().Children().Append(_firstChild.try_as<FrameworkElement>());
+        Root().Children().Append(_secondChild.try_as<FrameworkElement>());
 
         _SetupChildEventHandlers(true);
         _SetupChildEventHandlers(false);
@@ -358,8 +357,7 @@ namespace winrt::TerminalApp::implementation
             // When we're zooming the pane, we'll need to remove it from our UI
             // tree. Easy way: just remove both children. We'll re-attach both
             // when we un-zoom.
-            FirstChild_Root().Content(nullptr);
-            SecondChild_Root().Content(nullptr);
+            Root().Children().Clear();
         }
 
         // Always recurse into both children. If the (un)zoomed pane was one of
@@ -383,8 +381,9 @@ namespace winrt::TerminalApp::implementation
         {
             // When we're un-zooming the pane, we'll need to re-add it to our UI
             // tree where it originally belonged. easy way: just re-add both.
-            FirstChild_Root().Content(_firstChild);
-            SecondChild_Root().Content(_secondChild);
+            Root().Children().Clear();
+            Root().Children().Append(_firstChild.try_as<FrameworkElement>());
+            Root().Children().Append(_secondChild.try_as<FrameworkElement>());
         }
 
         // Always recurse into both children. If the (un)zoomed pane was one of
@@ -816,8 +815,7 @@ namespace winrt::TerminalApp::implementation
         const auto remainingChild = closeFirst ? _secondChild : _firstChild;
 
         // Detach all the controls from our grid, so they can be attached later.
-        FirstChild_Root().Content(nullptr);
-        SecondChild_Root().Content(nullptr);
+        Root().Children().Clear();
 
         const auto closedChildDir = (_splitState == SplitState::Vertical) ?
                                         (closeFirst ? ResizeDirection::Left : ResizeDirection::Right) :
@@ -838,41 +836,19 @@ namespace winrt::TerminalApp::implementation
             });
         }
 
-        // If any children of closed pane was previously active, we move the focus to the remaining child
-        //bool setupEvent{ false };
-        //if (closedChild.GetActivePane())
-        //{
-        //    closedChild.ClearActive();
-        //    const auto remainingFirstLeaf = remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>();
-        //    remainingFirstLeaf.SetActive();
-        //    setupEvent = true;
-        //}
+        // If the closed child was last active, make sure to set a leaf in our remaining child
+        // as last active before we collapse (there should always be exactly 1 active leaf)
+        if (closedChild.WasLastFocused())
+        {
+            closedChild.ClearActive();
+            auto& remainingChild = closeFirst ? _secondChild : _firstChild;
+            remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>().SetActive();
+        }
 
         // Make sure to only fire off this event _after_ we have set the new active pane, because this event
         // might cause the tab content to change which will fire off a property changed event which eventually
         // results in the tab trying to access the active terminal control, which requires a valid active pane
         _PaneTypeChangedHandlers(nullptr, remainingChild);
-
-        //const auto remainingFirstLeaf = remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>();
-
-        //Dispatcher().TryRunAsync(CoreDispatcherPriority::Normal, [=]() {
-        //    remainingFirstLeaf.TerminalControl().Focus(FocusState::Programmatic);
-        //});
-
-        //if (setupEvent)
-        //{
-        //    const auto remainingFirstLeaf = remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>();
-
-        //     // Trying to get the revoker here causes a crash (and we also crash if we try to get the revoker in
-        //     // _CloseChildRoutine, after it calls _CloseChild)
-        //     // Its probably because both times we try to get the revoker on the foreground thread?
-        //     // Simply trying to call Focus on the TerminalControl here (not in the LayoutUpdated handler) doesn't transfer the focus
-
-        //    _firstLayoutRevoker = remainingFirstLeaf.GetTerminalControl().LayoutUpdated(winrt::auto_revoke, [&](auto /*s*/, auto /*e*/) {
-        //        remainingFirstLeaf.GetTerminalControl().Focus(FocusState::Programmatic);
-        //        //_firstLayoutRevoker.revoke();
-        //    });
-        //}
     }
 
     winrt::fire_and_forget ParentPane::_CloseChildRoutine(const bool closeFirst)
@@ -936,17 +912,16 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Remove both children from the grid
-            FirstChild_Root().Content(nullptr);
-            SecondChild_Root().Content(nullptr);
+            Root().Children().Clear();
             // Add the remaining child back to the grid, in the right place.
-            if (const auto remainingAsLeaf = remainingChild.try_as<TerminalApp::LeafPane>())
+            Root().Children().Append(remainingChild.try_as<FrameworkElement>());
+            if (_splitState == SplitState::Vertical)
             {
-                closeFirst ? SecondChild_Root().Content(remainingAsLeaf) : FirstChild_Root().Content(remainingAsLeaf);
+                Controls::Grid::SetColumn(remainingChild.try_as<FrameworkElement>(), closeFirst ? 1 : 0);
             }
-            else
+            else if (_splitState == SplitState::Horizontal)
             {
-                const auto remainingAsParent = remainingChild.try_as<TerminalApp::ParentPane>();
-                closeFirst ? SecondChild_Root().Content(remainingAsParent) : FirstChild_Root().Content(remainingAsParent);
+                Controls::Grid::SetRow(remainingChild.try_as<FrameworkElement>(), closeFirst ? 1 : 0);
             }
 
             // Create the dummy grid. This grid will be the one we actually animate,
@@ -1048,31 +1023,7 @@ namespace winrt::TerminalApp::implementation
                 // get closed when our child does.
                 _RemoveAllChildEventHandlers(false);
                 _RemoveAllChildEventHandlers(true);
-
-                if (childAsLeaf.WasLastFocused())
-                {
-                    // make sure to transfer focus to the remaining child if the
-                    // child we are about to close has focus
-                    childAsLeaf.ClearActive();
-                    auto& remainingChild = isFirstChild ? _secondChild : _firstChild;
-                    const auto remainingFirstLeaf = remainingChild.FindFirstLeaf().try_as<TerminalApp::LeafPane>();
-                    remainingFirstLeaf.SetActive();
-                    _CloseChildRoutine(isFirstChild);
-                    //_firstLayoutRevoker = remainingFirstLeaf.GetTerminalControl().LayoutUpdated(winrt::auto_revoke, [=](auto /*s*/, auto /*e*/) {
-                    //    remainingFirstLeaf.GetTerminalControl().Focus(FocusState::Programmatic);
-                    //    // todo, fix these issues:
-                    //    // - this transfers the focus fine in debug build, but not consistently in release
-                    //    // - IF we change _CloseChildRoutine to just _CloseChild, then it works more consistently in release but still not completely
-                    //    // - so its probably some sort of race somewhere?
-                    //    // - I don't like that we don't revoke this (revoking this causes the focus to not _stay_ with the control,
-                    //    //   it loses the focus for some reason, so the last layoutUpdated event helps to get the focus back)
-                    //    //_firstLayoutRevoker.revoke();
-                    //});
-                }
-                else
-                {
-                    _CloseChildRoutine(isFirstChild);
-                }
+                _CloseChildRoutine(isFirstChild);
             });
         }
 
@@ -1108,28 +1059,43 @@ namespace winrt::TerminalApp::implementation
         // Unsubscribe from all the events of the child.
         _RemoveAllChildEventHandlers(isFirstChild);
 
+        // check whether we need to move focus to the newChild after
+        // we are done modifying the UI tree
+        bool moveFocusAfter{ false };
+        const auto childToReplace = isFirstChild ? _firstChild : _secondChild;
+
+        // we only need to move the focus if a parent pane is collapsing and
+        // one of its leaves had focus
+        if (childToReplace.try_as<TerminalApp::ParentPane>())
+        {
+            moveFocusAfter = childToReplace.HasFocusedChild();
+        }
+
         (isFirstChild ? _firstChild : _secondChild) = newChild;
 
         const auto remainingChild = isFirstChild ? _secondChild : _firstChild;
-        remainingChild.FocusFirstChild();
 
-        isFirstChild ? FirstChild_Root().Content(newChild.try_as<FrameworkElement>()) : SecondChild_Root().Content(newChild.try_as<FrameworkElement>());
+        Root().Children().Clear();
+        _GridLayoutHelper();
+        Root().Children().Append(_firstChild.try_as<FrameworkElement>());
+        Root().Children().Append(_secondChild.try_as<FrameworkElement>());
 
         // Setup events appropriate for the new child
         _SetupChildEventHandlers(isFirstChild);
-        newChild.FocusFirstChild();
+
+        if (moveFocusAfter)
+        {
+            newChild.FocusFirstChild();
+        }
     }
 
-    std::function<void(winrt::Windows::UI::Xaml::FrameworkElement const&, int32_t)> ParentPane::_GetGridSetColOrRowFunc() const noexcept
+    void ParentPane::_GridLayoutHelper() const noexcept
     {
-        if (_splitState == SplitState::Vertical)
-        {
-            return Controls::Grid::SetColumn;
-        }
-        else
-        {
-            return Controls::Grid::SetRow;
-        }
+        Controls::Grid::SetColumn(_firstChild.try_as<FrameworkElement>(), 0);
+        Controls::Grid::SetRow(_firstChild.try_as<FrameworkElement>(), 0);
+
+        Controls::Grid::SetColumn(_secondChild.try_as<FrameworkElement>(), _splitState == SplitState::Vertical ? 1 : 0);
+        Controls::Grid::SetRow(_secondChild.try_as<FrameworkElement>(), _splitState == SplitState::Horizontal ? 1 : 0);
     }
 
     // Method Description:
