@@ -645,6 +645,10 @@ void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const GU
             auto unfocusedSettings{ settings.UnfocusedSettings() };
             if (unfocusedSettings)
             {
+                // Note: the unfocused settings needs to be entirely unchanged _except_ we need to
+                // set its parent to the settings object that lives in the control. This is because
+                // the overrides made by the control live in that settings object, so we want to make
+                // sure the unfocused settings inherit from that.
                 unfocusedSettings.SetParent(_control.Settings().as<TerminalSettings>());
             }
             _control.UnfocusedAppearance(unfocusedSettings);

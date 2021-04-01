@@ -191,6 +191,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - Creates a TerminalSettingsCreateResult from a parent TerminalSettingsCreateResult
     // - The returned defaultSettings inherits from the parent's defaultSettings, and the
     //   returned unfocusedSettings inherits from the returned defaultSettings
+    // - Note that the unfocused settings needs to be entirely unchanged _except_ we need to
+    //   set its parent to the other settings object that we return. This is because the overrides
+    //   made by the control will live in that other settings object, so we want to make
+    //   sure the unfocused settings inherit from that.
+    // - Another way to think about this is that initially we have UnfocusedSettings inherit
+    //   from DefaultSettings. This function simply adds another TerminalSettings object
+    //   in the middle of these two, so UnfocusedSettings now inherits from the new object
+    //   and the new object inherits from the DefaultSettings. And this new object is what
+    //   the control can put overrides in.
     // Arguments:
     // - parent: the TerminalSettingsCreateResult that we create a new one from
     // Return Value:

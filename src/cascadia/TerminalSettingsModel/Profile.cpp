@@ -180,13 +180,12 @@ void Profile::InsertParentHelper(winrt::com_ptr<Profile> child, winrt::com_ptr<P
     if (index)
     {
         child->InsertParent(index.value(), parent);
-        child->_FinalizeInheritance();
     }
     else
     {
         child->InsertParent(parent);
-        child->_FinalizeInheritance();
     }
+    child->_FinalizeInheritance();
 }
 
 // Method Description:
