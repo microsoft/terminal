@@ -74,14 +74,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         settings->_ApplyGlobalSettings(globals);
         settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes());
 
-        if (profile.UnfocusedAppearance())
+        Model::TerminalSettings child{ nullptr };
+        if (const auto& unfocusedAppearance{ profile.UnfocusedAppearance() })
         {
-            auto child = settings->CreateChild();
-            child->_ApplyAppearanceSettings(profile.UnfocusedAppearance(), globals.ColorSchemes());
-            return winrt::make<TerminalSettingsCreateResult>(*settings, *child);
+            auto childImpl = settings->CreateChild();
+            childImpl->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes());
+            child = *childImpl;
         }
 
-        return winrt::make<TerminalSettingsCreateResult>(*settings, nullptr);
+        return winrt::make<TerminalSettingsCreateResult>(*settings, child);
     }
 
     // Method Description:
