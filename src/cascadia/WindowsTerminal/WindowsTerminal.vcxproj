@@ -127,8 +127,8 @@
       BuildInParallel="$(BuildInParallel)"
       Properties="%(ProjectReferenceWithConfiguration.SetConfiguration); %(ProjectReferenceWithConfiguration.SetPlatform)"
       Condition="'@(ProjectReferenceWithConfiguration)' != ''
-                and '%(ProjectReferenceWithConfiguration.BuildReference)' == 'true'
-                and '%(ProjectReferenceWithConfiguration.ReferenceOutputAssembly)' == 'true'"
+                 and '%(ProjectReferenceWithConfiguration.BuildReference)' == 'true'
+                 and '%(ProjectReferenceWithConfiguration.ReferenceOutputAssembly)' == 'true'"
       ContinueOnError="$(_ContinueOnError)">
       <Output TaskParameter="TargetOutputs" ItemName="_PackagingOutputsFromOtherProjects"/>
     </MSBuild>
