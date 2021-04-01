@@ -382,9 +382,12 @@ void Profile::_FinalizeInheritance()
 {
     if (auto defaultAppearanceImpl = get_self<AppearanceConfig>(_DefaultAppearance))
     {
-        if (auto parentDefaultAppearanceImpl = _parents.at(0)->_DefaultAppearance.try_as<AppearanceConfig>())
+        for (auto& parent : _parents)
         {
-            defaultAppearanceImpl->InsertParent(0, parentDefaultAppearanceImpl);
+            if (auto parentDefaultAppearanceImpl = parent->_DefaultAppearance.try_as<AppearanceConfig>())
+            {
+                defaultAppearanceImpl->InsertParent(parentDefaultAppearanceImpl);
+            }
         }
     }
 }
