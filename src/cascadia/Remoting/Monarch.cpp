@@ -653,16 +653,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         try
         {
             args.Succeeded(false);
-            auto name{ args.NewName() };
+            const auto name{ args.NewName() };
             // Try to find a peasant that currently has this name
-            auto id = _lookupPeasantIdForName(name);
-            if (auto p{ _getPeasant(id) })
+            const auto id = _lookupPeasantIdForName(name);
+            if (_getPeasant(id) == nullptr)
             {
                 // If there is one, then oh no! The requestor is not allowed to
                 // be renamed.
-            }
-            else
-            {
                 args.Succeeded(true);
                 successfullyRenamed = true;
             }

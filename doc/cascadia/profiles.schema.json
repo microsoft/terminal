@@ -713,7 +713,6 @@
               { "$ref": "#/definitions/NewWindowAction" },
               { "$ref": "#/definitions/NextTabAction" },
               { "$ref": "#/definitions/PrevTabAction" },
-              { "$ref": "#/definitions/PrevTabAction" },
               { "$ref": "#/definitions/RenameTabAction" },
               { "$ref": "#/definitions/RenameWindowAction" },
               { "type": "null" }

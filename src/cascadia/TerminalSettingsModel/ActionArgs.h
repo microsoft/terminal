@@ -1052,5 +1052,4 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(OpenSettingsArgs);
     BASIC_FACTORY(FindMatchArgs);
     BASIC_FACTORY(NewWindowArgs);
-
 }

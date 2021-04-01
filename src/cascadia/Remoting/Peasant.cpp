@@ -167,7 +167,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     void Peasant::RequestRename(const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args)
     {
         bool successfullyNotified = false;
-        auto oldName{ _WindowName };
+        const auto oldName{ _WindowName };
         try
         {
             // Try/catch this, because the other side of this event is handled
