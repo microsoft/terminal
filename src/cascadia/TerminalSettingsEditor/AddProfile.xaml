@@ -1,22 +1,23 @@
-﻿<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
-the MIT License. See LICENSE in the project root for license information. -->
-<Page
-    x:Class="Microsoft.Terminal.Settings.Editor.AddProfile"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:Microsoft.Terminal.Settings.Editor"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-    xmlns:model="using:Microsoft.Terminal.Settings.Model"
-    mc:Ignorable="d">
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.AddProfile"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
 
     <Page.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="CommonResources.xaml"/>
+                <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
-            <model:IconPathConverter x:Key="IconSourceConverter"/>
+            <model:IconPathConverter x:Key="IconSourceConverter" />
         </ResourceDictionary>
     </Page.Resources>
 
@@ -27,38 +28,36 @@ the MIT License. See LICENSE in the project root for license information. -->
                     Style="{StaticResource AccentButtonStyle}">
                 <Button.Content>
                     <StackPanel Orientation="Horizontal">
-                        <FontIcon Glyph="&#xE710;"
-                                    FontSize="{StaticResource StandardIconSize}"/>
+                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                  Glyph="&#xE710;" />
                         <TextBlock x:Uid="AddProfile_AddNewButton"
-                                   Style="{StaticResource IconButtonTextBlockStyle}"/>
+                                   Style="{StaticResource IconButtonTextBlockStyle}" />
                     </StackPanel>
                 </Button.Content>
             </Button>
             <StackPanel Margin="{StaticResource StandardControlMargin}">
                 <local:SettingContainer x:Uid="AddProfile_Duplicate">
-                    <muxc:RadioButtons ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}"
-                                       x:Name="Profiles">
+                    <muxc:RadioButtons x:Name="Profiles"
+                                       ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}">
                         <muxc:RadioButtons.ItemTemplate>
                             <DataTemplate x:DataType="model:Profile">
-                                <Grid HorizontalAlignment="Stretch" ColumnSpacing="8">
+                                <Grid HorizontalAlignment="Stretch"
+                                      ColumnSpacing="8">
 
                                     <Grid.ColumnDefinitions>
-                                        <!-- icon -->
-                                        <ColumnDefinition Width="16"/>
-                                        <!-- profile name -->
-                                        <ColumnDefinition Width="Auto"/>
+                                        <!--  icon  -->
+                                        <ColumnDefinition Width="16" />
+                                        <!--  profile name  -->
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
 
-                                    <IconSourceElement
-                                    Grid.Column="0"
-                                    Width="16"
-                                    Height="16"
-                                    IconSource="{x:Bind Icon,
-                                                        Mode=OneWay,
-                                                        Converter={StaticResource IconSourceConverter}}"/>
+                                    <IconSourceElement Grid.Column="0"
+                                                       Width="16"
+                                                       Height="16"
+                                                       IconSource="{x:Bind Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
 
                                     <TextBlock Grid.Column="1"
-                                           Text="{x:Bind Name}"/>
+                                               Text="{x:Bind Name}" />
 
                                 </Grid>
                             </DataTemplate>
@@ -66,17 +65,17 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </muxc:RadioButtons>
                 </local:SettingContainer>
                 <Button x:Name="DuplicateButton"
-                        Click="DuplicateClick"
                         Margin="{StaticResource StandardControlMargin}"
+                        Click="DuplicateClick"
                         Style="{StaticResource AccentButtonStyle}">
-                        <Button.Content>
-                            <StackPanel Orientation="Horizontal">
-                                <FontIcon Glyph="&#xE710;"
-                                          FontSize="{StaticResource StandardIconSize}"/>
-                                <TextBlock x:Uid="AddProfile_DuplicateButton"
-                                           Style="{StaticResource IconButtonTextBlockStyle}"/>
-                            </StackPanel>
-                        </Button.Content>
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                      Glyph="&#xE710;" />
+                            <TextBlock x:Uid="AddProfile_DuplicateButton"
+                                       Style="{StaticResource IconButtonTextBlockStyle}" />
+                        </StackPanel>
+                    </Button.Content>
                 </Button>
             </StackPanel>
         </StackPanel>
