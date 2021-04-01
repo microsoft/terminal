@@ -70,6 +70,8 @@
                 </local:SettingContainer>
 
                 <!--  Default Terminal  -->
+                <!--  TODO GH#9463 - Complete hookup of Terminal UX to choose defapp.  -->
+                <!--
                 <local:SettingContainer x:Uid="Globals_DefaultTerminal">
                     <ComboBox x:Name="DefaultTerminal"
                               x:Load="False"
@@ -77,6 +79,7 @@
                               SelectedItem="{x:Bind CurrentDefaultTerminal, Mode=TwoWay}"
                               Style="{StaticResource ComboBoxSettingStyle}" />
                 </local:SettingContainer>
+                -->
 
                 <!--  Start on User Login  -->
                 <local:SettingContainer x:Uid="Globals_StartOnUserLogin">
