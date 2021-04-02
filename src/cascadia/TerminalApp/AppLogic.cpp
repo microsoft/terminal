@@ -1410,4 +1410,13 @@ namespace winrt::TerminalApp::implementation
             _root->WindowId(id);
         }
     }
+
+    void AppLogic::RenameFailed()
+    {
+        if (_root)
+        {
+            _root->RenameFailed();
+        }
+    }
+
 }

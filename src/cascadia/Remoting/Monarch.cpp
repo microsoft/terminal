@@ -76,6 +76,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // Add an event listener to the peasant's WindowActivated event.
             peasant.WindowActivated({ this, &Monarch::_peasantWindowActivated });
             peasant.IdentifyWindowsRequested({ this, &Monarch::_identifyWindows });
+            peasant.RenameRequested({ this, &Monarch::_renameRequested });
 
             _peasants[newPeasantsId] = peasant;
 
@@ -630,5 +631,53 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
         };
         _forAllPeasantsIgnoringTheDead(callback, onError);
+    }
+
+    // Method Description:
+    // - This is an event handler for the RenameRequested event. A
+    //   Peasant may raise that event when they want to be renamed to something else.
+    // - We will check if there are any other windows with this name. If there
+    //   are, then we'll reject the rename by setting args.Succeeded=false.
+    // - If there aren't any other windows with this name, then we'll set
+    //   args.Succeeded=true, allowing the window to keep this name.
+    // Arguments:
+    // - args: Contains the requested window name and a boolean (Succeeded)
+    //   indicating if the request was successful.
+    // Return Value:
+    // - <none>
+    void Monarch::_renameRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                   const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args)
+    {
+        bool successfullyRenamed = false;
+
+        try
+        {
+            args.Succeeded(false);
+            const auto name{ args.NewName() };
+            // Try to find a peasant that currently has this name
+            const auto id = _lookupPeasantIdForName(name);
+            if (_getPeasant(id) == nullptr)
+            {
+                // If there is one, then oh no! The requestor is not allowed to
+                // be renamed.
+                args.Succeeded(true);
+                successfullyRenamed = true;
+            }
+
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_renameRequested",
+                              TraceLoggingWideString(name.c_str(), "name", "The newly proposed name"),
+                              TraceLoggingInt64(successfullyRenamed, "successfullyRenamed", "true if the peasant is allowed to rename themselves to that name."),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+            // If this fails, we don't _really_ care. The peasant died, but
+            // they're the only one who cares about the result.
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_renameRequested_Failed",
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+        }
     }
 }

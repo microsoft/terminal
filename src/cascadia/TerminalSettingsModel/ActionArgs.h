@@ -30,6 +30,7 @@
 #include "NewWindowArgs.g.h"
 #include "PrevTabArgs.g.h"
 #include "NextTabArgs.g.h"
+#include "RenameWindowArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
@@ -998,6 +999,39 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto copy{ winrt::make_self<NextTabArgs>() };
             copy->_SwitcherMode = _SwitcherMode;
+            return *copy;
+        }
+    };
+
+    struct RenameWindowArgs : public RenameWindowArgsT<RenameWindowArgs>
+    {
+        RenameWindowArgs() = default;
+        WINRT_PROPERTY(winrt::hstring, Name);
+        static constexpr std::string_view NameKey{ "name" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<RenameWindowArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Name == _Name;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<RenameWindowArgs>();
+            JsonUtils::GetValueForKey(json, NameKey, args->_Name);
+            return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<RenameWindowArgs>() };
+            copy->_Name = _Name;
             return *copy;
         }
     };

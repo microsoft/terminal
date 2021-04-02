@@ -85,12 +85,14 @@
         "openNewTabDropdown",
         "openSettings",
         "openTabColorPicker",
+        "openWindowRenamer",
         "paste",
         "prevTab",
         "renameTab",
         "openTabRenamer",
         "resetFontSize",
         "resizePane",
+        "renameWindow",
         "scrollDown",
         "scrollDownPage",
         "scrollUp",
@@ -651,6 +653,38 @@
         }
       ]
     },
+    "RenameTabAction": {
+      "description": "Arguments corresponding to a renameTab Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "renameTab" },
+            "title": {
+              "type": "string",
+              "default": "",
+              "description": "A title to assign to the tab. If omitted or null, this action will restore the tab's title to the original value."
+            }
+          }
+        }
+      ]
+    },
+    "RenameWindowAction": {
+      "description": "Arguments corresponding to a renameWindow Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "renameWindow" },
+            "name": {
+              "type": "string",
+              "default": "",
+              "description": "A name to assign to the window."
+            }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -679,6 +713,8 @@
               { "$ref": "#/definitions/NewWindowAction" },
               { "$ref": "#/definitions/NextTabAction" },
               { "$ref": "#/definitions/PrevTabAction" },
+              { "$ref": "#/definitions/RenameTabAction" },
+              { "$ref": "#/definitions/RenameWindowAction" },
               { "type": "null" }
             ]
         },

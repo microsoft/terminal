@@ -708,4 +708,47 @@ namespace winrt::TerminalApp::implementation
         IdentifyWindow();
         args.Handled(true);
     }
+
+    void TerminalPage::_HandleRenameWindow(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<RenameWindowArgs>())
+            {
+                const auto newName = realArgs.Name();
+                const auto request = winrt::make_self<implementation::RenameWindowRequestedArgs>(newName);
+                _RenameWindowRequestedHandlers(*this, *request);
+            }
+        }
+        args.Handled(false);
+    }
+
+    void TerminalPage::_HandleOpenWindowRenamer(const IInspectable& /*sender*/,
+                                                const ActionEventArgs& args)
+    {
+        if (WindowRenamer() == nullptr)
+        {
+            // We need to use FindName to lazy-load this object
+            if (MUX::Controls::TeachingTip tip{ FindName(L"WindowRenamer").try_as<MUX::Controls::TeachingTip>() })
+            {
+                tip.Closed({ get_weak(), &TerminalPage::_FocusActiveControl });
+            }
+        }
+
+        WindowRenamer().IsOpen(true);
+
+        // PAIN: We can't immediately focus the textbox in the TeachingTip. It's
+        // not technically focusable until it is opened. However, it doesn't
+        // provide an event to tell us when it is opened. That's tracked in
+        // microsoft/microsoft-ui-xaml#1607. So for now, the user _needs_ to
+        // click on the text box manually.
+        //
+        // We're also not using a ContentDialog for this, because in Xaml
+        // Islands a text box in a ContentDialog won't receive _any_ keypresses.
+        // Fun!
+        // WindowRenamerTextBox().Focus(FocusState::Programmatic);
+
+        args.Handled(true);
+    }
 }

@@ -15,6 +15,7 @@
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
+#include "RenameWindowRequestedArgs.g.cpp"
 
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
@@ -2568,7 +2569,7 @@ namespace winrt::TerminalApp::implementation
         if (_WindowName != value)
         {
             _WindowName = value;
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+            _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
         }
     }
 
@@ -2584,7 +2585,7 @@ namespace winrt::TerminalApp::implementation
         if (_WindowId != value)
         {
             _WindowId = value;
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
+            _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
         }
     }
 
@@ -2613,4 +2614,72 @@ namespace winrt::TerminalApp::implementation
                    winrt::hstring{ fmt::format(L"<{}>", RS_(L"UnnamedWindowName")) } :
                    _WindowName;
     }
+
+    // Method Description:
+    // - Called when an attempt to rename the window has failed. This will open
+    //   the toast displaying a message to the user that the attempt to rename
+    //   the window has failed.
+    // - This will load the RenameFailedToast TeachingTip the first time it's called.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget TerminalPage::RenameFailed()
+    {
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_foreground(Dispatcher());
+        if (auto page{ weakThis.get() })
+        {
+            // If we haven't ever loaded the TeachingTip, then do so now and
+            // create the toast for it.
+            if (page->_windowRenameFailedToast == nullptr)
+            {
+                if (MUX::Controls::TeachingTip tip{ page->FindName(L"RenameFailedToast").try_as<MUX::Controls::TeachingTip>() })
+                {
+                    page->_windowRenameFailedToast = std::make_shared<Toast>(tip);
+                    // Make sure to use the weak ref when setting up this
+                    // callback.
+                    tip.Closed({ page->get_weak(), &TerminalPage::_FocusActiveControl });
+                }
+            }
+
+            if (page->_windowRenameFailedToast != nullptr)
+            {
+                page->_windowRenameFailedToast->Open();
+            }
+        }
+    }
+
+    // Method Description:
+    // - Called when the user hits the "Ok" button on the WindowRenamer TeachingTip.
+    // - Will raise an event that will bubble up to the monarch, asking if this
+    //   name is acceptable.
+    //   - If it is, we'll eventually get called back in TerminalPage::WindowName(hstring).
+    //   - If not, then TerminalPage::RenameFailed will get called.
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_WindowRenamerActionClick(const IInspectable& /*sender*/,
+                                                 const IInspectable& /*eventArgs*/)
+    {
+        auto newName = WindowRenamerTextBox().Text();
+        _RequestWindowRename(newName);
+    }
+
+    void TerminalPage::_RequestWindowRename(const winrt::hstring& newName)
+    {
+        auto request = winrt::make<implementation::RenameWindowRequestedArgs>(newName);
+        // The WindowRenamer is _not_ a Toast - we want it to stay open until the user dismisses it.
+        WindowRenamer().IsOpen(false);
+        _RenameWindowRequestedHandlers(*this, request);
+        // We can't just use request.Successful here, because the handler might
+        // (will) be handling this asynchronously, so when control returns to
+        // us, this hasn't actually been handled yet. We'll get called back in
+        // RenameFailed if this fails.
+        //
+        // Theoretically we could do a IAsyncOperation<RenameWindowResult> kind
+        // of thing with co_return winrt::make<RenameWindowResult>(false).
+    }
+
 }

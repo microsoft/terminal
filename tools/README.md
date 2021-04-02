@@ -62,7 +62,7 @@ running this on save, but you can add a `git` hook to format before committing
 XSTYLER_PATH="dotnet tool run xstyler --"
 
 # Define path to XAML Styler configuration
-XSTYLER_CONFIG="../../XamlStyler.json"
+XSTYLER_CONFIG="XamlStyler.json"
 
 echo "Running XAML Styler on committed XAML files"
 git diff --cached --name-only --diff-filter=ACM  | grep -e '\.xaml$' | \
