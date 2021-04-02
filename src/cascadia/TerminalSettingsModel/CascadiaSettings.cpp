@@ -239,7 +239,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::CreateNew
 // - a reference to the new profile
 winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::DuplicateProfile(Model::Profile source)
 {
-    THROW_IF_NULL_ALLOC(source);
+    THROW_HR_IF_NULL(E_INVALIDARG, source);
 
     auto duplicated{ _userDefaultProfileSettings->CreateChild() };
     _allProfiles.Append(*duplicated);
@@ -252,146 +252,48 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
     const auto newName{ fmt::format(L"{} ({})", source.Name(), RS_(L"CopySuffix")) };
     duplicated->Name(winrt::hstring(newName));
 
-    if (source.HasHidden() || source.HiddenOverrideSource() != nullptr)
-    {
-        duplicated->Hidden(source.Hidden());
+    #define DUPLICATE_MACRO(settingName)                                                                                                                            \
+    if (source.Has##settingName() ||                                                                                                                                \
+       (source.##settingName##OverrideSource() != nullptr && source.##settingName##OverrideSource().Origin() != OriginTag::UserDefaults))                           \
+    {                                                                                                                                                               \
+        duplicated->##settingName(source.##settingName());                                                                                                          \
     }
-    if (source.HasIcon() || source.IconOverrideSource() != nullptr)
-    {
-        duplicated->Icon(source.Icon());
-    }
-    if (source.HasCloseOnExit() || source.CloseOnExitOverrideSource() != nullptr)
-    {
-        duplicated->CloseOnExit(source.CloseOnExit());
-    }
-    if (source.HasTabTitle() || source.TabTitleOverrideSource() != nullptr)
-    {
-        duplicated->TabTitle(source.TabTitle());
-    }
-    if (source.HasTabColor() || source.TabColorOverrideSource() != nullptr)
-    {
-        duplicated->TabColor(source.TabColor());
-    }
-    if (source.HasSuppressApplicationTitle() || source.SuppressApplicationTitleOverrideSource() != nullptr)
-    {
-        duplicated->SuppressApplicationTitle(source.SuppressApplicationTitle());
-    }
-    if (source.HasUseAcrylic() || source.UseAcrylicOverrideSource() != nullptr)
-    {
-        duplicated->UseAcrylic(source.UseAcrylic());
-    }
-    if (source.HasAcrylicOpacity() || source.AcrylicOpacityOverrideSource() != nullptr)
-    {
-        duplicated->AcrylicOpacity(source.AcrylicOpacity());
-    }
-    if (source.HasScrollState() || source.ScrollStateOverrideSource() != nullptr)
-    {
-        duplicated->ScrollState(source.ScrollState());
-    }
-    if (source.HasFontFace() || source.FontFaceOverrideSource() != nullptr)
-    {
-        duplicated->FontFace(source.FontFace());
-    }
-    if (source.HasFontSize() || source.FontSizeOverrideSource() != nullptr)
-    {
-        duplicated->FontSize(source.FontSize());
-    }
-    if (source.HasFontWeight() || source.FontWeightOverrideSource() != nullptr)
-    {
-        duplicated->FontWeight(source.FontWeight());
-    }
-    if (source.HasPadding() || source.PaddingOverrideSource() != nullptr)
-    {
-        duplicated->Padding(source.Padding());
-    }
-    if (source.HasCommandline() || source.CommandlineOverrideSource() != nullptr)
-    {
-        duplicated->Commandline(source.Commandline());
-    }
-    if (source.HasStartingDirectory() || source.StartingDirectoryOverrideSource() != nullptr)
-    {
-        duplicated->StartingDirectory(source.StartingDirectory());
-    }
-    if (source.HasBackgroundImagePath() || source.BackgroundImagePathOverrideSource() != nullptr)
-    {
-        duplicated->BackgroundImagePath(source.BackgroundImagePath());
-    }
-    if (source.HasBackgroundImageOpacity() || source.BackgroundImageOpacityOverrideSource() != nullptr)
-    {
-        duplicated->BackgroundImageOpacity(source.BackgroundImageOpacity());
-    }
-    if (source.HasBackgroundImageStretchMode() || source.BackgroundImageStretchModeOverrideSource() != nullptr)
-    {
-        duplicated->BackgroundImageStretchMode(source.BackgroundImageStretchMode());
-    }
-    if (source.HasAntialiasingMode() || source.AntialiasingModeOverrideSource() != nullptr)
-    {
-        duplicated->AntialiasingMode(source.AntialiasingMode());
-    }
-    if (source.HasRetroTerminalEffect() || source.RetroTerminalEffectOverrideSource() != nullptr)
-    {
-        duplicated->RetroTerminalEffect(source.RetroTerminalEffect());
-    }
-    if (source.HasForceFullRepaintRendering() || source.ForceFullRepaintRenderingOverrideSource() != nullptr)
-    {
-        duplicated->ForceFullRepaintRendering(source.ForceFullRepaintRendering());
-    }
-    if (source.HasSoftwareRendering() || source.SoftwareRenderingOverrideSource() != nullptr)
-    {
-        duplicated->SoftwareRendering(source.SoftwareRendering());
-    }
-    if (source.HasColorSchemeName() || source.ColorSchemeNameOverrideSource() != nullptr)
-    {
-        duplicated->ColorSchemeName(source.ColorSchemeName());
-    }
-    if (source.HasForeground() || source.ForegroundOverrideSource() != nullptr)
-    {
-        duplicated->Foreground(source.Foreground());
-    }
-    if (source.HasBackground() || source.BackgroundOverrideSource() != nullptr)
-    {
-        duplicated->Background(source.Background());
-    }
-    if (source.HasSelectionBackground() || source.SelectionBackgroundOverrideSource() != nullptr)
-    {
-        duplicated->SelectionBackground(source.SelectionBackground());
-    }
-    if (source.HasCursorColor() || source.CursorColorOverrideSource() != nullptr)
-    {
-        duplicated->CursorColor(source.CursorColor());
-    }
-    if (source.HasHistorySize() || source.HistorySizeOverrideSource() != nullptr)
-    {
-        duplicated->HistorySize(source.HistorySize());
-    }
-    if (source.HasSnapOnInput() || source.SnapOnInputOverrideSource() != nullptr)
-    {
-        duplicated->SnapOnInput(source.SnapOnInput());
-    }
-    if (source.HasAltGrAliasing() || source.AltGrAliasingOverrideSource() != nullptr)
-    {
-        duplicated->AltGrAliasing(source.AltGrAliasing());
-    }
-    if (source.HasCursorShape() || source.CursorShapeOverrideSource() != nullptr)
-    {
-        duplicated->CursorShape(source.CursorShape());
-    }
-    if (source.HasCursorHeight() || source.CursorHeightOverrideSource() != nullptr)
-    {
-        duplicated->CursorHeight(source.CursorHeight());
-    }
-    if (source.HasBellStyle() || source.BellStyleOverrideSource() != nullptr)
-    {
-        duplicated->BellStyle(source.BellStyle());
-    }
-    if (source.HasPixelShaderPath() || source.PixelShaderPathOverrideSource() != nullptr)
-    {
-        duplicated->PixelShaderPath(source.PixelShaderPath());
-    }
-    if (source.HasBackgroundImageAlignment() || source.BackgroundImageAlignmentOverrideSource() != nullptr)
-    {
-        duplicated->BackgroundImageAlignment(source.BackgroundImageAlignment());
-    }
+
+    DUPLICATE_MACRO(Hidden);
+    DUPLICATE_MACRO(Icon);
+    DUPLICATE_MACRO(CloseOnExit);
+    DUPLICATE_MACRO(TabTitle);
+    DUPLICATE_MACRO(TabColor);
+    DUPLICATE_MACRO(SuppressApplicationTitle);
+    DUPLICATE_MACRO(UseAcrylic);
+    DUPLICATE_MACRO(AcrylicOpacity);
+    DUPLICATE_MACRO(ScrollState);
+    DUPLICATE_MACRO(FontFace);
+    DUPLICATE_MACRO(FontSize);
+    DUPLICATE_MACRO(FontWeight);
+    DUPLICATE_MACRO(Padding);
+    DUPLICATE_MACRO(Commandline);
+    DUPLICATE_MACRO(StartingDirectory);
+    DUPLICATE_MACRO(BackgroundImagePath);
+    DUPLICATE_MACRO(BackgroundImageOpacity);
+    DUPLICATE_MACRO(BackgroundImageStretchMode);
+    DUPLICATE_MACRO(AntialiasingMode);
+    DUPLICATE_MACRO(RetroTerminalEffect);
+    DUPLICATE_MACRO(ForceFullRepaintRendering);
+    DUPLICATE_MACRO(SoftwareRendering);
+    DUPLICATE_MACRO(ColorSchemeName);
+    DUPLICATE_MACRO(Foreground);
+    DUPLICATE_MACRO(Background);
+    DUPLICATE_MACRO(SelectionBackground);
+    DUPLICATE_MACRO(CursorColor);
+    DUPLICATE_MACRO(HistorySize);
+    DUPLICATE_MACRO(SnapOnInput);
+    DUPLICATE_MACRO(AltGrAliasing);
+    DUPLICATE_MACRO(CursorShape);
+    DUPLICATE_MACRO(CursorHeight);
+    DUPLICATE_MACRO(BellStyle);
+    DUPLICATE_MACRO(PixelShaderPath);
+    DUPLICATE_MACRO(BackgroundImageAlignment);
     if (source.HasConnectionType())
     {
         duplicated->ConnectionType(source.ConnectionType());

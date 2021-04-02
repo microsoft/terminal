@@ -380,7 +380,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         SettingsNav().MenuItems().Append(addProfileItem);
     }
 
-    void MainPage::_CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile profile)
+    void MainPage::_CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile& profile)
     {
         const auto newProfile{ profile ? profile : _settingsClone.CreateNewProfile() };
         const auto profileViewModel{ _viewModelForProfile(newProfile) };
