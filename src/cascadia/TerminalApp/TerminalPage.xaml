@@ -123,8 +123,8 @@
             tracked by MUX#4382
         -->
         <mux:TeachingTip x:Name="WindowIdToast"
-                         x:Load="False"
                          Title="{x:Bind WindowIdForDisplay}"
+                         x:Load="False"
                          IsLightDismissEnabled="True"
                          Subtitle="{x:Bind WindowNameForDisplay, Mode=OneWay}" />
 
@@ -135,8 +135,8 @@
 
         <mux:TeachingTip x:Name="WindowRenamer"
                          x:Uid="WindowRenamer"
-                         x:Load="False"
                          Title="{x:Bind WindowIdForDisplay}"
+                         x:Load="False"
                          ActionButtonClick="_WindowRenamerActionClick">
             <mux:TeachingTip.Content>
                 <TextBox x:Name="WindowRenamerTextBox"
