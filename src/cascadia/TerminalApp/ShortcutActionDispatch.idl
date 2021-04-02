@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+#include "../TerminalSettingsModel/AllShortcutActions.h"
 
 #define ACTION_EVENT(name) event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> name
 
@@ -10,53 +11,10 @@ namespace TerminalApp
 
         Boolean DoAction(Microsoft.Terminal.Settings.Model.ActionAndArgs actionAndArgs);
 
-        ACTION_EVENT(CopyText);
-        ACTION_EVENT(PasteText);
-        ACTION_EVENT(NewTab);
-        ACTION_EVENT(OpenNewTabDropdown);
-        ACTION_EVENT(DuplicateTab);
-        ACTION_EVENT(CloseWindow);
-        ACTION_EVENT(CloseTab);
-        ACTION_EVENT(ClosePane);
-        ACTION_EVENT(SwitchToTab);
-        ACTION_EVENT(NextTab);
-        ACTION_EVENT(PrevTab);
-        ACTION_EVENT(SendInput);
-        ACTION_EVENT(SplitPane);
-        ACTION_EVENT(TogglePaneZoom);
-        ACTION_EVENT(AdjustFontSize);
-        ACTION_EVENT(ResetFontSize);
-        ACTION_EVENT(ScrollUp);
-        ACTION_EVENT(ScrollDown);
-        ACTION_EVENT(ScrollUpPage);
-        ACTION_EVENT(ScrollDownPage);
-        ACTION_EVENT(ScrollToTop);
-        ACTION_EVENT(ScrollToBottom);
-        ACTION_EVENT(OpenSettings);
-        ACTION_EVENT(ResizePane);
-        ACTION_EVENT(Find);
-        ACTION_EVENT(MoveFocus);
-        ACTION_EVENT(ToggleShaderEffects);
-        ACTION_EVENT(ToggleFocusMode);
-        ACTION_EVENT(ToggleFullscreen);
-        ACTION_EVENT(ToggleAlwaysOnTop);
-        ACTION_EVENT(ToggleCommandPalette);
-        ACTION_EVENT(SetColorScheme);
-        ACTION_EVENT(SetTabColor);
-        ACTION_EVENT(OpenTabColorPicker);
-        ACTION_EVENT(RenameTab);
-        ACTION_EVENT(OpenTabRenamer);
-        ACTION_EVENT(ExecuteCommandline);
-        ACTION_EVENT(CloseOtherTabs);
-        ACTION_EVENT(CloseTabsAfter);
-        ACTION_EVENT(TabSearch);
-        ACTION_EVENT(MoveTab);
-        ACTION_EVENT(BreakIntoDebugger);
-        ACTION_EVENT(FindMatch);
-        ACTION_EVENT(TogglePaneReadOnly);
-        ACTION_EVENT(NewWindow);
-        ACTION_EVENT(IdentifyWindow);
-        ACTION_EVENT(IdentifyWindows);
+        // When adding a new action, add them to AllShortcutActions.h!
+        #define ON_ALL_ACTIONS(action) ACTION_EVENT(action);
+        ALL_SHORTCUT_ACTIONS
+        #undef ON_ALL_ACTIONS
 
     }
 }

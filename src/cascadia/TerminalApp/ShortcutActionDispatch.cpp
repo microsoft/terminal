@@ -41,61 +41,9 @@ namespace winrt::TerminalApp::implementation
 
         switch (action)
         {
-            ACTION_CASE(CopyText);
-            ACTION_CASE(PasteText);
-            ACTION_CASE(OpenNewTabDropdown);
-            ACTION_CASE(DuplicateTab);
-            ACTION_CASE(OpenSettings);
-            ACTION_CASE(NewTab);
-            ACTION_CASE(CloseWindow);
-            ACTION_CASE(CloseTab);
-            ACTION_CASE(ClosePane);
-            ACTION_CASE(ScrollUp);
-            ACTION_CASE(ScrollDown);
-            ACTION_CASE(ScrollUpPage);
-            ACTION_CASE(ScrollDownPage);
-            ACTION_CASE(ScrollToTop);
-            ACTION_CASE(ScrollToBottom);
-            ACTION_CASE(NextTab);
-            ACTION_CASE(PrevTab);
-            ACTION_CASE(SendInput);
-
-        case ShortcutAction::SplitVertical:
-        case ShortcutAction::SplitHorizontal:
-        case ShortcutAction::SplitPane:
-        {
-            _SplitPaneHandlers(*this, eventArgs);
-            break;
-        }
-
-            ACTION_CASE(TogglePaneZoom);
-            ACTION_CASE(SwitchToTab);
-            ACTION_CASE(ResizePane);
-            ACTION_CASE(MoveFocus);
-            ACTION_CASE(AdjustFontSize);
-            ACTION_CASE(Find);
-            ACTION_CASE(ResetFontSize);
-            ACTION_CASE(ToggleShaderEffects);
-            ACTION_CASE(ToggleFocusMode);
-            ACTION_CASE(ToggleFullscreen);
-            ACTION_CASE(ToggleAlwaysOnTop);
-            ACTION_CASE(ToggleCommandPalette);
-            ACTION_CASE(SetColorScheme);
-            ACTION_CASE(SetTabColor);
-            ACTION_CASE(OpenTabColorPicker);
-            ACTION_CASE(RenameTab);
-            ACTION_CASE(OpenTabRenamer);
-            ACTION_CASE(ExecuteCommandline);
-            ACTION_CASE(CloseOtherTabs);
-            ACTION_CASE(CloseTabsAfter);
-            ACTION_CASE(MoveTab);
-            ACTION_CASE(TabSearch);
-            ACTION_CASE(BreakIntoDebugger);
-            ACTION_CASE(FindMatch);
-            ACTION_CASE(TogglePaneReadOnly);
-            ACTION_CASE(NewWindow);
-            ACTION_CASE(IdentifyWindow);
-            ACTION_CASE(IdentifyWindows);
+#define ON_ALL_ACTIONS(id) ACTION_CASE(id);
+            ALL_SHORTCUT_ACTIONS
+#undef ON_ALL_ACTIONS
         default:
             return false;
         }
