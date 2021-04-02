@@ -269,12 +269,14 @@ GdiEngine::~GdiEngine()
 // Arguments:
 // - textAttributes - Text attributes to use for the brush color
 // - pData - The interface to console data structures required for rendering
+// - usingSoftFont - Whether we're rendering characters from a soft soft
 // - isSettingDefaultBrushes - Lets us know that the default brushes are being set so we can update the DC background
 //                             and the hung app background painting color
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]] HRESULT GdiEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                       const gsl::not_null<IRenderData*> pData,
+                                                      const bool /*usingSoftFont*/,
                                                       const bool isSettingDefaultBrushes) noexcept
 {
     RETURN_IF_FAILED(_FlushBufferLines());

@@ -144,7 +144,7 @@ try
     });
 
     // A. Prep Colors
-    RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, _pData->GetDefaultBrushColors(), true));
+    RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, _pData->GetDefaultBrushColors(), false, true));
 
     // B. Perform Scroll Operations
     RETURN_IF_FAILED(_PerformScrolling(pEngine));
@@ -536,11 +536,23 @@ void Renderer::TriggerFontChange(const int iDpi, const FontInfoDesired& FontInfo
 // - <none>
 void Renderer::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern, const SIZE cellSize, const size_t centeringHint)
 {
+    // We reserve PUA code points U+EF20 to U+EF7F for soft fonts, but the range
+    // that we test for in _IsSoftFontChar will depend on the size of the active
+    // bitPattern. If it's empty (i.e. no soft font is set), then nothing will
+    // match, and those code points will be treated the same as everything else.
+    const auto softFontCharCount = cellSize.cy ? bitPattern.size() / cellSize.cy : 0;
+    _lastSoftFontChar = _firstSoftFontChar + softFontCharCount - 1;
+
     for (const auto pEngine : _rgpEngines)
     {
         LOG_IF_FAILED(pEngine->UpdateSoftFont(bitPattern, cellSize, centeringHint));
     }
     TriggerRedrawAll();
+}
+
+bool Renderer::_IsSoftFontChar(const std::wstring_view v) const
+{
+    return v.size() == 1 && v.front() >= _firstSoftFontChar && v.front() <= _lastSoftFontChar;
 }
 
 // Routine Description:
@@ -757,6 +769,8 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
         auto color = it->TextAttr();
         // Retrieve the first pattern id
         auto patternIds = _pData->GetPatternId(target);
+        // Determine whether we're using a soft font.
+        auto usingSoftFont = _IsSoftFontChar(it->Chars());
 
         // And hold the point where we should start drawing.
         auto screenPoint = target;
@@ -773,8 +787,8 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // Hold onto the current pattern id as well
             const auto currentPatternId = patternIds;
 
-            // Update the drawing brushes with our color.
-            THROW_IF_FAILED(_UpdateDrawingBrushes(pEngine, currentRunColor, false));
+            // Update the drawing brushes with our color and font usage.
+            THROW_IF_FAILED(_UpdateDrawingBrushes(pEngine, currentRunColor, usingSoftFont, false));
 
             // Advance the point by however many columns we've just outputted and reset the accumulator.
             screenPoint.X += gsl::narrow<SHORT>(cols);
@@ -803,15 +817,18 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             {
                 COORD thisPoint{ screenPoint.X + gsl::narrow<SHORT>(cols), screenPoint.Y };
                 const auto thisPointPatterns = _pData->GetPatternId(thisPoint);
-                if (color != it->TextAttr() || patternIds != thisPointPatterns)
+                const auto thisUsingSoftFont = _IsSoftFontChar(it->Chars());
+                const auto changedPatternOrFont = patternIds != thisPointPatterns || usingSoftFont != thisUsingSoftFont;
+                if (color != it->TextAttr() || changedPatternOrFont)
                 {
                     auto newAttr{ it->TextAttr() };
                     // foreground doesn't matter for runs of spaces (!)
                     // if we trick it . . . we call Paint far fewer times for cmatrix
-                    if (!_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert) || patternIds != thisPointPatterns)
+                    if (!_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert) || changedPatternOrFont)
                     {
                         color = newAttr;
                         patternIds = thisPointPatterns;
+                        usingSoftFont = thisUsingSoftFont;
                         break; // vend this run
                     }
                 }
@@ -1200,17 +1217,21 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 // Arguments:
 // - pEngine - Which engine is being updated
 // - textAttributes - The 16 color foreground/background combination to set
+// - usingSoftFont - Whether we're rendering characters from a soft soft
 // - isSettingDefaultBrushes - Alerts that the default brushes are being set which will
 //                             impact whether or not to include the hung window/erase window brushes in this operation
 //                             and can affect other draw state that wants to know the default color scheme.
 //                             (Usually only happens when the default is changed, not when each individual color is swapped in a multi-color run.)
 // Return Value:
 // - <none>
-[[nodiscard]] HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute textAttributes, const bool isSettingDefaultBrushes)
+[[nodiscard]] HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine,
+                                                      const TextAttribute textAttributes,
+                                                      const bool usingSoftFont,
+                                                      const bool isSettingDefaultBrushes)
 {
     // The last color needs to be each engine's responsibility. If it's local to this function,
     //      then on the next engine we might not update the color.
-    return pEngine->UpdateDrawingBrushes(textAttributes, _pData, isSettingDefaultBrushes);
+    return pEngine->UpdateDrawingBrushes(textAttributes, _pData, usingSoftFont, isSettingDefaultBrushes);
 }
 
 // Routine Description:
