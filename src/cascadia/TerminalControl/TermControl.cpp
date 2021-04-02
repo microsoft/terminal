@@ -1140,25 +1140,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _interactivity->MouseWheel(modifiers, delta, _GetTerminalPosition(location), state);
     }
 
-    winrt::fire_and_forget TermControl::_coreTransparencyChanged(const IInspectable& sender,
-                                                                 const Control::TransparencyChangedEventArgs& args)
+    // Method Description:
+    // - Called in response to the core's TransparencyChanged event. We'll use
+    //   this to update our background brush.
+    // - The Core should have already updated the TintOpacity and UseAcrylic
+    //   properties in the _settings.
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget TermControl::_coreTransparencyChanged(const IInspectable& /*sender*/,
+                                                                 const Control::TransparencyChangedEventArgs& /*args*/)
     {
-        const auto newOpacity = args.Opacity();
         co_await resume_foreground(Dispatcher());
-        // if (_settings.UseAcrylic())
-        // {
         try
         {
-            auto acrylicBrush = RootGrid().Background().as<Media::AcrylicBrush>();
-            acrylicBrush.TintOpacity(newOpacity);
-
-            if (newOpacity == 1.0)
-            {
-                _settings.UseAcrylic(false);
-                _InitializeBackgroundBrush();
-                const auto bg = _settings.DefaultBackground();
-                _changeBackgroundColor(bg);
-            }
+            _InitializeBackgroundBrush();
+            const auto bg = _settings.DefaultBackground();
+            _changeBackgroundColor(bg);
         }
         CATCH_LOG();
     }
