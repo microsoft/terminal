@@ -40,12 +40,9 @@ namespace TerminalCoreUnitTests
         bool SuppressApplicationTitle() { return _suppressApplicationTitle; }
         til::color SelectionBackground() { return COLOR_WHITE; }
         bool ForceVTInput() { return false; }
-<<<<<<< HEAD
         ICoreAppearance UnfocusedAppearance() { return {}; };
-=======
         winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color> TabColor() { return nullptr; }
         winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color> StartingTabColor() { return nullptr; }
->>>>>>> fd99b012f55e677d18955be7324eeb25c95bf173
 
         // other implemented methods
         til::color GetColorTableEntry(int32_t) const { return 123; }
@@ -68,15 +65,9 @@ namespace TerminalCoreUnitTests
         void SuppressApplicationTitle(bool suppressApplicationTitle) { _suppressApplicationTitle = suppressApplicationTitle; }
         void SelectionBackground(til::color) {}
         void ForceVTInput(bool) {}
-<<<<<<< HEAD
         void UnfocusedAppearance(ICoreAppearance) {}
-
-        WINRT_PROPERTY(winrt::Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
-        WINRT_PROPERTY(winrt::Windows::Foundation::IReference<uint32_t>, StartingTabColor, nullptr);
-=======
         void TabColor(const IInspectable&) {}
         void StartingTabColor(const IInspectable&) {}
->>>>>>> fd99b012f55e677d18955be7324eeb25c95bf173
 
     private:
         int32_t _historySize;
