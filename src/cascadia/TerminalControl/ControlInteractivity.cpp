@@ -42,6 +42,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlInteractivity::Initialize()
     {
+        _UpdateSystemParameterSettings();
+
         // import value from WinUser (convert from milli-seconds to micro-seconds)
         _multiClickTimer = GetDoubleClickTime() * 1000;
     }

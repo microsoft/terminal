@@ -24,6 +24,8 @@ namespace ControlUnitTests
         END_TEST_CLASS()
 
         TEST_METHOD(TestAdjustAcrylic);
+        TEST_METHOD(TestPanWithTouch);
+        TEST_METHOD(TestScrollWithMouse);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -48,7 +50,7 @@ namespace ControlUnitTests
         settings->UseAcrylic(true);
         settings->TintOpacity(0.5f);
 
-        Log::Comment(L"Create ControlCore object");
+        Log::Comment(L"Create ControlInteractivity object");
         auto interactivity = winrt::make_self<Control::implementation::ControlInteractivity>(*settings, *conn);
         VERIFY_IS_NOT_NULL(interactivity);
         auto core = interactivity->_core;
@@ -108,6 +110,119 @@ namespace ControlUnitTests
                                       til::point{ 0, 0 },
                                       { false, false, false });
         }
+    }
+
+    void ControlInteractivityTests::TestPanWithTouch()
+    {
+        VERIFY_IS_TRUE(false);
+    }
+    void ControlInteractivityTests::TestScrollWithMouse()
+    {
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+
+        winrt::com_ptr<MockControlSettings> settings;
+        settings.attach(new MockControlSettings());
+        winrt::com_ptr<MockConnection> conn;
+        conn.attach(new MockConnection());
+
+        settings->UseAcrylic(true);
+        settings->TintOpacity(0.5f);
+
+        Log::Comment(L"Create ControlInteractivity object");
+        auto interactivity = winrt::make_self<Control::implementation::ControlInteractivity>(*settings, *conn);
+        VERIFY_IS_NOT_NULL(interactivity);
+        auto core = interactivity->_core;
+        VERIFY_IS_NOT_NULL(core);
+        // "Cascadia Mono" ends up with an actual size of 9x19 at 96DPI. So
+        // let's just arbitrarily start with a 270x380px (30x20 chars) window
+        core->InitializeTerminal(270, 380, 1.0, 1.0);
+        VERIFY_IS_TRUE(core->_initializedTerminal);
+        VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
+        interactivity->Initialize();
+        // For the sake of this test, scroll one line at a time
+        interactivity->_rowsToScroll = 1;
+
+        int expectedTop = 0;
+        int expectedViewHeight = 20;
+        int expectedBufferHeight = 20;
+
+        auto scrollChangedHandler = [&](auto&&, const Control::ScrollPositionChangedArgs& args) mutable {
+            VERIFY_ARE_EQUAL(expectedTop, args.ViewTop());
+            VERIFY_ARE_EQUAL(expectedViewHeight, args.ViewHeight());
+            VERIFY_ARE_EQUAL(expectedBufferHeight, args.BufferSize());
+        };
+        core->ScrollPositionChanged(scrollChangedHandler);
+        interactivity->ScrollPositionChanged(scrollChangedHandler);
+
+        for (int i = 0; i < 40; ++i)
+        {
+            Log::Comment(NoThrowString().Format(L"Writing line #%d", i));
+            // The \r\n in the 19th loop will cause the view to start moving
+            if (i >= 19)
+            {
+                expectedTop++;
+                expectedBufferHeight++;
+            }
+
+            conn->WriteInput(L"Foo\r\n");
+        }
+        // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
+        VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
+        VERIFY_ARE_EQUAL(21, core->ScrollOffset());
+        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(41, core->BufferHeight());
+
+        Log::Comment(L"Scroll up a line");
+        const auto modifiers = ControlKeyStates();
+        expectedBufferHeight = 41;
+        expectedTop = 20;
+        // DebugBreak();
+        interactivity->MouseWheel(modifiers,
+                                  WHEEL_DELTA,
+                                  til::point{ 0, 0 },
+                                  { false, false, false });
+
+        Log::Comment(L"Scroll up 19 more times, to the top");
+        for (int i = 0; i < 20; ++i)
+        {
+            expectedTop--;
+            interactivity->MouseWheel(modifiers,
+                                      WHEEL_DELTA,
+                                      til::point{ 0, 0 },
+                                      { false, false, false });
+        }
+        Log::Comment(L"Scrolling up more should do nothing");
+        expectedTop = 0;
+        interactivity->MouseWheel(modifiers,
+                                  WHEEL_DELTA,
+                                  til::point{ 0, 0 },
+                                  { false, false, false });
+        interactivity->MouseWheel(modifiers,
+                                  WHEEL_DELTA,
+                                  til::point{ 0, 0 },
+                                  { false, false, false });
+
+        Log::Comment(L"Scroll down 21 more times, to the bottom");
+        for (int i = 0; i < 21; ++i)
+        {
+            expectedTop++;
+            interactivity->MouseWheel(modifiers,
+                                      -WHEEL_DELTA,
+                                      til::point{ 0, 0 },
+                                      { false, false, false });
+        }
+        Log::Comment(L"Scrolling up more should do nothing");
+        expectedTop = 21;
+        interactivity->MouseWheel(modifiers,
+                                  -WHEEL_DELTA,
+                                  til::point{ 0, 0 },
+                                  { false, false, false });
+        interactivity->MouseWheel(modifiers,
+                                  -WHEEL_DELTA,
+                                  til::point{ 0, 0 },
+                                  { false, false, false });
+
+        VERIFY_IS_TRUE(false);
     }
 
 }

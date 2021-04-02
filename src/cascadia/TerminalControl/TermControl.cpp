@@ -600,6 +600,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return false;
         }
+        _interactivity->Initialize();
 
         _AttachDxgiSwapChainToXaml(_core->GetSwapChainHandle());
 
