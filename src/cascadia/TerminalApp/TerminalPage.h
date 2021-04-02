@@ -313,54 +313,9 @@ namespace winrt::TerminalApp::implementation
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
-        DECLARE_ACTION_HANDLER(OpenNewTabDropdown);
-        DECLARE_ACTION_HANDLER(DuplicateTab);
-        DECLARE_ACTION_HANDLER(CloseTab);
-        DECLARE_ACTION_HANDLER(ClosePane);
-        DECLARE_ACTION_HANDLER(ScrollUp);
-        DECLARE_ACTION_HANDLER(ScrollDown);
-        DECLARE_ACTION_HANDLER(NextTab);
-        DECLARE_ACTION_HANDLER(PrevTab);
-        DECLARE_ACTION_HANDLER(SendInput);
-        DECLARE_ACTION_HANDLER(SplitPane);
-        DECLARE_ACTION_HANDLER(TogglePaneZoom);
-        DECLARE_ACTION_HANDLER(ScrollUpPage);
-        DECLARE_ACTION_HANDLER(ScrollDownPage);
-        DECLARE_ACTION_HANDLER(ScrollToTop);
-        DECLARE_ACTION_HANDLER(ScrollToBottom);
-        DECLARE_ACTION_HANDLER(OpenSettings);
-        DECLARE_ACTION_HANDLER(PasteText);
-        DECLARE_ACTION_HANDLER(NewTab);
-        DECLARE_ACTION_HANDLER(SwitchToTab);
-        DECLARE_ACTION_HANDLER(ResizePane);
-        DECLARE_ACTION_HANDLER(MoveFocus);
-        DECLARE_ACTION_HANDLER(CopyText);
-        DECLARE_ACTION_HANDLER(CloseWindow);
-        DECLARE_ACTION_HANDLER(AdjustFontSize);
-        DECLARE_ACTION_HANDLER(Find);
-        DECLARE_ACTION_HANDLER(ResetFontSize);
-        DECLARE_ACTION_HANDLER(ToggleShaderEffects);
-        DECLARE_ACTION_HANDLER(ToggleFocusMode);
-        DECLARE_ACTION_HANDLER(ToggleFullscreen);
-        DECLARE_ACTION_HANDLER(ToggleAlwaysOnTop);
-        DECLARE_ACTION_HANDLER(SetColorScheme);
-        DECLARE_ACTION_HANDLER(SetTabColor);
-        DECLARE_ACTION_HANDLER(OpenTabColorPicker);
-        DECLARE_ACTION_HANDLER(RenameTab);
-        DECLARE_ACTION_HANDLER(OpenTabRenamer);
-        DECLARE_ACTION_HANDLER(ExecuteCommandline);
-        DECLARE_ACTION_HANDLER(ToggleCommandPalette);
-        DECLARE_ACTION_HANDLER(CloseOtherTabs);
-        DECLARE_ACTION_HANDLER(CloseTabsAfter);
-        DECLARE_ACTION_HANDLER(TabSearch);
-        DECLARE_ACTION_HANDLER(MoveTab);
-        DECLARE_ACTION_HANDLER(BreakIntoDebugger);
-        DECLARE_ACTION_HANDLER(FindMatch);
-        DECLARE_ACTION_HANDLER(TogglePaneReadOnly);
-        DECLARE_ACTION_HANDLER(NewWindow);
-        DECLARE_ACTION_HANDLER(IdentifyWindow);
-        DECLARE_ACTION_HANDLER(IdentifyWindows);
-        // Make sure to hook new actions up in _RegisterActionCallbacks!
+#define ON_ALL_ACTIONS(action) DECLARE_ACTION_HANDLER(action);
+        ALL_SHORTCUT_ACTIONS
+#undef ON_ALL_ACTIONS
 #pragma endregion
 
         friend class TerminalAppLocalTests::TabTests;

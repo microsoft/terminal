@@ -13,12 +13,30 @@ namespace Microsoft.Terminal.Core
         EmptyBox
     };
 
+    // TerminalCore declares its own Color struct to avoid depending
+    // on Windows.UI.Color and to avoid passing around unclothed uint32s.
+    // It is supported by til::color for conversions in and out of WinRT land.
+    struct Color
+    {
+        UInt8 R;
+        UInt8 G;
+        UInt8 B;
+        UInt8 A;
+    };
+
+    declare
+    {
+        // Forward declare this parameterized specialization so that it lives
+        // in TerminalCore instead of being flung to the winds of all IDL dependents.
+        interface Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>;
+    }
+
     interface ICoreAppearance
     {
-        UInt32 GetColorTableEntry(Int32 index);
-        UInt32 DefaultForeground { get; set; };
-        UInt32 DefaultBackground { get; set; };
-        UInt32 CursorColor { get; set; };
+        Microsoft.Terminal.Core.Color DefaultForeground;
+        Microsoft.Terminal.Core.Color DefaultBackground;
+        Microsoft.Terminal.Core.Color GetColorTableEntry(Int32 index);
+        Microsoft.Terminal.Core.Color CursorColor;
         CursorStyle CursorShape;
         UInt32 CursorHeight;
     };

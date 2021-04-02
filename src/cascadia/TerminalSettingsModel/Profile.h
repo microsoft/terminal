@@ -114,7 +114,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         INHERITABLE_SETTING(Model::Profile, CloseOnExitMode, CloseOnExit, CloseOnExitMode::Graceful);
         INHERITABLE_SETTING(Model::Profile, hstring, TabTitle);
-        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, TabColor, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::Color, TabColor, nullptr);
         INHERITABLE_SETTING(Model::Profile, bool, SuppressApplicationTitle, false);
 
         INHERITABLE_SETTING(Model::Profile, bool, UseAcrylic, false);

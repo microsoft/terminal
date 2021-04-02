@@ -21,8 +21,8 @@ namespace Microsoft.Terminal.Core
 
         Boolean ForceVTInput;
 
-        Windows.Foundation.IReference<UInt32> TabColor;
-        Windows.Foundation.IReference<UInt32> StartingTabColor;
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> TabColor;
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> StartingTabColor;
     };
 
 }

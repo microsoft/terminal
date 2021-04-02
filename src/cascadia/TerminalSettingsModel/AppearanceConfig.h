@@ -41,10 +41,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         INHERITABLE_SETTING(Model::IAppearanceConfig, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
         INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, ColorSchemeName, L"Campbell");
-        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Windows::UI::Color, Foreground, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Windows::UI::Color, Background, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Windows::UI::Color, SelectionBackground, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Windows::UI::Color, CursorColor, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Foreground, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Background, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, SelectionBackground, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, CursorColor, nullptr);
         INHERITABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::CursorStyle, CursorShape, Microsoft::Terminal::Core::CursorStyle::Bar);
         INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, BackgroundImagePath);
 
