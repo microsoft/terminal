@@ -979,7 +979,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - The height of the terminal in lines of text
     int ControlCore::BufferHeight() const
     {
-        return _terminal->GetViewport().BottomExclusive();
+        return _terminal->GetBufferHeight();
     }
 
     void ControlCore::_TerminalWarningBell()

@@ -319,13 +319,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto currentOffset = ::base::ClampedNumeric<double>(_core->ScrollOffset());
                 const auto newValue = numRows + currentOffset;
 
-                // !TODO! - Very worried about using UserScrollViewport as
-                // opposed to the ScrollBar().Value() setter. Originally setting
-                // the scrollbar value would raise a event handled in
-                // _ScrollbarChangeHandler, which would _then_ scroll the core,
-                // and start the _updateScrollBar ThrottledFunc to update the
-                // scroll position. I'm worried that won't work like this.
-                _core->UserScrollViewport(newValue);
+                // Update the Core's viewport position, and raise a
+                // ScrollPositionChanged event to update the scrollbar
+                _updateScrollbar(newValue);
                 // ScrollBar().Value(newValue);
 
                 // Use this point as our new scroll anchor.
@@ -521,24 +517,43 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? _core->ViewHeight() : _rowsToScroll };
         double newValue = (rowsToScroll * rowDelta) + (currentOffset);
 
-        // The scroll bar's ValueChanged handler will actually move the viewport
-        //      for us.
-        // ScrollBar().Value(newValue);
-
-        // !TODO! - Very worried about using UserScrollViewport as
-        // opposed to the ScrollBar().Value() setter. Originally setting
-        // the scrollbar value would raise a event handled in
-        // _ScrollbarChangeHandler, which would _then_ scroll the core,
-        // and start the _updateScrollBar ThrottledFunc to update the
-        // scroll position. I'm worried that won't work like this.
-        _core->UserScrollViewport(::base::saturated_cast<int>(newValue));
+        // Update the Core's viewport position, and raise a
+        // ScrollPositionChanged event to update the scrollbar
+        _updateScrollbar(::base::saturated_cast<int>(newValue));
 
         if (isLeftButtonPressed)
         {
-            // If user is mouse selecting and scrolls, they then point at new character.
-            //      Make sure selection reflects that immediately.
+            // If user is mouse selecting and scrolls, they then point at new
+            // character. Make sure selection reflects that immediately.
             _SetEndSelectionPoint(terminalPosition);
         }
+    }
+
+    // Method Description:
+    // - Update the scroll position in such a way that should update the
+    //   scrollbar. For example, when scrolling the buffer with the mouse or
+    //   touch input. This will both update the Core's Terminal's buffer
+    //   location, then also raise our own ScrollPositionChanged event.
+    //   UserScrollViewport _won't_ raise the core's ScrollPositionChanged
+    //   event, because it's assumed that's already being called from a context
+    //   that knows about the change to the scrollbar. So we need to raise the
+    //   event on our own.
+    // - The hosting control should make sure to listen to our own
+    //   ScrollPositionChanged event and use that as an opportunity to update
+    //   the location of the scrollbar.
+    // Arguments:
+    // - newValue: The new top of the viewport
+    // Return Value:
+    // - <none>
+    void ControlInteractivity::_updateScrollbar(const int newValue)
+    {
+        _core->UserScrollViewport(newValue);
+
+        // _core->ScrollOffset() is new set to newValue
+        auto scrollArgs = winrt::make_self<ScrollPositionChangedArgs>(_core->ScrollOffset(),
+                                                                      _core->ViewHeight(),
+                                                                      _core->BufferHeight());
+        _ScrollPositionChangedHandlers(*this, *scrollArgs);
     }
 
     void ControlInteractivity::_HyperlinkHandler(const std::wstring_view uri)

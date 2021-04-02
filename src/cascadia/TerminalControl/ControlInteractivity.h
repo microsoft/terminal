@@ -107,8 +107,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _SetEndSelectionPoint(const til::point terminalPosition);
 
         void _SendPastedTextToConnection(const std::wstring& wstr);
+        void _updateScrollbar(const int newValue);
+
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
+        TYPED_EVENT(ScrollPositionChanged, IInspectable, Control::ScrollPositionChangedArgs);
 
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;

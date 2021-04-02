@@ -70,6 +70,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->TransparencyChanged({ get_weak(), &TermControl::_coreTransparencyChanged });
 
         _interactivity->OpenHyperlink({ get_weak(), &TermControl::_HyperlinkHandler });
+        _interactivity->ScrollPositionChanged({ get_weak(), &TermControl::_ScrollPositionChanged });
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
         _layoutUpdatedRevoker = SwapChainPanel().LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
