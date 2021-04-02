@@ -123,18 +123,20 @@
             tracked by MUX#4382
         -->
         <mux:TeachingTip x:Name="WindowIdToast"
-                         Title="{x:Bind WindowIdForDisplay, Mode=OneWay}"
                          x:Load="False"
+                         Title="{x:Bind WindowIdForDisplay}"
                          IsLightDismissEnabled="True"
                          Subtitle="{x:Bind WindowNameForDisplay, Mode=OneWay}" />
 
         <mux:TeachingTip x:Name="RenameFailedToast"
                          x:Uid="RenameFailedToast"
+                         x:Load="False"
                          IsLightDismissEnabled="True" />
 
         <mux:TeachingTip x:Name="WindowRenamer"
                          x:Uid="WindowRenamer"
-                         Title="{x:Bind WindowIdForDisplay, Mode=OneWay}"
+                         x:Load="False"
+                         Title="{x:Bind WindowIdForDisplay}"
                          ActionButtonClick="_WindowRenamerActionClick">
             <mux:TeachingTip.Content>
                 <TextBox x:Name="WindowRenamerTextBox"

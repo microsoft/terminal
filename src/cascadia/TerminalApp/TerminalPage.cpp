@@ -253,8 +253,6 @@ namespace winrt::TerminalApp::implementation
         // DON'T set up Toasts/TeachingTips here. They should be loaded and
         // initialized the first time they're opened, in whatever method opens
         // them.
-        // The WindowRenamer, however, is _not_ a Toast.
-        WindowRenamer().Closed({ get_weak(), &TerminalPage::_FocusActiveControl });
 
         // Setup mouse vanish attributes
         SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &_shouldMouseVanish, false);
@@ -2671,10 +2669,17 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_RequestWindowRename(const winrt::hstring& newName)
     {
-        auto request = winrt::make_self<implementation::RenameWindowRequestedArgs>(newName);
+        auto request = winrt::make<implementation::RenameWindowRequestedArgs>(newName);
         // The WindowRenamer is _not_ a Toast - we want it to stay open until the user dismisses it.
         WindowRenamer().IsOpen(false);
-        _RenameWindowRequestedHandlers(*this, *request);
+        _RenameWindowRequestedHandlers(*this, request);
+        // We can't just use request.Successful here, because the handler might
+        // (will) be handling this asynchronously, so when control returns to
+        // us, this hasn't actually been handled yet. We'll get called back in
+        // RenameFailed if this fails.
+        //
+        // Theoretically we could do a IAsyncOperation<RenameWindowResult> kind
+        // of thing with co_return winrt::make<RenameWindowResult>(false).
     }
 
 }

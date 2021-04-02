@@ -727,6 +727,15 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleOpenWindowRenamer(const IInspectable& /*sender*/,
                                                 const ActionEventArgs& args)
     {
+        if (WindowRenamer() == nullptr)
+        {
+            // We need to use FindName to lazy-load this object
+            if (MUX::Controls::TeachingTip tip{ FindName(L"WindowRenamer").try_as<MUX::Controls::TeachingTip>() })
+            {
+                tip.Closed({ get_weak(), &TerminalPage::_FocusActiveControl });
+            }
+        }
+
         WindowRenamer().IsOpen(true);
 
         // PAIN: We can't immediately focus the textbox in the TeachingTip. It's

@@ -679,7 +679,7 @@
             "name": {
               "type": "string",
               "default": "",
-              "description": "A name to assign to the window. "
+              "description": "A name to assign to the window."
             }
           }
         }
