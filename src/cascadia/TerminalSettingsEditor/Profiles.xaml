@@ -60,9 +60,9 @@
                    Visibility="{x:Bind State.Profile.IsBaseLayer}" />
 
         <Border x:Name="ControlPreview"
-                HorizontalAlignment="Stretch"
+                Height="320"
                 Margin="8,0,8,0"
-                Height="320"/>
+                HorizontalAlignment="Stretch" />
 
         <Pivot x:Name="ProfilesPivot"
                Grid.Row="1"

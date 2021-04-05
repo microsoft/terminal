@@ -16,10 +16,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void PreviewConnection::Start() noexcept
     {
         _TerminalOutputHandlers(fmt::format(L"{}\r\n\x1b[31m{}\r\n\x1b[32m{}\r\n\x1b[34m{}",
-                                RS_(L"PreviewConnection_DefaultText"),
-                                RS_(L"PreviewConnection_RedText"),
-                                RS_(L"PreviewConnection_GreenText"),
-                                RS_(L"PreviewConnection_BlueText")));
+                                            RS_(L"PreviewConnection_DefaultText"),
+                                            RS_(L"PreviewConnection_RedText"),
+                                            RS_(L"PreviewConnection_GreenText"),
+                                            RS_(L"PreviewConnection_BlueText")));
     }
 
     void PreviewConnection::WriteInput(hstring const& /*data*/)
