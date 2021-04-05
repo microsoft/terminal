@@ -191,6 +191,17 @@ namespace winrt::TerminalApp::implementation
 
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
 
+        // When the tab requests close, try to close it (prompt for approval, if required)
+        newTabImpl->CloseRequested([weakTab, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab)
+            {
+                page->_HandleCloseTabRequested(*tab);
+            }
+        });
+
         // When the tab is closed, remove it from our list of tabs.
         newTabImpl->Closed([tabViewItem, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
             if (auto page{ weakThis.get() })
