@@ -36,8 +36,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             com_ptr<T> parent;
             winrt::copy_from_abi(parent, const_cast<T*>(static_cast<const T*>(this)));
             child->InsertParent(parent);
-            child->_FinalizeInheritance();
 
+            child->_FinalizeInheritance();
             return child;
         }
 
