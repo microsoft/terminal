@@ -120,8 +120,6 @@ private:
 
     Borders _borders{ Borders::None };
 
-    std::atomic<bool> _isClosing{ false };
-
     bool _zoomed{ false };
 
     bool _IsLeaf() const noexcept;
@@ -145,7 +143,7 @@ private:
     winrt::fire_and_forget _CloseChildRoutine(const bool closeFirst);
 
     void _FocusFirstChild();
-    void _ControlConnectionStateChangedHandler(const winrt::Microsoft::Terminal::Control::TermControl& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
+    void _ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
     void _ControlWarningBellHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                     winrt::Windows::Foundation::IInspectable const& e);
     void _ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,

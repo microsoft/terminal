@@ -13,6 +13,13 @@ namespace Microsoft.Terminal.Remoting
         String CurrentDirectory();
     };
 
+    runtimeclass RenameRequestArgs
+    {
+        RenameRequestArgs(String newName);
+        String NewName { get; };
+        Boolean Succeeded;
+    };
+
     runtimeclass WindowActivatedArgs
     {
         WindowActivatedArgs(UInt64 peasantID, Guid desktopID, Windows.Foundation.DateTime activatedTime);
@@ -34,9 +41,16 @@ namespace Microsoft.Terminal.Remoting
         void ActivateWindow(WindowActivatedArgs args);
         WindowActivatedArgs GetLastActivatedArgs();
         String WindowName { get; };
+        void RequestIdentifyWindows(); // Tells us to raise a IdentifyWindowsRequested
+        void DisplayWindowId(); // Tells us to display its own ID (which causes a DisplayWindowIdRequested to be raised)
+
+        void RequestRename(RenameRequestArgs args); // Tells us to raise a RenameRequested
 
         event Windows.Foundation.TypedEventHandler<Object, WindowActivatedArgs> WindowActivated;
         event Windows.Foundation.TypedEventHandler<Object, CommandlineArgs> ExecuteCommandlineRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> DisplayWindowIdRequested;
+        event Windows.Foundation.TypedEventHandler<Object, RenameRequestArgs> RenameRequested;
     };
 
     [default_interface] runtimeclass Peasant : IPeasant

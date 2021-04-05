@@ -70,6 +70,7 @@
   <ItemGroup>
     <ProjectReference Include="..\WindowsTerminal\WindowsTerminal.vcxproj" />
     <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" />
+    <ProjectReference Include="..\..\host\proxy\Host.Proxy.vcxproj" />
     <ProjectReference Include="..\TerminalAzBridge\TerminalAzBridge.vcxproj" />
     <ProjectReference Include="..\ShellExtension\WindowsTerminalShellExt.vcxproj" />
     <ProjectReference Include="..\wt\wt.vcxproj" />

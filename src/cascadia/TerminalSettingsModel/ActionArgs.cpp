@@ -26,6 +26,9 @@
 #include "FindMatchArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
 #include "NewWindowArgs.g.cpp"
+#include "PrevTabArgs.g.cpp"
+#include "NextTabArgs.g.cpp"
+#include "RenameWindowArgs.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -65,6 +68,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             const til::color tabColor{ _TabColor.Value() };
             ss << fmt::format(L"tabColor: {}, ", tabColor.ToHexString(true));
+        }
+        if (!_ColorScheme.empty())
+        {
+            ss << fmt::format(L"colorScheme: {}, ", _ColorScheme);
         }
 
         if (_SuppressApplicationTitle)
@@ -131,6 +138,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 ss << fmt::format(L"--useApplicationTitle ");
             }
+        }
+
+        if (!_ColorScheme.empty())
+        {
+            ss << fmt::format(L"--colorScheme \"{}\" ", _ColorScheme);
         }
 
         if (!_Commandline.empty())
@@ -533,5 +545,41 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring{
             fmt::format(L"{}, {}", RS_(L"NewWindowCommandKey"), newTerminalArgsStr)
         };
+    }
+
+    winrt::hstring PrevTabArgs::GenerateName() const
+    {
+        if (!_SwitcherMode)
+        {
+            return RS_(L"PrevTabCommandKey");
+        }
+
+        const auto mode = _SwitcherMode.Value() == TabSwitcherMode::MostRecentlyUsed ? L"most recently used" : L"in order";
+        return winrt::hstring(fmt::format(L"{}, {}", RS_(L"PrevTabCommandKey"), mode));
+    }
+
+    winrt::hstring NextTabArgs::GenerateName() const
+    {
+        if (!_SwitcherMode)
+        {
+            return RS_(L"NextTabCommandKey");
+        }
+
+        const auto mode = _SwitcherMode.Value() == TabSwitcherMode::MostRecentlyUsed ? L"most recently used" : L"in order";
+        return winrt::hstring(fmt::format(L"{}, {}", RS_(L"NextTabCommandKey"), mode));
+    }
+
+    winrt::hstring RenameWindowArgs::GenerateName() const
+    {
+        // "Rename window to \"{_Name}\""
+        // "Clear window name"
+        if (!_Name.empty())
+        {
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"RenameWindowCommandKey")),
+                            _Name.c_str())
+            };
+        }
+        return RS_(L"ResetWindowNameCommandKey");
     }
 }

@@ -312,7 +312,7 @@ bool Pane::NavigateFocus(const FocusDirection& direction)
 // - <none>
 // Return Value:
 // - <none>
-void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/,
+void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                  const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     std::unique_lock lock{ _createCloseLock };
@@ -416,11 +416,8 @@ void Pane::_ControlLostFocusHandler(winrt::Windows::Foundation::IInspectable con
 // - <none>
 void Pane::Close()
 {
-    if (!_isClosing.exchange(true))
-    {
-        // Fire our Closed event to tell our parent that we should be removed.
-        _ClosedHandlers(nullptr, nullptr);
-    }
+    // Fire our Closed event to tell our parent that we should be removed.
+    _ClosedHandlers(nullptr, nullptr);
 }
 
 // Method Description:

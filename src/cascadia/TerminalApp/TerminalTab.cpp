@@ -542,7 +542,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        control.TitleChanged([weakThis](auto newTitle) {
+        control.TitleChanged([weakThis](auto&&, auto&&) {
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
             {
@@ -788,7 +788,7 @@ namespace winrt::TerminalApp::implementation
         closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_rootPane->Close();
+                tab->_CloseRequestedHandlers(nullptr, nullptr);
             }
         });
         closeTabMenuItem.Text(RS_(L"TabClose"));

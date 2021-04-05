@@ -56,7 +56,7 @@ HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
         siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
 
         // Append a "\." to the given path, so that this will work in "C:\"
-        std::wstring cmdline = fmt::format(L"\"{}\" -d \"{}\\.\"", GetWtExePath(), pszName.get());
+        auto cmdline{ wil::str_printf<std::wstring>(LR"-("%s" -d "%s\.")-", GetWtExePath().c_str(), pszName.get()) };
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
             nullptr,
             cmdline.data(),
