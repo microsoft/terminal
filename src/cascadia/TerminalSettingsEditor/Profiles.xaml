@@ -60,8 +60,9 @@
                    Visibility="{x:Bind State.Profile.IsBaseLayer}" />
 
         <Border x:Name="ControlPreview"
-                Width="600"
-                Height="200" />
+                HorizontalAlignment="Stretch"
+                Margin="8,0,8,0"
+                Height="320"/>
 
         <Pivot x:Name="ProfilesPivot"
                Grid.Row="1"
@@ -781,5 +782,22 @@
                 </ScrollViewer>
             </PivotItem>
         </Pivot>
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState>
+                    <VisualState.StateTriggers>
+                        <!--
+                            Official guidance states that 640 is the breakpoint between small and medium devices.
+                            Since MinWindowWidth is an inclusive range, we need to add 1 to it.
+                        -->
+                        <AdaptiveTrigger MinWindowWidth="641" />
+                    </VisualState.StateTriggers>
+
+                    <VisualState.Setters>
+                        <Setter Target="ControlPreview.Width" Value="640" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
     </Grid>
 </Page>

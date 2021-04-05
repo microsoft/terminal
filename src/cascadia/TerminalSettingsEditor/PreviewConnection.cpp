@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "PreviewConnection.h"
+#include <LibraryResources.h>
 
 using namespace ::winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::winrt::Windows::Foundation;
@@ -14,7 +15,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void PreviewConnection::Start() noexcept
     {
-        _TerminalOutputHandlers(L"this needs to be updated! use ansii sequences to send color");
+        _TerminalOutputHandlers(fmt::format(L"{}\r\n\x1b[31m{}\r\n\x1b[32m{}\r\n\x1b[34m{}",
+                                RS_(L"PreviewConnection_DefaultText"),
+                                RS_(L"PreviewConnection_RedText"),
+                                RS_(L"PreviewConnection_GreenText"),
+                                RS_(L"PreviewConnection_BlueText")));
     }
 
     void PreviewConnection::WriteInput(hstring const& /*data*/)
