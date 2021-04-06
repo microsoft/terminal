@@ -47,9 +47,17 @@
 
     <!-- If you don't reference these projects here, the
     _ConsoleGenerateAdditionalWinmdManifests step won't gather the winmd's -->
-    <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalControl\dll\TerminalControl.vcxproj" />
+    <!-- <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalControl\dll\TerminalControl.vcxproj" /> -->
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Microsoft.Terminal.TerminalConnection">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+  </ItemGroup>
   <!-- ========================= Globals ======================== -->
 
   <!-- ====================== Compiler & Linker Flags ===================== -->
@@ -79,7 +87,7 @@
   </PropertyGroup>
 
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\common.build.tests.props" />
 
 
