@@ -736,6 +736,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        _UpdateTeachingTipTheme(WindowRenamer().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
         WindowRenamer().IsOpen(true);
 
         // PAIN: We can't immediately focus the textbox in the TeachingTip. It's

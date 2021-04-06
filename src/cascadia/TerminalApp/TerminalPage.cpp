@@ -2521,6 +2521,24 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Update the RequestedTheme of the specified FrameworkElement and all its
+    //   Parent elements. We need to do this so that we can actually theme all
+    //   of the elements of the TeachingTip. See GH#9717
+    // Arguments:
+    // - element: The TeachingTip to set the theme on.
+    // Return Value:
+    // - <none>
+    void TerminalPage::_UpdateTeachingTipTheme(winrt::Windows::UI::Xaml::FrameworkElement element)
+    {
+        auto theme{ _settings.GlobalSettings().Theme() };
+        while (element)
+        {
+            element.RequestedTheme(theme);
+            element = element.Parent().try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
+        }
+    }
+
+    // Method Description:
     // - Display the name and ID of this window in a TeachingTip. If the window
     //   has no name, the name will be presented as "<unnamed-window>".
     // - This can be invoked by either:
@@ -2549,6 +2567,7 @@ namespace winrt::TerminalApp::implementation
                     tip.Closed({ page->get_weak(), &TerminalPage::_FocusActiveControl });
                 }
             }
+            _UpdateTeachingTipTheme(WindowIdToast().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
 
             if (page->_windowIdToast != nullptr)
             {
@@ -2642,6 +2661,7 @@ namespace winrt::TerminalApp::implementation
                     tip.Closed({ page->get_weak(), &TerminalPage::_FocusActiveControl });
                 }
             }
+            _UpdateTeachingTipTheme(RenameFailedToast().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
 
             if (page->_windowRenameFailedToast != nullptr)
             {
