@@ -77,6 +77,8 @@
         "duplicateTab",
         "find",
         "findMatch",
+        "identifyWindow",
+        "identifyWindows",
         "moveFocus",
         "moveTab",
         "newTab",
