@@ -63,7 +63,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
                  auto extension = p.path().extension().wstring();
                  std::transform(extension.begin(), extension.end(), extension.begin(), std::towlower);
 
-                 const std::wstring_view ttfExtension{ L"ttf" };
+                 const std::wstring_view ttfExtension{ L".ttf" };
                  if (ttfExtension == extension)
                  {
                      fontSetBuilder2->AddFontFile(p.path().c_str());
@@ -666,7 +666,7 @@ CATCH_RETURN()
             familyName = familyName.substr(0, lastSpace);
 
             // Try to find it with the shortened family name
-            auto face = _FindFontFace(familyName, weight, stretch, style, localeName);
+            face = _FindFontFace(familyName, weight, stretch, style, localeName);
         }
 
         // Alright, if our quick shot at trimming didn't work either...
