@@ -94,7 +94,9 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
         // _ResolveFontFaceWithFallback overrides the last argument with the locale name of the font,
         // but we should use the system's locale to render the text.
         std::wstring fontLocaleName = localeName;
-        const auto face = _ResolveFontFaceWithFallback(fontName, weight, stretch, style, fontLocaleName);
+
+        bool didFallback = false;
+        const auto face = _ResolveFontFaceWithFallback(fontName, weight, stretch, style, fontLocaleName, didFallback);
 
         DWRITE_FONT_METRICS1 fontMetrics;
         face->GetMetrics(&fontMetrics);
@@ -221,8 +223,9 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
         DWRITE_FONT_WEIGHT weightItalic = weight;
         DWRITE_FONT_STYLE styleItalic = DWRITE_FONT_STYLE_ITALIC;
         DWRITE_FONT_STRETCH stretchItalic = stretch;
+        bool didItalicFallback = false;
 
-        const auto faceItalic = _ResolveFontFaceWithFallback(fontNameItalic, weightItalic, stretchItalic, styleItalic, fontLocaleName);
+        const auto faceItalic = _ResolveFontFaceWithFallback(fontNameItalic, weightItalic, stretchItalic, styleItalic, fontLocaleName, didItalicFallback);
 
         Microsoft::WRL::ComPtr<IDWriteTextFormat> formatItalic;
         THROW_IF_FAILED(_dwriteFactory->CreateTextFormat(fontNameItalic.data(),
@@ -266,6 +269,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
                              false,
                              scaled,
                              unscaled);
+        actual.SetFallback(didFallback);
 
         LineMetrics lineMetrics;
         // There is no font metric for the grid line width, so we use a small
@@ -578,37 +582,76 @@ CATCH_RETURN()
 // - weight - The weight (bold, light, etc.)
 // - stretch - The stretch of the font is the spacing between each letter
 // - style - Normal, italic, etc.
+// - localeName - Locale to search for appropriate fonts
+// - didFallback - Indicates whether we couldn't match the user request and had to choose from a hardcoded default list.
 // Return Value:
 // - Smart pointer holding interface reference for queryable font data.
 [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontRenderData::_ResolveFontFaceWithFallback(std::wstring& familyName,
                                                                                                       DWRITE_FONT_WEIGHT& weight,
                                                                                                       DWRITE_FONT_STRETCH& stretch,
                                                                                                       DWRITE_FONT_STYLE& style,
-                                                                                                      std::wstring& localeName) const
+                                                                                                      std::wstring& localeName,
+                                                                                                      bool& didFallback) const
 {
+    // First attempt to find exactly what the user asked for.
+    didFallback = false;
     auto face = _FindFontFace(familyName, weight, stretch, style, localeName);
 
     if (!face)
     {
-        for (const auto fallbackFace : FALLBACK_FONT_FACES)
+        // If we missed, try looking a little more by trimming the last word off the requested family name a few times.
+        // Quite often, folks are specifying weights or something in the familyName and it causes misresolution and
+        // an unexpected error dialog. We theoretically could detect the weight words and convert them, but this
+        // is the quick fix for the majority scenario.
+        // The long/full fix is backlogged to GH#xxxx
+        // Also this doesn't count as a fallback because we don't want to annoy folks with the warning dialog over
+        // this resolution.
+        while (!face && !familyName.empty())
         {
-            familyName = fallbackFace;
-            face = _FindFontFace(familyName, weight, stretch, style, localeName);
+            const auto lastSpace = familyName.find_last_of(L'\x20');
 
-            if (face)
+            // value is unsigned and npos will be greater than size.
+            // if we didn't find anything to trim, leave.
+            if (lastSpace >= familyName.size())
             {
                 break;
             }
 
-            familyName = fallbackFace;
-            weight = DWRITE_FONT_WEIGHT_NORMAL;
-            stretch = DWRITE_FONT_STRETCH_NORMAL;
-            style = DWRITE_FONT_STYLE_NORMAL;
-            face = _FindFontFace(familyName, weight, stretch, style, localeName);
+            // trim string down to just before the found space
+            // (space found at 6... trim from 0 for 6 length will give us 0-5 as the new string)
+            familyName = familyName.substr(0, lastSpace);
 
-            if (face)
+            // Try to find it with the shortened family name
+            auto face = _FindFontFace(familyName, weight, stretch, style, localeName);
+        }
+
+        // Alright, if our quick shot at trimming didn't work either...
+        // move onto looking up a font from our hardcoded list of fonts
+        // that should really always be available.
+        if (!face)
+        {
+            for (const auto fallbackFace : FALLBACK_FONT_FACES)
             {
-                break;
+                familyName = fallbackFace;
+                face = _FindFontFace(familyName, weight, stretch, style, localeName);
+
+                if (face)
+                {
+                    didFallback = true;
+                    break;
+                }
+
+                familyName = fallbackFace;
+                weight = DWRITE_FONT_WEIGHT_NORMAL;
+                stretch = DWRITE_FONT_STRETCH_NORMAL;
+                style = DWRITE_FONT_STYLE_NORMAL;
+                face = _FindFontFace(familyName, weight, stretch, style, localeName);
+
+                if (face)
+                {
+                    didFallback = true;
+                    break;
+                }
             }
         }
     }

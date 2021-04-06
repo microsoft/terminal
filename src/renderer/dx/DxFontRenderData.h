@@ -62,7 +62,8 @@ namespace Microsoft::Console::Render
                                                                                               DWRITE_FONT_WEIGHT& weight,
                                                                                               DWRITE_FONT_STRETCH& stretch,
                                                                                               DWRITE_FONT_STYLE& style,
-                                                                                              std::wstring& localeName) const;
+                                                                                              std::wstring& localeName,
+                                                                                              bool& didFallback) const;
 
         [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _FindFontFace(std::wstring& familyName,
                                                                                DWRITE_FONT_WEIGHT& weight,
