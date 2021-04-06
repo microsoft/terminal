@@ -15,6 +15,11 @@ using namespace WEX::Common;
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
 using namespace ::Microsoft::Terminal::Core;
+using namespace ::Microsoft::Console::VirtualTerminal;
+// namespace winrt
+// {
+//     using namespace Windows::Foundation;
+// };
 
 namespace ControlUnitTests
 {
@@ -227,6 +232,7 @@ namespace ControlUnitTests
 
     void ControlInteractivityTests::CreateSubsequentSelectionWithDragging()
     {
+        // This is a test for GH#9725
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
 
         winrt::com_ptr<MockControlSettings> settings;
@@ -251,25 +257,87 @@ namespace ControlUnitTests
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
+        const TerminalInput::MouseButtonState leftMouseDown{ true, false, false };
+        const TerminalInput::MouseButtonState noMouseDown{ false, false, false };
 
-        // Click on the terminal
-        interactivity->PointerPressed();
-        // Verify that there's one selection
+        const til::size fontSize{ 9, 19 };
 
-        // Drag the mouse
-        interactivity->PointerMoved();
-        // Verify that there's still one selection
+        Log::Comment(L"Click on the terminal");
+        const til::point terminalPosition0{ 0, 0 };
+        const til::point cursorPosition0 = terminalPosition0 * fontSize;
+        interactivity->PointerPressed(cursorPosition0,
+                                      leftMouseDown,
+                                      WM_LBUTTONDOWN, //pointerUpdateKind
+                                      0, // timestamp
+                                      modifiers,
+                                      true, // focused,
+                                      terminalPosition0);
+        Log::Comment(L"Verify that there's not yet a selection");
 
-        // Release the mouse
-        interactivity->PointerReleased();
-        // Verify that there's still one selection
+        VERIFY_IS_FALSE(core->HasSelection());
 
-        // click outside the current selection
-        interactivity->PointerPressed();
-        // Verify that there's now no selection
+        Log::Comment(L"Drag the mouse just a little");
+        // move not quite a whole cell, but enough to start a selection
+        const til::point terminalPosition1{ 0, 0 };
+        const til::point cursorPosition1{ 6, 0 };
+        interactivity->PointerMoved(cursorPosition1,
+                                    leftMouseDown,
+                                    WM_LBUTTONDOWN, //pointerUpdateKind
+                                    modifiers,
+                                    true, // focused,
+                                    terminalPosition1);
+        Log::Comment(L"Verify that there's one selection");
+        VERIFY_IS_TRUE(core->HasSelection());
+        VERIFY_ARE_EQUAL(1, core->_terminal->GetSelectionRects().size());
 
-        // Drag the mouse
-        interactivity->PointerMoved();
-        // Verify that there's now one selection
+        Log::Comment(L"Drag the mouse down a whole row");
+        const til::point terminalPosition2{ 1, 1 };
+        const til::point cursorPosition2 = terminalPosition2 * fontSize;
+        interactivity->PointerMoved(cursorPosition2,
+                                    leftMouseDown,
+                                    WM_LBUTTONDOWN, //pointerUpdateKind
+                                    modifiers,
+                                    true, // focused,
+                                    terminalPosition2);
+        Log::Comment(L"Verify that there's now two selections (one on each row)");
+        VERIFY_IS_TRUE(core->HasSelection());
+        VERIFY_ARE_EQUAL(2, core->_terminal->GetSelectionRects().size());
+
+        Log::Comment(L"Release the mouse");
+        interactivity->PointerReleased(noMouseDown,
+                                       WM_LBUTTONUP, //pointerUpdateKind
+                                       modifiers,
+                                       true, // focused,
+                                       terminalPosition2);
+        Log::Comment(L"Verify that there's still two selections");
+        VERIFY_IS_TRUE(core->HasSelection());
+        VERIFY_ARE_EQUAL(2, core->_terminal->GetSelectionRects().size());
+
+        Log::Comment(L"click outside the current selection");
+        const til::point terminalPosition3{ 2, 2 };
+        const til::point cursorPosition3 = terminalPosition3 * fontSize;
+        interactivity->PointerPressed(cursorPosition3,
+                                      leftMouseDown,
+                                      WM_LBUTTONDOWN, //pointerUpdateKind
+                                      0, // timestamp
+                                      modifiers,
+                                      true, // focused,
+                                      terminalPosition3);
+        Log::Comment(L"Verify that there's now no selection");
+        VERIFY_IS_FALSE(core->HasSelection());
+        VERIFY_ARE_EQUAL(0, core->_terminal->GetSelectionRects().size());
+
+        Log::Comment(L"Drag the mouse");
+        const til::point terminalPosition4{ 3, 2 };
+        const til::point cursorPosition4 = terminalPosition4 * fontSize;
+        interactivity->PointerMoved(cursorPosition4,
+                                    leftMouseDown,
+                                    WM_LBUTTONDOWN, //pointerUpdateKind
+                                    modifiers,
+                                    true, // focused,
+                                    terminalPosition4);
+        Log::Comment(L"Verify that there's now one selection");
+        VERIFY_IS_TRUE(core->HasSelection());
+        VERIFY_ARE_EQUAL(1, core->_terminal->GetSelectionRects().size());
     }
 }
