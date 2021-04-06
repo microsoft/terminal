@@ -67,7 +67,6 @@
     <ClCompile Include="TermControl.cpp">
       <DependentUpon>TermControl.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="ThrottledFunc.cpp" />
     <ClCompile Include="TSFInputControl.cpp">
       <DependentUpon>TSFInputControl.xaml</DependentUpon>
     </ClCompile>
