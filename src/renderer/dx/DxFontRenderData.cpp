@@ -36,9 +36,20 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     return _systemFontFallback;
 }
 
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontCollection1> DxFontRenderData::PackageCollection() const
+// Routine Description:
+// - Creates a DirectWrite font collection of font files that are sitting next to the running
+//   binary (in the same directory as the EXE).
+// Arguments:
+// - <none>
+// Return Value:
+// - DirectWrite font collection
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontCollection1> DxFontRenderData::NearbyCollection() const
 {
-    if (!_packageLoadCollection)
+    // Magic static so we only attempt to grovel the hard disk once no matter how many instances
+    // of the font collection itself we require.
+    static const auto knownPaths = s_GetNearbyFonts();
+
+    if (!_nearbyCollection)
     {
         // Factory3 has a convenience to get us a font set builder.
         ::Microsoft::WRL::ComPtr<IDWriteFactory3> factory3;
@@ -56,28 +67,18 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
         const std::filesystem::path module{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
         const auto folder = module.parent_path();
 
-        for (auto& p : std::filesystem::directory_iterator(folder))
+        for (auto& p : knownPaths)
         {
-            if (p.is_regular_file())
-            {
-                auto extension = p.path().extension().wstring();
-                std::transform(extension.begin(), extension.end(), extension.begin(), std::towlower);
-
-                const std::wstring_view ttfExtension{ L".ttf" };
-                if (ttfExtension == extension)
-                {
-                    fontSetBuilder2->AddFontFile(p.path().c_str());
-                }
-            }
+            fontSetBuilder2->AddFontFile(p.c_str());
         }
 
         ::Microsoft::WRL::ComPtr<IDWriteFontSet> fontSet;
         THROW_IF_FAILED(fontSetBuilder2->CreateFontSet(&fontSet));
 
-        THROW_IF_FAILED(factory3->CreateFontCollectionFromFontSet(fontSet.Get(), &_packageLoadCollection));
+        THROW_IF_FAILED(factory3->CreateFontCollectionFromFontSet(fontSet.Get(), &_nearbyCollection));
     }
 
-    return _packageLoadCollection;
+    return _nearbyCollection;
 }
 
 [[nodiscard]] til::size DxFontRenderData::GlyphCell() noexcept
@@ -729,10 +730,10 @@ CATCH_RETURN()
     BOOL familyExists;
     THROW_IF_FAILED(fontCollection->FindFamilyName(familyName.data(), &familyIndex, &familyExists));
 
-    // If the system collection missed, try the files sitting next to our binary in the package.
+    // If the system collection missed, try the files sitting next to our binary.
     if (!familyExists)
     {
-        PackageCollection().As(&fontCollection);
+        NearbyCollection().As(&fontCollection);
         THROW_IF_FAILED(fontCollection->FindFamilyName(familyName.data(), &familyIndex, &familyExists));
     }
 
@@ -846,4 +847,38 @@ CATCH_RETURN()
     }
 
     return _userLocaleName;
+}
+
+// Routine Description:
+// - Digs through the directory that the current executable is running within to find
+//   any TTF files sitting next to it.
+// Arguments:
+// - <none>
+// Return Value:
+// - Iterable collection of filesystem paths, one per font file that was found
+[[nodiscard]] std::vector<std::filesystem::path> DxFontRenderData::s_GetNearbyFonts()
+{
+    std::vector<std::filesystem::path> paths;
+
+    // Find the directory we're running from then enumerate all the TTF files
+    // sitting next to us.
+    const std::filesystem::path module{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
+    const auto folder = module.parent_path();
+
+    for (auto& p : std::filesystem::directory_iterator(folder))
+    {
+        if (p.is_regular_file())
+        {
+            auto extension = p.path().extension().wstring();
+            std::transform(extension.begin(), extension.end(), extension.begin(), std::towlower);
+
+            const std::wstring_view ttfExtension{ L".ttf" };
+            if (ttfExtension == extension)
+            {
+                paths.push_back(p);
+            }
+        }
+    }
+
+    return paths;
 }

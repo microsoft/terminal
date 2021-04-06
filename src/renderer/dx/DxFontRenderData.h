@@ -35,7 +35,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFallback> SystemFontFallback();
 
-        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontCollection1> PackageCollection() const;
+        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontCollection1> NearbyCollection() const;
 
         [[nodiscard]] til::size GlyphCell() noexcept;
         [[nodiscard]] LineMetrics GetLineMetrics() noexcept;
@@ -79,6 +79,8 @@ namespace Microsoft::Console::Render
         // A locale that can be used on construction of assorted DX objects that want to know one.
         [[nodiscard]] std::wstring _GetUserLocaleName();
 
+        [[nodiscard]] static std::vector<std::filesystem::path> s_GetNearbyFonts();
+
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
 
         ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
@@ -90,7 +92,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
 
         ::Microsoft::WRL::ComPtr<IDWriteFontFallback> _systemFontFallback;
-        mutable ::Microsoft::WRL::ComPtr<IDWriteFontCollection1> _packageLoadCollection;
+        mutable ::Microsoft::WRL::ComPtr<IDWriteFontCollection1> _nearbyCollection;
         std::wstring _userLocaleName;
 
         til::size _glyphCell;
