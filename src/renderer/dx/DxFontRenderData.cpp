@@ -644,7 +644,7 @@ CATCH_RETURN()
     if (!face)
     {
         // If we missed, try looking a little more by trimming the last word off the requested family name a few times.
-        // Quite often, folks are specifying weights or something in the familyName and it causes misresolution and
+        // Quite often, folks are specifying weights or something in the familyName and it causes failed resolution and
         // an unexpected error dialog. We theoretically could detect the weight words and convert them, but this
         // is the quick fix for the majority scenario.
         // The long/full fix is backlogged to GH#xxxx
