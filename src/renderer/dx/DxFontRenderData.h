@@ -35,6 +35,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFallback> SystemFontFallback();
 
+        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontCollection1> PackageCollection() const;
+
         [[nodiscard]] til::size GlyphCell() noexcept;
         [[nodiscard]] LineMetrics GetLineMetrics() noexcept;
 
@@ -88,6 +90,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
 
         ::Microsoft::WRL::ComPtr<IDWriteFontFallback> _systemFontFallback;
+        mutable ::Microsoft::WRL::ComPtr<IDWriteFontCollection1> _packageLoadCollection;
         std::wstring _userLocaleName;
 
         til::size _glyphCell;

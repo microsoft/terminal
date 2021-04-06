@@ -36,6 +36,50 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     return _systemFontFallback;
 }
 
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontCollection1> DxFontRenderData::PackageCollection() const
+{
+    if (!_packageLoadCollection)
+    {
+        // Factory3 has a convenience to get us a font set builder.
+        ::Microsoft::WRL::ComPtr<IDWriteFactory3> factory3;
+        THROW_IF_FAILED(_dwriteFactory.As(&factory3));
+
+        ::Microsoft::WRL::ComPtr<IDWriteFontSetBuilder> fontSetBuilder;
+        THROW_IF_FAILED(factory3->CreateFontSetBuilder(&fontSetBuilder));
+
+        // Builder2 has a convenience to just feed in paths to font files.
+        ::Microsoft::WRL::ComPtr<IDWriteFontSetBuilder2> fontSetBuilder2;
+        THROW_IF_FAILED(fontSetBuilder.As(&fontSetBuilder2));
+
+        // Find the directory we're running from then enumerate all the TTF files
+        // sitting next to us.
+        const std::filesystem::path module{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
+        const auto folder = module.parent_path();
+
+        for (auto& p : std::filesystem::directory_iterator(folder))
+        {
+            if (p.is_regular_file())
+            {
+                 auto extension = p.path().extension().wstring();
+                 std::transform(extension.begin(), extension.end(), extension.begin(), std::towlower);
+
+                 const std::wstring_view ttfExtension{ L"ttf" };
+                 if (ttfExtension == extension)
+                 {
+                     fontSetBuilder2->AddFontFile(p.path().c_str());
+                 }
+            }
+        }
+
+        ::Microsoft::WRL::ComPtr<IDWriteFontSet> fontSet;
+        THROW_IF_FAILED(fontSetBuilder2->CreateFontSet(&fontSet));
+
+        THROW_IF_FAILED(factory3->CreateFontCollectionFromFontSet(fontSet.Get(), &_packageLoadCollection));
+    }
+
+    return _packageLoadCollection;
+}
+
 [[nodiscard]] til::size DxFontRenderData::GlyphCell() noexcept
 {
     return _glyphCell;
@@ -684,6 +728,13 @@ CATCH_RETURN()
     UINT32 familyIndex;
     BOOL familyExists;
     THROW_IF_FAILED(fontCollection->FindFamilyName(familyName.data(), &familyIndex, &familyExists));
+
+    // If the system collection missed, try the files sitting next to our binary in the package.
+    if (!familyExists)
+    {
+        PackageCollection().As(&fontCollection);
+        THROW_IF_FAILED(fontCollection->FindFamilyName(familyName.data(), &familyIndex, &familyExists));
+    }
 
     if (familyExists)
     {
