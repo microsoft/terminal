@@ -7,6 +7,7 @@
 #include "TerminalTab.h"
 #include "AppKeyBindings.h"
 #include "AppCommandlineArgs.h"
+#include "RenameWindowRequestedArgs.g.h"
 #include "Toast.h"
 
 #define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
@@ -33,6 +34,15 @@ namespace winrt::TerminalApp::implementation
     {
         ScrollUp = 0,
         ScrollDown = 1
+    };
+
+    struct RenameWindowRequestedArgs : RenameWindowRequestedArgsT<RenameWindowRequestedArgs>
+    {
+        WINRT_PROPERTY(winrt::hstring, ProposedName);
+
+    public:
+        RenameWindowRequestedArgs(const winrt::hstring& name) :
+            _ProposedName{ name } {};
     };
 
     struct TerminalPage : TerminalPageT<TerminalPage>
@@ -82,6 +92,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring KeyboardServiceDisabledText();
 
         winrt::fire_and_forget IdentifyWindow();
+        winrt::fire_and_forget RenameFailed();
 
         winrt::fire_and_forget ProcessStartupActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions,
                                                      const bool initial,
@@ -110,6 +121,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(SetTaskbarProgress, IInspectable, IInspectable);
         TYPED_EVENT(Initialized, IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(IdentifyWindowsRequested, IInspectable, IInspectable);
+        TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs);
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
@@ -162,6 +174,7 @@ namespace winrt::TerminalApp::implementation
         bool _shouldStartInboundListener{ false };
 
         std::shared_ptr<Toast> _windowIdToast{ nullptr };
+        std::shared_ptr<Toast> _windowRenameFailedToast{ nullptr };
 
         void _ShowAboutDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseWarningDialog();
@@ -311,56 +324,14 @@ namespace winrt::TerminalApp::implementation
         void _OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
         void _HandleToggleInboundPty(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
 
+        void _WindowRenamerActionClick(const IInspectable& sender, const IInspectable& eventArgs);
+        void _RequestWindowRename(const winrt::hstring& newName);
+        void _WindowRenamerKeyUp(const IInspectable& sender, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
-        DECLARE_ACTION_HANDLER(OpenNewTabDropdown);
-        DECLARE_ACTION_HANDLER(DuplicateTab);
-        DECLARE_ACTION_HANDLER(CloseTab);
-        DECLARE_ACTION_HANDLER(ClosePane);
-        DECLARE_ACTION_HANDLER(ScrollUp);
-        DECLARE_ACTION_HANDLER(ScrollDown);
-        DECLARE_ACTION_HANDLER(NextTab);
-        DECLARE_ACTION_HANDLER(PrevTab);
-        DECLARE_ACTION_HANDLER(SendInput);
-        DECLARE_ACTION_HANDLER(SplitPane);
-        DECLARE_ACTION_HANDLER(TogglePaneZoom);
-        DECLARE_ACTION_HANDLER(ScrollUpPage);
-        DECLARE_ACTION_HANDLER(ScrollDownPage);
-        DECLARE_ACTION_HANDLER(ScrollToTop);
-        DECLARE_ACTION_HANDLER(ScrollToBottom);
-        DECLARE_ACTION_HANDLER(OpenSettings);
-        DECLARE_ACTION_HANDLER(PasteText);
-        DECLARE_ACTION_HANDLER(NewTab);
-        DECLARE_ACTION_HANDLER(SwitchToTab);
-        DECLARE_ACTION_HANDLER(ResizePane);
-        DECLARE_ACTION_HANDLER(MoveFocus);
-        DECLARE_ACTION_HANDLER(CopyText);
-        DECLARE_ACTION_HANDLER(CloseWindow);
-        DECLARE_ACTION_HANDLER(AdjustFontSize);
-        DECLARE_ACTION_HANDLER(Find);
-        DECLARE_ACTION_HANDLER(ResetFontSize);
-        DECLARE_ACTION_HANDLER(ToggleShaderEffects);
-        DECLARE_ACTION_HANDLER(ToggleFocusMode);
-        DECLARE_ACTION_HANDLER(ToggleFullscreen);
-        DECLARE_ACTION_HANDLER(ToggleAlwaysOnTop);
-        DECLARE_ACTION_HANDLER(SetColorScheme);
-        DECLARE_ACTION_HANDLER(SetTabColor);
-        DECLARE_ACTION_HANDLER(OpenTabColorPicker);
-        DECLARE_ACTION_HANDLER(RenameTab);
-        DECLARE_ACTION_HANDLER(OpenTabRenamer);
-        DECLARE_ACTION_HANDLER(ExecuteCommandline);
-        DECLARE_ACTION_HANDLER(ToggleCommandPalette);
-        DECLARE_ACTION_HANDLER(CloseOtherTabs);
-        DECLARE_ACTION_HANDLER(CloseTabsAfter);
-        DECLARE_ACTION_HANDLER(TabSearch);
-        DECLARE_ACTION_HANDLER(MoveTab);
-        DECLARE_ACTION_HANDLER(BreakIntoDebugger);
-        DECLARE_ACTION_HANDLER(FindMatch);
-        DECLARE_ACTION_HANDLER(TogglePaneReadOnly);
-        DECLARE_ACTION_HANDLER(NewWindow);
-        DECLARE_ACTION_HANDLER(IdentifyWindow);
-        DECLARE_ACTION_HANDLER(IdentifyWindows);
-        // Make sure to hook new actions up in _RegisterActionCallbacks!
+#define ON_ALL_ACTIONS(action) DECLARE_ACTION_HANDLER(action);
+        ALL_SHORTCUT_ACTIONS
+#undef ON_ALL_ACTIONS
 #pragma endregion
 
         friend class TerminalAppLocalTests::TabTests;

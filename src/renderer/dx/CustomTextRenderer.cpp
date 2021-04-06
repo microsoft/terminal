@@ -257,20 +257,23 @@ try
         return S_FALSE;
     }
 
+    const bool fInvert = !options.fUseColor;
+    // The normal, colored FullBox and legacy cursors are drawn in the first pass
+    // so they go behind the text.
+    // Inverted cursors are drawn in two passes.
+    // All other cursors are drawn in the second pass only.
+    if (!fInvert)
+    {
+        if (firstPass != (options.cursorType == CursorType::FullBox))
+        {
+            return S_FALSE;
+        }
+    }
+
     // TODO GH#6338: Add support for `"cursorTextColor": null` for letting the
     // cursor draw on top again.
 
-    // Only draw the filled box in the first pass. All the other cursors should
-    // be drawn in the second pass.
-    //           | type==FullBox |
-    // firstPass |   T   |   F   |
-    //    T      | draw  |  skip |
-    //    F      | skip  |  draw |
-    if ((options.cursorType == CursorType::FullBox) != firstPass)
-    {
-        return S_FALSE;
-    }
-
+    // **MATH** PHASE
     const til::size glyphSize{ til::math::flooring,
                                drawingContext.cellSize.width,
                                drawingContext.cellSize.height };
@@ -294,15 +297,6 @@ try
     }
 
     CursorPaintType paintType = CursorPaintType::Fill;
-    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush{ drawingContext.foregroundBrush };
-
-    if (options.fUseColor)
-    {
-        // Make sure to make the cursor opaque
-        RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(til::color{ OPACITY_OPAQUE | options.cursorColor },
-                                                           &brush));
-    }
-
     switch (options.cursorType)
     {
     case CursorType::Legacy:
@@ -332,12 +326,6 @@ try
     {
         // Use rect for lower line.
         rect.top = rect.bottom - 1;
-
-        // Draw upper line directly.
-        D2D1_RECT_F upperLine = rect;
-        upperLine.top -= 2;
-        upperLine.bottom -= 2;
-        d2dContext->FillRectangle(upperLine, brush.Get());
         break;
     }
     case CursorType::EmptyBox:
@@ -351,6 +339,78 @@ try
     }
     default:
         return E_NOTIMPL;
+    }
+
+    // **DRAW** PHASE
+    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush;
+    Microsoft::WRL::ComPtr<ID2D1Image> originalTarget;
+    Microsoft::WRL::ComPtr<ID2D1CommandList> commandList;
+    if (!fInvert)
+    {
+        // Make sure to make the cursor opaque
+        RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(til::color{ OPACITY_OPAQUE | options.cursorColor },
+                                                           &brush));
+    }
+    else
+    {
+        // CURSOR INVERSION
+        // We're trying to invert the cursor and the character underneath it without redrawing the text (as
+        // doing so would break up the run if it were part of a ligature). To do that, we're going to try
+        // to invert the content of the screen where the cursor would have been.
+        //
+        // This renderer, however, supports transparency. In fact, in its default configuration it will not
+        // have a background at all (it delegates background handling to somebody else.) You can't invert what
+        // isn't there.
+        //
+        // To properly invert the cursor in such a configuration, then, we have to play some tricks. Examples
+        // are given below for two cursor types, but this applies to all of them.
+        //
+        // First, we'll draw a "backplate" in the user's requested background color (with the alpha channel
+        // set to 0xFF). (firstPass == true)
+        //
+        // EMPTY BOX  FILLED BOX
+        // =====      =====
+        // =   =      =====
+        // =   =      =====
+        // =   =      =====
+        // =====      =====
+        //
+        // Then, outside of _drawCursor, the glyph is drawn:
+        //
+        // EMPTY BOX  FILLED BOX
+        // ==A==      ==A==
+        // =A A=      =A=A=
+        // AAAAA      AAAAA
+        // A   A      A===A
+        // A===A      A===A
+        //
+        // Last, we'll draw the cursor again in all white and use that as the *mask* for inverting the already-
+        // drawn pixels. (firstPass == false) (# = mask, a = inverted A)
+        //
+        // EMPTY BOX  FILLED BOX
+        // ##a##      ##a##
+        // #A A#      #a#a#
+        // aAAAa      aaaaa
+        // a   a      a###a
+        // a###a      a###a
+        if (firstPass)
+        {
+            // Draw a backplate behind the cursor in the *background* color so that we can invert it later.
+            // We're going to draw the exact same color as the background behind the cursor
+            const til::color color{ drawingContext.backgroundBrush->GetColor() };
+            RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(color.with_alpha(255),
+                                                               &brush));
+        }
+        else
+        {
+            // When we're drawing an inverted cursor on the second pass (foreground), we want to draw it into a
+            // command list, which we will then draw down with MASK_INVERT. We'll draw it in white,
+            // which will ensure that every component is masked.
+            RETURN_IF_FAILED(d2dContext->CreateCommandList(&commandList));
+            d2dContext->GetTarget(&originalTarget);
+            d2dContext->SetTarget(commandList.Get());
+            RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(COLOR_WHITE, &brush));
+        }
     }
 
     switch (paintType)
@@ -374,6 +434,24 @@ try
     }
     default:
         return E_NOTIMPL;
+    }
+
+    if (options.cursorType == CursorType::DoubleUnderscore)
+    {
+        // Draw upper line directly.
+        D2D1_RECT_F upperLine = rect;
+        upperLine.top -= 2;
+        upperLine.bottom -= 2;
+        d2dContext->FillRectangle(upperLine, brush.Get());
+    }
+
+    if (commandList)
+    {
+        // We drew the entire cursor in a command list
+        // so now we draw that command list using MASK_INVERT over the existing image
+        RETURN_IF_FAILED(commandList->Close());
+        d2dContext->SetTarget(originalTarget.Get());
+        d2dContext->DrawImage(commandList.Get(), D2D1_INTERPOLATION_MODE_LINEAR, D2D1_COMPOSITE_MODE_MASK_INVERT);
     }
 
     return S_OK;

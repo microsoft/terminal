@@ -55,6 +55,8 @@ static constexpr std::string_view TogglePaneReadOnlyKey{ "toggleReadOnlyMode" };
 static constexpr std::string_view NewWindowKey{ "newWindow" };
 static constexpr std::string_view IdentifyWindowKey{ "identifyWindow" };
 static constexpr std::string_view IdentifyWindowsKey{ "identifyWindows" };
+static constexpr std::string_view RenameWindowKey{ "renameWindow" };
+static constexpr std::string_view OpenWindowRenamerKey{ "openWindowRenamer" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
@@ -123,6 +125,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { NewWindowKey, ShortcutAction::NewWindow },
         { IdentifyWindowKey, ShortcutAction::IdentifyWindow },
         { IdentifyWindowsKey, ShortcutAction::IdentifyWindows },
+        { RenameWindowKey, ShortcutAction::RenameWindow },
+        { OpenWindowRenamerKey, ShortcutAction::OpenWindowRenamer },
     };
 
     using ParseResult = std::tuple<IActionArgs, std::vector<SettingsLoadWarnings>>;
@@ -157,6 +161,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { ShortcutAction::NewWindow, NewWindowArgs::FromJson },
         { ShortcutAction::PrevTab, PrevTabArgs::FromJson },
         { ShortcutAction::NextTab, NextTabArgs::FromJson },
+        { ShortcutAction::RenameWindow, RenameWindowArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };
@@ -330,6 +335,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::NewWindow, RS_(L"NewWindowCommandKey") },
                 { ShortcutAction::IdentifyWindow, RS_(L"IdentifyWindowCommandKey") },
                 { ShortcutAction::IdentifyWindows, RS_(L"IdentifyWindowsCommandKey") },
+                { ShortcutAction::RenameWindow, RS_(L"ResetWindowNameCommandKey") },
+                { ShortcutAction::OpenWindowRenamer, RS_(L"OpenWindowRenamerCommandKey") },
             };
         }();
 

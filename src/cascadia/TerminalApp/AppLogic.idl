@@ -51,6 +51,7 @@ namespace TerminalApp
         void IdentifyWindow();
         String WindowName;
         UInt64 WindowId;
+        void RenameFailed();
 
         Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
         Boolean CenterOnLaunch { get; };
@@ -83,5 +84,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> RaiseVisualBell;
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
         event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
+        event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
     }
 }

@@ -1470,6 +1470,7 @@ MSIL
 msix
 msrc
 msvcrt
+msvcrtd
 MSVS
 msys
 msysgit

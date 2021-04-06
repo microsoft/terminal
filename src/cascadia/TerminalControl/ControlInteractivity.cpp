@@ -189,12 +189,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto multiClickMapper = clickCount > MAX_CLICK_COUNT ? ((clickCount + MAX_CLICK_COUNT - 1) % MAX_CLICK_COUNT) + 1 : clickCount;
 
             // Capture the position of the first click when no selection is active
-            if (multiClickMapper == 1 &&
-                !_core->HasSelection())
+            if (multiClickMapper == 1)
             {
                 _singleClickTouchdownPos = mouseCursorPosition;
                 _singleClickTouchdownTerminalPos = terminalPosition;
-                _lastMouseClickPosNoSelection = mouseCursorPosition;
+
+                if (!_core->HasSelection())
+                {
+                    _lastMouseClickPosNoSelection = mouseCursorPosition;
+                }
             }
             const bool isOnOriginalPosition = _lastMouseClickPosNoSelection == mouseCursorPosition;
 

@@ -15,6 +15,7 @@
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
+#include "RenameWindowRequestedArgs.g.cpp"
 
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
@@ -949,53 +950,9 @@ namespace winrt::TerminalApp::implementation
         // Hook up the ShortcutActionDispatch object's events to our handlers.
         // They should all be hooked up here, regardless of whether or not
         // there's an actual keychord for them.
-        HOOKUP_ACTION(OpenNewTabDropdown);
-        HOOKUP_ACTION(DuplicateTab);
-        HOOKUP_ACTION(CloseTab);
-        HOOKUP_ACTION(ClosePane);
-        HOOKUP_ACTION(CloseWindow);
-        HOOKUP_ACTION(ScrollUp);
-        HOOKUP_ACTION(ScrollDown);
-        HOOKUP_ACTION(NextTab);
-        HOOKUP_ACTION(PrevTab);
-        HOOKUP_ACTION(SendInput);
-        HOOKUP_ACTION(SplitPane);
-        HOOKUP_ACTION(TogglePaneZoom);
-        HOOKUP_ACTION(ScrollUpPage);
-        HOOKUP_ACTION(ScrollDownPage);
-        HOOKUP_ACTION(ScrollToTop);
-        HOOKUP_ACTION(ScrollToBottom);
-        HOOKUP_ACTION(OpenSettings);
-        HOOKUP_ACTION(PasteText);
-        HOOKUP_ACTION(NewTab);
-        HOOKUP_ACTION(SwitchToTab);
-        HOOKUP_ACTION(ResizePane);
-        HOOKUP_ACTION(MoveFocus);
-        HOOKUP_ACTION(CopyText);
-        HOOKUP_ACTION(AdjustFontSize);
-        HOOKUP_ACTION(Find);
-        HOOKUP_ACTION(ResetFontSize);
-        HOOKUP_ACTION(ToggleShaderEffects);
-        HOOKUP_ACTION(ToggleFocusMode);
-        HOOKUP_ACTION(ToggleFullscreen);
-        HOOKUP_ACTION(ToggleAlwaysOnTop);
-        HOOKUP_ACTION(ToggleCommandPalette);
-        HOOKUP_ACTION(SetColorScheme);
-        HOOKUP_ACTION(SetTabColor);
-        HOOKUP_ACTION(OpenTabColorPicker);
-        HOOKUP_ACTION(RenameTab);
-        HOOKUP_ACTION(OpenTabRenamer);
-        HOOKUP_ACTION(ExecuteCommandline);
-        HOOKUP_ACTION(CloseOtherTabs);
-        HOOKUP_ACTION(CloseTabsAfter);
-        HOOKUP_ACTION(TabSearch);
-        HOOKUP_ACTION(MoveTab);
-        HOOKUP_ACTION(BreakIntoDebugger);
-        HOOKUP_ACTION(FindMatch);
-        HOOKUP_ACTION(TogglePaneReadOnly);
-        HOOKUP_ACTION(NewWindow);
-        HOOKUP_ACTION(IdentifyWindow);
-        HOOKUP_ACTION(IdentifyWindows);
+#define ON_ALL_ACTIONS(action) HOOKUP_ACTION(action);
+        ALL_SHORTCUT_ACTIONS
+#undef ON_ALL_ACTIONS
     }
 
     // Method Description:
@@ -2621,7 +2578,7 @@ namespace winrt::TerminalApp::implementation
         if (_WindowName != value)
         {
             _WindowName = value;
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+            _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
         }
     }
 
@@ -2637,7 +2594,7 @@ namespace winrt::TerminalApp::implementation
         if (_WindowId != value)
         {
             _WindowId = value;
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
+            _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
         }
     }
 
@@ -2665,5 +2622,95 @@ namespace winrt::TerminalApp::implementation
         return _WindowName.empty() ?
                    winrt::hstring{ fmt::format(L"<{}>", RS_(L"UnnamedWindowName")) } :
                    _WindowName;
+    }
+
+    // Method Description:
+    // - Called when an attempt to rename the window has failed. This will open
+    //   the toast displaying a message to the user that the attempt to rename
+    //   the window has failed.
+    // - This will load the RenameFailedToast TeachingTip the first time it's called.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget TerminalPage::RenameFailed()
+    {
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_foreground(Dispatcher());
+        if (auto page{ weakThis.get() })
+        {
+            // If we haven't ever loaded the TeachingTip, then do so now and
+            // create the toast for it.
+            if (page->_windowRenameFailedToast == nullptr)
+            {
+                if (MUX::Controls::TeachingTip tip{ page->FindName(L"RenameFailedToast").try_as<MUX::Controls::TeachingTip>() })
+                {
+                    page->_windowRenameFailedToast = std::make_shared<Toast>(tip);
+                    // Make sure to use the weak ref when setting up this
+                    // callback.
+                    tip.Closed({ page->get_weak(), &TerminalPage::_FocusActiveControl });
+                }
+            }
+
+            if (page->_windowRenameFailedToast != nullptr)
+            {
+                page->_windowRenameFailedToast->Open();
+            }
+        }
+    }
+
+    // Method Description:
+    // - Called when the user hits the "Ok" button on the WindowRenamer TeachingTip.
+    // - Will raise an event that will bubble up to the monarch, asking if this
+    //   name is acceptable.
+    //   - If it is, we'll eventually get called back in TerminalPage::WindowName(hstring).
+    //   - If not, then TerminalPage::RenameFailed will get called.
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_WindowRenamerActionClick(const IInspectable& /*sender*/,
+                                                 const IInspectable& /*eventArgs*/)
+    {
+        auto newName = WindowRenamerTextBox().Text();
+        _RequestWindowRename(newName);
+    }
+
+    void TerminalPage::_RequestWindowRename(const winrt::hstring& newName)
+    {
+        auto request = winrt::make<implementation::RenameWindowRequestedArgs>(newName);
+        // The WindowRenamer is _not_ a Toast - we want it to stay open until the user dismisses it.
+        WindowRenamer().IsOpen(false);
+        _RenameWindowRequestedHandlers(*this, request);
+        // We can't just use request.Successful here, because the handler might
+        // (will) be handling this asynchronously, so when control returns to
+        // us, this hasn't actually been handled yet. We'll get called back in
+        // RenameFailed if this fails.
+        //
+        // Theoretically we could do a IAsyncOperation<RenameWindowResult> kind
+        // of thing with co_return winrt::make<RenameWindowResult>(false).
+    }
+
+    // Method Description:
+    // - Manually handle Enter and Escape for committing and dismissing a window
+    //   rename. This is highly similar to the TabHeaderControl's KeyUp handler.
+    // Arguments:
+    // - e: the KeyRoutedEventArgs describing the key that was released
+    // Return Value:
+    // - <none>
+    void TerminalPage::_WindowRenamerKeyUp(const IInspectable& sender,
+                                           winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+    {
+        if (e.OriginalKey() == Windows::System::VirtualKey::Enter)
+        {
+            // User is done making changes, close the rename box
+            _WindowRenamerActionClick(sender, nullptr);
+        }
+        else if (e.OriginalKey() == Windows::System::VirtualKey::Escape)
+        {
+            // User wants to discard the changes they made
+            WindowRenamerTextBox().Text(WindowName());
+            WindowRenamer().IsOpen(false);
+        }
     }
 }
