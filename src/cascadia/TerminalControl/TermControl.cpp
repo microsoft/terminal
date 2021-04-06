@@ -1348,11 +1348,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     mode = ::Terminal::SelectionExpansionMode::Line;
                 }
 
-                // Capture the position of the first click when no selection is active
-                if (mode == ::Terminal::SelectionExpansionMode::Cell && !_terminal->IsSelectionActive())
+                // Capture the position of the first click
+                if (mode == ::Terminal::SelectionExpansionMode::Cell)
                 {
                     _singleClickTouchdownPos = cursorPosition;
-                    _lastMouseClickPosNoSelection = cursorPosition;
+                    if (!_terminal->IsSelectionActive())
+                    {
+                        _lastMouseClickPosNoSelection = cursorPosition;
+                    }
                 }
 
                 // We reset the active selection if one of the conditions apply:
