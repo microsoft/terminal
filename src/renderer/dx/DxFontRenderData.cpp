@@ -60,14 +60,14 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
         {
             if (p.is_regular_file())
             {
-                 auto extension = p.path().extension().wstring();
-                 std::transform(extension.begin(), extension.end(), extension.begin(), std::towlower);
+                auto extension = p.path().extension().wstring();
+                std::transform(extension.begin(), extension.end(), extension.begin(), std::towlower);
 
-                 const std::wstring_view ttfExtension{ L".ttf" };
-                 if (ttfExtension == extension)
-                 {
-                     fontSetBuilder2->AddFontFile(p.path().c_str());
-                 }
+                const std::wstring_view ttfExtension{ L".ttf" };
+                if (ttfExtension == extension)
+                {
+                    fontSetBuilder2->AddFontFile(p.path().c_str());
+                }
             }
         }
 
