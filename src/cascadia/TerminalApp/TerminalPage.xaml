@@ -137,7 +137,8 @@
                          x:Uid="WindowRenamer"
                          Title="{x:Bind WindowIdForDisplay}"
                          x:Load="False"
-                         ActionButtonClick="_WindowRenamerActionClick">
+                         ActionButtonClick="_WindowRenamerActionClick"
+                         ActionButtonStyle="{ThemeResource AccentButtonStyle}">
             <mux:TeachingTip.Content>
                 <TextBox x:Name="WindowRenamerTextBox"
                          KeyUp="_WindowRenamerKeyUp"
