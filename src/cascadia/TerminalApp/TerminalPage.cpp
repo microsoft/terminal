@@ -2682,4 +2682,26 @@ namespace winrt::TerminalApp::implementation
         // of thing with co_return winrt::make<RenameWindowResult>(false).
     }
 
+    // Method Description:
+    // - Manually handle Enter and Escape for committing and dismissing a window
+    //   rename. This is highly similar to the TabHeaderControl's KeyUp handler.
+    // Arguments:
+    // - e: the KeyRoutedEventArgs describing the key that was released
+    // Return Value:
+    // - <none>
+    void TerminalPage::_WindowRenamerKeyUp(const IInspectable& sender,
+                                           winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+    {
+        if (e.OriginalKey() == Windows::System::VirtualKey::Enter)
+        {
+            // User is done making changes, close the rename box
+            _WindowRenamerActionClick(sender, nullptr);
+        }
+        else if (e.OriginalKey() == Windows::System::VirtualKey::Escape)
+        {
+            // User wants to discard the changes they made
+            WindowRenamerTextBox().Text(WindowName());
+            WindowRenamer().IsOpen(false);
+        }
+    }
 }
