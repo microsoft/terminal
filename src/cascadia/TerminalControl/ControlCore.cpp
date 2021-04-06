@@ -65,10 +65,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto onReceiveOutputFn = [this](const hstring str) {
             _terminal->Write(str);
 
-            // !TODO!: _updatePatternLocations should happen in the Core, but it's
-            // a ThrottledFunc, which needs a CoreDispatcher. How do we plan on
-            // dealing with that?
-            // _updatePatternLocations->Run();
+            // NOTE: We're raising an event here to inform the TermControl that
+            // output has been recieved, so it can queue up a throttled
+            // UpdatePatternLocations call. In the future, we should have the
+            // _updatePatternLocations ThrottledFunc internal to this class, and
+            // run on this object's dispatcher queue.
+            //
+            // We're not doing that quite yet, because the Core will eventually
+            // be out-of-proc from the UI thread, and won't be able to just use
+            // the UI thread as the dispatcher queue thread.
+            _ReceivedOutputHandlers(*this, nullptr);
         };
         _connectionOutputEventToken = _connection.TerminalOutput(onReceiveOutputFn);
 

@@ -68,6 +68,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->RendererEnteredErrorState({ get_weak(), &TermControl::_RendererEnteredErrorState });
         _core->FontSizeChanged({ get_weak(), &TermControl::_coreFontSizeChanged });
         _core->TransparencyChanged({ get_weak(), &TermControl::_coreTransparencyChanged });
+        _core->ReceivedOutput({ get_weak(), &TermControl::_coreReceivedOutput });
 
         _interactivity->OpenHyperlink({ get_weak(), &TermControl::_HyperlinkHandler });
         _interactivity->ScrollPositionChanged({ get_weak(), &TermControl::_ScrollPositionChanged });
@@ -970,6 +971,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
+        const auto type = ptr.PointerDeviceType();
 
         // We also TryShow in GotFocusHandler, but this call is specifically
         // for the case where the Terminal is in focus but the user closed the
@@ -983,11 +985,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         const auto cursorPosition = point.Position();
 
-        _interactivity->PointerPressed(point,
-                                       ControlKeyStates(args.KeyModifiers()),
-                                       _focused,
-                                       _GetTerminalPosition(cursorPosition),
-                                       ptr.PointerDeviceType());
+        if (type == Windows::Devices::Input::PointerDeviceType::Touch)
+        {
+            const auto contactRect = point.Properties().ContactRect();
+            auto anchor = winrt::Windows::Foundation::Point{ contactRect.X, contactRect.Y };
+            _interactivity->Touched(anchor);
+        }
+        else
+        {
+            _interactivity->PointerPressed(cursorPosition,
+                                           TermControl::GetPressedMouseButtons(point),
+                                           TermControl::PointerToMouseButtons(point),
+                                           point.Timestamp(),
+                                           ControlKeyStates(args.KeyModifiers()),
+                                           _focused,
+                                           _GetTerminalPosition(cursorPosition));
+        }
 
         args.Handled(true);
     }
@@ -1018,37 +1031,50 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _FocusFollowMouseRequestedHandlers(*this, nullptr);
         }
 
-        _interactivity->PointerMoved(point,
-                                     ControlKeyStates(args.KeyModifiers()),
-                                     _focused,
-                                     terminalPosition,
-                                     type);
-
-        if (_focused && point.Properties().IsLeftButtonPressed())
+        if (type == Windows::Devices::Input::PointerDeviceType::Mouse ||
+            type == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            const double cursorBelowBottomDist = cursorPosition.Y - SwapChainPanel().Margin().Top - SwapChainPanel().ActualHeight();
-            const double cursorAboveTopDist = -1 * cursorPosition.Y + SwapChainPanel().Margin().Top;
+            _interactivity->PointerMoved(cursorPosition,
+                                         TermControl::GetPressedMouseButtons(point),
+                                         TermControl::PointerToMouseButtons(point),
+                                         ControlKeyStates(args.KeyModifiers()),
+                                         _focused,
+                                         terminalPosition);
 
-            constexpr double MinAutoScrollDist = 2.0; // Arbitrary value
-            double newAutoScrollVelocity = 0.0;
-            if (cursorBelowBottomDist > MinAutoScrollDist)
+            if (_focused && point.Properties().IsLeftButtonPressed())
             {
-                newAutoScrollVelocity = _GetAutoScrollSpeed(cursorBelowBottomDist);
-            }
-            else if (cursorAboveTopDist > MinAutoScrollDist)
-            {
-                newAutoScrollVelocity = -1.0 * _GetAutoScrollSpeed(cursorAboveTopDist);
-            }
+                const double cursorBelowBottomDist = cursorPosition.Y - SwapChainPanel().Margin().Top - SwapChainPanel().ActualHeight();
+                const double cursorAboveTopDist = -1 * cursorPosition.Y + SwapChainPanel().Margin().Top;
 
-            if (newAutoScrollVelocity != 0)
-            {
-                _TryStartAutoScroll(point, newAutoScrollVelocity);
-            }
-            else
-            {
-                _TryStopAutoScroll(ptr.PointerId());
+                constexpr double MinAutoScrollDist = 2.0; // Arbitrary value
+                double newAutoScrollVelocity = 0.0;
+                if (cursorBelowBottomDist > MinAutoScrollDist)
+                {
+                    newAutoScrollVelocity = _GetAutoScrollSpeed(cursorBelowBottomDist);
+                }
+                else if (cursorAboveTopDist > MinAutoScrollDist)
+                {
+                    newAutoScrollVelocity = -1.0 * _GetAutoScrollSpeed(cursorAboveTopDist);
+                }
+
+                if (newAutoScrollVelocity != 0)
+                {
+                    _TryStartAutoScroll(point, newAutoScrollVelocity);
+                }
+                else
+                {
+                    _TryStopAutoScroll(ptr.PointerId());
+                }
             }
         }
+        else if (type == Windows::Devices::Input::PointerDeviceType::Touch)
+        {
+            const auto contactRect = point.Properties().ContactRect();
+            winrt::Windows::Foundation::Point newTouchPoint{ contactRect.X, contactRect.Y };
+
+            _interactivity->TouchMoved(newTouchPoint, _focused);
+        }
+
         args.Handled(true);
     }
 
@@ -1073,11 +1099,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto type = ptr.PointerDeviceType();
 
         _ReleasePointerCapture(sender, args);
-        _interactivity->PointerReleased(point,
-                                        ControlKeyStates(args.KeyModifiers()),
-                                        _focused,
-                                        terminalPosition,
-                                        type);
+
+        if (type == Windows::Devices::Input::PointerDeviceType::Mouse ||
+            type == Windows::Devices::Input::PointerDeviceType::Pen)
+        {
+            _interactivity->PointerReleased(TermControl::GetPressedMouseButtons(point),
+                                            TermControl::PointerToMouseButtons(point),
+                                            ControlKeyStates(args.KeyModifiers()),
+                                            _focused,
+                                            terminalPosition);
+        }
+        else if (type == Windows::Devices::Input::PointerDeviceType::Touch)
+        {
+            _interactivity->TouchReleased();
+        }
 
         _TryStopAutoScroll(ptr.PointerId());
 
@@ -1162,6 +1197,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _changeBackgroundColor(bg);
         }
         CATCH_LOG();
+    }
+
+    void TermControl::_coreReceivedOutput(const IInspectable& /*sender*/,
+                                          const IInspectable& /*args*/)
+    {
+        // Queue up a throttled UpdatePatternLocations call. In the future, we
+        // should have the _updatePatternLocations ThrottledFunc internal to
+        // ControlCore, and run on that object's dispatcher queue.
+        //
+        // We're not doing that quite yet, because the Core will eventually
+        // be out-of-proc from the UI thread, and won't be able to just use
+        // the UI thread as the dispatcher queue thread.
+        //
+        // THIS IS ACLLED ON EVERY STRING OF TEXT OUTPUT TO THE TERMINAL. Think
+        // twice before adding anything here.
+
+        _updatePatternLocations->Run();
     }
 
     // Method Description:
@@ -2324,4 +2376,43 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _FontSizeChangedHandlers(fontWidth, fontHeight, isInitialChange);
     }
 
+    TerminalInput::MouseButtonState TermControl::GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point)
+    {
+        return TerminalInput::MouseButtonState{ point.Properties().IsLeftButtonPressed(),
+                                                point.Properties().IsMiddleButtonPressed(),
+                                                point.Properties().IsRightButtonPressed() };
+    }
+
+    unsigned int TermControl::PointerToMouseButtons(const winrt::Windows::UI::Input::PointerPoint point)
+    {
+        const auto props = point.Properties();
+
+        // Which mouse button changed state (and how)
+        unsigned int uiButton{};
+        switch (props.PointerUpdateKind())
+        {
+        case winrt::Windows::UI::Input::PointerUpdateKind::LeftButtonPressed:
+            uiButton = WM_LBUTTONDOWN;
+            break;
+        case winrt::Windows::UI::Input::PointerUpdateKind::LeftButtonReleased:
+            uiButton = WM_LBUTTONUP;
+            break;
+        case winrt::Windows::UI::Input::PointerUpdateKind::MiddleButtonPressed:
+            uiButton = WM_MBUTTONDOWN;
+            break;
+        case winrt::Windows::UI::Input::PointerUpdateKind::MiddleButtonReleased:
+            uiButton = WM_MBUTTONUP;
+            break;
+        case winrt::Windows::UI::Input::PointerUpdateKind::RightButtonPressed:
+            uiButton = WM_RBUTTONDOWN;
+            break;
+        case winrt::Windows::UI::Input::PointerUpdateKind::RightButtonReleased:
+            uiButton = WM_RBUTTONUP;
+            break;
+        default:
+            uiButton = WM_MOUSEMOVE;
+        }
+
+        return uiButton;
+    }
 }

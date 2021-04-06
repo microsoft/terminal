@@ -27,6 +27,8 @@ namespace ControlUnitTests
         TEST_METHOD(TestPanWithTouch);
         TEST_METHOD(TestScrollWithMouse);
 
+        TEST_METHOD(CreateSubsequentSelectionWithDragging);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             winrt::init_apartment(winrt::apartment_type::single_threaded);
@@ -221,8 +223,53 @@ namespace ControlUnitTests
                                   -WHEEL_DELTA,
                                   til::point{ 0, 0 },
                                   { false, false, false });
-
-        VERIFY_IS_TRUE(false);
     }
 
+    void ControlInteractivityTests::CreateSubsequentSelectionWithDragging()
+    {
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+
+        winrt::com_ptr<MockControlSettings> settings;
+        settings.attach(new MockControlSettings());
+        winrt::com_ptr<MockConnection> conn;
+        conn.attach(new MockConnection());
+
+        settings->UseAcrylic(true);
+        settings->TintOpacity(0.5f);
+
+        Log::Comment(L"Create ControlInteractivity object");
+        auto interactivity = winrt::make_self<Control::implementation::ControlInteractivity>(*settings, *conn);
+        VERIFY_IS_NOT_NULL(interactivity);
+        auto core = interactivity->_core;
+        VERIFY_IS_NOT_NULL(core);
+        // "Cascadia Mono" ends up with an actual size of 9x19 at 96DPI. So
+        // let's just arbitrarily start with a 270x380px (30x20 chars) window
+        core->InitializeTerminal(270, 380, 1.0, 1.0);
+        VERIFY_IS_TRUE(core->_initializedTerminal);
+        VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
+        interactivity->Initialize();
+
+        // For this test, don't use any modifiers
+        const auto modifiers = ControlKeyStates();
+
+        // Click on the terminal
+        interactivity->PointerPressed();
+        // Verify that there's one selection
+
+        // Drag the mouse
+        interactivity->PointerMoved();
+        // Verify that there's still one selection
+
+        // Release the mouse
+        interactivity->PointerReleased();
+        // Verify that there's still one selection
+
+        // click outside the current selection
+        interactivity->PointerPressed();
+        // Verify that there's now no selection
+
+        // Drag the mouse
+        interactivity->PointerMoved();
+        // Verify that there's now one selection
+    }
 }

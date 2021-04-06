@@ -146,6 +146,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(RendererWarning,           IInspectable, Control::RendererWarningArgs);
         TYPED_EVENT(RaiseNotice,               IInspectable, Control::NoticeEventArgs);
         TYPED_EVENT(TransparencyChanged,       IInspectable, Control::TransparencyChangedEventArgs);
+        TYPED_EVENT(ReceivedOutput,            IInspectable, IInspectable);
         // clang-format on
 
     private:

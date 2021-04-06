@@ -93,6 +93,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ReadOnly() const noexcept;
         void ToggleReadOnly();
 
+        static ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point);
+        static unsigned int PointerToMouseButtons(const winrt::Windows::UI::Input::PointerPoint point);
+
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
         WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);
@@ -228,6 +231,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                   const int fontHeight,
                                   const bool isInitialChange);
         winrt::fire_and_forget _coreTransparencyChanged(const IInspectable& sender, const Control::TransparencyChangedEventArgs& args);
+        void _coreReceivedOutput(const IInspectable& sender, const IInspectable& args);
     };
 }
 

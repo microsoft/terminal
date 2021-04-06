@@ -32,21 +32,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void UpdateSettings();
         void Initialize();
         ////////////////////////////////////////////////////////////////////////
-        void PointerPressed(const winrt::Windows::UI::Input::PointerPoint point,
+        void PointerPressed(const winrt::Windows::Foundation::Point mouseCursorPosition,
+                            ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
+                            const unsigned int pointerUpdateKind,
+                            const uint64_t timestamp,
                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                             const bool focused,
-                            const til::point terminalPosition,
-                            const winrt::Windows::Devices::Input::PointerDeviceType type);
-        void PointerMoved(const winrt::Windows::UI::Input::PointerPoint point,
+                            const til::point terminalPosition);
+        void Touched(const winrt::Windows::Foundation::Point contactPoint);
+        void PointerMoved(const winrt::Windows::Foundation::Point mouseCursorPosition,
+                          ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
+                          const unsigned int pointerUpdateKind,
                           const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                           const bool focused,
-                          const til::point terminalPosition,
-                          const winrt::Windows::Devices::Input::PointerDeviceType type);
-        void PointerReleased(const winrt::Windows::UI::Input::PointerPoint point,
+                          const til::point terminalPosition);
+        void TouchMoved(const winrt::Windows::Foundation::Point newTouchPoint,
+                        const bool focused);
+        void PointerReleased(::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
+                             const unsigned int pointerUpdateKind,
                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                              const bool focused,
-                             const til::point terminalPosition,
-                             const winrt::Windows::Devices::Input::PointerDeviceType type);
+                             const til::point terminalPosition);
+        void TouchReleased();
         bool MouseWheel(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                         const int32_t delta,
                         const til::point terminalPosition,
@@ -92,9 +99,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
         void _UpdateSystemParameterSettings() noexcept;
-        bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point,
+        // bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point,
+        //                         const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+        //                         const til::point terminalPosition);
+        bool _TrySendMouseEvent(const unsigned int updateKind,
+                                const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
                                 const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                 const til::point terminalPosition);
+        bool _TrySendMouseWheelEvent(const short scrollDelta,
+                                     const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
+                                     const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+                                     const til::point terminalPosition);
 
         void _MouseTransparencyHandler(const double mouseDelta);
         void _MouseZoomHandler(const double mouseDelta);
