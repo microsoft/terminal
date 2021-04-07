@@ -60,7 +60,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         InitializeComponent();
 
         _interactivity = winrt::make_self<ControlInteractivity>(settings, connection);
-        _core = _interactivity->_core;
+        _core = _interactivity->GetCore();
 
         _core->BackgroundColorChanged({ get_weak(), &TermControl::_BackgroundColorChangedHandler });
         _core->ScrollPositionChanged({ get_weak(), &TermControl::_ScrollPositionChanged });
@@ -1346,8 +1346,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Called continuously to gradually scroll viewport when user is
-    //      mouse selecting outside it (to 'follow' the cursor).
+    // - Called continuously to gradually scroll viewport when user is mouse
+    //   selecting outside it (to 'follow' the cursor).
     // Arguments:
     // - none
     void TermControl::_UpdateAutoScroll(Windows::Foundation::IInspectable const& /* sender */,
@@ -1544,13 +1544,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    // // Method Description:
-    // // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
-    // // Arguments:
-    // // - cursorPosition: in pixels, relative to the origin of the control
+    // Method Description:
+    // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
+    // Arguments:
+    // - cursorPosition: in pixels, relative to the origin of the control
     void TermControl::_SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition)
     {
-        _interactivity->_SetEndSelectionPoint(_GetTerminalPosition(cursorPosition));
+        _interactivity->SetEndSelectionPoint(_GetTerminalPosition(cursorPosition));
     }
 
     // Method Description:
@@ -2305,17 +2305,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _ReadOnlyChangedHandlers(*this, winrt::box_value(_core->IsInReadOnlyMode()));
     }
 
-    winrt::fire_and_forget TermControl::_RaiseReadOnlyWarning()
-    {
-        auto weakThis{ get_weak() };
-        co_await winrt::resume_foreground(Dispatcher());
-
-        if (auto control{ weakThis.get() })
-        {
-            auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));
-            control->_RaiseNoticeHandlers(*control, std::move(noticeArgs));
-        }
-    }
     // Method Description:
     // - Handle a mouse exited event, specifically clearing last hovered cell
     // and removing selection from hyper link if exists

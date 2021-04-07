@@ -260,8 +260,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_isReadOnly)
         {
-            // !TODO!: Do we want this?
-            // _RaiseReadOnlyWarning();
+            _RaiseReadOnlyWarning();
         }
         else
         {
@@ -273,8 +272,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_isReadOnly)
         {
-            // !TODO!: Do we want this?
-            // _RaiseReadOnlyWarning();
+            _RaiseReadOnlyWarning();
         }
         else
         {
@@ -1312,9 +1310,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         return _isReadOnly;
     }
+
     void ControlCore::ToggleReadOnlyMode()
     {
         _isReadOnly = !_isReadOnly;
     }
 
+    void ControlCore::_RaiseReadOnlyWarning()
+    {
+        auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));
+        _RaiseNoticeHandlers(*this, std::move(noticeArgs));
+    }
 }

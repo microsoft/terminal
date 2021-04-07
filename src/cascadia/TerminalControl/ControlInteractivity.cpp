@@ -48,6 +48,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _multiClickTimer = GetDoubleClickTime() * 1000;
     }
 
+    winrt::com_ptr<ControlCore> ControlInteractivity::GetCore()
+    {
+        return _core;
+    }
+
     // Method Description:
     // - Returns the number of clicks that occurred (double and triple click support).
     // Every call to this function registers a click.
@@ -128,8 +133,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Initiate a paste operation.
     void ControlInteractivity::PasteTextFromClipboard()
     {
-        // attach TermControl::_SendInputToConnection() as the clipboardDataHandler.
-        // This is called when the clipboard data is loaded.
+        // attach ControlInteractivity::_SendPastedTextToConnection() as the
+        // clipboardDataHandler. This is called when the clipboard data is
+        // loaded.
         auto clipboardDataHandler = std::bind(&ControlInteractivity::_SendPastedTextToConnection, this, std::placeholders::_1);
         auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
 
@@ -145,7 +151,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->PasteText(winrt::hstring{ wstr });
     }
 
-    // TODO: Don't take a Windows::UI::Input::PointerPoint here. No WinUI here.
     void ControlInteractivity::PointerPressed(const winrt::Windows::Foundation::Point mouseCursorPosition,
                                               TerminalInput::MouseButtonState buttonState,
                                               const unsigned int pointerUpdateKind,
@@ -227,7 +232,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _touchAnchor = contactPoint;
     }
 
-    // TODO: Don't take a Windows::UI::Input::PointerPoint here
     void ControlInteractivity::PointerMoved(const winrt::Windows::Foundation::Point mouseCursorPosition,
                                             TerminalInput::MouseButtonState buttonState,
                                             const unsigned int pointerUpdateKind,
@@ -260,7 +264,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
 
-            _SetEndSelectionPoint(terminalPosition);
+            SetEndSelectionPoint(terminalPosition);
 
             // const double cursorBelowBottomDist = cursorPosition.Y - SwapChainPanel().Margin().Top - SwapChainPanel().ActualHeight();
             // const double cursorAboveTopDist = -1 * cursorPosition.Y + SwapChainPanel().Margin().Top;
@@ -287,42 +291,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _core->UpdateHoveredCell(terminalPosition);
-        // else if (focused &&
-        //          type == Windows::Devices::Input::PointerDeviceType::Touch &&
-        //          _touchAnchor)
-        // {
-        //     const auto contactRect = point.Properties().ContactRect();
-        //     winrt::Windows::Foundation::Point newTouchPoint{ contactRect.X, contactRect.Y };
-        //     const auto anchor = _touchAnchor.value();
-
-        //     // Our actualFont's size is in pixels, convert to DIPs, which the
-        //     // rest of the Points here are in.
-        //     const til::size fontSize{ _core->GetFont().GetSize() };
-        //     const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _core->RendererScale());
-
-        //     // Get the difference between the point we've dragged to and the start of the touch.
-        //     const float dy = newTouchPoint.Y - anchor.Y;
-
-        //     // Start viewport scroll after we've moved more than a half row of text
-        //     if (std::abs(dy) > (fontSizeInDips.height<float>() / 2.0f))
-        //     {
-        //         // Multiply by -1, because moving the touch point down will
-        //         // create a positive delta, but we want the viewport to move up,
-        //         // so we'll need a negative scroll amount (and the inverse for
-        //         // panning down)
-        //         const float numRows = -1.0f * (dy / fontSizeInDips.height<float>());
-
-        //         const auto currentOffset = ::base::ClampedNumeric<double>(_core->ScrollOffset());
-        //         const auto newValue = numRows + currentOffset;
-
-        //         // Update the Core's viewport position, and raise a
-        //         // ScrollPositionChanged event to update the scrollbar
-        //         _updateScrollbar(newValue);
-
-        //         // Use this point as our new scroll anchor.
-        //         _touchAnchor = newTouchPoint;
-        //     }
-        // }
     }
 
     void ControlInteractivity::TouchMoved(const winrt::Windows::Foundation::Point newTouchPoint,
@@ -396,57 +364,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _touchAnchor = std::nullopt;
     }
-
-    // // Method Description:
-    // // - Send this particular mouse event to the terminal.
-    // //   See Terminal::SendMouseEvent for more information.
-    // // Arguments:
-    // // - point: the PointerPoint object representing a mouse event from our XAML input handler
-    // bool ControlInteractivity::_TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point,
-    //                                               const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-    //                                               const til::point terminalPosition)
-    // {
-    //     const auto props = point.Properties();
-
-    //     // Which mouse button changed state (and how)
-    //     unsigned int uiButton{};
-    //     switch (props.PointerUpdateKind())
-    //     {
-    //     case winrt::Windows::UI::Input::PointerUpdateKind::LeftButtonPressed:
-    //         uiButton = WM_LBUTTONDOWN;
-    //         break;
-    //     case winrt::Windows::UI::Input::PointerUpdateKind::LeftButtonReleased:
-    //         uiButton = WM_LBUTTONUP;
-    //         break;
-    //     case winrt::Windows::UI::Input::PointerUpdateKind::MiddleButtonPressed:
-    //         uiButton = WM_MBUTTONDOWN;
-    //         break;
-    //     case winrt::Windows::UI::Input::PointerUpdateKind::MiddleButtonReleased:
-    //         uiButton = WM_MBUTTONUP;
-    //         break;
-    //     case winrt::Windows::UI::Input::PointerUpdateKind::RightButtonPressed:
-    //         uiButton = WM_RBUTTONDOWN;
-    //         break;
-    //     case winrt::Windows::UI::Input::PointerUpdateKind::RightButtonReleased:
-    //         uiButton = WM_RBUTTONUP;
-    //         break;
-    //     default:
-    //         uiButton = WM_MOUSEMOVE;
-    //     }
-
-    //     // Mouse wheel data
-    //     const short sWheelDelta = ::base::saturated_cast<short>(props.MouseWheelDelta());
-    //     if (sWheelDelta != 0 && !props.IsHorizontalMouseWheel())
-    //     {
-    //         // if we have a mouse wheel delta and it wasn't a horizontal wheel motion
-    //         uiButton = WM_MOUSEWHEEL;
-    //     }
-
-    //     const TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(),
-    //                                                  props.IsMiddleButtonPressed(),
-    //                                                  props.IsRightButtonPressed() };
-    //     return _core->SendMouseEvent(terminalPosition, uiButton, modifiers, sWheelDelta, state);
-    // }
 
     // Method Description:
     // - Send this particular mouse event to the terminal.
@@ -579,7 +496,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // If user is mouse selecting and scrolls, they then point at new
             // character. Make sure selection reflects that immediately.
-            _SetEndSelectionPoint(terminalPosition);
+            SetEndSelectionPoint(terminalPosition);
         }
     }
 
@@ -633,7 +550,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
     // Arguments:
     // - cursorPosition: in pixels, relative to the origin of the control
-    void ControlInteractivity::_SetEndSelectionPoint(const til::point terminalPosition)
+    void ControlInteractivity::SetEndSelectionPoint(const til::point terminalPosition)
     {
         _core->SetEndSelectionPoint(terminalPosition);
         _selectionNeedsToBeCopied = true;

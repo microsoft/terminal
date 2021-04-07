@@ -170,11 +170,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate{ std::nullopt };
 
-        bool _isReadOnly{ false }; // Probably belongs in Interactivity
-
         std::optional<COORD> _lastHoveredCell{ std::nullopt };
         // Track the last hyperlink ID we hovered over
         uint16_t _lastHoveredId{ 0 };
+
+        bool _isReadOnly{ false };
 
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval{ std::nullopt };
 
@@ -212,6 +212,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #pragma endregion
 
         void _raiseHoveredHyperlinkChanged();
+        void _RaiseReadOnlyWarning();
 
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;

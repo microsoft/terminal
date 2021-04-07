@@ -25,13 +25,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct ControlInteractivity : ControlInteractivityT<ControlInteractivity>
     {
+    public:
         ControlInteractivity(IControlSettings settings,
                              TerminalConnection::ITerminalConnection connection);
 
         void GainFocus();
         void UpdateSettings();
         void Initialize();
-        ////////////////////////////////////////////////////////////////////////
+        winrt::com_ptr<ControlCore> GetCore();
+
+#pragma region InputMethods
         void PointerPressed(const winrt::Windows::Foundation::Point mouseCursorPosition,
                             ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
                             const unsigned int pointerUpdateKind,
@@ -58,14 +61,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         const int32_t delta,
                         const til::point terminalPosition,
                         const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
-        ////////////////////////////////////////////////////////////////////////
+#pragma endregion
 
         bool CopySelectionToClipboard(bool singleLine,
                                       const Windows::Foundation::IReference<CopyFormat>& formats);
         void PasteTextFromClipboard();
-        /////////////////////// From Control
+        void SetEndSelectionPoint(const til::point terminalPosition);
+
+    private:
         winrt::com_ptr<ControlCore> _core{ nullptr };
-        unsigned int _rowsToScroll; // Definitely Control/Interactivity
+        unsigned int _rowsToScroll;
 
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.
@@ -86,10 +91,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // since it was last copied. It's generally used to prevent copyOnSelect
         // from firing when the pointer _just happens_ to be released over the
         // terminal.
-        bool _selectionNeedsToBeCopied; // ->Interactivity
-
-        /////////////////////// From Core
-        bool _isReadOnly{ false }; // Probably belongs in Interactivity
+        bool _selectionNeedsToBeCopied;
 
         std::optional<COORD> _lastHoveredCell{ std::nullopt };
         // Track the last hyperlink ID we hovered over
@@ -99,9 +101,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
         void _UpdateSystemParameterSettings() noexcept;
-        // bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point,
-        //                         const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-        //                         const til::point terminalPosition);
         bool _TrySendMouseEvent(const unsigned int updateKind,
                                 const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
                                 const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
@@ -119,7 +118,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _HyperlinkHandler(const std::wstring_view uri);
         bool _CanSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
-        void _SetEndSelectionPoint(const til::point terminalPosition);
 
         void _SendPastedTextToConnection(const std::wstring& wstr);
         void _updateScrollbar(const int newValue);

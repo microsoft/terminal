@@ -224,7 +224,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _CurrentCursorPositionHandler(const IInspectable& sender, const CursorPositionEventArgs& eventArgs);
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
 
-        winrt::fire_and_forget _RaiseReadOnlyWarning();
         winrt::fire_and_forget _hoveredHyperlinkChanged(const IInspectable& sender, const IInspectable& args);
 
         void _coreFontSizeChanged(const int fontWidth,
