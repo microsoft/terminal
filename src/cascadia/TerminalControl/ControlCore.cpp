@@ -15,7 +15,6 @@
 #include "../../buffer/out/search.h"
 
 #include "ControlCore.g.cpp"
-// #include "TermControlAutomationPeer.h" // ?
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
@@ -135,7 +134,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 return false;
             }
 
-            const auto windowWidth = actualWidth * compositionScaleX; // Width() and Height() are NaN?
+            const auto windowWidth = actualWidth * compositionScaleX;
             const auto windowHeight = actualHeight * compositionScaleY;
 
             if (windowWidth == 0 || windowHeight == 0)
@@ -381,16 +380,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             try
             {
-                // auto acrylicBrush = RootGrid().Background().as<Media::AcrylicBrush>();
                 _settings.TintOpacity(newOpacity);
-                // acrylicBrush.TintOpacity(_settings.TintOpacity());
 
                 if (newOpacity >= 1.0)
                 {
                     _settings.UseAcrylic(false);
-                    // _initializeBackgroundBrush();
-                    // COLORREF bg = _settings.DefaultBackground();
-                    // _changeBackgroundColor(bg);
                 }
                 else
                 {
@@ -674,11 +668,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::_refreshSizeUnderLock()
     {
-        // const auto currentScaleX = SwapChainPanel().CompositionScaleX();
-        // const auto currentScaleY = SwapChainPanel().CompositionScaleY();
-        // const auto actualWidth = SwapChainPanel().ActualWidth();
-        // const auto actualHeight = SwapChainPanel().ActualHeight();
-
         const auto widthInPixels = _panelWidth * _compositionScaleX;
         const auto heightInPixels = _panelHeight * _compositionScaleY;
 

@@ -231,6 +231,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                   const bool isInitialChange);
         winrt::fire_and_forget _coreTransparencyChanged(const IInspectable& sender, const Control::TransparencyChangedEventArgs& args);
         void _coreReceivedOutput(const IInspectable& sender, const IInspectable& args);
+        void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
     };
 }
 

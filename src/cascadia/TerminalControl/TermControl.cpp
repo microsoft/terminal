@@ -69,6 +69,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->FontSizeChanged({ get_weak(), &TermControl::_coreFontSizeChanged });
         _core->TransparencyChanged({ get_weak(), &TermControl::_coreTransparencyChanged });
         _core->ReceivedOutput({ get_weak(), &TermControl::_coreReceivedOutput });
+        _core->RaiseNotice({ get_weak(), &TermControl::_coreRaisedNotice });
 
         _interactivity->OpenHyperlink({ get_weak(), &TermControl::_HyperlinkHandler });
         _interactivity->ScrollPositionChanged({ get_weak(), &TermControl::_ScrollPositionChanged });
@@ -2363,6 +2364,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                            const bool isInitialChange)
     {
         _FontSizeChangedHandlers(fontWidth, fontHeight, isInitialChange);
+    }
+
+    void TermControl::_coreRaisedNotice(const IInspectable& /*sender*/,
+                                        const Control::NoticeEventArgs& eventArgs)
+    {
+        _RaiseNoticeHandlers(*this, eventArgs);
     }
 
     TerminalInput::MouseButtonState TermControl::GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point)
