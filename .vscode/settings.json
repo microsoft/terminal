@@ -28,9 +28,5 @@
         "**/obj/**": true,
         "**/packages/**": true,
         "**/generated files/**": true
-    },
-    "vscode-nmake-tools.workspaceBuildDirectories": [
-        "f:\\terminal"
-    ],
-    "C_Cpp.default.configurationProvider": "microsoft.vscode-nmake-tools"
+    }
 }
