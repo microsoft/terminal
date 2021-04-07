@@ -1210,7 +1210,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // be out-of-proc from the UI thread, and won't be able to just use
         // the UI thread as the dispatcher queue thread.
         //
-        // THIS IS ACLLED ON EVERY STRING OF TEXT OUTPUT TO THE TERMINAL. Think
+        // THIS IS CALLED ON EVERY STRING OF TEXT OUTPUT TO THE TERMINAL. Think
         // twice before adding anything here.
 
         _updatePatternLocations->Run();

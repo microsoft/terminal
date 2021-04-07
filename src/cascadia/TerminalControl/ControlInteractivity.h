@@ -99,27 +99,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval{ std::nullopt };
 
-        unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
-        void _UpdateSystemParameterSettings() noexcept;
-        bool _TrySendMouseEvent(const unsigned int updateKind,
+        unsigned int _numberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
+        void _updateSystemParameterSettings() noexcept;
+        bool _trySendMouseEvent(const unsigned int updateKind,
                                 const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
                                 const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                 const til::point terminalPosition);
-        bool _TrySendMouseWheelEvent(const short scrollDelta,
+        bool _trySendMouseWheelEvent(const short scrollDelta,
                                      const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
                                      const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                      const til::point terminalPosition);
 
-        void _MouseTransparencyHandler(const double mouseDelta);
-        void _MouseZoomHandler(const double mouseDelta);
-        void _MouseScrollHandler(const double mouseDelta,
+        void _mouseTransparencyHandler(const double mouseDelta);
+        void _mouseZoomHandler(const double mouseDelta);
+        void _mouseScrollHandler(const double mouseDelta,
                                  const til::point terminalPosition,
                                  const bool isLeftButtonPressed);
 
-        void _HyperlinkHandler(const std::wstring_view uri);
-        bool _CanSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+        void _hyperlinkHandler(const std::wstring_view uri);
+        bool _canSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
 
-        void _SendPastedTextToConnection(const std::wstring& wstr);
+        void _sendPastedTextToConnection(const std::wstring& wstr);
         void _updateScrollbar(const int newValue);
 
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);

@@ -37,12 +37,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlInteractivity::UpdateSettings()
     {
-        _UpdateSystemParameterSettings();
+        _updateSystemParameterSettings();
     }
 
     void ControlInteractivity::Initialize()
     {
-        _UpdateSystemParameterSettings();
+        _updateSystemParameterSettings();
 
         // import value from WinUser (convert from milli-seconds to micro-seconds)
         _multiClickTimer = GetDoubleClickTime() * 1000;
@@ -63,7 +63,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Return Value:
     // - if the click is in the same position as the last click and within the timeout, the number of clicks within that time window
     // - otherwise, 1
-    unsigned int ControlInteractivity::_NumberOfClicks(winrt::Windows::Foundation::Point clickPos,
+    unsigned int ControlInteractivity::_numberOfClicks(winrt::Windows::Foundation::Point clickPos,
                                                        Timestamp clickTime)
     {
         // if click occurred at a different location or past the multiClickTimer...
@@ -85,12 +85,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlInteractivity::GainFocus()
     {
-        _UpdateSystemParameterSettings();
+        _updateSystemParameterSettings();
     }
 
     // Method Description
     // - Updates internal params based on system parameters
-    void ControlInteractivity::_UpdateSystemParameterSettings() noexcept
+    void ControlInteractivity::_updateSystemParameterSettings() noexcept
     {
         if (!SystemParametersInfoW(SPI_GETWHEELSCROLLLINES, 0, &_rowsToScroll, 0))
         {
@@ -133,10 +133,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Initiate a paste operation.
     void ControlInteractivity::PasteTextFromClipboard()
     {
-        // attach ControlInteractivity::_SendPastedTextToConnection() as the
+        // attach ControlInteractivity::_sendPastedTextToConnection() as the
         // clipboardDataHandler. This is called when the clipboard data is
         // loaded.
-        auto clipboardDataHandler = std::bind(&ControlInteractivity::_SendPastedTextToConnection, this, std::placeholders::_1);
+        auto clipboardDataHandler = std::bind(&ControlInteractivity::_sendPastedTextToConnection, this, std::placeholders::_1);
         auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
 
         // send paste event up to TermApp
@@ -146,7 +146,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Method Description:
     // - Pre-process text pasted (presumably from the clipboard)
     //   before sending it over the terminal's connection.
-    void ControlInteractivity::_SendPastedTextToConnection(const std::wstring& wstr)
+    void ControlInteractivity::_sendPastedTextToConnection(const std::wstring& wstr)
     {
         _core->PasteText(winrt::hstring{ wstr });
     }
@@ -163,8 +163,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto shiftEnabled = modifiers.IsShiftPressed();
         const auto ctrlEnabled = modifiers.IsCtrlPressed();
 
-        // const auto cursorPosition = point.Position();
-
         // GH#9396: we prioritize hyper-link over VT mouse events
         //
         // !TODO! Before we'd lock the terminal before getting the hyperlink. Do we still need to?
@@ -172,20 +170,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (buttonState.isLeftButtonDown &&
             ctrlEnabled && !hyperlink.empty())
         {
-            const auto clickCount = _NumberOfClicks(mouseCursorPosition, timestamp);
+            const auto clickCount = _numberOfClicks(mouseCursorPosition, timestamp);
             // Handle hyper-link only on the first click to prevent multiple activations
             if (clickCount == 1)
             {
-                _HyperlinkHandler(hyperlink);
+                _hyperlinkHandler(hyperlink);
             }
         }
-        else if (_CanSendVTMouseInput(modifiers))
+        else if (_canSendVTMouseInput(modifiers))
         {
-            _TrySendMouseEvent(pointerUpdateKind, buttonState, modifiers, terminalPosition);
+            _trySendMouseEvent(pointerUpdateKind, buttonState, modifiers, terminalPosition);
         }
         else if (buttonState.isLeftButtonDown)
         {
-            const auto clickCount = _NumberOfClicks(mouseCursorPosition, timestamp);
+            const auto clickCount = _numberOfClicks(mouseCursorPosition, timestamp);
             // This formula enables the number of clicks to cycle properly
             // between single-, double-, and triple-click. To increase the
             // number of acceptable click states, simply increment
@@ -240,9 +238,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                             const til::point terminalPosition)
     {
         // Short-circuit isReadOnly check to avoid warning dialog
-        if (focused && !_core->IsInReadOnlyMode() && _CanSendVTMouseInput(modifiers))
+        if (focused && !_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
-            _TrySendMouseEvent(pointerUpdateKind, buttonState, modifiers, terminalPosition);
+            _trySendMouseEvent(pointerUpdateKind, buttonState, modifiers, terminalPosition);
         }
         else if (focused && buttonState.isLeftButtonDown)
         {
@@ -273,20 +271,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // double newAutoScrollVelocity = 0.0;
             // if (cursorBelowBottomDist > MinAutoScrollDist)
             // {
-            //     newAutoScrollVelocity = _GetAutoScrollSpeed(cursorBelowBottomDist);
+            //     newAutoScrollVelocity = _getAutoScrollSpeed(cursorBelowBottomDist);
             // }
             // else if (cursorAboveTopDist > MinAutoScrollDist)
             // {
-            //     newAutoScrollVelocity = -1.0 * _GetAutoScrollSpeed(cursorAboveTopDist);
+            //     newAutoScrollVelocity = -1.0 * _getAutoScrollSpeed(cursorAboveTopDist);
             // }
 
             // if (newAutoScrollVelocity != 0)
             // {
-            //     _TryStartAutoScroll(point, newAutoScrollVelocity);
+            //     _tryStartAutoScroll(point, newAutoScrollVelocity);
             // }
             // else
             // {
-            //     _TryStopAutoScroll(ptr.PointerId());
+            //     _tryStopAutoScroll(ptr.PointerId());
             // }
         }
 
@@ -338,10 +336,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                const til::point terminalPosition)
     {
         // Short-circuit isReadOnly check to avoid warning dialog
-        if (!_core->IsInReadOnlyMode() && _CanSendVTMouseInput(modifiers))
+        if (!_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
-            _TrySendMouseEvent(pointerUpdateKind, buttonState, modifiers, terminalPosition);
-            // args.Handled(true);
+            _trySendMouseEvent(pointerUpdateKind, buttonState, modifiers, terminalPosition);
             return;
         }
 
@@ -370,7 +367,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   See Terminal::SendMouseEvent for more information.
     // Arguments:
     // - point: the PointerPoint object representing a mouse event from our XAML input handler
-    bool ControlInteractivity::_TrySendMouseEvent(const unsigned int updateKind,
+    bool ControlInteractivity::_trySendMouseEvent(const unsigned int updateKind,
                                                   const TerminalInput::MouseButtonState buttonState,
                                                   const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                                   const til::point terminalPosition)
@@ -383,7 +380,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   See Terminal::SendMouseEvent for more information.
     // Arguments:
     // - point: the PointerPoint object representing a mouse event from our XAML input handler
-    bool ControlInteractivity::_TrySendMouseWheelEvent(const short scrollDelta,
+    bool ControlInteractivity::_trySendMouseWheelEvent(const short scrollDelta,
                                                        const TerminalInput::MouseButtonState buttonState,
                                                        const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                                        const til::point terminalPosition)
@@ -409,10 +406,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                           const TerminalInput::MouseButtonState state)
     {
         // Short-circuit isReadOnly check to avoid warning dialog
-        if (!_core->IsInReadOnlyMode() && _CanSendVTMouseInput(modifiers))
+        if (!_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
             // Most mouse event handlers call
-            //      _TrySendMouseEvent(point);
+            //      _trySendMouseEvent(point);
             // here with a PointerPoint. However, as of #979, we don't have a
             // PointerPoint to work with. So, we're just going to do a
             // mousewheel event manually
@@ -428,15 +425,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (ctrlPressed && shiftPressed)
         {
-            _MouseTransparencyHandler(delta);
+            _mouseTransparencyHandler(delta);
         }
         else if (ctrlPressed)
         {
-            _MouseZoomHandler(delta);
+            _mouseZoomHandler(delta);
         }
         else
         {
-            _MouseScrollHandler(delta, terminalPosition, state.isLeftButtonDown);
+            _mouseScrollHandler(delta, terminalPosition, state.isLeftButtonDown);
         }
         return false;
     }
@@ -446,7 +443,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   scrolling event.
     // Arguments:
     // - mouseDelta: the mouse wheel delta that triggered this event.
-    void ControlInteractivity::_MouseTransparencyHandler(const double mouseDelta)
+    void ControlInteractivity::_mouseTransparencyHandler(const double mouseDelta)
     {
         // Transparency is on a scale of [0.0,1.0], so only increment by .01.
         const auto effectiveDelta = mouseDelta < 0 ? -.01 : .01;
@@ -458,7 +455,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   event.
     // Arguments:
     // - mouseDelta: the mouse wheel delta that triggered this event.
-    void ControlInteractivity::_MouseZoomHandler(const double mouseDelta)
+    void ControlInteractivity::_mouseZoomHandler(const double mouseDelta)
     {
         const auto fontDelta = mouseDelta < 0 ? -1 : 1;
         _core->AdjustFontSize(fontDelta);
@@ -470,7 +467,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - mouseDelta: the mouse wheel delta that triggered this event.
     // - point: the location of the mouse during this event
     // - isLeftButtonPressed: true iff the left mouse button was pressed during this event.
-    void ControlInteractivity::_MouseScrollHandler(const double mouseDelta,
+    void ControlInteractivity::_mouseScrollHandler(const double mouseDelta,
                                                    const til::point terminalPosition,
                                                    const bool isLeftButtonPressed)
     {
@@ -527,7 +524,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _ScrollPositionChangedHandlers(*this, *scrollArgs);
     }
 
-    void ControlInteractivity::_HyperlinkHandler(const std::wstring_view uri)
+    void ControlInteractivity::_hyperlinkHandler(const std::wstring_view uri)
     {
         // Save things we need to resume later.
         winrt::hstring heldUri{ uri };
@@ -535,7 +532,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _OpenHyperlinkHandlers(*this, *hyperlinkArgs);
     }
 
-    bool ControlInteractivity::_CanSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers)
+    bool ControlInteractivity::_canSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers)
     {
         // If the user is holding down Shift, suppress mouse events
         // TODO GH#4875: disable/customize this functionality
