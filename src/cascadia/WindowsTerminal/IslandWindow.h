@@ -77,8 +77,8 @@ protected:
 
     virtual void _SetIsBorderless(const bool borderlessEnabled);
     virtual void _SetIsFullscreen(const bool fullscreenEnabled);
-    void _BackupWindowSizes();
-    void _ApplyWindowSize();
+    void _RestoreFullscreenPosition(const RECT rcWork);
+    void _SetFullscreenPosition(const RECT rcMonitor, const RECT rcWork);
 
     LONG _getDesiredWindowStyle() const;
 

@@ -147,9 +147,8 @@ namespace Microsoft::Console::Interactivity::Win32
         RECT _rcClientLast;
 
         // Full screen
-        void _BackupWindowSizes();
-        void _ApplyWindowSize();
-
+        void _RestoreFullscreenPosition(const RECT rcWork);
+        void _SetFullscreenPosition(const RECT rcMonitor, const RECT rcWork);
         bool _fIsInFullscreen;
         bool _fWasMaximizedBeforeFullscreen;
         RECT _rcWindowBeforeFullscreen;

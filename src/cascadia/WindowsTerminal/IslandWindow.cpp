@@ -759,107 +759,55 @@ void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)
 }
 
 // Method Description:
-// - Controls setting us into or out of fullscreen mode. Largely taken from
-//   Window::SetIsFullscreen in conhost.
-// - When entering fullscreen mode, we'll save the current window size and
-//   location, and expand to take the entire monitor size. When leaving, we'll
-//   use that saved size to restore back to.
-// Arguments:
-// - fullscreenEnabled true if we should enable fullscreen mode, false to disable.
-// Return Value:
-// - <none>
-void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
+// - Called when entering fullscreen, with the window's current monitor rect and work area.
+// - The current window position, dpi, work area, and maximized state are stored, and the
+//   window is positioned to the monitor rect.
+void IslandWindow::_SetFullscreenPosition(const RECT rcMonitor, const RECT rcWork)
 {
-    // It is possible to enter _SetIsFullscreen even if we're already in full
-    // screen. Use the old is in fullscreen flag to gate checks that rely on the
-    // current state.
-    const auto oldIsInFullscreen = _fullscreen;
-    _fullscreen = fullscreenEnabled;
-
     HWND const hWnd = GetHandle();
 
-    // First, modify regular window styles as appropriate
-    auto windowStyle = _getDesiredWindowStyle();
-    _SetWindowLongWHelper(hWnd, GWL_STYLE, windowStyle);
+    ::GetWindowRect(hWnd, &_rcWindowBeforeFullscreen);
+    _dpiBeforeFullscreen = GetDpiForWindow(hWnd);
+    _fWasMaximizedBeforeFullscreen = IsZoomed(hWnd);
+    _rcWorkBeforeFullscreen = rcWork;
 
-    // Now modify extended window styles as appropriate
-    // When moving to fullscreen, remove the window edge style to avoid an
-    // ugly border when not focused.
-    auto exWindowStyle = GetWindowLongW(hWnd, GWL_EXSTYLE);
-    WI_UpdateFlag(exWindowStyle, WS_EX_WINDOWEDGE, !_fullscreen);
-    _SetWindowLongWHelper(hWnd, GWL_EXSTYLE, exWindowStyle);
-
-    // When entering/exiting fullscreen mode, we also need to backup/restore the
-    // current window size, and resize the window to match the new state.
-    if (_fullscreen && !oldIsInFullscreen)
-    {
-        _BackupWindowSizes();
-    }
-    _ApplyWindowSize();
+    SetWindowPos(hWnd,
+                 HWND_TOP,
+                 rcMonitor.left,
+                 rcMonitor.top,
+                 rcMonitor.right - rcMonitor.left,
+                 rcMonitor.bottom - rcMonitor.top,
+                 SWP_FRAMECHANGED);
 }
 
 // Method Description:
-// - Used in entering fullscreen mode. Saves the current window size,
-//   and the full size of the monitor, for use in _ApplyWindowSize.
-// - Taken from conhost's Window::_BackupWindowSizes
-// Return Value:
-// - <none>
-void IslandWindow::_BackupWindowSizes()
+// - Called when exiting fullscreen, with the window's current monitor work area.
+// - The window is restored to its previous position, migrating that previous position to the
+//   window's current monitor (if the current work area or window DPI have changed).
+// - A fullscreen window's monitor can be changed by win+shift+left/right hotkeys or monitor
+//   topology changes (for example unplugging a monitor or disconnecting a remote session).
+void IslandWindow::_RestoreFullscreenPosition(const RECT rcWork)
 {
-    ::GetWindowRect(GetHandle(), &_rcWindowBeforeFullscreen);
-    _dpiBeforeFullscreen = GetDpiForWindow(GetHandle());
-    _fWasMaximizedBeforeFullscreen = IsZoomed(GetHandle());
+    HWND const hWnd = GetHandle();
 
-    HMONITOR hmon = MonitorFromWindow(GetHandle(), MONITOR_DEFAULTTONEAREST);
-    MONITORINFO mi = {};
-    mi.cbSize = sizeof(mi);
-    GetMonitorInfo(hmon, &mi);
-
-    _rcWorkBeforeFullscreen = mi.rcWork;
-}
-
-// Method Description:
-// - Applies the appropriate window size for transitioning to/from fullscreen mode.
-// - Taken from conhost's Window::_ApplyWindowSize
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void IslandWindow::_ApplyWindowSize()
-{
-    HMONITOR hmon = MonitorFromWindow(GetHandle(), MONITOR_DEFAULTTONEAREST);
-    MONITORINFO mi = {};
-    mi.cbSize = sizeof(mi);
-    GetMonitorInfo(hmon, &mi);
-
-    if (_fullscreen)
-    {
-        SetWindowPos(GetHandle(),
-                     HWND_TOP,
-                     mi.rcMonitor.left,
-                     mi.rcMonitor.top,
-                     mi.rcMonitor.right - mi.rcMonitor.left,
-                     mi.rcMonitor.bottom - mi.rcMonitor.top,
-                     SWP_FRAMECHANGED);
-        return;
-    }
-
-
+    // If the window was previously maximized, re-maximize the window.
     if (_fWasMaximizedBeforeFullscreen)
     {
-        ShowWindow(GetHandle(), SW_SHOWMAXIMIZED);
-        SetWindowPos(GetHandle(), HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        ShowWindow(hWnd, SW_SHOWMAXIMIZED);
+        SetWindowPos(hWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+
         return;
     }
 
+    // Start with the stored window position.
     RECT rcRestore = _rcWindowBeforeFullscreen;
-    UINT dpiWindow = GetDpiForWindow(GetHandle());
 
-    // If window has changed DPI since storing previous position, scale the size by the DPI change.
+    // If the window DPI has changed, re-size the stored position by the change in DPI. This
+    // ensures the window restores to the same logical size (even if to a monitor with a different
+    // DPI/ scale factor).
+    UINT dpiWindow = GetDpiForWindow(hWnd);
     rcRestore.right = rcRestore.left + MulDiv(rcRestore.right - rcRestore.left, dpiWindow, _dpiBeforeFullscreen);
     rcRestore.bottom = rcRestore.top + MulDiv(rcRestore.bottom - rcRestore.top, dpiWindow, _dpiBeforeFullscreen);
-
-    RECT rcWork = mi.rcWork;
 
     // Offset the stored position by the difference in work area.
     OffsetRect(&rcRestore,
@@ -867,7 +815,7 @@ void IslandWindow::_ApplyWindowSize()
                rcWork.top - _rcWorkBeforeFullscreen.top);
 
     // Enforce that our position is entirely within the bounds of our work area.
-    // Prefer the top-left be on-screen rather than bottom-right.
+    // Prefer the top-left be on-screen rather than bottom-right (right before left, bottom before top).
     if (rcRestore.right > rcWork.right)
     {
         OffsetRect(&rcRestore, rcWork.right - rcRestore.right, 0);
@@ -886,13 +834,65 @@ void IslandWindow::_ApplyWindowSize()
     }
 
     // Show the window at the computed position.
-    SetWindowPos(GetHandle(),
+    SetWindowPos(hWnd,
                  HWND_TOP,
                  rcRestore.left,
                  rcRestore.top,
                  rcRestore.right - rcRestore.left,
                  rcRestore.bottom - rcRestore.top,
                  SWP_SHOWWINDOW | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+}
+
+// Method Description:
+// - Controls setting us into or out of fullscreen mode. Largely taken from
+//   Window::SetIsFullscreen in conhost.
+// - When entering fullscreen mode, we'll save the current window size and
+//   location, and expand to take the entire monitor size. When leaving, we'll
+//   use that saved size to restore back to.
+// Arguments:
+// - fullscreenEnabled true if we should enable fullscreen mode, false to disable.
+// Return Value:
+// - <none>
+void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
+{
+    // It is possible to enter _SetIsFullscreen even if we're already in full
+    // screen. Use the old is in fullscreen flag to gate checks that rely on the
+    // current state.
+    const bool fChangingFullscreen = (fullscreenEnabled != _fullscreen);
+    _fullscreen = fullscreenEnabled;
+
+    HWND const hWnd = GetHandle();
+
+    // First, modify regular window styles as appropriate
+    auto windowStyle = _getDesiredWindowStyle();
+    _SetWindowLongWHelper(hWnd, GWL_STYLE, windowStyle);
+
+    // Now modify extended window styles as appropriate
+    // When moving to fullscreen, remove the window edge style to avoid an
+    // ugly border when not focused.
+    auto exWindowStyle = GetWindowLongW(hWnd, GWL_EXSTYLE);
+    WI_UpdateFlag(exWindowStyle, WS_EX_WINDOWEDGE, !_fullscreen);
+    _SetWindowLongWHelper(hWnd, GWL_EXSTYLE, exWindowStyle);
+
+    // Only change the window position if changing fullscreen state.
+    if (fChangingFullscreen)
+    {
+        // Get the monitor info for the window's current monitor.
+        MONITORINFO mi = {};
+        mi.cbSize = sizeof(mi);
+        GetMonitorInfo(MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST), &mi);
+
+        if (_fullscreen)
+        {
+            // Store the window's current position and size the window to the monitor.
+            _SetFullscreenPosition(mi.rcMonitor, mi.rcWork);
+        }
+        else
+        {
+            // Restore the stored window position.
+            _RestoreFullscreenPosition(mi.rcWork);
+        }
+    }
 }
 
 // Method Description:
