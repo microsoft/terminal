@@ -375,13 +375,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
+        auto lock = _terminal->LockForWriting();
+
         // Update our control settings
         _ApplyUISettings(_settings);
 
         // Update the terminal core with its new Core settings
         _terminal->UpdateSettings(_settings);
 
-        auto lock = _terminal->LockForWriting();
+        if (!_initializedTerminal)
+        {
+            // If we haven't initialized, there's no point in continuing.
+            // Initialization will handle the renderer settings.
+            return;
+        }
 
         // Update DxEngine settings under the lock
         _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
