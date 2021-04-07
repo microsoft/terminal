@@ -79,34 +79,34 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _connectionOutputEventToken = _connection.TerminalOutput(onReceiveOutputFn);
 
         _terminal->SetWriteInputCallback([this](std::wstring& wstr) {
-            _SendInputToConnection(wstr);
+            _sendInputToConnection(wstr);
         });
 
         // GH#8969: pre-seed working directory to prevent potential races
         _terminal->SetWorkingDirectory(_settings.StartingDirectory());
 
-        auto pfnCopyToClipboard = std::bind(&ControlCore::_TerminalCopyToClipboard, this, std::placeholders::_1);
+        auto pfnCopyToClipboard = std::bind(&ControlCore::_terminalCopyToClipboard, this, std::placeholders::_1);
         _terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
 
-        auto pfnWarningBell = std::bind(&ControlCore::_TerminalWarningBell, this);
+        auto pfnWarningBell = std::bind(&ControlCore::_terminalWarningBell, this);
         _terminal->SetWarningBellCallback(pfnWarningBell);
 
-        auto pfnTitleChanged = std::bind(&ControlCore::_TerminalTitleChanged, this, std::placeholders::_1);
+        auto pfnTitleChanged = std::bind(&ControlCore::_terminalTitleChanged, this, std::placeholders::_1);
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
 
-        auto pfnTabColorChanged = std::bind(&ControlCore::_TerminalTabColorChanged, this, std::placeholders::_1);
+        auto pfnTabColorChanged = std::bind(&ControlCore::_terminalTabColorChanged, this, std::placeholders::_1);
         _terminal->SetTabColorChangedCallback(pfnTabColorChanged);
 
-        auto pfnBackgroundColorChanged = std::bind(&ControlCore::_TerminalBackgroundColorChanged, this, std::placeholders::_1);
+        auto pfnBackgroundColorChanged = std::bind(&ControlCore::_terminalBackgroundColorChanged, this, std::placeholders::_1);
         _terminal->SetBackgroundCallback(pfnBackgroundColorChanged);
 
-        auto pfnScrollPositionChanged = std::bind(&ControlCore::_TerminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        auto pfnScrollPositionChanged = std::bind(&ControlCore::_terminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
 
-        auto pfnTerminalCursorPositionChanged = std::bind(&ControlCore::_TerminalCursorPositionChanged, this);
+        auto pfnTerminalCursorPositionChanged = std::bind(&ControlCore::_terminalCursorPositionChanged, this);
         _terminal->SetCursorPositionChangedCallback(pfnTerminalCursorPositionChanged);
 
-        auto pfnTerminalTaskbarProgressChanged = std::bind(&ControlCore::_TerminalTaskbarProgressChanged, this);
+        auto pfnTerminalTaskbarProgressChanged = std::bind(&ControlCore::_terminalTaskbarProgressChanged, this);
         _terminal->TaskbarProgressChangedCallback(pfnTerminalTaskbarProgressChanged);
 
         _terminal->UpdateSettings(settings);
@@ -171,7 +171,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Initialize our font with the renderer
             // We don't have to care about DPI. We'll get a change message immediately if it's not 96
             // and react accordingly.
-            _UpdateFont(true);
+            _updateFont(true);
 
             const COORD windowSize{ static_cast<short>(windowWidth),
                                     static_cast<short>(windowHeight) };
@@ -200,11 +200,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // after Enable, then it'll be possible to paint the frame once
             // _before_ the warning handler is set up, and then warnings from
             // the first paint will be ignored!
-            dxEngine->SetWarningCallback(std::bind(&ControlCore::_RendererWarning, this, std::placeholders::_1));
+            dxEngine->SetWarningCallback(std::bind(&ControlCore::_rendererWarning, this, std::placeholders::_1));
 
             // Tell the DX Engine to notify us when the swap chain changes.
             // We do this after we initially set the swapchain so as to avoid unnecessary callbacks (and locking problems)
-            dxEngine->SetCallback(std::bind(&ControlCore::RenderEngineSwapChainChanged, this));
+            dxEngine->SetCallback(std::bind(&ControlCore::_renderEngineSwapChainChanged, this));
 
             dxEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
             dxEngine->SetPixelShaderPath(_settings.PixelShaderPath());
@@ -235,7 +235,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             THROW_IF_FAILED(dxEngine->Enable());
             _renderEngine = std::move(dxEngine);
 
-            // In the past we did _AttachDxgiSwapChainToXaml _before_ calling
+            // In the past we did _attachDxgiSwapChainToXaml _before_ calling
             // EnablePainting. There's mild worry that doing EnablePainting
             // first will break something, but this seems to work.
             localPointerToThread->EnablePainting();
@@ -256,11 +256,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - wstr: the string of characters to write to the terminal connection.
     // Return Value:
     // - <none>
-    void ControlCore::_SendInputToConnection(const winrt::hstring& wstr)
+    void ControlCore::_sendInputToConnection(const winrt::hstring& wstr)
     {
         if (_isReadOnly)
         {
-            _RaiseReadOnlyWarning();
+            _raiseReadOnlyWarning();
         }
         else
         {
@@ -268,11 +268,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::_SendInputToConnection(std::wstring_view wstr)
+    void ControlCore::_sendInputToConnection(std::wstring_view wstr)
     {
         if (_isReadOnly)
         {
-            _RaiseReadOnlyWarning();
+            _raiseReadOnlyWarning();
         }
         else
         {
@@ -288,7 +288,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::SendInput(const winrt::hstring& wstr)
     {
-        _SendInputToConnection(wstr);
+        _sendInputToConnection(wstr);
     }
 
     bool ControlCore::SendCharEvent(const wchar_t ch,
@@ -388,7 +388,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 if (newOpacity >= 1.0)
                 {
                     _settings.UseAcrylic(false);
-                    // _InitializeBackgroundBrush();
+                    // _initializeBackgroundBrush();
                     // COLORREF bg = _settings.DefaultBackground();
                     // _changeBackgroundColor(bg);
                 }
@@ -568,11 +568,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Refresh our font with the renderer
         const auto actualFontOldSize = _actualFont.GetSize();
-        _UpdateFont();
+        _updateFont();
         const auto actualFontNewSize = _actualFont.GetSize();
         if (actualFontNewSize != actualFontOldSize)
         {
-            _RefreshSizeUnderLock();
+            _refreshSizeUnderLock();
         }
     }
 
@@ -581,12 +581,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //      font changes or the DPI changes, as DPI changes will necessitate a
     //      font change. This method will *not* change the buffer/viewport size
     //      to account for the new glyph dimensions. Callers should make sure to
-    //      appropriately call _DoResizeUnderLock after this method is called.
+    //      appropriately call _doResizeUnderLock after this method is called.
     // - The write lock should be held when calling this method.
     // Arguments:
     // - initialUpdate: whether this font update should be considered as being
     //   concerned with initialization process. Value forwarded to event handler.
-    void ControlCore::_UpdateFont(const bool initialUpdate)
+    void ControlCore::_updateFont(const bool initialUpdate)
     {
         const int newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) *
                                             _compositionScaleX);
@@ -615,7 +615,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Set the font size of the terminal control.
     // Arguments:
     // - fontSize: The size of the font.
-    void ControlCore::_SetFontSize(int fontSize)
+    void ControlCore::_setFontSize(int fontSize)
     {
         try
         {
@@ -629,13 +629,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             auto lock = _terminal->LockForWriting();
 
             // Refresh our font with the renderer
-            _UpdateFont();
+            _updateFont();
 
             // Resize the terminal's BUFFER to match the new font size. This does
             // NOT change the size of the window, because that can lead to more
             // problems (like what happens when you change the font size while the
             // window is maximized?)
-            _RefreshSizeUnderLock();
+            _refreshSizeUnderLock();
         }
         CATCH_LOG();
     }
@@ -646,7 +646,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - none
     void ControlCore::ResetFontSize()
     {
-        _SetFontSize(_settings.FontSize());
+        _setFontSize(_settings.FontSize());
     }
 
     // Method Description:
@@ -656,23 +656,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::AdjustFontSize(int fontSizeDelta)
     {
         const auto newSize = _desiredFont.GetEngineSize().Y + fontSizeDelta;
-        _SetFontSize(newSize);
+        _setFontSize(newSize);
     }
 
     // Method Description:
     // - Perform a resize for the current size of the swapchainpanel. If the
     //   font size changed, we'll need to resize the buffer to fit the existing
-    //   swapchain size. This helper will call _DoResizeUnderLock with the
+    //   swapchain size. This helper will call _doResizeUnderLock with the
     //   current size of the swapchain, accounting for scaling due to DPI.
     // - Note that a DPI change will also trigger a font size change, and will
     //   call into here.
     // - The write lock should be held when calling this method, we might be
-    //   changing the buffer size in _DoResizeUnderLock.
+    //   changing the buffer size in _doResizeUnderLock.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
-    void ControlCore::_RefreshSizeUnderLock()
+    void ControlCore::_refreshSizeUnderLock()
     {
         // const auto currentScaleX = SwapChainPanel().CompositionScaleX();
         // const auto currentScaleY = SwapChainPanel().CompositionScaleY();
@@ -682,7 +682,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto widthInPixels = _panelWidth * _compositionScaleX;
         const auto heightInPixels = _panelHeight * _compositionScaleY;
 
-        _DoResizeUnderLock(widthInPixels, heightInPixels);
+        _doResizeUnderLock(widthInPixels, heightInPixels);
     }
 
     // Method Description:
@@ -693,7 +693,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Arguments:
     // - newWidth: the new width of the swapchain, in pixels.
     // - newHeight: the new height of the swapchain, in pixels.
-    void ControlCore::_DoResizeUnderLock(const double newWidth,
+    void ControlCore::_doResizeUnderLock(const double newWidth,
                                          const double newHeight)
     {
         SIZE size;
@@ -740,7 +740,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto scaledWidth = width * currentEngineScale;
         auto scaledHeight = height * currentEngineScale;
-        _DoResizeUnderLock(scaledWidth, scaledHeight);
+        _doResizeUnderLock(scaledWidth, scaledHeight);
     }
 
     void ControlCore::ScaleChanged(const double scaleX,
@@ -758,7 +758,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // If we're getting a notification to change to the DPI we already
         // have, then we're probably just beginning the DPI change. Since
         // we'll get _another_ event with the real DPI, do nothing here for
-        // now. We'll also skip the next resize in _SwapChainSizeChanged.
+        // now. We'll also skip the next resize in _swapChainSizeChanged.
         const bool dpiWasUnchanged = currentEngineScale == scaleX;
         if (dpiWasUnchanged)
         {
@@ -778,7 +778,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto actualFontNewSize = _actualFont.GetSize();
         if (actualFontNewSize != actualFontOldSize)
         {
-            _RefreshSizeUnderLock();
+            _refreshSizeUnderLock();
         }
     }
 
@@ -828,7 +828,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     // Called when the Terminal wants to set something to the clipboard, i.e.
     // when an OSC 52 is emitted.
-    void ControlCore::_TerminalCopyToClipboard(const std::wstring_view& wstr)
+    void ControlCore::_terminalCopyToClipboard(const std::wstring_view& wstr)
     {
         auto copyArgs = winrt::make_self<implementation::CopyToClipboardEventArgs>(winrt::hstring(wstr));
         _CopyToClipboardHandlers(*this, *copyArgs);
@@ -986,22 +986,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal->GetBufferHeight();
     }
 
-    void ControlCore::_TerminalWarningBell()
+    void ControlCore::_terminalWarningBell()
     {
         _WarningBellHandlers(*this, nullptr);
     }
 
-    void ControlCore::_TerminalTitleChanged(const std::wstring_view& wstr)
+    void ControlCore::_terminalTitleChanged(const std::wstring_view& wstr)
     {
         auto titleArgs = winrt::make_self<TitleChangedEventArgs>(winrt::hstring{ wstr });
         _TitleChangedHandlers(*this, *titleArgs);
     }
-    void ControlCore::_TerminalTabColorChanged(const std::optional<til::color> /*color*/)
+    void ControlCore::_terminalTabColorChanged(const std::optional<til::color> /*color*/)
     {
         _TabColorChangedHandlers(*this, nullptr);
     }
 
-    void ControlCore::_TerminalBackgroundColorChanged(const COLORREF color)
+    void ControlCore::_terminalBackgroundColorChanged(const COLORREF color)
     {
         _backgroundColor = color;
         _BackgroundColorChangedHandlers(*this, nullptr);
@@ -1017,12 +1017,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //      of the buffer.
     // - viewHeight: the height of the viewport in rows.
     // - bufferSize: the length of the buffer, in rows
-    void ControlCore::_TerminalScrollPositionChanged(const int viewTop,
+    void ControlCore::_terminalScrollPositionChanged(const int viewTop,
                                                      const int viewHeight,
                                                      const int bufferSize)
     {
         // Clear the regex pattern tree so the renderer does not try to render them while scrolling
-        // We're **NOT** taking the lock here unlike _ScrollbarChangeHandler because
+        // We're **NOT** taking the lock here unlike _scrollbarChangeHandler because
         // we are already under lock (since this usually happens as a result of writing).
         // TODO GH#9617: refine locking around pattern tree
         _terminal->ClearPatternTree();
@@ -1031,12 +1031,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _ScrollPositionChangedHandlers(*this, *scrollArgs);
     }
 
-    void ControlCore::_TerminalCursorPositionChanged()
+    void ControlCore::_terminalCursorPositionChanged()
     {
         _CursorPositionChangedHandlers(*this, nullptr);
     }
 
-    void ControlCore::_TerminalTaskbarProgressChanged()
+    void ControlCore::_terminalTaskbarProgressChanged()
     {
         _TaskbarProgressChangedHandlers(*this, nullptr);
     }
@@ -1115,7 +1115,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget ControlCore::_AsyncCloseConnection()
+    winrt::fire_and_forget ControlCore::_asyncCloseConnection()
     {
         if (auto localConnection{ std::exchange(_connection, nullptr) })
         {
@@ -1139,7 +1139,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Since TermControl::Close is only ever triggered by the UI, we
             // don't really care to wait for the connection to be completely
             // closed. We can just do it whenever.
-            _AsyncCloseConnection();
+            _asyncCloseConnection();
 
             {
                 // GH#8734:
@@ -1172,13 +1172,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _renderEngine->GetSwapChainHandle();
     }
 
-    void ControlCore::_RendererWarning(const HRESULT hr)
+    void ControlCore::_rendererWarning(const HRESULT hr)
     {
         auto args{ winrt::make_self<RendererWarningArgs>(hr) };
         _RendererWarningHandlers(*this, *args);
     }
 
-    void ControlCore::RenderEngineSwapChainChanged()
+    void ControlCore::_renderEngineSwapChainChanged()
     {
         _SwapChainChangedHandlers(*this, nullptr);
     }
@@ -1316,7 +1316,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _isReadOnly = !_isReadOnly;
     }
 
-    void ControlCore::_RaiseReadOnlyWarning()
+    void ControlCore::_raiseReadOnlyWarning()
     {
         auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));
         _RaiseNoticeHandlers(*this, std::move(noticeArgs));

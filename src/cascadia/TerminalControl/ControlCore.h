@@ -63,7 +63,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
 
-        winrt::fire_and_forget _AsyncCloseConnection();
         void Close();
 
 #pragma region ICoreState
@@ -184,35 +183,37 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         double _compositionScaleY{ 0 };
         til::color _backgroundColor; // !TODO! This is _in_ Terminal already!
 
-        void _SetFontSize(int fontSize);
-        void _UpdateFont(const bool initialUpdate = false);
-        void _RefreshSizeUnderLock();
-        void _DoResizeUnderLock(const double newWidth,
+        winrt::fire_and_forget _asyncCloseConnection();
+
+        void _setFontSize(int fontSize);
+        void _updateFont(const bool initialUpdate = false);
+        void _refreshSizeUnderLock();
+        void _doResizeUnderLock(const double newWidth,
                                 const double newHeight);
 
-        void _SendInputToConnection(const winrt::hstring& wstr);
-        void _SendInputToConnection(std::wstring_view wstr);
+        void _sendInputToConnection(const winrt::hstring& wstr);
+        void _sendInputToConnection(std::wstring_view wstr);
 
 #pragma region TerminalCoreCallbacks
-        void _TerminalCopyToClipboard(const std::wstring_view& wstr);
-        void _TerminalWarningBell();
-        void _TerminalTitleChanged(const std::wstring_view& wstr);
-        void _TerminalTabColorChanged(const std::optional<til::color> color);
-        void _TerminalBackgroundColorChanged(const COLORREF color);
-        void _TerminalScrollPositionChanged(const int viewTop,
+        void _terminalCopyToClipboard(const std::wstring_view& wstr);
+        void _terminalWarningBell();
+        void _terminalTitleChanged(const std::wstring_view& wstr);
+        void _terminalTabColorChanged(const std::optional<til::color> color);
+        void _terminalBackgroundColorChanged(const COLORREF color);
+        void _terminalScrollPositionChanged(const int viewTop,
                                             const int viewHeight,
                                             const int bufferSize);
-        void _TerminalCursorPositionChanged();
-        void _TerminalTaskbarProgressChanged();
+        void _terminalCursorPositionChanged();
+        void _terminalTaskbarProgressChanged();
 #pragma endregion
 
 #pragma region RendererCallbacks
-        void _RendererWarning(const HRESULT hr);
-        void RenderEngineSwapChainChanged();
+        void _rendererWarning(const HRESULT hr);
+        void _renderEngineSwapChainChanged();
 #pragma endregion
 
         void _raiseHoveredHyperlinkChanged();
-        void _RaiseReadOnlyWarning();
+        void _raiseReadOnlyWarning();
 
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;
