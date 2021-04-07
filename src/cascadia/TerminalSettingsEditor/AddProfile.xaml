@@ -24,8 +24,8 @@
     <ScrollViewer>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <Button x:Uid="AddProfile_AddNewButton"
-                    AutomationProperties.Name="{Binding Tag, RelativeSource={RelativeSource Self}}"
                     AutomationProperties.AutomationId="AddProfile_AddNewButton"
+                    AutomationProperties.Name="{Binding Tag, RelativeSource={RelativeSource Self}}"
                     Click="AddNewClick"
                     Style="{StaticResource AccentButtonStyle}">
                 <Button.Content>
@@ -67,9 +67,9 @@
                     </muxc:RadioButtons>
                 </local:SettingContainer>
                 <Button x:Uid="AddProfile_DuplicateButton"
-                        AutomationProperties.Name="{Binding Tag, RelativeSource={RelativeSource Self}}"
-                        AutomationProperties.AutomationId="AddProfile_DuplicateButton"
                         Margin="{StaticResource StandardControlMargin}"
+                        AutomationProperties.AutomationId="AddProfile_DuplicateButton"
+                        AutomationProperties.Name="{Binding Tag, RelativeSource={RelativeSource Self}}"
                         Click="DuplicateClick"
                         Style="{StaticResource AccentButtonStyle}">
                     <Button.Content>
