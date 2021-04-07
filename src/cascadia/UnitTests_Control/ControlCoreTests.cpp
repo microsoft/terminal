@@ -28,6 +28,8 @@ namespace ControlUnitTests
         TEST_METHOD(TestInitialize);
         TEST_METHOD(TestAdjustAcrylic);
 
+        TEST_METHOD(TestFreeAfterClose);
+
         TEST_CLASS_SETUP(ModuleSetup)
         {
             winrt::init_apartment(winrt::apartment_type::single_threaded);
@@ -165,6 +167,29 @@ namespace ControlUnitTests
         Log::Comment(L"Decreasing opacity more doesn't actually change it to be < 0");
         expectedOpacity = 0.0;
         core->AdjustOpacity(-0.25);
+    }
+
+    void ControlCoreTests::TestFreeAfterClose()
+    {
+        {
+            Log::Comment(L"Create settings object");
+            winrt::com_ptr<MockControlSettings> settings;
+            settings.attach(new MockControlSettings());
+
+            Log::Comment(L"Create connection object");
+            winrt::com_ptr<MockConnection> conn;
+            conn.attach(new MockConnection());
+            VERIFY_IS_NOT_NULL(conn);
+
+            Log::Comment(L"Create ControlCore object");
+            auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+            VERIFY_IS_NOT_NULL(core);
+
+            Log::Comment(L"Close the Core, like a TermControl would");
+            core->Close();
+        }
+
+        VERIFY_IS_TRUE(true, L"Make sure that the test didn't crash when the core when out of scope");
     }
 
 }

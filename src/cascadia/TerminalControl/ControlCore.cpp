@@ -1130,40 +1130,43 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::Close()
     {
-        // Stop accepting new output and state changes before we disconnect everything.
-        _connection.TerminalOutput(_connectionOutputEventToken);
-        _connectionStateChangedRevoker.revoke();
-
-        // GH#1996 - Close the connection asynchronously on a background
-        // thread.
-        // Since TermControl::Close is only ever triggered by the UI, we
-        // don't really care to wait for the connection to be completely
-        // closed. We can just do it whenever.
-        _AsyncCloseConnection();
-
+        if (!_closing.exchange(true))
         {
-            // GH#8734:
-            // We lock the terminal here to make sure it isn't still being
-            // used in the connection thread before we destroy the renderer.
-            // However, we must unlock it again prior to triggering the
-            // teardown, to avoid the render thread being deadlocked. The
-            // renderer may be waiting to acquire the terminal lock, while
-            // we're waiting for the renderer to finish.
-            auto lock = _terminal->LockForWriting();
-        }
+            // Stop accepting new output and state changes before we disconnect everything.
+            _connection.TerminalOutput(_connectionOutputEventToken);
+            _connectionStateChangedRevoker.revoke();
 
-        if (auto localRenderEngine{ std::exchange(_renderEngine, nullptr) })
-        {
-            if (auto localRenderer{ std::exchange(_renderer, nullptr) })
+            // GH#1996 - Close the connection asynchronously on a background
+            // thread.
+            // Since TermControl::Close is only ever triggered by the UI, we
+            // don't really care to wait for the connection to be completely
+            // closed. We can just do it whenever.
+            _AsyncCloseConnection();
+
             {
-                localRenderer->TriggerTeardown();
-                // renderer is destroyed
+                // GH#8734:
+                // We lock the terminal here to make sure it isn't still being
+                // used in the connection thread before we destroy the renderer.
+                // However, we must unlock it again prior to triggering the
+                // teardown, to avoid the render thread being deadlocked. The
+                // renderer may be waiting to acquire the terminal lock, while
+                // we're waiting for the renderer to finish.
+                auto lock = _terminal->LockForWriting();
             }
-            // renderEngine is destroyed
-        }
 
-        // we don't destroy _terminal here; it now has the same lifetime as the
-        // control.
+            if (auto localRenderEngine{ std::exchange(_renderEngine, nullptr) })
+            {
+                if (auto localRenderer{ std::exchange(_renderer, nullptr) })
+                {
+                    localRenderer->TriggerTeardown();
+                    // renderer is destroyed
+                }
+                // renderEngine is destroyed
+            }
+
+            // we don't destroy _terminal here; it now has the same lifetime as the
+            // control.
+        }
     }
 
     HANDLE ControlCore::GetSwapChainHandle() const

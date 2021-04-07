@@ -151,6 +151,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     private:
         bool _initializedTerminal{ false };
+        std::atomic<bool> _closing{ false };
 
         TerminalConnection::ITerminalConnection _connection{ nullptr };
         event_token _connectionOutputEventToken;
