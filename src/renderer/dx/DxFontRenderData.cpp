@@ -5,6 +5,8 @@
 
 #include "DxFontRenderData.h"
 
+#include "unicode.hpp"
+
 static constexpr float POINTS_PER_INCH = 72.0f;
 static constexpr std::wstring_view FALLBACK_FONT_FACES[] = { L"Consolas", L"Lucida Console", L"Courier New" };
 static constexpr std::wstring_view FALLBACK_LOCALE = L"en-us";
@@ -43,7 +45,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
 // - <none>
 // Return Value:
 // - DirectWrite font collection
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontCollection1> DxFontRenderData::NearbyCollection() const
+[[nodiscard]] const Microsoft::WRL::ComPtr<IDWriteFontCollection1>& DxFontRenderData::NearbyCollection() const
 {
     // Magic static so we only attempt to grovel the hard disk once no matter how many instances
     // of the font collection itself we require.
@@ -61,11 +63,6 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
         // Builder2 has a convenience to just feed in paths to font files.
         ::Microsoft::WRL::ComPtr<IDWriteFontSetBuilder2> fontSetBuilder2;
         THROW_IF_FAILED(fontSetBuilder.As(&fontSetBuilder2));
-
-        // Find the directory we're running from then enumerate all the TTF files
-        // sitting next to us.
-        const std::filesystem::path module{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
-        const auto folder = module.parent_path();
 
         for (auto& p : knownPaths)
         {
@@ -648,12 +645,12 @@ CATCH_RETURN()
         // Quite often, folks are specifying weights or something in the familyName and it causes failed resolution and
         // an unexpected error dialog. We theoretically could detect the weight words and convert them, but this
         // is the quick fix for the majority scenario.
-        // The long/full fix is backlogged to GH#xxxx
+        // The long/full fix is backlogged to GH#9744
         // Also this doesn't count as a fallback because we don't want to annoy folks with the warning dialog over
         // this resolution.
         while (!face && !familyName.empty())
         {
-            const auto lastSpace = familyName.find_last_of(L'\x20');
+            const auto lastSpace = familyName.find_last_of(UNICODE_SPACE);
 
             // value is unsigned and npos will be greater than size.
             // if we didn't find anything to trim, leave.
@@ -863,7 +860,7 @@ CATCH_RETURN()
     // Find the directory we're running from then enumerate all the TTF files
     // sitting next to us.
     const std::filesystem::path module{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
-    const auto folder = module.parent_path();
+    const auto folder{ module.parent_path() };
 
     for (auto& p : std::filesystem::directory_iterator(folder))
     {
@@ -872,7 +869,7 @@ CATCH_RETURN()
             auto extension = p.path().extension().wstring();
             std::transform(extension.begin(), extension.end(), extension.begin(), std::towlower);
 
-            const std::wstring_view ttfExtension{ L".ttf" };
+            static constexpr std::wstring_view ttfExtension{ L".ttf" };
             if (ttfExtension == extension)
             {
                 paths.push_back(p);

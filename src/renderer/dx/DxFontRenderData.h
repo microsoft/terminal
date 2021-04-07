@@ -35,7 +35,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFallback> SystemFontFallback();
 
-        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontCollection1> NearbyCollection() const;
+        [[nodiscard]] const Microsoft::WRL::ComPtr<IDWriteFontCollection1>& NearbyCollection() const;
 
         [[nodiscard]] til::size GlyphCell() noexcept;
         [[nodiscard]] LineMetrics GetLineMetrics() noexcept;
