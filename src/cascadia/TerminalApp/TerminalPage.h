@@ -327,6 +327,9 @@ namespace winrt::TerminalApp::implementation
         void _WindowRenamerActionClick(const IInspectable& sender, const IInspectable& eventArgs);
         void _RequestWindowRename(const winrt::hstring& newName);
         void _WindowRenamerKeyUp(const IInspectable& sender, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+
+        void _UpdateTeachingTipTheme(winrt::Windows::UI::Xaml::FrameworkElement element);
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
 #define ON_ALL_ACTIONS(action) DECLARE_ACTION_HANDLER(action);
