@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AddProfile_AddNewButton.Tag" xml:space="preserve">
-    <value>AddNewButton</value>
+    <value>Create New Button</value>
   </data>
   <data name="AddProfile_AddNewTextBlock.Text" xml:space="preserve">
     <value>Create new</value>
@@ -129,7 +129,7 @@
     <comment>This is the header for a control that lets the user duplicate one of their existing profiles.</comment>
   </data>
   <data name="AddProfile_DuplicateButton.Tag" xml:space="preserve">
-    <value>DuplicateButton</value>
+    <value>Duplicate Button</value>
   </data>
   <data name="AddProfile_DuplicateTextBlock.Text" xml:space="preserve">
     <value>Duplicate</value>
