@@ -233,6 +233,12 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::CreateNew
 
 // Method Description:
 // - Duplicate a new profile based off another profile's settings
+// - This differs from Profile::Copy because it also copies over settings
+//   that were not defined in the json (for example, settings that were
+//   defined in one of the parents)
+// - This will not duplicate settings that were defined in profiles.defaults
+//   however, because we do not want the json blob generated from the new profile
+//   to contain those settings
 // Arguments:
 // - source: the Profile object we are duplicating (must not be null)
 // Return Value:
