@@ -91,7 +91,6 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
         DECLARE_EVENT(DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
         FORWARDED_TYPED_EVENT(TabRenamerDeactivated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, (&_headerControl), RenameEnded);
-        TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
 
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };
@@ -144,8 +143,6 @@ namespace winrt::TerminalApp::implementation
         void _ClearTabBackgroundColor();
 
         void _RecalculateAndApplyReadOnly();
-
-        void _UpdateProgressState();
 
         void _DuplicateTab();
 

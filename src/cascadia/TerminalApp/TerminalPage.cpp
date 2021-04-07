@@ -993,6 +993,9 @@ namespace winrt::TerminalApp::implementation
 
         term.OpenHyperlink({ this, &TerminalPage::_OpenHyperlinkHandler });
 
+        // Add an event handler for when the terminal wants to set a progress indicator on the taskbar
+        term.SetTaskbarProgress({ this, &TerminalPage::_SetTaskbarProgressHandler });
+
         term.HidePointerCursor({ get_weak(), &TerminalPage::_HidePointerCursorHandler });
         term.RestorePointerCursor({ get_weak(), &TerminalPage::_RestorePointerCursorHandler });
 
@@ -1046,16 +1049,6 @@ namespace winrt::TerminalApp::implementation
                 page->_ClearNonClientAreaColors();
             }
         });
-
-        hostingTab.TaskbarProgressChanged([weakThis](const auto& s, const auto& args) {
-            if (auto page{ weakThis.get() })
-            {
-                page->_SetTaskbarProgressHandler(s, args);
-            }
-        });
-
-        // Add an event handler for when the terminal wants to set a progress indicator on the taskbar
-        term.SetTaskbarProgress({ this, &TerminalPage::_SetTaskbarProgressHandler });
 
         // TODO GH#3327: Once we support colorizing the NewTab button based on
         // the color of the tab, we'll want to make sure to call

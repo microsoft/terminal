@@ -178,8 +178,6 @@ namespace winrt::TerminalApp::implementation
                 // Seems like there's a better way...
                 //
                 // lastFocusedControl.TaskbarProgressChanged();
-                _UpdateProgressState();
-                _TaskbarProgressChangedHandlers(lastFocusedControl, nullptr);
             }
             // When we gain focus, remove the bell indicator if it is active
             if (_tabStatus.BellIndicator())
@@ -592,7 +590,33 @@ namespace winrt::TerminalApp::implementation
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
             {
-                tab->_UpdateProgressState();
+                // The progress of the control changed, but not necessarily the progress of the tab.
+                // Set the tab's progress ring to the active pane's progress
+                if (tab->GetActiveTerminalControl().TaskbarState() > 0)
+                {
+                    if (tab->GetActiveTerminalControl().TaskbarState() == 3)
+                    {
+                        // 3 is the indeterminate state, set the progress ring as such
+                        tab->_tabStatus.IsProgressRingIndeterminate(true);
+                    }
+                    else
+                    {
+                        // any non-indeterminate state has a value, set the progress ring as such
+                        tab->_tabStatus.IsProgressRingIndeterminate(false);
+
+                        const auto progressValue = gsl::narrow<uint32_t>(tab->GetActiveTerminalControl().TaskbarProgress());
+                        tab->_tabStatus.ProgressValue(progressValue);
+                    }
+                    // Hide the tab icon (the progress ring is placed over it)
+                    tab->HideIcon(true);
+                    tab->_tabStatus.IsProgressRingActive(true);
+                }
+                else
+                {
+                    // Show the tab icon
+                    tab->HideIcon(false);
+                    tab->_tabStatus.IsProgressRingActive(false);
+                }
             }
         });
 
@@ -617,37 +641,6 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
-    void TerminalTab::_UpdateProgressState()
-    {
-        // The progress of the control changed, but not necessarily the progress of the tab.
-        // Set the tab's progress ring to the active pane's progress
-        if (GetActiveTerminalControl().TaskbarState() > 0)
-        {
-            if (GetActiveTerminalControl().TaskbarState() == 3)
-            {
-                // 3 is the indeterminate state, set the progress ring as such
-                _tabStatus.IsProgressRingIndeterminate(true);
-            }
-            else
-            {
-                // any non-indeterminate state has a value, set the progress ring as such
-                _tabStatus.IsProgressRingIndeterminate(false);
-
-                const auto progressValue = gsl::narrow<uint32_t>(GetActiveTerminalControl().TaskbarProgress());
-                _tabStatus.ProgressValue(progressValue);
-            }
-            // Hide the tab icon (the progress ring is placed over it)
-            HideIcon(true);
-            _tabStatus.IsProgressRingActive(true);
-        }
-        else
-        {
-            // Show the tab icon
-            HideIcon(false);
-            _tabStatus.IsProgressRingActive(false);
-        }
-    }
-
     // Method Description:
     // - Mark the given pane as the active pane in this tab. All other panes
     //   will be marked as inactive. We'll also update our own UI state to
@@ -665,7 +658,6 @@ namespace winrt::TerminalApp::implementation
 
         // Update our own title text to match the newly-active pane.
         UpdateTitle();
-        _UpdateProgressState();
 
         // We need to move the pane to the top of our mru list
         // If its already somewhere in the list, remove it first
