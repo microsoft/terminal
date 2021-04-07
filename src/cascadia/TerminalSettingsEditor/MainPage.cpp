@@ -7,6 +7,7 @@
 #include "Launch.h"
 #include "Interaction.h"
 #include "Rendering.h"
+#include "Actions.h"
 #include "Profiles.h"
 #include "GlobalAppearance.h"
 #include "ColorSchemes.h"
@@ -30,7 +31,7 @@ using namespace winrt::Windows::UI::Xaml::Controls;
 static const std::wstring_view launchTag{ L"Launch_Nav" };
 static const std::wstring_view interactionTag{ L"Interaction_Nav" };
 static const std::wstring_view renderingTag{ L"Rendering_Nav" };
-static const std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
+static const std::wstring_view actionsTag{ L"Actions_Nav" };
 static const std::wstring_view addProfileTag{ L"AddProfile" };
 static const std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
 static const std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
@@ -51,6 +52,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProfilesList();
 
         _colorSchemesNavState = winrt::make<ColorSchemesPageNavigationState>(_settingsClone);
+
+        Automation::AutomationProperties::SetHelpText(SaveButton(), RS_(L"Settings_SaveSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetHelpText(ResetButton(), RS_(L"Settings_ResetSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetHelpText(OpenJsonNavItem(), RS_(L"Nav_OpenJSON/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
     }
 
     // Method Description:
@@ -252,16 +257,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<RenderingPageNavigationState>(_settingsClone.GlobalSettings()));
         }
-        else if (clickedItemTag == globalProfileTag)
+        else if (clickedItemTag == actionsTag)
         {
-            auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults()) };
-            profileVM.IsBaseLayer(true);
-            _lastProfilesNavState = winrt::make<ProfilePageNavigationState>(profileVM,
-                                                                            _settingsClone.GlobalSettings().ColorSchemes(),
-                                                                            _lastProfilesNavState,
-                                                                            *this);
-
-            contentFrame().Navigate(xaml_typename<Editor::Profiles>(), _lastProfilesNavState);
+            auto actionsState{ winrt::make<ActionsPageNavigationState>(_settingsClone) };
+            actionsState.OpenJson([weakThis = get_weak()](auto&&, auto&& arg) {
+                if (auto self{ weakThis.get() })
+                {
+                    self->_OpenJsonHandlers(nullptr, arg);
+                }
+            });
+            contentFrame().Navigate(xaml_typename<Editor::Actions>(), actionsState);
         }
         else if (clickedItemTag == colorSchemesTag)
         {
@@ -273,6 +278,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    // Method Description:
+    // - updates the content frame to present a view of the profile page
+    // - NOTE: this does not update the selected item.
+    // Arguments:
+    // - profile - the profile object we are getting a view of
     void MainPage::_Navigate(const Editor::ProfileViewModel& profile)
     {
         _lastProfilesNavState = winrt::make<ProfilePageNavigationState>(profile,

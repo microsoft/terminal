@@ -37,14 +37,14 @@ namespace winrt::TerminalApp::implementation
     public:
         LeafPane();
         LeafPane(const GUID& profile,
-                 const winrt::Microsoft::Terminal::TerminalControl::TermControl& control,
+                 const winrt::Microsoft::Terminal::Control::TermControl& control,
                  const bool lastFocused = false);
 
         winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
 
         IPane GetActivePane();
         IPane FindFirstLeaf();
-        winrt::Microsoft::Terminal::TerminalControl::TermControl TerminalControl();
+        winrt::Microsoft::Terminal::Control::TermControl TerminalControl();
         GUID Profile();
         void FocusPane(uint32_t id);
         void FocusFirstChild();
@@ -57,14 +57,14 @@ namespace winrt::TerminalApp::implementation
         void ClearActive();
         void SetActive();
 
-        void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings,
+        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettings& settings,
                             const GUID& profile);
         void ResizeContent(const winrt::Windows::Foundation::Size& /*newSize*/){};
 
         TerminalApp::LeafPane Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
                                     const float splitSize,
                                     const GUID& profile,
-                                    const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+                                    const winrt::Microsoft::Terminal::Control::TermControl& control);
 
         float CalcSnappedDimensionSingle(const bool widthOrHeight, const float dimension) const;
         void Shutdown();
@@ -95,14 +95,14 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(Closed, _ClosedHandlers, winrt::delegate<LeafPane>);
         DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<LeafPane>);
         DECLARE_EVENT(LostFocus, _LostFocusHandlers, winrt::delegate<LeafPane>);
-        DECLARE_EVENT(PaneRaiseVisualBell, _PaneRaiseVisualBellHandlers, winrt::delegate<LeafPane>);
+        DECLARE_EVENT(PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);
         TYPED_EVENT(PaneTypeChanged, IPane, IPane);
 
-        GETSET_PROPERTY(uint16_t, Id);
-        GETSET_PROPERTY(BordersEnum, Borders, BordersEnum::None);
+        WINRT_PROPERTY(uint16_t, Id);
+        WINRT_PROPERTY(BordersEnum, Borders, BordersEnum::None);
 
     private:
-        winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
+        winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
         GUID _profile;
         bool _lastActive{ false };
         bool _zoomed{ false };
@@ -116,7 +116,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
         winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
 
-        void _ControlConnectionStateChangedHandler(const winrt::Microsoft::Terminal::TerminalControl::TermControl& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
+        void _ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
         void _ControlWarningBellHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                         winrt::Windows::Foundation::IInspectable const& e);
         void _ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,

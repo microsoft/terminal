@@ -13,6 +13,12 @@ namespace TerminalApp
         Int64 Y;
     };
 
+    [default_interface] runtimeclass FindTargetWindowResult
+    {
+        Int32 WindowId { get; };
+        String WindowName { get; };
+    };
+
     [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
     {
         AppLogic();
@@ -42,7 +48,13 @@ namespace TerminalApp
         Boolean Fullscreen { get; };
         Boolean AlwaysOnTop { get; };
 
+        void IdentifyWindow();
+        String WindowName;
+        UInt64 WindowId;
+        void RenameFailed();
+
         Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
+        Boolean CenterOnLaunch { get; };
 
         InitialPosition GetInitialPosition(Int64 defaultInitialX, Int64 defaultInitialY);
         Windows.UI.Xaml.ElementTheme GetRequestedTheme();
@@ -56,7 +68,7 @@ namespace TerminalApp
         UInt64 GetLastActiveControlTaskbarState();
         UInt64 GetLastActiveControlTaskbarProgress();
 
-        Int32 FindTargetWindow(String[] args);
+        FindTargetWindowResult FindTargetWindow(String[] args);
 
         // See IDialogPresenter and TerminalPage's DialogPresenter for more
         // information.
@@ -71,5 +83,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> RaiseVisualBell;
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
+        event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
+        event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
     }
 }

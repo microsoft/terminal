@@ -215,6 +215,12 @@
   <data name="FindCommandKey" xml:space="preserve">
     <value>Find</value>
   </data>
+  <data name="FindNextCommandKey" xml:space="preserve">
+    <value>Find next search match</value>
+  </data>
+  <data name="FindPrevCommandKey" xml:space="preserve">
+    <value>Find previous search match</value>
+  </data>
   <data name="IncreaseFontSizeCommandKey" xml:space="preserve">
     <value>Increase font size</value>
   </data>
@@ -237,6 +243,12 @@
   </data>
   <data name="NewWindowCommandKey" xml:space="preserve">
     <value>New window</value>
+  </data>
+  <data name="IdentifyWindowCommandKey" xml:space="preserve">
+    <value>Identify window</value>
+  </data>
+  <data name="IdentifyWindowsCommandKey" xml:space="preserve">
+    <value>Identify windows</value>
   </data>
   <data name="NextTabCommandKey" xml:space="preserve">
     <value>Next tab</value>
@@ -368,5 +380,15 @@
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
     <value>Open Settings...</value>
+  </data>
+  <data name="RenameWindowCommandKey" xml:space="preserve">
+    <value>Rename window to "{0}"</value>
+    <comment>{0} will be replaced with a user-defined string</comment>
+  </data>
+  <data name="ResetWindowNameCommandKey" xml:space="preserve">
+    <value>Reset window name</value>
+  </data>
+  <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
+    <value>Rename window...</value>
   </data>
 </root>

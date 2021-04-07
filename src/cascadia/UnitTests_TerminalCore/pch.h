@@ -34,10 +34,13 @@ Author(s):
 
 #include <WexTestClass.h>
 #include "consoletaeftemplates.hpp"
+#include "winrtTaefTemplates.hpp"
 
 #include <winrt/Windows.system.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
+
+#include <winrt/Microsoft.Terminal.Core.h>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"

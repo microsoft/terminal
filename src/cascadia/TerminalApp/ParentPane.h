@@ -47,7 +47,7 @@ namespace winrt::TerminalApp::implementation
         void Shutdown();
         void ClearActive();
 
-        void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings,
+        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettings& settings,
                             const GUID& profile);
         void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
         void Relayout();
@@ -91,8 +91,8 @@ namespace winrt::TerminalApp::implementation
 
         bool _firstLayoutUpdated{ false };
         bool _secondLayoutUpdated{ false };
-        winrt::Microsoft::Terminal::TerminalControl::TermControl::LayoutUpdated_revoker _firstLayoutRevoker;
-        winrt::Microsoft::Terminal::TerminalControl::TermControl::LayoutUpdated_revoker _secondLayoutRevoker;
+        winrt::Microsoft::Terminal::Control::TermControl::LayoutUpdated_revoker _firstLayoutRevoker;
+        winrt::Microsoft::Terminal::Control::TermControl::LayoutUpdated_revoker _secondLayoutRevoker;
 
         void _CreateRowColDefinitions();
         bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);

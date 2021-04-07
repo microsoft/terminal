@@ -14,26 +14,26 @@ using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::VirtualTerminal::DispatchTypes;
 
 // clang-format off
-const BYTE BLUE_ATTR      = 0x01;
-const BYTE GREEN_ATTR     = 0x02;
-const BYTE RED_ATTR       = 0x04;
-const BYTE BRIGHT_ATTR    = 0x08;
-const BYTE DARK_BLACK     = 0;
-const BYTE DARK_RED       = RED_ATTR;
-const BYTE DARK_GREEN     = GREEN_ATTR;
-const BYTE DARK_YELLOW    = RED_ATTR | GREEN_ATTR;
-const BYTE DARK_BLUE      = BLUE_ATTR;
-const BYTE DARK_MAGENTA   = RED_ATTR | BLUE_ATTR;
-const BYTE DARK_CYAN      = GREEN_ATTR | BLUE_ATTR;
-const BYTE DARK_WHITE     = RED_ATTR | GREEN_ATTR | BLUE_ATTR;
-const BYTE BRIGHT_BLACK   = BRIGHT_ATTR;
-const BYTE BRIGHT_RED     = BRIGHT_ATTR | RED_ATTR;
-const BYTE BRIGHT_GREEN   = BRIGHT_ATTR | GREEN_ATTR;
-const BYTE BRIGHT_YELLOW  = BRIGHT_ATTR | RED_ATTR | GREEN_ATTR;
-const BYTE BRIGHT_BLUE    = BRIGHT_ATTR | BLUE_ATTR;
-const BYTE BRIGHT_MAGENTA = BRIGHT_ATTR | RED_ATTR | BLUE_ATTR;
-const BYTE BRIGHT_CYAN    = BRIGHT_ATTR | GREEN_ATTR | BLUE_ATTR;
-const BYTE BRIGHT_WHITE   = BRIGHT_ATTR | RED_ATTR | GREEN_ATTR | BLUE_ATTR;
+constexpr BYTE BLUE_ATTR      = 0x01;
+constexpr BYTE GREEN_ATTR     = 0x02;
+constexpr BYTE RED_ATTR       = 0x04;
+constexpr BYTE BRIGHT_ATTR    = 0x08;
+constexpr BYTE DARK_BLACK     = 0;
+constexpr BYTE DARK_RED       = RED_ATTR;
+constexpr BYTE DARK_GREEN     = GREEN_ATTR;
+constexpr BYTE DARK_YELLOW    = RED_ATTR | GREEN_ATTR;
+constexpr BYTE DARK_BLUE      = BLUE_ATTR;
+constexpr BYTE DARK_MAGENTA   = RED_ATTR | BLUE_ATTR;
+constexpr BYTE DARK_CYAN      = GREEN_ATTR | BLUE_ATTR;
+constexpr BYTE DARK_WHITE     = RED_ATTR | GREEN_ATTR | BLUE_ATTR;
+constexpr BYTE BRIGHT_BLACK   = BRIGHT_ATTR;
+constexpr BYTE BRIGHT_RED     = BRIGHT_ATTR | RED_ATTR;
+constexpr BYTE BRIGHT_GREEN   = BRIGHT_ATTR | GREEN_ATTR;
+constexpr BYTE BRIGHT_YELLOW  = BRIGHT_ATTR | RED_ATTR | GREEN_ATTR;
+constexpr BYTE BRIGHT_BLUE    = BRIGHT_ATTR | BLUE_ATTR;
+constexpr BYTE BRIGHT_MAGENTA = BRIGHT_ATTR | RED_ATTR | BLUE_ATTR;
+constexpr BYTE BRIGHT_CYAN    = BRIGHT_ATTR | GREEN_ATTR | BLUE_ATTR;
+constexpr BYTE BRIGHT_WHITE   = BRIGHT_ATTR | RED_ATTR | GREEN_ATTR | BLUE_ATTR;
 // clang-format on
 
 // Routine Description:
@@ -282,6 +282,51 @@ bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
             }
         }
         success = _pConApi->PrivateSetTextAttributes(attr);
+    }
+
+    return success;
+}
+
+// Method Description:
+// - Saves the current text attributes to an internal stack.
+// Arguments:
+// - options: if not empty, specify which portions of the current text attributes should
+//   be saved. Options that are not supported are ignored. If no options are specified,
+//   all attributes are stored.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::PushGraphicsRendition(const VTParameters options)
+{
+    bool success = true;
+    TextAttribute currentAttributes;
+
+    success = _pConApi->PrivateGetTextAttributes(currentAttributes);
+
+    if (success)
+    {
+        _sgrStack.Push(currentAttributes, options);
+    }
+
+    return success;
+}
+
+// Method Description:
+// - Restores text attributes from the internal stack. If only portions of text attributes
+//   were saved, combines those with the current attributes.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::PopGraphicsRendition()
+{
+    bool success = true;
+    TextAttribute currentAttributes;
+
+    success = _pConApi->PrivateGetTextAttributes(currentAttributes);
+
+    if (success)
+    {
+        success = _pConApi->PrivateSetTextAttributes(_sgrStack.Pop(currentAttributes));
     }
 
     return success;

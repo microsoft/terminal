@@ -16,11 +16,11 @@ namespace TerminalApp
 
     [default_interface] runtimeclass LeafPane : Windows.UI.Xaml.Controls.UserControl, IPane
     {
-        LeafPane(Guid profile, Microsoft.Terminal.TerminalControl.TermControl con, Boolean active);
+        LeafPane(Guid profile, Microsoft.Terminal.Control.TermControl con, Boolean active);
 
         UInt16 Id;
         BordersEnum Borders;
-        Microsoft.Terminal.TerminalControl.TermControl TerminalControl { get; };
+        Microsoft.Terminal.Control.TermControl TerminalControl { get; };
         Guid Profile { get; };
 
         Boolean WasLastFocused();
@@ -28,6 +28,6 @@ namespace TerminalApp
         void Close();
         void UpdateBorders();
         void UpdateBorderWithClosedNeighbor(LeafPane closedNeighbor, Microsoft.Terminal.Settings.Model.ResizeDirection neighborDirection);
-        LeafPane Split(Microsoft.Terminal.Settings.Model.SplitState splitType, Single splitSize, Guid profile, Microsoft.Terminal.TerminalControl.TermControl con);
+        LeafPane Split(Microsoft.Terminal.Settings.Model.SplitState splitType, Single splitSize, Guid profile, Microsoft.Terminal.Control.TermControl con);
     }
 }

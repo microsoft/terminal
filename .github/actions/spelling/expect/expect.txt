@@ -88,6 +88,7 @@ args
 argv
 ARRAYSIZE
 ARROWKEYS
+asan
 ASBRST
 ASBSET
 ASDF
@@ -327,6 +328,7 @@ conattrs
 conbufferout
 concat
 concfg
+conclnt
 conddkrefs
 condrv
 conechokey
@@ -432,6 +434,7 @@ cstring
 cstyle
 csv
 CSwitch
+CTerminal
 CText
 ctime
 ctl
@@ -521,6 +524,8 @@ DECAUPSS
 DECAWM
 DECCKM
 DECCOLM
+DECDHL
+DECDWL
 DECEKBD
 DECID
 DECKPAM
@@ -557,15 +562,18 @@ DECSR
 decstandar
 DECSTBM
 DECSTR
+DECSWL
 DECTCEM
 Dedupe
 deduplicated
+DEFAPP
 DEFAULTBACKGROUND
 DEFAULTFOREGROUND
 defaultsettings
 DEFAULTTONEAREST
 DEFAULTTONULL
 DEFAULTTOPRIMARY
+DEFCON
 defectdefs
 DEFERERASE
 deff
@@ -751,6 +759,7 @@ failfast
 FAILIFTHERE
 fallthrough
 FARPROC
+fastlink
 fcb
 fcharset
 fclose
@@ -824,6 +833,7 @@ FRAMECHANGED
 fre
 freopen
 frontend
+fsanitize
 Fscreen
 FSCTL
 FSINFOCLASS
@@ -836,6 +846,7 @@ fullwidth
 func
 FUNCTIONCALL
 fuzzer
+fuzzmain
 fuzzmap
 fuzzwrapper
 fwdecl
@@ -1248,6 +1259,7 @@ LEFTSHIFT
 len
 lhs
 libpopcnt
+libsancov
 libtickit
 LIMITTEXT
 LINEDOWN
@@ -1458,6 +1470,7 @@ MSIL
 msix
 msrc
 msvcrt
+msvcrtd
 MSVS
 msys
 msysgit
@@ -2049,6 +2062,7 @@ runtests
 runtimeclass
 runuia
 runut
+runxamlformat
 rvalue
 RVERTICAL
 rxvt
@@ -2825,6 +2839,7 @@ Xes
 XES
 xff
 XFile
+XFORM
 XManifest
 XMath
 XMFLOAT
@@ -2839,10 +2854,13 @@ XResource
 xsd
 xsi
 xsize
+xstyler
 XSubstantial
 xtended
 xterm
 XTest
+XTPUSHSGR
+XTPOPSGR
 xunit
 xutr
 xvalue

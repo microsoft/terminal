@@ -53,10 +53,10 @@
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
     <Reference Include="TE.Managed, Version=10.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Taef.Redist.Wlk.10.57.200731005-develop\lib\net45\TE.Managed.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.Taef.10.58.210305002\lib\net45\TE.Managed.dll</HintPath>
     </Reference>
     <Reference Include="TE.Model.Managed, Version=10.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Taef.Redist.Wlk.10.57.200731005-develop\lib\net45\TE.Model.Managed.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.Taef.10.58.210305002\lib\net45\TE.Model.Managed.dll</HintPath>
     </Reference>
     <Reference Include="UIAutomationClient" />
     <Reference Include="UIAutomationTypes" />
@@ -67,10 +67,10 @@
       <HintPath>..\..\..\packages\Selenium.Support.3.5.0\lib\net40\WebDriver.Support.dll</HintPath>
     </Reference>
     <Reference Include="Wex.Common.Managed, Version=10.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Taef.Redist.Wlk.10.57.200731005-develop\lib\net45\Wex.Common.Managed.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.Taef.10.58.210305002\lib\net45\Wex.Common.Managed.dll</HintPath>
     </Reference>
     <Reference Include="Wex.Logger.Interop, Version=10.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Taef.Redist.Wlk.10.57.200731005-develop\lib\net45\Wex.Logger.Interop.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.Taef.10.58.210305002\lib\net45\Wex.Logger.Interop.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>
@@ -145,11 +145,11 @@
   <PropertyGroup>
     <PostBuildEvent>copy $(SolutionDir)\dep\WinAppDriver\* $(OutDir)\</PostBuildEvent>
   </PropertyGroup>
-  <Import Project="..\..\..\packages\Taef.Redist.Wlk.10.57.200731005-develop\build\Taef.Redist.Wlk.targets" Condition="Exists('..\..\..\packages\Taef.Redist.Wlk.10.57.200731005-develop\build\Taef.Redist.Wlk.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.Taef.10.58.210305002\build\Microsoft.Taef.targets" Condition="Exists('..\..\..\packages\Microsoft.Taef.10.58.210305002\build\Microsoft.Taef.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Taef.Redist.Wlk.10.57.200731005-develop\build\Taef.Redist.Wlk.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Taef.Redist.Wlk.10.57.200731005-develop\build\Taef.Redist.Wlk.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.Taef.10.58.210305002\build\Microsoft.Taef.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Taef.10.58.210305002\build\Microsoft.Taef.targets'))" />
   </Target>
 </Project>

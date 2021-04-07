@@ -57,7 +57,8 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     }
     else
     {
-        const auto dirty = GetDirtyArea();
+        gsl::span<const til::rectangle> dirty;
+        RETURN_IF_FAILED(GetDirtyArea(dirty));
 
         // If we have 0 or 1 dirty pieces in the area, set as appropriate.
         Viewport dirtyView = dirty.empty() ? Viewport::Empty() : Viewport::FromInclusive(til::at(dirty, 0));
@@ -540,7 +541,7 @@ CATCH_RETURN();
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT XtermEngine::_DoUpdateTitle(const std::wstring& newTitle) noexcept
+[[nodiscard]] HRESULT XtermEngine::_DoUpdateTitle(const std::wstring_view newTitle) noexcept
 {
     // inbox telnet uses xterm-ascii as its mode. If we're in ascii mode, don't
     //      do anything, to maintain compatibility.

@@ -5,26 +5,26 @@
 
 #include "KeyChord.g.h"
 
-namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct KeyChord : KeyChordT<KeyChord>
     {
         KeyChord() noexcept;
-        KeyChord(TerminalControl::KeyModifiers const& modifiers, int32_t vkey) noexcept;
+        KeyChord(Control::KeyModifiers const& modifiers, int32_t vkey) noexcept;
         KeyChord(bool ctrl, bool alt, bool shift, int32_t vkey) noexcept;
 
-        TerminalControl::KeyModifiers Modifiers() noexcept;
-        void Modifiers(TerminalControl::KeyModifiers const& value) noexcept;
+        Control::KeyModifiers Modifiers() noexcept;
+        void Modifiers(Control::KeyModifiers const& value) noexcept;
         int32_t Vkey() noexcept;
         void Vkey(int32_t value) noexcept;
 
     private:
-        TerminalControl::KeyModifiers _modifiers;
+        Control::KeyModifiers _modifiers;
         int32_t _vkey;
     };
 }
 
-namespace winrt::Microsoft::Terminal::TerminalControl::factory_implementation
+namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
     struct KeyChord : KeyChordT<KeyChord, implementation::KeyChord>
     {

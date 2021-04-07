@@ -19,8 +19,8 @@ New-Item -ItemType Directory -Force -Path $payloadDir
 
 # Copy files from nuget packages
 Copy-Item "$nugetPackagesDir\microsoft.windows.apps.test.1.0.181203002\lib\netcoreapp2.1\*.dll" $payloadDir
-Copy-Item "$nugetPackagesDir\taef.redist.wlk.10.57.200731005-develop\build\Binaries\$Platform\*" $payloadDir
-Copy-Item "$nugetPackagesDir\taef.redist.wlk.10.57.200731005-develop\build\Binaries\$Platform\CoreClr\*" $payloadDir
+Copy-Item "$nugetPackagesDir\Microsoft.Taef.10.58.210305002\build\Binaries\$Platform\*" $payloadDir
+Copy-Item "$nugetPackagesDir\Microsoft.Taef.10.58.210305002\build\Binaries\$Platform\CoreClr\*" $payloadDir
 New-Item -ItemType Directory -Force -Path "$payloadDir\.NETCoreApp2.1\"
 Copy-Item "$nugetPackagesDir\runtime.win-$Platform.microsoft.netcore.app.2.1.0\runtimes\win-$Platform\lib\netcoreapp2.1\*" "$payloadDir\.NETCoreApp2.1\"
 Copy-Item "$nugetPackagesDir\runtime.win-$Platform.microsoft.netcore.app.2.1.0\runtimes\win-$Platform\native\*" "$payloadDir\.NETCoreApp2.1\"

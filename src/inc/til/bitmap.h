@@ -263,7 +263,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 return const_iterator(_bits, _sz, _sz.area());
             }
 
-            const std::vector<til::rectangle, run_allocator_type>& runs() const
+            const gsl::span<const til::rectangle> runs() const
             {
                 // If we don't have cached runs, rebuild.
                 if (!_runs.has_value())
@@ -271,7 +271,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     _runs.emplace(begin(), end());
                 }
 
-                // Return a reference to the runs.
+                // Return the runs.
                 return _runs.value();
             }
 

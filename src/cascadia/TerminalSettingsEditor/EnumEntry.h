@@ -46,8 +46,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _EnumName{ enumName },
             _EnumValue{ enumValue } {}
 
+        hstring ToString()
+        {
+            return EnumName();
+        }
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, EnumName, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::Windows::Foundation::IInspectable, EnumValue, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, EnumName, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::Foundation::IInspectable, EnumValue, _PropertyChangedHandlers);
     };
 }

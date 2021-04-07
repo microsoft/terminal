@@ -115,7 +115,7 @@ BOOL CheckBisectStringW(_In_reads_bytes_(cBytes) const WCHAR* pwchBuffer,
 // - pwchBuffer - Pointer to Unicode string buffer.
 // - cWords - Number of Unicode string.
 // - cBytes - Number of bisect position by byte counts.
-// - fEcho - TRUE if called by Read (echoing characters)
+// - fPrintableControlChars - TRUE if control characters are being expanded (to ^X)
 // Return Value:
 // - TRUE - Bisected character.
 // - FALSE - Correctly.
@@ -124,7 +124,7 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                          _In_ size_t cWords,
                          _In_ size_t cBytes,
                          _In_ SHORT sOriginalXPosition,
-                         _In_ BOOL fEcho)
+                         _In_ BOOL fPrintableControlChars)
 {
     if (WI_IsFlagSet(ScreenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT))
     {
@@ -162,7 +162,7 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                 switch (Char)
                 {
                 case UNICODE_BELL:
-                    if (fEcho)
+                    if (fPrintableControlChars)
                         goto CtrlChar;
                     break;
                 case UNICODE_BACKSPACE:
@@ -179,7 +179,7 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                     break;
                 }
                 default:
-                    if (fEcho)
+                    if (fPrintableControlChars)
                     {
                     CtrlChar:
                         if (cBytes < 2)

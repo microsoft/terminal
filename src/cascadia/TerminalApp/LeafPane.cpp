@@ -16,7 +16,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml::Media;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace TerminalApp;
 
@@ -147,16 +147,13 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - settings: The new TerminalSettings to apply to any matching controls
     // - profile: The GUID of the profile these settings should apply to.
-    void LeafPane::UpdateSettings(const TerminalApp::TerminalSettings& settings, const GUID& profile)
+    void LeafPane::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
     {
         if (profile == _profile)
         {
             // Update the parent of the control's settings object (and not the object itself) so
             // that any overrides made by the control don't get affected by the reload
-            auto child = winrt::get_self<winrt::TerminalApp::implementation::TerminalSettings>(_control.Settings());
-            auto parent = winrt::get_self<winrt::TerminalApp::implementation::TerminalSettings>(settings);
-            child->ClearParents();
-            child->InsertParent(0, parent->get_strong());
+            _control.Settings().as<TerminalSettings>().SetParent(settings);
             _control.UpdateSettings();
         }
     }
@@ -221,7 +218,7 @@ namespace winrt::TerminalApp::implementation
     TerminalApp::LeafPane LeafPane::Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
                                           const float splitSize,
                                           const GUID& profile,
-                                          const winrt::Microsoft::Terminal::TerminalControl::TermControl& control)
+                                          const winrt::Microsoft::Terminal::Control::TermControl& control)
     {
         splitType = _convertAutomaticSplitState(splitType);
         auto newNeighbour{ make<LeafPane>(profile, control, false) };
@@ -463,7 +460,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - todo: what does this even do in the new implementation
-    void LeafPane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/,
+    void LeafPane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                          const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
         const auto newConnectionState = _control.ConnectionState();
@@ -510,7 +507,7 @@ namespace winrt::TerminalApp::implementation
                 // Bubble this event up to app host, starting with bubbling to the hosting tab
                 // todo: figure out how to raise this event with nullptr
                 // have tried - nullptr, IPane{ nullptr }, LeafPane{ nullptr }
-                _PaneRaiseVisualBellHandlers(*this);
+                _PaneRaiseBellHandlers(nullptr, WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual));
             }
         }
     }
@@ -680,5 +677,5 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(LeafPane, Closed, _ClosedHandlers, winrt::delegate<LeafPane>);
     DEFINE_EVENT(LeafPane, GotFocus, _GotFocusHandlers, winrt::delegate<LeafPane>);
     DEFINE_EVENT(LeafPane, LostFocus, _LostFocusHandlers, winrt::delegate<LeafPane>);
-    DEFINE_EVENT(LeafPane, PaneRaiseVisualBell, _PaneRaiseVisualBellHandlers, winrt::delegate<LeafPane>);
+    DEFINE_EVENT(LeafPane, PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);
 }

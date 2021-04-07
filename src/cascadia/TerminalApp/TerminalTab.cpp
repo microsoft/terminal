@@ -13,7 +13,7 @@
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::System;
 
@@ -101,15 +101,21 @@ namespace winrt::TerminalApp::implementation
 
         if (auto tab{ weakThis.get() })
         {
-            const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
-            if (settings.GlobalSettings().TabWidthMode() == winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::SizeToContent)
+            try
             {
-                tab->_headerControl.RenamerMaxWidth(HeaderRenameBoxWidthTitleLength);
+                // Make sure to try/catch this, because the LocalTests won't be
+                // able to use this helper.
+                const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
+                if (settings.GlobalSettings().TabWidthMode() == winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::SizeToContent)
+                {
+                    tab->_headerControl.RenamerMaxWidth(HeaderRenameBoxWidthTitleLength);
+                }
+                else
+                {
+                    tab->_headerControl.RenamerMaxWidth(HeaderRenameBoxWidthDefault);
+                }
             }
-            else
-            {
-                tab->_headerControl.RenamerMaxWidth(HeaderRenameBoxWidthDefault);
-            }
+            CATCH_LOG()
         }
     }
 
@@ -205,7 +211,7 @@ namespace winrt::TerminalApp::implementation
     // - profile: The GUID of the profile these settings should apply to.
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile)
+    void TerminalTab::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
     {
         _rootPane.UpdateSettings(settings, profile);
 
@@ -353,6 +359,7 @@ namespace winrt::TerminalApp::implementation
 
             // Update the control to reflect the changed title
             _headerControl.Title(activeTitle);
+            Automation::AutomationProperties::SetName(tab->TabViewItem(), activeTitle);
             _UpdateToolTip();
         }
     }
@@ -372,7 +379,7 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(control.Dispatcher());
 
         const auto currentOffset = control.GetScrollOffset();
-        control.ScrollViewport(currentOffset + delta);
+        control.ScrollViewport(::base::ClampAdd(currentOffset, delta));
     }
 
     // Method Description:
@@ -523,7 +530,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        control.TitleChanged([weakThis](auto newTitle) {
+        control.TitleChanged([weakThis](auto&&, auto&&) {
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
             {
@@ -598,6 +605,19 @@ namespace winrt::TerminalApp::implementation
             if (auto tab{ weakThis.get() })
             {
                 tab->_RecalculateAndApplyReadOnly();
+            }
+        });
+
+        control.FocusFollowMouseRequested([weakThis](auto&& sender, auto&&) {
+            if (const auto tab{ weakThis.get() })
+            {
+                if (tab->_focusState != FocusState::Unfocused)
+                {
+                    if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::Control::TermControl>() })
+                    {
+                        termControl.Focus(FocusState::Pointer);
+                    }
+                }
             }
         });
     }
@@ -682,10 +702,27 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        paneImpl->PaneRaiseVisualBell([weakThis](auto&& /*s*/) {
+        // Add a PaneRaiseBell event handler to the Pane
+        paneImpl->PaneRaiseBell([weakThis](auto&& /*s*/, auto&& visual) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_TabRaiseVisualBellHandlers();
+                if (visual)
+                {
+                    // If visual is set, we need to bubble this event all the way to app host to flash the taskbar
+                    // In this part of the chain we bubble it from the hosting tab to the page
+                    tab->_TabRaiseVisualBellHandlers();
+                }
+
+                // Show the bell indicator in the tab header
+                tab->ShowBellIndicator(true);
+
+                // If this tab is focused, activate the bell indicator timer, which will
+                // remove the bell indicator once it fires
+                // (otherwise, the indicator is removed when the tab gets focus)
+                if (tab->_focusState != WUX::FocusState::Unfocused)
+                {
+                    tab->ActivateBellIndicatorTimer();
+                }
             }
         });
 
@@ -769,6 +806,7 @@ namespace winrt::TerminalApp::implementation
                 //tab->_rootPane->Close();
                 // todo: confirm that shutdown is the correct replacement
                 tab->_rootPane.Shutdown();
+                tab->_CloseRequestedHandlers(nullptr, nullptr);
             }
         });
         closeTabMenuItem.Text(RS_(L"TabClose"));
@@ -821,11 +859,29 @@ namespace winrt::TerminalApp::implementation
             renameTabMenuItem.Icon(renameTabSymbol);
         }
 
+        Controls::MenuFlyoutItem duplicateTabMenuItem;
+        {
+            // "Duplicate Tab"
+            Controls::FontIcon duplicateTabSymbol;
+            duplicateTabSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            duplicateTabSymbol.Glyph(L"\xF5ED");
+
+            duplicateTabMenuItem.Click([weakThis](auto&&, auto&&) {
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->_DuplicateRequestedHandlers();
+                }
+            });
+            duplicateTabMenuItem.Text(RS_(L"DuplicateTabText"));
+            duplicateTabMenuItem.Icon(duplicateTabSymbol);
+        }
+
         // Build the menu
         Controls::MenuFlyout newTabFlyout;
         Controls::MenuFlyoutSeparator menuSeparator;
         newTabFlyout.Items().Append(chooseColorMenuItem);
         newTabFlyout.Items().Append(renameTabMenuItem);
+        newTabFlyout.Items().Append(duplicateTabMenuItem);
         newTabFlyout.Items().Append(menuSeparator);
         newTabFlyout.Items().Append(_CreateCloseSubMenu());
         newTabFlyout.Items().Append(closeTabMenuItem);
@@ -1200,4 +1256,5 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(TerminalTab, ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
     DEFINE_EVENT(TerminalTab, ColorCleared, _colorCleared, winrt::delegate<>);
     DEFINE_EVENT(TerminalTab, TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
+    DEFINE_EVENT(TerminalTab, DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
 }

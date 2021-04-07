@@ -17,5 +17,6 @@ namespace TerminalApp
         TerminalTabStatus TabStatus { get;  set; };
 
         event TitleChangeRequestedArgs TitleChangeRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> RenameEnded;
     }
 }
