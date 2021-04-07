@@ -16,7 +16,7 @@ namespace Microsoft.Terminal.Settings.Model
         InBox,
         Generated,
         Fragment,
-        UserDefaults
+        ProfilesDefaults
     };
 
     enum CloseOnExitMode

@@ -23,14 +23,16 @@
 
     <ScrollViewer>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
-            <Button x:Name="AddNewButton"
+            <Button x:Uid="AddProfile_AddNewButton"
+                    AutomationProperties.Name="{Binding Tag, RelativeSource={RelativeSource Self}}"
+                    AutomationProperties.AutomationId="AddProfile_AddNewButton"
                     Click="AddNewClick"
                     Style="{StaticResource AccentButtonStyle}">
                 <Button.Content>
                     <StackPanel Orientation="Horizontal">
                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                   Glyph="&#xE710;" />
-                        <TextBlock x:Uid="AddProfile_AddNewButton"
+                        <TextBlock x:Uid="AddProfile_AddNewTextBlock"
                                    Style="{StaticResource IconButtonTextBlockStyle}" />
                     </StackPanel>
                 </Button.Content>
@@ -64,15 +66,17 @@
                         </muxc:RadioButtons.ItemTemplate>
                     </muxc:RadioButtons>
                 </local:SettingContainer>
-                <Button x:Name="DuplicateButton"
+                <Button x:Uid="AddProfile_DuplicateButton"
+                        AutomationProperties.Name="{Binding Tag, RelativeSource={RelativeSource Self}}"
+                        AutomationProperties.AutomationId="AddProfile_DuplicateButton"
                         Margin="{StaticResource StandardControlMargin}"
                         Click="DuplicateClick"
                         Style="{StaticResource AccentButtonStyle}">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">
                             <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                      Glyph="&#xE710;" />
-                            <TextBlock x:Uid="AddProfile_DuplicateButton"
+                                      Glyph="&#xE8C8;" />
+                            <TextBlock x:Uid="AddProfile_DuplicateTextBlock"
                                        Style="{StaticResource IconButtonTextBlockStyle}" />
                         </StackPanel>
                     </Button.Content>

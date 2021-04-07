@@ -249,14 +249,14 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
         _activeProfiles.Append(*duplicated);
     }
 
-    const auto newName{ fmt::format(L"{} ({})", source.Name(), RS_(L"CopySuffix")) };
+    const winrt::hstring newName{ fmt::format(L"{} ({})", source.Name(), RS_(L"CopySuffix")) };
     duplicated->Name(winrt::hstring(newName));
 
-#define DUPLICATE_MACRO(settingName)                                                                                                       \
-    if (source.Has##settingName() ||                                                                                                       \
-        (source.##settingName##OverrideSource() != nullptr && source.##settingName##OverrideSource().Origin() != OriginTag::UserDefaults)) \
-    {                                                                                                                                      \
-        duplicated->##settingName(source.##settingName());                                                                                 \
+#define DUPLICATE_MACRO(settingName)                                                                                                           \
+    if (source.Has##settingName() ||                                                                                                           \
+        (source.##settingName##OverrideSource() != nullptr && source.##settingName##OverrideSource().Origin() != OriginTag::ProfilesDefaults)) \
+    {                                                                                                                                          \
+        duplicated->##settingName(source.##settingName());                                                                                     \
     }
 
     DUPLICATE_MACRO(Hidden);
