@@ -2484,6 +2484,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return hstr;
     }
 
+    bool TermControl::BracketedPasteEnabled() const noexcept
+    {
+        return _terminal->IsXtermBracketedPasteModeEnabled();
+    }
+
     // Method Description:
     // - Given a copy-able selection, get the selected text from the buffer and send it to the
     //     Windows Clipboard (CascadiaWin32:main.cpp).

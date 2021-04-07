@@ -31,6 +31,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         hstring GetProfileName() const;
         hstring WorkingDirectory() const;
 
+        bool BracketedPasteEnabled() const noexcept;
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void PasteTextFromClipboard();
         void Close();
