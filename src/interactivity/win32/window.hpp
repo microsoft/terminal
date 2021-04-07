@@ -147,12 +147,14 @@ namespace Microsoft::Console::Interactivity::Win32
         RECT _rcClientLast;
 
         // Full screen
-        void _BackupWindowSizes(const bool fCurrentIsInFullscreen);
+        void _BackupWindowSizes();
         void _ApplyWindowSize();
 
         bool _fIsInFullscreen;
-        RECT _rcFullscreenWindowSize;
-        RECT _rcNonFullscreenWindowSize;
+        bool _fWasMaximizedBeforeFullscreen;
+        RECT _rcWindowBeforeFullscreen;
+        RECT _rcWorkBeforeFullscreen;
+        UINT _dpiBeforeFullscreen;
 
         // math helpers
         void _CalculateWindowRect(const COORD coordWindowInChars,

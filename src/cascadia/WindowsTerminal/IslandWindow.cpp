@@ -791,38 +791,31 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 
     // When entering/exiting fullscreen mode, we also need to backup/restore the
     // current window size, and resize the window to match the new state.
-    _BackupWindowSizes(oldIsInFullscreen);
+    if (_fullscreen && !oldIsInFullscreen)
+    {
+        _BackupWindowSizes();
+    }
     _ApplyWindowSize();
 }
 
 // Method Description:
-// - Used in entering/exiting fullscreen mode. Saves the current window size,
+// - Used in entering fullscreen mode. Saves the current window size,
 //   and the full size of the monitor, for use in _ApplyWindowSize.
 // - Taken from conhost's Window::_BackupWindowSizes
-// Arguments:
-// - fCurrentIsInFullscreen: true if we're currently in fullscreen mode.
 // Return Value:
 // - <none>
-void IslandWindow::_BackupWindowSizes(const bool fCurrentIsInFullscreen)
+void IslandWindow::_BackupWindowSizes()
 {
-    if (_fullscreen)
-    {
-        // Note: the current window size depends on the current state of the
-        // window. So don't back it up if we're already in full screen.
-        if (!fCurrentIsInFullscreen)
-        {
-            _nonFullscreenWindowSize = GetWindowRect();
-        }
+    ::GetWindowRect(GetHandle(), &_rcWindowBeforeFullscreen);
+    _dpiBeforeFullscreen = GetDpiForWindow(GetHandle());
+    _fWasMaximizedBeforeFullscreen = IsZoomed(GetHandle());
 
-        // get and back up the current monitor's size
-        HMONITOR const hCurrentMonitor = MonitorFromWindow(GetHandle(), MONITOR_DEFAULTTONEAREST);
-        MONITORINFO currMonitorInfo;
-        currMonitorInfo.cbSize = sizeof(currMonitorInfo);
-        if (GetMonitorInfo(hCurrentMonitor, &currMonitorInfo))
-        {
-            _fullscreenWindowSize = currMonitorInfo.rcMonitor;
-        }
-    }
+    HMONITOR hmon = MonitorFromWindow(GetHandle(), MONITOR_DEFAULTTONEAREST);
+    MONITORINFO mi = {};
+    mi.cbSize = sizeof(mi);
+    GetMonitorInfo(hmon, &mi);
+
+    _rcWorkBeforeFullscreen = mi.rcWork;
 }
 
 // Method Description:
@@ -834,14 +827,72 @@ void IslandWindow::_BackupWindowSizes(const bool fCurrentIsInFullscreen)
 // - <none>
 void IslandWindow::_ApplyWindowSize()
 {
-    const auto newSize = _fullscreen ? _fullscreenWindowSize : _nonFullscreenWindowSize;
-    LOG_IF_WIN32_BOOL_FALSE(SetWindowPos(GetHandle(),
-                                         HWND_TOP,
-                                         newSize.left,
-                                         newSize.top,
-                                         newSize.right - newSize.left,
-                                         newSize.bottom - newSize.top,
-                                         SWP_FRAMECHANGED | SWP_NOACTIVATE));
+    HMONITOR hmon = MonitorFromWindow(GetHandle(), MONITOR_DEFAULTTONEAREST);
+    MONITORINFO mi = {};
+    mi.cbSize = sizeof(mi);
+    GetMonitorInfo(hmon, &mi);
+
+    if (_fullscreen)
+    {
+        SetWindowPos(GetHandle(),
+                     HWND_TOP,
+                     mi.rcMonitor.left,
+                     mi.rcMonitor.top,
+                     mi.rcMonitor.right - mi.rcMonitor.left,
+                     mi.rcMonitor.bottom - mi.rcMonitor.top,
+                     SWP_FRAMECHANGED);
+        return;
+    }
+
+
+    if (_fWasMaximizedBeforeFullscreen)
+    {
+        ShowWindow(GetHandle(), SW_SHOWMAXIMIZED);
+        SetWindowPos(GetHandle(), HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        return;
+    }
+
+    RECT rcRestore = _rcWindowBeforeFullscreen;
+    UINT dpiWindow = GetDpiForWindow(GetHandle());
+
+    // If window has changed DPI since storing previous position, scale the size by the DPI change.
+    rcRestore.right = rcRestore.left + MulDiv(rcRestore.right - rcRestore.left, dpiWindow, _dpiBeforeFullscreen);
+    rcRestore.bottom = rcRestore.top + MulDiv(rcRestore.bottom - rcRestore.top, dpiWindow, _dpiBeforeFullscreen);
+
+    RECT rcWork = mi.rcWork;
+
+    // Offset the stored position by the difference in work area.
+    OffsetRect(&rcRestore,
+               rcWork.left - _rcWorkBeforeFullscreen.left,
+               rcWork.top - _rcWorkBeforeFullscreen.top);
+
+    // Enforce that our position is entirely within the bounds of our work area.
+    // Prefer the top-left be on-screen rather than bottom-right.
+    if (rcRestore.right > rcWork.right)
+    {
+        OffsetRect(&rcRestore, rcWork.right - rcRestore.right, 0);
+    }
+    if (rcRestore.left < rcWork.left)
+    {
+        OffsetRect(&rcRestore, rcWork.left - rcRestore.left, 0);
+    }
+    if (rcRestore.bottom > rcWork.bottom)
+    {
+        OffsetRect(&rcRestore, 0, rcWork.bottom - rcRestore.bottom);
+    }
+    if (rcRestore.top < rcWork.top)
+    {
+        OffsetRect(&rcRestore, 0, rcWork.top - rcRestore.top);
+    }
+
+    // Show the window at the computed position.
+    SetWindowPos(GetHandle(),
+                 HWND_TOP,
+                 rcRestore.left,
+                 rcRestore.top,
+                 rcRestore.right - rcRestore.left,
+                 rcRestore.bottom - rcRestore.top,
+                 SWP_SHOWWINDOW | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 }
 
 // Method Description:

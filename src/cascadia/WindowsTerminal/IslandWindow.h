@@ -68,14 +68,16 @@ protected:
     [[nodiscard]] LRESULT _OnSizing(const WPARAM wParam, const LPARAM lParam);
 
     bool _borderless{ false };
-    bool _fullscreen{ false };
     bool _alwaysOnTop{ false };
-    RECT _fullscreenWindowSize;
-    RECT _nonFullscreenWindowSize;
+    bool _fullscreen{ false };
+    bool _fWasMaximizedBeforeFullscreen{ false };
+    RECT _rcWindowBeforeFullscreen;
+    RECT _rcWorkBeforeFullscreen;
+    UINT _dpiBeforeFullscreen;
 
     virtual void _SetIsBorderless(const bool borderlessEnabled);
     virtual void _SetIsFullscreen(const bool fullscreenEnabled);
-    void _BackupWindowSizes(const bool currentIsInFullscreen);
+    void _BackupWindowSizes();
     void _ApplyWindowSize();
 
     LONG _getDesiredWindowStyle() const;
