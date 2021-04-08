@@ -553,6 +553,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::_AttachEventHandlersToControl(const TermControl& control)
     {
         auto weakThis{ get_weak() };
+        auto dispatcher = TabViewItem().Dispatcher();
 
         control.TitleChanged([weakThis](auto&&, auto&&) {
             // Check if Tab's lifetime has expired
@@ -588,7 +589,8 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        control.SetTaskbarProgress([weakThis](auto&&, auto&&) {
+        control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
+            co_await winrt::resume_foreground(dispatcher);
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
             {
@@ -617,6 +619,19 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
+    // Method Description:
+    // - This should be called on the UI thread. If you don't, then it might
+    //   silently do nothing.
+    // - Update our TabStatus to reflect the progress state of the currently
+    //   active pane.
+    // - This is called every time _any_ control's progress state changes,
+    //   regardless of if that control is the active one or not. This is simpler
+    //   then re-attaching this handler to the active control each time it
+    //   changes.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TerminalTab::_UpdateProgressState()
     {
         const auto activeControl = GetActiveTerminalControl();
