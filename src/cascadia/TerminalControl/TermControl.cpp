@@ -2262,13 +2262,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core->TabColor();
     }
 
-    // Method Description:
-    // - Sends an event (which will be caught by TerminalPage and forwarded to AppHost after)
-    //   to set the progress indicator on the taskbar
-    void TermControl::TaskbarProgressChanged()
-    {
-        _core->PumpTaskbarUpdate();
-    }
+    // // Method Description:
+    // // - Sends an event (which will be caught by TerminalPage and forwarded to AppHost after)
+    // //   to set the progress indicator on the taskbar
+    // winrt::fire_and_forget TermControl::TaskbarProgressChanged()
+    // {
+    //     co_await resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
+    //     _setTaskbarProgressHandlers(*this, nullptr);
+    // }
 
     // Method Description:
     // - Gets the internal taskbar state value

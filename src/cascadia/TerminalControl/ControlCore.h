@@ -62,8 +62,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
 
-        void PumpTaskbarUpdate();
-
         void Close();
 
 #pragma region ICoreState
