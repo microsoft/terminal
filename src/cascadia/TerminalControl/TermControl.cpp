@@ -910,9 +910,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             //      becomes a no-op.
             this->Focus(FocusState::Programmatic);
 
-            // Now that the renderer is set up, update the appearance for initialization
-            UpdateAppearance(_settings);
-
             _initializedTerminal = true;
         } // scope for TerminalLock
 
