@@ -5,7 +5,6 @@
 
 #include "EventArgs.h"
 #include "ControlCore.g.h"
-#include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../renderer/uia/UiaRenderer.hpp"
