@@ -153,6 +153,9 @@ namespace winrt::TerminalApp::implementation
             {
                 // Possibly update the icon of the tab.
                 page->_UpdateTabIcon(*tab);
+
+                // Update the taskbar progress
+                page->_SetTaskbarProgressHandlers(*page, nullptr);
             }
         });
 
