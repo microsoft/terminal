@@ -363,6 +363,7 @@
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+=" },
         { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+-" },
         { "command": "resetFontSize", "keys": "ctrl+0" },
+        // This is where I will add the code for issue-7518
 
         // Other commands
         {
