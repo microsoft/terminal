@@ -47,6 +47,9 @@ public:
                        const COORD coordSize,
                        const COORD coordSizeUnscaled);
 
+    bool GetFallback() const noexcept;
+    void SetFallback(const bool didFallback) noexcept;
+
     void ValidateFont();
 
     friend bool operator==(const FontInfo& a, const FontInfo& b);
@@ -56,6 +59,7 @@ private:
 
     COORD _coordSize;
     COORD _coordSizeUnscaled;
+    bool _didFallback;
 };
 
 bool operator==(const FontInfo& a, const FontInfo& b);
