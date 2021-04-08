@@ -195,13 +195,15 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
 
     auto clientHeight = winRect->bottom - winRect->top - nonClientSize.cy;
 
-    // TODO! How do we prevent resizing for The Alt+Space menu? This seemingly
-    // doesn't do anything.
-
-    // if (_IsQuakeWindow && wParam != WMSZ_BOTTOM)
-    // {
-    //     return true;
-    // }
+    // If we're the quake window, prevent resizing on all sides except the
+    // bottom. This also applies to resising with the Alt+Space menu
+    if (_IsQuakeWindow && wParam != WMSZ_BOTTOM)
+    {
+        // Stuff our current window size into the lParam, and return true. This
+        // will tell User32 to use our current dimensions to resize to.
+        ::GetWindowRect(_window.get(), winRect);
+        return true;
+    }
 
     // TODO! is there a way to prevent _moving_ the window as well?
 
