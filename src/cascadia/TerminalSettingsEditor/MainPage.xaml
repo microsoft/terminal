@@ -18,14 +18,17 @@
 
             <AcrylicBrush x:Key="NavigationViewDefaultPaneBackground"
                           BackgroundSource="Backdrop"
+                          FallbackColor="{ThemeResource SystemChromeMediumLowColor}"
                           TintColor="{ThemeResource SystemChromeMediumColor}"
                           TintOpacity="0.5" />
             <AcrylicBrush x:Key="NavigationViewTopPaneBackground"
                           BackgroundSource="Backdrop"
+                          FallbackColor="{ThemeResource SystemChromeMediumLowColor}"
                           TintColor="{ThemeResource SystemChromeMediumColor}"
                           TintOpacity="0.5" />
             <AcrylicBrush x:Key="NavigationViewExpandedPaneBackground"
                           BackgroundSource="HostBackdrop"
+                          FallbackColor="{ThemeResource SystemChromeMediumLowColor}"
                           TintColor="{ThemeResource SystemChromeMediumColor}"
                           TintOpacity="0.7" />
         </ResourceDictionary>
