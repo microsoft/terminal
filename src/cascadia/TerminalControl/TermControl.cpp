@@ -2121,8 +2121,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      actually fail. We need a way to gracefully fallback.
         _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
 
-        // If the actual font isn't what was requested...
-        if (_actualFont.GetFaceName() != _desiredFont.GetFaceName())
+        // If the actual font went through the last-chance fallback routines...
+        if (_actualFont.GetFallback())
         {
             // Then warn the user that we picked something because we couldn't find their font.
 
