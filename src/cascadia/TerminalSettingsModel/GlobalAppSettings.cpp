@@ -337,6 +337,13 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
             // Now parse the array again, but this time as a list of commands.
             warnings = implementation::Command::LayerJson(_commands, bindings);
+
+            // We cannot add all warnings, as some of them were already populated while parsing key mapping.
+            // Hence let's cherry-pick the ones relevant for command parsing.
+            if (std::count(warnings.begin(), warnings.end(), SettingsLoadWarnings::FailedToParseSubCommands))
+            {
+                _keybindingsWarnings.push_back(SettingsLoadWarnings::FailedToParseSubCommands);
+            }
         }
     };
     parseBindings(LegacyKeybindingsKey);

@@ -77,6 +77,8 @@
         "duplicateTab",
         "find",
         "findMatch",
+        "identifyWindow",
+        "identifyWindows",
         "moveFocus",
         "moveTab",
         "newTab",
@@ -85,12 +87,14 @@
         "openNewTabDropdown",
         "openSettings",
         "openTabColorPicker",
+        "openWindowRenamer",
         "paste",
         "prevTab",
         "renameTab",
         "openTabRenamer",
         "resetFontSize",
         "resizePane",
+        "renameWindow",
         "scrollDown",
         "scrollDownPage",
         "scrollUp",
@@ -227,9 +231,26 @@
           "type": "boolean",
           "default": "false",
           "description": "When set to true, tabTitle overrides the default title of the tab and any title change messages from the application will be suppressed. When set to false, tabTitle behaves as normal"
+        },
+        "colorScheme": {
+          "description": "The name of a color scheme to use, instead of the one specified by the profile",
+          "type": "string"
         }
       },
       "type": "object"
+    },
+    "SwitchToAdjacentTabArgs" : {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "enum": [
+            "mru",
+            "inOrder",
+            "disabled"
+          ],
+          "type": "string"
+        }
+      ]
     },
     "ShortcutAction": {
       "properties": {
@@ -602,6 +623,70 @@
         }
       ]
     },
+    "PrevTabAction": {
+      "description": "Arguments corresponding to a Previous Tab Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type":"string", "pattern": "prevTab" },
+            "tabSwitcherMode": {
+              "$ref": "#/definitions/SwitchToAdjacentTabArgs",
+              "default": null,
+              "description": "Move to the previous tab using \"tabSwitcherMode\". If no mode is provided, use the one globally defined one."
+            }
+          }
+        }
+      ]
+    },
+    "NextTabAction": {
+      "description": "Arguments corresponding to a Next Tab Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type":"string", "pattern": "nextTab" },
+            "tabSwitcherMode": {
+              "$ref": "#/definitions/SwitchToAdjacentTabArgs",
+              "default": null,
+              "description": "Move to the next tab using \"tabSwitcherMode\". If no mode is provided, use the one globally defined one."
+            }
+          }
+        }
+      ]
+    },
+    "RenameTabAction": {
+      "description": "Arguments corresponding to a renameTab Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "renameTab" },
+            "title": {
+              "type": "string",
+              "default": "",
+              "description": "A title to assign to the tab. If omitted or null, this action will restore the tab's title to the original value."
+            }
+          }
+        }
+      ]
+    },
+    "RenameWindowAction": {
+      "description": "Arguments corresponding to a renameWindow Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "renameWindow" },
+            "name": {
+              "type": "string",
+              "default": "",
+              "description": "A name to assign to the window."
+            }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -628,6 +713,10 @@
               { "$ref": "#/definitions/MoveTabAction" },
               { "$ref": "#/definitions/FindMatchAction" },
               { "$ref": "#/definitions/NewWindowAction" },
+              { "$ref": "#/definitions/NextTabAction" },
+              { "$ref": "#/definitions/PrevTabAction" },
+              { "$ref": "#/definitions/RenameTabAction" },
+              { "$ref": "#/definitions/RenameWindowAction" },
               { "type": "null" }
             ]
         },
