@@ -295,70 +295,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Given new settings for this profile, applies the settings to the current terminal.
-    // - This method is separate from UpdateSettings because there is an apparent optimizer
-    //   issue that causes one of our hstring -> wstring_view conversions to result in garbage,
-    //   but only from a coroutine context. See GH#8723.
-    // - INVARIANT: This method must be called from the UI thread.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TermControl::_UpdateSettingsOnUIThread()
-    {
-        if (_closing)
-        {
-            return;
-        }
-
-        auto lock = _terminal->LockForWriting();
-
-        // Update our control settings
-        _ApplyUISettings(_settings);
-
-        // Update the terminal core with its new Core settings
-        _terminal->UpdateSettings(_settings);
-
-        if (!_initializedTerminal)
-        {
-            // If we haven't initialized, there's no point in continuing.
-            // Initialization will handle the renderer settings.
-            return;
-        }
-
-        // Update DxEngine settings under the lock
-        _renderEngine->SetSelectionBackground(til::color{ _settings.SelectionBackground() });
-
-        _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-        _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
-        _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
-        _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
-
-        switch (_settings.AntialiasingMode())
-        {
-        case TextAntialiasingMode::Cleartype:
-            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
-            break;
-        case TextAntialiasingMode::Aliased:
-            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
-            break;
-        case TextAntialiasingMode::Grayscale:
-        default:
-            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
-            break;
-        }
-
-        // Refresh our font with the renderer
-        const auto actualFontOldSize = _actualFont.GetSize();
-        _UpdateFont();
-        const auto actualFontNewSize = _actualFont.GetSize();
-        if (actualFontNewSize != actualFontOldSize)
-        {
-            _RefreshSizeUnderLock();
-        }
-    }
-
-    // Method Description:
     // - Given Settings having been updated, applies the settings to the current terminal.
     // Return Value:
     // - <none>
@@ -370,11 +306,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // terminal.
         co_await winrt::resume_foreground(Dispatcher());
 
-        // If 'weakThis' is locked, then we can safely work with 'this'
-        if (auto control{ weakThis.get() })
+        _UpdateSettingsFromUIThread(_settings);
+        auto appearance = _settings.try_as<IControlAppearance>();
+        if (!_focused && _UnfocusedAppearance)
         {
-            _UpdateSettingsOnUIThread();
+            appearance = _UnfocusedAppearance;
         }
+        _UpdateAppearanceFromUIThread(appearance);
+    }
+
+    // Method Description:
+    // - Dispatches a call to the UI thread and updates the appearance
+    // Arguments:
+    // - newAppearance: the new appearance to set
+    winrt::fire_and_forget TermControl::UpdateAppearance(const IControlAppearance newAppearance)
+    {
+        // Dispatch a call to the UI thread
+        co_await winrt::resume_foreground(Dispatcher());
+        _UpdateAppearanceFromUIThread(newAppearance);
     }
 
     // Method Description:
@@ -412,6 +361,128 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
+    // - Updates the settings of the current terminal.
+    // - This method is separate from UpdateSettings because there is an apparent optimizer
+    //   issue that causes one of our hstring -> wstring_view conversions to result in garbage,
+    //   but only from a coroutine context. See GH#8723.
+    // - INVARIANT: This method must be called from the UI thread.
+    // Arguments:
+    // - newSettings: the new settings to set
+    void TermControl::_UpdateSettingsFromUIThread(IControlSettings newSettings)
+    {
+        if (_closing)
+        {
+            return;
+        }
+
+        auto lock = _terminal->LockForWriting();
+
+        // Update our control settings
+        _ApplyUISettings(_settings);
+
+        // Update the terminal core with its new Core settings
+        _terminal->UpdateSettings(_settings);
+
+        if (!_initializedTerminal)
+        {
+            // If we haven't initialized, there's no point in continuing.
+            // Initialization will handle the renderer settings.
+            return;
+        }
+
+        // Update DxEngine settings under the lock
+        _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
+        _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+
+        switch (_settings.AntialiasingMode())
+        {
+        case TextAntialiasingMode::Cleartype:
+            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
+            break;
+        case TextAntialiasingMode::Aliased:
+            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
+            break;
+        case TextAntialiasingMode::Grayscale:
+        default:
+            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+            break;
+        }
+
+        // Refresh our font with the renderer
+        const auto actualFontOldSize = _actualFont.GetSize();
+        _UpdateFont();
+        const auto actualFontNewSize = _actualFont.GetSize();
+        if (actualFontNewSize != actualFontOldSize)
+        {
+            _RefreshSizeUnderLock();
+        }
+    }
+
+    // Method Description:
+    // - Updates the appearance
+    // - This should only be called from the UI thread
+    // Arguments:
+    // - newAppearance: the new appearance to set
+    void TermControl::_UpdateAppearanceFromUIThread(IControlAppearance newAppearance)
+    {
+        if (_closing)
+        {
+            return;
+        }
+
+        if (!newAppearance.BackgroundImage().empty())
+        {
+            Windows::Foundation::Uri imageUri{ newAppearance.BackgroundImage() };
+
+            // Check if the image brush is already pointing to the image
+            // in the modified settings; if it isn't (or isn't there),
+            // set a new image source for the brush
+            auto imageSource = BackgroundImage().Source().try_as<Media::Imaging::BitmapImage>();
+
+            if (imageSource == nullptr ||
+                imageSource.UriSource() == nullptr ||
+                imageSource.UriSource().RawUri() != imageUri.RawUri())
+            {
+                // Note that BitmapImage handles the image load asynchronously,
+                // which is especially important since the image
+                // may well be both large and somewhere out on the
+                // internet.
+                Media::Imaging::BitmapImage image(imageUri);
+                BackgroundImage().Source(image);
+            }
+
+            // Apply stretch, opacity and alignment settings
+            BackgroundImage().Stretch(newAppearance.BackgroundImageStretchMode());
+            BackgroundImage().Opacity(newAppearance.BackgroundImageOpacity());
+            BackgroundImage().HorizontalAlignment(newAppearance.BackgroundImageHorizontalAlignment());
+            BackgroundImage().VerticalAlignment(newAppearance.BackgroundImageVerticalAlignment());
+        }
+        else
+        {
+            BackgroundImage().Source(nullptr);
+        }
+
+        // Update our control settings
+        const auto bg = newAppearance.DefaultBackground();
+        _BackgroundColorChanged(bg);
+
+        // Set TSF Foreground
+        Media::SolidColorBrush foregroundBrush{};
+        foregroundBrush.Color(static_cast<til::color>(newAppearance.DefaultForeground()));
+        TSFInputControl().Foreground(foregroundBrush);
+
+        // Update the terminal core with its new Core settings
+        auto lock = _terminal->LockForWriting();
+        _terminal->UpdateAppearance(newAppearance);
+
+        // Update DxEngine settings under the lock
+        _renderEngine->SetSelectionBackground(til::color{ newAppearance.SelectionBackground() });
+        _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
+        _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
+        _renderer->TriggerRedrawAll();
+    }
+
+    // Method Description:
     // - Style our UI elements based on the values in our _settings, and set up
     //   other control-specific settings. This method will be called whenever
     //   the settings are reloaded.
@@ -426,9 +497,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_ApplyUISettings(const IControlSettings& newSettings)
     {
         _InitializeBackgroundBrush();
-
-        const auto bg = newSettings.DefaultBackground();
-        _BackgroundColorChanged(bg);
 
         // Apply padding as swapChainPanel's margin
         auto newMargin = _ParseThicknessFromPadding(newSettings.Padding());
@@ -447,10 +515,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _actualFont = { fontFace, 0, fontWeight.Weight, { 0, fontHeight }, CP_UTF8, false };
         _desiredFont = { _actualFont };
 
-        // set TSF Foreground
-        Media::SolidColorBrush foregroundBrush{};
-        foregroundBrush.Color(static_cast<til::color>(newSettings.DefaultForeground()));
-        TSFInputControl().Foreground(foregroundBrush);
         TSFInputControl().Margin(newMargin);
 
         // Apply settings for scrollbar
@@ -533,38 +597,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 _renderEngine->SetDefaultTextBackgroundOpacity(1.0f);
             }
-        }
-
-        if (!_settings.BackgroundImage().empty())
-        {
-            Windows::Foundation::Uri imageUri{ _settings.BackgroundImage() };
-
-            // Check if the image brush is already pointing to the image
-            // in the modified settings; if it isn't (or isn't there),
-            // set a new image source for the brush
-            auto imageSource = BackgroundImage().Source().try_as<Media::Imaging::BitmapImage>();
-
-            if (imageSource == nullptr ||
-                imageSource.UriSource() == nullptr ||
-                imageSource.UriSource().RawUri() != imageUri.RawUri())
-            {
-                // Note that BitmapImage handles the image load asynchronously,
-                // which is especially important since the image
-                // may well be both large and somewhere out on the
-                // internet.
-                Media::Imaging::BitmapImage image(imageUri);
-                BackgroundImage().Source(image);
-            }
-
-            // Apply stretch, opacity and alignment settings
-            BackgroundImage().Stretch(_settings.BackgroundImageStretchMode());
-            BackgroundImage().Opacity(_settings.BackgroundImageOpacity());
-            BackgroundImage().HorizontalAlignment(_settings.BackgroundImageHorizontalAlignment());
-            BackgroundImage().VerticalAlignment(_settings.BackgroundImageVerticalAlignment());
-        }
-        else
-        {
-            BackgroundImage().Source(nullptr);
         }
     }
 
@@ -2004,6 +2036,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _UpdateSystemParameterSettings();
+
+        // Only update the appearance here if an unfocused config exists -
+        // if an unfocused config does not exist then we never would have switched
+        // appearances anyway so there's no need to switch back upon gaining focus
+        if (_UnfocusedAppearance)
+        {
+            UpdateAppearance(_settings);
+        }
     }
 
     // Method Description
@@ -2054,6 +2094,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_blinkTimer.has_value())
         {
             _blinkTimer.value().Stop();
+        }
+
+        // Check if there is an unfocused config we should set the appearance to
+        // upon losing focus
+        if (_UnfocusedAppearance)
+        {
+            UpdateAppearance(_UnfocusedAppearance);
         }
     }
 

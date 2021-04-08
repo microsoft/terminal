@@ -207,11 +207,11 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Attempts to update the settings of this tab's tree of panes.
     // Arguments:
-    // - settings: The new TerminalSettings to apply to any matching controls
+    // - settings: The new TerminalSettingsCreateResult to apply to any matching controls
     // - profile: The GUID of the profile these settings should apply to.
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
+    void TerminalTab::UpdateSettings(const TerminalSettingsCreateResult& settings, const GUID& profile)
     {
         _rootPane->UpdateSettings(settings, profile);
 
