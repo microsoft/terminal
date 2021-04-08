@@ -40,7 +40,7 @@ public:
 
     winrt::fire_and_forget SummonWindow();
 
-#pragma endregion
+    WINRT_PROPERTY(bool, IsQuakeWindow, false);
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
     DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);

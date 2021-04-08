@@ -107,6 +107,7 @@ namespace winrt::TerminalApp::implementation
         void WindowId(const uint64_t& value);
         winrt::hstring WindowIdForDisplay() const noexcept;
         winrt::hstring WindowNameForDisplay() const noexcept;
+        bool IsQuakeWindow() const;
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 

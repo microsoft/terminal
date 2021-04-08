@@ -2049,7 +2049,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::ToggleFocusMode()
     {
-        _isInFocusMode = !_isInFocusMode;
+        _isInFocusMode = !_isInFocusMode || IsQuakeWindow();
         _UpdateTabView();
         _FocusModeChangedHandlers(*this, nullptr);
     }
@@ -2260,7 +2260,7 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalPage::FocusMode() const
     {
-        return _isInFocusMode;
+        return _isInFocusMode || IsQuakeWindow();
     }
 
     bool TerminalPage::Fullscreen() const
@@ -2734,5 +2734,10 @@ namespace winrt::TerminalApp::implementation
             WindowRenamerTextBox().Text(WindowName());
             WindowRenamer().IsOpen(false);
         }
+    }
+
+    bool TerminalPage::IsQuakeWindow() const
+    {
+        return WindowName() == L"_quake";
     }
 }

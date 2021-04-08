@@ -195,6 +195,16 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
 
     auto clientHeight = winRect->bottom - winRect->top - nonClientSize.cy;
 
+    // TODO! How do we prevent resizing for The Alt+Space menu? This seemingly
+    // doesn't do anything.
+
+    // if (_IsQuakeWindow && wParam != WMSZ_BOTTOM)
+    // {
+    //     return true;
+    // }
+
+    // TODO! is there a way to prevent _moving_ the window as well?
+
     if (wParam != WMSZ_TOP && wParam != WMSZ_BOTTOM)
     {
         // If user has dragged anything but the top or bottom border (so e.g. left border,

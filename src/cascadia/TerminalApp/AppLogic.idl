@@ -52,6 +52,7 @@ namespace TerminalApp
         String WindowName;
         UInt64 WindowId;
         void RenameFailed();
+        Boolean IsQuakeWindow();
 
         Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
         Boolean CenterOnLaunch { get; };

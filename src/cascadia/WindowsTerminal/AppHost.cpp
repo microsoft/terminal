@@ -57,6 +57,8 @@ AppHost::AppHost() noexcept :
         _window = std::make_unique<IslandWindow>();
     }
 
+    _window->IsQuakeWindow(_logic.IsQuakeWindow());
+
     // Tell the window to callback to us when it's about to handle a WM_CREATE
     auto pfn = std::bind(&AppHost::_HandleCreateWindow,
                          this,
@@ -383,25 +385,36 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
     adjustedWidth = islandWidth + nonClientSize.cx;
     adjustedHeight = islandHeight + nonClientSize.cy;
 
-    const COORD dimensions{ Utils::ClampToShortMax(adjustedWidth, 1),
-                            Utils::ClampToShortMax(adjustedHeight, 1) };
+    COORD dimensions{ Utils::ClampToShortMax(adjustedWidth, 1),
+                      Utils::ClampToShortMax(adjustedHeight, 1) };
+
+    // Find nearest monitor for the position that we've actually settled on
+    HMONITOR hMonNearest = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
+    MONITORINFO nearestMonitorInfo;
+    nearestMonitorInfo.cbSize = sizeof(MONITORINFO);
+    // Get monitor dimensions:
+    GetMonitorInfo(hMonNearest, &nearestMonitorInfo);
+    const COORD desktopDimensions{ gsl::narrow<short>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
+                                   gsl::narrow<short>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
 
     if (centerOnLaunch)
     {
-        // Find nearest monitor for the position that we've actually settled on
-        HMONITOR hMonNearest = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
-        MONITORINFO nearestMonitorInfo;
-        nearestMonitorInfo.cbSize = sizeof(MONITORINFO);
-        // Get monitor dimensions:
-        GetMonitorInfo(hMonNearest, &nearestMonitorInfo);
-        const COORD desktopDimensions{ gsl::narrow<short>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
-                                       gsl::narrow<short>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
         // Move our proposed location into the center of that specific monitor.
         proposedRect.left = nearestMonitorInfo.rcWork.left +
                             ((desktopDimensions.X / 2) - (dimensions.X / 2));
         proposedRect.top = nearestMonitorInfo.rcWork.top +
                            ((desktopDimensions.Y / 2) - (dimensions.Y / 2));
     }
+
+    if (_logic.IsQuakeWindow())
+    {
+        proposedRect.left = nearestMonitorInfo.rcWork.left;
+        proposedRect.top = nearestMonitorInfo.rcWork.top;
+        dimensions.X = desktopDimensions.X;
+        dimensions.Y = desktopDimensions.Y / 2;
+        launchMode = LaunchMode::FocusMode;
+    }
+
     const COORD origin{ gsl::narrow<short>(proposedRect.left),
                         gsl::narrow<short>(proposedRect.top) };
 

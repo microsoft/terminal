@@ -286,11 +286,16 @@ namespace winrt::TerminalApp::implementation
             // that the window size is _first_ set up as something sensible, so
             // leaving fullscreen returns to a reasonable size.
             const auto launchMode = this->GetLaunchMode();
-            if (launchMode == LaunchMode::FullscreenMode)
+            if (IsQuakeWindow())
+            {
+                _root->ToggleFocusMode();
+            }
+            else if (launchMode == LaunchMode::FullscreenMode)
             {
                 _root->ToggleFullscreen();
             }
-            else if (launchMode == LaunchMode::FocusMode || launchMode == LaunchMode::MaximizedFocusMode)
+            else if (launchMode == LaunchMode::FocusMode ||
+                     launchMode == LaunchMode::MaximizedFocusMode)
             {
                 _root->ToggleFocusMode();
             }
@@ -1417,6 +1422,11 @@ namespace winrt::TerminalApp::implementation
         {
             _root->RenameFailed();
         }
+    }
+
+    bool AppLogic::IsQuakeWindow() const
+    {
+        return _root->IsQuakeWindow();
     }
 
 }

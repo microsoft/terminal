@@ -532,6 +532,25 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     const auto originalRet = DefWindowProc(_window.get(), WM_NCHITTEST, 0, lParam);
     if (originalRet != HTCLIENT)
     {
+        // If we're the quake window, supress resizing on any side except the
+        // bottom.
+        // TODO! This doesn't actually work on the top. I believe that's handled below.
+        //
+        // TODO! Make sure that this works for the IslandWindow as well.
+        if (IsQuakeWindow())
+        {
+            switch (originalRet)
+            {
+            case HTBOTTOMRIGHT:
+            case HTRIGHT:
+            case HTTOPRIGHT:
+            case HTTOP:
+            case HTTOPLEFT:
+            case HTLEFT:
+            case HTBOTTOMLEFT:
+                return HTCLIENT;
+            }
+        }
         return originalRet;
     }
 
