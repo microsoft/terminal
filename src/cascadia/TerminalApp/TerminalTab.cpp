@@ -177,7 +177,7 @@ namespace winrt::TerminalApp::implementation
                 //                                       AppHost
                 // Seems like there's a better way...
                 //
-                // lastFocusedControl.TaskbarProgressChanged();
+                lastFocusedControl.TaskbarProgressChanged();
             }
             // When we gain focus, remove the bell indicator if it is active
             if (_tabStatus.BellIndicator())

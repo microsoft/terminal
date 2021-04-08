@@ -1310,4 +1310,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));
         _RaiseNoticeHandlers(*this, std::move(noticeArgs));
     }
+
+    void ControlCore::PumpTaskbarUpdate()
+    {
+        _TaskbarProgressChangedHandlers(*this, nullptr);
+    }
 }
