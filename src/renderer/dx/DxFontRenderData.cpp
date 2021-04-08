@@ -737,7 +737,7 @@ CATCH_RETURN()
     // If the system collection missed, try the files sitting next to our binary.
     if (!familyExists)
     {
-        const auto nearbyCollection = NearbyCollection();
+        auto&& nearbyCollection = NearbyCollection();
 
         // May be null on OS below Windows 10. If null, just skip the attempt.
         if (nearbyCollection)
