@@ -164,8 +164,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto ctrlEnabled = modifiers.IsCtrlPressed();
 
         // GH#9396: we prioritize hyper-link over VT mouse events
-        //
-        // !TODO! Before we'd lock the terminal before getting the hyperlink. Do we still need to?
         auto hyperlink = _core->GetHyperlink(terminalPosition);
         if (buttonState.isLeftButtonDown &&
             ctrlEnabled && !hyperlink.empty())

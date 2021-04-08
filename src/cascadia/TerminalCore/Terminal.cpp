@@ -1196,7 +1196,6 @@ void Terminal::UpdatePatterns() noexcept
 //   visible region is changing
 void Terminal::ClearPatternTree() noexcept
 {
-    // auto lock = LockForWriting();
     auto oldTree = _patternIntervalTree;
     _patternIntervalTree = {};
     _InvalidatePatternTree(oldTree);

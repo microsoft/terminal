@@ -490,6 +490,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     winrt::hstring ControlCore::GetHyperlink(const til::point pos) const
     {
+        // Lock for the duration of our reads.
+        auto lock = _terminal->LockForReading();
         return winrt::hstring{ _terminal->GetHyperlinkAtPosition(pos) };
     }
 
@@ -805,7 +807,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // save location (for rendering) + render
         _terminal->SetSelectionEnd(terminalPosition);
         _renderer->TriggerSelection();
-        // _selectionNeedsToBeCopied = true; // !TODO! why is this commented out?
     }
 
     // Called when the Terminal wants to set something to the clipboard, i.e.
@@ -832,9 +833,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return false;
         }
-
-        // // Mark the current selection as copied
-        // _selectionNeedsToBeCopied = false;
 
         // extract text from buffer
         const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(singleLine);
@@ -927,7 +925,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     til::color ControlCore::BackgroundColor() const
     {
-        return _backgroundColor;
+        return _terminal->GetDefaultBackground();
     }
 
     // Method Description:
@@ -979,19 +977,48 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _WarningBellHandlers(*this, nullptr);
     }
 
+    // Method Description:
+    // - Called for the Terminal's TitleChanged callback. This will re-raise
+    //   a new winrt TypedEvent that can be listened to.
+    // - The listeners to this event will re-query the control for the current
+    //   value of Title().
+    // Arguments:
+    // - wstr: the new title of this terminal.
+    // Return Value:
+    // - <none>
     void ControlCore::_terminalTitleChanged(const std::wstring_view& wstr)
     {
         auto titleArgs = winrt::make_self<TitleChangedEventArgs>(winrt::hstring{ wstr });
         _TitleChangedHandlers(*this, *titleArgs);
     }
+
+    // Method Description:
+    // - Called for the Terminal's TabColorChanged callback. This will re-raise
+    //   a new winrt TypedEvent that can be listened to.
+    // - The listeners to this event will re-query the control for the current
+    //   value of TabColor().
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
     void ControlCore::_terminalTabColorChanged(const std::optional<til::color> /*color*/)
     {
+        // Raise a TabColorChanged event
         _TabColorChangedHandlers(*this, nullptr);
     }
 
-    void ControlCore::_terminalBackgroundColorChanged(const COLORREF color)
+    // Method Description:
+    // - Called for the Terminal's BackgroundColorChanged callback. This will
+    //   re-raise a new winrt TypedEvent that can be listened to.
+    // - The listeners to this event will re-query the control for the current
+    //   value of BackgroundColor().
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    void ControlCore::_terminalBackgroundColorChanged(const COLORREF /*color*/)
     {
-        _backgroundColor = color;
+        // Raise a BackgroundColorChanged event
         _BackgroundColorChangedHandlers(*this, nullptr);
     }
 

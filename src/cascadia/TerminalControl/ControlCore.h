@@ -78,7 +78,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         int BufferHeight() const;
 #pragma endregion
 
-#pragma region ITerminalInputButNotReally
+#pragma region ITerminalInput
         bool TrySendKeyEvent(const WORD vkey,
                              const WORD scanCode,
                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
@@ -160,7 +160,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine{ nullptr };
 
-        IControlSettings _settings{ nullptr }; // ? Might be able to get away with only retrieving pieces
+        IControlSettings _settings{ nullptr };
 
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
@@ -176,11 +176,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval{ std::nullopt };
 
+        // These members represent the size of the surface that we should be
+        // rendering to.
         double _panelWidth{ 0 };
         double _panelHeight{ 0 };
         double _compositionScaleX{ 0 };
         double _compositionScaleY{ 0 };
-        til::color _backgroundColor; // !TODO! This is _in_ Terminal already!
 
         winrt::fire_and_forget _asyncCloseConnection();
 

@@ -201,7 +201,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                               const bool goForward,
                               const bool caseSensitive)
     {
-        // !!TODO!! This is bound in XAML, and that seems a little silly now
         _core->Search(text, goForward, caseSensitive);
     }
 

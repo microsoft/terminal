@@ -208,6 +208,7 @@ public:
     void ClearPatternTree() noexcept;
 
     const std::optional<til::color> GetTabColor() const noexcept;
+    til::color GetDefaultBackground() const noexcept;
 
     Microsoft::Console::Render::BlinkingState& GetBlinkingState() const noexcept;
 
