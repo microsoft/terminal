@@ -55,10 +55,16 @@ namespace RemotingUnitTests
         uint64_t GetPID() { throw winrt::hresult_error{}; };
         bool ExecuteCommandline(const Remoting::CommandlineArgs& /*args*/) { throw winrt::hresult_error{}; }
         void ActivateWindow(const Remoting::WindowActivatedArgs& /*args*/) { throw winrt::hresult_error{}; }
+        void RequestIdentifyWindows() { throw winrt::hresult_error{}; };
+        void DisplayWindowId() { throw winrt::hresult_error{}; };
         Remoting::CommandlineArgs InitialArgs() { throw winrt::hresult_error{}; }
         Remoting::WindowActivatedArgs GetLastActivatedArgs() { throw winrt::hresult_error{}; }
+        void RequestRename(const Remoting::RenameRequestArgs& /*args*/) { throw winrt::hresult_error{}; }
         TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, Remoting::WindowActivatedArgs);
         TYPED_EVENT(ExecuteCommandlineRequested, winrt::Windows::Foundation::IInspectable, Remoting::CommandlineArgs);
+        TYPED_EVENT(IdentifyWindowsRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(DisplayWindowIdRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(RenameRequested, winrt::Windows::Foundation::IInspectable, Remoting::RenameRequestArgs);
     };
 
     class RemotingTests
@@ -94,6 +100,10 @@ namespace RemotingUnitTests
         TEST_METHOD(GetMruPeasantAfterNameLookupForDeadPeasant);
 
         TEST_METHOD(ProposeCommandlineForNamedDeadWindow);
+
+        TEST_METHOD(TestRenameWindowSuccessfully);
+        TEST_METHOD(TestRenameSameNameAsAnother);
+        TEST_METHOD(TestRenameSameNameAsADeadPeasant);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -1208,6 +1218,7 @@ namespace RemotingUnitTests
         VERIFY_ARE_EQUAL(1u, m0->_peasants.size());
         VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
     }
+
     void RemotingTests::GetMruPeasantAfterNameLookupForDeadPeasant()
     {
         // This test is trying to hit the catch in Monarch::_lookupPeasantIdForName.
@@ -1352,4 +1363,147 @@ namespace RemotingUnitTests
             VERIFY_ARE_EQUAL(L"two", result.WindowName());
         }
     }
+
+    void RemotingTests::TestRenameWindowSuccessfully()
+    {
+        Log::Comment(L"Attempt to rename a window. This should succeed.");
+
+        const auto monarch0PID = 12345u;
+        const auto peasant1PID = 23456u;
+        const auto peasant2PID = 34567u;
+
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+
+        VERIFY_IS_NOT_NULL(m0);
+        VERIFY_IS_NOT_NULL(p1);
+        VERIFY_IS_NOT_NULL(p2);
+        p1->WindowName(L"one");
+        p2->WindowName(L"two");
+
+        VERIFY_ARE_EQUAL(0, p1->GetID());
+        VERIFY_ARE_EQUAL(0, p2->GetID());
+
+        m0->AddPeasant(*p1);
+        m0->AddPeasant(*p2);
+
+        VERIFY_ARE_EQUAL(1, p1->GetID());
+        VERIFY_ARE_EQUAL(2, p2->GetID());
+
+        VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
+
+        Remoting::RenameRequestArgs eventArgs{ L"foo" };
+        p1->RequestRename(eventArgs);
+
+        VERIFY_IS_TRUE(eventArgs.Succeeded());
+        VERIFY_ARE_EQUAL(L"foo", p1->WindowName());
+
+        VERIFY_ARE_EQUAL(0, m0->_lookupPeasantIdForName(L"one"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_lookupPeasantIdForName(L"foo"));
+    }
+
+    void RemotingTests::TestRenameSameNameAsAnother()
+    {
+        Log::Comment(L"Try renaming a window to a name used by another peasant."
+                     L" This should fail.");
+
+        const auto monarch0PID = 12345u;
+        const auto peasant1PID = 23456u;
+        const auto peasant2PID = 34567u;
+
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+
+        VERIFY_IS_NOT_NULL(m0);
+        VERIFY_IS_NOT_NULL(p1);
+        VERIFY_IS_NOT_NULL(p2);
+        p1->WindowName(L"one");
+        p2->WindowName(L"two");
+
+        VERIFY_ARE_EQUAL(0, p1->GetID());
+        VERIFY_ARE_EQUAL(0, p2->GetID());
+
+        m0->AddPeasant(*p1);
+        m0->AddPeasant(*p2);
+
+        VERIFY_ARE_EQUAL(1, p1->GetID());
+        VERIFY_ARE_EQUAL(2, p2->GetID());
+
+        VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
+
+        Remoting::RenameRequestArgs eventArgs{ L"two" };
+        p1->RequestRename(eventArgs);
+
+        VERIFY_IS_FALSE(eventArgs.Succeeded());
+        VERIFY_ARE_EQUAL(L"one", p1->WindowName());
+
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_lookupPeasantIdForName(L"one"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
+    }
+    void RemotingTests::TestRenameSameNameAsADeadPeasant()
+    {
+        Log::Comment(L"We'll try renaming a window to the name of a window that"
+                     L" has died. This should succeed, without crashing.");
+
+        const auto monarch0PID = 12345u;
+        const auto peasant1PID = 23456u;
+        const auto peasant2PID = 34567u;
+
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+
+        VERIFY_IS_NOT_NULL(m0);
+        VERIFY_IS_NOT_NULL(p1);
+        VERIFY_IS_NOT_NULL(p2);
+        p1->WindowName(L"one");
+        p2->WindowName(L"two");
+
+        VERIFY_ARE_EQUAL(0, p1->GetID());
+        VERIFY_ARE_EQUAL(0, p2->GetID());
+
+        m0->AddPeasant(*p1);
+        m0->AddPeasant(*p2);
+
+        VERIFY_ARE_EQUAL(1, p1->GetID());
+        VERIFY_ARE_EQUAL(2, p2->GetID());
+
+        VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
+
+        Remoting::RenameRequestArgs eventArgs{ L"two" };
+        p1->RequestRename(eventArgs);
+
+        VERIFY_IS_FALSE(eventArgs.Succeeded());
+        VERIFY_ARE_EQUAL(L"one", p1->WindowName());
+
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_lookupPeasantIdForName(L"one"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
+
+        RemotingTests::_killPeasant(m0, p2->GetID());
+
+        p1->RequestRename(eventArgs);
+
+        VERIFY_IS_TRUE(eventArgs.Succeeded());
+        VERIFY_ARE_EQUAL(L"two", p1->WindowName());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_lookupPeasantIdForName(L"two"));
+    }
+
 }

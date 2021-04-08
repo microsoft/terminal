@@ -83,7 +83,11 @@
   <ItemDefinitionGroup>
     <Link>
       <AdditionalDependencies>dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;user32.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <!-- ControlLib contains a DllMain that we need to force the use of. -->
+      <!--
+      ControlLib contains a DllMain that we need to force the use of.
+      If you don't have this, then you'll see an error like
+      "(init.obj) : error LNK2005: DllMain already defined in MSVCRTD.lib(dll_dllmain_stub.obj)"
+      -->
       <AdditionalOptions Condition="'$(Platform)'=='Win32'">/INCLUDE:_DllMain@12</AdditionalOptions>
       <AdditionalOptions Condition="'$(Platform)'!='Win32'">/INCLUDE:DllMain</AdditionalOptions>
 

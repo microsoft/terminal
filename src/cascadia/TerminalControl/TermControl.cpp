@@ -327,7 +327,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Update DxEngine settings under the lock
-        _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
+        _renderEngine->SetSelectionBackground(til::color{ _settings.SelectionBackground() });
 
         _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
         _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
@@ -427,7 +427,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _InitializeBackgroundBrush();
 
-        COLORREF bg = newSettings.DefaultBackground();
+        const auto bg = newSettings.DefaultBackground();
         _BackgroundColorChanged(bg);
 
         // Apply padding as swapChainPanel's margin
@@ -503,12 +503,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // see GH#1082: Initialize background color so we don't get a
             // fade/flash when _BackgroundColorChanged is called
-            uint32_t color = _settings.DefaultBackground();
-            winrt::Windows::UI::Color bgColor{};
-            bgColor.R = GetRValue(color);
-            bgColor.G = GetGValue(color);
-            bgColor.B = GetBValue(color);
-            bgColor.A = 255;
+            auto bgColor = til::color{ _settings.DefaultBackground() }.with_alpha(0xff);
 
             acrylic.FallbackColor(bgColor);
             acrylic.TintColor(bgColor);
@@ -579,7 +574,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - color: The background color to use as a uint32 (aka DWORD COLORREF)
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::_BackgroundColorChanged(const COLORREF color)
+    winrt::fire_and_forget TermControl::_BackgroundColorChanged(const til::color color)
     {
         til::color newBgColor{ color };
 
@@ -774,7 +769,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             LOG_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
             // Update DxEngine's SelectionBackground
-            dxEngine->SetSelectionBackground(_settings.SelectionBackground());
+            dxEngine->SetSelectionBackground(til::color{ _settings.SelectionBackground() });
 
             const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
             const auto width = vp.Width();
@@ -1353,11 +1348,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     mode = ::Terminal::SelectionExpansionMode::Line;
                 }
 
-                // Capture the position of the first click when no selection is active
-                if (mode == ::Terminal::SelectionExpansionMode::Cell && !_terminal->IsSelectionActive())
+                // Capture the position of the first click
+                if (mode == ::Terminal::SelectionExpansionMode::Cell)
                 {
                     _singleClickTouchdownPos = cursorPosition;
-                    _lastMouseClickPosNoSelection = cursorPosition;
+                    if (!_terminal->IsSelectionActive())
+                    {
+                        _lastMouseClickPosNoSelection = cursorPosition;
+                    }
                 }
 
                 // We reset the active selection if one of the conditions apply:
@@ -1710,7 +1708,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 {
                     _settings.UseAcrylic(false);
                     _InitializeBackgroundBrush();
-                    COLORREF bg = _settings.DefaultBackground();
+                    const auto bg = _settings.DefaultBackground();
                     _BackgroundColorChanged(bg);
                 }
                 else
@@ -1815,7 +1813,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Clear the regex pattern tree so the renderer does not try to render them while scrolling
-        _terminal->ClearPatternTree();
+        {
+            // We're taking the lock here instead of in ClearPatternTree because ClearPatternTree is
+            // sometimes called from an already-locked context. Here, we are sure we are not
+            // already under lock (since it is not an internal scroll bar update)
+            // TODO GH#9617: refine locking around pattern tree
+            auto lock = _terminal->LockForWriting();
+            _terminal->ClearPatternTree();
+        }
 
         const auto newValue = static_cast<int>(args.NewValue());
 
@@ -2434,6 +2439,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Clear the regex pattern tree so the renderer does not try to render them while scrolling
+        // We're **NOT** taking the lock here unlike _ScrollbarChangeHandler because
+        // we are already under lock (since this usually happens as a result of writing).
+        // TODO GH#9617: refine locking around pattern tree
         _terminal->ClearPatternTree();
 
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
@@ -2474,6 +2482,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         hstring hstr{ _terminal->GetWorkingDirectory() };
         return hstr;
+    }
+
+    bool TermControl::BracketedPasteEnabled() const noexcept
+    {
+        return _terminal->IsXtermBracketedPasteModeEnabled();
     }
 
     // Method Description:
@@ -2518,7 +2531,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                   TextBuffer::GenHTML(bufferData,
                                                       _actualFont.GetUnscaledSize().Y,
                                                       _actualFont.GetFaceName(),
-                                                      _settings.DefaultBackground()) :
+                                                      til::color{ _settings.DefaultBackground() }) :
                                   "";
 
         // convert to RTF format
@@ -2526,7 +2539,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  TextBuffer::GenRTF(bufferData,
                                                     _actualFont.GetUnscaledSize().Y,
                                                     _actualFont.GetFaceName(),
-                                                    _settings.DefaultBackground()) :
+                                                    til::color{ _settings.DefaultBackground() }) :
                                  "";
 
         if (!_settings.CopyOnSelect())
@@ -3262,7 +3275,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControl::TabColor() noexcept
     {
         auto coreColor = _terminal->GetTabColor();
-        return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(coreColor.value()) : nullptr;
+        return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(til::color{ coreColor.value() }) : nullptr;
     }
 
     // Method Description:
@@ -3334,8 +3347,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _lastHoveredCell = terminalPosition;
 
+        uint16_t newId{ 0u };
+        // we can't use auto here because we're pre-declaring newInterval.
+        decltype(_terminal->GetHyperlinkIntervalFromPosition(COORD{})) newInterval{ std::nullopt };
         if (terminalPosition.has_value())
         {
+            auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
+
             const auto uri = _terminal->GetHyperlinkAtPosition(*terminalPosition);
             if (!uri.empty())
             {
@@ -3361,15 +3379,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
                 OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
             }
-        }
 
-        const uint16_t newId = terminalPosition.has_value() ? _terminal->GetHyperlinkIdAtPosition(*terminalPosition) : 0u;
-        const auto newInterval = terminalPosition.has_value() ? _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition) : std::nullopt;
+            newId = _terminal->GetHyperlinkIdAtPosition(*terminalPosition);
+            newInterval = _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition);
+        }
 
         // If the hyperlink ID changed or the interval changed, trigger a redraw all
         // (so this will happen both when we move onto a link and when we move off a link)
         if (newId != _lastHoveredId || (newInterval != _lastHoveredInterval))
         {
+            auto lock = _terminal->LockForWriting();
             _lastHoveredId = newId;
             _lastHoveredInterval = newInterval;
             _renderEngine->UpdateHyperlinkHoveredId(newId);

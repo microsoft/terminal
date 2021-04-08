@@ -44,6 +44,7 @@ namespace Microsoft.Terminal.Control
 
         String Title { get; };
 
+        Boolean BracketedPasteEnabled { get; };
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();
         void Close();

@@ -19,6 +19,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     struct ConptyConnection : ConptyConnectionT<ConptyConnection>, ConnectionStateHolder<ConptyConnection>
     {
+        ConptyConnection(const HANDLE hSig,
+                         const HANDLE hIn,
+                         const HANDLE hOut,
+                         const HANDLE hClientProcess);
+
         ConptyConnection(
             const hstring& cmdline,
             const hstring& startingDirectory,
@@ -36,12 +41,20 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         winrt::guid Guid() const noexcept;
 
+        static void StartInboundListener();
+        static void StopInboundListener();
+
+        static winrt::event_token NewConnection(NewConnectionHandler const& handler);
+        static void NewConnection(winrt::event_token const& token);
+
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
 
     private:
         HRESULT _LaunchAttachedClient() noexcept;
         void _indicateExitWithStatus(unsigned int status) noexcept;
         void _ClientTerminated() noexcept;
+
+        static HRESULT NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE process) noexcept;
 
         uint32_t _initialRows{};
         uint32_t _initialCols{};

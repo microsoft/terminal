@@ -30,6 +30,7 @@
 #include "NewWindowArgs.g.h"
 #include "PrevTabArgs.g.h"
 #include "NextTabArgs.g.h"
+#include "RenameWindowArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
@@ -70,6 +71,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(Windows::Foundation::IReference<int32_t>, ProfileIndex, nullptr);
         WINRT_PROPERTY(winrt::hstring, Profile, L"");
         WINRT_PROPERTY(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, nullptr);
+        WINRT_PROPERTY(winrt::hstring, ColorScheme);
 
         static constexpr std::string_view CommandlineKey{ "commandline" };
         static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
@@ -78,6 +80,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static constexpr std::string_view ProfileIndexKey{ "index" };
         static constexpr std::string_view ProfileKey{ "profile" };
         static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
+        static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
 
     public:
         hstring GenerateName() const;
@@ -91,7 +94,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                    other.TabColor() == _TabColor &&
                    other.ProfileIndex() == _ProfileIndex &&
                    other.Profile() == _Profile &&
-                   other.SuppressApplicationTitle() == _SuppressApplicationTitle;
+                   other.SuppressApplicationTitle() == _SuppressApplicationTitle &&
+                   other.ColorScheme() == _ColorScheme;
         };
         static Model::NewTerminalArgs FromJson(const Json::Value& json)
         {
@@ -104,6 +108,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, ProfileKey, args->_Profile);
             JsonUtils::GetValueForKey(json, TabColorKey, args->_TabColor);
             JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, args->_SuppressApplicationTitle);
+            JsonUtils::GetValueForKey(json, ColorSchemeKey, args->_ColorScheme);
             return *args;
         }
         Model::NewTerminalArgs Copy() const
@@ -116,6 +121,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_ProfileIndex = _ProfileIndex;
             copy->_Profile = _Profile;
             copy->_SuppressApplicationTitle = _SuppressApplicationTitle;
+            copy->_ColorScheme = _ColorScheme;
             return *copy;
         }
     };
@@ -389,6 +395,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
         SplitPaneArgs() = default;
+        SplitPaneArgs(SplitType splitMode, SplitState style, double size, const Model::NewTerminalArgs& terminalArgs) :
+            _SplitMode{ splitMode },
+            _SplitStyle{ style },
+            _SplitSize{ size },
+            _TerminalArgs{ terminalArgs } {};
         SplitPaneArgs(SplitState style, double size, const Model::NewTerminalArgs& terminalArgs) :
             _SplitStyle{ style },
             _SplitSize{ size },
@@ -988,6 +999,39 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto copy{ winrt::make_self<NextTabArgs>() };
             copy->_SwitcherMode = _SwitcherMode;
+            return *copy;
+        }
+    };
+
+    struct RenameWindowArgs : public RenameWindowArgsT<RenameWindowArgs>
+    {
+        RenameWindowArgs() = default;
+        WINRT_PROPERTY(winrt::hstring, Name);
+        static constexpr std::string_view NameKey{ "name" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<RenameWindowArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Name == _Name;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<RenameWindowArgs>();
+            JsonUtils::GetValueForKey(json, NameKey, args->_Name);
+            return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<RenameWindowArgs>() };
+            copy->_Name = _Name;
             return *copy;
         }
     };

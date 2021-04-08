@@ -100,6 +100,8 @@ namespace Microsoft.Terminal.Settings.Model
 
         Windows.Foundation.IReference<Boolean> SuppressApplicationTitle;
 
+        String ColorScheme;
+
         Boolean Equals(NewTerminalArgs other);
         String GenerateName();
         String ToCommandline();
@@ -152,6 +154,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
+        SplitPaneArgs(SplitType splitMode, SplitState split, Double size, NewTerminalArgs terminalArgs);
         SplitPaneArgs(SplitState split, Double size, NewTerminalArgs terminalArgs);
         SplitPaneArgs(SplitState split, NewTerminalArgs terminalArgs);
         SplitPaneArgs(SplitType splitMode);
@@ -242,5 +245,10 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass NextTabArgs : IActionArgs
     {
         Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
+    };
+
+    [default_interface] runtimeclass RenameWindowArgs : IActionArgs
+    {
+        String Name { get; };
     };
 }

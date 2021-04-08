@@ -1,149 +1,225 @@
-﻿<UserControl
-    x:Class="Microsoft.Terminal.Control.SearchBoxControl"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="using:Microsoft.Terminal.Control"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    x:Name="Root"
-    HorizontalAlignment="Stretch"
-    VerticalAlignment="Top"
-    d:DesignHeight="55"
-    d:DesignWidth="285"
-    TabNavigation="Cycle">
+<UserControl x:Class="Microsoft.Terminal.Control.SearchBoxControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="using:Microsoft.Terminal.Control"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             x:Name="Root"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Top"
+             d:DesignHeight="55"
+             d:DesignWidth="285"
+             TabNavigation="Cycle"
+             mc:Ignorable="d">
 
     <UserControl.Resources>
         <ResourceDictionary>
-            <Style x:Key="ToggleButtonStyle" TargetType="ToggleButton">
+            <Style x:Key="ToggleButtonStyle"
+                   TargetType="ToggleButton">
                 <Setter Property="Width" Value="25" />
                 <Setter Property="Height" Value="25" />
                 <Setter Property="Background" Value="Transparent" />
                 <Setter Property="Padding" Value="1" />
-                <Setter Property="CornerRadius" Value="2"/>
+                <Setter Property="CornerRadius" Value="2" />
             </Style>
-            <Style x:Key="ButtonStyle" TargetType="Button">
+            <Style x:Key="ButtonStyle"
+                   TargetType="Button">
                 <Setter Property="Width" Value="25" />
                 <Setter Property="Height" Value="25" />
                 <Setter Property="Background" Value="Transparent" />
-                <Setter Property="CornerRadius" Value="2"/>
+                <Setter Property="CornerRadius" Value="2" />
             </Style>
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Dark">
-                    <Style x:Key="FontIconStyle" TargetType="FontIcon">
+                    <Style x:Key="FontIconStyle"
+                           TargetType="FontIcon">
                         <Setter Property="FontSize" Value="12" />
                     </Style>
-                    <Style x:Key="SearchBoxBackground" TargetType="StackPanel">
+                    <Style x:Key="SearchBoxBackground"
+                           TargetType="StackPanel">
                         <Setter Property="Background" Value="#333333" />
                     </Style>
-                    <!-- TextBox colors !-->
-                    <SolidColorBrush x:Key="TextControlBackground" Color="#333333"/>
-                    <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush" Color="#B5B5B5"/>
-                    <SolidColorBrush x:Key="TextControlForeground" Color="#B5B5B5"/>
-                    <SolidColorBrush x:Key="TextControlBorderBrush" Color="#404040"/>
-                    <SolidColorBrush x:Key="TextControlButtonForeground" Color="#B5B5B5"/>
+                    <!--  TextBox colors !  -->
+                    <SolidColorBrush x:Key="TextControlBackground"
+                                     Color="#333333" />
+                    <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush"
+                                     Color="#B5B5B5" />
+                    <SolidColorBrush x:Key="TextControlForeground"
+                                     Color="#B5B5B5" />
+                    <SolidColorBrush x:Key="TextControlBorderBrush"
+                                     Color="#404040" />
+                    <SolidColorBrush x:Key="TextControlButtonForeground"
+                                     Color="#B5B5B5" />
 
-                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#404040"/>
-                    <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="#FFFFFF"/>
-                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#404040"/>
-                    <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver" Color="#FF4343"/>
+                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver"
+                                     Color="#404040" />
+                    <SolidColorBrush x:Key="TextControlForegroundPointerOver"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver"
+                                     Color="#404040" />
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver"
+                                     Color="#FF4343" />
 
-                    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#333333"/>
-                    <SolidColorBrush x:Key="TextControlForegroundFocused" Color="#FFFFFF"/>
-                    <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#404040"/>
-                    <SolidColorBrush x:Key="TextControlButtonForegroundPressed" Color="#FFFFFF"/>
-                    <SolidColorBrush x:Key="TextControlButtonBackgroundPressed" Color="#FF4343"/>
+                    <SolidColorBrush x:Key="TextControlBackgroundFocused"
+                                     Color="#333333" />
+                    <SolidColorBrush x:Key="TextControlForegroundFocused"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="TextControlBorderBrushFocused"
+                                     Color="#404040" />
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPressed"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="TextControlButtonBackgroundPressed"
+                                     Color="#FF4343" />
 
-                    <!-- ToggleButton colors !-->
-                    <SolidColorBrush x:Key="ToggleButtonForeground" Color="#B5B5B5"/>
+                    <!--  ToggleButton colors !  -->
+                    <SolidColorBrush x:Key="ToggleButtonForeground"
+                                     Color="#B5B5B5" />
 
-                    <SolidColorBrush x:Key="ToggleButtonBackgroundPointerOver" Color="#404040"/>
-                    <SolidColorBrush x:Key="ToggleButtonForegroundPointerOver" Color="#FFFFFF"/>
-                    <SolidColorBrush x:Key="ToggleButtonBorderBrushPointerOver" Color="Transparent"/>
+                    <SolidColorBrush x:Key="ToggleButtonBackgroundPointerOver"
+                                     Color="#404040" />
+                    <SolidColorBrush x:Key="ToggleButtonForegroundPointerOver"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="ToggleButtonBorderBrushPointerOver"
+                                     Color="Transparent" />
 
-                    <SolidColorBrush x:Key="ToggleButtonBackgroundPressed" Color="#555555"/>
-                    <SolidColorBrush x:Key="ToggleButtonForegroundPressed" Color="#FFFFFF"/>
-                    <SolidColorBrush x:Key="ToggleButtonBorderBrushPressed" Color="Transparent"/>
+                    <SolidColorBrush x:Key="ToggleButtonBackgroundPressed"
+                                     Color="#555555" />
+                    <SolidColorBrush x:Key="ToggleButtonForegroundPressed"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="ToggleButtonBorderBrushPressed"
+                                     Color="Transparent" />
 
-                    <SolidColorBrush x:Key="ToggleButtonBackgroundChecked" Color="#555555"/>
-                    <SolidColorBrush x:Key="ToggleButtonForegroundChecked" Color="#FFFFFF"/>
-                    <SolidColorBrush x:Key="ToggleButtonBorderBrushChecked" Color="Transparent"/>
+                    <SolidColorBrush x:Key="ToggleButtonBackgroundChecked"
+                                     Color="#555555" />
+                    <SolidColorBrush x:Key="ToggleButtonForegroundChecked"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="ToggleButtonBorderBrushChecked"
+                                     Color="Transparent" />
 
-                    <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="#404040"/>
-                    <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPointerOver" Color="#FFFFFF"/>
-                    <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPointerOver" Color="Transparent"/>
+                    <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver"
+                                     Color="#404040" />
+                    <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPointerOver"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPointerOver"
+                                     Color="Transparent" />
 
-                    <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed" Color="#555555"/>
-                    <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPressed" Color="#FFFFFF"/>
-                    <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPressed" Color="Transparent"/>
+                    <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed"
+                                     Color="#555555" />
+                    <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPressed"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPressed"
+                                     Color="Transparent" />
 
-                    <!--Button color !-->
-                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#404040"/>
-                    <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#FFFFFF"/>
-                    <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent"/>
+                    <!--  Button color !  -->
+                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                     Color="#404040" />
+                    <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="ButtonBorderBrushPointerOver"
+                                     Color="Transparent" />
 
-                    <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#555555"/>
-                    <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#FFFFFF"/>
-                    <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="Transparent"/>
+                    <SolidColorBrush x:Key="ButtonBackgroundPressed"
+                                     Color="#555555" />
+                    <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="ButtonBorderBrushPressed"
+                                     Color="Transparent" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Light">
-                    <Style x:Key="FontIconStyle" TargetType="FontIcon">
+                    <Style x:Key="FontIconStyle"
+                           TargetType="FontIcon">
                         <Setter Property="FontSize" Value="12" />
                     </Style>
-                    <Style x:Key="SearchBoxBackground" TargetType="StackPanel">
+                    <Style x:Key="SearchBoxBackground"
+                           TargetType="StackPanel">
                         <Setter Property="Background" Value="#CCCCCC" />
                     </Style>
-                    <!-- TextBox colors !-->
-                    <SolidColorBrush x:Key="TextControlBackground" Color="#CCCCCC"/>
-                    <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush" Color="#636363"/>
-                    <SolidColorBrush x:Key="TextControlBorderBrush" Color="#636363"/>
-                    <SolidColorBrush x:Key="TextControlButtonForeground" Color="#636363"/>
+                    <!--  TextBox colors !  -->
+                    <SolidColorBrush x:Key="TextControlBackground"
+                                     Color="#CCCCCC" />
+                    <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush"
+                                     Color="#636363" />
+                    <SolidColorBrush x:Key="TextControlBorderBrush"
+                                     Color="#636363" />
+                    <SolidColorBrush x:Key="TextControlButtonForeground"
+                                     Color="#636363" />
 
-                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#DADADA"/>
-                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#636363"/>
-                    <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver" Color="#FF4343"/>
+                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver"
+                                     Color="#DADADA" />
+                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver"
+                                     Color="#636363" />
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver"
+                                     Color="#FF4343" />
 
-                    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#CCCCCC"/>
-                    <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#636363"/>
-                    <SolidColorBrush x:Key="TextControlButtonForegroundPressed" Color="#FFFFFF"/>
-                    <SolidColorBrush x:Key="TextControlButtonBackgroundPressed" Color="#FF4343"/>
-                    <!-- ToggleButton colors !-->
-                    <SolidColorBrush x:Key="ToggleButtonForeground" Color="#636363"/>
+                    <SolidColorBrush x:Key="TextControlBackgroundFocused"
+                                     Color="#CCCCCC" />
+                    <SolidColorBrush x:Key="TextControlBorderBrushFocused"
+                                     Color="#636363" />
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPressed"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="TextControlButtonBackgroundPressed"
+                                     Color="#FF4343" />
+                    <!--  ToggleButton colors !  -->
+                    <SolidColorBrush x:Key="ToggleButtonForeground"
+                                     Color="#636363" />
 
-                    <SolidColorBrush x:Key="ToggleButtonBackgroundPointerOver" Color="#DADADA"/>
-                    <SolidColorBrush x:Key="ToggleButtonForegroundPointerOver" Color="#000000"/>
-                    <SolidColorBrush x:Key="ToggleButtonBorderBrushPointerOver" Color="Transparent"/>
+                    <SolidColorBrush x:Key="ToggleButtonBackgroundPointerOver"
+                                     Color="#DADADA" />
+                    <SolidColorBrush x:Key="ToggleButtonForegroundPointerOver"
+                                     Color="#000000" />
+                    <SolidColorBrush x:Key="ToggleButtonBorderBrushPointerOver"
+                                     Color="Transparent" />
 
-                    <SolidColorBrush x:Key="ToggleButtonBackgroundPressed" Color="#B8B8B8"/>
-                    <SolidColorBrush x:Key="ToggleButtonForegroundPressed" Color="#000000"/>
-                    <SolidColorBrush x:Key="ToggleButtonBorderBrushPressed" Color="Transparent"/>
+                    <SolidColorBrush x:Key="ToggleButtonBackgroundPressed"
+                                     Color="#B8B8B8" />
+                    <SolidColorBrush x:Key="ToggleButtonForegroundPressed"
+                                     Color="#000000" />
+                    <SolidColorBrush x:Key="ToggleButtonBorderBrushPressed"
+                                     Color="Transparent" />
 
-                    <SolidColorBrush x:Key="ToggleButtonBackgroundChecked" Color="#B8B8B8"/>
-                    <SolidColorBrush x:Key="ToggleButtonForegroundChecked" Color="#000000"/>
-                    <SolidColorBrush x:Key="ToggleButtonBorderBrushChecked" Color="Transparent"/>
+                    <SolidColorBrush x:Key="ToggleButtonBackgroundChecked"
+                                     Color="#B8B8B8" />
+                    <SolidColorBrush x:Key="ToggleButtonForegroundChecked"
+                                     Color="#000000" />
+                    <SolidColorBrush x:Key="ToggleButtonBorderBrushChecked"
+                                     Color="Transparent" />
 
-                    <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="#DADADA"/>
-                    <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPointerOver" Color="#000000"/>
-                    <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPointerOver" Color="Transparent"/>
+                    <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver"
+                                     Color="#DADADA" />
+                    <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPointerOver"
+                                     Color="#000000" />
+                    <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPointerOver"
+                                     Color="Transparent" />
 
-                    <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed" Color="#B8B8B8"/>
-                    <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPressed" Color="#000000"/>
-                    <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPressed" Color="Transparent"/>
+                    <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed"
+                                     Color="#B8B8B8" />
+                    <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPressed"
+                                     Color="#000000" />
+                    <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPressed"
+                                     Color="Transparent" />
 
-                    <!-- Button color !-->
-                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#DADADA"/>
-                    <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#000000"/>
-                    <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent"/>
+                    <!--  Button color !  -->
+                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                     Color="#DADADA" />
+                    <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                     Color="#000000" />
+                    <SolidColorBrush x:Key="ButtonBorderBrushPointerOver"
+                                     Color="Transparent" />
 
-                    <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#B8B8B8"/>
-                    <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#000000"/>
-                    <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="Transparent"/>
+                    <SolidColorBrush x:Key="ButtonBackgroundPressed"
+                                     Color="#B8B8B8" />
+                    <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                     Color="#000000" />
+                    <SolidColorBrush x:Key="ButtonBorderBrushPressed"
+                                     Color="Transparent" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="HighContrast">
-                    <Style x:Key="FontIconStyle" TargetType="FontIcon">
+                    <Style x:Key="FontIconStyle"
+                           TargetType="FontIcon">
                         <Setter Property="FontSize" Value="12" />
                     </Style>
-                    <Style x:Key="SearchBoxBackground" TargetType="StackPanel">
+                    <Style x:Key="SearchBoxBackground"
+                           TargetType="StackPanel">
                         <Setter Property="Background" Value="{ThemeResource SystemColorWindowColor}" />
                     </Style>
                 </ResourceDictionary>
@@ -151,38 +227,44 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <StackPanel Orientation="Horizontal" Style="{ThemeResource SearchBoxBackground}" Padding="5" CornerRadius="0,0,2,2">
-        <TextBox  x:Name="TextBox"
-                  x:Uid="SearchBox_TextBox"
-                  CornerRadius="2"
-                  Width="160"
-                  PlaceholderForeground="{ThemeResource TextBoxPlaceholderTextThemeBrush}"
-                  FontSize="15"
-                  KeyDown="TextBoxKeyDown"
-                  Margin="5"
-                  HorizontalAlignment="Left"
-                  VerticalAlignment="Center">
-        </TextBox>
+    <StackPanel Padding="5"
+                CornerRadius="0,0,2,2"
+                Orientation="Horizontal"
+                Style="{ThemeResource SearchBoxBackground}">
+        <TextBox x:Name="TextBox"
+                 x:Uid="SearchBox_TextBox"
+                 Width="160"
+                 Margin="5"
+                 HorizontalAlignment="Left"
+                 VerticalAlignment="Center"
+                 CornerRadius="2"
+                 FontSize="15"
+                 KeyDown="TextBoxKeyDown"
+                 PlaceholderForeground="{ThemeResource TextBoxPlaceholderTextThemeBrush}" />
 
         <ToggleButton x:Name="GoBackwardButton"
                       x:Uid="SearchBox_SearchBackwards"
                       HorizontalAlignment="Right"
-                      Style="{StaticResource ToggleButtonStyle}"
                       Click="GoBackwardClicked"
-                      IsChecked="True">
-            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74A;" Style="{ThemeResource FontIconStyle}"/>
+                      IsChecked="True"
+                      Style="{StaticResource ToggleButtonStyle}">
+            <FontIcon FontFamily="Segoe MDL2 Assets"
+                      Glyph="&#xE74A;"
+                      Style="{ThemeResource FontIconStyle}" />
         </ToggleButton>
         <ToggleButton x:Name="GoForwardButton"
                       x:Uid="SearchBox_SearchForwards"
-                      Style="{StaticResource ToggleButtonStyle}"
-                      Click="GoForwardClicked">
-            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74B;" Style="{ThemeResource FontIconStyle}"/>
+                      Click="GoForwardClicked"
+                      Style="{StaticResource ToggleButtonStyle}">
+            <FontIcon FontFamily="Segoe MDL2 Assets"
+                      Glyph="&#xE74B;"
+                      Style="{ThemeResource FontIconStyle}" />
         </ToggleButton>
 
         <ToggleButton x:Name="CaseSensitivityButton"
                       x:Uid="SearchBox_CaseSensitivity"
                       Style="{StaticResource ToggleButtonStyle}">
-            <PathIcon Data="M8.87305 10H7.60156L6.5625 7.25195H2.40625L1.42871 10H0.150391L3.91016 0.197266H5.09961L8.87305 10ZM6.18652 6.21973L4.64844 2.04297C4.59831 1.90625 4.54818 1.6875 4.49805 1.38672H4.4707C4.42513 1.66471 4.37272 1.88346 4.31348 2.04297L2.78906 6.21973H6.18652ZM15.1826 10H14.0615V8.90625H14.0342C13.5465 9.74479 12.8288 10.1641 11.8809 10.1641C11.1836 10.1641 10.6367 9.97949 10.2402 9.61035C9.84831 9.24121 9.65234 8.7513 9.65234 8.14062C9.65234 6.83268 10.4225 6.07161 11.9629 5.85742L14.0615 5.56348C14.0615 4.37402 13.5807 3.7793 12.6191 3.7793C11.776 3.7793 11.015 4.06641 10.3359 4.64062V3.49219C11.0241 3.05469 11.8171 2.83594 12.7148 2.83594C14.36 2.83594 15.1826 3.70638 15.1826 5.44727V10ZM14.0615 6.45898L12.373 6.69141C11.8535 6.76432 11.4616 6.89421 11.1973 7.08105C10.9329 7.26335 10.8008 7.58919 10.8008 8.05859C10.8008 8.40039 10.9215 8.68066 11.1631 8.89941C11.4092 9.11361 11.735 9.2207 12.1406 9.2207C12.6966 9.2207 13.1546 9.02702 13.5146 8.63965C13.8792 8.24772 14.0615 7.75326 14.0615 7.15625V6.45898Z"/>
+            <PathIcon Data="M8.87305 10H7.60156L6.5625 7.25195H2.40625L1.42871 10H0.150391L3.91016 0.197266H5.09961L8.87305 10ZM6.18652 6.21973L4.64844 2.04297C4.59831 1.90625 4.54818 1.6875 4.49805 1.38672H4.4707C4.42513 1.66471 4.37272 1.88346 4.31348 2.04297L2.78906 6.21973H6.18652ZM15.1826 10H14.0615V8.90625H14.0342C13.5465 9.74479 12.8288 10.1641 11.8809 10.1641C11.1836 10.1641 10.6367 9.97949 10.2402 9.61035C9.84831 9.24121 9.65234 8.7513 9.65234 8.14062C9.65234 6.83268 10.4225 6.07161 11.9629 5.85742L14.0615 5.56348C14.0615 4.37402 13.5807 3.7793 12.6191 3.7793C11.776 3.7793 11.015 4.06641 10.3359 4.64062V3.49219C11.0241 3.05469 11.8171 2.83594 12.7148 2.83594C14.36 2.83594 15.1826 3.70638 15.1826 5.44727V10ZM14.0615 6.45898L12.373 6.69141C11.8535 6.76432 11.4616 6.89421 11.1973 7.08105C10.9329 7.26335 10.8008 7.58919 10.8008 8.05859C10.8008 8.40039 10.9215 8.68066 11.1631 8.89941C11.4092 9.11361 11.735 9.2207 12.1406 9.2207C12.6966 9.2207 13.1546 9.02702 13.5146 8.63965C13.8792 8.24772 14.0615 7.75326 14.0615 7.15625V6.45898Z" />
         </ToggleButton>
 
         <Button x:Name="CloseButton"
@@ -190,7 +272,9 @@
                 Padding="0"
                 Click="CloseClick"
                 Style="{ThemeResource ButtonStyle}">
-            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE711;" FontSize="12"/>
+            <FontIcon FontFamily="Segoe MDL2 Assets"
+                      FontSize="12"
+                      Glyph="&#xE711;" />
         </Button>
     </StackPanel>
 </UserControl>
