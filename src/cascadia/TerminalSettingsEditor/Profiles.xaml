@@ -60,7 +60,7 @@
                    Visibility="{x:Bind State.Profile.IsBaseLayer}" />
 
         <Border x:Name="ControlPreview"
-                Height="320"
+                Height="160"
                 Margin="8,0,8,0"
                 HorizontalAlignment="Stretch" />
 

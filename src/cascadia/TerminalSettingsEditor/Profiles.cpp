@@ -426,6 +426,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"Profile_DeleteButton/Text"));
 
+        _previewControl.IsEnabled(false);
+        _previewControl.AllowFocusWhenDisabled(false);
         ControlPreview().Child(_previewControl);
     }
 
