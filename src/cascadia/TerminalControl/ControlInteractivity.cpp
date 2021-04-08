@@ -250,9 +250,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 auto& touchdownPoint{ *_singleClickTouchdownPos };
                 auto distance{ std::sqrtf(std::powf(mouseCursorPosition.X - touchdownPoint.X, 2) +
                                           std::powf(mouseCursorPosition.Y - touchdownPoint.Y, 2)) };
-                const til::size fontSize{ _core->GetFont().GetSize() };
 
-                const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _core->RendererScale());
+                const auto fontSizeInDips{ _core->FontSizeInDips() };
                 if (distance >= (std::min(fontSizeInDips.width(), fontSizeInDips.height()) / 4.f))
                 {
                     _core->SetSelectionAnchor(terminalPosition);
@@ -264,6 +263,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             SetEndSelectionPoint(terminalPosition);
 
+            // TODO: Make sure this still works
+            //
             // const double cursorBelowBottomDist = cursorPosition.Y - SwapChainPanel().Margin().Top - SwapChainPanel().ActualHeight();
             // const double cursorAboveTopDist = -1 * cursorPosition.Y + SwapChainPanel().Margin().Top;
 
@@ -301,8 +302,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // Our actualFont's size is in pixels, convert to DIPs, which the
             // rest of the Points here are in.
-            const til::size fontSize{ _core->GetFont().GetSize() };
-            const auto fontSizeInDips = fontSize.scale(til::math::rounding, 1.0f / _core->RendererScale());
+            const auto fontSizeInDips{ _core->FontSizeInDips() };
 
             // Get the difference between the point we've dragged to and the start of the touch.
             const float dy = newTouchPoint.Y - anchor.Y;

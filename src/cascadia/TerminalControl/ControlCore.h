@@ -36,12 +36,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void UpdateSettings(const IControlSettings& settings);
         void SizeChanged(const double width, const double height);
         void ScaleChanged(const double scaleX, const double scaleY);
-        float RendererScale() const;
         HANDLE GetSwapChainHandle() const;
 
         void AdjustFontSize(int fontSizeDelta);
         void ResetFontSize();
         FontInfo GetFont() const;
+        til::size FontSizeInDips() const;
 
         til::color BackgroundColor() const;
         void SetBackgroundOpacity(const float opacity);

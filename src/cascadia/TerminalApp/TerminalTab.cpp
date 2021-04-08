@@ -167,17 +167,9 @@ namespace winrt::TerminalApp::implementation
             if (lastFocusedControl)
             {
                 lastFocusedControl.Focus(_focusState);
-                // !!TODO!!: This is weird: The tab calls a method on the
-                // control to cause the control to raise an event to the page to
-                // the app logic
-                //
-                //            TermControl \v
-                //              /^       TerminalPage \v
-                // TerminalTab /^                  AppLogic \v
-                //                                       AppHost
-                // Seems like there's a better way...
-                //
-                // lastFocusedControl.TaskbarProgressChanged();
+
+                // Update our own progress state, and fire an event signalling
+                // that our taskbar progress changed.
                 _UpdateProgressState();
                 _TaskbarProgressChangedHandlers(lastFocusedControl, nullptr);
             }

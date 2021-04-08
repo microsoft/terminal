@@ -771,13 +771,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    // !!TODO!! Does the Control really need to ask the Core for this? Or can it
-    // suffice with the swapchain value? That's unclear.
-    float ControlCore::RendererScale() const
-    {
-        return _renderEngine->GetScaling();
-    }
-
     void ControlCore::SetSelectionAnchor(Windows::Foundation::Point const& position)
     {
         auto lock = _terminal->LockForWriting();
@@ -900,6 +893,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     FontInfo ControlCore::GetFont() const
     {
         return _actualFont;
+    }
+
+    til::size ControlCore::FontSizeInDips() const
+    {
+        const til::size fontSize{ GetFont().GetSize() };
+        return fontSize.scale(til::math::rounding, 1.0f / ::base::saturated_cast<float>(_compositionScaleX));
     }
 
     TerminalConnection::ConnectionState ControlCore::ConnectionState() const
