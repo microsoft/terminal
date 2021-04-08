@@ -7,6 +7,8 @@
 
 #include "unicode.hpp"
 
+#include <VersionHelpers.h>
+
 static constexpr float POINTS_PER_INCH = 72.0f;
 static constexpr std::wstring_view FALLBACK_FONT_FACES[] = { L"Consolas", L"Lucida Console", L"Courier New" };
 static constexpr std::wstring_view FALLBACK_LOCALE = L"en-us";
@@ -44,14 +46,19 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
 // Arguments:
 // - <none>
 // Return Value:
-// - DirectWrite font collection
+// - DirectWrite font collection. May be null if one cannot be created.
 [[nodiscard]] const Microsoft::WRL::ComPtr<IDWriteFontCollection1>& DxFontRenderData::NearbyCollection() const
 {
     // Magic static so we only attempt to grovel the hard disk once no matter how many instances
     // of the font collection itself we require.
     static const auto knownPaths = s_GetNearbyFonts();
 
-    if (!_nearbyCollection)
+    // The convenience interfaces for loading fonts from files
+    // are only available on Windows 10+.
+    // Don't try to look up if below that OS version.
+    static const bool s_isWindows10OrGreater = IsWindows10OrGreater();
+
+    if (s_isWindows10OrGreater && !_nearbyCollection)
     {
         // Factory3 has a convenience to get us a font set builder.
         ::Microsoft::WRL::ComPtr<IDWriteFactory3> factory3;
@@ -730,8 +737,14 @@ CATCH_RETURN()
     // If the system collection missed, try the files sitting next to our binary.
     if (!familyExists)
     {
-        NearbyCollection().As(&fontCollection);
-        THROW_IF_FAILED(fontCollection->FindFamilyName(familyName.data(), &familyIndex, &familyExists));
+        const auto nearbyCollection = NearbyCollection();
+
+        // May be null on OS below Windows 10. If null, just skip the attempt.
+        if (nearbyCollection)
+        {
+            nearbyCollection.As(&fontCollection);
+            THROW_IF_FAILED(fontCollection->FindFamilyName(familyName.data(), &familyIndex, &familyExists));
+        }
     }
 
     if (familyExists)
