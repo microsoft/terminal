@@ -39,9 +39,9 @@ constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 // The minimum delay between updating the locations of regex patterns
 constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
 
-DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::TerminalControl::CopyFormat);
+DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::CopyFormat);
 
-namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+namespace winrt::Microsoft::Terminal::Control::implementation
 {
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
     // See microsoft/terminal#2066 for more info.
@@ -203,7 +203,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Lazy load the search box control.
         if (auto loadedSearchBox{ FindName(L"SearchBox") })
         {
-            if (auto searchBox{ loadedSearchBox.try_as<::winrt::Microsoft::Terminal::TerminalControl::SearchBoxControl>() })
+            if (auto searchBox{ loadedSearchBox.try_as<::winrt::Microsoft::Terminal::Control::SearchBoxControl>() })
             {
                 // get at its private implementation
                 _searchBox.copy_from(winrt::get_self<implementation::SearchBoxControl>(searchBox));
@@ -327,7 +327,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // Update DxEngine settings under the lock
-        _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
+        _renderEngine->SetSelectionBackground(til::color{ _settings.SelectionBackground() });
 
         _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
         _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
@@ -427,7 +427,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         _InitializeBackgroundBrush();
 
-        COLORREF bg = newSettings.DefaultBackground();
+        const auto bg = newSettings.DefaultBackground();
         _BackgroundColorChanged(bg);
 
         // Apply padding as swapChainPanel's margin
@@ -503,12 +503,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             // see GH#1082: Initialize background color so we don't get a
             // fade/flash when _BackgroundColorChanged is called
-            uint32_t color = _settings.DefaultBackground();
-            winrt::Windows::UI::Color bgColor{};
-            bgColor.R = GetRValue(color);
-            bgColor.G = GetGValue(color);
-            bgColor.B = GetBValue(color);
-            bgColor.A = 255;
+            auto bgColor = til::color{ _settings.DefaultBackground() }.with_alpha(0xff);
 
             acrylic.FallbackColor(bgColor);
             acrylic.TintColor(bgColor);
@@ -579,7 +574,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - color: The background color to use as a uint32 (aka DWORD COLORREF)
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::_BackgroundColorChanged(const COLORREF color)
+    winrt::fire_and_forget TermControl::_BackgroundColorChanged(const til::color color)
     {
         til::color newBgColor{ color };
 
@@ -619,7 +614,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // create a custom automation peer with this code pattern:
             // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
-            auto autoPeer = winrt::make_self<winrt::Microsoft::Terminal::TerminalControl::implementation::TermControlAutomationPeer>(this);
+            auto autoPeer = winrt::make_self<winrt::Microsoft::Terminal::Control::implementation::TermControlAutomationPeer>(this);
 
             _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
             _renderer->AddRenderEngine(_uiaEngine.get());
@@ -704,7 +699,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
 
             auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(message));
-            control->_raiseNoticeHandlers(*control, std::move(noticeArgs));
+            control->_RaiseNoticeHandlers(*control, std::move(noticeArgs));
         }
     }
 
@@ -774,7 +769,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             LOG_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
             // Update DxEngine's SelectionBackground
-            dxEngine->SetSelectionBackground(_settings.SelectionBackground());
+            dxEngine->SetSelectionBackground(til::color{ _settings.SelectionBackground() });
 
             const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
             const auto width = vp.Width();
@@ -1353,11 +1348,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     mode = ::Terminal::SelectionExpansionMode::Line;
                 }
 
-                // Capture the position of the first click when no selection is active
-                if (mode == ::Terminal::SelectionExpansionMode::Cell && !_terminal->IsSelectionActive())
+                // Capture the position of the first click
+                if (mode == ::Terminal::SelectionExpansionMode::Cell)
                 {
                     _singleClickTouchdownPos = cursorPosition;
-                    _lastMouseClickPosNoSelection = cursorPosition;
+                    if (!_terminal->IsSelectionActive())
+                    {
+                        _lastMouseClickPosNoSelection = cursorPosition;
+                    }
                 }
 
                 // We reset the active selection if one of the conditions apply:
@@ -1710,7 +1708,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 {
                     _settings.UseAcrylic(false);
                     _InitializeBackgroundBrush();
-                    COLORREF bg = _settings.DefaultBackground();
+                    const auto bg = _settings.DefaultBackground();
                     _BackgroundColorChanged(bg);
                 }
                 else
@@ -1815,7 +1813,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // Clear the regex pattern tree so the renderer does not try to render them while scrolling
-        _terminal->ClearPatternTree();
+        {
+            // We're taking the lock here instead of in ClearPatternTree because ClearPatternTree is
+            // sometimes called from an already-locked context. Here, we are sure we are not
+            // already under lock (since it is not an internal scroll bar update)
+            // TODO GH#9617: refine locking around pattern tree
+            auto lock = _terminal->LockForWriting();
+            _terminal->ClearPatternTree();
+        }
 
         const auto newValue = static_cast<int>(args.NewValue());
 
@@ -2134,7 +2139,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 co_await strong->Dispatcher();
 
                 auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(msg));
-                strong->_raiseNoticeHandlers(*strong, std::move(noticeArgs));
+                strong->_RaiseNoticeHandlers(*strong, std::move(noticeArgs));
             }();
         }
 
@@ -2399,7 +2404,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::_TerminalTitleChanged(const std::wstring_view& wstr)
     {
-        _titleChangedHandlers(winrt::hstring{ wstr });
+        _TitleChangedHandlers(*this, winrt::make<TitleChangedEventArgs>(winrt::hstring{ wstr }));
     }
     void TermControl::_TerminalTabColorChanged(const std::optional<til::color> /*color*/)
     {
@@ -2409,7 +2414,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_CopyToClipboard(const std::wstring_view& wstr)
     {
         auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(wstr));
-        _clipboardCopyHandlers(*this, *copyArgs);
+        _CopyToClipboardHandlers(*this, *copyArgs);
     }
 
     // Method Description:
@@ -2434,6 +2439,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // Clear the regex pattern tree so the renderer does not try to render them while scrolling
+        // We're **NOT** taking the lock here unlike _ScrollbarChangeHandler because
+        // we are already under lock (since this usually happens as a result of writing).
+        // TODO GH#9617: refine locking around pattern tree
         _terminal->ClearPatternTree();
 
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
@@ -2474,6 +2482,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         hstring hstr{ _terminal->GetWorkingDirectory() };
         return hstr;
+    }
+
+    bool TermControl::BracketedPasteEnabled() const noexcept
+    {
+        return _terminal->IsXtermBracketedPasteModeEnabled();
     }
 
     // Method Description:
@@ -2518,7 +2531,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                   TextBuffer::GenHTML(bufferData,
                                                       _actualFont.GetUnscaledSize().Y,
                                                       _actualFont.GetFaceName(),
-                                                      _settings.DefaultBackground()) :
+                                                      til::color{ _settings.DefaultBackground() }) :
                                   "";
 
         // convert to RTF format
@@ -2526,7 +2539,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                  TextBuffer::GenRTF(bufferData,
                                                     _actualFont.GetUnscaledSize().Y,
                                                     _actualFont.GetFaceName(),
-                                                    _settings.DefaultBackground()) :
+                                                    til::color{ _settings.DefaultBackground() }) :
                                  "";
 
         if (!_settings.CopyOnSelect())
@@ -2540,7 +2553,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                                    winrt::to_hstring(htmlData),
                                                                    winrt::to_hstring(rtfData),
                                                                    formats);
-        _clipboardCopyHandlers(*this, *copyArgs);
+        _CopyToClipboardHandlers(*this, *copyArgs);
         return true;
     }
 
@@ -2554,7 +2567,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
 
         // send paste event up to TermApp
-        _clipboardPasteHandlers(*this, *pasteArgs);
+        _PasteFromClipboardHandlers(*this, *pasteArgs);
     }
 
     // Method Description:
@@ -3226,7 +3239,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         co_await Dispatcher();
 
         auto hyperlinkArgs = winrt::make_self<OpenHyperlinkEventArgs>(heldUri);
-        _openHyperlinkHandlers(*strongThis, *hyperlinkArgs);
+        _OpenHyperlinkHandlers(*strongThis, *hyperlinkArgs);
     }
 
     // Method Description:
@@ -3262,7 +3275,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControl::TabColor() noexcept
     {
         auto coreColor = _terminal->GetTabColor();
-        return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(coreColor.value()) : nullptr;
+        return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(til::color{ coreColor.value() }) : nullptr;
     }
 
     // Method Description:
@@ -3271,7 +3284,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     winrt::fire_and_forget TermControl::TaskbarProgressChanged()
     {
         co_await resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
-        _setTaskbarProgressHandlers(*this, nullptr);
+        _SetTaskbarProgressHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -3317,7 +3330,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (auto control{ weakThis.get() })
         {
             auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));
-            control->_raiseNoticeHandlers(*control, std::move(noticeArgs));
+            control->_RaiseNoticeHandlers(*control, std::move(noticeArgs));
         }
     }
 
@@ -3334,8 +3347,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _lastHoveredCell = terminalPosition;
 
+        uint16_t newId{ 0u };
+        // we can't use auto here because we're pre-declaring newInterval.
+        decltype(_terminal->GetHyperlinkIntervalFromPosition(COORD{})) newInterval{ std::nullopt };
         if (terminalPosition.has_value())
         {
+            auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
+
             const auto uri = _terminal->GetHyperlinkAtPosition(*terminalPosition);
             if (!uri.empty())
             {
@@ -3361,15 +3379,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
                 OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
             }
-        }
 
-        const uint16_t newId = terminalPosition.has_value() ? _terminal->GetHyperlinkIdAtPosition(*terminalPosition) : 0u;
-        const auto newInterval = terminalPosition.has_value() ? _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition) : std::nullopt;
+            newId = _terminal->GetHyperlinkIdAtPosition(*terminalPosition);
+            newInterval = _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition);
+        }
 
         // If the hyperlink ID changed or the interval changed, trigger a redraw all
         // (so this will happen both when we move onto a link and when we move off a link)
         if (newId != _lastHoveredId || (newInterval != _lastHoveredInterval))
         {
+            auto lock = _terminal->LockForWriting();
             _lastHoveredId = newId;
             _lastHoveredInterval = newInterval;
             _renderEngine->UpdateHyperlinkHoveredId(newId);
@@ -3392,14 +3411,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
-    DEFINE_EVENT(TermControl, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
-    DEFINE_EVENT(TermControl, FontSizeChanged, _fontSizeChangedHandlers, TerminalControl::FontSizeChangedEventArgs);
-    DEFINE_EVENT(TermControl, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
-
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, CopyToClipboard, _clipboardCopyHandlers, TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControl, IInspectable);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControl, TerminalControl::NoticeEventArgs);
-    // clang-format on
+    DEFINE_EVENT(TermControl, FontSizeChanged, _fontSizeChangedHandlers, Control::FontSizeChangedEventArgs);
+    DEFINE_EVENT(TermControl, ScrollPositionChanged, _scrollPositionChangedHandlers, Control::ScrollPositionChangedEventArgs);
 }

@@ -48,11 +48,4 @@
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />
   <Import Project="$(SolutionDir)src\common.build.tests.props" />
-  <Import Project="..\..\..\..\packages\Taef.Redist.Wlk.10.57.200731005-develop\build\Taef.Redist.Wlk.targets" Condition="Exists('..\..\..\..\packages\Taef.Redist.Wlk.10.57.200731005-develop\build\Taef.Redist.Wlk.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\..\packages\Taef.Redist.Wlk.10.57.200731005-develop\build\Taef.Redist.Wlk.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\Taef.Redist.Wlk.10.57.200731005-develop\build\Taef.Redist.Wlk.targets'))" />
-  </Target>
 </Project>

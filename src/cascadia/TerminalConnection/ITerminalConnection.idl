@@ -27,4 +27,6 @@ namespace Microsoft.Terminal.TerminalConnection
         event Windows.Foundation.TypedEventHandler<ITerminalConnection, Object> StateChanged;
         ConnectionState State { get; };
     };
+
+    delegate void NewConnectionHandler(ITerminalConnection connection);
 }
