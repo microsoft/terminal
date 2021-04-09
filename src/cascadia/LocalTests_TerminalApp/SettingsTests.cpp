@@ -120,11 +120,11 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto actionMap{ settings.ActionMap() };
-        VERIFY_ARE_EQUAL(1u, actionMap.CommandCount());
+        auto nameMap{ settings.ActionMap().NameMap() };
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
 
         {
-            auto command = actionMap.GetActionByName(L"iterable command ${profile.name}");
+            auto command = nameMap.TryLookup(L"iterable command ${profile.name}");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -141,7 +141,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(actionMap.NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(nameMap, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
@@ -247,11 +247,11 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto actionMap{ settings.ActionMap() };
-        VERIFY_ARE_EQUAL(1u, actionMap.CommandCount());
+        auto nameMap{ settings.ActionMap().NameMap() };
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
 
         {
-            auto command = actionMap.GetActionByName(L"Split pane, profile: ${profile.name}");
+            auto command = nameMap.TryLookup(L"Split pane, profile: ${profile.name}");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -268,7 +268,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(actionMap.NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(nameMap, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
@@ -376,11 +376,11 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto actionMap{ settings.ActionMap() };
-        VERIFY_ARE_EQUAL(1u, actionMap.CommandCount());
+        auto nameMap{ settings.ActionMap().NameMap() };
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
 
         {
-            auto command = actionMap.GetActionByName(L"iterable command ${profile.name}");
+            auto command = nameMap.TryLookup(L"iterable command ${profile.name}");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -397,7 +397,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(actionMap.NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(nameMap, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
@@ -1108,11 +1108,11 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto actionMap{ settings.ActionMap() };
-        VERIFY_ARE_EQUAL(1u, actionMap.CommandCount());
+        auto nameMap{ settings.ActionMap().NameMap() };
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
 
         {
-            auto command = actionMap.GetActionByName(L"iterable command ${scheme.name}");
+            auto command = nameMap.TryLookup(L"iterable command ${scheme.name}");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -1129,7 +1129,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${scheme.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(actionMap.NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(nameMap, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         // This is the same warning as above

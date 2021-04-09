@@ -8,6 +8,7 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean Equals(IActionArgs other);
         String GenerateName();
         IActionArgs Copy();
+        UInt64 Hash();
     };
 
     interface IActionEventArgs

@@ -6,10 +6,10 @@ import "Command.idl";
 namespace Microsoft.Terminal.Settings.Model
 {
     [default_interface] runtimeclass ActionMap {
-        UInt64 KeybindingCount { get; };
-        UInt64 CommandCount { get; };
+        //UInt64 KeybindingCount { get; };
+        //UInt64 CommandCount { get; };
 
-        Command GetActionByName(String name);
+        //Command GetActionByName(String name);
         Command GetActionByKeyChord(Microsoft.Terminal.Control.KeyChord keys);
 
         Microsoft.Terminal.Control.KeyChord GetKeyBindingForAction(ShortcutAction action);

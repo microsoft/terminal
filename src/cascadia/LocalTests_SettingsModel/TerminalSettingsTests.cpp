@@ -109,7 +109,8 @@ namespace SettingsModelLocalTests
         const auto profile2Guid = settings.ActiveProfiles().GetAt(2).Guid();
         VERIFY_ARE_NOT_EQUAL(winrt::guid{}, profile2Guid);
 
-        VERIFY_ARE_EQUAL(12u, actionMap.KeybindingCount());
+        const auto& actionMapImpl{ winrt::get_self<implementation::ActionMap>(actionMap) };
+        VERIFY_ARE_EQUAL(12u, actionMapImpl->_KeyMap.size());
 
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('A') };
