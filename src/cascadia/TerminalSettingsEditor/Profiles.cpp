@@ -660,7 +660,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto lifetime = get_strong();
 
         static constexpr COMDLG_FILTERSPEC supportedFileTypes[] = {
-            { L"Executable FIles (*.exe, *.cmd, *.bat)", L"*.exe;*.cmd;*.bat" },
+            { L"Executable Files (*.exe, *.cmd, *.bat)", L"*.exe;*.cmd;*.bat" },
             { L"All Files (*.*)", L"*.*" }
         };
 
