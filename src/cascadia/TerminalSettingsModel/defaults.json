@@ -295,8 +295,8 @@
         { "command": "renameTab" },
         { "command": "openTabRenamer" },
         { "command": "commandPalette", "keys":"ctrl+shift+p" },
-
         { "command": "identifyWindow" },
+        { "command": "openWindowRenamer" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.

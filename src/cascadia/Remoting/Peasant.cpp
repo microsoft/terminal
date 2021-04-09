@@ -164,4 +164,34 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 
+    void Peasant::RequestRename(const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args)
+    {
+        bool successfullyNotified = false;
+        const auto oldName{ _WindowName };
+        try
+        {
+            // Try/catch this, because the other side of this event is handled
+            // by the monarch. The monarch might have died. If they have, this
+            // will throw an exception. Just eat it, the election thread will
+            // handle hooking up the new one.
+            _RenameRequestedHandlers(*this, args);
+            if (args.Succeeded())
+            {
+                _WindowName = args.NewName();
+            }
+            successfullyNotified = true;
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+        }
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Peasant_RequestRename",
+                          TraceLoggingUInt64(GetID(), "peasantID", "Our ID"),
+                          TraceLoggingWideString(oldName.c_str(), "oldName", "Our old name"),
+                          TraceLoggingWideString(args.NewName().c_str(), "newName", "The proposed name"),
+                          TraceLoggingBoolean(args.Succeeded(), "succeeded", "true if the monarch ok'd this new name for us."),
+                          TraceLoggingBoolean(successfullyNotified, "successfullyNotified", "true if we successfully notified the monarch"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+    }
 }

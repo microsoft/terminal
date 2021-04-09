@@ -85,6 +85,9 @@ namespace TerminalAppLocalTests
         TEST_METHOD(NextMRUTab);
         TEST_METHOD(VerifyCommandPaletteTabSwitcherOrder);
 
+        TEST_METHOD(TestWindowRenameSuccessful);
+        TEST_METHOD(TestWindowRenameFailure);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             return true;
@@ -947,5 +950,58 @@ namespace TerminalAppLocalTests
         // in TerminalPage::_SelectNextTab, but as we saw before, the palette
         // will also dismiss itself immediately when that's called. So we can't
         // really inspect the contents of the list in this test, unfortunately.
+    }
+
+    void TabTests::TestWindowRenameSuccessful()
+    {
+        auto page = _commonSetup();
+        page->RenameWindowRequested([&page](auto&&, const winrt::TerminalApp::RenameWindowRequestedArgs args) {
+            // In the real terminal, this would bounce up to the monarch and
+            // come back down. Instead, immediately call back and set the name.
+            page->WindowName(args.ProposedName());
+        });
+
+        bool windowNameChanged = false;
+        page->PropertyChanged([&page, &windowNameChanged](auto&&, const winrt::WUX::Data::PropertyChangedEventArgs& args) mutable {
+            if (args.PropertyName() == L"WindowNameForDisplay")
+            {
+                windowNameChanged = true;
+            }
+        });
+
+        TestOnUIThread([&page]() {
+            page->_RequestWindowRename(winrt::hstring{ L"Foo" });
+        });
+        TestOnUIThread([&]() {
+            VERIFY_ARE_EQUAL(L"Foo", page->_WindowName);
+            VERIFY_IS_TRUE(windowNameChanged,
+                           L"The window name should have changed, and we should have raised a notification that WindowNameForDisplay changed");
+        });
+    }
+    void TabTests::TestWindowRenameFailure()
+    {
+        auto page = _commonSetup();
+        page->RenameWindowRequested([&page](auto&&, auto&&) {
+            // In the real terminal, this would bounce up to the monarch and
+            // come back down. Instead, immediately call back to tell the terminal it failed.
+            page->RenameFailed();
+        });
+
+        bool windowNameChanged = false;
+
+        page->PropertyChanged([&page, &windowNameChanged](auto&&, const winrt::WUX::Data::PropertyChangedEventArgs& args) mutable {
+            if (args.PropertyName() == L"WindowNameForDisplay")
+            {
+                windowNameChanged = true;
+            }
+        });
+
+        TestOnUIThread([&page]() {
+            page->_RequestWindowRename(winrt::hstring{ L"Foo" });
+        });
+        TestOnUIThread([&]() {
+            VERIFY_IS_FALSE(windowNameChanged,
+                            L"The window name should not have changed, we should have rejected the change.");
+        });
     }
 }

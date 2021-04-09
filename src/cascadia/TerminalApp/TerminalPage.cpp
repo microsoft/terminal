@@ -15,6 +15,7 @@
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
+#include "RenameWindowRequestedArgs.g.cpp"
 
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
@@ -1195,7 +1196,7 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
-            TerminalSettings controlSettings{ nullptr };
+            TerminalSettingsCreateResult controlSettings{ nullptr };
             GUID realGuid;
             bool profileFound = false;
 
@@ -1210,7 +1211,7 @@ namespace winrt::TerminalApp::implementation
                     const auto validWorkingDirectory = !workingDirectory.empty();
                     if (validWorkingDirectory)
                     {
-                        controlSettings.StartingDirectory(workingDirectory);
+                        controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
                     }
                     realGuid = current_guid.value();
                 }
@@ -1233,7 +1234,7 @@ namespace winrt::TerminalApp::implementation
                 controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
             }
 
-            const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
+            const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings.DefaultSettings());
 
             const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
             const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
@@ -1510,9 +1511,13 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            const auto isNewLineLambda = [](auto c) { return c == L'\n' || c == L'\r'; };
-            const auto hasNewLine = std::find_if(text.cbegin(), text.cend(), isNewLineLambda) != text.cend();
-            const auto warnMultiLine = hasNewLine && _settings.GlobalSettings().WarnAboutMultiLinePaste();
+            bool warnMultiLine = _settings.GlobalSettings().WarnAboutMultiLinePaste();
+            if (warnMultiLine)
+            {
+                const auto isNewLineLambda = [](auto c) { return c == L'\n' || c == L'\r'; };
+                const auto hasNewLine = std::find_if(text.cbegin(), text.cend(), isNewLineLambda) != text.cend();
+                warnMultiLine = hasNewLine;
+            }
 
             constexpr const std::size_t minimumSizeForWarning = 1024 * 5; // 5 KiB
             const bool warnLargeText = text.size() > minimumSizeForWarning &&
@@ -1522,6 +1527,13 @@ namespace winrt::TerminalApp::implementation
             {
                 co_await winrt::resume_foreground(Dispatcher());
 
+                if (warnMultiLine)
+                {
+                    const auto focusedTab = _GetFocusedTabImpl();
+                    // Do not warn about multi line pasting if the current tab has bracketed paste enabled.
+                    warnMultiLine = warnMultiLine && !focusedTab->GetActiveTerminalControl().BracketedPasteEnabled();
+                }
+
                 // We have to initialize the dialog here to be able to change the text of the text block within it
                 FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>();
                 ClipboardText().Text(text);
@@ -1529,7 +1541,7 @@ namespace winrt::TerminalApp::implementation
                 // The vertical offset on the scrollbar does not reset automatically, so reset it manually
                 ClipboardContentScrollViewer().ScrollToVerticalOffset(0);
 
-                ContentDialogResult warningResult;
+                ContentDialogResult warningResult = ContentDialogResult::Primary;
                 if (warnMultiLine)
                 {
                     warningResult = co_await _ShowMultiLinePasteWarningDialog();
@@ -1773,9 +1785,16 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    TermControl TerminalPage::_InitControl(const TerminalSettings& settings, const ITerminalConnection& connection)
+    TermControl TerminalPage::_InitControl(const TerminalSettingsCreateResult& settings, const ITerminalConnection& connection)
     {
-        return TermControl{ TerminalSettings::CreateWithParent(settings), connection };
+        // Give term control a child of the settings so that any overrides go in the child
+        // This way, when we do a settings reload we just update the parent and the overrides remain
+        const auto child = TerminalSettings::CreateWithParent(settings);
+        TermControl term{ child.DefaultSettings(), connection };
+
+        term.UnfocusedAppearance(child.UnfocusedSettings()); // It is okay for the unfocused settings to be null
+
+        return term;
     }
 
     // Method Description:
@@ -2520,6 +2539,24 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Update the RequestedTheme of the specified FrameworkElement and all its
+    //   Parent elements. We need to do this so that we can actually theme all
+    //   of the elements of the TeachingTip. See GH#9717
+    // Arguments:
+    // - element: The TeachingTip to set the theme on.
+    // Return Value:
+    // - <none>
+    void TerminalPage::_UpdateTeachingTipTheme(winrt::Windows::UI::Xaml::FrameworkElement element)
+    {
+        auto theme{ _settings.GlobalSettings().Theme() };
+        while (element)
+        {
+            element.RequestedTheme(theme);
+            element = element.Parent().try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
+        }
+    }
+
+    // Method Description:
     // - Display the name and ID of this window in a TeachingTip. If the window
     //   has no name, the name will be presented as "<unnamed-window>".
     // - This can be invoked by either:
@@ -2548,6 +2585,7 @@ namespace winrt::TerminalApp::implementation
                     tip.Closed({ page->get_weak(), &TerminalPage::_FocusActiveControl });
                 }
             }
+            _UpdateTeachingTipTheme(WindowIdToast().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
 
             if (page->_windowIdToast != nullptr)
             {
@@ -2568,7 +2606,7 @@ namespace winrt::TerminalApp::implementation
         if (_WindowName != value)
         {
             _WindowName = value;
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+            _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
         }
     }
 
@@ -2584,7 +2622,7 @@ namespace winrt::TerminalApp::implementation
         if (_WindowId != value)
         {
             _WindowId = value;
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
+            _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
         }
     }
 
@@ -2612,5 +2650,96 @@ namespace winrt::TerminalApp::implementation
         return _WindowName.empty() ?
                    winrt::hstring{ fmt::format(L"<{}>", RS_(L"UnnamedWindowName")) } :
                    _WindowName;
+    }
+
+    // Method Description:
+    // - Called when an attempt to rename the window has failed. This will open
+    //   the toast displaying a message to the user that the attempt to rename
+    //   the window has failed.
+    // - This will load the RenameFailedToast TeachingTip the first time it's called.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget TerminalPage::RenameFailed()
+    {
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_foreground(Dispatcher());
+        if (auto page{ weakThis.get() })
+        {
+            // If we haven't ever loaded the TeachingTip, then do so now and
+            // create the toast for it.
+            if (page->_windowRenameFailedToast == nullptr)
+            {
+                if (MUX::Controls::TeachingTip tip{ page->FindName(L"RenameFailedToast").try_as<MUX::Controls::TeachingTip>() })
+                {
+                    page->_windowRenameFailedToast = std::make_shared<Toast>(tip);
+                    // Make sure to use the weak ref when setting up this
+                    // callback.
+                    tip.Closed({ page->get_weak(), &TerminalPage::_FocusActiveControl });
+                }
+            }
+            _UpdateTeachingTipTheme(RenameFailedToast().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
+
+            if (page->_windowRenameFailedToast != nullptr)
+            {
+                page->_windowRenameFailedToast->Open();
+            }
+        }
+    }
+
+    // Method Description:
+    // - Called when the user hits the "Ok" button on the WindowRenamer TeachingTip.
+    // - Will raise an event that will bubble up to the monarch, asking if this
+    //   name is acceptable.
+    //   - If it is, we'll eventually get called back in TerminalPage::WindowName(hstring).
+    //   - If not, then TerminalPage::RenameFailed will get called.
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_WindowRenamerActionClick(const IInspectable& /*sender*/,
+                                                 const IInspectable& /*eventArgs*/)
+    {
+        auto newName = WindowRenamerTextBox().Text();
+        _RequestWindowRename(newName);
+    }
+
+    void TerminalPage::_RequestWindowRename(const winrt::hstring& newName)
+    {
+        auto request = winrt::make<implementation::RenameWindowRequestedArgs>(newName);
+        // The WindowRenamer is _not_ a Toast - we want it to stay open until the user dismisses it.
+        WindowRenamer().IsOpen(false);
+        _RenameWindowRequestedHandlers(*this, request);
+        // We can't just use request.Successful here, because the handler might
+        // (will) be handling this asynchronously, so when control returns to
+        // us, this hasn't actually been handled yet. We'll get called back in
+        // RenameFailed if this fails.
+        //
+        // Theoretically we could do a IAsyncOperation<RenameWindowResult> kind
+        // of thing with co_return winrt::make<RenameWindowResult>(false).
+    }
+
+    // Method Description:
+    // - Manually handle Enter and Escape for committing and dismissing a window
+    //   rename. This is highly similar to the TabHeaderControl's KeyUp handler.
+    // Arguments:
+    // - e: the KeyRoutedEventArgs describing the key that was released
+    // Return Value:
+    // - <none>
+    void TerminalPage::_WindowRenamerKeyUp(const IInspectable& sender,
+                                           winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+    {
+        if (e.OriginalKey() == Windows::System::VirtualKey::Enter)
+        {
+            // User is done making changes, close the rename box
+            _WindowRenamerActionClick(sender, nullptr);
+        }
+        else if (e.OriginalKey() == Windows::System::VirtualKey::Escape)
+        {
+            // User wants to discard the changes they made
+            WindowRenamerTextBox().Text(WindowName());
+            WindowRenamer().IsOpen(false);
+        }
     }
 }

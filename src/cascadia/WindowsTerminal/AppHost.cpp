@@ -250,6 +250,7 @@ void AppHost::Initialize()
     _logic.LastTabClosed({ this, &AppHost::LastTabClosed });
     _logic.SetTaskbarProgress({ this, &AppHost::SetTaskbarProgress });
     _logic.IdentifyWindowsRequested({ this, &AppHost::_IdentifyWindowsRequested });
+    _logic.RenameWindowRequested({ this, &AppHost::_RenameWindowRequested });
 
     _window->UpdateTitle(_logic.Title());
 
@@ -618,8 +619,8 @@ GUID AppHost::_CurrentDesktopGuid()
 // - <unused>
 // Return Value:
 // - <none>
-winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                                          const winrt::Windows::Foundation::IInspectable& /*args*/)
+winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
+                                                          const winrt::Windows::Foundation::IInspectable /*args*/)
 {
     // We'll be raising an event that may result in a RPC call to the monarch -
     // make sure we're on the background thread, or this will silently fail
@@ -642,4 +643,34 @@ void AppHost::_DisplayWindowId(const winrt::Windows::Foundation::IInspectable& /
                                const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     _logic.IdentifyWindow();
+}
+
+winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
+                                                       const winrt::TerminalApp::RenameWindowRequestedArgs args)
+{
+    // Capture calling context.
+    winrt::apartment_context ui_thread;
+
+    // Switch to the BG thread - anything x-proc must happen on a BG thread
+    co_await winrt::resume_background();
+
+    if (auto peasant{ _windowManager.CurrentWindow() })
+    {
+        Remoting::RenameRequestArgs requestArgs{ args.ProposedName() };
+
+        peasant.RequestRename(requestArgs);
+
+        // Switch back to the UI thread. Setting the WindowName needs to happen
+        // on the UI thread, because it'll raise a PropertyChanged event
+        co_await ui_thread;
+
+        if (requestArgs.Succeeded())
+        {
+            _logic.WindowName(args.ProposedName());
+        }
+        else
+        {
+            _logic.RenameFailed();
+        }
+    }
 }

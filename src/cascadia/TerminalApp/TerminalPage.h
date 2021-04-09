@@ -7,6 +7,7 @@
 #include "TerminalTab.h"
 #include "AppKeyBindings.h"
 #include "AppCommandlineArgs.h"
+#include "RenameWindowRequestedArgs.g.h"
 #include "Toast.h"
 
 #define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
@@ -33,6 +34,15 @@ namespace winrt::TerminalApp::implementation
     {
         ScrollUp = 0,
         ScrollDown = 1
+    };
+
+    struct RenameWindowRequestedArgs : RenameWindowRequestedArgsT<RenameWindowRequestedArgs>
+    {
+        WINRT_PROPERTY(winrt::hstring, ProposedName);
+
+    public:
+        RenameWindowRequestedArgs(const winrt::hstring& name) :
+            _ProposedName{ name } {};
     };
 
     struct TerminalPage : TerminalPageT<TerminalPage>
@@ -82,6 +92,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring KeyboardServiceDisabledText();
 
         winrt::fire_and_forget IdentifyWindow();
+        winrt::fire_and_forget RenameFailed();
 
         winrt::fire_and_forget ProcessStartupActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions,
                                                      const bool initial,
@@ -110,6 +121,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(SetTaskbarProgress, IInspectable, IInspectable);
         TYPED_EVENT(Initialized, IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(IdentifyWindowsRequested, IInspectable, IInspectable);
+        TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs);
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
@@ -162,6 +174,7 @@ namespace winrt::TerminalApp::implementation
         bool _shouldStartInboundListener{ false };
 
         std::shared_ptr<Toast> _windowIdToast{ nullptr };
+        std::shared_ptr<Toast> _windowRenameFailedToast{ nullptr };
 
         void _ShowAboutDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseWarningDialog();
@@ -172,7 +185,7 @@ namespace winrt::TerminalApp::implementation
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
         void _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
-        void _CreateNewTabFromSettings(GUID profileGuid, Microsoft::Terminal::Settings::Model::TerminalSettings settings, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
+        void _CreateNewTabFromSettings(GUID profileGuid, const Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, Microsoft::Terminal::Settings::Model::TerminalSettings settings);
 
         winrt::fire_and_forget _OpenNewWindow(const bool elevate, const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
@@ -277,7 +290,7 @@ namespace winrt::TerminalApp::implementation
 
         void _Find();
 
-        winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettings& settings,
+        winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                                                                       const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
 
         winrt::fire_and_forget _RefreshUIForSettingsReload();
@@ -310,6 +323,12 @@ namespace winrt::TerminalApp::implementation
 
         void _OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
         void _HandleToggleInboundPty(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+
+        void _WindowRenamerActionClick(const IInspectable& sender, const IInspectable& eventArgs);
+        void _RequestWindowRename(const winrt::hstring& newName);
+        void _WindowRenamerKeyUp(const IInspectable& sender, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+
+        void _UpdateTeachingTipTheme(winrt::Windows::UI::Xaml::FrameworkElement element);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
