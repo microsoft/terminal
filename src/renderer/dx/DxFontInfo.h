@@ -37,6 +37,8 @@ namespace Microsoft::Console::Render
         DWRITE_FONT_STRETCH GetStretch() const noexcept;
         void SetStretch(const DWRITE_FONT_STRETCH stretch) noexcept;
 
+        bool GetFallback() const noexcept;
+
         void SetFromEngine(const std::wstring_view familyName,
                            const DWRITE_FONT_WEIGHT weight,
                            const DWRITE_FONT_STYLE style,
@@ -51,9 +53,24 @@ namespace Microsoft::Console::Render
         [[nodiscard]] std::wstring _GetFontFamilyName(gsl::not_null<IDWriteFontFamily*> const fontFamily,
                                                       std::wstring& localeName);
 
+        [[nodiscard]] const Microsoft::WRL::ComPtr<IDWriteFontCollection1>& NearbyCollection(gsl::not_null<IDWriteFactory1*> dwriteFactory) const;
+
+        [[nodiscard]] static std::vector<std::filesystem::path> s_GetNearbyFonts();
+
+        mutable ::Microsoft::WRL::ComPtr<IDWriteFontCollection1> _nearbyCollection;
+
         std::wstring _familyName;
+
+        // The weight (bold, light, etc.)
         DWRITE_FONT_WEIGHT _weight;
+
+        // Normal, italic, etc.
         DWRITE_FONT_STYLE _style;
+
+        // The stretch of the font is the spacing between each letter
         DWRITE_FONT_STRETCH _stretch;
+
+        // Indicates whether we couldn't match the user request and had to choose from a hardcoded default list.
+        bool _didFallback;
     };
 }

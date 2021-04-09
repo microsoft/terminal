@@ -5,6 +5,10 @@
 
 #include "DxFontInfo.h"
 
+#include "unicode.hpp"
+
+#include <VersionHelpers.h>
+
 static constexpr std::wstring_view FALLBACK_FONT_FACES[] = { L"Consolas", L"Lucida Console", L"Courier New" };
 
 using namespace Microsoft::Console::Render;
@@ -79,6 +83,11 @@ void DxFontInfo::SetStretch(const DWRITE_FONT_STRETCH stretch) noexcept
     _stretch = stretch;
 }
 
+bool DxFontInfo::GetFallback() const noexcept
+{
+    return _didFallback;
+}
+
 void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
                                const DWRITE_FONT_WEIGHT weight,
                                const DWRITE_FONT_STYLE style,
@@ -105,29 +114,65 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontInfo::ResolveFontFaceWithFallback(gsl::not_null<IDWriteFactory1*> dwriteFactory,
                                                                                                std::wstring& localeName)
 {
+    // First attempt to find exactly what the user asked for.
+    _didFallback = false;
     auto face = _FindFontFace(dwriteFactory, localeName);
 
     if (!face)
     {
-        for (const auto fallbackFace : FALLBACK_FONT_FACES)
+        // If we missed, try looking a little more by trimming the last word off the requested family name a few times.
+        // Quite often, folks are specifying weights or something in the familyName and it causes failed resolution and
+        // an unexpected error dialog. We theoretically could detect the weight words and convert them, but this
+        // is the quick fix for the majority scenario.
+        // The long/full fix is backlogged to GH#9744
+        // Also this doesn't count as a fallback because we don't want to annoy folks with the warning dialog over
+        // this resolution.
+        while (!face && !_familyName.empty())
         {
-            _familyName = fallbackFace;
-            face = _FindFontFace(dwriteFactory, localeName);
+            const auto lastSpace = _familyName.find_last_of(UNICODE_SPACE);
 
-            if (face)
+            // value is unsigned and npos will be greater than size.
+            // if we didn't find anything to trim, leave.
+            if (lastSpace >= _familyName.size())
             {
                 break;
             }
 
-            SetFromEngine(fallbackFace,
-                          DWRITE_FONT_WEIGHT_NORMAL,
-                          DWRITE_FONT_STYLE_NORMAL,
-                          DWRITE_FONT_STRETCH_NORMAL);
-            face = _FindFontFace(dwriteFactory, localeName);
+            // trim string down to just before the found space
+            // (space found at 6... trim from 0 for 6 length will give us 0-5 as the new string)
+            _familyName = _familyName.substr(0, lastSpace);
 
-            if (face)
+            // Try to find it with the shortened family name
+            face = _FindFontFace(dwriteFactory, localeName);
+        }
+
+        // Alright, if our quick shot at trimming didn't work either...
+        // move onto looking up a font from our hardcoded list of fonts
+        // that should really always be available.
+        if (!face)
+        {
+            for (const auto fallbackFace : FALLBACK_FONT_FACES)
             {
-                break;
+                _familyName = fallbackFace;
+                face = _FindFontFace(dwriteFactory, localeName);
+
+                if (face)
+                {
+                    _didFallback = true;
+                    break;
+                }
+
+                _familyName = fallbackFace;
+                _weight = DWRITE_FONT_WEIGHT_NORMAL;
+                _stretch = DWRITE_FONT_STRETCH_NORMAL;
+                _style = DWRITE_FONT_STYLE_NORMAL;
+                face = _FindFontFace(dwriteFactory, localeName);
+
+                if (face)
+                {
+                    _didFallback = true;
+                    break;
+                }
             }
         }
     }
@@ -155,7 +200,20 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 
     UINT32 familyIndex;
     BOOL familyExists;
-    THROW_IF_FAILED(fontCollection->FindFamilyName(GetFamilyName().data(), &familyIndex, &familyExists));
+    THROW_IF_FAILED(fontCollection->FindFamilyName(_familyName.data(), &familyIndex, &familyExists));
+
+     // If the system collection missed, try the files sitting next to our binary.
+    if (!familyExists)
+    {
+        auto&& nearbyCollection = NearbyCollection(dwriteFactory);
+
+        // May be null on OS below Windows 10. If null, just skip the attempt.
+        if (nearbyCollection)
+        {
+            nearbyCollection.As(&fontCollection);
+            THROW_IF_FAILED(fontCollection->FindFamilyName(_familyName.data(), &familyIndex, &familyExists));
+        }
+    }
 
     if (familyExists)
     {
@@ -171,12 +229,12 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
         THROW_IF_FAILED(fontFace0.As(&fontFace));
 
         // Retrieve metrics in case the font we created was different than what was requested.
-        SetWeight(font->GetWeight());
-        SetStretch(font->GetStretch());
-        SetStyle(font->GetStyle());
+        _weight = font->GetWeight();
+        _stretch = font->GetStretch();
+        _style = font->GetStyle();
 
         // Dig the family name out at the end to return it.
-        SetFamilyName(_GetFontFamilyName(fontFamily.Get(), localeName));
+        _familyName = _GetFontFamilyName(fontFamily.Get(), localeName);
     }
 
     return fontFace;
@@ -247,4 +305,76 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 
     // and return it.
     return retVal;
+}
+
+// Routine Description:
+// - Creates a DirectWrite font collection of font files that are sitting next to the running
+//   binary (in the same directory as the EXE).
+// Arguments:
+// - <none>
+// Return Value:
+// - DirectWrite font collection. May be null if one cannot be created.
+[[nodiscard]] const Microsoft::WRL::ComPtr<IDWriteFontCollection1>& DxFontInfo::NearbyCollection(gsl::not_null<IDWriteFactory1*> dwriteFactory) const
+{
+    // Magic static so we only attempt to grovel the hard disk once no matter how many instances
+    // of the font collection itself we require.
+    static const auto knownPaths = s_GetNearbyFonts();
+
+    // The convenience interfaces for loading fonts from files
+    // are only available on Windows 10+.
+    // Don't try to look up if below that OS version.
+    static const bool s_isWindows10OrGreater = IsWindows10OrGreater();
+
+    if (s_isWindows10OrGreater && !_nearbyCollection)
+    {
+        // Factory3 has a convenience to get us a font set builder.
+        ::Microsoft::WRL::ComPtr<IDWriteFactory3> factory3;
+        THROW_IF_FAILED(dwriteFactory->QueryInterface<IDWriteFactory3>(&factory3));
+
+        ::Microsoft::WRL::ComPtr<IDWriteFontSetBuilder> fontSetBuilder;
+        THROW_IF_FAILED(factory3->CreateFontSetBuilder(&fontSetBuilder));
+
+        // Builder2 has a convenience to just feed in paths to font files.
+        ::Microsoft::WRL::ComPtr<IDWriteFontSetBuilder2> fontSetBuilder2;
+        THROW_IF_FAILED(fontSetBuilder.As(&fontSetBuilder2));
+
+        for (auto& p : knownPaths)
+        {
+            fontSetBuilder2->AddFontFile(p.c_str());
+        }
+
+        ::Microsoft::WRL::ComPtr<IDWriteFontSet> fontSet;
+        THROW_IF_FAILED(fontSetBuilder2->CreateFontSet(&fontSet));
+
+        THROW_IF_FAILED(factory3->CreateFontCollectionFromFontSet(fontSet.Get(), &_nearbyCollection));
+    }
+
+    return _nearbyCollection;
+}
+
+[[nodiscard]] std::vector<std::filesystem::path> DxFontInfo::s_GetNearbyFonts()
+{
+    std::vector<std::filesystem::path> paths;
+
+    // Find the directory we're running from then enumerate all the TTF files
+    // sitting next to us.
+    const std::filesystem::path module{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
+    const auto folder{ module.parent_path() };
+
+    for (auto& p : std::filesystem::directory_iterator(folder))
+    {
+        if (p.is_regular_file())
+        {
+            auto extension = p.path().extension().wstring();
+            std::transform(extension.begin(), extension.end(), extension.begin(), std::towlower);
+
+            static constexpr std::wstring_view ttfExtension{ L".ttf" };
+            if (ttfExtension == extension)
+            {
+                paths.push_back(p);
+            }
+        }
+    }
+
+    return paths;
 }

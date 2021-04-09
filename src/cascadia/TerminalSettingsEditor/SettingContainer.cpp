@@ -159,6 +159,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     {
                         tooltip = _GenerateOverrideMessage(profile);
                     }
+                    else if (const auto& appearanceConfig{ settingSrc.try_as<Model::AppearanceConfig>() })
+                    {
+                        tooltip = _GenerateOverrideMessage(appearanceConfig.SourceProfile());
+                    }
 
                     Controls::ToolTipService::SetToolTip(button, box_value(tooltip));
                     button.Visibility(tooltip.empty() ? Visibility::Collapsed : Visibility::Visible);
