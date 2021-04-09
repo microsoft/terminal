@@ -36,20 +36,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     Command::Command()
     {
-        _setAction(nullptr);
     }
 
     com_ptr<Command> Command::Copy() const
     {
         auto command{ winrt::make_self<Command>() };
-        command->_Name = _Name;
+        command->_name = _name;
 
         // TODO GH#6900: We probably want ActionAndArgs::Copy here
         //              This is fine for now because SUI can't actually
         //              modify the copy yet.
-        command->_Action = _Action;
-        command->_Keys = _Keys;
-        command->_IconPath = _IconPath;
+        command->_action = _action;
+        std::for_each(_keyMappings.begin(), _keyMappings.end(), [command](const Control::KeyChord& keys) {
+            command->_keyMappings.push_back({ keys.Modifiers(), keys.Vkey() });
+        });
+        command->_iconPath = _iconPath;
         command->_IterateOn = _IterateOn;
 
         command->_originalJson = _originalJson;
@@ -74,6 +75,142 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         return _subcommands ? _subcommands.Size() > 0 : false;
     }
+
+    bool Command::HasName() const noexcept
+    {
+        return _name.has_value();
+    }
+
+    hstring Command::Name() const noexcept
+    {
+        if (_name.has_value())
+        {
+            // name was explicitly set, return that value.
+            return hstring{ _name.value() };
+        }
+
+        return get_self<ActionAndArgs>(_action)->GenerateName();
+    }
+
+    void Command::Name(const hstring& value)
+    {
+        if (!_name.has_value() || _name.value() != value)
+        {
+            _name = value;
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Name" });
+        }
+    }
+
+    std::vector<Control::KeyChord> Command::KeyMappings() const noexcept
+    {
+        return _keyMappings;
+    }
+
+    // Function Description:
+    // - Add the key chord to the command's list of key mappings.
+    // - If the key chord was already registered, move it to the back
+    //   of the line, and dispatch a notification that Command::Keys changed.
+    // Arguments:
+    // - keys: the new key chord that we are registering this command to
+    // Return Value:
+    // - <none>
+    void Command::RegisterKey(const Control::KeyChord& keys)
+    {
+        // Check if we registered this key chord before
+        for (auto pos = _keyMappings.begin(); pos < _keyMappings.end(); ++pos)
+        {
+            if (keys.Modifiers() == pos->Modifiers() && keys.Vkey() == pos->Vkey())
+            {
+                // KeyChord was already registered.
+                if (*pos == _keyMappings.back())
+                {
+                    // It's already the latest key registered.
+                    return;
+                }
+                else
+                {
+                    // Move the new KeyChord to the back of the line.
+                    _keyMappings.erase(pos);
+                    _keyMappings.push_back(*pos);
+                    // TODO CARLOS: tests fail because this is on the wrong thread
+                    //_PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Keys" });
+                    return;
+                }
+            }
+        }
+
+        // Add the KeyChord to the back of the line.
+        _keyMappings.push_back(keys);
+        // TODO CARLOS: tests fail because this is on the wrong thread
+        //_PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Keys" });
+    }
+
+    // Function Description:
+    // - Remove the key chord from the command's list of key mappings.
+    // Arguments:
+    // - keys: the key chord that we are unregistering
+    // Return Value:
+    // - <none>
+    void Command::EraseKey(const Control::KeyChord& keys)
+    {
+        for (auto pos = _keyMappings.begin(); pos < _keyMappings.end(); ++pos)
+        {
+            if (keys.Modifiers() == pos->Modifiers() && keys.Vkey() == pos->Vkey())
+            {
+                if (*pos == _keyMappings.back())
+                {
+                    // Keys has changed if we just unbound the primary KeyChord
+                    _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Keys" });
+                }
+
+                // Found the KeyChord, remove it.
+                _keyMappings.erase(pos);
+                return;
+            }
+        }
+    }
+
+    // Function Description:
+    // - Keys is the Command's identifying KeyChord. The command may have multiple keys associated
+    //   with it, but we'll only ever display the most recently added one externally. To do this,
+    //   _keyMappings stores all of the associated key chords, but ensures that the last entry
+    //   is the most recently added one.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the primary key chord associated with this Command
+    Control::KeyChord Command::Keys() const noexcept
+    {
+        if (_keyMappings.empty())
+        {
+            return nullptr;
+        }
+        return _keyMappings.back();
+    }
+
+    Model::ActionAndArgs Command::Action() const noexcept
+    {
+        return _action;
+    }
+
+    hstring Command::IconPath() const noexcept
+    {
+        if (_iconPath.has_value())
+        {
+            return hstring{ *_iconPath };
+        }
+        return {};
+    }
+
+    void Command::IconPath(const hstring& val)
+    {
+        if (!_iconPath.has_value() || _iconPath.value() != val)
+        {
+            _iconPath = val;
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"IconPath" });
+        }
+    }
+
     // Function Description:
     // - attempt to get the name of this command from the provided json object.
     //   * If the "name" property is a string, return that value.
@@ -84,7 +221,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - json: The Json::Value representing the command object we should get the name for.
     // Return Value:
     // - the empty string if we couldn't find a name, otherwise the command's name.
-    static winrt::hstring _nameFromJson(const Json::Value& json)
+    static std::optional<std::wstring> _nameFromJson(const Json::Value& json)
     {
         if (const auto name{ json[JsonKey(NameKey)] })
         {
@@ -94,43 +231,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 {
                     if (HasLibraryResourceWithName(*resourceKey))
                     {
-                        return GetLibraryResourceString(*resourceKey);
+                        return std::wstring{ GetLibraryResourceString(*resourceKey) };
                     }
                 }
             }
             else if (name.isString())
             {
-                return JsonUtils::GetValue<winrt::hstring>(name);
+                return JsonUtils::GetValue<std::wstring>(name);
             }
         }
 
-        return L"";
-    }
-
-    // Method Description:
-    // - Get the name for the command specified in `json`. If there is no "name"
-    //   property in the provided json object, then instead generate a name for
-    //   the provided ActionAndArgs.
-    // Arguments:
-    // - json: json for the command to generate a name for.
-    // - actionAndArgs: An ActionAndArgs object to use to generate a name for,
-    //   if the json object doesn't contain a "name".
-    // Return Value:
-    // - The "name" from the json, or the generated name from ActionAndArgs::GenerateName
-    static winrt::hstring _nameFromJsonOrAction(const Json::Value& json,
-                                                winrt::com_ptr<ActionAndArgs> actionAndArgs)
-    {
-        auto manualName = _nameFromJson(json);
-        if (!manualName.empty())
-        {
-            return manualName;
-        }
-        if (!actionAndArgs)
-        {
-            return L"";
-        }
-
-        return actionAndArgs->GenerateName();
+        return std::nullopt;
     }
 
     // Method Description:
@@ -181,11 +292,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // should also be used for unbinding.
 
             // create an "invalid" ActionAndArgs
-            result->Action(make<ActionAndArgs>());
-            return result;
+            result->_action = make<ActionAndArgs>();
         }
 
-        JsonUtils::GetValueForKey(json, IconKey, result->_IconPath);
+        JsonUtils::GetValueForKey(json, IconKey, result->_iconPath);
 
         // If we're a nested command, we can ignore the current action.
         if (!nested)
@@ -196,14 +306,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
                 if (actionAndArgs)
                 {
-                    result->_setAction(*actionAndArgs);
+                    result->_action = *actionAndArgs;
                 }
                 else
                 {
                     // Something like
                     //      { name: "foo", action: "unbound" }
                     // will _remove_ the "foo" command, by returning an "invalid" action here.
-                    result->Action(make<ActionAndArgs>());
+                    result->_action = make<ActionAndArgs>();
                     return result;
                 }
 
@@ -212,15 +322,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // currently have. It'll probably generate something like "New tab,
                 // profile: ${profile.name}". This string will only be temporarily
                 // used internally, so there's no problem.
-                result->_setName(_nameFromJsonOrAction(json, actionAndArgs));
+                result->_name = _nameFromJson(json);
             }
             else
             {
                 // { name: "foo", action: null } will land in this case, which
                 // should also be used for unbinding.
-                
+
                 // create an "invalid" ActionAndArgs
-                result->Action(make<ActionAndArgs>());
+                result->_action = make<ActionAndArgs>();
                 return result;
             }
 
@@ -234,12 +344,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
             else
             {
-                JsonUtils::GetValueForKey(json, KeysKey, result->_Keys);
+                Control::KeyChord keys{ nullptr };
+                if (JsonUtils::GetValueForKey(json, KeysKey, keys))
+                {
+                    result->RegisterKey(keys);
+                }
             }
         }
         else
         {
-            result->_setName(_nameFromJson(json));
+            result->_name = _nameFromJson(json);
         }
 
         // Stash the original json value in this object. If the command is
@@ -272,7 +386,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 try
                 {
-                    auto result = Command::FromJson(value, warnings);
+                    const auto result = Command::FromJson(value, warnings);
                     if (result)
                     {
                         // Override commands with the same name
@@ -284,9 +398,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                         // name from the json blob. If that name currently
                         // exists in our list of commands, we should remove it.
                         const auto name = _nameFromJson(value);
-                        if (!name.empty())
+                        if (name.has_value() && !name->empty())
                         {
-                            commands.Remove(name);
+                            commands.Remove(*name);
                         }
                     }
                 }

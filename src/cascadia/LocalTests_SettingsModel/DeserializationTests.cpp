@@ -1918,7 +1918,7 @@ namespace SettingsModelLocalTests
         const auto settingsObject = VerifyParseSucceeded(badSettings);
         auto settings = implementation::CascadiaSettings::FromJson(settingsObject);
 
-        VERIFY_ARE_EQUAL(0u, settings->_globals->ActionMap().KeybindingCount());
+        VERIFY_ARE_EQUAL(0u, settings->_globals->_actionMap->_KeyMap.size());
 
         VERIFY_ARE_EQUAL(4u, settings->_globals->_keybindingsWarnings.size());
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::TooManyKeysForChord, settings->_globals->_keybindingsWarnings.at(0));
@@ -1962,7 +1962,7 @@ namespace SettingsModelLocalTests
 
         auto settings = implementation::CascadiaSettings::FromJson(settingsObject);
 
-        VERIFY_ARE_EQUAL(0u, settings->_globals->ActionMap().KeybindingCount());
+        VERIFY_ARE_EQUAL(0u, settings->_globals->_actionMap->_KeyMap.size());
 
         for (const auto& warning : settings->_globals->_keybindingsWarnings)
         {
@@ -2104,12 +2104,13 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_NOT_EQUAL(winrt::guid{}, profile2Guid);
 
         auto actionMap = winrt::get_self<implementation::ActionMap>(settings->_globals->ActionMap());
-        VERIFY_ARE_EQUAL(5u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(5u, actionMap->_KeyMap.size());
 
         // A/D, B, C, E will be in the list of commands, for 4 total.
         // * A and D share the same name, so they'll only generate a single action.
         // * F's name is set manually to `null`
-        VERIFY_ARE_EQUAL(4u, settings->_globals->ActionMap().CommandCount());
+        const auto& nameMap{ actionMap->NameMap() };
+        VERIFY_ARE_EQUAL(4u, nameMap.Size());
 
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('A') };
@@ -2186,9 +2187,9 @@ namespace SettingsModelLocalTests
         }
 
         Log::Comment(L"Now verify the commands");
-        _logCommandNames(actionMap->NameMap());
+        _logCommandNames(nameMap);
         {
-            auto command = actionMap->GetActionByName(L"Split pane, split: vertical");
+            auto command = nameMap.TryLookup(L"Split pane, split: vertical");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2204,7 +2205,7 @@ namespace SettingsModelLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
         }
         {
-            auto command = actionMap->GetActionByName(L"ctrl+b");
+            auto command = nameMap.TryLookup(L"ctrl+b");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2220,7 +2221,7 @@ namespace SettingsModelLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
         }
         {
-            auto command = actionMap->GetActionByName(L"ctrl+c");
+            auto command = nameMap.TryLookup(L"ctrl+c");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2236,7 +2237,7 @@ namespace SettingsModelLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
         }
         {
-            auto command = actionMap->GetActionByName(L"Split pane, split: horizontal");
+            auto command = nameMap.TryLookup(L"Split pane, split: horizontal");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2308,14 +2309,15 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
 
         settings->_ValidateSettings();
-        _logCommandNames(settings->ActionMap().NameMap());
+        const auto& nameMap{ settings->ActionMap().NameMap() };
+        _logCommandNames(nameMap);
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
 
         // Because the "parent" command didn't have a name, it couldn't be
         // placed into the list of commands. It and it's children are just
         // ignored.
-        VERIFY_ARE_EQUAL(0u, settings->_globals->ActionMap().CommandCount());
+        VERIFY_ARE_EQUAL(0u, nameMap.Size());
     }
 
     void DeserializationTests::TestNestedCommandWithBadSubCommands()
@@ -2361,7 +2363,8 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(2u, settings->_warnings.Size());
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::AtLeastOneKeybindingWarning, settings->_warnings.GetAt(0));
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::FailedToParseSubCommands, settings->_warnings.GetAt(1));
-        VERIFY_ARE_EQUAL(0u, settings->_globals->ActionMap().CommandCount());
+        const auto& nameMap{ settings->ActionMap().NameMap() };
+        VERIFY_ARE_EQUAL(0u, nameMap.Size());
     }
 
     void DeserializationTests::TestUnbindNestedCommand()
@@ -2430,10 +2433,11 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
 
         settings->_ValidateSettings();
-        _logCommandNames(settings->ActionMap().NameMap());
+        const auto& nameMap{ settings->ActionMap().NameMap() };
+        _logCommandNames(nameMap);
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
-        VERIFY_ARE_EQUAL(1u, settings->_globals->ActionMap().CommandCount());
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
 
         Log::Comment(L"Layer second bit of json, to unbind the original command.");
 
@@ -2442,7 +2446,7 @@ namespace SettingsModelLocalTests
         settings->_ValidateSettings();
         _logCommandNames(settings->ActionMap().NameMap());
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
-        VERIFY_ARE_EQUAL(0u, settings->_globals->ActionMap().CommandCount());
+        VERIFY_ARE_EQUAL(0u, nameMap.Size());
     }
 
     void DeserializationTests::TestRebindNestedCommand()
@@ -2513,14 +2517,15 @@ namespace SettingsModelLocalTests
 
         const auto& actionMap{ settings->ActionMap() };
         settings->_ValidateSettings();
-        _logCommandNames(actionMap.NameMap());
+        const auto& nameMap{ actionMap.NameMap() };
+        _logCommandNames(nameMap);
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
-        VERIFY_ARE_EQUAL(1u, settings->_globals->ActionMap().CommandCount());
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
 
         {
             winrt::hstring commandName{ L"parent" };
-            auto commandProj = actionMap.GetActionByName(commandName);
+            auto commandProj = nameMap.TryLookup(commandName);
             VERIFY_IS_NOT_NULL(commandProj);
 
             winrt::com_ptr<implementation::Command> commandImpl;
@@ -2536,11 +2541,11 @@ namespace SettingsModelLocalTests
         settings->_ValidateSettings();
         _logCommandNames(settings->ActionMap().NameMap());
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
-        VERIFY_ARE_EQUAL(1u, settings->ActionMap().CommandCount());
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
 
         {
             winrt::hstring commandName{ L"parent" };
-            auto commandProj = actionMap.GetActionByName(commandName);
+            auto commandProj = nameMap.TryLookup(commandName);
 
             VERIFY_IS_NOT_NULL(commandProj);
             auto actionAndArgs = commandProj.Action();
@@ -2636,8 +2641,10 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(settings->_globals->_colorSchemes.HasKey(schemeName), copyImpl->_globals->_colorSchemes.HasKey(schemeName));
 
         // test actions
-        VERIFY_ARE_EQUAL(settings->ActionMap().KeybindingCount(), copyImpl->ActionMap().KeybindingCount());
-        VERIFY_ARE_EQUAL(settings->ActionMap().CommandCount(), copyImpl->ActionMap().CommandCount());
+        VERIFY_ARE_EQUAL(settings->_globals->_actionMap->_KeyMap.size(), copyImpl->_globals->_actionMap->_KeyMap.size());
+        const auto& nameMapOriginal{ settings->_globals->_actionMap->NameMap() };
+        const auto& nameMapCopy{ copyImpl->_globals->_actionMap->NameMap() };
+        VERIFY_ARE_EQUAL(nameMapOriginal.Size(), nameMapCopy.Size());
 
         // Test that changing the copy should not change the original
         VERIFY_ARE_EQUAL(settings->_globals->WordDelimiters(), copyImpl->_globals->WordDelimiters());

@@ -73,16 +73,16 @@ namespace SettingsModelLocalTests
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_IS_NOT_NULL(actionMap);
-        VERIFY_ARE_EQUAL(0u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
 
         actionMap->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(1u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
 
         actionMap->LayerJson(bindings1Json);
-        VERIFY_ARE_EQUAL(2u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(2u, actionMap->_KeyMap.size());
 
         actionMap->LayerJson(bindings2Json);
-        VERIFY_ARE_EQUAL(4u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(4u, actionMap->_KeyMap.size());
     }
 
     void KeyBindingsTests::LayerKeybindings()
@@ -90,23 +90,23 @@ namespace SettingsModelLocalTests
         const std::string bindings0String{ R"([ { "command": "copy", "keys": ["ctrl+c"] } ])" };
         const std::string bindings1String{ R"([ { "command": "paste", "keys": ["ctrl+c"] } ])" };
         const std::string bindings2String{ R"([ { "command": "copy", "keys": ["enter"] } ])" };
-
+        DebugBreak();
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
         const auto bindings1Json = VerifyParseSucceeded(bindings1String);
         const auto bindings2Json = VerifyParseSucceeded(bindings2String);
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_IS_NOT_NULL(actionMap);
-        VERIFY_ARE_EQUAL(0u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
 
         actionMap->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(1u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
 
         actionMap->LayerJson(bindings1Json);
-        VERIFY_ARE_EQUAL(1u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
 
         actionMap->LayerJson(bindings2Json);
-        VERIFY_ARE_EQUAL(2u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(2u, actionMap->_KeyMap.size());
     }
 
     void KeyBindingsTests::UnbindKeybindings()
@@ -127,50 +127,50 @@ namespace SettingsModelLocalTests
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_IS_NOT_NULL(actionMap);
-        VERIFY_ARE_EQUAL(0u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
 
         actionMap->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(1u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
 
         actionMap->LayerJson(bindings1Json);
-        VERIFY_ARE_EQUAL(1u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using `\"unbound\"` to unbind the key"));
         actionMap->LayerJson(bindings2Json);
-        VERIFY_ARE_EQUAL(0u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using `null` to unbind the key"));
         // First add back a good binding
         actionMap->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(1u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
         // Then try layering in the bad setting
         actionMap->LayerJson(bindings3Json);
-        VERIFY_ARE_EQUAL(0u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using an unrecognized command to unbind the key"));
         // First add back a good binding
         actionMap->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(1u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
         // Then try layering in the bad setting
         actionMap->LayerJson(bindings4Json);
-        VERIFY_ARE_EQUAL(0u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using a straight up invalid value to unbind the key"));
         // First add back a good binding
         actionMap->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(1u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
         // Then try layering in the bad setting
         actionMap->LayerJson(bindings5Json);
-        VERIFY_ARE_EQUAL(0u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key that wasn't bound at all"));
         actionMap->LayerJson(bindings2Json);
-        VERIFY_ARE_EQUAL(0u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
     }
 
     void KeyBindingsTests::TestArbitraryArgs()
@@ -196,9 +196,9 @@ namespace SettingsModelLocalTests
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_IS_NOT_NULL(actionMap);
-        VERIFY_ARE_EQUAL(0u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
         actionMap->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(10u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(10u, actionMap->_KeyMap.size());
 
         {
             Log::Comment(NoThrowString().Format(
@@ -335,9 +335,9 @@ namespace SettingsModelLocalTests
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_IS_NOT_NULL(actionMap);
-        VERIFY_ARE_EQUAL(0u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
         actionMap->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(4u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(4u, actionMap->_KeyMap.size());
 
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('D') };
@@ -389,9 +389,9 @@ namespace SettingsModelLocalTests
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_IS_NOT_NULL(actionMap);
-        VERIFY_ARE_EQUAL(0u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
         actionMap->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(3u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(3u, actionMap->_KeyMap.size());
 
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
@@ -434,9 +434,9 @@ namespace SettingsModelLocalTests
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_IS_NOT_NULL(actionMap);
-        VERIFY_ARE_EQUAL(0u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
         actionMap->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(1u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
 
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
@@ -463,9 +463,9 @@ namespace SettingsModelLocalTests
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_IS_NOT_NULL(actionMap);
-        VERIFY_ARE_EQUAL(0u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
         actionMap->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(6u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(6u, actionMap->_KeyMap.size());
 
         {
             KeyChord kc{ false, false, false, static_cast<int32_t>(VK_UP) };
@@ -528,7 +528,7 @@ namespace SettingsModelLocalTests
             const auto bindingsInvalidJson = VerifyParseSucceeded(bindingsInvalidString);
             auto invalidActionMap = winrt::make_self<implementation::ActionMap>();
             VERIFY_IS_NOT_NULL(invalidActionMap);
-            VERIFY_ARE_EQUAL(0u, invalidActionMap->KeybindingCount());
+            VERIFY_ARE_EQUAL(0u, invalidActionMap->_KeyMap.size());
             VERIFY_THROWS(invalidActionMap->LayerJson(bindingsInvalidJson);, std::exception);
         }
     }
@@ -544,9 +544,9 @@ namespace SettingsModelLocalTests
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_IS_NOT_NULL(actionMap);
-        VERIFY_ARE_EQUAL(0u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
         actionMap->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(2u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(2u, actionMap->_KeyMap.size());
 
         {
             KeyChord kc{ false, false, false, static_cast<int32_t>(VK_UP) };
@@ -570,14 +570,14 @@ namespace SettingsModelLocalTests
             const std::string bindingsInvalidString{ R"([{ "keys": ["up"], "command": "moveTab" }])" };
             auto actionMapNoArgs = winrt::make_self<implementation::ActionMap>();
             actionMapNoArgs->LayerJson(bindingsInvalidString);
-            VERIFY_ARE_EQUAL(0u, actionMapNoArgs->KeybindingCount());
+            VERIFY_ARE_EQUAL(0u, actionMapNoArgs->_KeyMap.size());
         }
         {
             const std::string bindingsInvalidString{ R"([{ "keys": ["up"], "command": { "action": "moveTab", "direction": "bad" } }])" };
             const auto bindingsInvalidJson = VerifyParseSucceeded(bindingsInvalidString);
             auto invalidActionMap = winrt::make_self<implementation::ActionMap>();
             VERIFY_IS_NOT_NULL(invalidActionMap);
-            VERIFY_ARE_EQUAL(0u, invalidActionMap->KeybindingCount());
+            VERIFY_ARE_EQUAL(0u, invalidActionMap->_KeyMap.size());
             VERIFY_THROWS(invalidActionMap->LayerJson(bindingsInvalidJson);, std::exception);
         }
     }
@@ -594,9 +594,9 @@ namespace SettingsModelLocalTests
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
         VERIFY_IS_NOT_NULL(actionMap);
-        VERIFY_ARE_EQUAL(0u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
         actionMap->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(3u, actionMap->KeybindingCount());
+        VERIFY_ARE_EQUAL(3u, actionMap->_KeyMap.size());
 
         {
             KeyChord kc{ false, false, false, static_cast<int32_t>(VK_UP) };
@@ -630,7 +630,7 @@ namespace SettingsModelLocalTests
             const auto bindingsInvalidJson = VerifyParseSucceeded(bindingsInvalidString);
             auto invalidActionMap = winrt::make_self<implementation::ActionMap>();
             VERIFY_IS_NOT_NULL(invalidActionMap);
-            VERIFY_ARE_EQUAL(0u, invalidActionMap->KeybindingCount());
+            VERIFY_ARE_EQUAL(0u, invalidActionMap->_KeyMap.size());
             VERIFY_THROWS(invalidActionMap->LayerJson(bindingsInvalidJson);, std::exception);
         }
     }

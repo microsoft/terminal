@@ -21,6 +21,7 @@ Author(s):
 #include "Command.g.h"
 #include "TerminalWarnings.h"
 #include "Profile.h"
+#include "ActionAndArgs.h"
 #include "../inc/cppwinrt_utils.h"
 #include "SettingsTypes.h"
 
@@ -51,19 +52,32 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool HasNestedCommands() const;
         Windows::Foundation::Collections::IMapView<winrt::hstring, Model::Command> NestedCommands() const;
 
+        bool HasName() const noexcept;
+        hstring Name() const noexcept;
+        void Name(const hstring& name);
+
+        Control::KeyChord Keys() const noexcept;
+        std::vector<Control::KeyChord> KeyMappings() const noexcept;
+        void RegisterKey(const Control::KeyChord& keys);
+        void EraseKey(const Control::KeyChord& keys);
+
+        Model::ActionAndArgs Action() const noexcept;
+
+        hstring IconPath() const noexcept;
+        void IconPath(const hstring& val);
+
         winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker propertyChangedRevoker;
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
-        WINRT_OBSERVABLE_PROPERTY(Model::ActionAndArgs, Action, _PropertyChangedHandlers);
-        WINRT_OBSERVABLE_PROPERTY(Control::KeyChord, Keys, _PropertyChangedHandlers, nullptr);
-        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, IconPath, _PropertyChangedHandlers);
-
         WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
 
     private:
         Json::Value _originalJson;
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command> _subcommands{ nullptr };
+        std::vector<Control::KeyChord> _keyMappings;
+        std::optional<std::wstring> _name;
+        std::optional<std::wstring> _iconPath;
+        Model::ActionAndArgs _action{};
 
         static std::vector<Model::Command> _expandCommand(Command* const expandable,
                                                           Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,
