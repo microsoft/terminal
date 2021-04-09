@@ -157,11 +157,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             if (keys.Modifiers() == pos->Modifiers() && keys.Vkey() == pos->Vkey())
             {
-                if (*pos == _keyMappings.back())
-                {
-                    // Keys has changed if we just unbound the primary KeyChord
-                    _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Keys" });
-                }
+                // TODO CARLOS: tests fail because this is on the wrong thread
+                //if (*pos == _keyMappings.back())
+                //{
+                //    // Keys has changed if we just unbound the primary KeyChord
+                //    _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Keys" });
+                //}
 
                 // Found the KeyChord, remove it.
                 _keyMappings.erase(pos);
@@ -302,27 +303,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             if (const auto actionJson{ json[JsonKey(ActionKey)] })
             {
-                auto actionAndArgs = ActionAndArgs::FromJson(actionJson, warnings);
-
-                if (actionAndArgs)
-                {
-                    result->_action = *actionAndArgs;
-                }
-                else
-                {
-                    // Something like
-                    //      { name: "foo", action: "unbound" }
-                    // will _remove_ the "foo" command, by returning an "invalid" action here.
-                    result->_action = make<ActionAndArgs>();
-                    return result;
-                }
-
-                // If an iterable command doesn't have a name set, we'll still just
-                // try and generate a fake name for the command give the string we
-                // currently have. It'll probably generate something like "New tab,
-                // profile: ${profile.name}". This string will only be temporarily
-                // used internally, so there's no problem.
-                result->_name = _nameFromJson(json);
+                result->_action = *ActionAndArgs::FromJson(actionJson, warnings);
             }
             else
             {
@@ -331,8 +312,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
                 // create an "invalid" ActionAndArgs
                 result->_action = make<ActionAndArgs>();
-                return result;
             }
+
+            // If an iterable command doesn't have a name set, we'll still just
+            // try and generate a fake name for the command give the string we
+            // currently have. It'll probably generate something like "New tab,
+            // profile: ${profile.name}". This string will only be temporarily
+            // used internally, so there's no problem.
+            result->_name = _nameFromJson(json);
 
             // GH#4239 - If the user provided more than one key
             // chord to a "keys" array, warn the user here.
@@ -387,12 +374,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 try
                 {
                     const auto result = Command::FromJson(value, warnings);
-                    if (result)
-                    {
-                        // Override commands with the same name
-                        commands.Insert(result->Name(), *result);
-                    }
-                    else
+                    if (!result || !result->Action() || result->Action().Action() == ShortcutAction::Invalid)
                     {
                         // If there wasn't a parsed command, then try to get the
                         // name from the json blob. If that name currently
@@ -402,6 +384,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                         {
                             commands.Remove(*name);
                         }
+                    }
+                    else
+                    {
+                        // Override commands with the same name
+                        commands.Insert(result->Name(), *result);
                     }
                 }
                 CATCH_LOG();

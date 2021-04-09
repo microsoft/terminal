@@ -90,7 +90,7 @@ namespace SettingsModelLocalTests
         const std::string bindings0String{ R"([ { "command": "copy", "keys": ["ctrl+c"] } ])" };
         const std::string bindings1String{ R"([ { "command": "paste", "keys": ["ctrl+c"] } ])" };
         const std::string bindings2String{ R"([ { "command": "copy", "keys": ["enter"] } ])" };
-        DebugBreak();
+        
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
         const auto bindings1Json = VerifyParseSucceeded(bindings1String);
         const auto bindings2Json = VerifyParseSucceeded(bindings2String);
@@ -138,7 +138,8 @@ namespace SettingsModelLocalTests
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using `\"unbound\"` to unbind the key"));
         actionMap->LayerJson(bindings2Json);
-        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
+        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
+        VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('c') }));
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using `null` to unbind the key"));
@@ -147,7 +148,8 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
         // Then try layering in the bad setting
         actionMap->LayerJson(bindings3Json);
-        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
+        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
+        VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('c') }));
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using an unrecognized command to unbind the key"));
@@ -156,7 +158,8 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
         // Then try layering in the bad setting
         actionMap->LayerJson(bindings4Json);
-        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
+        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
+        VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('c') }));
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using a straight up invalid value to unbind the key"));
@@ -165,12 +168,14 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
         // Then try layering in the bad setting
         actionMap->LayerJson(bindings5Json);
-        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
+        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
+        VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('c') }));
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key that wasn't bound at all"));
         actionMap->LayerJson(bindings2Json);
-        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
+        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
+        VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('c') }));
     }
 
     void KeyBindingsTests::TestArbitraryArgs()

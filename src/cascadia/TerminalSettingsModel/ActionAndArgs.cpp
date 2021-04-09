@@ -200,7 +200,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   appended to this vector.
     // Return Value:
     // - a deserialized ActionAndArgs corresponding to the values in json, or
-    //   null if we failed to deserialize an action.
+    //   an "invalid" action if we failed to deserialize an action.
     winrt::com_ptr<ActionAndArgs> ActionAndArgs::FromJson(const Json::Value& json,
                                                           std::vector<SettingsLoadWarnings>& warnings)
     {
@@ -255,7 +255,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // if an arg parser was registered, but failed, bail
             if (pfn && args == nullptr)
             {
-                return nullptr;
+                return make_self<ActionAndArgs>();
             }
         }
 
@@ -269,7 +269,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         else
         {
-            return nullptr;
+            // Something like
+            //      { name: "foo", action: "unbound" }
+            // will _remove_ the "foo" command, by returning an "invalid" action here.
+            return make_self<ActionAndArgs>();
         }
     }
 
