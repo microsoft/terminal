@@ -9,7 +9,8 @@ namespace Microsoft.Terminal.Control
         None = 0x0000,
         Alt = 0x0001,
         Ctrl = 0x0002,
-        Shift = 0x0004
+        Shift = 0x0004,
+        Windows = 0x0008
     };
 
     [default_interface]
