@@ -533,8 +533,8 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     if (originalRet != HTCLIENT)
     {
         // If we're the quake window, supress resizing on any side except the
-        // bottom.
-        // TODO! This doesn't actually work on the top. I believe that's handled below.
+        // bottom. I don't believe that this actually works on the top. That's
+        // handled below.
         //
         // TODO! Make sure that this works for the IslandWindow as well.
         if (IsQuakeWindow())
@@ -570,7 +570,9 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     // the top of the drag bar is used to resize the window
     if (!_isMaximized && isOnResizeBorder)
     {
-        return HTTOP;
+        // However, if we're the quake window, then just return HTCAPTION so we
+        // don't get a resize handle on the top.
+        return IsQuakeWindow() ? HTCAPTION : HTTOP;
     }
 
     return HTCAPTION;
