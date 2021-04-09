@@ -40,7 +40,8 @@ public:
 
     winrt::fire_and_forget SummonWindow();
 
-    WINRT_PROPERTY(bool, IsQuakeWindow, false);
+    bool IsQuakeWindow() const noexcept;
+    void IsQuakeWindow(bool isQuakeWindow) noexcept;
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
     DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
@@ -85,6 +86,9 @@ protected:
 
     void _OnGetMinMaxInfo(const WPARAM wParam, const LPARAM lParam);
     long _calculateTotalSize(const bool isWidth, const long clientSize, const long nonClientSize);
+
+    bool _isQuakeWindow{ false };
+    void _enterQuakeMode();
 
 private:
     // This minimum width allows for width the tabs fit

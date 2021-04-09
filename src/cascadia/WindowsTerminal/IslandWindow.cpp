@@ -197,7 +197,7 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
 
     // If we're the quake window, prevent resizing on all sides except the
     // bottom. This also applies to resising with the Alt+Space menu
-    if (_IsQuakeWindow && wParam != WMSZ_BOTTOM)
+    if (IsQuakeWindow() && wParam != WMSZ_BOTTOM)
     {
         // Stuff our current window size into the lParam, and return true. This
         // will tell User32 to use our current dimensions to resize to.
@@ -271,7 +271,7 @@ LRESULT IslandWindow::_OnMoving(const WPARAM /*wParam*/, const LPARAM lParam)
 {
     LPRECT winRect = reinterpret_cast<LPRECT>(lParam);
     // If we're the quake window, prevent moving the window
-    if (_IsQuakeWindow)
+    if (IsQuakeWindow())
     {
         // Stuff our current window into the lParam, and return true. This
         // will tell User32 to use our current position to move to.
@@ -787,6 +787,7 @@ void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)
     // Resize the window, with SWP_FRAMECHANGED, to trigger user32 to
     // recalculate the non/client areas
     const til::rectangle windowPos{ GetWindowRect() };
+
     SetWindowPos(GetHandle(),
                  HWND_TOP,
                  windowPos.left<int>(),
@@ -916,6 +917,53 @@ winrt::fire_and_forget IslandWindow::SummonWindow()
     });
     LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
     LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_SHOW));
+}
+
+bool IslandWindow::IsQuakeWindow() const noexcept
+{
+    return _isQuakeWindow;
+}
+
+void IslandWindow::IsQuakeWindow(bool isQuakeWindow) noexcept
+{
+    if (_isQuakeWindow != isQuakeWindow)
+    {
+        _isQuakeWindow = isQuakeWindow;
+        if (IsQuakeWindow())
+        {
+            _enterQuakeMode();
+        }
+    }
+}
+
+void IslandWindow::_enterQuakeMode()
+{
+    RECT windowRect = GetWindowRect();
+    HMONITOR hmon = MonitorFromRect(&windowRect, MONITOR_DEFAULTTONEAREST);
+    MONITORINFO nearestMonitorInfo;
+    nearestMonitorInfo.cbSize = sizeof(MONITORINFO);
+    // Get monitor dimensions:
+    GetMonitorInfo(hmon, &nearestMonitorInfo);
+    const COORD desktopDimensions{ gsl::narrow<short>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
+                                   gsl::narrow<short>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
+
+    const til::point origin{
+        ::base::saturated_cast<short>(nearestMonitorInfo.rcWork.left),
+        ::base::saturated_cast<short>(nearestMonitorInfo.rcWork.top)
+    };
+    const til::size dimensions{
+        desktopDimensions.X,
+        desktopDimensions.Y / 2
+    };
+
+    const til::rectangle newRect{ origin, dimensions };
+    SetWindowPos(GetHandle(),
+                 HWND_TOP,
+                 newRect.left<int>(),
+                 newRect.top<int>(),
+                 newRect.width<int>(),
+                 newRect.height<int>(),
+                 SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

@@ -244,7 +244,6 @@ void AppHost::Initialize()
     _logic.FullscreenChanged({ this, &AppHost::_FullscreenChanged });
     _logic.FocusModeChanged({ this, &AppHost::_FocusModeChanged });
     _logic.AlwaysOnTopChanged({ this, &AppHost::_AlwaysOnTopChanged });
-    _logic.RaiseVisualBell({ this, &AppHost::_RaiseVisualBell });
 
     _logic.Create();
 
@@ -253,6 +252,7 @@ void AppHost::Initialize()
     _logic.SetTaskbarProgress({ this, &AppHost::SetTaskbarProgress });
     _logic.IdentifyWindowsRequested({ this, &AppHost::_IdentifyWindowsRequested });
     _logic.RenameWindowRequested({ this, &AppHost::_RenameWindowRequested });
+    _logic.IsQuakeWindowChanged({ this, &AppHost::_IsQuakeWindowChanged });
 
     _window->UpdateTitle(_logic.Title());
 
@@ -686,4 +686,10 @@ winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Fou
             _logic.RenameFailed();
         }
     }
+}
+
+void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
+                                    const winrt::Windows::Foundation::IInspectable&)
+{
+    _window->IsQuakeWindow(_logic.IsQuakeWindow());
 }

@@ -2049,9 +2049,17 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::ToggleFocusMode()
     {
-        _isInFocusMode = !_isInFocusMode || IsQuakeWindow();
-        _UpdateTabView();
-        _FocusModeChangedHandlers(*this, nullptr);
+        _SetFocusMode(!_isInFocusMode);
+    }
+
+    void TerminalPage::_SetFocusMode(const bool inFocusMode)
+    {
+        if (inFocusMode != FocusMode())
+        {
+            _isInFocusMode = inFocusMode || IsQuakeWindow();
+            _UpdateTabView();
+            _FocusModeChangedHandlers(*this, nullptr);
+        }
     }
 
     // Method Description:
@@ -2596,10 +2604,21 @@ namespace winrt::TerminalApp::implementation
     }
     void TerminalPage::WindowName(const winrt::hstring& value)
     {
+        const bool oldIsQuakeMode = IsQuakeWindow();
         if (_WindowName != value)
         {
             _WindowName = value;
             _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+
+            // If we're entering quake mode, or leaving it
+            if (IsQuakeWindow() != oldIsQuakeMode)
+            {
+                // If we're entering QM from ~FM, then this will enter FM
+                // If we're entering QM from FM, then this will do nothing
+                // If we're leaving QM (we're already in FM), then this will do nothing
+                _SetFocusMode(_isInFocusMode);
+                _IsQuakeWindowChangedHandlers(*this, nullptr);
+            }
         }
     }
 
