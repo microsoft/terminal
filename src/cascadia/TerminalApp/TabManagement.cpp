@@ -83,9 +83,9 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingUInt32(tabCount, "TabCount", "Count of tabs currently opened in TerminalApp"),
             TraceLoggingBool(usedManualProfile, "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
             TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
-            TraceLoggingBool(settings.UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
-            TraceLoggingFloat64(settings.TintOpacity(), "TintOpacity", "Opacity preference from the settings"),
-            TraceLoggingWideString(settings.FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
+            TraceLoggingBool(settings.DefaultSettings().UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
+            TraceLoggingFloat64(settings.DefaultSettings().TintOpacity(), "TintOpacity", "Opacity preference from the settings"),
+            TraceLoggingWideString(settings.DefaultSettings().FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
             TraceLoggingWideString(schemeName.data(), "SchemeName", "Color scheme set in the settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
@@ -99,11 +99,11 @@ namespace winrt::TerminalApp::implementation
     // - profileGuid: ID to use to lookup profile settings for this connection
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
     // - existingConnection: optionally receives a connection from the outside world instead of attempting to create one
-    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings, TerminalConnection::ITerminalConnection existingConnection)
+    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, const TerminalSettingsCreateResult& settings, TerminalConnection::ITerminalConnection existingConnection)
     {
         // Initialize the new tab
         // Create a connection based on the values in our settings object if we weren't given one.
-        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profileGuid, settings);
+        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profileGuid, settings.DefaultSettings());
 
         TerminalConnection::ITerminalConnection debugConnection{ nullptr };
         if (_settings.GlobalSettings().DebugFeaturesEnabled())
@@ -314,15 +314,15 @@ namespace winrt::TerminalApp::implementation
             const auto& profileGuid = tab.GetFocusedProfile();
             if (profileGuid.has_value())
             {
-                const auto settings{ TerminalSettings::CreateWithProfileByID(_settings, profileGuid.value(), *_bindings) };
+                const auto settingsCreateResult{ TerminalSettings::CreateWithProfileByID(_settings, profileGuid.value(), *_bindings) };
                 const auto workingDirectory = tab.GetActiveTerminalControl().WorkingDirectory();
                 const auto validWorkingDirectory = !workingDirectory.empty();
                 if (validWorkingDirectory)
                 {
-                    settings.StartingDirectory(workingDirectory);
+                    settingsCreateResult.DefaultSettings().StartingDirectory(workingDirectory);
                 }
 
-                _CreateNewTabFromSettings(profileGuid.value(), settings);
+                _CreateNewTabFromSettings(profileGuid.value(), settingsCreateResult);
             }
         }
         CATCH_LOG();

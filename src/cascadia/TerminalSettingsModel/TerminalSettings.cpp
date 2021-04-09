@@ -50,7 +50,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
-    // - Create a TerminalSettings object for the provided profile guid. We'll
+    // - Create a TerminalSettingsCreateResult for the provided profile guid. We'll
     //   use the guid to look up the profile that should be used to
     //   create these TerminalSettings. Then, we'll apply settings contained in the
     //   global and profile settings to the instance.
@@ -58,7 +58,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - appSettings: the set of settings being used to construct the new terminal
     // - profileGuid: the unique identifier (guid) of the profile
     // - keybindings: the keybinding handler
-    Model::TerminalSettings TerminalSettings::CreateWithProfileByID(const Model::CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings)
+    // Return Value:
+    // - A TerminalSettingsCreateResult, which contains a pair of TerminalSettings objects,
+    //   one for when the terminal is focused and the other for when the terminal is unfocused
+    Model::TerminalSettingsCreateResult TerminalSettings::CreateWithProfileByID(const Model::CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings)
     {
         auto settings{ winrt::make_self<TerminalSettings>() };
         settings->_KeyBindings = keybindings;
@@ -67,10 +70,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         THROW_HR_IF_NULL(E_INVALIDARG, profile);
 
         const auto globals = appSettings.GlobalSettings();
-        settings->_ApplyProfileSettings(profile, globals.ColorSchemes());
+        settings->_ApplyProfileSettings(profile);
         settings->_ApplyGlobalSettings(globals);
+        settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes());
 
-        return *settings;
+        Model::TerminalSettings child{ nullptr };
+        if (const auto& unfocusedAppearance{ profile.UnfocusedAppearance() })
+        {
+            auto childImpl = settings->CreateChild();
+            childImpl->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes());
+            child = *childImpl;
+        }
+
+        return winrt::make<TerminalSettingsCreateResult>(*settings, child);
     }
 
     // Method Description:
@@ -88,61 +100,123 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //     StartingDirectory) in this object to override the settings directly from
     //     the profile.
     // - keybindings: the keybinding handler
-    Model::TerminalSettings TerminalSettings::CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
-                                                                        const Model::NewTerminalArgs& newTerminalArgs,
-                                                                        const IKeyBindings& keybindings)
+    // Return Value:
+    // - A TerminalSettingsCreateResult object, which contains a pair of TerminalSettings
+    //   objects. One for when the terminal is focused and one for when the terminal is unfocused.
+    Model::TerminalSettingsCreateResult TerminalSettings::CreateWithNewTerminalArgs(const CascadiaSettings& appSettings,
+                                                                                    const NewTerminalArgs& newTerminalArgs,
+                                                                                    const IKeyBindings& keybindings)
     {
         const guid profileGuid = appSettings.GetProfileForArgs(newTerminalArgs);
-        auto settings{ CreateWithProfileByID(appSettings, profileGuid, keybindings) };
+        auto settingsPair{ CreateWithProfileByID(appSettings, profileGuid, keybindings) };
+        auto defaultSettings = settingsPair.DefaultSettings();
 
         if (newTerminalArgs)
         {
             // Override commandline, starting directory if they exist in newTerminalArgs
             if (!newTerminalArgs.Commandline().empty())
             {
-                settings.Commandline(newTerminalArgs.Commandline());
+                defaultSettings.Commandline(newTerminalArgs.Commandline());
             }
             if (!newTerminalArgs.StartingDirectory().empty())
             {
-                settings.StartingDirectory(newTerminalArgs.StartingDirectory());
+                defaultSettings.StartingDirectory(newTerminalArgs.StartingDirectory());
             }
             if (!newTerminalArgs.TabTitle().empty())
             {
-                settings.StartingTitle(newTerminalArgs.TabTitle());
+                defaultSettings.StartingTitle(newTerminalArgs.TabTitle());
             }
             if (newTerminalArgs.TabColor())
             {
-                settings.StartingTabColor(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>{ til::color{ newTerminalArgs.TabColor().Value() } });
+                defaultSettings.StartingTabColor(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>{ til::color{ newTerminalArgs.TabColor().Value() } });
             }
             if (newTerminalArgs.SuppressApplicationTitle())
             {
-                settings.SuppressApplicationTitle(newTerminalArgs.SuppressApplicationTitle().Value());
+                defaultSettings.SuppressApplicationTitle(newTerminalArgs.SuppressApplicationTitle().Value());
             }
             if (!newTerminalArgs.ColorScheme().empty())
             {
                 const auto schemes = appSettings.GlobalSettings().ColorSchemes();
                 if (const auto& scheme = schemes.TryLookup(newTerminalArgs.ColorScheme()))
                 {
-                    settings.ApplyColorScheme(scheme);
+                    defaultSettings.ApplyColorScheme(scheme);
                 }
             }
         }
 
-        return settings;
+        return settingsPair;
+    }
+
+    void TerminalSettings::_ApplyAppearanceSettings(const IAppearanceConfig& appearance, const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes)
+    {
+        _CursorShape = appearance.CursorShape();
+        _CursorHeight = appearance.CursorHeight();
+        if (!appearance.ColorSchemeName().empty())
+        {
+            if (const auto scheme = schemes.TryLookup(appearance.ColorSchemeName()))
+            {
+                ApplyColorScheme(scheme);
+            }
+        }
+        if (appearance.Foreground())
+        {
+            _DefaultForeground = til::color{ appearance.Foreground().Value() };
+        }
+        if (appearance.Background())
+        {
+            _DefaultBackground = til::color{ appearance.Background().Value() };
+        }
+        if (appearance.SelectionBackground())
+        {
+            _SelectionBackground = til::color{ appearance.SelectionBackground().Value() };
+        }
+        if (appearance.CursorColor())
+        {
+            _CursorColor = til::color{ appearance.CursorColor().Value() };
+        }
+        if (!appearance.BackgroundImagePath().empty())
+        {
+            _BackgroundImage = appearance.ExpandedBackgroundImagePath();
+        }
+
+        _BackgroundImageOpacity = appearance.BackgroundImageOpacity();
+        _BackgroundImageStretchMode = appearance.BackgroundImageStretchMode();
+        std::tie(_BackgroundImageHorizontalAlignment, _BackgroundImageVerticalAlignment) = ConvertConvergedAlignment(appearance.BackgroundImageAlignment());
+
+        _RetroTerminalEffect = appearance.RetroTerminalEffect();
+        _PixelShaderPath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(appearance.PixelShaderPath().c_str()) };
     }
 
     // Method Description:
-    // - Creates a TerminalSettings object that inherits from a parent TerminalSettings
-    // Arguments::
-    // - parent: the TerminalSettings object that the newly created TerminalSettings will inherit from
+    // - Creates a TerminalSettingsCreateResult from a parent TerminalSettingsCreateResult
+    // - The returned defaultSettings inherits from the parent's defaultSettings, and the
+    //   returned unfocusedSettings inherits from the returned defaultSettings
+    // - Note that the unfocused settings needs to be entirely unchanged _except_ we need to
+    //   set its parent to the other settings object that we return. This is because the overrides
+    //   made by the control will live in that other settings object, so we want to make
+    //   sure the unfocused settings inherit from that.
+    // - Another way to think about this is that initially we have UnfocusedSettings inherit
+    //   from DefaultSettings. This function simply adds another TerminalSettings object
+    //   in the middle of these two, so UnfocusedSettings now inherits from the new object
+    //   and the new object inherits from the DefaultSettings. And this new object is what
+    //   the control can put overrides in.
+    // Arguments:
+    // - parent: the TerminalSettingsCreateResult that we create a new one from
     // Return Value:
-    // - a newly created child of the given parent object
-    Model::TerminalSettings TerminalSettings::CreateWithParent(const Model::TerminalSettings& parent)
+    // - A TerminalSettingsCreateResult object that contains a defaultSettings that inherits
+    //   from parent's defaultSettings, and contains an unfocusedSettings that inherits from
+    //   its defaultSettings
+    Model::TerminalSettingsCreateResult TerminalSettings::CreateWithParent(const Model::TerminalSettingsCreateResult& parent)
     {
         THROW_HR_IF_NULL(E_INVALIDARG, parent);
 
-        auto parentImpl{ get_self<TerminalSettings>(parent) };
-        return *parentImpl->CreateChild();
+        auto defaultImpl{ get_self<TerminalSettings>(parent.DefaultSettings()) };
+        auto defaultChild = defaultImpl->CreateChild();
+        if (parent.UnfocusedSettings())
+        {
+            parent.UnfocusedSettings().SetParent(*defaultChild);
+        }
+        return winrt::make<TerminalSettingsCreateResult>(*defaultChild, parent.UnfocusedSettings());
     }
 
     // Method Description:
@@ -164,14 +238,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - schemes: a map of schemes to look for our color scheme in, if we have one.
     // Return Value:
     // - <none>
-    void TerminalSettings::_ApplyProfileSettings(const Model::Profile& profile, const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes)
+    void TerminalSettings::_ApplyProfileSettings(const Profile& profile)
     {
         // Fill in the Terminal Setting's CoreSettings from the profile
         _HistorySize = profile.HistorySize();
         _SnapOnInput = profile.SnapOnInput();
         _AltGrAliasing = profile.AltGrAliasing();
-        _CursorHeight = profile.CursorHeight();
-        _CursorShape = profile.CursorShape();
 
         // Fill in the remaining properties from the profile
         _ProfileName = profile.Name();
@@ -196,43 +268,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _SuppressApplicationTitle = profile.SuppressApplicationTitle();
         }
 
-        if (!profile.ColorSchemeName().empty())
-        {
-            if (const auto scheme = schemes.TryLookup(profile.ColorSchemeName()))
-            {
-                ApplyColorScheme(scheme);
-            }
-        }
-        if (profile.Foreground())
-        {
-            _DefaultForeground = til::color{ profile.Foreground().Value() };
-        }
-        if (profile.Background())
-        {
-            _DefaultBackground = til::color{ profile.Background().Value() };
-        }
-        if (profile.SelectionBackground())
-        {
-            _SelectionBackground = til::color{ profile.SelectionBackground().Value() };
-        }
-        if (profile.CursorColor())
-        {
-            _CursorColor = til::color{ profile.CursorColor().Value() };
-        }
-
         _ScrollState = profile.ScrollState();
-
-        if (!profile.BackgroundImagePath().empty())
-        {
-            _BackgroundImage = profile.ExpandedBackgroundImagePath();
-        }
-
-        _BackgroundImageOpacity = profile.BackgroundImageOpacity();
-        _BackgroundImageStretchMode = profile.BackgroundImageStretchMode();
-        std::tie(_BackgroundImageHorizontalAlignment, _BackgroundImageVerticalAlignment) = ConvertConvergedAlignment(profile.BackgroundImageAlignment());
-
-        _RetroTerminalEffect = profile.RetroTerminalEffect();
-        _PixelShaderPath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(profile.PixelShaderPath().c_str()) };
 
         _AntialiasingMode = profile.AntialiasingMode();
 

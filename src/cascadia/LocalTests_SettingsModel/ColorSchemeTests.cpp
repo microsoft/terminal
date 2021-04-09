@@ -338,34 +338,34 @@ namespace SettingsModelLocalTests
 
         // verify profile defaults
         Log::Comment(L"Profile Defaults");
-        VERIFY_ARE_EQUAL(newName, settings->ProfileDefaults().ColorSchemeName());
-        VERIFY_IS_TRUE(settings->ProfileDefaults().HasColorSchemeName());
+        VERIFY_ARE_EQUAL(newName, settings->ProfileDefaults().DefaultAppearance().ColorSchemeName());
+        VERIFY_IS_TRUE(settings->ProfileDefaults().DefaultAppearance().HasColorSchemeName());
 
         // verify all other profiles
         const auto& profiles{ settings->AllProfiles() };
         {
             const auto& prof{ profiles.GetAt(0) };
             Log::Comment(prof.Name().c_str());
-            VERIFY_ARE_EQUAL(newName, prof.ColorSchemeName());
-            VERIFY_IS_TRUE(prof.HasColorSchemeName());
+            VERIFY_ARE_EQUAL(newName, prof.DefaultAppearance().ColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasColorSchemeName());
         }
         {
             const auto& prof{ profiles.GetAt(1) };
             Log::Comment(prof.Name().c_str());
-            VERIFY_ARE_EQUAL(newName, prof.ColorSchemeName());
-            VERIFY_IS_TRUE(prof.HasColorSchemeName());
+            VERIFY_ARE_EQUAL(newName, prof.DefaultAppearance().ColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasColorSchemeName());
         }
         {
             const auto& prof{ profiles.GetAt(2) };
             Log::Comment(prof.Name().c_str());
-            VERIFY_ARE_EQUAL(newName, prof.ColorSchemeName());
-            VERIFY_IS_FALSE(prof.HasColorSchemeName());
+            VERIFY_ARE_EQUAL(newName, prof.DefaultAppearance().ColorSchemeName());
+            VERIFY_IS_FALSE(prof.DefaultAppearance().HasColorSchemeName());
         }
         {
             const auto& prof{ profiles.GetAt(3) };
             Log::Comment(prof.Name().c_str());
-            VERIFY_ARE_EQUAL(L"Scheme 2", prof.ColorSchemeName());
-            VERIFY_IS_TRUE(prof.HasColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Scheme 2", prof.DefaultAppearance().ColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasColorSchemeName());
         }
     }
 }
