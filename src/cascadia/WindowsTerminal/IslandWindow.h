@@ -66,6 +66,7 @@ protected:
 
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
     [[nodiscard]] LRESULT _OnSizing(const WPARAM wParam, const LPARAM lParam);
+    [[nodiscard]] LRESULT _OnMoving(const WPARAM wParam, const LPARAM lParam);
 
     bool _borderless{ false };
     bool _fullscreen{ false };

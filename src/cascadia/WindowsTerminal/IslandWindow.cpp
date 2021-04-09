@@ -205,8 +205,6 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
         return true;
     }
 
-    // TODO! is there a way to prevent _moving_ the window as well?
-
     if (wParam != WMSZ_TOP && wParam != WMSZ_BOTTOM)
     {
         // If user has dragged anything but the top or bottom border (so e.g. left border,
@@ -257,6 +255,30 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     }
 
     return TRUE;
+}
+
+// Method Description:
+// - Handle the WM_MOVING message
+// - If we're the quake window, then we don't want to be able to be moved.
+//   Immediately return our current window position, which will prevent us from
+//   being moved at all.
+// Arguments:
+// - lParam: a LPRECT with the proposed window position, that should be filled
+//   with the resultant position.
+// Return Value:
+// - true iff we handled this message.
+LRESULT IslandWindow::_OnMoving(const WPARAM /*wParam*/, const LPARAM lParam)
+{
+    LPRECT winRect = reinterpret_cast<LPRECT>(lParam);
+    // If we're the quake window, prevent moving the window
+    if (_IsQuakeWindow)
+    {
+        // Stuff our current window into the lParam, and return true. This
+        // will tell User32 to use our current position to move to.
+        ::GetWindowRect(_window.get(), winRect);
+        return true;
+    }
+    return false;
 }
 
 void IslandWindow::Initialize()
@@ -416,6 +438,10 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     case WM_SIZING:
     {
         return _OnSizing(wparam, lparam);
+    }
+    case WM_MOVING:
+    {
+        return _OnMoving(wparam, lparam);
     }
     case WM_CLOSE:
     {
