@@ -17,7 +17,8 @@ DxFontInfo::DxFontInfo() noexcept :
     _familyName(),
     _weight(DWRITE_FONT_WEIGHT_NORMAL),
     _style(DWRITE_FONT_STYLE_NORMAL),
-    _stretch(DWRITE_FONT_STRETCH_NORMAL)
+    _stretch(DWRITE_FONT_STRETCH_NORMAL),
+    _didFallback(false)
 {
 }
 
@@ -28,7 +29,8 @@ DxFontInfo::DxFontInfo(std::wstring_view familyName,
     _familyName(familyName),
     _weight(weight),
     _style(style),
-    _stretch(stretch)
+    _stretch(stretch),
+    _didFallback(false)
 {
 }
 
@@ -39,7 +41,8 @@ DxFontInfo::DxFontInfo(std::wstring_view familyName,
     _familyName(familyName),
     _weight(static_cast<DWRITE_FONT_WEIGHT>(weight)),
     _style(style),
-    _stretch(stretch)
+    _stretch(stretch),
+    _didFallback(false)
 {
 }
 
@@ -105,10 +108,8 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 //   then try Consolas again with normal weight/stretch/style,
 //   and if nothing works, then we'll throw an error.
 // Arguments:
-// - familyName - The font name we should be looking for
-// - weight - The weight (bold, light, etc.)
-// - stretch - The stretch of the font is the spacing between each letter
-// - style - Normal, italic, etc.
+// - dwriteFactory - The DWrite factory to use
+// - localeName - Locale to search for appropriate fonts
 // Return Value:
 // - Smart pointer holding interface reference for queryable font data.
 [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontInfo::ResolveFontFaceWithFallback(gsl::not_null<IDWriteFactory1*> dwriteFactory,
@@ -185,10 +186,8 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 // Routine Description:
 // - Locates a suitable font face from the given information
 // Arguments:
-// - familyName - The font name we should be looking for
-// - weight - The weight (bold, light, etc.)
-// - stretch - The stretch of the font is the spacing between each letter
-// - style - Normal, italic, etc.
+// - dwriteFactory - The DWrite factory to use
+// - localeName - Locale to search for appropriate fonts
 // Return Value:
 // - Smart pointer holding interface reference for queryable font data.
 [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontInfo::_FindFontFace(gsl::not_null<IDWriteFactory1*> dwriteFactory, std::wstring& localeName)
@@ -202,7 +201,7 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
     BOOL familyExists;
     THROW_IF_FAILED(fontCollection->FindFamilyName(_familyName.data(), &familyIndex, &familyExists));
 
-     // If the system collection missed, try the files sitting next to our binary.
+    // If the system collection missed, try the files sitting next to our binary.
     if (!familyExists)
     {
         auto&& nearbyCollection = NearbyCollection(dwriteFactory);
@@ -311,7 +310,7 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 // - Creates a DirectWrite font collection of font files that are sitting next to the running
 //   binary (in the same directory as the EXE).
 // Arguments:
-// - <none>
+// - dwriteFactory - The DWrite factory to use
 // Return Value:
 // - DirectWrite font collection. May be null if one cannot be created.
 [[nodiscard]] const Microsoft::WRL::ComPtr<IDWriteFontCollection1>& DxFontInfo::NearbyCollection(gsl::not_null<IDWriteFactory1*> dwriteFactory) const
@@ -352,6 +351,13 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
     return _nearbyCollection;
 }
 
+// Routine Description:
+// - Digs through the directory that the current executable is running within to find
+//   any TTF files sitting next to it.
+// Arguments:
+// - <none>
+// Return Value:
+// - Iterable collection of filesystem paths, one per font file that was found
 [[nodiscard]] std::vector<std::filesystem::path> DxFontInfo::s_GetNearbyFonts()
 {
     std::vector<std::filesystem::path> paths;

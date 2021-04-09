@@ -59,6 +59,7 @@ namespace Microsoft::Console::Render
 
         mutable ::Microsoft::WRL::ComPtr<IDWriteFontCollection1> _nearbyCollection;
 
+        // The font name we should be looking for
         std::wstring _familyName;
 
         // The weight (bold, light, etc.)

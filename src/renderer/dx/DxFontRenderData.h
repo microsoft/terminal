@@ -39,8 +39,6 @@ namespace Microsoft::Console::Render
         // A locale that can be used on construction of assorted DX objects that want to know one.
         [[nodiscard]] std::wstring UserLocaleName();
 
-        [[nodiscard]] const Microsoft::WRL::ComPtr<IDWriteFontCollection1>& NearbyCollection() const;
-
         [[nodiscard]] til::size GlyphCell() noexcept;
         [[nodiscard]] LineMetrics GetLineMetrics() noexcept;
 
@@ -66,8 +64,6 @@ namespace Microsoft::Console::Render
     private:
         void _BuildFontRenderData(const FontInfoDesired& desired, FontInfo& actual, const int dpi);
         Microsoft::WRL::ComPtr<IDWriteTextFormat> _BuildTextFormat(const DxFontInfo fontInfo, const std::wstring_view localeName);
-
-        [[nodiscard]] static std::vector<std::filesystem::path> s_GetNearbyFonts();
 
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
 

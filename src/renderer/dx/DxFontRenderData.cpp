@@ -627,37 +627,3 @@ Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(con
                                                      &format));
     return format;
 }
-
-// Routine Description:
-// - Digs through the directory that the current executable is running within to find
-//   any TTF files sitting next to it.
-// Arguments:
-// - <none>
-// Return Value:
-// - Iterable collection of filesystem paths, one per font file that was found
-[[nodiscard]] std::vector<std::filesystem::path> DxFontRenderData::s_GetNearbyFonts()
-{
-    std::vector<std::filesystem::path> paths;
-
-    // Find the directory we're running from then enumerate all the TTF files
-    // sitting next to us.
-    const std::filesystem::path module{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
-    const auto folder{ module.parent_path() };
-
-    for (auto& p : std::filesystem::directory_iterator(folder))
-    {
-        if (p.is_regular_file())
-        {
-            auto extension = p.path().extension().wstring();
-            std::transform(extension.begin(), extension.end(), extension.begin(), std::towlower);
-
-            static constexpr std::wstring_view ttfExtension{ L".ttf" };
-            if (ttfExtension == extension)
-            {
-                paths.push_back(p);
-            }
-        }
-    }
-
-    return paths;
-}
