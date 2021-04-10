@@ -126,6 +126,7 @@ public:
     bool DeleteLines(const size_t count) override;
     bool InsertLines(const size_t count) override;
 
+    void ResetBottom() override;
     bool MoveToBottom() const override;
 
     bool PrivateGetColorTableEntry(const size_t index, COLORREF& value) const noexcept override;

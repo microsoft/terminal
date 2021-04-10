@@ -2535,6 +2535,19 @@ void SCREEN_INFORMATION::UpdateBottom()
 }
 
 // Method Description:
+// - Resets the internal "virtual bottom" tracker to the top of the buffer.
+//      Used when the scrollback buffer has been completely cleared.
+// - <none>
+// Return Value:
+// - <none>
+void SCREEN_INFORMATION::ResetBottom()
+{
+    // The virtual bottom points to the last line of the viewport, so at the
+    // top of the buffer it should be one less than the viewport height.
+    _virtualBottom = _viewport.Height() - 1;
+}
+
+// Method Description:
 // - Initialize the row with the cursor on it to the standard erase attributes.
 //      This is executed when we move the cursor below the current viewport in
 //      VT mode. When that happens in a real terminal, the line is brand new,
