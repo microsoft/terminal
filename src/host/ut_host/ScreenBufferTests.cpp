@@ -67,6 +67,8 @@ class ScreenBufferTests
         auto& currentBuffer = gci.GetActiveOutputBuffer();
         // Make sure a test hasn't left us in the alt buffer on accident
         VERIFY_IS_FALSE(currentBuffer._IsAltBuffer());
+        // Make sure the virtual viewport bottom is reset.
+        currentBuffer._virtualBottom = 0;
         VERIFY_SUCCEEDED(currentBuffer.SetViewportOrigin(true, { 0, 0 }, true));
         // Make sure the viewport always starts off at the default size.
         auto defaultSize = COORD{ CommonState::s_csWindowWidth, CommonState::s_csWindowHeight };
@@ -1542,6 +1544,7 @@ void ScreenBufferTests::VtNewlineOutsideMargins()
     VERIFY_ARE_EQUAL(COORD({ 0, viewportTop + 1 }), si.GetViewport().Origin());
 
     Log::Comment(L"Reset viewport and apply DECSTBM margins");
+    si._virtualBottom = 0;
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, viewportTop }), true));
     stateMachine.ProcessString(L"\x1b[1;5r");
     // Make sure we clear the margins on exit so they can't break other tests.
@@ -3341,6 +3344,7 @@ void ScreenBufferTests::ScrollOperations()
     const auto bufferHeight = si.GetBufferSize().Height();
 
     // Move the viewport down a few lines, and only cover part of the buffer width.
+    si._virtualBottom = 0;
     si.SetViewport(Viewport::FromDimensions({ 5, 10 }, { bufferWidth - 10, 10 }), true);
     const auto viewportStart = si.GetViewport().Top();
     const auto viewportEnd = si.GetViewport().BottomExclusive();
@@ -3865,6 +3869,7 @@ void ScreenBufferTests::EraseTests()
     const auto bufferHeight = si.GetBufferSize().Height();
 
     // Move the viewport down a few lines, and only cover part of the buffer width.
+    si._virtualBottom = 0;
     si.SetViewport(Viewport::FromDimensions({ 5, 10 }, { bufferWidth - 10, 10 }), true);
 
     // Fill the entire buffer with Zs. Blue on Green.
@@ -3985,6 +3990,7 @@ void _CommonScrollingSetup()
     const auto oldView = si.GetViewport();
     const auto view = Viewport::FromDimensions({ 0, 0 }, { oldView.Width(), 6 });
     si.SetViewport(view, true);
+    si.ResetBottom();
     cursor.SetPosition({ 0, 0 });
     stateMachine.ProcessString(L"A");
     cursor.SetPosition({ 0, 5 });
