@@ -308,6 +308,33 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
     DUPLICATE_APPEARANCE_SETTING_MACRO(RetroTerminalEffect);
     DUPLICATE_APPEARANCE_SETTING_MACRO(CursorShape);
     DUPLICATE_APPEARANCE_SETTING_MACRO(CursorHeight);
+
+    // UnfocusedAppearance is treated as a single setting,
+    // but requires a little more legwork to duplicate properly
+    if (source.HasUnfocusedAppearance() ||
+        (source.UnfocusedAppearanceOverrideSource() != nullptr && source.UnfocusedAppearanceOverrideSource().Origin() != OriginTag::ProfilesDefaults))
+    {
+        // First, get a com_ptr to the source's unfocused appearance
+        // We need this to be able to call CopyAppearance (it is alright to simply call CopyAppearance here
+        // instead of needing a separate function like DuplicateAppearance since UnfocusedAppearance is treated
+        // as a single setting)
+        winrt::com_ptr<AppearanceConfig> sourceUnfocusedAppearanceImpl;
+        sourceUnfocusedAppearanceImpl.copy_from(winrt::get_self<AppearanceConfig>(source.UnfocusedAppearance()));
+
+        // Get a weak ref to the duplciate profile so we can provide a source profile to the new UnfocusedAppearance
+        // we are about to create
+        const auto weakRefToDuplicated = weak_ref<Model::Profile>(*duplicated);
+        auto duplicatedUnfocusedAppearanceImpl = AppearanceConfig::CopyAppearance(sourceUnfocusedAppearanceImpl, weakRefToDuplicated);
+
+        // Make sure to add the default appearance of the duplicated profile as a parent to the duplicate's UnfocusedAppearance
+        winrt::com_ptr<AppearanceConfig> duplicatedDefaultAppearanceImpl;
+        duplicatedDefaultAppearanceImpl.copy_from(winrt::get_self<AppearanceConfig>(duplicated->DefaultAppearance()));
+        duplicatedUnfocusedAppearanceImpl->InsertParent(duplicatedDefaultAppearanceImpl);
+
+        // Finally, set the duplicate's UnfocusedAppearance
+        duplicated->UnfocusedAppearance(*duplicatedUnfocusedAppearanceImpl);
+    }
+
     if (source.HasConnectionType())
     {
         duplicated->ConnectionType(source.ConnectionType());
