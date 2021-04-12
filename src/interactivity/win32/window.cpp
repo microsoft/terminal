@@ -289,11 +289,17 @@ void Window::_UpdateSystemMetrics() const
             }
         }
 
+        // CreateWindowExW needs a null terminated string, so ensure
+        // title is null terminated in a std::wstring here.
+        // We don't mind the string copy here because making the window
+        // should be infrequent.
+        const std::wstring title{ gci.GetTitle() };
+
         // Attempt to create window
         HWND hWnd = CreateWindowExW(
             CONSOLE_WINDOW_EX_FLAGS,
             CONSOLE_WINDOW_CLASS,
-            gci.GetTitle().c_str(),
+            title.c_str(),
             CONSOLE_WINDOW_FLAGS,
             WI_IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION) ? CW_USEDEFAULT : rectProposed.left,
             rectProposed.top, // field is ignored if CW_USEDEFAULT was chosen above

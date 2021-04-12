@@ -2,8 +2,9 @@
 // Licensed under the MIT license.
 
 import "IKeyBindings.idl";
+import "IControlAppearance.idl";
 
-namespace Microsoft.Terminal.TerminalControl
+namespace Microsoft.Terminal.Control
 {
     enum ScrollbarState
     {
@@ -23,7 +24,7 @@ namespace Microsoft.Terminal.TerminalControl
     //      TermControl's behavior. In these settings there is both the entirety
     //      of the Core ITerminalSettings interface, and any additional settings
     //      for specifically the control.
-    interface IControlSettings requires ICoreSettings
+    interface IControlSettings requires Microsoft.Terminal.Core.ICoreSettings, Microsoft.Terminal.Control.IControlAppearance
     {
         String ProfileName;
 
@@ -36,29 +37,19 @@ namespace Microsoft.Terminal.TerminalControl
         Windows.UI.Text.FontWeight FontWeight;
         String Padding;
 
-        Microsoft.Terminal.TerminalControl.IKeyBindings KeyBindings;
+        Microsoft.Terminal.Control.IKeyBindings KeyBindings;
 
         Boolean CopyOnSelect;
+        Boolean FocusFollowMouse;
 
         String Commandline;
         String StartingDirectory;
         String EnvironmentVariables;
 
-        String BackgroundImage;
-        Double BackgroundImageOpacity;
-        Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;
-        Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;
-        Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
-
-        UInt32 SelectionBackground;
-
         TextAntialiasingMode AntialiasingMode;
 
         // Experimental Settings
-        Boolean RetroTerminalEffect;
         Boolean ForceFullRepaintRendering;
         Boolean SoftwareRendering;
-        String PixelShaderPath;
-
     };
 }

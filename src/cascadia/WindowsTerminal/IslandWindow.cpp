@@ -15,7 +15,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace ::Microsoft::Console::Types;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
@@ -833,7 +833,7 @@ void IslandWindow::_BackupWindowSizes(const bool fCurrentIsInFullscreen)
 }
 
 // Method Description:
-// - Applys the appropriate window size for transitioning to/from fullscreen mode.
+// - Applies the appropriate window size for transitioning to/from fullscreen mode.
 // - Taken from conhost's Window::_ApplyWindowSize
 // Arguments:
 // - <none>
@@ -851,7 +851,7 @@ void IslandWindow::_ApplyWindowSize()
                                          SWP_FRAMECHANGED | SWP_NOACTIVATE));
 }
 
-void IslandWindow::SetGlobalHotkey(const winrt::Microsoft::Terminal::TerminalControl::KeyChord& hotkey)
+void IslandWindow::SetGlobalHotkey(const winrt::Microsoft::Terminal::Control::KeyChord& hotkey)
 {
     if (hotkey)
     {
@@ -865,7 +865,7 @@ void IslandWindow::SetGlobalHotkey(const winrt::Microsoft::Terminal::TerminalCon
         // `1` is an arbitrary ID. We only have one hotkey in the entire app, so
         // we don't need to worry about setting a unique ID for each.
         //
-        // TODO: (discussion) should we display a warning of some kind if this
+        // TODO!: (discussion) should we display a warning of some kind if this
         // fails? This can fail if something else already bound this hotkey.
         LOG_IF_WIN32_BOOL_FALSE(RegisterHotKey(_window.get(),
                                                1,
@@ -874,6 +874,14 @@ void IslandWindow::SetGlobalHotkey(const winrt::Microsoft::Terminal::TerminalCon
     }
 }
 
+// Method Description:
+// - Force activate this window. This method will bring us to the foreground and
+//   activate us. If the window is minimized, it will restore the window. If the
+//   window is on another desktop, the OS will switch to that desktop.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 winrt::fire_and_forget IslandWindow::SummonWindow()
 {
     // On the foreground thread:
@@ -884,19 +892,22 @@ winrt::fire_and_forget IslandWindow::SummonWindow()
     // > window (hwnd) are related by attaching the threads (using
     // > AttachThreadInput API) and using an alternative API: BringWindowToTop.
     // If the window is minimized, then restore it. We don't want to do this
-    // always though, because SW_RESTORE'ing a maximized window will
-    // restore-down it.
+    // always though, because if you SW_RESTORE a maximized window, it will
+    // restore-down the window.
     if (IsIconic(_window.get()))
     {
         LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
     }
-    const DWORD windowThreadProcessId = GetWindowThreadProcessId(GetForegroundWindow(), LPDWORD(0));
+    const DWORD windowThreadProcessId = GetWindowThreadProcessId(GetForegroundWindow(), nullptr);
     const DWORD currentThreadId = GetCurrentThreadId();
 
     LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, true));
+    // Just in case, add the thread detach as a scope_exit, to make _sure_ we do it.
+    auto detachThread = wil::scope_exit([windowThreadProcessId, currentThreadId]() {
+        LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, false));
+    });
     LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
     LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_SHOW));
-    LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, false));
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

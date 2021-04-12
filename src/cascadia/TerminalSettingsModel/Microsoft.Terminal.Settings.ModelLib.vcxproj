@@ -53,10 +53,16 @@
     <ClInclude Include="Profile.h">
       <DependentUpon>Profile.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="AppearanceConfig.h">
+      <DependentUpon>AppearanceConfig.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="EnumMappings.h">
       <DependentUpon>EnumMappings.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="SettingsTypes.h" />
+    <ClInclude Include="TerminalSettings.h">
+      <DependentUpon>TerminalSettings.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="TerminalSettingsSerializationHelpers.h" />
     <ClInclude Include="TerminalWarnings.h">
       <DependentUpon>TerminalWarnings.idl</DependentUpon>
@@ -108,6 +114,12 @@
     <ClCompile Include="Profile.cpp">
       <DependentUpon>Profile.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="AppearanceConfig.cpp">
+      <DependentUpon>AppearanceConfig.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="TerminalSettings.cpp">
+      <DependentUpon>TerminalSettings.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="EnumMappings.cpp">
       <DependentUpon>EnumMappings.idl</DependentUpon>
     </ClCompile>
@@ -130,8 +142,11 @@
     <Midl Include="KeyMapping.idl" />
     <Midl Include="Profile.idl" />
     <Midl Include="EnumMappings.idl" />
+    <Midl Include="TerminalSettings.idl" />
     <Midl Include="TerminalWarnings.idl" />
     <Midl Include="KeyChordSerialization.idl" />
+    <Midl Include="AppearanceConfig.idl" />
+    <Midl Include="IAppearanceConfig.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
@@ -166,8 +181,14 @@
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
-    <Reference Include="Microsoft.Terminal.TerminalControl">
-      <HintPath>$(OpenConsoleCommonOutDir)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
+    <Reference Include="Microsoft.Terminal.Control">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Control\Microsoft.Terminal.Control.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.Core">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>

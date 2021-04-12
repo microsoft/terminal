@@ -35,6 +35,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(CanLayerColorScheme);
         TEST_METHOD(LayerColorSchemeProperties);
         TEST_METHOD(LayerColorSchemesOnArray);
+        TEST_METHOD(UpdateSchemeReferences);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -288,6 +289,83 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme1->_Background);
             VERIFY_ARE_EQUAL(ARGB(0, 6, 6, 6), scheme2->_Foreground);
             VERIFY_ARE_EQUAL(ARGB(0, 7, 7, 7), scheme2->_Background);
+        }
+    }
+
+    void ColorSchemeTests::UpdateSchemeReferences()
+    {
+        const std::string settingsString{ R"json({
+                                                "defaultProfile": "Inherited reference",
+                                                "profiles": {
+                                                    "defaults": {
+                                                        "colorScheme": "Scheme 1"
+                                                    },
+                                                    "list": [
+                                                        {
+                                                            "name": "Explicit scheme reference",
+                                                            "colorScheme": "Scheme 1"
+                                                        },
+                                                        {
+                                                            "name": "Explicit reference; hidden",
+                                                            "colorScheme": "Scheme 1",
+                                                            "hidden": true
+                                                        },
+                                                        {
+                                                            "name": "Inherited reference"
+                                                        },
+                                                        {
+                                                            "name": "Different reference",
+                                                            "colorScheme": "Scheme 2"
+                                                        }
+                                                    ]
+                                                },
+                                                "schemes": [
+                                                    { "name": "Scheme 1" },
+                                                    { "name": "Scheme 2" },
+                                                    { "name": "Scheme 1 (renamed)" }
+                                                ]
+                                            })json" };
+
+        auto settings{ winrt::make_self<CascadiaSettings>(false) };
+        settings->_ParseJsonString(settingsString, false);
+        settings->_ApplyDefaultsFromUserSettings();
+        settings->LayerJson(settings->_userSettings);
+        settings->_ValidateSettings();
+
+        // update all references to "Scheme 1"
+        const auto newName{ L"Scheme 1 (renamed)" };
+        settings->UpdateColorSchemeReferences(L"Scheme 1", newName);
+
+        // verify profile defaults
+        Log::Comment(L"Profile Defaults");
+        VERIFY_ARE_EQUAL(newName, settings->ProfileDefaults().DefaultAppearance().ColorSchemeName());
+        VERIFY_IS_TRUE(settings->ProfileDefaults().DefaultAppearance().HasColorSchemeName());
+
+        // verify all other profiles
+        const auto& profiles{ settings->AllProfiles() };
+        {
+            const auto& prof{ profiles.GetAt(0) };
+            Log::Comment(prof.Name().c_str());
+            VERIFY_ARE_EQUAL(newName, prof.DefaultAppearance().ColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasColorSchemeName());
+        }
+        {
+            const auto& prof{ profiles.GetAt(1) };
+            Log::Comment(prof.Name().c_str());
+            VERIFY_ARE_EQUAL(newName, prof.DefaultAppearance().ColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasColorSchemeName());
+        }
+        {
+            const auto& prof{ profiles.GetAt(2) };
+            Log::Comment(prof.Name().c_str());
+            VERIFY_ARE_EQUAL(newName, prof.DefaultAppearance().ColorSchemeName());
+            VERIFY_IS_FALSE(prof.DefaultAppearance().HasColorSchemeName());
+        }
+        {
+            const auto& prof{ profiles.GetAt(3) };
+            Log::Comment(prof.Name().c_str());
+            VERIFY_ARE_EQUAL(L"Scheme 2", prof.DefaultAppearance().ColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasColorSchemeName());
         }
     }
 }

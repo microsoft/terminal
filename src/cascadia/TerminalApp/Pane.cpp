@@ -14,7 +14,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml::Media;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::TerminalApp;
 using namespace TerminalApp;
@@ -312,7 +312,7 @@ bool Pane::NavigateFocus(const FocusDirection& direction)
 // - <none>
 // Return Value:
 // - <none>
-void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/,
+void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                  const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     std::unique_lock lock{ _createCloseLock };
@@ -628,7 +628,7 @@ void Pane::_FocusFirstChild()
 // - profile: The GUID of the profile these settings should apply to.
 // Return Value:
 // - <none>
-void Pane::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
+void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const GUID& profile)
 {
     if (!_IsLeaf())
     {
@@ -639,7 +639,21 @@ void Pane::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
     {
         if (profile == _profile)
         {
-            _control.UpdateSettings(settings);
+            auto controlSettings = _control.Settings().as<TerminalSettings>();
+            // Update the parent of the control's settings object (and not the object itself) so
+            // that any overrides made by the control don't get affected by the reload
+            controlSettings.SetParent(settings.DefaultSettings());
+            auto unfocusedSettings{ settings.UnfocusedSettings() };
+            if (unfocusedSettings)
+            {
+                // Note: the unfocused settings needs to be entirely unchanged _except_ we need to
+                // set its parent to the settings object that lives in the control. This is because
+                // the overrides made by the control live in that settings object, so we want to make
+                // sure the unfocused settings inherit from that.
+                unfocusedSettings.SetParent(controlSettings);
+            }
+            _control.UnfocusedAppearance(unfocusedSettings);
+            _control.UpdateSettings();
         }
     }
 }
@@ -1550,9 +1564,9 @@ void Pane::Restore(std::shared_ptr<Pane> zoomedPane)
 //   otherwise the ID value will not make sense (leaves have IDs, parents do not)
 // Return Value:
 // - The ID of this pane
-uint16_t Pane::Id() noexcept
+std::optional<uint16_t> Pane::Id() noexcept
 {
-    return _id.value();
+    return _id;
 }
 
 // Method Description:
@@ -2083,6 +2097,13 @@ std::optional<SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane
     // We should not possibly be getting here - both the above branches should
     // return a value.
     FAIL_FAST();
+}
+
+// Method Description:
+// - Returns true if the pane or one of its descendants is read-only
+bool Pane::ContainsReadOnly() const
+{
+    return _IsLeaf() ? _control.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
 }
 
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);

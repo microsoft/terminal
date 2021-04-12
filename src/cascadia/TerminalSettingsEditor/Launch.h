@@ -15,7 +15,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         LaunchPageNavigationState(const Model::CascadiaSettings& settings) :
             _Settings{ settings } {}
 
-        GETSET_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
+        WINRT_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
     };
 
     struct Launch : LaunchT<Launch>
@@ -28,9 +28,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         IInspectable CurrentDefaultProfile();
         void CurrentDefaultProfile(const IInspectable& value);
 
-        GETSET_PROPERTY(Editor::LaunchPageNavigationState, State, nullptr);
+        Windows::Foundation::Collections::IObservableVector<IInspectable> DefaultTerminals();
+        IInspectable CurrentDefaultTerminal();
+        void CurrentDefaultTerminal(const IInspectable& value);
+
+        WINRT_PROPERTY(Editor::LaunchPageNavigationState, State, nullptr);
 
         GETSET_BINDABLE_ENUM_SETTING(LaunchMode, Model::LaunchMode, State().Settings().GlobalSettings, LaunchMode);
+        GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, State().Settings().GlobalSettings, WindowingBehavior);
     };
 }
 

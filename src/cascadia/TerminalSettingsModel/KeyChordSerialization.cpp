@@ -5,7 +5,7 @@
 #include "KeyChordSerialization.h"
 #include "KeyChordSerialization.g.cpp"
 
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
 static constexpr std::wstring_view CTRL_KEY{ L"ctrl" };

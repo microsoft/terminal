@@ -89,7 +89,7 @@ DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
     {
         // If we get an access denied and couldn't connect to the coniosrv in CSRSS.exe.
         // that's OK. We're likely inside an AppContainer in a TAEF /runas:uap test.
-        // We don't want AppContainered things to have access to the hardware devices directly
+        // We don't want things in an AppContainer to have access to the hardware devices directly
         // like coniosrv in CSRSS offers, so we "succeeded" and will let the IO thread know it
         // can continue.
         if (STATUS_ACCESS_DENIED == Status)

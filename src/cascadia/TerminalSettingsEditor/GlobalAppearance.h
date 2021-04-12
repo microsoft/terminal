@@ -15,7 +15,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GlobalAppearancePageNavigationState(const Model::GlobalAppSettings& settings) :
             _Globals{ settings } {}
 
-        GETSET_PROPERTY(Model::GlobalAppSettings, Globals, nullptr)
+        WINRT_PROPERTY(Model::GlobalAppSettings, Globals, nullptr)
     };
 
     struct GlobalAppearance : GlobalAppearanceT<GlobalAppearance>
@@ -25,7 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
-        GETSET_PROPERTY(Editor::GlobalAppearancePageNavigationState, State, nullptr);
+        WINRT_PROPERTY(Editor::GlobalAppearancePageNavigationState, State, nullptr);
 
         GETSET_BINDABLE_ENUM_SETTING(Theme, winrt::Windows::UI::Xaml::ElementTheme, State().Globals, Theme);
         GETSET_BINDABLE_ENUM_SETTING(TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, State().Globals, TabWidthMode);

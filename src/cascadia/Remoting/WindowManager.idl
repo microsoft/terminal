@@ -12,7 +12,6 @@ namespace Microsoft.Terminal.Remoting
         IPeasant CurrentWindow();
         Boolean IsMonarch { get; };
         void SummonWindow();
-
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> BecameMonarch;
     };

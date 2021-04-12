@@ -56,7 +56,7 @@ Abstract:
 #include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
 
 // Additional headers for various xaml features. We need:
-//  * Core for CoreDispatcher
+//  * Core so we can resume_foreground with CoreDispatcher
 //  * Controls for grid
 //  * Media for ScaleTransform
 #include <winrt/Windows.UI.Core.h>
@@ -66,7 +66,7 @@ Abstract:
 #include <winrt/TerminalApp.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
 #include <winrt/Microsoft.Terminal.Remoting.h>
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/Microsoft.Terminal.Control.h>
 
 #include <wil/resource.h>
 #include <wil/win32_helpers.h>

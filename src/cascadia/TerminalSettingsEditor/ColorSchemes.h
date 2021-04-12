@@ -16,8 +16,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ColorSchemesPageNavigationState(const Model::CascadiaSettings& settings) :
             _Settings{ settings } {}
 
-        GETSET_PROPERTY(Model::CascadiaSettings, Settings, nullptr);
-        GETSET_PROPERTY(winrt::hstring, LastSelectedScheme, L"");
+        WINRT_PROPERTY(Model::CascadiaSettings, Settings, nullptr);
+        WINRT_PROPERTY(winrt::hstring, LastSelectedScheme, L"");
     };
 
     struct ColorSchemes : ColorSchemesT<ColorSchemes>
@@ -38,13 +38,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool CanDeleteCurrentScheme() const;
         void DeleteConfirmation_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
-        GETSET_PROPERTY(Editor::ColorSchemesPageNavigationState, State, nullptr);
-        GETSET_PROPERTY(Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::ColorTableEntry>, CurrentColorTable, nullptr);
-        GETSET_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);
+        WINRT_PROPERTY(Editor::ColorSchemesPageNavigationState, State, nullptr);
+        WINRT_PROPERTY(Model::ColorScheme, CurrentColorScheme, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, CurrentNonBrightColorTable, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, CurrentBrightColorTable, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        OBSERVABLE_GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::ColorScheme, CurrentColorScheme, _PropertyChangedHandlers, nullptr);
-        OBSERVABLE_GETSET_PROPERTY(bool, IsRenaming, _PropertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(bool, IsRenaming, _PropertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, CurrentForegroundColor, _PropertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, CurrentBackgroundColor, _PropertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, CurrentCursorColor, _PropertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, CurrentSelectionBackgroundColor, _PropertyChangedHandlers, nullptr);
 
     private:
         void _UpdateColorTable(const winrt::Microsoft::Terminal::Settings::Model::ColorScheme& colorScheme);
@@ -56,11 +61,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         ColorTableEntry(uint8_t index, Windows::UI::Color color);
+        ColorTableEntry(std::wstring_view tag, Windows::UI::Color color);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(IInspectable, Index, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(Windows::UI::Color, Color, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(IInspectable, Tag, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(Windows::UI::Color, Color, _PropertyChangedHandlers);
     };
 }
 
