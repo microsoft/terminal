@@ -137,4 +137,29 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         return keyModifiers;
     }
+
+    Windows::Foundation::Collections::IMap<Control::KeyChord, Model::ActionAndArgs> KeyMapping::FetchGlobalHotkeys()
+    {
+        std::unordered_map<Control::KeyChord, Model::ActionAndArgs, KeyChordHash, KeyChordEquality> justGlobals;
+
+        for (const auto& [k, v] : _keyShortcuts)
+        {
+            if (v.Action() == ShortcutAction::GlobalSummon)
+            {
+                justGlobals[k] = v;
+            }
+            else if (v.Action() == ShortcutAction::QuakeMode)
+            {
+                // Manually replace the QuakeMode action with a globalSummon
+                // that has the appropriate action args.
+                auto args = winrt::make_self<GlobalSummonArgs>();
+                args->Name(L"_quake");
+                Model::ActionAndArgs actionAndArgs{ ShortcutAction::GlobalSummon, *args };
+                justGlobals[k] = actionAndArgs;
+            }
+        }
+
+        return winrt::single_threaded_map<Control::KeyChord, Model::ActionAndArgs>(std::move(justGlobals));
+    }
+
 }

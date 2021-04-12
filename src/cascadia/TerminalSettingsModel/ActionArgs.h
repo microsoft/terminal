@@ -31,6 +31,7 @@
 #include "PrevTabArgs.g.h"
 #include "NextTabArgs.g.h"
 #include "RenameWindowArgs.g.h"
+#include "GlobalSummonArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
@@ -1035,6 +1036,40 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return *copy;
         }
     };
+
+    struct GlobalSummonArgs : public GlobalSummonArgsT<GlobalSummonArgs>
+    {
+        GlobalSummonArgs() = default;
+        WINRT_PROPERTY(winrt::hstring, Name, L"");
+
+        static constexpr std::string_view NameKey{ "name" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            if (auto otherAsUs = other.try_as<GlobalSummonArgs>(); otherAsUs)
+            {
+                return otherAsUs->_Name == _Name;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<GlobalSummonArgs>();
+            JsonUtils::GetValueForKey(json, NameKey, args->_Name);
+            return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<GlobalSummonArgs>() };
+            copy->_Name = _Name;
+            return *copy;
+        }
+    };
+
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation

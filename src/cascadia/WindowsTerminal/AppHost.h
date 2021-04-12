@@ -28,6 +28,9 @@ private:
     bool _shouldCreateWindow{ false };
     winrt::Microsoft::Terminal::Remoting::WindowManager _windowManager{ nullptr };
 
+    std::vector<winrt::Microsoft::Terminal::Control::KeyChord> _hotkeys{ nullptr };
+    winrt::Windows::Foundation::Collections::IMap<winrt::Microsoft::Terminal::Control::KeyChord, winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _hotkeyActions{ nullptr };
+
     void _HandleCommandlineArgs();
 
     void _HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
@@ -54,7 +57,7 @@ private:
 
     winrt::fire_and_forget _BecomeMonarch(const winrt::Windows::Foundation::IInspectable& sender,
                                           const winrt::Windows::Foundation::IInspectable& args);
-    void _GlobalHotkeyPressed();
+    void _GlobalHotkeyPressed(const long hotkeyIndex);
     void _HandleSummon(const winrt::Windows::Foundation::IInspectable& sender,
                        const winrt::Windows::Foundation::IInspectable& args);
 

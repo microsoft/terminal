@@ -752,4 +752,15 @@ namespace winrt::TerminalApp::implementation
 
         args.Handled(true);
     }
+
+    void TerminalPage::_HandleGlobalSummon(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        args.Handled(false);
+    }
+    void TerminalPage::_HandleQuakeMode(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        args.Handled(false);
+    }
 }

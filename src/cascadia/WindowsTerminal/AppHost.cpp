@@ -612,22 +612,41 @@ winrt::fire_and_forget AppHost::_BecomeMonarch(const winrt::Windows::Foundation:
     co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher(),
                                       winrt::Windows::UI::Core::CoreDispatcherPriority::Normal);
     // TODO! This needs to be a list
-    auto hotkey{ _logic.GlobalHotkey() };
-    _window->SetGlobalHotkey(hotkey);
+    // auto hotkey{ _logic.GlobalHotkey() };
+    // _window->SetGlobalHotkey(hotkey);
+    _hotkeyActions = _logic.GlobalHotkeys();
+    _hotkeys.clear();
+    for (const auto& [k, v] : _hotkeyActions)
+    {
+        _hotkeys.push_back(k);
+    }
+    _window->SetGlobalHotkeys(_hotkeys);
 }
 
-void AppHost::_GlobalHotkeyPressed()
+void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
 {
-    Remoting::SummonWindowSelectionArgs args;
-    args.WindowName(L"_quake");
-    _windowManager.SummonWindow(args);
-    if (args.FoundMatch())
+    if (hotkeyIndex < 0 || hotkeyIndex > _hotkeys.size())
     {
-        // Excellent, the window was found.
+        return;
     }
-    else
+    Control::KeyChord kc = _hotkeys.at(hotkeyIndex);
+    const auto& actionAndArgs = _hotkeyActions.Lookup(kc);
+    if (actionAndArgs)
     {
-        // We should make the window ourselves.
+        if (const auto& summonArgs{ actionAndArgs.Args().try_as<Settings::Model::GlobalSummonArgs>() })
+        {
+            Remoting::SummonWindowSelectionArgs args;
+            args.WindowName(summonArgs.Name());
+            _windowManager.SummonWindow(args);
+            if (args.FoundMatch())
+            {
+                // Excellent, the window was found.
+            }
+            else
+            {
+                // We should make the window ourselves.
+            }
+        }
     }
 }
 

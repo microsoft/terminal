@@ -354,7 +354,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     {
     case WM_HOTKEY:
     {
-        _HotkeyPressedHandlers();
+        _HotkeyPressedHandlers(static_cast<long>(wparam));
         return 0;
     }
     case WM_GETMINMAXINFO:
@@ -851,9 +851,11 @@ void IslandWindow::_ApplyWindowSize()
                                          SWP_FRAMECHANGED | SWP_NOACTIVATE));
 }
 
-void IslandWindow::SetGlobalHotkey(const winrt::Microsoft::Terminal::Control::KeyChord& hotkey)
+// void IslandWindow::SetGlobalHotkey(const winrt::Microsoft::Terminal::Control::KeyChord& hotkey)
+void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList)
 {
-    if (hotkey)
+    int index = 0;
+    for (const auto& hotkey : hotkeyList)
     {
         const auto modifiers = hotkey.Modifiers();
         const auto hotkeyFlags = MOD_NOREPEAT |
@@ -868,9 +870,11 @@ void IslandWindow::SetGlobalHotkey(const winrt::Microsoft::Terminal::Control::Ke
         // TODO!: (discussion) should we display a warning of some kind if this
         // fails? This can fail if something else already bound this hotkey.
         LOG_IF_WIN32_BOOL_FALSE(RegisterHotKey(_window.get(),
-                                               1,
+                                               index,
                                                hotkeyFlags,
                                                hotkey.Vkey()));
+
+        index++;
     }
 }
 

@@ -38,7 +38,8 @@ public:
     void FlashTaskbar();
     void SetTaskbarProgress(const size_t state, const size_t progress);
 
-    void SetGlobalHotkey(const winrt::Microsoft::Terminal::Control::KeyChord& hotkey);
+    // void SetGlobalHotkey(const winrt::Microsoft::Terminal::Control::KeyChord& hotkey);
+    void SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList);
 
     winrt::fire_and_forget SummonWindow();
 
@@ -48,7 +49,7 @@ public:
     DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
     WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
     WINRT_CALLBACK(WindowActivated, winrt::delegate<void()>);
-    WINRT_CALLBACK(HotkeyPressed, winrt::delegate<void()>);
+    WINRT_CALLBACK(HotkeyPressed, winrt::delegate<void(long)>);
 
 protected:
     void ForceResize()

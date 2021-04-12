@@ -29,6 +29,7 @@
 #include "PrevTabArgs.g.cpp"
 #include "NextTabArgs.g.cpp"
 #include "RenameWindowArgs.g.cpp"
+#include "GlobalSummonArgs.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -581,5 +582,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             };
         }
         return RS_(L"ResetWindowNameCommandKey");
+    }
+
+    winrt::hstring GlobalSummonArgs::GenerateName() const
+    {
+        return L"";
     }
 }
