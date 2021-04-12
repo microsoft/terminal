@@ -43,8 +43,6 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                     <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" >
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="16"/>
-                            <!-- icon -->
                             <ColumnDefinition Width="Auto"/>
                             <!-- command label -->
                             <ColumnDefinition Width="*"/>
@@ -53,7 +51,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <!-- gutter for scrollbar -->
                         </Grid.ColumnDefinitions>
 
-                        <TextBlock Grid.Column="1"
+                        <TextBlock Grid.Column="0"
                                    HorizontalAlignment="Left"
                                    Text="{x:Bind Name, Mode=OneWay}"/>
 
@@ -63,7 +61,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                              Inexplicably, we don't need to set the
                                  AutomationProperties to Raw here, unlike in the
                                  CommandPalette. We're not quite sure why.-->
-                        <Border Grid.Column="2"
+                        <Border Grid.Column="1"
                                 Visibility="{x:Bind KeyChordText,
                                              Mode=OneWay,
                                              Converter={StaticResource CommandKeyChordVisibilityConverter}}"
