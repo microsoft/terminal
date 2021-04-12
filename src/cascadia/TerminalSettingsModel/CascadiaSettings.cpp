@@ -258,48 +258,56 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
     const winrt::hstring newName{ fmt::format(L"{} ({})", source.Name(), RS_(L"CopySuffix")) };
     duplicated->Name(winrt::hstring(newName));
 
-#define DUPLICATE_MACRO(settingName)                                                                                                           \
+#define DUPLICATE_SETTING_MACRO(settingName)                                                                                                   \
     if (source.Has##settingName() ||                                                                                                           \
         (source.##settingName##OverrideSource() != nullptr && source.##settingName##OverrideSource().Origin() != OriginTag::ProfilesDefaults)) \
     {                                                                                                                                          \
         duplicated->##settingName(source.##settingName());                                                                                     \
     }
 
-    DUPLICATE_MACRO(Hidden);
-    DUPLICATE_MACRO(Icon);
-    DUPLICATE_MACRO(CloseOnExit);
-    DUPLICATE_MACRO(TabTitle);
-    DUPLICATE_MACRO(TabColor);
-    DUPLICATE_MACRO(SuppressApplicationTitle);
-    DUPLICATE_MACRO(UseAcrylic);
-    DUPLICATE_MACRO(AcrylicOpacity);
-    DUPLICATE_MACRO(ScrollState);
-    DUPLICATE_MACRO(FontFace);
-    DUPLICATE_MACRO(FontSize);
-    DUPLICATE_MACRO(FontWeight);
-    DUPLICATE_MACRO(Padding);
-    DUPLICATE_MACRO(Commandline);
-    DUPLICATE_MACRO(StartingDirectory);
-    DUPLICATE_MACRO(BackgroundImagePath);
-    DUPLICATE_MACRO(BackgroundImageOpacity);
-    DUPLICATE_MACRO(BackgroundImageStretchMode);
-    DUPLICATE_MACRO(AntialiasingMode);
-    DUPLICATE_MACRO(RetroTerminalEffect);
-    DUPLICATE_MACRO(ForceFullRepaintRendering);
-    DUPLICATE_MACRO(SoftwareRendering);
-    DUPLICATE_MACRO(ColorSchemeName);
-    DUPLICATE_MACRO(Foreground);
-    DUPLICATE_MACRO(Background);
-    DUPLICATE_MACRO(SelectionBackground);
-    DUPLICATE_MACRO(CursorColor);
-    DUPLICATE_MACRO(HistorySize);
-    DUPLICATE_MACRO(SnapOnInput);
-    DUPLICATE_MACRO(AltGrAliasing);
-    DUPLICATE_MACRO(CursorShape);
-    DUPLICATE_MACRO(CursorHeight);
-    DUPLICATE_MACRO(BellStyle);
-    DUPLICATE_MACRO(PixelShaderPath);
-    DUPLICATE_MACRO(BackgroundImageAlignment);
+#define DUPLICATE_APPEARANCE_SETTING_MACRO(settingName)                                                                                                                                                \
+    if (source.DefaultAppearance().Has##settingName() ||                                                                                                                                               \
+        (source.DefaultAppearance().##settingName##OverrideSource() != nullptr && source.DefaultAppearance().##settingName##OverrideSource().SourceProfile().Origin() != OriginTag::ProfilesDefaults)) \
+    {                                                                                                                                                                                                  \
+        duplicated->DefaultAppearance().##settingName(source.DefaultAppearance().##settingName());                                                                                                                                             \
+    }
+
+    DUPLICATE_SETTING_MACRO(Hidden);
+    DUPLICATE_SETTING_MACRO(Icon);
+    DUPLICATE_SETTING_MACRO(CloseOnExit);
+    DUPLICATE_SETTING_MACRO(TabTitle);
+    DUPLICATE_SETTING_MACRO(TabColor);
+    DUPLICATE_SETTING_MACRO(SuppressApplicationTitle);
+    DUPLICATE_SETTING_MACRO(UseAcrylic);
+    DUPLICATE_SETTING_MACRO(AcrylicOpacity);
+    DUPLICATE_SETTING_MACRO(ScrollState);
+    DUPLICATE_SETTING_MACRO(FontFace);
+    DUPLICATE_SETTING_MACRO(FontSize);
+    DUPLICATE_SETTING_MACRO(FontWeight);
+    DUPLICATE_SETTING_MACRO(Padding);
+    DUPLICATE_SETTING_MACRO(Commandline);
+    DUPLICATE_SETTING_MACRO(StartingDirectory);
+    DUPLICATE_SETTING_MACRO(AntialiasingMode);
+    DUPLICATE_SETTING_MACRO(ForceFullRepaintRendering);
+    DUPLICATE_SETTING_MACRO(SoftwareRendering);
+    DUPLICATE_SETTING_MACRO(HistorySize);
+    DUPLICATE_SETTING_MACRO(SnapOnInput);
+    DUPLICATE_SETTING_MACRO(AltGrAliasing);
+    DUPLICATE_SETTING_MACRO(BellStyle);
+
+    DUPLICATE_APPEARANCE_SETTING_MACRO(ColorSchemeName);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(Foreground);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(Background);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(SelectionBackground);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(CursorColor);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(PixelShaderPath);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(BackgroundImagePath);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(BackgroundImageOpacity);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(BackgroundImageStretchMode);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(BackgroundImageAlignment);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(RetroTerminalEffect);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(CursorShape);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(CursorHeight);
     if (source.HasConnectionType())
     {
         duplicated->ConnectionType(source.ConnectionType());
