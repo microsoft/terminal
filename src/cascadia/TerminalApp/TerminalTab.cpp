@@ -665,7 +665,7 @@ namespace winrt::TerminalApp::implementation
 
         _RecalculateAndApplyReadOnly();
 
-        if (const auto control = pane->GetTerminalControl())
+        if (const auto control{ pane->GetTerminalControl() })
         {
             control.TaskbarProgressChanged();
         }
