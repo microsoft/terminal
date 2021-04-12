@@ -194,6 +194,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
         _ApplyUISettings(_settings);
+
+        // Set the foreground and background here in the constructor
+        // (they will also be called later in UpdateAppearance, but we want to have it here so
+        //  that the terminal is not gray on startup)
+        const auto bg = _settings.DefaultBackground();
+        _BackgroundColorChanged(bg);
+
+        Media::SolidColorBrush foregroundBrush{};
+        foregroundBrush.Color(static_cast<til::color>(_settings.DefaultForeground()));
+        TSFInputControl().Foreground(foregroundBrush);
     }
 
     // Method Description:
