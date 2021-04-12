@@ -666,6 +666,11 @@ namespace winrt::TerminalApp::implementation
 
         _RecalculateAndApplyReadOnly();
 
+        if (const auto control{ pane->GetTerminalControl() })
+        {
+            control.TaskbarProgressChanged();
+        }
+
         // Raise our own ActivePaneChanged event.
         _ActivePaneChangedHandlers();
     }
