@@ -726,24 +726,36 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        paneImpl->Closed([weakThis](TerminalApp::LeafPane sender) {
+        paneImpl->Closed([weakThis](TerminalApp::IPane sender, auto&& /*a*/) {
             if (auto tab{ weakThis.get() })
             {
-                // Update our mru list
-                for (auto i = tab->_mruPanes.begin(); i != tab->_mruPanes.end(); ++i)
+                if (const auto senderAsLeaf = sender.try_as<TerminalApp::LeafPane>())
                 {
-                    if (*i == sender.Id())
+                    // Update our mru list
+                    const auto senderId = senderAsLeaf.Id();
+                    for (auto i = tab->_mruPanes.begin(); i != tab->_mruPanes.end(); ++i)
                     {
-                        tab->_mruPanes.erase(i);
-                        break;
+                        if (*i == senderId)
+                        {
+                            tab->_mruPanes.erase(i);
+                            break;
+                        }
                     }
-                }
 
-                // If that was the last leaf, close the tab
-                if (tab->_mruPanes.empty())
-                {
-                    tab->_RemoveRootPaneEventHandlers();
-                    tab->_ClosedHandlers(nullptr, nullptr);
+                    // If that was the last leaf, close the tab
+                    if (tab->_mruPanes.empty())
+                    {
+                        tab->_RemoveRootPaneEventHandlers();
+                        tab->_ClosedHandlers(nullptr, nullptr);
+                    }
+                    else if (!senderAsLeaf.WasLastFocused())
+                    {
+                        // If the closed child was not focused, then there is a
+                        // good chance that the last focused pane no longer has focus
+                        // due to the changes made to the UI tree from the close event
+                        // So, focus the most recently used pane just in case
+                        tab->_rootPane.FocusPane(tab->_mruPanes.at(0));
+                    }
                 }
             }
         });

@@ -92,10 +92,10 @@ namespace winrt::TerminalApp::implementation
 
         void UpdateBorders();
 
-        DECLARE_EVENT(Closed, _ClosedHandlers, winrt::delegate<LeafPane>);
         DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<LeafPane>);
         DECLARE_EVENT(LostFocus, _LostFocusHandlers, winrt::delegate<LeafPane>);
         DECLARE_EVENT(PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);
+        TYPED_EVENT(Closed, IPane, IPane);
         TYPED_EVENT(PaneTypeChanged, IPane, IPane);
 
         WINRT_PROPERTY(uint16_t, Id);

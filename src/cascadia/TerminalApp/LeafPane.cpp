@@ -279,7 +279,7 @@ namespace winrt::TerminalApp::implementation
     // - Fire our Closed event to tell our parent that we should be removed.
     void LeafPane::Close()
     {
-        _ClosedHandlers(*this);
+        _ClosedHandlers(*this, nullptr);
     }
 
     uint32_t LeafPane::GetLeafPaneCount() const noexcept
@@ -674,7 +674,6 @@ namespace winrt::TerminalApp::implementation
         return splitType;
     }
 
-    DEFINE_EVENT(LeafPane, Closed, _ClosedHandlers, winrt::delegate<LeafPane>);
     DEFINE_EVENT(LeafPane, GotFocus, _GotFocusHandlers, winrt::delegate<LeafPane>);
     DEFINE_EVENT(LeafPane, LostFocus, _LostFocusHandlers, winrt::delegate<LeafPane>);
     DEFINE_EVENT(LeafPane, PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);

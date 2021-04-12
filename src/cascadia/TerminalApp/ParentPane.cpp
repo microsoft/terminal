@@ -1018,7 +1018,7 @@ namespace winrt::TerminalApp::implementation
             // When our child is a leaf and got closed, we close it
             const auto childImpl = winrt::get_self<implementation::LeafPane>(child);
 
-            closedToken = childImpl->Closed([=](auto&& /*s*/) {
+            closedToken = childImpl->Closed([=](auto&& /*s*/, auto&& /*a*/) {
                 // Unsubscribe from events of both our children, as we ourself will also
                 // get closed when our child does.
                 _RemoveAllChildEventHandlers(false);
