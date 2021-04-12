@@ -2684,26 +2684,6 @@ bool SCREEN_INFORMATION::IsCursorInMargins(const COORD cursorPosition) const noe
     return cursorPosition.Y <= margins.Bottom && cursorPosition.Y >= margins.Top;
 }
 
-// Method Description:
-// - Gets the region of the buffer that should be used for scrolling within the
-//      scroll margins. If the scroll margins aren't set, it returns the entire
-//      buffer size.
-// Arguments:
-// - <none>
-// Return Value:
-// - The area of the buffer within the scroll margins
-Viewport SCREEN_INFORMATION::GetScrollingRegion() const noexcept
-{
-    const auto buffer = GetBufferSize();
-    const bool marginsSet = AreMarginsSet();
-    const auto marginRect = GetAbsoluteScrollMargins().ToInclusive();
-    const auto margin = Viewport::FromInclusive({ buffer.Left(),
-                                                  marginsSet ? marginRect.Top : buffer.Top(),
-                                                  buffer.RightInclusive(),
-                                                  marginsSet ? marginRect.Bottom : buffer.BottomInclusive() });
-    return margin;
-}
-
 // Routine Description:
 // - Engages the legacy VT handling quirk; see TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults
 void SCREEN_INFORMATION::SetIgnoreLegacyEquivalentVTAttributes() noexcept
