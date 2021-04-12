@@ -535,8 +535,6 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         // If we're the quake window, supress resizing on any side except the
         // bottom. I don't believe that this actually works on the top. That's
         // handled below.
-        //
-        // TODO! Make sure that this works for the IslandWindow as well.
         if (IsQuakeWindow())
         {
             switch (originalRet)

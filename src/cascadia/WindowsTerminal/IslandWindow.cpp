@@ -941,19 +941,30 @@ void IslandWindow::_enterQuakeMode()
     RECT windowRect = GetWindowRect();
     HMONITOR hmon = MonitorFromRect(&windowRect, MONITOR_DEFAULTTONEAREST);
     MONITORINFO nearestMonitorInfo;
+
+    UINT dpix = USER_DEFAULT_SCREEN_DPI;
+    UINT dpiy = USER_DEFAULT_SCREEN_DPI;
+    // If this fails, we'll use the default of 96.
+    GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
+
     nearestMonitorInfo.cbSize = sizeof(MONITORINFO);
     // Get monitor dimensions:
     GetMonitorInfo(hmon, &nearestMonitorInfo);
-    const COORD desktopDimensions{ gsl::narrow<short>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
-                                   gsl::narrow<short>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
+    const til::size desktopDimensions{ gsl::narrow<short>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
+                                       gsl::narrow<short>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
+
+    // If we just use rcWork by itself, we'll fail to account for the invisible
+    // space reserved for the resize handles. So retrieve that size here.
+    const til::size ncSize{ GetTotalNonClientExclusiveSize(dpix) };
+    const til::size availableSpace = desktopDimensions + ncSize;
 
     const til::point origin{
-        ::base::saturated_cast<short>(nearestMonitorInfo.rcWork.left),
+        ::base::saturated_cast<short>(nearestMonitorInfo.rcWork.left - (ncSize.width() / 2)),
         ::base::saturated_cast<short>(nearestMonitorInfo.rcWork.top)
     };
     const til::size dimensions{
-        desktopDimensions.X,
-        desktopDimensions.Y / 2
+        availableSpace.width(),
+        availableSpace.height() / 2
     };
 
     const til::rectangle newRect{ origin, dimensions };

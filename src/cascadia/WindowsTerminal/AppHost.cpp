@@ -381,12 +381,12 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
 
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
-    const auto nonClientSize = _window->GetTotalNonClientExclusiveSize(dpix);
-    adjustedWidth = islandWidth + nonClientSize.cx;
-    adjustedHeight = islandHeight + nonClientSize.cy;
+    const til::size nonClientSize = _window->GetTotalNonClientExclusiveSize(dpix);
+    adjustedWidth = islandWidth + nonClientSize.width<long>();
+    adjustedHeight = islandHeight + nonClientSize.height<long>();
 
-    COORD dimensions{ Utils::ClampToShortMax(adjustedWidth, 1),
-                      Utils::ClampToShortMax(adjustedHeight, 1) };
+    til::size dimensions{ Utils::ClampToShortMax(adjustedWidth, 1),
+                          Utils::ClampToShortMax(adjustedHeight, 1) };
 
     // Find nearest monitor for the position that we've actually settled on
     HMONITOR hMonNearest = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
@@ -394,37 +394,46 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
     nearestMonitorInfo.cbSize = sizeof(MONITORINFO);
     // Get monitor dimensions:
     GetMonitorInfo(hMonNearest, &nearestMonitorInfo);
-    const COORD desktopDimensions{ gsl::narrow<short>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
-                                   gsl::narrow<short>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
+    const til::size desktopDimensions{ gsl::narrow<short>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
+                                       gsl::narrow<short>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
 
+    til::point origin{ ::base::saturated_cast<ptrdiff_t>(proposedRect.left),
+                       ::base::saturated_cast<ptrdiff_t>(proposedRect.top) };
     if (centerOnLaunch)
     {
         // Move our proposed location into the center of that specific monitor.
-        proposedRect.left = nearestMonitorInfo.rcWork.left +
-                            ((desktopDimensions.X / 2) - (dimensions.X / 2));
-        proposedRect.top = nearestMonitorInfo.rcWork.top +
-                           ((desktopDimensions.Y / 2) - (dimensions.Y / 2));
+        origin = til::point{
+            nearestMonitorInfo.rcWork.left + ((desktopDimensions.width() / 2) - (dimensions.width() / 2)),
+            nearestMonitorInfo.rcWork.top + ((desktopDimensions.height() / 2) - (dimensions.height() / 2))
+        };
     }
 
     if (_logic.IsQuakeWindow())
     {
-        proposedRect.left = nearestMonitorInfo.rcWork.left;
-        proposedRect.top = nearestMonitorInfo.rcWork.top;
-        dimensions.X = desktopDimensions.X;
-        dimensions.Y = desktopDimensions.Y / 2;
+        // If we just use rcWork by itself, we'll fail to account for the invisible
+        // space reserved for the resize handles. So retrieve that size here.
+        const til::size ncSize{ _window->GetTotalNonClientExclusiveSize(dpix) };
+        const til::size availableSpace = desktopDimensions + nonClientSize;
+
+        origin = til::point{
+            nearestMonitorInfo.rcWork.left - (nonClientSize.width() / 2),
+            nearestMonitorInfo.rcWork.top
+        };
+        dimensions = til::size{
+            availableSpace.width(),
+            availableSpace.height() / 2
+        };
         launchMode = LaunchMode::FocusMode;
     }
 
-    const COORD origin{ gsl::narrow<short>(proposedRect.left),
-                        gsl::narrow<short>(proposedRect.top) };
-
-    const auto newPos = Viewport::FromDimensions(origin, dimensions);
+    const til::rectangle newRect{ origin, dimensions };
+    // const auto newPos = Viewport::FromDimensions(origin, dimensions);
     bool succeeded = SetWindowPos(hwnd,
                                   nullptr,
-                                  newPos.Left(),
-                                  newPos.Top(),
-                                  newPos.Width(),
-                                  newPos.Height(),
+                                  newRect.left<int>(),
+                                  newRect.top<int>(),
+                                  newRect.width<int>(),
+                                  newRect.height<int>(),
                                   SWP_NOACTIVATE | SWP_NOZORDER);
 
     // Refresh the dpi of HWND because the dpi where the window will launch may be different
