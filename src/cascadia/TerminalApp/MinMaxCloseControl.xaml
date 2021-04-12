@@ -31,6 +31,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <SolidColorBrush x:Key="CloseButtonStrokePointerOver" Color="White"/>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPressed" Color="#f1707a"/>
                     <SolidColorBrush x:Key="CloseButtonStrokePressed" Color="Black"/>
+                    <SolidColorBrush x:Key="CloseButtonBackground" Color="#00e81123" />
+                    <Color x:Key="CloseButtonBackgroundColor">#00e81123</Color>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
                     <x:Double x:Key="CaptionButtonStrokeWidth">1.0</x:Double>
@@ -46,6 +48,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <SolidColorBrush x:Key="CloseButtonStrokePointerOver" Color="White"/>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPressed" Color="#f1707a"/>
                     <SolidColorBrush x:Key="CloseButtonStrokePressed" Color="Black"/>
+                    <SolidColorBrush x:Key="CloseButtonBackground" Color="#00e81123" />
+                    <Color x:Key="CloseButtonBackgroundColor">#00e81123</Color>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="HighContrast">
                     <x:Double x:Key="CaptionButtonStrokeWidth">3.0</x:Double>
@@ -210,12 +214,16 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <StaticResource x:Key="CaptionButtonBackgroundPressed" ResourceKey="CloseButtonBackgroundPressed"/>
                         <StaticResource x:Key="CaptionButtonStrokePointerOver" ResourceKey="CloseButtonStrokePointerOver"/>
                         <StaticResource x:Key="CaptionButtonStrokePressed" ResourceKey="CloseButtonStrokePressed"/>
+                        <StaticResource x:Key="CaptionButtonBackground" ResourceKey="CloseButtonBackground" />
+                        <StaticResource x:Key="CaptionButtonBackgroundColor" ResourceKey="CloseButtonBackgroundColor" />
                     </ResourceDictionary>
                     <ResourceDictionary x:Key="Dark">
                         <StaticResource x:Key="CaptionButtonBackgroundPointerOver" ResourceKey="CloseButtonBackgroundPointerOver"/>
                         <StaticResource x:Key="CaptionButtonBackgroundPressed" ResourceKey="CloseButtonBackgroundPressed"/>
                         <StaticResource x:Key="CaptionButtonStrokePointerOver" ResourceKey="CloseButtonStrokePointerOver"/>
                         <StaticResource x:Key="CaptionButtonStrokePressed" ResourceKey="CloseButtonStrokePressed"/>
+                        <StaticResource x:Key="CaptionButtonBackground" ResourceKey="CloseButtonBackground" />
+                        <StaticResource x:Key="CaptionButtonBackgroundColor" ResourceKey="CloseButtonBackgroundColor" />
                     </ResourceDictionary>
                     <ResourceDictionary x:Key="HighContrast">
                         <StaticResource x:Key="CaptionButtonBackgroundPointerOver" ResourceKey="CloseButtonBackgroundPointerOver"/>
