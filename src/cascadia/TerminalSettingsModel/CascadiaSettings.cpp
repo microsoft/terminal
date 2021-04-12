@@ -269,7 +269,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
     if (source.DefaultAppearance().Has##settingName() ||                                                                                                                                               \
         (source.DefaultAppearance().##settingName##OverrideSource() != nullptr && source.DefaultAppearance().##settingName##OverrideSource().SourceProfile().Origin() != OriginTag::ProfilesDefaults)) \
     {                                                                                                                                                                                                  \
-        duplicated->DefaultAppearance().##settingName(source.DefaultAppearance().##settingName());                                                                                                                                             \
+        duplicated->DefaultAppearance().##settingName(source.DefaultAppearance().##settingName());                                                                                                     \
     }
 
     DUPLICATE_SETTING_MACRO(Hidden);
