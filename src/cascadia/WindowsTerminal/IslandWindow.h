@@ -38,7 +38,7 @@ public:
     void FlashTaskbar();
     void SetTaskbarProgress(const size_t state, const size_t progress);
 
-    // void SetGlobalHotkey(const winrt::Microsoft::Terminal::Control::KeyChord& hotkey);
+    void UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList);
     void SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList);
 
     winrt::fire_and_forget SummonWindow();

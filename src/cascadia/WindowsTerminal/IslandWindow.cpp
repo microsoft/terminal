@@ -851,7 +851,15 @@ void IslandWindow::_ApplyWindowSize()
                                          SWP_FRAMECHANGED | SWP_NOACTIVATE));
 }
 
-// void IslandWindow::SetGlobalHotkey(const winrt::Microsoft::Terminal::Control::KeyChord& hotkey)
+void IslandWindow::UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList)
+{
+    for (int i = 0; i < hotkeyList.size(); i++)
+    {
+        LOG_IF_WIN32_BOOL_FALSE(UnregisterHotKey(_window.get(),
+                                                 1));
+    }
+}
+
 void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList)
 {
     int index = 0;
@@ -864,11 +872,8 @@ void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal
                                  (WI_IsFlagSet(modifiers, KeyModifiers::Ctrl) ? MOD_CONTROL : 0) |
                                  (WI_IsFlagSet(modifiers, KeyModifiers::Shift) ? MOD_SHIFT : 0);
 
-        // `1` is an arbitrary ID. We only have one hotkey in the entire app, so
-        // we don't need to worry about setting a unique ID for each.
-        //
-        // TODO!: (discussion) should we display a warning of some kind if this
-        // fails? This can fail if something else already bound this hotkey.
+        // TODO GH#8888: We should display a warning of some kind if this fails.
+        // This can fail if something else already bound this hotkey.
         LOG_IF_WIN32_BOOL_FALSE(RegisterHotKey(_window.get(),
                                                index,
                                                hotkeyFlags,

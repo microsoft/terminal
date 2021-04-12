@@ -6,6 +6,7 @@
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/utils.hpp"
 #include "../types/inc/User32Utils.hpp"
+#include "../WinRTUtils/inc/WtExeUtils.h"
 #include "resource.h"
 
 using namespace winrt::Windows::UI;
@@ -611,15 +612,24 @@ winrt::fire_and_forget AppHost::_BecomeMonarch(const winrt::Windows::Foundation:
     // The hotkey MUST be registered on the main thread. It will fail otherwise!
     co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher(),
                                       winrt::Windows::UI::Core::CoreDispatcherPriority::Normal);
-    // TODO! This needs to be a list
-    // auto hotkey{ _logic.GlobalHotkey() };
-    // _window->SetGlobalHotkey(hotkey);
+
+    _setupGlobalHotkeys();
+}
+
+void AppHost::_setupGlobalHotkeys()
+{
+    _window->UnsetHotkeys(_hotkeys);
+
     _hotkeyActions = _logic.GlobalHotkeys();
     _hotkeys.clear();
     for (const auto& [k, v] : _hotkeyActions)
     {
-        _hotkeys.push_back(k);
+        if (k != nullptr)
+        {
+            _hotkeys.push_back(k);
+        }
     }
+
     _window->SetGlobalHotkeys(_hotkeys);
 }
 
@@ -645,9 +655,45 @@ void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
             else
             {
                 // We should make the window ourselves.
+                _createNewTerminalWindow(summonArgs);
             }
         }
     }
+}
+
+winrt::fire_and_forget AppHost::_createNewTerminalWindow(Settings::Model::GlobalSummonArgs args)
+{
+    // Hop to the BG thread
+    co_await winrt::resume_background();
+
+    // This will get us the correct exe for dev/preview/release. If you
+    // don't stick this in a local, it'll get mangled by ShellExecute. I
+    // have no idea why.
+    const auto exePath{ GetWtExePath() };
+
+    // If we weren't given a name, then just use new to force the window to be
+    // unnamed.
+    winrt::hstring cmdline{
+        fmt::format(L"-w {}",
+                    args.Name().empty() ? L"new" :
+                                          args.Name())
+    };
+    // Build the args to ShellExecuteEx. We need to use ShellExecuteEx so we
+    // can pass the SEE_MASK_NOASYNC flag. That flag allows us to safely
+    // call this on the background thread, and have ShellExecute _not_ call
+    // back to us on the main thread. Without this, if you close the
+    // Terminal quickly after the UAC prompt, the elevated WT will never
+    // actually spawn.
+    SHELLEXECUTEINFOW seInfo{ 0 };
+    seInfo.cbSize = sizeof(seInfo);
+    seInfo.fMask = SEE_MASK_NOASYNC;
+    seInfo.lpVerb = L"open";
+    seInfo.lpFile = exePath.c_str();
+    seInfo.lpParameters = cmdline.c_str();
+    seInfo.nShow = SW_SHOWNORMAL;
+    LOG_IF_WIN32_BOOL_FALSE(ShellExecuteExW(&seInfo));
+
+    co_return;
 }
 
 void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*sender*/,
