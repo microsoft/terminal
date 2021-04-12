@@ -198,8 +198,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
-        void _UpdateSettingsFromUIThread(IControlSettings newSettings);
-        void _UpdateAppearanceFromUIThread(IControlAppearance newAppearance);
+        void _UpdateSettingsFromUIThreadUnderLock(IControlSettings newSettings);
+        void _UpdateAppearanceFromUIThreadUnderLock(IControlAppearance newAppearance);
         bool _isReadOnly{ false };
 
         void _ApplyUISettings(const IControlSettings&);
