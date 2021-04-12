@@ -29,7 +29,7 @@ static const std::array<winrt::guid, 2> InBoxProfileGuids{
 // Return value:
 // (async) path to the selected item.
 template<typename TLambda>
-static winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> OpenFilePicker(TLambda&& customize)
+static winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> OpenFilePicker(HWND parentHwnd, TLambda&& customize)
 {
     auto fileDialog{ winrt::create_instance<IFileDialog>(CLSID_FileOpenDialog) };
     DWORD flags{};
@@ -37,7 +37,7 @@ static winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> OpenFilePicke
     THROW_IF_FAILED(fileDialog->SetOptions(flags | FOS_FORCEFILESYSTEM | FOS_NOCHANGEDIR | FOS_DONTADDTORECENT)); // filesystem objects only; no recent places
     customize(fileDialog.get());
 
-    auto hr{ fileDialog->Show(NULL) };
+    auto hr{ fileDialog->Show(parentHwnd) };
     if (!SUCCEEDED(hr))
     {
         if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED))
@@ -58,7 +58,7 @@ static winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> OpenFilePicke
 
 // Function Description:
 // - Helper that opens a file picker pre-seeded with image file types.
-static winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> OpenImagePicker()
+static winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> OpenImagePicker(HWND parentHwnd)
 {
     static constexpr COMDLG_FILTERSPEC supportedImageFileTypes[] = {
         { L"All Supported Bitmap Types (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.tiff, *.ico)", L"*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff;*.ico" },
@@ -66,7 +66,7 @@ static winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> OpenImagePick
     };
 
     static constexpr winrt::guid clientGuidImagePicker{ 0x55675F54, 0x74A1, 0x4552, { 0xA3, 0x9D, 0x94, 0xAE, 0x85, 0xD8, 0xF2, 0x7A } };
-    return OpenFilePicker([](auto&& dialog) {
+    return OpenFilePicker(parentHwnd, [](auto&& dialog) {
         THROW_IF_FAILED(dialog->SetClientGuid(clientGuidImagePicker));
         try
         {
@@ -637,7 +637,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto lifetime = get_strong();
 
-        auto file = co_await OpenImagePicker();
+        const auto parentHwnd{ reinterpret_cast<HWND>(_State.WindowRoot().GetHostingWindow()) };
+        auto file = co_await OpenImagePicker(parentHwnd);
         if (!file.empty())
         {
             _State.Profile().BackgroundImagePath(file);
@@ -648,7 +649,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto lifetime = get_strong();
 
-        auto file = co_await OpenImagePicker();
+        const auto parentHwnd{ reinterpret_cast<HWND>(_State.WindowRoot().GetHostingWindow()) };
+        auto file = co_await OpenImagePicker(parentHwnd);
         if (!file.empty())
         {
             _State.Profile().Icon(file);
@@ -665,7 +667,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         };
 
         static constexpr winrt::guid clientGuidExecutables{ 0x2E7E4331, 0x0800, 0x48E6, { 0xB0, 0x17, 0xA1, 0x4C, 0xD8, 0x73, 0xDD, 0x58 } };
-        auto path = co_await OpenFilePicker([](auto&& dialog) {
+        const auto parentHwnd{ reinterpret_cast<HWND>(_State.WindowRoot().GetHostingWindow()) };
+        auto path = co_await OpenFilePicker(parentHwnd, [](auto&& dialog) {
             THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExecutables));
             try
             {
@@ -687,7 +690,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     fire_and_forget Profiles::StartingDirectory_Click(IInspectable const&, RoutedEventArgs const&)
     {
         auto lifetime = get_strong();
-        auto folder = co_await OpenFilePicker([](auto&& dialog) {
+        const auto parentHwnd{ reinterpret_cast<HWND>(_State.WindowRoot().GetHostingWindow()) };
+        auto folder = co_await OpenFilePicker(parentHwnd, [](auto&& dialog) {
             static constexpr winrt::guid clientGuidFolderPicker{ 0xAADAA433, 0xB04D, 0x4BAE, { 0xB1, 0xEA, 0x1E, 0x6C, 0xD1, 0xCD, 0xA6, 0x8B } };
             THROW_IF_FAILED(dialog->SetClientGuid(clientGuidFolderPicker));
             try
