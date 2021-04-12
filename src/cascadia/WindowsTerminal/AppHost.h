@@ -55,8 +55,8 @@ private:
     void _FindTargetWindow(const winrt::Windows::Foundation::IInspectable& sender,
                            const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
 
-    winrt::fire_and_forget _BecomeMonarch(const winrt::Windows::Foundation::IInspectable& sender,
-                                          const winrt::Windows::Foundation::IInspectable& args);
+    void _BecomeMonarch(const winrt::Windows::Foundation::IInspectable& sender,
+                        const winrt::Windows::Foundation::IInspectable& args);
     void _GlobalHotkeyPressed(const long hotkeyIndex);
     void _HandleSummon(const winrt::Windows::Foundation::IInspectable& sender,
                        const winrt::Windows::Foundation::IInspectable& args);
@@ -70,6 +70,8 @@ private:
 
     GUID _CurrentDesktopGuid();
 
-    void _setupGlobalHotkeys();
+    winrt::fire_and_forget _setupGlobalHotkeys();
     winrt::fire_and_forget _createNewTerminalWindow(winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs args);
+    void _HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& sender,
+                                const winrt::Windows::Foundation::IInspectable& args);
 };

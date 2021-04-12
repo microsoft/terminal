@@ -260,6 +260,7 @@ void AppHost::Initialize()
     _logic.SetTaskbarProgress({ this, &AppHost::SetTaskbarProgress });
     _logic.IdentifyWindowsRequested({ this, &AppHost::_IdentifyWindowsRequested });
     _logic.RenameWindowRequested({ this, &AppHost::_RenameWindowRequested });
+    _logic.SettingsChanged({ this, &AppHost::_HandleSettingsChanged });
 
     _window->UpdateTitle(_logic.Title());
 
@@ -606,18 +607,19 @@ winrt::fire_and_forget AppHost::_WindowActivated()
     }
 }
 
-winrt::fire_and_forget AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                               const winrt::Windows::Foundation::IInspectable& /*args*/)
+void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                             const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    _setupGlobalHotkeys();
+}
+
+winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
 {
     // The hotkey MUST be registered on the main thread. It will fail otherwise!
     co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher(),
                                       winrt::Windows::UI::Core::CoreDispatcherPriority::Normal);
 
-    _setupGlobalHotkeys();
-}
-
-void AppHost::_setupGlobalHotkeys()
-{
+    // Remove all the already registered hotkeys before setting up the new ones.
     _window->UnsetHotkeys(_hotkeys);
 
     _hotkeyActions = _logic.GlobalHotkeys();
@@ -779,4 +781,10 @@ winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Fou
             _logic.RenameFailed();
         }
     }
+}
+
+void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                     const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    _setupGlobalHotkeys();
 }
