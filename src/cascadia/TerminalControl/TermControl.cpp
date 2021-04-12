@@ -1422,6 +1422,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     _selectionNeedsToBeCopied = true;
                 }
 
+                if (_terminal->IsSelectionActive())
+                {
+                    // GH#9787: if selection is active we don't want to track the touchdown position
+                    // so that dragging the mouse will extend the selection rather than starting the new one
+                    _singleClickTouchdownPos = std::nullopt;
+                }
+
                 _renderer->TriggerSelection();
             }
             else if (point.Properties().IsRightButtonPressed())
