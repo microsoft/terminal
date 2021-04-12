@@ -252,8 +252,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<SwitchToTabArgs>())
         {
-            const auto handled = _SelectTab({ realArgs.TabIndex() });
-            args.Handled(handled);
+            _SelectTab({ realArgs.TabIndex() });
+            args.Handled(true);
         }
     }
 
