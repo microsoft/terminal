@@ -24,6 +24,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void SetHostingWindow(uint64_t hostingWindow) noexcept;
         bool TryPropagateHostingWindow(IInspectable object) noexcept;
+        uint64_t GetHostingWindow() const noexcept;
 
         TYPED_EVENT(OpenJson, Windows::Foundation::IInspectable, Model::SettingsTarget);
 

@@ -321,7 +321,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
         winrt::com_ptr<AppearanceConfig> sourceUnfocusedAppearanceImpl;
         sourceUnfocusedAppearanceImpl.copy_from(winrt::get_self<AppearanceConfig>(source.UnfocusedAppearance()));
 
-        // Get a weak ref to the duplciate profile so we can provide a source profile to the new UnfocusedAppearance
+        // Get a weak ref to the duplicate profile so we can provide a source profile to the new UnfocusedAppearance
         // we are about to create
         const auto weakRefToDuplicated = weak_ref<Model::Profile>(*duplicated);
         auto duplicatedUnfocusedAppearanceImpl = AppearanceConfig::CopyAppearance(sourceUnfocusedAppearanceImpl, weakRefToDuplicated);
