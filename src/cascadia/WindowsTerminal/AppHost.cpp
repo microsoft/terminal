@@ -618,7 +618,17 @@ winrt::fire_and_forget AppHost::_BecomeMonarch(const winrt::Windows::Foundation:
 
 void AppHost::_GlobalHotkeyPressed()
 {
-    _windowManager.SummonWindow();
+    Remoting::SummonWindowSelectionArgs args;
+    args.WindowName(L"_quake");
+    _windowManager.SummonWindow(args);
+    if (args.FoundMatch())
+    {
+        // Excellent, the window was found.
+    }
+    else
+    {
+        // We should make the window ourselves.
+    }
 }
 
 void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*sender*/,

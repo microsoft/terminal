@@ -18,6 +18,16 @@ namespace Microsoft.Terminal.Remoting
         Boolean ShouldCreateWindow { get; }; // If you name this `CreateWindow`, the compiler will explode
     }
 
+    [default_interface] runtimeclass SummonWindowSelectionArgs {
+        SummonWindowSelectionArgs();
+        String WindowName;
+        // Other options:
+        // * CurrentDesktop
+        // * CurrentMonitor
+
+        Boolean FoundMatch;
+    }
+
     [default_interface] runtimeclass Monarch {
         Monarch();
 
@@ -25,7 +35,7 @@ namespace Microsoft.Terminal.Remoting
         UInt64 AddPeasant(IPeasant peasant);
         ProposeCommandlineResult ProposeCommandline(CommandlineArgs args);
         void HandleActivatePeasant(WindowActivatedArgs args);
-        void SummonWindow();
+        void SummonWindow(SummonWindowSelectionArgs args);
 
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
     };

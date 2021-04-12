@@ -681,14 +681,27 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
     }
 
-    void Monarch::SummonWindow()
+    void Monarch::SummonWindow(const Remoting::SummonWindowSelectionArgs& args)
     {
         try
         {
-            auto windowID = _getMostRecentPeasantID(true);
-            if (auto targetPeasant{ _getPeasant(windowID) })
+            args.FoundMatch(false);
+            const auto searchedForName{ args.WindowName() };
+            uint64_t windowId = 0;
+            // If no name was provided, then just summon the MRU window.
+            if (searchedForName.empty())
+            {
+                windowId = _getMostRecentPeasantID(true);
+            }
+            else
+            {
+                // Try to find a peasant that currently has this name
+                windowId = _lookupPeasantIdForName(searchedForName);
+            }
+            if (auto targetPeasant{ _getPeasant(windowId) })
             {
                 targetPeasant.Summon();
+                args.FoundMatch(true);
             }
         }
         catch (...)

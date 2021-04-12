@@ -486,12 +486,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return _isKing;
     }
 
-    void WindowManager::SummonWindow()
+    void WindowManager::SummonWindow(const Remoting::SummonWindowSelectionArgs& args)
     {
         // We should only ever get called when we are the monarch, because only
         // the monarch ever registers for the global hotkey. So the monarch is
         // the only window that will be calling this.
-        _monarch.SummonWindow();
+        _monarch.SummonWindow(args);
     }
 
 }

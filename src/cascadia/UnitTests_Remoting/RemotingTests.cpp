@@ -6,10 +6,7 @@
 #include "../Remoting/CommandlineArgs.h"
 #include "../Remoting/FindTargetWindowArgs.h"
 #include "../Remoting/ProposeCommandlineResult.h"
-<<<<<<< HEAD
-=======
 #include "../inc/WindowingBehavior.h"
->>>>>>> origin/main
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
