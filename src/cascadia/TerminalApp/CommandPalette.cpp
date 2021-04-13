@@ -259,13 +259,13 @@ namespace winrt::TerminalApp::implementation
             winrt::Microsoft::Terminal::Control::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
             if (const auto cmd{ _actionMap.GetActionByKeyChord(kc) })
             {
-                if (cmd.Action().Action() == ShortcutAction::PrevTab)
+                if (cmd.ActionAndArgs().Action() == ShortcutAction::PrevTab)
                 {
                     SelectNextItem(false);
                     e.Handled(true);
                     return;
                 }
-                else if (cmd.Action().Action() == ShortcutAction::NextTab)
+                else if (cmd.ActionAndArgs().Action() == ShortcutAction::NextTab)
                 {
                     SelectNextItem(true);
                     e.Handled(true);

@@ -16,7 +16,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto cmd{ _actionMap.GetActionByKeyChord(kc) })
         {
-            return _dispatch.DoAction(cmd.Action());
+            return _dispatch.DoAction(cmd.ActionAndArgs());
         }
         return false;
     }

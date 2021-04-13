@@ -259,21 +259,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
-        if (action != ShortcutAction::Invalid)
-        {
-            auto actionAndArgs = winrt::make_self<ActionAndArgs>();
-            actionAndArgs->Action(action);
-            actionAndArgs->Args(args);
-
-            return actionAndArgs;
-        }
-        else
-        {
-            // Something like
-            //      { name: "foo", action: "unbound" }
-            // will _remove_ the "foo" command, by returning an "invalid" action here.
-            return make_self<ActionAndArgs>();
-        }
+        // Something like
+        //      { name: "foo", action: "unbound" }
+        // will _remove_ the "foo" command, by returning an "invalid" action here.
+        return make_self<ActionAndArgs>(action, args);
     }
 
     com_ptr<ActionAndArgs> ActionAndArgs::Copy() const

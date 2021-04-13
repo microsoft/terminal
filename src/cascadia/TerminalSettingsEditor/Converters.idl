@@ -59,14 +59,8 @@ namespace Microsoft.Terminal.Settings.Editor
         DesktopWallpaperToEmptyStringConverter();
     };
 
-    runtimeclass KeyChordToVisibilityConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    runtimeclass NullCheckToVisibilityConverter : [default] Windows.UI.Xaml.Data.IValueConverter
     {
-        KeyChordToVisibilityConverter();
+        NullCheckToVisibilityConverter();
     };
-
-    runtimeclass KeyChordToStringConverter : [default] Windows.UI.Xaml.Data.IValueConverter
-    {
-        KeyChordToStringConverter();
-    };
-
 }

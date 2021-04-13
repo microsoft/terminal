@@ -104,12 +104,12 @@ static const std::unordered_map<std::wstring_view, int32_t> vkeyNamePairs {
 // - hstr: the string to parse into a keychord.
 // Return Value:
 // - a newly constructed KeyChord
-static KeyChord _FromString(const std::wstring& wstr)
+static KeyChord _FromString(const std::wstring_view& wstr)
 {
     // Split the string on '+'
     std::wstring temp;
     std::vector<std::wstring> parts;
-    std::wstringstream wss(wstr);
+    std::wstringstream wss(wstr.data());
 
     while (std::getline(wss, temp, L'+'))
     {
@@ -291,7 +291,7 @@ static std::wstring _ToString(const KeyChord& chord)
 
 KeyChord KeyChordSerialization::FromString(const winrt::hstring& hstr)
 {
-    return _FromString(std::wstring{ hstr });
+    return _FromString(hstr);
 }
 
 winrt::hstring KeyChordSerialization::ToString(const KeyChord& chord)
@@ -303,12 +303,24 @@ KeyChord ConversionTrait<KeyChord>::FromJson(const Json::Value& json)
 {
     try
     {
-        const std::string keyChordText{ json.isString() ?
-                                            json.asString() :
-                                            json[0].asString() };
+        std::string keyChordText;
+        if (json.isString())
+        {
+            // "keys": "ctrl+c"
+            keyChordText = json.asString();
+        }
+        else if (json.isArray() && json.size() == 1)
+        {
+            // "keys": [ "ctrl+c" ]
+            keyChordText = json[0].asString();
+        }
+        else
+        {
+            throw winrt::hresult_invalid_argument{};
+        }
         return _FromString(til::u8u16(keyChordText));
     }
-    catch (winrt::hresult_invalid_argument)
+    catch (...)
     {
         return nullptr;
     }

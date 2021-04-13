@@ -57,11 +57,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void Name(const hstring& name);
 
         Control::KeyChord Keys() const noexcept;
+        hstring KeyChordText() const noexcept;
         std::vector<Control::KeyChord> KeyMappings() const noexcept;
         void RegisterKey(const Control::KeyChord& keys);
         void EraseKey(const Control::KeyChord& keys);
-
-        Model::ActionAndArgs Action() const noexcept;
 
         hstring IconPath() const noexcept;
         void IconPath(const hstring& val);
@@ -70,6 +69,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
+        WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs);
 
     private:
         Json::Value _originalJson;
@@ -77,7 +77,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::vector<Control::KeyChord> _keyMappings;
         std::optional<std::wstring> _name;
         std::optional<std::wstring> _iconPath;
-        Model::ActionAndArgs _action{};
 
         static std::vector<Model::Command> _expandCommand(Command* const expandable,
                                                           Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,

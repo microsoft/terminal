@@ -44,29 +44,16 @@
 // * ActionEventArgs holds a single IActionArgs. For events that don't need
 //   additional args, this can be nullptr.
 
+template<>
+static size_t HashProperty(const winrt::Microsoft::Terminal::Settings::Model::IActionArgs& args)
+{
+    return gsl::narrow_cast<size_t>(args.Hash());
+}
+
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     using namespace ::Microsoft::Terminal::Settings::Model;
     using FromJsonResult = std::tuple<Model::IActionArgs, std::vector<SettingsLoadWarnings>>;
-
-    template<typename T>
-    static size_t HashProperty(const IActionArgs& args)
-    {
-        return gsl::narrow_cast<size_t>(args.Hash());
-    }
-
-    template<typename T>
-    static size_t HashProperty(const T& val)
-    {
-        std::hash<T> hashFunc;
-        return hashFunc(val);
-    }
-
-    template<typename T, typename... Args>
-    static size_t HashProperty(const T& val, Args&&... more)
-    {
-        return HashProperty(val) ^ HashProperty(std::forward<Args>(more)...);
-    }
 
     struct ActionEventArgs : public ActionEventArgsT<ActionEventArgs>
     {
