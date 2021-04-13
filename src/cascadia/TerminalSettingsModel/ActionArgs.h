@@ -49,15 +49,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     using namespace ::Microsoft::Terminal::Settings::Model;
     using FromJsonResult = std::tuple<Model::IActionArgs, std::vector<SettingsLoadWarnings>>;
 
-    //template<>
-    //struct std::hash<IActionArgs>
-    //{
-    //    size_t operator()(const IActionArgs& args)
-    //    {
-    //        return gsl::narrow_cast<size_t>(args.Hash());
-    //    }
-    //};
-
     template<typename T>
     static size_t HashProperty(const IActionArgs& args)
     {
@@ -1157,6 +1148,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<RenameWindowArgs>() };
             copy->_Name = _Name;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return HashProperty(_Name);
         }
     };
 }
