@@ -10,7 +10,7 @@ Licensed under the MIT license.
 
 namespace ControlUnitTests
 {
-    class MockControlSettings : public winrt::implements<MockControlSettings, winrt::Microsoft::Terminal::Core::ICoreSettings, winrt::Microsoft::Terminal::Control::IControlSettings>
+    class MockControlSettings : public winrt::implements<MockControlSettings, winrt::Microsoft::Terminal::Core::ICoreSettings, winrt::Microsoft::Terminal::Control::IControlSettings, winrt::Microsoft::Terminal::Core::ICoreAppearance, winrt::Microsoft::Terminal::Control::IControlAppearance>
     {
     public:
         MockControlSettings() = default;
@@ -39,6 +39,7 @@ namespace ControlUnitTests
 
         WINRT_PROPERTY(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, StartingTabColor, nullptr);
 
+        winrt::Microsoft::Terminal::Core::ICoreAppearance UnfocusedAppearance() { return {}; };
         // ------------------------ End of Core Settings -----------------------
 
         WINRT_PROPERTY(winrt::hstring, ProfileName);

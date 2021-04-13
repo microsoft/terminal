@@ -199,7 +199,6 @@ namespace ControlUnitTests
         // This is to catch a dumb programming mistake I made while working on
         // the ore/control split. We want the font initialized in the ctor,
         // before we even get to Core::Initialize.
-        VERIFY_IS_TRUE(false, L"Make sure the core's _font is initialized from the settings in the ctor");
 
         Log::Comment(L"Create settings object");
         winrt::com_ptr<MockControlSettings> settings;
