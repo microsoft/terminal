@@ -481,11 +481,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Update the terminal core with its new Core settings
         _terminal->UpdateAppearance(newAppearance);
 
-        // Update DxEngine settings under the lock
-        _renderEngine->SetSelectionBackground(til::color{ newAppearance.SelectionBackground() });
-        _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
-        _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
-        _renderer->TriggerRedrawAll();
+        if (_renderEngine)
+        {
+            // Update DxEngine settings under the lock
+            _renderEngine->SetSelectionBackground(til::color{ newAppearance.SelectionBackground() });
+            _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
+            _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
+            _renderer->TriggerRedrawAll();
+        }
     }
 
     // Method Description:
