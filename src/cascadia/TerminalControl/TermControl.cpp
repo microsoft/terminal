@@ -198,8 +198,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Set the foreground and background here in the constructor
         // (they will also be called later in UpdateAppearance, but we want to have it here so
         //  that the terminal is not gray on startup)
-        const auto bg = _settings.DefaultBackground();
-        _BackgroundColorChanged(bg);
+        til::color newBgColor{ _settings.DefaultBackground() };
+        if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
+        {
+            acrylic.FallbackColor(newBgColor);
+            acrylic.TintColor(newBgColor);
+        }
+        else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
+        {
+            solidColor.Color(newBgColor);
+        }
 
         Media::SolidColorBrush foregroundBrush{};
         foregroundBrush.Color(static_cast<til::color>(_settings.DefaultForeground()));
@@ -480,8 +488,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Update our control settings
-        const auto bg = newAppearance.DefaultBackground();
-        _BackgroundColorChanged(bg);
+        til::color newBgColor{ newAppearance.DefaultBackground() };
+        if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
+        {
+            acrylic.FallbackColor(newBgColor);
+            acrylic.TintColor(newBgColor);
+        }
+        else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
+        {
+            solidColor.Color(newBgColor);
+        }
 
         // Set TSF Foreground
         Media::SolidColorBrush foregroundBrush{};
