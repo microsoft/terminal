@@ -28,6 +28,7 @@ GETHIGHCONTRAST
 Hashtable
 HIGHCONTRASTON
 HIGHCONTRASTW
+hotkeys
 href
 IActivation
 IApp
