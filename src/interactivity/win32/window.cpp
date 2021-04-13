@@ -60,11 +60,13 @@ Window::Window() :
     _fIsInFullscreen(false),
     _pSettings(nullptr),
     _hWnd(nullptr),
-    _pUiaProvider(nullptr)
+    _pUiaProvider(nullptr),
+    _fWasMaximizedBeforeFullscreen(false),
+    _dpiBeforeFullscreen(0)
 {
     ZeroMemory((void*)&_rcClientLast, sizeof(_rcClientLast));
-    ZeroMemory((void*)&_rcNonFullscreenWindowSize, sizeof(_rcNonFullscreenWindowSize));
-    ZeroMemory((void*)&_rcFullscreenWindowSize, sizeof(_rcFullscreenWindowSize));
+    ZeroMemory((void*)&_rcWindowBeforeFullscreen, sizeof(_rcWindowBeforeFullscreen));
+    ZeroMemory((void*)&_rcWorkBeforeFullscreen, sizeof(_rcWorkBeforeFullscreen));
 }
 
 Window::~Window()
@@ -1095,11 +1097,90 @@ bool Window::IsInFullscreen() const
     return _fIsInFullscreen;
 }
 
+// Routine Description:
+// - Called when entering fullscreen, with the window's current monitor rect and work area.
+// - The current window position, dpi, work area, and maximized state are stored, and the
+//   window is positioned to the monitor rect.
+void Window::_SetFullscreenPosition(const RECT rcMonitor, const RECT rcWork)
+{
+    ::GetWindowRect(GetWindowHandle(), &_rcWindowBeforeFullscreen);
+    _dpiBeforeFullscreen = GetDpiForWindow(GetWindowHandle());
+    _fWasMaximizedBeforeFullscreen = IsZoomed(GetWindowHandle());
+    _rcWorkBeforeFullscreen = rcWork;
+
+    SetWindowPos(GetWindowHandle(),
+                 HWND_TOP,
+                 rcMonitor.left,
+                 rcMonitor.top,
+                 rcMonitor.right - rcMonitor.left,
+                 rcMonitor.bottom - rcMonitor.top,
+                 SWP_FRAMECHANGED);
+}
+
+// Routine Description:
+// - Called when exiting fullscreen, with the window's current monitor work area.
+// - The window is restored to its previous position, migrating that previous position to the
+//   window's current monitor (if the current work area or window DPI have changed).
+// - A fullscreen window's monitor can be changed by win+shift+left/right hotkeys or monitor
+//   topology changes (for example unplugging a monitor or disconnecting a remote session).
+void Window::_RestoreFullscreenPosition(const RECT rcWork)
+{
+    // If the window was previously maximized, re-maximize the window.
+    if (_fWasMaximizedBeforeFullscreen)
+    {
+        ShowWindow(GetWindowHandle(), SW_SHOWMAXIMIZED);
+        SetWindowPos(GetWindowHandle(), HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+
+        return;
+    }
+
+    // Start with the stored window position.
+    RECT rcRestore = _rcWindowBeforeFullscreen;
+
+    // If the window DPI has changed, re-size the stored position by the change in DPI. This
+    // ensures the window restores to the same logical size (even if to a monitor with a different
+    // DPI/ scale factor).
+    UINT dpiWindow = GetDpiForWindow(GetWindowHandle());
+    rcRestore.right = rcRestore.left + MulDiv(rcRestore.right - rcRestore.left, dpiWindow, _dpiBeforeFullscreen);
+    rcRestore.bottom = rcRestore.top + MulDiv(rcRestore.bottom - rcRestore.top, dpiWindow, _dpiBeforeFullscreen);
+
+    // Offset the stored position by the difference in work area.
+    OffsetRect(&rcRestore,
+               rcWork.left - _rcWorkBeforeFullscreen.left,
+               rcWork.top - _rcWorkBeforeFullscreen.top);
+
+    // Enforce that our position is entirely within the bounds of our work area.
+    // Prefer the top-left be on-screen rather than bottom-right (right before left, bottom before top).
+    if (rcRestore.right > rcWork.right)
+    {
+        OffsetRect(&rcRestore, rcWork.right - rcRestore.right, 0);
+    }
+    if (rcRestore.left < rcWork.left)
+    {
+        OffsetRect(&rcRestore, rcWork.left - rcRestore.left, 0);
+    }
+    if (rcRestore.bottom > rcWork.bottom)
+    {
+        OffsetRect(&rcRestore, 0, rcWork.bottom - rcRestore.bottom);
+    }
+    if (rcRestore.top < rcWork.top)
+    {
+        OffsetRect(&rcRestore, 0, rcWork.top - rcRestore.top);
+    }
+
+    // Show the window at the computed position.
+    SetWindowPos(GetWindowHandle(),
+                 HWND_TOP,
+                 rcRestore.left,
+                 rcRestore.top,
+                 rcRestore.right - rcRestore.left,
+                 rcRestore.bottom - rcRestore.top,
+                 SWP_SHOWWINDOW | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+}
+
 void Window::SetIsFullscreen(const bool fFullscreenEnabled)
 {
-    // It is possible to enter SetIsFullScreen even if we're already in full screen.
-    // Use the old is in fullscreen flag to gate checks that rely on the current state.
-    bool fOldIsInFullscreen = _fIsInFullscreen;
+    const bool fChangingFullscreen = (fFullscreenEnabled != _fIsInFullscreen);
     _fIsInFullscreen = fFullscreenEnabled;
 
     HWND const hWnd = GetWindowHandle();
@@ -1135,46 +1216,28 @@ void Window::SetIsFullscreen(const bool fFullscreenEnabled)
     }
     SetWindowLongW(hWnd, GWL_EXSTYLE, dwExWindowStyle);
 
-    _BackupWindowSizes(fOldIsInFullscreen);
-    _ApplyWindowSize();
-}
-
-void Window::_BackupWindowSizes(const bool fCurrentIsInFullscreen)
-{
-    if (_fIsInFullscreen)
+    // Only change the window position if changing fullscreen state.
+    if (fChangingFullscreen)
     {
-        // Note: the current window size depends on the current state of the window.
-        // So don't back it up if we're already in full screen.
-        if (!fCurrentIsInFullscreen)
-        {
-            _rcNonFullscreenWindowSize = GetWindowRect();
-        }
+        // Get the monitor info for the window's current monitor.
+        MONITORINFO mi = {};
+        mi.cbSize = sizeof(mi);
+        GetMonitorInfo(MonitorFromWindow(GetWindowHandle(), MONITOR_DEFAULTTONEAREST), &mi);
 
-        // get and back up the current monitor's size
-        HMONITOR const hCurrentMonitor = MonitorFromWindow(GetWindowHandle(), MONITOR_DEFAULTTONEAREST);
-        MONITORINFO currMonitorInfo;
-        currMonitorInfo.cbSize = sizeof(currMonitorInfo);
-        if (GetMonitorInfo(hCurrentMonitor, &currMonitorInfo))
+        if (_fIsInFullscreen)
         {
-            _rcFullscreenWindowSize = currMonitorInfo.rcMonitor;
+            // Store the window's current position and size the window to the monitor.
+            _SetFullscreenPosition(mi.rcMonitor, mi.rcWork);
+        }
+        else
+        {
+            // Restore the stored window position.
+            _RestoreFullscreenPosition(mi.rcWork);
+
+            SCREEN_INFORMATION& siAttached = GetScreenInfo();
+            siAttached.MakeCurrentCursorVisible();
         }
     }
-}
-
-void Window::_ApplyWindowSize()
-{
-    const RECT rcNewSize = _fIsInFullscreen ? _rcFullscreenWindowSize : _rcNonFullscreenWindowSize;
-
-    SetWindowPos(GetWindowHandle(),
-                 HWND_TOP,
-                 rcNewSize.left,
-                 rcNewSize.top,
-                 RECT_WIDTH(&rcNewSize),
-                 RECT_HEIGHT(&rcNewSize),
-                 SWP_FRAMECHANGED);
-
-    SCREEN_INFORMATION& siAttached = GetScreenInfo();
-    siAttached.MakeCurrentCursorVisible();
 }
 
 void Window::ToggleFullscreen()
