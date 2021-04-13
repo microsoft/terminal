@@ -85,6 +85,9 @@ namespace TerminalAppLocalTests
         TEST_METHOD(NextMRUTab);
         TEST_METHOD(VerifyCommandPaletteTabSwitcherOrder);
 
+        TEST_METHOD(TestWindowRenameSuccessful);
+        TEST_METHOD(TestWindowRenameFailure);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             return true;
@@ -260,6 +263,15 @@ namespace TerminalAppLocalTests
             page->Create();
             Log::Comment(L"Create()'d the page successfully");
 
+            // Build a NewTab action, to make sure we start with one. The real
+            // Terminal will always get one from AppCommandlineArgs.
+            NewTerminalArgs newTerminalArgs{};
+            NewTabArgs args{ newTerminalArgs };
+            ActionAndArgs newTabAction{ ShortcutAction::NewTab, args };
+            // push the arg onto the front
+            page->_startupActions.Append(newTabAction);
+            Log::Comment(L"Added a single newTab action");
+
             auto app = ::winrt::Windows::UI::Xaml::Application::Current();
 
             winrt::TerminalApp::TerminalPage pp = *page;
@@ -276,8 +288,9 @@ namespace TerminalAppLocalTests
             // In the real app, this isn't a problem, but doesn't happen
             // reliably in the unit tests.
             Log::Comment(L"Ensure we set the first tab as the selected one.");
-            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
-            page->_tabView.SelectedItem(tab->TabViewItem());
+            auto tab = page->_tabs.GetAt(0);
+            auto tabImpl = page->_GetTerminalTabImpl(tab);
+            page->_tabView.SelectedItem(tabImpl->TabViewItem());
             page->_UpdatedSelectedTab(0);
         });
         VERIFY_SUCCEEDED(result);
@@ -330,7 +343,7 @@ namespace TerminalAppLocalTests
     {
         // * Create a tab with a profile with GUID 1
         // * Reload the settings so that GUID 1 is no longer in the list of profiles
-        // * Try calling _DuplicateTabViewItem on tab 1
+        // * Try calling _DuplicateFocusedTab on tab 1
         // * No new tab should be created (and more importantly, the app should not crash)
         //
         // Created to test GH#2455
@@ -392,7 +405,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Duplicate the first tab");
         result = RunOnUIThread([&page]() {
-            page->_DuplicateTabViewItem();
+            page->_DuplicateFocusedTab();
             VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
         });
         VERIFY_SUCCEEDED(result);
@@ -407,7 +420,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Duplicate the tab, and don't crash");
         result = RunOnUIThread([&page]() {
-            page->_DuplicateTabViewItem();
+            page->_DuplicateFocusedTab();
             VERIFY_ARE_EQUAL(2u, page->_tabs.Size(), L"We should gracefully do nothing here - the profile no longer exists.");
         });
         VERIFY_SUCCEEDED(result);
@@ -601,7 +614,6 @@ namespace TerminalAppLocalTests
         auto result = RunOnUIThread([&page]() {
             SplitPaneArgs args{ SplitType::Duplicate };
             ActionEventArgs eventArgs{ args };
-            // eventArgs.Args(args);
             page->_HandleSplitPane(nullptr, eventArgs);
             auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
 
@@ -782,8 +794,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Switch to the next MRU tab, which is the fourth tab");
         TestOnUIThread([&page]() {
-            ActionEventArgs eventArgs{};
-            page->_HandleNextTab(nullptr, eventArgs);
+            page->_SelectNextTab(true, nullptr);
         });
 
         Log::Comment(L"Sleep to let events propagate");
@@ -804,8 +815,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Switch to the next MRU tab, which is the second tab");
         TestOnUIThread([&page]() {
-            ActionEventArgs eventArgs{};
-            page->_HandleNextTab(nullptr, eventArgs);
+            page->_SelectNextTab(true, nullptr);
         });
 
         Log::Comment(L"Sleep to let events propagate");
@@ -829,8 +839,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Switch to the next in-order tab, which is the third tab");
         TestOnUIThread([&page]() {
-            ActionEventArgs eventArgs{};
-            page->_HandleNextTab(nullptr, eventArgs);
+            page->_SelectNextTab(true, nullptr);
         });
         TestOnUIThread([&page]() {
             uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
@@ -842,8 +851,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Switch to the next in-order tab, which is the fourth tab");
         TestOnUIThread([&page]() {
-            ActionEventArgs eventArgs{};
-            page->_HandleNextTab(nullptr, eventArgs);
+            page->_SelectNextTab(true, nullptr);
         });
         TestOnUIThread([&page]() {
             uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
@@ -916,7 +924,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Switch to the next MRU tab, which is the third tab");
         RunOnUIThread([&page]() {
-            page->_SelectNextTab(true);
+            page->_SelectNextTab(true, nullptr);
             // In the course of a single tick, the Command Palette will:
             // * open
             // * select the proper tab from the mru's list
@@ -942,5 +950,58 @@ namespace TerminalAppLocalTests
         // in TerminalPage::_SelectNextTab, but as we saw before, the palette
         // will also dismiss itself immediately when that's called. So we can't
         // really inspect the contents of the list in this test, unfortunately.
+    }
+
+    void TabTests::TestWindowRenameSuccessful()
+    {
+        auto page = _commonSetup();
+        page->RenameWindowRequested([&page](auto&&, const winrt::TerminalApp::RenameWindowRequestedArgs args) {
+            // In the real terminal, this would bounce up to the monarch and
+            // come back down. Instead, immediately call back and set the name.
+            page->WindowName(args.ProposedName());
+        });
+
+        bool windowNameChanged = false;
+        page->PropertyChanged([&page, &windowNameChanged](auto&&, const winrt::WUX::Data::PropertyChangedEventArgs& args) mutable {
+            if (args.PropertyName() == L"WindowNameForDisplay")
+            {
+                windowNameChanged = true;
+            }
+        });
+
+        TestOnUIThread([&page]() {
+            page->_RequestWindowRename(winrt::hstring{ L"Foo" });
+        });
+        TestOnUIThread([&]() {
+            VERIFY_ARE_EQUAL(L"Foo", page->_WindowName);
+            VERIFY_IS_TRUE(windowNameChanged,
+                           L"The window name should have changed, and we should have raised a notification that WindowNameForDisplay changed");
+        });
+    }
+    void TabTests::TestWindowRenameFailure()
+    {
+        auto page = _commonSetup();
+        page->RenameWindowRequested([&page](auto&&, auto&&) {
+            // In the real terminal, this would bounce up to the monarch and
+            // come back down. Instead, immediately call back to tell the terminal it failed.
+            page->RenameFailed();
+        });
+
+        bool windowNameChanged = false;
+
+        page->PropertyChanged([&page, &windowNameChanged](auto&&, const winrt::WUX::Data::PropertyChangedEventArgs& args) mutable {
+            if (args.PropertyName() == L"WindowNameForDisplay")
+            {
+                windowNameChanged = true;
+            }
+        });
+
+        TestOnUIThread([&page]() {
+            page->_RequestWindowRename(winrt::hstring{ L"Foo" });
+        });
+        TestOnUIThread([&]() {
+            VERIFY_IS_FALSE(windowNameChanged,
+                            L"The window name should not have changed, we should have rejected the change.");
+        });
     }
 }

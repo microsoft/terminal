@@ -1,140 +1,135 @@
-﻿<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
-the MIT License. See LICENSE in the project root for license information. -->
-<Page
-    x:Class="Microsoft.Terminal.Settings.Editor.ColorSchemes"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:Microsoft.Terminal.Settings.Editor"
-    xmlns:model="using:Microsoft.Terminal.Settings.Model"
-    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d">
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.ColorSchemes"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
 
     <Page.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="CommonResources.xaml"/>
+                <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <Style x:Key="GroupHeaderStyle" TargetType="TextBlock" BasedOn="{StaticResource SubtitleTextBlockStyle}">
-                <Setter Property="Margin" Value="0,0,0,4"/>
+            <Style x:Key="GroupHeaderStyle"
+                   BasedOn="{StaticResource SubtitleTextBlockStyle}"
+                   TargetType="TextBlock">
+                <Setter Property="Margin" Value="0,0,0,4" />
             </Style>
 
-            <Style x:Key="ColorLabelStyle" TargetType="TextBlock">
-                <Setter Property="HorizontalAlignment" Value="Left"/>
-                <Setter Property="VerticalAlignment" Value="Center"/>
+            <Style x:Key="ColorLabelStyle"
+                   TargetType="TextBlock">
+                <Setter Property="HorizontalAlignment" Value="Left" />
+                <Setter Property="VerticalAlignment" Value="Center" />
             </Style>
 
-            <Style x:Key="ColorTableGridStyle" TargetType="Grid">
-                <Setter Property="RowSpacing" Value="10"/>
-                <Setter Property="ColumnSpacing" Value="10"/>
+            <Style x:Key="ColorTableGridStyle"
+                   TargetType="Grid">
+                <Setter Property="RowSpacing" Value="10" />
+                <Setter Property="ColumnSpacing" Value="10" />
             </Style>
 
-            <Style x:Key="ColorControlStyle" TargetType="ContentControl">
-                <Setter Property="IsTabStop" Value="False"/>
+            <Style x:Key="ColorControlStyle"
+                   TargetType="ContentControl">
+                <Setter Property="IsTabStop" Value="False" />
             </Style>
 
-            <Style x:Key="ColorButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
-                <Setter Property="BorderBrush" Value="{StaticResource SystemBaseLowColor}"/>
-                <Setter Property="Height" Value="30"/>
-                <Setter Property="Width" Value="100"/>
+            <Style x:Key="ColorButtonStyle"
+                   BasedOn="{StaticResource BaseButtonStyle}"
+                   TargetType="Button">
+                <Setter Property="BorderBrush" Value="{StaticResource SystemBaseLowColor}" />
+                <Setter Property="Height" Value="30" />
+                <Setter Property="Width" Value="100" />
             </Style>
 
             <Style TargetType="ColorPicker">
-                <Setter Property="IsColorSliderVisible" Value="False"/>
-                <Setter Property="IsColorChannelTextInputVisible" Value="False"/>
-                <Setter Property="IsHexInputVisible" Value="True"/>
-                <Setter Property="IsAlphaSliderVisible" Value="True"/>
-                <Setter Property="IsAlphaTextInputVisible" Value="True"/>
+                <Setter Property="IsColorSliderVisible" Value="False" />
+                <Setter Property="IsColorChannelTextInputVisible" Value="False" />
+                <Setter Property="IsHexInputVisible" Value="True" />
+                <Setter Property="IsAlphaSliderVisible" Value="True" />
+                <Setter Property="IsAlphaTextInputVisible" Value="True" />
             </Style>
 
-            <DataTemplate x:Key="ColorTableEntryTemplate" x:DataType="local:ColorTableEntry">
-                <Button Background="{x:Bind Color, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}"
-                        ToolTipService.ToolTip="{x:Bind Name}"
-                        AutomationProperties.Name="{x:Bind Name}"
-                        Style="{StaticResource ColorButtonStyle}">
+            <DataTemplate x:Key="ColorTableEntryTemplate"
+                          x:DataType="local:ColorTableEntry">
+                <Button AutomationProperties.Name="{x:Bind Name}"
+                        Background="{x:Bind Color, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}"
+                        Style="{StaticResource ColorButtonStyle}"
+                        ToolTipService.ToolTip="{x:Bind Name}">
                     <Button.Resources>
-                        <!-- Resources to colorize hover/pressed states based on the color of the button -->
+                        <!--  Resources to colorize hover/pressed states based on the color of the button  -->
                         <ResourceDictionary>
                             <ResourceDictionary.ThemeDictionaries>
                                 <ResourceDictionary x:Key="Light">
-                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{x:Bind Color, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
+                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                                     Color="{x:Bind Color, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}" />
                                 </ResourceDictionary>
                                 <ResourceDictionary x:Key="Dark">
-                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{x:Bind Color, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
+                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                                     Color="{x:Bind Color, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}" />
                                 </ResourceDictionary>
-                                <!-- No High contrast dictionary, let's just leave that unchanged. -->
+                                <!--  No High contrast dictionary, let's just leave that unchanged.  -->
                             </ResourceDictionary.ThemeDictionaries>
                         </ResourceDictionary>
                     </Button.Resources>
 
                     <Button.Flyout>
                         <Flyout>
-                            <ColorPicker Tag="{x:Bind Tag, Mode=OneWay}"
-                                         Color="{x:Bind Color, Mode=OneWay}"
-                                         ColorChanged="ColorPickerChanged"/>
+                            <ColorPicker ColorChanged="ColorPickerChanged"
+                                         Tag="{x:Bind Tag, Mode=OneWay}"
+                                         Color="{x:Bind Color, Mode=OneWay}" />
                         </Flyout>
                     </Button.Flyout>
                 </Button>
             </DataTemplate>
 
-            <local:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
-            <local:ColorToHexConverter x:Key="ColorToHexConverter"/>
-            <local:InvertedBooleanToVisibilityConverter x:Key="InvertedBooleanToVisibilityConverter"/>
-            <local:ColorLightenConverter x:Key="ColorLightenConverter"/>
+            <local:ColorToBrushConverter x:Key="ColorToBrushConverter" />
+            <local:ColorToHexConverter x:Key="ColorToHexConverter" />
+            <local:InvertedBooleanToVisibilityConverter x:Key="InvertedBooleanToVisibilityConverter" />
+            <local:ColorLightenConverter x:Key="ColorLightenConverter" />
 
         </ResourceDictionary>
     </Page.Resources>
 
     <ScrollViewer>
-        <VisualStateManager.VisualStateGroups>
-            <VisualStateGroup>
-                <VisualState>
-                    <VisualState.StateTriggers>
-                        <!--Official guidance states that 640 is the breakpoint between small and medium devices.
-                        Since MinWindowWidth is an inclusive range, we need to add 1 to it.-->
-                        <AdaptiveTrigger MinWindowWidth="641"/>
-                    </VisualState.StateTriggers>
-
-                    <VisualState.Setters>
-                        <Setter Target="ColorPanel.Orientation" Value="Horizontal"/>
-                    </VisualState.Setters>
-                </VisualState>
-            </VisualStateGroup>
-        </VisualStateManager.VisualStateGroups>
-
         <StackPanel Margin="{StaticResource StandardIndentMargin}"
                     Spacing="24">
 
-            <!--Select Color and Add New Button-->
+            <!--  Select Color and Add New Button  -->
             <StackPanel Orientation="Horizontal">
 
                 <StackPanel Orientation="Horizontal"
                             Visibility="{x:Bind IsRenaming, Converter={StaticResource InvertedBooleanToVisibilityConverter}, Mode=OneWay}">
-                    <!--Select a color scheme-->
+                    <!--  Select a color scheme  -->
                     <ComboBox x:Name="ColorSchemeComboBox"
-                              SelectedIndex="0"
                               ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
+                              SelectedIndex="0"
                               SelectionChanged="ColorSchemeSelectionChanged"
                               Style="{StaticResource ComboBoxSettingStyle}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate x:DataType="model:ColorScheme">
-                                <TextBlock Text="{x:Bind Name, Mode=OneWay}"/>
+                                <TextBlock Text="{x:Bind Name, Mode=OneWay}" />
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
 
-                    <!--Rename Button-->
-                    <!--Bind IsEnabled to prevent a the color scheme from returning from the dead-->
-                    <Button x:Uid="Rename"
-                            x:Name="RenameButton"
-                            Style="{StaticResource SmallButtonStyle}"
+                    <!--  Rename Button  -->
+                    <!--  Bind IsEnabled to prevent a the color scheme from returning from the dead  -->
+                    <Button x:Name="RenameButton"
+                            x:Uid="Rename"
                             Click="Rename_Click"
-                            IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}">
+                            IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}"
+                            Style="{StaticResource SmallButtonStyle}">
                         <StackPanel Orientation="Horizontal">
-                            <FontIcon Glyph="&#xE8AC;"
-                                      FontSize="{StaticResource StandardIconSize}"/>
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                      Glyph="&#xE8AC;" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -142,152 +137,152 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <StackPanel Orientation="Horizontal"
                             Visibility="{x:Bind IsRenaming, Mode=OneWay}">
 
-                    <!--Shown when color scheme name is already in use-->
+                    <!--  Shown when color scheme name is already in use  -->
                     <muxc:TeachingTip x:Name="RenameErrorTip"
-                                      x:Uid="ColorScheme_RenameErrorTip"/>
+                                      x:Uid="ColorScheme_RenameErrorTip" />
 
-                    <!--Name text box-->
+                    <!--  Name text box  -->
                     <TextBox x:Name="NameBox"
-                             Style="{StaticResource TextBoxSettingStyle}"
-                             PreviewKeyDown="NameBox_PreviewKeyDown"/>
+                             PreviewKeyDown="NameBox_PreviewKeyDown"
+                             Style="{StaticResource TextBoxSettingStyle}" />
 
-                    <!--Accept rename button-->
-                    <Button x:Uid="RenameAccept"
-                            x:Name="RenameAcceptButton"
-                            Style="{StaticResource AccentSmallButtonStyle}"
-                            Click="RenameAccept_Click">
+                    <!--  Accept rename button  -->
+                    <Button x:Name="RenameAcceptButton"
+                            x:Uid="RenameAccept"
+                            Click="RenameAccept_Click"
+                            Style="{StaticResource AccentSmallButtonStyle}">
                         <StackPanel Orientation="Horizontal">
-                            <FontIcon Glyph="&#xE8FB;"
-                                      FontSize="{StaticResource StandardIconSize}"/>
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                      Glyph="&#xE8FB;" />
                         </StackPanel>
                     </Button>
-                    <!--Cancel rename button-->
-                    <Button x:Uid="RenameCancel"
-                            x:Name="RenameCancelButton"
-                            Style="{StaticResource SmallButtonStyle}"
-                            Click="RenameCancel_Click">
+                    <!--  Cancel rename button  -->
+                    <Button x:Name="RenameCancelButton"
+                            x:Uid="RenameCancel"
+                            Click="RenameCancel_Click"
+                            Style="{StaticResource SmallButtonStyle}">
                         <StackPanel Orientation="Horizontal">
-                            <FontIcon Glyph="&#xE711;"
-                                      FontSize="{StaticResource StandardIconSize}"/>
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                      Glyph="&#xE711;" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
 
-                <!--Add new button-->
+                <!--  Add new button  -->
                 <Button x:Name="AddNewButton"
                         Click="AddNew_Click"
                         Style="{StaticResource BrowseButtonStyle}">
                     <StackPanel Orientation="Horizontal">
-                        <FontIcon Glyph="&#xE710;"
-                                  FontSize="{StaticResource StandardIconSize}"/>
+                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                  Glyph="&#xE710;" />
                         <TextBlock x:Uid="ColorScheme_AddNewButton"
-                                   Style="{StaticResource IconButtonTextBlockStyle}"/>
+                                   Style="{StaticResource IconButtonTextBlockStyle}" />
                     </StackPanel>
                 </Button>
             </StackPanel>
 
-            <!-- Terminal Colors (Left Column)-->
+            <!--  Terminal Colors (Left Column)  -->
             <StackPanel x:Name="ColorPanel"
                         Spacing="48">
                 <StackPanel>
                     <TextBlock x:Uid="ColorScheme_TerminalColorsHeader"
-                               Style="{StaticResource GroupHeaderStyle}"/>
+                               Style="{StaticResource GroupHeaderStyle}" />
                     <Grid x:Name="ColorTableGrid"
                           Style="{StaticResource ColorTableGridStyle}">
                         <Grid.ColumnDefinitions>
-                            <!--Labels-->
-                            <ColumnDefinition Width="Auto"/>
+                            <!--  Labels  -->
+                            <ColumnDefinition Width="Auto" />
 
-                            <!--Regular Colors-->
-                            <ColumnDefinition Width="Auto"/>
+                            <!--  Regular Colors  -->
+                            <ColumnDefinition Width="Auto" />
 
-                            <!--Bright Colors-->
-                            <ColumnDefinition Width="Auto"/>
+                            <!--  Bright Colors  -->
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                     </Grid>
                 </StackPanel>
 
-                <!-- System Colors (Right Column) -->
+                <!--  System Colors (Right Column)  -->
                 <StackPanel>
                     <TextBlock x:Uid="ColorScheme_SystemColorsHeader"
-                               Style="{StaticResource GroupHeaderStyle}"/>
+                               Style="{StaticResource GroupHeaderStyle}" />
                     <Grid Style="{StaticResource ColorTableGridStyle}">
 
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <!--Foreground-->
+                        <!--  Foreground  -->
                         <TextBlock x:Uid="ColorScheme_Foreground"
-                                   Style="{StaticResource ColorLabelStyle}"
                                    Grid.Row="0"
-                                   Grid.Column="0"/>
+                                   Grid.Column="0"
+                                   Style="{StaticResource ColorLabelStyle}" />
                         <ContentControl x:Name="ForegroundButton"
-                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
-                                        Content="{x:Bind CurrentForegroundColor, Mode=TwoWay}"
-                                        Style="{StaticResource ColorControlStyle}"
                                         Grid.Row="0"
-                                        Grid.Column="1"/>
+                                        Grid.Column="1"
+                                        Content="{x:Bind CurrentForegroundColor, Mode=TwoWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Style="{StaticResource ColorControlStyle}" />
 
-                        <!--Background-->
+                        <!--  Background  -->
                         <TextBlock x:Uid="ColorScheme_Background"
-                                   Style="{StaticResource ColorLabelStyle}"
                                    Grid.Row="1"
-                                   Grid.Column="0"/>
+                                   Grid.Column="0"
+                                   Style="{StaticResource ColorLabelStyle}" />
                         <ContentControl x:Name="BackgroundButton"
-                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
-                                        Content="{x:Bind CurrentBackgroundColor, Mode=TwoWay}"
-                                        Style="{StaticResource ColorControlStyle}"
                                         Grid.Row="1"
-                                        Grid.Column="1"/>
+                                        Grid.Column="1"
+                                        Content="{x:Bind CurrentBackgroundColor, Mode=TwoWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Style="{StaticResource ColorControlStyle}" />
 
-                        <!--Cursor Color-->
+                        <!--  Cursor Color  -->
                         <TextBlock x:Uid="ColorScheme_CursorColor"
-                                   Style="{StaticResource ColorLabelStyle}"
                                    Grid.Row="2"
-                                   Grid.Column="0"/>
+                                   Grid.Column="0"
+                                   Style="{StaticResource ColorLabelStyle}" />
                         <ContentControl x:Name="CursorColorButton"
-                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
-                                        Content="{x:Bind CurrentCursorColor, Mode=TwoWay}"
-                                        Style="{StaticResource ColorControlStyle}"
                                         Grid.Row="2"
-                                        Grid.Column="1"/>
-
-                        <!--Selection Background-->
-                        <TextBlock x:Uid="ColorScheme_SelectionBackground"
-                                   Style="{StaticResource ColorLabelStyle}"
-                                   Grid.Row="3"
-                                   Grid.Column="0"/>
-                        <ContentControl x:Name="SelectionBackgroundButton"
+                                        Grid.Column="1"
+                                        Content="{x:Bind CurrentCursorColor, Mode=TwoWay}"
                                         ContentTemplate="{StaticResource ColorTableEntryTemplate}"
-                                        Content="{x:Bind CurrentSelectionBackgroundColor, Mode=TwoWay}"
-                                        Style="{StaticResource ColorControlStyle}"
+                                        Style="{StaticResource ColorControlStyle}" />
+
+                        <!--  Selection Background  -->
+                        <TextBlock x:Uid="ColorScheme_SelectionBackground"
+                                   Grid.Row="3"
+                                   Grid.Column="0"
+                                   Style="{StaticResource ColorLabelStyle}" />
+                        <ContentControl x:Name="SelectionBackgroundButton"
                                         Grid.Row="3"
-                                        Grid.Column="1"/>
+                                        Grid.Column="1"
+                                        Content="{x:Bind CurrentSelectionBackgroundColor, Mode=TwoWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Style="{StaticResource ColorControlStyle}" />
                     </Grid>
                 </StackPanel>
             </StackPanel>
 
-            <!--Delete Button-->
+            <!--  Delete Button  -->
             <StackPanel Style="{StaticResource PivotStackStyle}">
                 <Button x:Name="DeleteButton"
                         IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}"
@@ -296,54 +291,89 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <ResourceDictionary>
                             <ResourceDictionary.ThemeDictionaries>
                                 <ResourceDictionary x:Key="Light">
-                                    <SolidColorBrush x:Key="ButtonBackground" Color="Firebrick"/>
-                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#C23232"/>
-                                    <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#A21212"/>
-                                    <SolidColorBrush x:Key="ButtonForeground" Color="White"/>
-                                    <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="White"/>
-                                    <SolidColorBrush x:Key="ButtonForegroundPressed" Color="White"/>
+                                    <SolidColorBrush x:Key="ButtonBackground"
+                                                     Color="Firebrick" />
+                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                                     Color="#C23232" />
+                                    <SolidColorBrush x:Key="ButtonBackgroundPressed"
+                                                     Color="#A21212" />
+                                    <SolidColorBrush x:Key="ButtonForeground"
+                                                     Color="White" />
+                                    <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                     Color="White" />
+                                    <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                     Color="White" />
                                 </ResourceDictionary>
                                 <ResourceDictionary x:Key="Dark">
-                                    <SolidColorBrush x:Key="ButtonBackground" Color="Firebrick"/>
-                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#C23232"/>
-                                    <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#A21212"/>
-                                    <SolidColorBrush x:Key="ButtonForeground" Color="White"/>
-                                    <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="White"/>
-                                    <SolidColorBrush x:Key="ButtonForegroundPressed" Color="White"/>
+                                    <SolidColorBrush x:Key="ButtonBackground"
+                                                     Color="Firebrick" />
+                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                                     Color="#C23232" />
+                                    <SolidColorBrush x:Key="ButtonBackgroundPressed"
+                                                     Color="#A21212" />
+                                    <SolidColorBrush x:Key="ButtonForeground"
+                                                     Color="White" />
+                                    <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                     Color="White" />
+                                    <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                     Color="White" />
                                 </ResourceDictionary>
                                 <ResourceDictionary x:Key="HighContrast">
-                                    <SolidColorBrush x:Key="ButtonBackground" Color="{ThemeResource SystemColorButtonFaceColor}"/>
-                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{ThemeResource SystemColorHighlightColor}"/>
-                                    <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="{ThemeResource SystemColorHighlightColor}"/>
-                                    <SolidColorBrush x:Key="ButtonForeground" Color="{ThemeResource SystemColorButtonTextColor}"/>
-                                    <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="{ThemeResource SystemColorHighlightTextColor}"/>
-                                    <SolidColorBrush x:Key="ButtonForegroundPressed" Color="{ThemeResource SystemColorHighlightTextColor}"/>
+                                    <SolidColorBrush x:Key="ButtonBackground"
+                                                     Color="{ThemeResource SystemColorButtonFaceColor}" />
+                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                                     Color="{ThemeResource SystemColorHighlightColor}" />
+                                    <SolidColorBrush x:Key="ButtonBackgroundPressed"
+                                                     Color="{ThemeResource SystemColorHighlightColor}" />
+                                    <SolidColorBrush x:Key="ButtonForeground"
+                                                     Color="{ThemeResource SystemColorButtonTextColor}" />
+                                    <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                     Color="{ThemeResource SystemColorHighlightTextColor}" />
+                                    <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                     Color="{ThemeResource SystemColorHighlightTextColor}" />
                                 </ResourceDictionary>
                             </ResourceDictionary.ThemeDictionaries>
                         </ResourceDictionary>
                     </Button.Resources>
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">
-                            <FontIcon Glyph="&#xE74D;"/>
+                            <FontIcon Glyph="&#xE74D;" />
                             <TextBlock x:Uid="ColorScheme_DeleteButton"
-                                       Style="{StaticResource IconButtonTextBlockStyle}"/>
+                                       Style="{StaticResource IconButtonTextBlockStyle}" />
                         </StackPanel>
                     </Button.Content>
                     <Button.Flyout>
                         <Flyout>
                             <StackPanel>
                                 <TextBlock x:Uid="ColorScheme_DeleteConfirmationMessage"
-                                           Style="{StaticResource CustomFlyoutTextStyle}"/>
-                                <Button x:Uid="ColorScheme_DeleteConfirmationButton"   
-                                        Click="DeleteConfirmation_Click"/>
+                                           Style="{StaticResource CustomFlyoutTextStyle}" />
+                                <Button x:Uid="ColorScheme_DeleteConfirmationButton"
+                                        Click="DeleteConfirmation_Click" />
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
                 <TextBlock x:Name="DeleteButtonDisclaimer"
-                           Style="{StaticResource DisclaimerStyle}"
-                           VerticalAlignment="Center"/>
+                           VerticalAlignment="Center"
+                           Style="{StaticResource DisclaimerStyle}" />
             </StackPanel>
         </StackPanel>
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState>
+                    <VisualState.StateTriggers>
+                        <!--
+                            Official guidance states that 640 is the breakpoint between small and medium devices.
+                            Since MinWindowWidth is an inclusive range, we need to add 1 to it.
+                        -->
+                        <AdaptiveTrigger MinWindowWidth="641" />
+                    </VisualState.StateTriggers>
+
+                    <VisualState.Setters>
+                        <Setter Target="ColorPanel.Orientation" Value="Horizontal" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
     </ScrollViewer>
 </Page>

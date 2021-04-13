@@ -45,6 +45,7 @@ Author(s):
 #include <winrt/Windows.ui.input.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
+#include <winrt/Windows.UI.Xaml.Data.h>
 #include <winrt/Windows.ui.xaml.media.h>
 #include <winrt/Windows.ui.xaml.input.h>
 #include <winrt/Windows.UI.Xaml.Markup.h>
@@ -61,6 +62,8 @@ Author(s):
 
 #include <regex>
 #include <CLI11/CLI11.hpp>
+
+#include <shobjidl_core.h>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"

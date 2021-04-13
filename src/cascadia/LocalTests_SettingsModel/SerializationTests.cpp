@@ -15,7 +15,7 @@ using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 
 namespace SettingsModelLocalTests
 {
@@ -84,7 +84,7 @@ namespace SettingsModelLocalTests
                 "initialPosition": ",",
                 "launchMode": "default",
                 "alwaysOnTop": false,
-
+                "inputServiceWarning": true,
                 "copyOnSelect": false,
                 "copyFormatting": "all",
                 "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",

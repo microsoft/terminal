@@ -472,9 +472,8 @@ using namespace Microsoft::Console::Render;
         // send the auto-assigned ID, prefixed with the PID of this session
         // (we do this so different conpty sessions do not overwrite each other's hyperlinks)
         const auto sessionID = GetCurrentProcessId();
-        const std::string fmt{ "\x1b]8;id={}-{};{}\x1b\\" };
         const std::string uri_str{ til::u16u8(uri) };
-        auto s = fmt::format(fmt, sessionID, numberId, uri_str);
+        auto s = fmt::format(FMT_COMPILE("\x1b]8;id={}-{};{}\x1b\\"), sessionID, numberId, uri_str);
         return _Write(s);
     }
     else
@@ -482,10 +481,9 @@ using namespace Microsoft::Console::Render;
         // This is the case of user-defined IDs:
         // send the user-defined ID, prefixed with a "u"
         // (we do this so no application can accidentally override a user defined ID)
-        const std::string fmt{ "\x1b]8;id=u-{};{}\x1b\\" };
         const std::string uri_str{ til::u16u8(uri) };
         const std::string customId_str{ til::u16u8(customId) };
-        auto s = fmt::format(fmt, customId_str, uri_str);
+        auto s = fmt::format(FMT_COMPILE("\x1b]8;id=u-{};{}\x1b\\"), customId_str, uri_str);
         return _Write(s);
     }
 }

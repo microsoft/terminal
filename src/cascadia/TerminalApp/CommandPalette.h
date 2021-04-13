@@ -48,12 +48,12 @@ namespace winrt::TerminalApp::implementation
         void EnableTabSearchMode();
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, NoMatchesText, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, SearchBoxPlaceholderText, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, PrefixCharacter, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, ControlName, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, ParentCommandName, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, ParsedCommandLineText, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, NoMatchesText, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, SearchBoxPlaceholderText, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, PrefixCharacter, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, ControlName, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, ParentCommandName, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, ParsedCommandLineText, _PropertyChangedHandlers);
 
         TYPED_EVENT(SwitchToTabRequested, winrt::TerminalApp::CommandPalette, winrt::TerminalApp::TabBase);
         TYPED_EVENT(CommandLineExecutionRequested, winrt::TerminalApp::CommandPalette, winrt::hstring);
@@ -132,6 +132,12 @@ namespace winrt::TerminalApp::implementation
         static constexpr int CommandLineHistoryLength = 10;
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandLineHistory{ nullptr };
         ::TerminalApp::AppCommandlineArgs _appArgs;
+
+        void _choosingItemContainer(Windows::UI::Xaml::Controls::ListViewBase const& sender, Windows::UI::Xaml::Controls::ChoosingItemContainerEventArgs const& args);
+        void _containerContentChanging(Windows::UI::Xaml::Controls::ListViewBase const& sender, Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs const& args);
+        winrt::TerminalApp::PaletteItemTemplateSelector _itemTemplateSelector{ nullptr };
+        std::unordered_map<Windows::UI::Xaml::DataTemplate, std::unordered_set<Windows::UI::Xaml::Controls::Primitives::SelectorItem>> _listViewItemsCache;
+        Windows::UI::Xaml::DataTemplate _listItemTemplate;
 
         friend class TerminalAppLocalTests::TabTests;
     };

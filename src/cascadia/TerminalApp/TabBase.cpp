@@ -9,7 +9,7 @@
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::System;
 
@@ -49,12 +49,12 @@ namespace winrt::TerminalApp::implementation
         Controls::MenuFlyoutItem closeTabMenuItem;
         Controls::FontIcon closeSymbol;
         closeSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
-        closeSymbol.Glyph(L"\xE8BB");
+        closeSymbol.Glyph(L"\xE711");
 
         closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_ClosedHandlers(nullptr, nullptr);
+                tab->_CloseRequestedHandlers(nullptr, nullptr);
             }
         });
         closeTabMenuItem.Text(RS_(L"TabClose"));

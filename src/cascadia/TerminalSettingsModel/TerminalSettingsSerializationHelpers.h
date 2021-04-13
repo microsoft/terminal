@@ -18,7 +18,7 @@ Abstract:
 #include "JsonUtils.h"
 #include "SettingsTypes.h"
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CursorStyle)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::CursorStyle)
 {
     static constexpr std::array<pair_type, 6> mappings = {
         pair_type{ "bar", ValueType::Bar },
@@ -40,7 +40,7 @@ JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::Media::Stretch)
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::ScrollbarState)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollbarState)
 {
     static constexpr std::array<pair_type, 2> mappings = {
         pair_type{ "visible", ValueType::Visible },
@@ -93,7 +93,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ConvergedAlignme
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::TextAntialiasingMode)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::TextAntialiasingMode)
 {
     static constexpr std::array<pair_type, 3> mappings = {
         pair_type{ "grayscale", ValueType::Grayscale },
@@ -235,7 +235,7 @@ JSON_ENUM_MAPPER(winrt::Microsoft::Terminal::Settings::Model::ExpandCommandType)
     };
 };
 
-JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CopyFormat)
+JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Control::CopyFormat)
 {
     JSON_MAPPINGS(4) = {
         pair_type{ "none", AllClear },
@@ -437,5 +437,14 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FindMatchDirecti
     JSON_MAPPINGS(2) = {
         pair_type{ "next", ValueType::Next },
         pair_type{ "prev", ValueType::Previous },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::WindowingMode)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "useNew", ValueType::UseNew },
+        pair_type{ "useAnyExisting", ValueType::UseAnyExisting },
+        pair_type{ "useExisting", ValueType::UseExisting },
     };
 };

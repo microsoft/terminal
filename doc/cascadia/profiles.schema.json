@@ -52,6 +52,117 @@
         }
       ]
     },
+    "AppearanceConfig": {
+      "properties": {
+        "colorScheme": {
+          "description": "The name of a color scheme to use when unfocused.",
+          "type": "string"
+        },
+        "foreground": {
+          "$ref": "#/definitions/Color",
+          "default": "#cccccc",
+          "description": "Sets the text color when unfocused. Overrides \"foreground\" from the color scheme. Uses hex color format: \"#rrggbb\".",
+          "type": ["string", "null"]
+        },
+        "background": {
+          "$ref": "#/definitions/Color",
+          "default": "#0c0c0c",
+          "description": "Sets the background color of the text when unfocused. Overrides \"background\" from the color scheme. Uses hex color format: \"#rrggbb\".",
+          "type": ["string", "null"]
+        },
+        "selectionBackground": {
+          "oneOf": [
+            {"$ref": "#/definitions/Color"},
+            { "type": "null" }
+          ],
+          "description": "Sets the background color of selected text when unfocused. Overrides selectionBackground set in the color scheme. Uses hex color format: \"#rrggbb\"."
+        },
+        "cursorColor": {
+          "oneOf": [
+            { "$ref": "#/definitions/Color" },
+            {"type": "null"}
+          ],
+          "description": "Sets the color of the cursor when unfocused. Overrides the cursor color from the color scheme. Uses hex color format: \"#rrggbb\"."
+        },
+        "cursorShape": {
+          "default": "bar",
+          "description": "Sets the shape of the cursor when unfocused. Possible values:\n -\"bar\" ( ┃, default )\n -\"doubleUnderscore\" ( ‗ )\n -\"emptyBox\" ( ▯ )\n -\"filledBox\" ( █ )\n -\"underscore\" ( ▁ )\n -\"vintage\" ( ▃ )",
+          "enum": [
+            "bar",
+            "doubleUnderscore",
+            "emptyBox",
+            "filledBox",
+            "underscore",
+            "vintage"
+          ],
+          "type": "string"
+        },
+        "cursorHeight": {
+          "description": "Sets the percentage height of the cursor (when unfocused) starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 1-100.",
+          "maximum": 100,
+          "minimum": 1,
+          "type": ["integer","null"],
+          "default": 25
+        },
+        "backgroundImage": {
+          "description": "Sets the file location of the image to draw over the window background when unfocused.",
+          "oneOf": [
+            {
+              "type": ["string", null]
+            },
+            {
+              "enum": [
+                "desktopWallpaper"
+              ]
+            }
+          ],
+          "type": [ "string", "null" ]
+        },
+        "backgroundImageOpacity": {
+          "default": 1.0,
+          "description": "Sets the transparency of the background image when unfocused. Accepts floating point values from 0-1.",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        "backgroundImageStretchMode": {
+          "default": "uniformToFill",
+          "description": "Sets how the background image is resized to fill the window when unfocused.",
+          "enum": [
+            "fill",
+            "none",
+            "uniform",
+            "uniformToFill"
+          ],
+          "type": "string"
+        },
+        "backgroundImageAlignment": {
+          "default": "center",
+          "enum": [
+            "bottom",
+            "bottomLeft",
+            "bottomRight",
+            "center",
+            "left",
+            "right",
+            "top",
+            "topLeft",
+            "topRight"
+          ],
+          "description": "Sets how the background image aligns to the boundaries of the window when unfocused. Possible values: \"center\", \"left\", \"top\", \"right\", \"bottom\", \"topLeft\", \"topRight\", \"bottomLeft\", \"bottomRight\"",
+          "type": "string"
+        },
+        "experimental.retroTerminalEffect": {
+          "description": "When set to true, enable retro terminal effects when unfocused. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "boolean"
+        },
+        "experimental.pixelShaderPath": {
+          "description": "Use to set a path to a pixel shader to use with the Terminal when unfocused. Overrides `experimental.retroTerminalEffect`. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "ProfileGuid": {
       "default": "{}",
       "pattern": "^\\{[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\\}$",
@@ -77,19 +188,24 @@
         "duplicateTab",
         "find",
         "findMatch",
+        "identifyWindow",
+        "identifyWindows",
         "moveFocus",
         "moveTab",
         "newTab",
+        "newWindow",
         "nextTab",
         "openNewTabDropdown",
         "openSettings",
         "openTabColorPicker",
+        "openWindowRenamer",
         "paste",
         "prevTab",
         "renameTab",
         "openTabRenamer",
         "resetFontSize",
         "resizePane",
+        "renameWindow",
         "scrollDown",
         "scrollDownPage",
         "scrollUp",
@@ -221,9 +337,31 @@
           "$ref": "#/definitions/Color",
           "default": null,
           "description": "If provided, will set the tab's color to the given value"
+        },
+        "suppressApplicationTitle": {
+          "type": "boolean",
+          "default": "false",
+          "description": "When set to true, tabTitle overrides the default title of the tab and any title change messages from the application will be suppressed. When set to false, tabTitle behaves as normal"
+        },
+        "colorScheme": {
+          "description": "The name of a color scheme to use, instead of the one specified by the profile",
+          "type": "string"
         }
       },
       "type": "object"
+    },
+    "SwitchToAdjacentTabArgs" : {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "enum": [
+            "mru",
+            "inOrder",
+            "disabled"
+          ],
+          "type": "string"
+        }
+      ]
     },
     "ShortcutAction": {
       "properties": {
@@ -584,6 +722,82 @@
       ],
       "required": [ "direction" ]
     },
+    "NewWindowAction": {
+      "description": "Arguments corresponding to a New Window Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        { "$ref": "#/definitions/NewTerminalArgs" },
+        {
+          "properties": {
+            "action": { "type":"string", "pattern": "newWindow" }
+          }
+        }
+      ]
+    },
+    "PrevTabAction": {
+      "description": "Arguments corresponding to a Previous Tab Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type":"string", "pattern": "prevTab" },
+            "tabSwitcherMode": {
+              "$ref": "#/definitions/SwitchToAdjacentTabArgs",
+              "default": null,
+              "description": "Move to the previous tab using \"tabSwitcherMode\". If no mode is provided, use the one globally defined one."
+            }
+          }
+        }
+      ]
+    },
+    "NextTabAction": {
+      "description": "Arguments corresponding to a Next Tab Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type":"string", "pattern": "nextTab" },
+            "tabSwitcherMode": {
+              "$ref": "#/definitions/SwitchToAdjacentTabArgs",
+              "default": null,
+              "description": "Move to the next tab using \"tabSwitcherMode\". If no mode is provided, use the one globally defined one."
+            }
+          }
+        }
+      ]
+    },
+    "RenameTabAction": {
+      "description": "Arguments corresponding to a renameTab Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "renameTab" },
+            "title": {
+              "type": "string",
+              "default": "",
+              "description": "A title to assign to the tab. If omitted or null, this action will restore the tab's title to the original value."
+            }
+          }
+        }
+      ]
+    },
+    "RenameWindowAction": {
+      "description": "Arguments corresponding to a renameWindow Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "renameWindow" },
+            "name": {
+              "type": "string",
+              "default": "",
+              "description": "A name to assign to the window."
+            }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -609,6 +823,11 @@
               { "$ref": "#/definitions/ScrollDownAction" },
               { "$ref": "#/definitions/MoveTabAction" },
               { "$ref": "#/definitions/FindMatchAction" },
+              { "$ref": "#/definitions/NewWindowAction" },
+              { "$ref": "#/definitions/NextTabAction" },
+              { "$ref": "#/definitions/PrevTabAction" },
+              { "$ref": "#/definitions/RenameTabAction" },
+              { "$ref": "#/definitions/RenameWindowAction" },
               { "type": "null" }
             ]
         },
@@ -654,6 +873,16 @@
         "alwaysShowTabs": {
           "default": true,
           "description": "When set to true, tabs are always displayed. When set to false and \"showTabsInTitlebar\" is set to false, tabs only appear after opening a new tab.",
+          "type": "boolean"
+        },
+        "centerOnLaunch": {
+          "default": false,
+          "description": "When set to `true`, the terminal window will auto-center itself on the display it opens on. The terminal will use the \"initialPosition\" to determine which display to open on.",
+          "type": "boolean"
+        },
+        "inputServiceWarning": {
+          "default": true,
+          "description": "Warning if 'Touch Keyboard and Handwriting Panel Service' is disabled.",
           "type": "boolean"
         },
         "copyOnSelect": {
@@ -838,6 +1067,16 @@
               "type": "string"
             }
           ]
+        },
+        "windowingBehavior": {
+          "default": "useNew",
+          "description": "Controls how new terminal instances attach to existing windows. \"useNew\" will always create a new window. \"useExisting\" will create new tabs in the most recently used window on this virtual desktop, and \"useAnyExisting\" will create tabs in the most recent window on any desktop.",
+          "enum": [
+            "useNew",
+            "useExisting",
+            "useAnyExisting"
+          ],
+          "type": "string"
         }
       },
       "required": [
@@ -871,6 +1110,11 @@
           "default": "#0c0c0c",
           "description": "Sets the background color of the text. Overrides \"background\" from the color scheme. Uses hex color format: \"#rrggbb\".",
           "type": ["string", "null"]
+        },
+        "unfocusedAppearance": {
+          "$ref": "#/definitions/AppearanceConfig",
+          "description": "Sets the appearance of the terminal when it is unfocused.",
+          "type": ["object", "null"]
         },
         "backgroundImage": {
           "description": "Sets the file location of the image to draw over the window background.",
@@ -959,9 +1203,9 @@
           "description": "Sets the color of the cursor. Overrides the cursor color from the color scheme. Uses hex color format: \"#rrggbb\"."
         },
         "cursorHeight": {
-          "description": "Sets the percentage height of the cursor starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 25-100.",
+          "description": "Sets the percentage height of the cursor starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 1-100.",
           "maximum": 100,
-          "minimum": 25,
+          "minimum": 1,
           "type": ["integer","null"],
           "default": 25
         },

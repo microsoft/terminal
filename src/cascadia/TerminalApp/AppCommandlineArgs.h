@@ -35,6 +35,7 @@ public:
 
     void ValidateStartupCommands();
     std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& GetStartupActions();
+    bool IsHandoffListener() const noexcept;
     const std::string& GetExitMessage();
     bool ShouldExitEarly() const noexcept;
 
@@ -44,7 +45,7 @@ public:
     void DisableHelpInExitMessage();
     void FullResetState();
 
-    int GetTargetWindow() const noexcept;
+    std::string_view GetTargetWindow() const noexcept;
 
 private:
     static const std::wregex _commandDelimiterRegex;
@@ -61,12 +62,15 @@ private:
         CLI::Option* startingDirectoryOption;
         CLI::Option* titleOption;
         CLI::Option* tabColorOption;
+        CLI::Option* suppressApplicationTitleOption;
+        CLI::Option* colorSchemeOption;
     };
 
     struct NewPaneSubcommand : public NewTerminalSubcommand
     {
         CLI::Option* _horizontalOption;
         CLI::Option* _verticalOption;
+        CLI::Option* _duplicateOption;
     };
 
     // --- Subcommands ---
@@ -85,6 +89,8 @@ private:
     std::string _startingDirectory;
     std::string _startingTitle;
     std::string _startingTabColor;
+    std::string _startingColorScheme;
+    bool _suppressApplicationTitle{ false };
 
     winrt::Microsoft::Terminal::Settings::Model::FocusDirection _moveFocusDirection{ winrt::Microsoft::Terminal::Settings::Model::FocusDirection::None };
 
@@ -93,6 +99,7 @@ private:
 
     bool _splitVertical{ false };
     bool _splitHorizontal{ false };
+    bool _splitDuplicate{ false };
     float _splitPaneSize{ 0.5f };
 
     int _focusTabIndex{ -1 };
@@ -102,11 +109,12 @@ private:
 
     const Commandline* _currentCommandline{ nullptr };
     std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> _launchMode{ std::nullopt };
+    bool _isHandoffListener{ false };
     std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _startupActions;
     std::string _exitMessage;
     bool _shouldExitEarly{ false };
 
-    int _windowTarget{ -1 };
+    std::string _windowTarget{};
     // Are you adding more args or attributes here? If they are not reset in _resetStateToDefault, make sure to reset them in FullResetState
 
     winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs _getNewTerminalArgs(NewTerminalSubcommand& subcommand);

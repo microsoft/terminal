@@ -34,14 +34,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     DEFINE_ENUM_MAP(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabViewWidthMode);
     DEFINE_ENUM_MAP(Model::LaunchMode, LaunchMode);
     DEFINE_ENUM_MAP(Model::TabSwitcherMode, TabSwitcherMode);
-    DEFINE_ENUM_MAP(Microsoft::Terminal::TerminalControl::CopyFormat, CopyFormat);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Control::CopyFormat, CopyFormat);
+    DEFINE_ENUM_MAP(Model::WindowingMode, WindowingMode);
 
     // Profile Settings
     DEFINE_ENUM_MAP(Model::CloseOnExitMode, CloseOnExitMode);
-    DEFINE_ENUM_MAP(Microsoft::Terminal::TerminalControl::ScrollbarState, ScrollbarState);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Control::ScrollbarState, ScrollbarState);
     DEFINE_ENUM_MAP(Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode);
-    DEFINE_ENUM_MAP(Microsoft::Terminal::TerminalControl::TextAntialiasingMode, TextAntialiasingMode);
-    DEFINE_ENUM_MAP(Microsoft::Terminal::TerminalControl::CursorStyle, CursorStyle);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Control::TextAntialiasingMode, TextAntialiasingMode);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Core::CursorStyle, CursorStyle);
     DEFINE_ENUM_MAP(Model::BellStyle, BellStyle);
 
     // FontWeight is special because the JsonUtils::ConversionTrait for it

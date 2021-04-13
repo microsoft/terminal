@@ -6,6 +6,7 @@
 #include "Monarch.g.h"
 #include "Peasant.h"
 #include "../cascadia/inc/cppwinrt_utils.h"
+#include "WindowActivatedArgs.h"
 
 // We sure different GUIDs here depending on whether we're running a Release,
 // Preview, or Dev build. This ensures that different installs don't
@@ -28,12 +29,6 @@ constexpr GUID Monarch_clsid
     {
         0x85, 0xf5, 0x8b, 0xdd, 0x73, 0x86, 0xcc, 0xe3
     }
-};
-
-enum class WindowingBehavior : uint64_t
-{
-    UseNew = 0,
-    UseExisting = 1,
 };
 
 namespace RemotingUnitTests
@@ -63,17 +58,30 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         uint64_t _nextPeasantID{ 1 };
         uint64_t _thisPeasantID{ 0 };
-        uint64_t _mostRecentPeasant{ 0 };
-        winrt::Windows::Foundation::DateTime _lastActivatedTime{};
 
-        WindowingBehavior _windowingBehavior{ WindowingBehavior::UseNew };
+        winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
+
         std::unordered_map<uint64_t, winrt::Microsoft::Terminal::Remoting::IPeasant> _peasants;
 
+        std::vector<Remoting::WindowActivatedArgs> _mruPeasants;
+
         winrt::Microsoft::Terminal::Remoting::IPeasant _getPeasant(uint64_t peasantID);
-        uint64_t _getMostRecentPeasantID();
+        uint64_t _getMostRecentPeasantID(bool limitToCurrentDesktop);
+        uint64_t _lookupPeasantIdForName(std::wstring_view name);
 
         void _peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& sender,
                                      const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args);
+        void _doHandleActivatePeasant(const winrt::com_ptr<winrt::Microsoft::Terminal::Remoting::implementation::WindowActivatedArgs>& args);
+        void _clearOldMruEntries(const uint64_t peasantID);
+
+        void _forAllPeasantsIgnoringTheDead(std::function<void(const winrt::Microsoft::Terminal::Remoting::IPeasant&, const uint64_t)> callback,
+                                            std::function<void(const uint64_t)> errorCallback);
+
+        void _identifyWindows(const winrt::Windows::Foundation::IInspectable& sender,
+                              const winrt::Windows::Foundation::IInspectable& args);
+
+        void _renameRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                              const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args);
 
         friend class RemotingUnitTests::RemotingTests;
     };

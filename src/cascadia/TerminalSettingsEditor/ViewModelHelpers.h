@@ -65,10 +65,10 @@ public:                                                   \
         {                                            \
             _NotifyChanges(L"Has" #name, L#name);    \
         }                                            \
-    }
+    }                                                \
+    auto name##OverrideSource() { return target.name##OverrideSource(); }
 
 // Defines a setting that reflects another object's same-named
 // setting, but which cannot be erased.
 #define PERMANENT_OBSERVABLE_PROJECTED_SETTING(target, name) \
-    _BASE_OBSERVABLE_PROJECTED_SETTING(target, name)         \
-    void Clear##name() {}
+    _BASE_OBSERVABLE_PROJECTED_SETTING(target, name)

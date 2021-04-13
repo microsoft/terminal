@@ -7,7 +7,7 @@
 #include "FontInfoEventArgs.g.h"
 #include "cppwinrt_utils.h"
 
-namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct CursorPositionEventArgs :
         public CursorPositionEventArgsT<CursorPositionEventArgs>
@@ -15,7 +15,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     public:
         CursorPositionEventArgs() = default;
 
-        GETSET_PROPERTY(Windows::Foundation::Point, CurrentPosition);
+        WINRT_PROPERTY(Windows::Foundation::Point, CurrentPosition);
     };
 
     struct FontInfoEventArgs :
@@ -24,11 +24,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     public:
         FontInfoEventArgs() = default;
 
-        GETSET_PROPERTY(Windows::Foundation::Size, FontSize);
+        WINRT_PROPERTY(Windows::Foundation::Size, FontSize);
 
-        GETSET_PROPERTY(winrt::hstring, FontFace);
+        WINRT_PROPERTY(winrt::hstring, FontFace);
 
-        GETSET_PROPERTY(Windows::UI::Text::FontWeight, FontWeight);
+        WINRT_PROPERTY(Windows::UI::Text::FontWeight, FontWeight);
     };
 
     struct TSFInputControl : TSFInputControlT<TSFInputControl>
@@ -44,9 +44,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void Close();
 
         // -------------------------------- WinRT Events ---------------------------------
-        TYPED_EVENT(CurrentCursorPosition, TerminalControl::TSFInputControl, TerminalControl::CursorPositionEventArgs);
-        TYPED_EVENT(CurrentFontInfo, TerminalControl::TSFInputControl, TerminalControl::FontInfoEventArgs);
-        DECLARE_EVENT(CompositionCompleted, _compositionCompletedHandlers, TerminalControl::CompositionCompletedEventArgs);
+        TYPED_EVENT(CurrentCursorPosition, Control::TSFInputControl, Control::CursorPositionEventArgs);
+        TYPED_EVENT(CurrentFontInfo, Control::TSFInputControl, Control::FontInfoEventArgs);
+        DECLARE_EVENT(CompositionCompleted, _compositionCompletedHandlers, Control::CompositionCompletedEventArgs);
 
     private:
         void _layoutRequestedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, winrt::Windows::UI::Text::Core::CoreTextLayoutRequestedEventArgs const& args);
@@ -87,7 +87,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         winrt::Windows::Foundation::Rect _currentWindowBounds;
     };
 }
-namespace winrt::Microsoft::Terminal::TerminalControl::factory_implementation
+namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
     struct TSFInputControl : TSFInputControlT<TSFInputControl, implementation::TSFInputControl>
     {

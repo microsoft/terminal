@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+#include "IInheritable.idl.h"
+
 import "ColorScheme.idl";
 import "KeyMapping.idl";
 import "Command.idl";
@@ -26,114 +28,46 @@ namespace Microsoft.Terminal.Settings.Model
         MaximizedFocusMode,
     };
 
-    enum TabSwitcherMode
+    enum WindowingMode
     {
-        MostRecentlyUsed,
-        InOrder,
-        Disabled,
+        UseNew,
+        UseAnyExisting,
+        UseExisting,
     };
 
     [default_interface] runtimeclass GlobalAppSettings {
         Guid DefaultProfile;
-        Boolean HasUnparsedDefaultProfile();
-        void ClearUnparsedDefaultProfile();
-        String UnparsedDefaultProfile;
+        INHERITABLE_SETTING(String, UnparsedDefaultProfile);
 
-        Boolean HasInitialRows();
-        void ClearInitialRows();
-        Int32 InitialRows;
-
-        Boolean HasInitialCols();
-        void ClearInitialCols();
-        Int32 InitialCols;
-
-        Boolean HasAlwaysShowTabs();
-        void ClearAlwaysShowTabs();
-        Boolean AlwaysShowTabs;
-
-        Boolean HasShowTitleInTitlebar();
-        void ClearShowTitleInTitlebar();
-        Boolean ShowTitleInTitlebar;
-
-        Boolean HasConfirmCloseAllTabs();
-        void ClearConfirmCloseAllTabs();
-        Boolean ConfirmCloseAllTabs;
-
-        Boolean HasTheme();
-        void ClearTheme();
-        Windows.UI.Xaml.ElementTheme Theme;
-
-        Boolean HasTabWidthMode();
-        void ClearTabWidthMode();
-        Microsoft.UI.Xaml.Controls.TabViewWidthMode TabWidthMode;
-
-        Boolean HasShowTabsInTitlebar();
-        void ClearShowTabsInTitlebar();
-        Boolean ShowTabsInTitlebar;
-
-        Boolean HasWordDelimiters();
-        void ClearWordDelimiters();
-        String WordDelimiters;
-
-        Boolean HasCopyOnSelect();
-        void ClearCopyOnSelect();
-        Boolean CopyOnSelect;
-
-        Boolean HasCopyFormatting();
-        void ClearCopyFormatting();
-        Microsoft.Terminal.TerminalControl.CopyFormat CopyFormatting;
-
-        Boolean HasWarnAboutLargePaste();
-        void ClearWarnAboutLargePaste();
-        Boolean WarnAboutLargePaste;
-
-        Boolean HasWarnAboutMultiLinePaste();
-        void ClearWarnAboutMultiLinePaste();
-        Boolean WarnAboutMultiLinePaste;
-
-        Boolean HasInitialPosition();
-        void ClearInitialPosition();
-        LaunchPosition InitialPosition;
-
-        Boolean HasLaunchMode();
-        void ClearLaunchMode();
-        LaunchMode LaunchMode;
-
-        Boolean HasSnapToGridOnResize();
-        void ClearSnapToGridOnResize();
-        Boolean SnapToGridOnResize;
-
-        Boolean HasForceFullRepaintRendering();
-        void ClearForceFullRepaintRendering();
-        Boolean ForceFullRepaintRendering;
-
-        Boolean HasSoftwareRendering();
-        void ClearSoftwareRendering();
-        Boolean SoftwareRendering;
-
-        Boolean HasForceVTInput();
-        void ClearForceVTInput();
-        Boolean ForceVTInput;
-
-        Boolean HasDebugFeaturesEnabled();
-        void ClearDebugFeaturesEnabled();
-        Boolean DebugFeaturesEnabled;
-
-        Boolean HasStartOnUserLogin();
-        void ClearStartOnUserLogin();
-        Boolean StartOnUserLogin;
-
-        Boolean HasAlwaysOnTop();
-        void ClearAlwaysOnTop();
-        Boolean AlwaysOnTop;
-
-        Boolean HasTabSwitcherMode();
-        void ClearTabSwitcherMode();
-        TabSwitcherMode TabSwitcherMode;
-
-        Boolean HasDisableAnimations();
-        void ClearDisableAnimations();
-        Boolean DisableAnimations;
+        INHERITABLE_SETTING(Int32, InitialRows);
+        INHERITABLE_SETTING(Int32, InitialCols);
+        INHERITABLE_SETTING(Boolean, AlwaysShowTabs);
+        INHERITABLE_SETTING(Boolean, ShowTitleInTitlebar);
+        INHERITABLE_SETTING(Boolean, ConfirmCloseAllTabs);
+        INHERITABLE_SETTING(Windows.UI.Xaml.ElementTheme, Theme);
+        INHERITABLE_SETTING(Microsoft.UI.Xaml.Controls.TabViewWidthMode, TabWidthMode);
+        INHERITABLE_SETTING(Boolean, ShowTabsInTitlebar);
+        INHERITABLE_SETTING(String, WordDelimiters);
+        INHERITABLE_SETTING(Boolean, CopyOnSelect);
+        INHERITABLE_SETTING(Boolean, InputServiceWarning);
+        INHERITABLE_SETTING(Microsoft.Terminal.Control.CopyFormat, CopyFormatting);
+        INHERITABLE_SETTING(Boolean, WarnAboutLargePaste);
+        INHERITABLE_SETTING(Boolean, WarnAboutMultiLinePaste);
+        INHERITABLE_SETTING(LaunchPosition, InitialPosition);
+        INHERITABLE_SETTING(Boolean, CenterOnLaunch);
+        INHERITABLE_SETTING(LaunchMode, LaunchMode);
+        INHERITABLE_SETTING(Boolean, SnapToGridOnResize);
+        INHERITABLE_SETTING(Boolean, ForceFullRepaintRendering);
+        INHERITABLE_SETTING(Boolean, SoftwareRendering);
+        INHERITABLE_SETTING(Boolean, ForceVTInput);
+        INHERITABLE_SETTING(Boolean, DebugFeaturesEnabled);
+        INHERITABLE_SETTING(Boolean, StartOnUserLogin);
+        INHERITABLE_SETTING(Boolean, AlwaysOnTop);
+        INHERITABLE_SETTING(TabSwitcherMode, TabSwitcherMode);
+        INHERITABLE_SETTING(Boolean, DisableAnimations);
+        INHERITABLE_SETTING(String, StartupActions);
+        INHERITABLE_SETTING(Boolean, FocusFollowMouse);
+        INHERITABLE_SETTING(WindowingMode, WindowingBehavior);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);
@@ -142,13 +76,5 @@ namespace Microsoft.Terminal.Settings.Model
         KeyMapping KeyMap();
 
         Windows.Foundation.Collections.IMapView<String, Command> Commands();
-
-        Boolean HasStartupActions();
-        void ClearStartupActions();
-        String StartupActions();
-
-        Boolean HasFocusFollowMouse();
-        void ClearFocusFollowMouse();
-        Boolean FocusFollowMouse;
     }
 }

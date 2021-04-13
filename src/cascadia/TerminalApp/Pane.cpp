@@ -14,7 +14,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml::Media;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::TerminalApp;
 using namespace TerminalApp;
@@ -312,7 +312,7 @@ bool Pane::NavigateFocus(const FocusDirection& direction)
 // - <none>
 // Return Value:
 // - <none>
-void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/,
+void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                  const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     std::unique_lock lock{ _createCloseLock };
@@ -416,11 +416,8 @@ void Pane::_ControlLostFocusHandler(winrt::Windows::Foundation::IInspectable con
 // - <none>
 void Pane::Close()
 {
-    if (!_isClosing.exchange(true))
-    {
-        // Fire our Closed event to tell our parent that we should be removed.
-        _ClosedHandlers(nullptr, nullptr);
-    }
+    // Fire our Closed event to tell our parent that we should be removed.
+    _ClosedHandlers(nullptr, nullptr);
 }
 
 // Method Description:
@@ -631,7 +628,7 @@ void Pane::_FocusFirstChild()
 // - profile: The GUID of the profile these settings should apply to.
 // Return Value:
 // - <none>
-void Pane::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
+void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const GUID& profile)
 {
     if (!_IsLeaf())
     {
@@ -642,12 +639,20 @@ void Pane::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
     {
         if (profile == _profile)
         {
+            auto controlSettings = _control.Settings().as<TerminalSettings>();
             // Update the parent of the control's settings object (and not the object itself) so
             // that any overrides made by the control don't get affected by the reload
-            auto child = winrt::get_self<winrt::TerminalApp::implementation::TerminalSettings>(_control.Settings());
-            auto parent = winrt::get_self<winrt::TerminalApp::implementation::TerminalSettings>(settings);
-            child->ClearParents();
-            child->InsertParent(0, parent->get_strong());
+            controlSettings.SetParent(settings.DefaultSettings());
+            auto unfocusedSettings{ settings.UnfocusedSettings() };
+            if (unfocusedSettings)
+            {
+                // Note: the unfocused settings needs to be entirely unchanged _except_ we need to
+                // set its parent to the settings object that lives in the control. This is because
+                // the overrides made by the control live in that settings object, so we want to make
+                // sure the unfocused settings inherit from that.
+                unfocusedSettings.SetParent(controlSettings);
+            }
+            _control.UnfocusedAppearance(unfocusedSettings);
             _control.UpdateSettings();
         }
     }

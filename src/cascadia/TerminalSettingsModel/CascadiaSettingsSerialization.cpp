@@ -374,6 +374,13 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     resultPtr->_ResolveDefaultProfile();
     resultPtr->_UpdateActiveProfiles();
 
+    // tag these profiles as in-box
+    for (const auto& profile : resultPtr->AllProfiles())
+    {
+        const auto& profileImpl{ winrt::get_self<implementation::Profile>(profile) };
+        profileImpl->Origin(OriginTag::InBox);
+    }
+
     return *resultPtr;
 }
 
@@ -478,21 +485,24 @@ void CascadiaSettings::_LoadFragmentExtensions()
             // So we use another mutex and condition variable
             auto foundFolder = _extractValueFromTaskWithoutMainThreadAwait(ext.GetPublicFolderAsync());
 
-            // the StorageFolder class has its own methods for obtaining the files within the folder
-            // however, all those methods are Async methods
-            // you may have noticed that we need to resort to clunky implementations for async operations
-            // (they are in _extractValueFromTaskWithoutMainThreadAwait)
-            // so for now we will just take the folder path and access the files that way
-            auto path = winrt::to_string(foundFolder.Path());
-            path.append(FragmentsSubDirectory);
-
-            // If the directory exists, use the fragments in it
-            if (std::filesystem::exists(path))
+            if (foundFolder)
             {
-                const auto jsonFiles = _AccumulateJsonFilesInDirectory(til::u8u16(path));
+                // the StorageFolder class has its own methods for obtaining the files within the folder
+                // however, all those methods are Async methods
+                // you may have noticed that we need to resort to clunky implementations for async operations
+                // (they are in _extractValueFromTaskWithoutMainThreadAwait)
+                // so for now we will just take the folder path and access the files that way
+                auto path = winrt::to_string(foundFolder.Path());
+                path.append(FragmentsSubDirectory);
 
-                // Provide the package name as the source
-                _ParseAndLayerFragmentFiles(jsonFiles, ext.Package().Id().FamilyName().c_str());
+                // If the directory exists, use the fragments in it
+                if (std::filesystem::exists(path))
+                {
+                    const auto jsonFiles = _AccumulateJsonFilesInDirectory(til::u8u16(path));
+
+                    // Provide the package name as the source
+                    _ParseAndLayerFragmentFiles(jsonFiles, ext.Package().Id().FamilyName().c_str());
+                }
             }
         }
     }
@@ -590,6 +600,7 @@ void CascadiaSettings::_ParseAndLayerFragmentFiles(const std::unordered_set<std:
                         // (we add a new inheritance layer)
                         auto childImpl{ matchingProfile->CreateChild() };
                         childImpl->LayerJson(profileStub);
+                        childImpl->Origin(OriginTag::Fragment);
 
                         // replace parent in _profiles with child
                         _allProfiles.SetAt(_FindMatchingProfileIndex(matchingProfile->ToJson()).value(), *childImpl);
@@ -606,6 +617,7 @@ void CascadiaSettings::_ParseAndLayerFragmentFiles(const std::unordered_set<std:
                         // We don't make modifications to the user's settings file yet, that will happen when
                         // _AppendDynamicProfilesToUserSettings() is called later
                         newProfile->Source(source);
+                        newProfile->Origin(OriginTag::Fragment);
                         _allProfiles.Append(*newProfile);
                     }
                 }
@@ -934,7 +946,7 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
             // We _won't_ have these settings yet for defaults, dynamic profiles.
             if (_userDefaultProfileSettings)
             {
-                profile->InsertParent(0, _userDefaultProfileSettings);
+                Profile::InsertParentHelper(profile, _userDefaultProfileSettings, 0);
             }
 
             profile->LayerJson(profileJson);
@@ -1031,7 +1043,7 @@ void CascadiaSettings::_ApplyDefaultsFromUserSettings()
         auto childImpl{ parentImpl->CreateChild() };
 
         // Add profile.defaults as the _first_ parent to the child
-        childImpl->InsertParent(0, _userDefaultProfileSettings);
+        Profile::InsertParentHelper(childImpl, _userDefaultProfileSettings, 0);
 
         // replace parent in _profiles with child
         _allProfiles.SetAt(profileIndex, *childImpl);

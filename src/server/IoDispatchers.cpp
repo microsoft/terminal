@@ -146,6 +146,19 @@ static bool _shouldAttemptHandoff(const Globals& globals,
                                   const CONSOLE_INFORMATION& gci,
                                   CONSOLE_API_CONNECTINFO& cac)
 {
+#ifndef __INSIDE_WINDOWS
+
+    UNREFERENCED_PARAMETER(globals);
+    UNREFERENCED_PARAMETER(gci);
+    UNREFERENCED_PARAMETER(cac);
+
+    // If we are outside of Windows, do not attempt a handoff
+    // to another target as handoff is an inbox escape mechanism
+    // to get to this copy!
+    return false;
+
+#else
+
     // This console is already initialized. Do not
     // attempt handoff to another one.
     // Note you can have a non-attach secondary connect for a child process
@@ -155,7 +168,7 @@ static bool _shouldAttemptHandoff(const Globals& globals,
         return false;
     }
 
-    // If this is an AttachConsole message and not occuring
+    // If this is an AttachConsole message and not occurring
     // because of a conclnt!ConsoleInitialize, do not handoff.
     // ConsoleApp is FALSE for attach.
     if (!cac.ConsoleApp)
@@ -209,6 +222,7 @@ static bool _shouldAttemptHandoff(const Globals& globals,
     }
 
     return true;
+#endif
 }
 
 // Routine Description:

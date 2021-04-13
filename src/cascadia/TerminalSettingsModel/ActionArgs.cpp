@@ -25,10 +25,14 @@
 #include "MoveTabArgs.g.cpp"
 #include "FindMatchArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
+#include "NewWindowArgs.g.cpp"
+#include "PrevTabArgs.g.cpp"
+#include "NextTabArgs.g.cpp"
+#include "RenameWindowArgs.g.cpp"
 
 #include <LibraryResources.h>
 
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -65,6 +69,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             const til::color tabColor{ _TabColor.Value() };
             ss << fmt::format(L"tabColor: {}, ", tabColor.ToHexString(true));
         }
+        if (!_ColorScheme.empty())
+        {
+            ss << fmt::format(L"colorScheme: {}, ", _ColorScheme);
+        }
+
+        if (_SuppressApplicationTitle)
+        {
+            if (_SuppressApplicationTitle.Value())
+            {
+                ss << fmt::format(L"suppress application title, ");
+            }
+            else
+            {
+                ss << fmt::format(L"use application title, ");
+            }
+        }
 
         auto s = ss.str();
         if (s.empty())
@@ -74,6 +94,70 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Chop off the last ", "
         return winrt::hstring{ s.substr(0, s.size() - 2) };
+    }
+
+    winrt::hstring NewTerminalArgs::ToCommandline() const
+    {
+        std::wstringstream ss;
+
+        if (!_Profile.empty())
+        {
+            ss << fmt::format(L"--profile \"{}\" ", _Profile);
+        }
+        // The caller is always expected to provide the evaluated profile in the
+        // NewTerminalArgs, not the index
+        //
+        // else if (_ProfileIndex)
+        // {
+        //     ss << fmt::format(L"profile index: {}, ", _ProfileIndex.Value());
+        // }
+
+        if (!_StartingDirectory.empty())
+        {
+            ss << fmt::format(L"--startingDirectory \"{}\" ", _StartingDirectory);
+        }
+
+        if (!_TabTitle.empty())
+        {
+            ss << fmt::format(L"--title \"{}\" ", _TabTitle);
+        }
+
+        if (_TabColor)
+        {
+            const til::color tabColor{ _TabColor.Value() };
+            ss << fmt::format(L"--tabColor \"{}\" ", tabColor.ToHexString(true));
+        }
+
+        if (_SuppressApplicationTitle)
+        {
+            if (_SuppressApplicationTitle.Value())
+            {
+                ss << fmt::format(L"--suppressApplicationTitle ");
+            }
+            else
+            {
+                ss << fmt::format(L"--useApplicationTitle ");
+            }
+        }
+
+        if (!_ColorScheme.empty())
+        {
+            ss << fmt::format(L"--colorScheme \"{}\" ", _ColorScheme);
+        }
+
+        if (!_Commandline.empty())
+        {
+            ss << fmt::format(L"-- \"{}\" ", _Commandline);
+        }
+
+        auto s = ss.str();
+        if (s.empty())
+        {
+            return L"";
+        }
+
+        // Chop off the last " "
+        return winrt::hstring{ s.substr(0, s.size() - 1) };
     }
 
     winrt::hstring CopyTextArgs::GenerateName() const
@@ -293,10 +377,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"OpenDefaultSettingsCommandKey");
         case SettingsTarget::AllFiles:
             return RS_(L"OpenBothSettingsFilesCommandKey");
-        case SettingsTarget::SettingsUI:
-            return RS_(L"OpenSettingsUICommandKey");
-        default:
+        case SettingsTarget::SettingsFile:
             return RS_(L"OpenSettingsCommandKey");
+        case SettingsTarget::SettingsUI:
+        default:
+            return RS_(L"OpenSettingsUICommandKey");
         }
     }
 
@@ -443,5 +528,58 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return winrt::hstring{ RS_(L"FindPrevCommandKey") };
         }
         return L"";
+    }
+
+    winrt::hstring NewWindowArgs::GenerateName() const
+    {
+        winrt::hstring newTerminalArgsStr;
+        if (_TerminalArgs)
+        {
+            newTerminalArgsStr = _TerminalArgs.GenerateName();
+        }
+
+        if (newTerminalArgsStr.empty())
+        {
+            return RS_(L"NewWindowCommandKey");
+        }
+        return winrt::hstring{
+            fmt::format(L"{}, {}", RS_(L"NewWindowCommandKey"), newTerminalArgsStr)
+        };
+    }
+
+    winrt::hstring PrevTabArgs::GenerateName() const
+    {
+        if (!_SwitcherMode)
+        {
+            return RS_(L"PrevTabCommandKey");
+        }
+
+        const auto mode = _SwitcherMode.Value() == TabSwitcherMode::MostRecentlyUsed ? L"most recently used" : L"in order";
+        return winrt::hstring(fmt::format(L"{}, {}", RS_(L"PrevTabCommandKey"), mode));
+    }
+
+    winrt::hstring NextTabArgs::GenerateName() const
+    {
+        if (!_SwitcherMode)
+        {
+            return RS_(L"NextTabCommandKey");
+        }
+
+        const auto mode = _SwitcherMode.Value() == TabSwitcherMode::MostRecentlyUsed ? L"most recently used" : L"in order";
+        return winrt::hstring(fmt::format(L"{}, {}", RS_(L"NextTabCommandKey"), mode));
+    }
+
+    winrt::hstring RenameWindowArgs::GenerateName() const
+    {
+        // "Rename window to \"{_Name}\""
+        // "Clear window name"
+        if (!_Name.empty())
+        {
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"RenameWindowCommandKey")),
+                            _Name.c_str())
+            };
+        }
+        return RS_(L"ResetWindowNameCommandKey");
     }
 }

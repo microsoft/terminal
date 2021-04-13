@@ -19,7 +19,7 @@
 // - Mike Griese (zadjii-msft) 16-May-2019
 
 #pragma once
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/Microsoft.Terminal.Control.h>
 #include <winrt/TerminalApp.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
@@ -37,11 +37,11 @@ class Pane : public std::enable_shared_from_this<Pane>
 {
 public:
     Pane(const GUID& profile,
-         const winrt::Microsoft::Terminal::TerminalControl::TermControl& control,
+         const winrt::Microsoft::Terminal::Control::TermControl& control,
          const bool lastFocused = false);
 
     std::shared_ptr<Pane> GetActivePane();
-    winrt::Microsoft::Terminal::TerminalControl::TermControl GetTerminalControl();
+    winrt::Microsoft::Terminal::Control::TermControl GetTerminalControl();
     std::optional<GUID> GetFocusedProfile();
 
     winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
@@ -51,7 +51,7 @@ public:
     void ClearActive();
     void SetActive();
 
-    void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings,
+    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                         const GUID& profile);
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
     void Relayout();
@@ -61,7 +61,7 @@ public:
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
                                                                   const float splitSize,
                                                                   const GUID& profile,
-                                                                  const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+                                                                  const winrt::Microsoft::Terminal::Control::TermControl& control);
     float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
     std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitState> PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
                                                                                                  const winrt::Windows::Foundation::Size parentSize) const;
@@ -95,7 +95,7 @@ private:
 
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
     winrt::Windows::UI::Xaml::Controls::Border _border{};
-    winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
+    winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
 
@@ -120,8 +120,6 @@ private:
 
     Borders _borders{ Borders::None };
 
-    std::atomic<bool> _isClosing{ false };
-
     bool _zoomed{ false };
 
     bool _IsLeaf() const noexcept;
@@ -131,7 +129,7 @@ private:
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
                                                                    const float splitSize,
                                                                    const GUID& profile,
-                                                                   const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+                                                                   const winrt::Microsoft::Terminal::Control::TermControl& control);
 
     void _CreateRowColDefinitions();
     void _ApplySplitDefinitions();
@@ -145,7 +143,7 @@ private:
     winrt::fire_and_forget _CloseChildRoutine(const bool closeFirst);
 
     void _FocusFirstChild();
-    void _ControlConnectionStateChangedHandler(const winrt::Microsoft::Terminal::TerminalControl::TermControl& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
+    void _ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
     void _ControlWarningBellHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                     winrt::Windows::Foundation::IInspectable const& e);
     void _ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,

@@ -194,6 +194,11 @@ void AppHost::_HandleCommandlineArgs()
         // commandline (in the future), it'll trigger this callback, that we'll
         // use to send the actions to the app.
         peasant.ExecuteCommandlineRequested({ this, &AppHost::_DispatchCommandline });
+
+        peasant.DisplayWindowIdRequested({ this, &AppHost::_DisplayWindowId });
+
+        _logic.WindowName(peasant.WindowName());
+        _logic.WindowId(peasant.GetID());
     }
 }
 
@@ -244,6 +249,8 @@ void AppHost::Initialize()
     _logic.TitleChanged({ this, &AppHost::AppTitleChanged });
     _logic.LastTabClosed({ this, &AppHost::LastTabClosed });
     _logic.SetTaskbarProgress({ this, &AppHost::SetTaskbarProgress });
+    _logic.IdentifyWindowsRequested({ this, &AppHost::_IdentifyWindowsRequested });
+    _logic.RenameWindowRequested({ this, &AppHost::_RenameWindowRequested });
 
     _window->UpdateTitle(_logic.Title());
 
@@ -316,6 +323,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
 
     // Acquire the actual initial position
     auto initialPos = _logic.GetInitialPosition(proposedRect.left, proposedRect.top);
+    const auto centerOnLaunch = _logic.CenterOnLaunch();
     proposedRect.left = static_cast<long>(initialPos.X);
     proposedRect.top = static_cast<long>(initialPos.Y);
 
@@ -375,10 +383,27 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
     adjustedWidth = islandWidth + nonClientSize.cx;
     adjustedHeight = islandHeight + nonClientSize.cy;
 
-    const COORD origin{ gsl::narrow<short>(proposedRect.left),
-                        gsl::narrow<short>(proposedRect.top) };
     const COORD dimensions{ Utils::ClampToShortMax(adjustedWidth, 1),
                             Utils::ClampToShortMax(adjustedHeight, 1) };
+
+    if (centerOnLaunch)
+    {
+        // Find nearest monitor for the position that we've actually settled on
+        HMONITOR hMonNearest = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
+        MONITORINFO nearestMonitorInfo;
+        nearestMonitorInfo.cbSize = sizeof(MONITORINFO);
+        // Get monitor dimensions:
+        GetMonitorInfo(hMonNearest, &nearestMonitorInfo);
+        const COORD desktopDimensions{ gsl::narrow<short>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
+                                       gsl::narrow<short>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
+        // Move our proposed location into the center of that specific monitor.
+        proposedRect.left = nearestMonitorInfo.rcWork.left +
+                            ((desktopDimensions.X / 2) - (dimensions.X / 2));
+        proposedRect.top = nearestMonitorInfo.rcWork.top +
+                           ((desktopDimensions.Y / 2) - (dimensions.Y / 2));
+    }
+    const COORD origin{ gsl::narrow<short>(proposedRect.left),
+                        gsl::narrow<short>(proposedRect.top) };
 
     const auto newPos = Viewport::FromDimensions(origin, dimensions);
     bool succeeded = SetWindowPos(hwnd,
@@ -484,7 +509,7 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
         for (const auto& e : elems)
         {
             // If that element has implemented IMouseWheelListener, call OnMouseWheel on that element.
-            if (auto control{ e.try_as<winrt::Microsoft::Terminal::TerminalControl::IMouseWheelListener>() })
+            if (auto control{ e.try_as<winrt::Microsoft::Terminal::Control::IMouseWheelListener>() })
             {
                 try
                 {
@@ -548,7 +573,8 @@ void AppHost::_FindTargetWindow(const winrt::Windows::Foundation::IInspectable& 
                                 const Remoting::FindTargetWindowArgs& args)
 {
     const auto targetWindow = _logic.FindTargetWindow(args.Args().Commandline());
-    args.ResultTargetWindow(targetWindow);
+    args.ResultTargetWindow(targetWindow.WindowId());
+    args.ResultTargetWindowName(targetWindow.WindowName());
 }
 
 winrt::fire_and_forget AppHost::_WindowActivated()
@@ -557,12 +583,94 @@ winrt::fire_and_forget AppHost::_WindowActivated()
 
     if (auto peasant{ _windowManager.CurrentWindow() })
     {
+        const auto currentDesktopGuid{ _CurrentDesktopGuid() };
+
         // TODO: projects/5 - in the future, we'll want to actually get the
         // desktop GUID in IslandWindow, and bubble that up here, then down to
         // the Peasant. For now, we're just leaving space for it.
         Remoting::WindowActivatedArgs args{ peasant.GetID(),
-                                            winrt::guid{},
+                                            (uint64_t)_window->GetHandle(),
+                                            currentDesktopGuid,
                                             winrt::clock().now() };
         peasant.ActivateWindow(args);
+    }
+}
+
+GUID AppHost::_CurrentDesktopGuid()
+{
+    GUID currentDesktopGuid{ 0 };
+    try
+    {
+        const auto manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
+        if (manager)
+        {
+            LOG_IF_FAILED(manager->GetWindowDesktopId(_window->GetHandle(), &currentDesktopGuid));
+        }
+    }
+    CATCH_LOG();
+    return currentDesktopGuid;
+}
+
+// Method Description:
+// - Called when this window wants _all_ windows to display their
+//   identification. We'll hop to the BG thread, and raise an event (eventually
+//   handled by the monarch) to bubble this request to all the Terminal windows.
+// Arguments:
+// - <unused>
+// Return Value:
+// - <none>
+winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
+                                                          const winrt::Windows::Foundation::IInspectable /*args*/)
+{
+    // We'll be raising an event that may result in a RPC call to the monarch -
+    // make sure we're on the background thread, or this will silently fail
+    co_await winrt::resume_background();
+
+    if (auto peasant{ _windowManager.CurrentWindow() })
+    {
+        peasant.RequestIdentifyWindows();
+    }
+}
+
+// Method Description:
+// - Called when the monarch wants us to display our window ID. We'll call down
+//   to the app layer to display the toast.
+// Arguments:
+// - <unused>
+// Return Value:
+// - <none>
+void AppHost::_DisplayWindowId(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                               const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    _logic.IdentifyWindow();
+}
+
+winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
+                                                       const winrt::TerminalApp::RenameWindowRequestedArgs args)
+{
+    // Capture calling context.
+    winrt::apartment_context ui_thread;
+
+    // Switch to the BG thread - anything x-proc must happen on a BG thread
+    co_await winrt::resume_background();
+
+    if (auto peasant{ _windowManager.CurrentWindow() })
+    {
+        Remoting::RenameRequestArgs requestArgs{ args.ProposedName() };
+
+        peasant.RequestRename(requestArgs);
+
+        // Switch back to the UI thread. Setting the WindowName needs to happen
+        // on the UI thread, because it'll raise a PropertyChanged event
+        co_await ui_thread;
+
+        if (requestArgs.Succeeded())
+        {
+            _logic.WindowName(args.ProposedName());
+        }
+        else
+        {
+            _logic.RenameFailed();
+        }
     }
 }

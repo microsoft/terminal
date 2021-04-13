@@ -21,12 +21,12 @@ namespace winrt::TerminalApp::implementation
     struct TerminalTab : TerminalTabT<TerminalTab, TabBase>
     {
     public:
-        TerminalTab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+        TerminalTab(const GUID& profile, const winrt::Microsoft::Terminal::Control::TermControl& control);
 
         // Called after construction to perform the necessary setup, which relies on weak_ptr
-        void Initialize(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+        void Initialize(const winrt::Microsoft::Terminal::Control::TermControl& control);
 
-        winrt::Microsoft::Terminal::TerminalControl::TermControl GetActiveTerminalControl() const;
+        winrt::Microsoft::Terminal::Control::TermControl GetActiveTerminalControl() const;
         std::optional<GUID> GetFocusedProfile() const noexcept;
 
         void Focus(winrt::Windows::UI::Xaml::FocusState focusState) override;
@@ -36,7 +36,7 @@ namespace winrt::TerminalApp::implementation
         void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
                        const float splitSize,
                        const GUID& profile,
-                       winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+                       winrt::Microsoft::Terminal::Control::TermControl& control);
 
         winrt::fire_and_forget UpdateIcon(const winrt::hstring iconPath);
         winrt::fire_and_forget HideIcon(const bool hide);
@@ -54,7 +54,7 @@ namespace winrt::TerminalApp::implementation
         void ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         void NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
 
-        void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile);
+        void UpdateSettings(const Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings, const GUID& profile);
         winrt::fire_and_forget UpdateTitle();
 
         void Shutdown() override;
@@ -89,6 +89,7 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
         DECLARE_EVENT(ColorCleared, _colorCleared, winrt::delegate<>);
         DECLARE_EVENT(TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
+        DECLARE_EVENT(DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
         FORWARDED_TYPED_EVENT(TabRenamerDeactivated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, (&_headerControl), RenameEnded);
 
     private:
@@ -128,9 +129,9 @@ namespace winrt::TerminalApp::implementation
 
         void _RefreshVisualState();
 
-        void _BindEventHandlers(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control) noexcept;
+        void _BindEventHandlers(const winrt::Microsoft::Terminal::Control::TermControl& control) noexcept;
 
-        void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+        void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::Control::TermControl& control);
         void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
 
         void _UpdateActivePane(std::shared_ptr<Pane> pane);
@@ -142,6 +143,8 @@ namespace winrt::TerminalApp::implementation
         void _ClearTabBackgroundColor();
 
         void _RecalculateAndApplyReadOnly();
+
+        void _DuplicateTab();
 
         friend class ::TerminalAppLocalTests::TabTests;
     };
