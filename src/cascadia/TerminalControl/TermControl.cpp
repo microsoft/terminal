@@ -651,7 +651,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         co_await winrt::resume_foreground(Dispatcher());
 
-        _UpdateBackgroundFromUIThread(newBgColor);
+        if (auto control{ weakThis.get() })
+        {
+            _UpdateBackgroundFromUIThread(newBgColor);
+        }
     }
 
     TermControl::~TermControl()
