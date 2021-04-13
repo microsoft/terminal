@@ -198,20 +198,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Set the foreground and background here in the constructor
         // (they will also be called later in UpdateAppearance, but we want to have it here so
         //  that the terminal is not gray on startup)
-        til::color newBgColor{ _settings.DefaultBackground() };
-        if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
-        {
-            acrylic.FallbackColor(newBgColor);
-            acrylic.TintColor(newBgColor);
-        }
-        else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
-        {
-            solidColor.Color(newBgColor);
-        }
-
-        Media::SolidColorBrush foregroundBrush{};
-        foregroundBrush.Color(static_cast<til::color>(_settings.DefaultForeground()));
-        TSFInputControl().Foreground(foregroundBrush);
+        _UpdateBackgroundFromUIThread(til::color(_settings.DefaultBackground()));
+        _UpdateForegroundFromUIThread(til::color(_settings.DefaultForeground()));
     }
 
     // Method Description:
@@ -487,22 +475,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             BackgroundImage().Source(nullptr);
         }
 
-        // Update our control settings
-        til::color newBgColor{ newAppearance.DefaultBackground() };
-        if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
-        {
-            acrylic.FallbackColor(newBgColor);
-            acrylic.TintColor(newBgColor);
-        }
-        else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
-        {
-            solidColor.Color(newBgColor);
-        }
-
-        // Set TSF Foreground
-        Media::SolidColorBrush foregroundBrush{};
-        foregroundBrush.Color(static_cast<til::color>(newAppearance.DefaultForeground()));
-        TSFInputControl().Foreground(foregroundBrush);
+        // Update the background and foreground
+        _UpdateBackgroundFromUIThread(til::color(newAppearance.DefaultBackground()));
+        _UpdateForegroundFromUIThread(til::color(newAppearance.DefaultForeground()));
 
         // Update the terminal core with its new Core settings
         _terminal->UpdateAppearance(newAppearance);
@@ -512,6 +487,36 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
         _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
         _renderer->TriggerRedrawAll();
+    }
+
+    // Method Description:
+    // - Updates the background color
+    // - INVARIANT: This method must be called from the UI thread.
+    // Arguments:
+    // - bg: the new background color to set
+    void TermControl::_UpdateBackgroundFromUIThread(til::color bg)
+    {
+        if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
+        {
+            acrylic.FallbackColor(bg);
+            acrylic.TintColor(bg);
+        }
+        else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
+        {
+            solidColor.Color(bg);
+        }
+    }
+
+    // Method Description:
+    // - Updates the foreground color
+    // - INVARIANT: This method must be called from the UI thread.
+    // Arguments:
+    // - fg: the new foreground color to set
+    void TermControl::_UpdateForegroundFromUIThread(til::color fg)
+    {
+        Media::SolidColorBrush foregroundBrush{};
+        foregroundBrush.Color(fg);
+        TSFInputControl().Foreground(foregroundBrush);
     }
 
     // Method Description:
@@ -646,18 +651,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         co_await winrt::resume_foreground(Dispatcher());
 
-        if (auto control{ weakThis.get() })
-        {
-            if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
-            {
-                acrylic.FallbackColor(newBgColor);
-                acrylic.TintColor(newBgColor);
-            }
-            else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
-            {
-                solidColor.Color(newBgColor);
-            }
-        }
+        _UpdateBackgroundFromUIThread(newBgColor);
     }
 
     TermControl::~TermControl()
