@@ -208,6 +208,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                        shiftEnabled,
                                        isOnOriginalPosition,
                                        _selectionNeedsToBeCopied);
+
+            if (_core->HasSelection())
+            {
+                // GH#9787: if selection is active we don't want to track the touchdown position
+                // so that dragging the mouse will extend the selection rather than starting the new one
+                _singleClickTouchdownPos = std::nullopt;
+            }
         }
         else if (buttonState.isRightButtonDown)
         {

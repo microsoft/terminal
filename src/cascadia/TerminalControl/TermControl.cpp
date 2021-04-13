@@ -222,16 +222,54 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Given new settings for this profile, applies the settings to the current terminal.
+    // - Given Settings having been updated, applies the settings to the current terminal.
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget TermControl::UpdateSettings()
+    {
+        auto weakThis{ get_weak() };
+
+        // Dispatch a call to the UI thread to apply the new settings to the
+        // terminal.
+        co_await winrt::resume_foreground(Dispatcher());
+
+        // // Take the lock before calling the helper functions to update the settings and appearance
+        // auto lock = _terminal->LockForWriting();
+
+        _UpdateSettingsFromUIThreadUnderLock(_settings);
+
+        auto appearance = _settings.try_as<IControlAppearance>();
+        if (!_focused && _UnfocusedAppearance)
+        {
+            appearance = _UnfocusedAppearance;
+        }
+        _UpdateAppearanceFromUIThreadUnderLock(appearance);
+    }
+
+    // Method Description:
+    // - Dispatches a call to the UI thread and updates the appearance
+    // Arguments:
+    // - newAppearance: the new appearance to set
+    winrt::fire_and_forget TermControl::UpdateAppearance(const IControlAppearance newAppearance)
+    {
+        // Dispatch a call to the UI thread
+        co_await winrt::resume_foreground(Dispatcher());
+
+        // // Take the lock before calling the helper function to update the appearance
+        // auto lock = _terminal->LockForWriting();
+        _UpdateAppearanceFromUIThreadUnderLock(newAppearance);
+    }
+
+    // Method Description:
+    // - Updates the settings of the current terminal.
     // - This method is separate from UpdateSettings because there is an apparent optimizer
     //   issue that causes one of our hstring -> wstring_view conversions to result in garbage,
     //   but only from a coroutine context. See GH#8723.
     // - INVARIANT: This method must be called from the UI thread.
+    // - INVARIANT: This method can only be called if the caller has the writing lock on the terminal.
     // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TermControl::_UpdateSettingsOnUIThread()
+    // - newSettings: the new settings to set
+    void TermControl::_UpdateSettingsFromUIThreadUnderLock(IControlSettings newSettings)
     {
         if (_closing)
         {
@@ -245,22 +283,68 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Given Settings having been updated, applies the settings to the current terminal.
-    // Return Value:
-    // - <none>
-    winrt::fire_and_forget TermControl::UpdateSettings()
+    // - Updates the appearance
+    // - INVARIANT: This method must be called from the UI thread.
+    // - INVARIANT: This method can only be called if the caller has the writing lock on the terminal.
+    // Arguments:
+    // - newAppearance: the new appearance to set
+    void TermControl::_UpdateAppearanceFromUIThreadUnderLock(IControlAppearance newAppearance)
     {
-        auto weakThis{ get_weak() };
-
-        // Dispatch a call to the UI thread to apply the new settings to the
-        // terminal.
-        co_await winrt::resume_foreground(Dispatcher());
-
-        // If 'weakThis' is locked, then we can safely work with 'this'
-        if (auto control{ weakThis.get() })
+        if (_closing)
         {
-            _UpdateSettingsOnUIThread();
+            return;
         }
+
+        if (!newAppearance.BackgroundImage().empty())
+        {
+            Windows::Foundation::Uri imageUri{ newAppearance.BackgroundImage() };
+
+            // Check if the image brush is already pointing to the image
+            // in the modified settings; if it isn't (or isn't there),
+            // set a new image source for the brush
+            auto imageSource = BackgroundImage().Source().try_as<Media::Imaging::BitmapImage>();
+
+            if (imageSource == nullptr ||
+                imageSource.UriSource() == nullptr ||
+                imageSource.UriSource().RawUri() != imageUri.RawUri())
+            {
+                // Note that BitmapImage handles the image load asynchronously,
+                // which is especially important since the image
+                // may well be both large and somewhere out on the
+                // internet.
+                Media::Imaging::BitmapImage image(imageUri);
+                BackgroundImage().Source(image);
+            }
+
+            // Apply stretch, opacity and alignment settings
+            BackgroundImage().Stretch(newAppearance.BackgroundImageStretchMode());
+            BackgroundImage().Opacity(newAppearance.BackgroundImageOpacity());
+            BackgroundImage().HorizontalAlignment(newAppearance.BackgroundImageHorizontalAlignment());
+            BackgroundImage().VerticalAlignment(newAppearance.BackgroundImageVerticalAlignment());
+        }
+        else
+        {
+            BackgroundImage().Source(nullptr);
+        }
+
+        // Update our control settings
+        const auto bg = newAppearance.DefaultBackground();
+        _changeBackgroundColor(bg);
+
+        // Set TSF Foreground
+        Media::SolidColorBrush foregroundBrush{};
+        foregroundBrush.Color(static_cast<til::color>(newAppearance.DefaultForeground()));
+        TSFInputControl().Foreground(foregroundBrush);
+
+        _core->UpdateAppearance(newAppearance);
+        // // Update the terminal core with its new Core settings
+        // _terminal->UpdateAppearance(newAppearance);
+
+        // // Update DxEngine settings under the lock
+        // _renderEngine->SetSelectionBackground(til::color{ newAppearance.SelectionBackground() });
+        // _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
+        // _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
+        // _renderer->TriggerRedrawAll();
     }
 
     // Method Description:
@@ -295,17 +379,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _InitializeBackgroundBrush();
 
+        // TODO!: I added the following, do we still need it?
         const auto bg = newSettings.DefaultBackground();
         _changeBackgroundColor(bg);
+        // </TODO!>
 
         // Apply padding as swapChainPanel's margin
         auto newMargin = _ParseThicknessFromPadding(newSettings.Padding());
         SwapChainPanel().Margin(newMargin);
 
-        // set TSF Foreground
-        Media::SolidColorBrush foregroundBrush{};
-        foregroundBrush.Color(static_cast<til::color>(newSettings.DefaultForeground()));
-        TSFInputControl().Foreground(foregroundBrush);
         TSFInputControl().Margin(newMargin);
 
         // Apply settings for scrollbar
@@ -382,38 +464,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // GH#5098: Inform the engine of the new opacity of the default text background.
             _core->SetBackgroundOpacity(1.0f);
-        }
-
-        if (!_settings.BackgroundImage().empty())
-        {
-            Windows::Foundation::Uri imageUri{ _settings.BackgroundImage() };
-
-            // Check if the image brush is already pointing to the image
-            // in the modified settings; if it isn't (or isn't there),
-            // set a new image source for the brush
-            auto imageSource = BackgroundImage().Source().try_as<Media::Imaging::BitmapImage>();
-
-            if (imageSource == nullptr ||
-                imageSource.UriSource() == nullptr ||
-                imageSource.UriSource().RawUri() != imageUri.RawUri())
-            {
-                // Note that BitmapImage handles the image load asynchronously,
-                // which is especially important since the image
-                // may well be both large and somewhere out on the
-                // internet.
-                Media::Imaging::BitmapImage image(imageUri);
-                BackgroundImage().Source(image);
-            }
-
-            // Apply stretch, opacity and alignment settings
-            BackgroundImage().Stretch(_settings.BackgroundImageStretchMode());
-            BackgroundImage().Opacity(_settings.BackgroundImageOpacity());
-            BackgroundImage().HorizontalAlignment(_settings.BackgroundImageHorizontalAlignment());
-            BackgroundImage().VerticalAlignment(_settings.BackgroundImageVerticalAlignment());
-        }
-        else
-        {
-            BackgroundImage().Source(nullptr);
         }
     }
 
@@ -657,6 +707,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // The user has disabled blinking
             _blinkTimer = std::nullopt;
         }
+
+        // Now that the renderer is set up, update the appearance for initialization
+        _UpdateAppearanceFromUIThreadUnderLock(_settings);
 
         // Focus the control here. If we do it during control initialization, then
         //      focus won't actually get passed to us. I believe this is because
@@ -1423,6 +1476,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _interactivity->GainFocus();
+
+        // Only update the appearance here if an unfocused config exists -
+        // if an unfocused config does not exist then we never would have switched
+        // appearances anyway so there's no need to switch back upon gaining focus
+        if (_UnfocusedAppearance)
+        {
+            UpdateAppearance(_settings);
+        }
     }
 
     // Method Description:
@@ -1460,6 +1521,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_blinkTimer.has_value())
         {
             _blinkTimer.value().Stop();
+        }
+
+        // Check if there is an unfocused config we should set the appearance to
+        // upon losing focus
+        if (_UnfocusedAppearance)
+        {
+            UpdateAppearance(_UnfocusedAppearance);
         }
     }
 
@@ -1608,6 +1676,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     hstring TermControl::WorkingDirectory() const
     {
         return _core->WorkingDirectory();
+    }
+
+    bool TermControl::BracketedPasteEnabled() const noexcept
+    {
+        return _core->BracketedPasteEnabled();
     }
 
     // Method Description:

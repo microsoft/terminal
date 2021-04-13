@@ -28,11 +28,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
         winrt::fire_and_forget UpdateSettings();
+        winrt::fire_and_forget UpdateAppearance(const IControlAppearance newAppearance);
 
         hstring Title();
         hstring GetProfileName() const;
         hstring WorkingDirectory() const;
 
+        bool BracketedPasteEnabled() const noexcept;
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void PasteTextFromClipboard();
         void Close();
@@ -117,6 +119,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(Initialized,               Control::TermControl, Windows::UI::Xaml::RoutedEventArgs);
         // clang-format on
 
+        WINRT_PROPERTY(IControlAppearance, UnfocusedAppearance);
+
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
 
@@ -157,8 +161,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
+        void _UpdateSettingsFromUIThreadUnderLock(IControlSettings newSettings);
+        void _UpdateAppearanceFromUIThreadUnderLock(IControlAppearance newAppearance);
         void _ApplyUISettings(const IControlSettings&);
-        void _UpdateSettingsOnUIThread();
 
         void _InitializeBackgroundBrush();
         void _BackgroundColorChangedHandler(const IInspectable& sender, const IInspectable& args);

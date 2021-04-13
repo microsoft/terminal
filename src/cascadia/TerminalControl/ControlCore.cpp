@@ -540,11 +540,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        // Update DxEngine settings under the lock
-        _renderEngine->SetSelectionBackground(til::color{ _settings.SelectionBackground() });
-
-        _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-        _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
         _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
         _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
@@ -562,6 +557,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             break;
         }
 
+        // TODO!: UpdateAppearance() ?
+
         // Refresh our font with the renderer
         const auto actualFontOldSize = _actualFont.GetSize();
         _updateFont();
@@ -570,6 +567,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _refreshSizeUnderLock();
         }
+    }
+
+    void ControlCore::UpdateAppearance(IControlAppearance newAppearance)
+    {
+        // Update the terminal core with its new Core settings
+        _terminal->UpdateAppearance(newAppearance);
+
+        // Update DxEngine settings under the lock
+        _renderEngine->SetSelectionBackground(til::color{ newAppearance.SelectionBackground() });
+        _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
+        _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
+        _renderer->TriggerRedrawAll();
     }
 
     // Method Description:
@@ -914,6 +923,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         hstring hstr{ _terminal->GetWorkingDirectory() };
         return hstr;
+    }
+
+    bool ControlCore::BracketedPasteEnabled() const noexcept
+    {
+        return _terminal->IsXtermBracketedPasteModeEnabled();
     }
 
     Windows::Foundation::IReference<winrt::Windows::UI::Color> ControlCore::TabColor() noexcept

@@ -1,0 +1,19 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Control
+{
+    interface IControlAppearance requires Microsoft.Terminal.Core.ICoreAppearance
+    {
+        Microsoft.Terminal.Core.Color SelectionBackground;
+        String BackgroundImage;
+        Double BackgroundImageOpacity;
+        Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;
+        Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;
+        Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
+
+        // Experimental settings
+        Boolean RetroTerminalEffect;
+        String PixelShaderPath;
+    };
+}

@@ -34,6 +34,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                 const double compositionScaleY);
 
         void UpdateSettings(const IControlSettings& settings);
+        void UpdateAppearance(IControlAppearance newAppearance);
         void SizeChanged(const double width, const double height);
         void ScaleChanged(const double scaleX, const double scaleY);
         HANDLE GetSwapChainHandle() const;
@@ -76,6 +77,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         int ScrollOffset();
         int ViewHeight() const;
         int BufferHeight() const;
+
+        bool BracketedPasteEnabled() const noexcept;
 #pragma endregion
 
 #pragma region ITerminalInput

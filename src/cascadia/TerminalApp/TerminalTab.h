@@ -54,7 +54,7 @@ namespace winrt::TerminalApp::implementation
         void ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         void NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
 
-        void UpdateSettings(const Microsoft::Terminal::Settings::Model::TerminalSettings& settings, const GUID& profile);
+        void UpdateSettings(const Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings, const GUID& profile);
         winrt::fire_and_forget UpdateTitle();
 
         void Shutdown() override;

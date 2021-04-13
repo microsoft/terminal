@@ -18,6 +18,8 @@ namespace Microsoft.Terminal.Control
         Int32 ScrollOffset { get; };
         Int32 ViewHeight { get; };
 
+        Boolean BracketedPasteEnabled { get; };
+
         Microsoft.Terminal.TerminalConnection.ConnectionState ConnectionState { get; };
     };
 }
