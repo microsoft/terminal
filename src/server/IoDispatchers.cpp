@@ -157,8 +157,6 @@ static bool _shouldAttemptHandoff(const Globals& globals,
     // to get to this copy!
     return false;
 
-
-
 #else
 
     // This console was started with a command line argument to
