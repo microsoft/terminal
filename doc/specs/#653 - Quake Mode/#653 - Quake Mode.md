@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2021-02-23
-last updated: 2021-03-16
+last updated: 2021-04-13
 issue id: #653
 ---
 
@@ -156,6 +156,9 @@ The way these settings can be combined is in a table below. As an overview:
     virtual desktop
   - `"onCurrent"`: Only summon the window if it's **already on** the current
     virtual desktop
+
+Neither `desktop` nor `monitor` is a required parameter - if either is ommitted,
+the omitted property will default to `toCurrent`.
 
 Together, these settings interact in the following ways:
 
@@ -652,6 +655,31 @@ aren't already included in this spec.
 * We might think of other things for the Quake Mode window in the future - this
   spec is by no means comprehensive. For example, it might make sense for the
   quake mode window to automatically open in "always on top" mode.
+* It was suggested that the quake mode window could auto-hide when it loses
+  focus. That's a really neat idea, but we're a little worried about the
+  implementation. What happens when the IME window gets focus? Or the Start
+  Menu? Would those end up causing the quake window to prematurely minimize
+  itself? For that reason, we're leaving this as a future consideration.
+* Perhaps there could be a top-level object in the settings like
+  ```json
+  {
+    "quakeMode": {
+        "hideOnFocusLost": true,
+        "useFocusMode": false,
+        "profile": "my quake mode profile" ,
+        "quakeModeDockSide": "bottom"
+    }
+  }
+  ```
+  That would allow the user some further customizations on the quake mode
+  behaviors.
+* Another proposed idea was a simplification of some of the summoning modes. `{
+  "monitor": "any", "desktop": "any" }` is a little long, and maybe not the most
+  apparent naming. Perhaps we could add another property like `summonMode` that
+  would act like an alias for a `monitor`, `desktop` combo.
+  - `"summonMode": "activateInMyFace"`: `{ "monitor": "toCurrent", "desktop": "toCurrent" }`
+  - `"summonMode": "activateWherever"`: `{ "monitor": "any", "desktop": "any" }`
+
 
 ## Resources
 
