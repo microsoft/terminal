@@ -30,15 +30,13 @@ namespace SettingsModelLocalTests
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    typedef size_t InternalActionID;
+
     struct KeyChordHash
     {
         std::size_t operator()(const Control::KeyChord& key) const
         {
-            std::hash<int32_t> keyHash;
-            std::hash<Control::KeyModifiers> modifiersHash;
-            std::size_t hashedKey = keyHash(key.Vkey());
-            std::size_t hashedMods = modifiersHash(key.Modifiers());
-            return hashedKey ^ hashedMods;
+            return ::HashProperty(key.Modifiers(), key.Vkey());
         }
     };
 
@@ -52,16 +50,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     struct ActionHash
     {
-        std::size_t operator()(const Model::ActionAndArgs& actionAndArgs) const
+        InternalActionID operator()(const Model::ActionAndArgs& actionAndArgs) const
         {
             std::hash<Model::ShortcutAction> actionHash;
             std::size_t hashedAction{ actionHash(actionAndArgs.Action()) };
 
-            std::hash<IActionArgs> argsHash;
-            std::size_t hashedArgs{ argsHash(nullptr) };
+            std::size_t hashedArgs;
             if (const auto& args{ actionAndArgs.Args() })
             {
                 hashedArgs = args.Hash();
+            }
+            else
+            {
+                std::hash<IActionArgs> argsHash;
+                hashedArgs = argsHash(nullptr);
             }
             return hashedAction ^ hashedArgs;
         }
@@ -87,15 +89,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static Windows::System::VirtualKeyModifiers ConvertVKModifiers(Control::KeyModifiers modifiers);
 
     private:
-        std::optional<Model::Command> _GetActionByID(size_t actionID) const;
+        std::optional<Model::Command> _GetActionByID(InternalActionID actionID) const;
         std::optional<Model::Command> _GetActionByKeyChordInternal(Control::KeyChord const& keys) const;
 
-        void _PopulateNameMap(std::unordered_map<hstring, Model::Command>& nameMap, std::set<size_t>& visitedActionIDs) const;
+        void _PopulateNameMap(std::unordered_map<hstring, Model::Command>& nameMap, std::set<InternalActionID>& visitedActionIDs) const;
 
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NestedCommands{ nullptr };
-        std::unordered_map<Control::KeyChord, size_t, KeyChordHash, KeyChordEquality> _KeyMap;
-        std::unordered_map<size_t, Model::Command> _ActionMap;
+        std::unordered_map<Control::KeyChord, InternalActionID, KeyChordHash, KeyChordEquality> _KeyMap;
+        std::unordered_map<InternalActionID, Model::Command> _ActionMap;
 
         friend class SettingsModelLocalTests::KeyBindingsTests;
         friend class SettingsModelLocalTests::DeserializationTests;

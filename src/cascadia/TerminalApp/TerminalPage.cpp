@@ -85,7 +85,7 @@ namespace winrt::TerminalApp::implementation
                 // then get the keychord and display it as a
                 // part of the command in the UI.
                 // We specifically need to do this for nested commands.
-                const auto keyChord{ settings.ActionMap().GetKeyBindingForAction(command.Action().Action(), command.Action().Args()) };
+                const auto keyChord{ settings.ActionMap().GetKeyBindingForAction(command.ActionAndArgs().Action(), command.ActionAndArgs().Args()) };
                 command.RegisterKey(keyChord);
             }
         }
@@ -274,7 +274,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_OnDispatchCommandRequested(const IInspectable& /*sender*/, const Microsoft::Terminal::Settings::Model::Command& command)
     {
-        const auto& actionAndArgs = command.Action();
+        const auto& actionAndArgs = command.ActionAndArgs();
         _actionDispatch->DoAction(actionAndArgs);
     }
 
@@ -889,11 +889,11 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Control::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
         if (const auto cmd{ _settings.ActionMap().GetActionByKeyChord(kc) })
         {
-            if (CommandPalette().Visibility() == Visibility::Visible && cmd.Action().Action() != ShortcutAction::ToggleCommandPalette)
+            if (CommandPalette().Visibility() == Visibility::Visible && cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
             {
                 CommandPalette().Visibility(Visibility::Collapsed);
             }
-            _actionDispatch->DoAction(cmd.Action());
+            _actionDispatch->DoAction(cmd.ActionAndArgs());
             e.Handled(true);
         }
     }
@@ -915,9 +915,9 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::Control::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
         const auto cmd{ _settings.ActionMap().GetActionByKeyChord(kc) };
-        if (cmd && (cmd.Action().Action() == ShortcutAction::CloseTab || cmd.Action().Action() == ShortcutAction::NextTab || cmd.Action().Action() == ShortcutAction::PrevTab || cmd.Action().Action() == ShortcutAction::ClosePane))
+        if (cmd && (cmd.ActionAndArgs().Action() == ShortcutAction::CloseTab || cmd.ActionAndArgs().Action() == ShortcutAction::NextTab || cmd.ActionAndArgs().Action() == ShortcutAction::PrevTab || cmd.ActionAndArgs().Action() == ShortcutAction::ClosePane))
         {
-            _actionDispatch->DoAction(cmd.Action());
+            _actionDispatch->DoAction(cmd.ActionAndArgs());
             e.Handled(true);
         }
     }

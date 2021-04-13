@@ -56,7 +56,7 @@
     <ClInclude Include="InvertedBooleanToVisibilityConverter.h">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="KeyChordConverter.h">
+    <ClInclude Include="NullCheckConverter.h">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="StringIsEmptyConverter.h">
@@ -159,7 +159,7 @@
     <ClCompile Include="InvertedBooleanToVisibilityConverter.cpp">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="KeyChordConverter.cpp">
+    <ClCompile Include="NullCheckConverter.cpp">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="StringIsEmptyConverter.cpp">

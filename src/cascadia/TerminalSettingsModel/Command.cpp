@@ -46,10 +46,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // TODO GH#6900: We probably want ActionAndArgs::Copy here
         //              This is fine for now because SUI can't actually
         //              modify the copy yet.
-        command->_action = _action;
-        std::for_each(_keyMappings.begin(), _keyMappings.end(), [command](const Control::KeyChord& keys) {
-            command->_keyMappings.push_back({ keys.Modifiers(), keys.Vkey() });
-        });
+        command->_ActionAndArgs = _ActionAndArgs;
+        for (const auto& keys : _keyMappings)
+        {
+            command->_keyMappings.emplace_back(keys.Modifiers(), keys.Vkey());
+        }
         command->_iconPath = _iconPath;
         command->_IterateOn = _IterateOn;
 
@@ -88,10 +89,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // name was explicitly set, return that value.
             return hstring{ _name.value() };
         }
-        else if (_action)
+        else if (_ActionAndArgs)
         {
             // generate a name from our action
-            return get_self<ActionAndArgs>(_action)->GenerateName();
+            return get_self<implementation::ActionAndArgs>(_ActionAndArgs)->GenerateName();
         }
         else
         {
@@ -124,6 +125,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - <none>
     void Command::RegisterKey(const Control::KeyChord& keys)
     {
+        if (!keys)
+        {
+            return;
+        }
+
         // Check if we registered this key chord before
         for (auto pos = _keyMappings.begin(); pos < _keyMappings.end(); ++pos)
         {
@@ -140,8 +146,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     // Move the new KeyChord to the back of the line.
                     _keyMappings.erase(pos);
                     _keyMappings.push_back(*pos);
-                    // TODO CARLOS: tests fail because this is on the wrong thread
-                    //_PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Keys" });
                     return;
                 }
             }
@@ -149,8 +153,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Add the KeyChord to the back of the line.
         _keyMappings.push_back(keys);
-        // TODO CARLOS: tests fail because this is on the wrong thread
-        //_PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Keys" });
     }
 
     // Function Description:
@@ -165,13 +167,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             if (keys.Modifiers() == pos->Modifiers() && keys.Vkey() == pos->Vkey())
             {
-                // TODO CARLOS: tests fail because this is on the wrong thread
-                //if (*pos == _keyMappings.back())
-                //{
-                //    // Keys has changed if we just unbound the primary KeyChord
-                //    _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Keys" });
-                //}
-
                 // Found the KeyChord, remove it.
                 _keyMappings.erase(pos);
                 return;
@@ -197,9 +192,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _keyMappings.back();
     }
 
-    Model::ActionAndArgs Command::Action() const noexcept
+    hstring Command::KeyChordText() const noexcept
     {
-        return _action;
+        return KeyChordSerialization::ToString(Keys());
     }
 
     hstring Command::IconPath() const noexcept
@@ -289,10 +284,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             if (result->_subcommands.Size() == 0)
             {
-                const std::string x{ json.toStyledString().c_str() };
-                OutputDebugString(til::u8u16(x).c_str());
                 warnings.push_back(SettingsLoadWarnings::FailedToParseSubCommands);
-                result->_action = make<ActionAndArgs>();
+                result->_ActionAndArgs = make<implementation::ActionAndArgs>();
             }
 
             nested = true;
@@ -303,7 +296,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // should also be used for unbinding.
 
             // create an "invalid" ActionAndArgs
-            result->_action = make<ActionAndArgs>();
+            result->_ActionAndArgs = make<implementation::ActionAndArgs>();
         }
 
         JsonUtils::GetValueForKey(json, IconKey, result->_iconPath);
@@ -313,7 +306,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             if (const auto actionJson{ json[JsonKey(ActionKey)] })
             {
-                result->_action = *ActionAndArgs::FromJson(actionJson, warnings);
+                result->_ActionAndArgs = *ActionAndArgs::FromJson(actionJson, warnings);
             }
             else
             {
@@ -321,7 +314,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // should also be used for unbinding.
 
                 // create an "invalid" ActionAndArgs
-                result->_action = make<ActionAndArgs>();
+                result->_ActionAndArgs = make<implementation::ActionAndArgs>();
             }
 
             // GH#4239 - If the user provided more than one key
@@ -380,7 +373,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 try
                 {
                     const auto result = Command::FromJson(value, warnings);
-                    if (result->Action().Action() == ShortcutAction::Invalid && !result->HasNestedCommands())
+                    if (result->ActionAndArgs().Action() == ShortcutAction::Invalid && !result->HasNestedCommands())
                     {
                         // If there wasn't a parsed command, then try to get the
                         // name from the json blob. If that name currently

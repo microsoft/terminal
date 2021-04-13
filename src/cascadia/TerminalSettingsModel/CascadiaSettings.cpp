@@ -809,7 +809,7 @@ bool CascadiaSettings::_HasInvalidColorScheme(const Model::Command& command)
             }
         }
     }
-    else if (const auto& actionAndArgs = command.Action())
+    else if (const auto& actionAndArgs = command.ActionAndArgs())
     {
         if (const auto& realArgs = actionAndArgs.Args().try_as<Model::SetColorSchemeArgs>())
         {

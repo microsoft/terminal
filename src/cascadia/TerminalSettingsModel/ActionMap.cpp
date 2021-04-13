@@ -28,7 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - If the command is valid, the command itself.
     // - If the command is explicitly unbound, nullptr.
     // - If the command cannot be found in this layer, nullopt.
-    std::optional<Model::Command> ActionMap::_GetActionByID(size_t actionID) const
+    std::optional<Model::Command> ActionMap::_GetActionByID(InternalActionID actionID) const
     {
         const auto& cmdPair{ _ActionMap.find(actionID) };
         if (cmdPair == _ActionMap.end())
@@ -43,7 +43,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // ActionMap should never point to nullptr
             FAIL_FAST_IF_NULL(cmd);
 
-            return !cmd.HasNestedCommands() && cmd.Action().Action() == ShortcutAction::Invalid ?
+            return !cmd.HasNestedCommands() && cmd.ActionAndArgs().Action() == ShortcutAction::Invalid ?
                        nullptr : // explicitly unbound
                        cmd;
         }
@@ -61,7 +61,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         std::unordered_map<hstring, Model::Command> nameMap{};
-        std::set<size_t> visitedActionIDs{ ActionHash()(make<implementation::ActionAndArgs>()) };
+        std::set<InternalActionID> visitedActionIDs{ ActionHash()(make<implementation::ActionAndArgs>()) };
         _PopulateNameMap(nameMap, visitedActionIDs);
 
         _NameMapCache = single_threaded_map<hstring, Model::Command>(std::move(nameMap));
@@ -76,7 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //             There should only ever by one of each command (identified by the actionID) in the nameMap.
     // - visitedActionIDs: the actionIDs that we've already added to the nameMap. Commands with a matching actionID
     //                      have already been added, and should be ignored.
-    void ActionMap::_PopulateNameMap(std::unordered_map<hstring, Model::Command>& nameMap, std::set<size_t>& visitedActionIDs) const
+    void ActionMap::_PopulateNameMap(std::unordered_map<hstring, Model::Command>& nameMap, std::set<InternalActionID>& visitedActionIDs) const
     {
         // Update NameMap and visitedActionIDs with our current layer
         for (const auto& [actionID, cmd] : _ActionMap)
@@ -118,10 +118,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             actionMap->_KeyMap.insert(pair);
         });
 
-        std::for_each(_ActionMap.begin(), _ActionMap.end(), [actionMap](const auto& pair) {
-            const auto& cmdCopy{ get_self<Command>(pair.second)->Copy() };
-            actionMap->_ActionMap.insert({ pair.first, *cmdCopy });
-        });
+        for(const auto& [actionID, cmd] : _ActionMap)
+        {
+            actionMap->_ActionMap.insert({ actionID, *(get_self<Command>(cmd)->Copy()) });
+        }
+
         return actionMap;
     }
 
@@ -163,7 +164,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         //  If action is "unbound"/"invalid", you're explicitly unbinding the provided cmd.keys.
 
         Model::Command oldCmd{ nullptr };
-        const auto actionID{ ActionHash()(cmd.Action()) };
+        const auto actionID{ ActionHash()(cmd.ActionAndArgs()) };
         auto actionPair{ _ActionMap.find(actionID) };
         if (actionPair != _ActionMap.end())
         {

@@ -19,8 +19,7 @@
             </ResourceDictionary.MergedDictionaries>
 
             <local:StringIsEmptyConverter x:Key="CommandKeyChordVisibilityConverter" />
-            <local:KeyChordToStringConverter x:Key="KeyChordToStringConverter" />
-            <local:KeyChordToVisibilityConverter x:Key="KeyChordToVisibilityConverter" />
+            <local:NullCheckToVisibilityConverter x:Key="KeyChordToVisibilityConverter" />
 
             <!--
                 Template for actions. This is _heavily_ copied from the command
@@ -45,7 +44,7 @@
                     to make sure it takes the entire width of the line
                 -->
                 <ListViewItem HorizontalContentAlignment="Stretch"
-                              AutomationProperties.AcceleratorKey="{x:Bind Keys, Mode=OneWay, Converter={StaticResource KeyChordToStringConverter}}"
+                              AutomationProperties.AcceleratorKey="{x:Bind KeyChordText, Mode=OneWay}"
                               AutomationProperties.Name="{x:Bind Name, Mode=OneWay}">
 
                     <Grid HorizontalAlignment="Stretch"
@@ -71,7 +70,7 @@
                             AutomationProperties to Raw here, unlike in the
                             CommandPalette. We're not quite sure why.
                         -->
-                        <Border Grid.Column="2"
+                        <Border Grid.Column="1"
                                 Padding="2,0,2,0"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Center"
@@ -80,7 +79,7 @@
 
                             <TextBlock FontSize="12"
                                        Style="{ThemeResource KeyChordTextBlockStyle}"
-                                       Text="{x:Bind Keys, Mode=OneWay, Converter={StaticResource KeyChordToStringConverter}}" />
+                                       Text="{x:Bind KeyChordText, Mode=OneWay}" />
                         </Border>
                     </Grid>
                 </ListViewItem>

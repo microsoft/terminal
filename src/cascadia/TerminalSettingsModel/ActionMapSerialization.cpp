@@ -43,8 +43,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 continue;
             }
 
-            // TODO CARLOS: We get a serialization error here, but only on settings reload.
-            //              "The application called an interface that was marshalled for a different thread."
             AddAction(*Command::FromJson(cmdJson, warnings));
         }
 
