@@ -252,8 +252,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<SwitchToTabArgs>())
         {
-            const auto handled = _SelectTab({ realArgs.TabIndex() });
-            args.Handled(handled);
+            _SelectTab({ realArgs.TabIndex() });
+            args.Handled(true);
         }
     }
 
@@ -736,6 +736,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        _UpdateTeachingTipTheme(WindowRenamer().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
         WindowRenamer().IsOpen(true);
 
         // PAIN: We can't immediately focus the textbox in the TeachingTip. It's

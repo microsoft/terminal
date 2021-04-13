@@ -10,6 +10,7 @@ namespace Microsoft.Terminal.Settings.Editor
     interface IHostedInWindow
     {
         Boolean TryPropagateHostingWindow(IInspectable i);
+        UInt64 GetHostingWindow();
     }
 
     [default_interface] runtimeclass MainPage : Windows.UI.Xaml.Controls.Page, IHostedInWindow

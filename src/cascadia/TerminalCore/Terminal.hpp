@@ -23,6 +23,7 @@
 namespace winrt::Microsoft::Terminal::Core
 {
     struct ICoreSettings;
+    struct ICoreAppearance;
 }
 
 namespace Microsoft::Terminal::Core
@@ -63,6 +64,7 @@ public:
                             Microsoft::Console::Render::IRenderTarget& renderTarget);
 
     void UpdateSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings);
+    void UpdateAppearance(const winrt::Microsoft::Terminal::Core::ICoreAppearance& appearance);
 
     // Write goes through the parser
     void Write(std::wstring_view stringView);

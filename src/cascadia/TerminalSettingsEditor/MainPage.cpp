@@ -182,6 +182,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return false;
     }
 
+    uint64_t MainPage::GetHostingWindow() const noexcept
+    {
+        return reinterpret_cast<uint64_t>(_hostingHwnd.value_or(nullptr));
+    }
+
     // Function Description:
     // - Called when the NavigationView is loaded. Navigates to the first item in the NavigationView, if no item is selected
     // Arguments:

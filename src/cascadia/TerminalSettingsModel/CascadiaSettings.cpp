@@ -104,7 +104,7 @@ void CascadiaSettings::_CopyProfileInheritanceTree(winrt::com_ptr<CascadiaSettin
     {
         winrt::com_ptr<Profile> profileImpl;
         profileImpl.copy_from(winrt::get_self<Profile>(profile));
-        dummyRootSource->InsertParent(profileImpl);
+        Profile::InsertParentHelper(dummyRootSource, profileImpl);
     }
 
     auto dummyRootClone{ winrt::make_self<Profile>() };
@@ -519,12 +519,21 @@ void CascadiaSettings::_ValidateAllSchemesExist()
     bool foundInvalidScheme = false;
     for (auto profile : _allProfiles)
     {
-        const auto schemeName = profile.ColorSchemeName();
+        const auto schemeName = profile.DefaultAppearance().ColorSchemeName();
         if (!_globals->ColorSchemes().HasKey(schemeName))
         {
             // Clear the user set color scheme. We'll just fallback instead.
-            profile.ClearColorSchemeName();
+            profile.DefaultAppearance().ClearColorSchemeName();
             foundInvalidScheme = true;
+        }
+        if (profile.UnfocusedAppearance())
+        {
+            const auto unfocusedSchemeName = profile.UnfocusedAppearance().ColorSchemeName();
+            if (!_globals->ColorSchemes().HasKey(unfocusedSchemeName))
+            {
+                profile.UnfocusedAppearance().ClearColorSchemeName();
+                foundInvalidScheme = true;
+            }
         }
     }
 
@@ -552,19 +561,38 @@ void CascadiaSettings::_ValidateMediaResources()
 
     for (auto profile : _allProfiles)
     {
-        if (!profile.BackgroundImagePath().empty())
+        if (!profile.DefaultAppearance().BackgroundImagePath().empty())
         {
             // Attempt to convert the path to a URI, the ctor will throw if it's invalid/unparseable.
             // This covers file paths on the machine, app data, URLs, and other resource paths.
             try
             {
-                winrt::Windows::Foundation::Uri imagePath{ profile.ExpandedBackgroundImagePath() };
+                winrt::Windows::Foundation::Uri imagePath{ profile.DefaultAppearance().ExpandedBackgroundImagePath() };
             }
             catch (...)
             {
                 // reset background image path
-                profile.BackgroundImagePath(L"");
+                profile.DefaultAppearance().BackgroundImagePath(L"");
                 invalidBackground = true;
+            }
+        }
+
+        if (profile.UnfocusedAppearance())
+        {
+            if (!profile.UnfocusedAppearance().BackgroundImagePath().empty())
+            {
+                // Attempt to convert the path to a URI, the ctor will throw if it's invalid/unparseable.
+                // This covers file paths on the machine, app data, URLs, and other resource paths.
+                try
+                {
+                    winrt::Windows::Foundation::Uri imagePath{ profile.UnfocusedAppearance().ExpandedBackgroundImagePath() };
+                }
+                catch (...)
+                {
+                    // reset background image path
+                    profile.UnfocusedAppearance().BackgroundImagePath(L"");
+                    invalidBackground = true;
+                }
             }
         }
 
@@ -861,7 +889,7 @@ winrt::Microsoft::Terminal::Settings::Model::ColorScheme CascadiaSettings::GetCo
     {
         return nullptr;
     }
-    const auto schemeName = profile.ColorSchemeName();
+    const auto schemeName = profile.DefaultAppearance().ColorSchemeName();
     return _globals->ColorSchemes().TryLookup(schemeName);
 }
 
@@ -876,18 +904,26 @@ void CascadiaSettings::UpdateColorSchemeReferences(const hstring oldName, const 
 {
     // update profiles.defaults, if necessary
     if (_userDefaultProfileSettings &&
-        _userDefaultProfileSettings->HasColorSchemeName() &&
-        _userDefaultProfileSettings->ColorSchemeName() == oldName)
+        _userDefaultProfileSettings->DefaultAppearance().HasColorSchemeName() &&
+        _userDefaultProfileSettings->DefaultAppearance().ColorSchemeName() == oldName)
     {
-        _userDefaultProfileSettings->ColorSchemeName(newName);
+        _userDefaultProfileSettings->DefaultAppearance().ColorSchemeName(newName);
     }
 
     // update all profiles referencing this color scheme
     for (const auto& profile : _allProfiles)
     {
-        if (profile.HasColorSchemeName() && profile.ColorSchemeName() == oldName)
+        if (profile.DefaultAppearance().HasColorSchemeName() && profile.DefaultAppearance().ColorSchemeName() == oldName)
         {
-            profile.ColorSchemeName(newName);
+            profile.DefaultAppearance().ColorSchemeName(newName);
+        }
+
+        if (profile.UnfocusedAppearance())
+        {
+            if (profile.UnfocusedAppearance().HasColorSchemeName() && profile.UnfocusedAppearance().ColorSchemeName() == oldName)
+            {
+                profile.UnfocusedAppearance().ColorSchemeName(newName);
+            }
         }
     }
 }
