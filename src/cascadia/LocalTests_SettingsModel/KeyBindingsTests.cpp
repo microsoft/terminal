@@ -90,7 +90,7 @@ namespace SettingsModelLocalTests
         const std::string bindings0String{ R"([ { "command": "copy", "keys": ["ctrl+c"] } ])" };
         const std::string bindings1String{ R"([ { "command": "paste", "keys": ["ctrl+c"] } ])" };
         const std::string bindings2String{ R"([ { "command": "copy", "keys": ["enter"] } ])" };
-        
+
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
         const auto bindings1Json = VerifyParseSucceeded(bindings1String);
         const auto bindings2Json = VerifyParseSucceeded(bindings2String);
