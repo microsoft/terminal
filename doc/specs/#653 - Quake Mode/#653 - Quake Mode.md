@@ -157,7 +157,7 @@ The way these settings can be combined is in a table below. As an overview:
   - `"onCurrent"`: Only summon the window if it's **already on** the current
     virtual desktop
 
-Neither `desktop` nor `monitor` is a required parameter - if either is ommitted,
+Neither `desktop` nor `monitor` is a required parameter - if either is omitted,
 the omitted property will default to `toCurrent`.
 
 Together, these settings interact in the following ways:
@@ -613,7 +613,7 @@ work would be needed:
 * [ ] Add a `globalSummon` action. `AppHost` would need to be able to get _all_
   of these actions, and register all of them. Each one would need to be assigned
   a unique ID, so `WM_HOTKEY` can identify which hotkey was pressed.
-    - This could be committed without any other args to the `globalHotkeys`. in
+    - This could be comitted without any other args to the `globalHotkeys`. in
       this initial version, the behavior would be summoning the MRU window,
       where it is, no dropdown, to start with. From there, we'd add the
       remaining properties:
