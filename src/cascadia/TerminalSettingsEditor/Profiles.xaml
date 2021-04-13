@@ -61,8 +61,8 @@
 
         <Border x:Name="ControlPreview"
                 Height="160"
-                Margin="8,0,8,0"
                 MaxWidth="640"
+                Margin="8,0,8,0"
                 HorizontalAlignment="Stretch" />
 
         <Pivot x:Name="ProfilesPivot"

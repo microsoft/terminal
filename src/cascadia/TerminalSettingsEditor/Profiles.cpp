@@ -617,9 +617,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _previewControl.Settings(_State.Profile().TermSettings());
         // There is a possibility that the control has not fully initialized yet,
-        // so wait for it to initialize before updating the settings (or we'll crash
-        // as the update settings call tries to access the renderer before the
-        // the renderer is set up)
+        // so wait for it to initialize before updating the settings (so we know
+        // that the renderer is set up)
         _previewControl.Initialized([&](auto&& /*s*/, auto&& /*e*/) {
             _previewControl.UpdateSettings();
         });

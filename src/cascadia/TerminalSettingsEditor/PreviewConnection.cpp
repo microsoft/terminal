@@ -18,6 +18,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void PreviewConnection::Start() noexcept
     {
+        // First send a sequence to disable cursor blinking
+        _TerminalOutputHandlers(L"\x1b[?12l");
+        // Send the preview text
         _TerminalOutputHandlers(PreviewText);
     }
 
