@@ -30,6 +30,8 @@ namespace ControlUnitTests
 
         TEST_METHOD(TestFreeAfterClose);
 
+        TEST_METHOD(TestFontInitializedInCtor);
+
         TEST_CLASS_SETUP(ModuleSetup)
         {
             winrt::init_apartment(winrt::apartment_type::single_threaded);
@@ -190,6 +192,32 @@ namespace ControlUnitTests
         }
 
         VERIFY_IS_TRUE(true, L"Make sure that the test didn't crash when the core when out of scope");
+    }
+
+    void ControlCoreTests::TestFontInitializedInCtor()
+    {
+        // This is to catch a dumb programming mistake I made while working on
+        // the ore/control split. We want the font initialized in the ctor,
+        // before we even get to Core::Initialize.
+        VERIFY_IS_TRUE(false, L"Make sure the core's _font is initialized from the settings in the ctor");
+
+        Log::Comment(L"Create settings object");
+        winrt::com_ptr<MockControlSettings> settings;
+        settings.attach(new MockControlSettings());
+        // Make sure to use something dumb like "Impact" as a font name here so
+        // that you don't default to Cascadia*
+        settings->FontFace(L"Impact");
+
+        Log::Comment(L"Create connection object");
+        winrt::com_ptr<MockConnection> conn;
+        conn.attach(new MockConnection());
+        VERIFY_IS_NOT_NULL(conn);
+
+        Log::Comment(L"Create ControlCore object");
+        auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+
+        VERIFY_ARE_EQUAL(L"Impact", std::wstring{ core->_actualFont.GetFaceName() });
     }
 
 }

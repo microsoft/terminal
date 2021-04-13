@@ -108,7 +108,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnTerminalTaskbarProgressChanged = std::bind(&ControlCore::_terminalTaskbarProgressChanged, this);
         _terminal->TaskbarProgressChangedCallback(pfnTerminalTaskbarProgressChanged);
 
-        _terminal->UpdateSettings(settings);
+        UpdateSettings(settings);
     }
 
     ControlCore::~ControlCore()
