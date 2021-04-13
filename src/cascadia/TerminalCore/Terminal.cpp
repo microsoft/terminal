@@ -128,12 +128,12 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     }
     else
     {
-        _tabColor = til::color(settings.TabColor().Value() | 0xff000000);
+        _tabColor = til::color{ settings.TabColor().Value() }.with_alpha(0xff);
     }
 
     if (!_startingTabColor && settings.StartingTabColor())
     {
-        _startingTabColor = til::color(settings.StartingTabColor().Value() | 0xff000000);
+        _startingTabColor = til::color{ settings.StartingTabColor().Value() }.with_alpha(0xff);
     }
 
     if (_pfnTabColorChanged)
@@ -153,17 +153,17 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 //   CoreAppearance object.
 // Arguments:
 // - appearance: an ICoreAppearance with new settings values for us to use.
-void Terminal::UpdateAppearance(const ICoreAppearance appearance)
+void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 {
     // Set the default background as transparent to prevent the
     // DX layer from overwriting the background image or acrylic effect
-    til::color newBackgroundColor{ static_cast<COLORREF>(appearance.DefaultBackground()) };
+    til::color newBackgroundColor{ appearance.DefaultBackground() };
     _defaultBg = newBackgroundColor.with_alpha(0);
     _defaultFg = appearance.DefaultForeground();
 
     for (int i = 0; i < 16; i++)
     {
-        _colorTable.at(i) = appearance.GetColorTableEntry(i);
+        _colorTable.at(i) = til::color{ appearance.GetColorTableEntry(i) };
     }
 
     CursorType cursorShape = CursorType::VerticalBar;
@@ -193,7 +193,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance appearance)
     if (_buffer)
     {
         _buffer->GetCursor().SetStyle(appearance.CursorHeight(),
-                                      appearance.CursorColor(),
+                                      til::color{ appearance.CursorColor() },
                                       cursorShape);
     }
 
@@ -1138,8 +1138,8 @@ void Terminal::SetCursorPositionChangedCallback(std::function<void()> pfn) noexc
 // Method Description:
 // - Allows setting a callback for when the background color is changed
 // Arguments:
-// - pfn: a function callback that takes a uint32 (DWORD COLORREF) color in the format 0x00BBGGRR
-void Terminal::SetBackgroundCallback(std::function<void(const COLORREF)> pfn) noexcept
+// - pfn: a function callback that takes a color
+void Terminal::SetBackgroundCallback(std::function<void(const til::color)> pfn) noexcept
 {
     _pfnBackgroundColorChanged.swap(pfn);
 }

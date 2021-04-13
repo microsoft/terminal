@@ -1166,6 +1166,17 @@ namespace winrt::TerminalApp::implementation
             _hasCommandLineArguments = args.size() > 1;
             _appArgs.ValidateStartupCommands();
             _root->SetStartupActions(_appArgs.GetStartupActions());
+
+            // Check if we were started as a COM server for inbound connections of console sessions
+            // coming out of the operating system default application feature. If so,
+            // tell TerminalPage to start the listener as we have to make sure it has the chance
+            // to register a handler to hear about the requests first and is all ready to receive
+            // them before the COM server registers itself. Otherwise, the request might come
+            // in and be routed to an event with no handlers or a non-ready Page.
+            if (_appArgs.IsHandoffListener())
+            {
+                _root->SetInboundListener();
+            }
         }
 
         return result;
@@ -1367,6 +1378,45 @@ namespace winrt::TerminalApp::implementation
     bool AppLogic::AlwaysOnTop() const
     {
         return _root ? _root->AlwaysOnTop() : false;
+    }
+
+    void AppLogic::IdentifyWindow()
+    {
+        if (_root)
+        {
+            _root->IdentifyWindow();
+        }
+    }
+
+    winrt::hstring AppLogic::WindowName()
+    {
+        return _root ? _root->WindowName() : L"";
+    }
+    void AppLogic::WindowName(const winrt::hstring& name)
+    {
+        if (_root)
+        {
+            _root->WindowName(name);
+        }
+    }
+    uint64_t AppLogic::WindowId()
+    {
+        return _root ? _root->WindowId() : 0;
+    }
+    void AppLogic::WindowId(const uint64_t& id)
+    {
+        if (_root)
+        {
+            _root->WindowId(id);
+        }
+    }
+
+    void AppLogic::RenameFailed()
+    {
+        if (_root)
+        {
+            _root->RenameFailed();
+        }
     }
 
 }

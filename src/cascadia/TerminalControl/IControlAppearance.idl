@@ -5,7 +5,7 @@ namespace Microsoft.Terminal.Control
 {
     interface IControlAppearance requires Microsoft.Terminal.Core.ICoreAppearance
     {
-        UInt32 SelectionBackground;
+        Microsoft.Terminal.Core.Color SelectionBackground;
         String BackgroundImage;
         Double BackgroundImageOpacity;
         Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;

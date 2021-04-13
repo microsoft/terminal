@@ -15,7 +15,7 @@ Author(s):
 #pragma once
 
 #include "TerminalSettings.g.h"
-#include "TerminalSettingsStruct.g.h"
+#include "TerminalSettingsCreateResult.g.h"
 #include "IInheritable.h"
 #include "../inc/cppwinrt_utils.h"
 #include <DefaultSettings.h>
@@ -29,11 +29,11 @@ namespace SettingsModelLocalTests
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct TerminalSettingsStruct :
-        public TerminalSettingsStructT<TerminalSettingsStruct>
+    struct TerminalSettingsCreateResult :
+        public TerminalSettingsCreateResultT<TerminalSettingsCreateResult>
     {
     public:
-        TerminalSettingsStruct(Model::TerminalSettings defaultSettings, Model::TerminalSettings unfocusedSettings) :
+        TerminalSettingsCreateResult(Model::TerminalSettings defaultSettings, Model::TerminalSettings unfocusedSettings) :
             _defaultSettings(defaultSettings),
             _unfocusedSettings(unfocusedSettings) {}
 
@@ -49,16 +49,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         TerminalSettings() = default;
 
-        static Model::TerminalSettingsStruct CreateWithProfileByID(const Model::CascadiaSettings& appSettings,
-                                                                   guid profileGuid,
-                                                                   const Control::IKeyBindings& keybindings);
+        static Model::TerminalSettingsCreateResult CreateWithProfileByID(const Model::CascadiaSettings& appSettings,
+                                                                         guid profileGuid,
+                                                                         const Control::IKeyBindings& keybindings);
 
-        static Model::TerminalSettingsStruct CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
-                                                                       const Model::NewTerminalArgs& newTerminalArgs,
-                                                                       const Control::IKeyBindings& keybindings);
+        static Model::TerminalSettingsCreateResult CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
+                                                                             const Model::NewTerminalArgs& newTerminalArgs,
+                                                                             const Control::IKeyBindings& keybindings);
 
-        static Model::TerminalSettingsStruct CreateWithParent(const Model::TerminalSettingsStruct& parent);
+        static Model::TerminalSettingsCreateResult CreateWithParent(const Model::TerminalSettingsCreateResult& parent);
+
         Model::TerminalSettings GetParent();
+
         void SetParent(const Model::TerminalSettings& parent);
 
         void ApplyColorScheme(const Model::ColorScheme& scheme);
@@ -68,20 +70,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // GetColorTableEntry needs to be implemented manually, to get a
         // particular value from the array.
-        uint32_t GetColorTableEntry(int32_t index) noexcept;
-        void ColorTable(std::array<uint32_t, 16> colors);
-        std::array<uint32_t, 16> ColorTable();
+        Microsoft::Terminal::Core::Color GetColorTableEntry(int32_t index) noexcept;
+        void ColorTable(std::array<Microsoft::Terminal::Core::Color, 16> colors);
+        std::array<Microsoft::Terminal::Core::Color, 16> ColorTable();
 
-        INHERITABLE_SETTING(Model::TerminalSettings, uint32_t, DefaultForeground, DEFAULT_FOREGROUND_WITH_ALPHA);
-        INHERITABLE_SETTING(Model::TerminalSettings, uint32_t, DefaultBackground, DEFAULT_BACKGROUND_WITH_ALPHA);
-        INHERITABLE_SETTING(Model::TerminalSettings, uint32_t, SelectionBackground, DEFAULT_FOREGROUND);
+        INHERITABLE_SETTING(Model::TerminalSettings, til::color, DefaultForeground, DEFAULT_FOREGROUND);
+        INHERITABLE_SETTING(Model::TerminalSettings, til::color, DefaultBackground, DEFAULT_BACKGROUND);
+        INHERITABLE_SETTING(Model::TerminalSettings, til::color, SelectionBackground, DEFAULT_FOREGROUND);
         INHERITABLE_SETTING(Model::TerminalSettings, int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
         INHERITABLE_SETTING(Model::TerminalSettings, int32_t, InitialRows, 30);
         INHERITABLE_SETTING(Model::TerminalSettings, int32_t, InitialCols, 80);
 
         INHERITABLE_SETTING(Model::TerminalSettings, bool, SnapOnInput, true);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, AltGrAliasing, true);
-        INHERITABLE_SETTING(Model::TerminalSettings, uint32_t, CursorColor, DEFAULT_CURSOR_COLOR);
+        INHERITABLE_SETTING(Model::TerminalSettings, til::color, CursorColor, DEFAULT_CURSOR_COLOR);
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Core::CursorStyle, CursorShape, Core::CursorStyle::Vintage);
         INHERITABLE_SETTING(Model::TerminalSettings, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
@@ -89,7 +91,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, InputServiceWarning, true);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, FocusFollowMouse, false);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
+        INHERITABLE_SETTING(Model::TerminalSettings, Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, TabColor, nullptr);
 
         // When set, StartingTabColor allows to create a terminal with a "sticky" tab color.
         // This color is prioritized above the TabColor (that is usually initialized based on profile settings).
@@ -99,7 +101,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // TODO: to ensure that this property is not populated during settings reload,
         // we should consider moving this property to a separate interface,
         // passed to the terminal only upon creation.
-        INHERITABLE_SETTING(Model::TerminalSettings, Windows::Foundation::IReference<uint32_t>, StartingTabColor, nullptr);
+        INHERITABLE_SETTING(Model::TerminalSettings, Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, StartingTabColor, nullptr);
 
         // ------------------------ End of Core Settings -----------------------
 
@@ -139,9 +141,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, PixelShaderPath);
 
     private:
-        std::optional<std::array<uint32_t, COLOR_TABLE_SIZE>> _ColorTable;
-        gsl::span<uint32_t> _getColorTableImpl();
+        std::optional<std::array<Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>> _ColorTable;
+        gsl::span<Microsoft::Terminal::Core::Color> _getColorTableImpl();
         void _ApplyProfileSettings(const Model::Profile& profile);
+
         void _ApplyGlobalSettings(const Model::GlobalAppSettings& globalSettings) noexcept;
         void _ApplyAppearanceSettings(const Microsoft::Terminal::Settings::Model::IAppearanceConfig& appearance,
                                       const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes);
@@ -152,6 +155,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
-    BASIC_FACTORY(TerminalSettingsStruct);
+    BASIC_FACTORY(TerminalSettingsCreateResult);
     BASIC_FACTORY(TerminalSettings);
 }

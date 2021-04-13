@@ -166,7 +166,7 @@ should be working just the same as before.
 Now that you have a static library project, you can start building your unittest
 dll. Start by creating a new directory for your unittest code, and creating a
 `.vcxproj` for a TAEF unittest dll. For the Terminal solution, we use the TAEF
-nuget package `Taef.Redist.Wlk`.
+nuget package `Microsoft.Taef`.
 
 ### Referencing your C++/WinRT static lib
 

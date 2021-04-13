@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "Profile.idl";
 #include "IInheritable.idl.h"
 
 #define INHERITABLE_APPEARANCE_SETTING(Type, Name) \
@@ -23,11 +24,12 @@ namespace Microsoft.Terminal.Settings.Model
 
     interface IAppearanceConfig
     {
+        Microsoft.Terminal.Settings.Model.Profile SourceProfile { get; };
         INHERITABLE_APPEARANCE_SETTING(String, ColorSchemeName);
-        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Foreground);
-        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Background);
-        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, SelectionBackground);
-        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, CursorColor);
+        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Foreground);
+        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Background);
+        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, SelectionBackground);
+        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, CursorColor);
         INHERITABLE_APPEARANCE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
         INHERITABLE_APPEARANCE_SETTING(UInt32, CursorHeight);
 

@@ -244,6 +244,12 @@
   <data name="NewWindowCommandKey" xml:space="preserve">
     <value>New window</value>
   </data>
+  <data name="IdentifyWindowCommandKey" xml:space="preserve">
+    <value>Identify window</value>
+  </data>
+  <data name="IdentifyWindowsCommandKey" xml:space="preserve">
+    <value>Identify windows</value>
+  </data>
   <data name="NextTabCommandKey" xml:space="preserve">
     <value>Next tab</value>
   </data>
@@ -374,5 +380,15 @@
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
     <value>Open Settings...</value>
+  </data>
+  <data name="RenameWindowCommandKey" xml:space="preserve">
+    <value>Rename window to "{0}"</value>
+    <comment>{0} will be replaced with a user-defined string</comment>
+  </data>
+  <data name="ResetWindowNameCommandKey" xml:space="preserve">
+    <value>Reset window name</value>
+  </data>
+  <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
+    <value>Rename window...</value>
   </data>
 </root>

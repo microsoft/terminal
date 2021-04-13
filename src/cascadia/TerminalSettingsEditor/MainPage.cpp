@@ -32,7 +32,6 @@ static const std::wstring_view launchTag{ L"Launch_Nav" };
 static const std::wstring_view interactionTag{ L"Interaction_Nav" };
 static const std::wstring_view renderingTag{ L"Rendering_Nav" };
 static const std::wstring_view actionsTag{ L"Actions_Nav" };
-static const std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
 static const std::wstring_view addProfileTag{ L"AddProfile" };
 static const std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
 static const std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
@@ -183,6 +182,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return false;
     }
 
+    uint64_t MainPage::GetHostingWindow() const noexcept
+    {
+        return reinterpret_cast<uint64_t>(_hostingHwnd.value_or(nullptr));
+    }
+
     // Function Description:
     // - Called when the NavigationView is loaded. Navigates to the first item in the NavigationView, if no item is selected
     // Arguments:
@@ -268,17 +272,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
             });
             contentFrame().Navigate(xaml_typename<Editor::Actions>(), actionsState);
-        }
-        else if (clickedItemTag == globalProfileTag)
-        {
-            auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults()) };
-            profileVM.IsBaseLayer(true);
-            _lastProfilesNavState = winrt::make<ProfilePageNavigationState>(profileVM,
-                                                                            _settingsClone.GlobalSettings().ColorSchemes(),
-                                                                            _lastProfilesNavState,
-                                                                            *this);
-
-            contentFrame().Navigate(xaml_typename<Editor::Profiles>(), _lastProfilesNavState);
         }
         else if (clickedItemTag == colorSchemesTag)
         {

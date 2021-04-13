@@ -51,7 +51,7 @@ public:
     void ClearActive();
     void SetActive();
 
-    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsStruct& settings,
+    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                         const GUID& profile);
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
     void Relayout();
@@ -119,8 +119,6 @@ private:
     std::shared_mutex _createCloseLock{};
 
     Borders _borders{ Borders::None };
-
-    std::atomic<bool> _isClosing{ false };
 
     bool _zoomed{ false };
 

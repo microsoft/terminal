@@ -306,24 +306,31 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // terminal.
         co_await winrt::resume_foreground(Dispatcher());
 
-        _UpdateSettingsFromUIThread(_settings);
+        // Take the lock before calling the helper functions to update the settings and appearance
+        auto lock = _terminal->LockForWriting();
+
+        _UpdateSettingsFromUIThreadUnderLock(_settings);
+
         auto appearance = _settings.try_as<IControlAppearance>();
         if (!_focused && _UnfocusedAppearance)
         {
             appearance = _UnfocusedAppearance;
         }
-        _UpdateAppearanceFromUIThread(appearance);
+        _UpdateAppearanceFromUIThreadUnderLock(appearance);
     }
 
     // Method Description:
     // - Dispatches a call to the UI thread and updates the appearance
     // Arguments:
     // - newAppearance: the new appearance to set
-    winrt::fire_and_forget TermControl::UpdateAppearance(IControlAppearance newAppearance)
+    winrt::fire_and_forget TermControl::UpdateAppearance(const IControlAppearance newAppearance)
     {
         // Dispatch a call to the UI thread
         co_await winrt::resume_foreground(Dispatcher());
-        _UpdateAppearanceFromUIThread(newAppearance);
+
+        // Take the lock before calling the helper function to update the appearance
+        auto lock = _terminal->LockForWriting();
+        _UpdateAppearanceFromUIThreadUnderLock(newAppearance);
     }
 
     // Method Description:
@@ -366,9 +373,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   issue that causes one of our hstring -> wstring_view conversions to result in garbage,
     //   but only from a coroutine context. See GH#8723.
     // - INVARIANT: This method must be called from the UI thread.
+    // - INVARIANT: This method can only be called if the caller has the writing lock on the terminal.
     // Arguments:
     // - newSettings: the new settings to set
-    void TermControl::_UpdateSettingsFromUIThread(IControlSettings newSettings)
+    void TermControl::_UpdateSettingsFromUIThreadUnderLock(IControlSettings newSettings)
     {
         if (_closing)
         {
@@ -381,7 +389,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Update the terminal core with its new Core settings
         _terminal->UpdateSettings(_settings);
 
-        auto lock = _terminal->LockForWriting();
+        if (!_initializedTerminal)
+        {
+            // If we haven't initialized, there's no point in continuing.
+            // Initialization will handle the renderer settings.
+            return;
+        }
 
         // Update DxEngine settings under the lock
         _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
@@ -413,10 +426,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     // Method Description:
     // - Updates the appearance
-    // - This should only be called from the UI thread
+    // - INVARIANT: This method must be called from the UI thread.
+    // - INVARIANT: This method can only be called if the caller has the writing lock on the terminal.
     // Arguments:
     // - newAppearance: the new appearance to set
-    void TermControl::_UpdateAppearanceFromUIThread(IControlAppearance newAppearance)
+    void TermControl::_UpdateAppearanceFromUIThreadUnderLock(IControlAppearance newAppearance)
     {
         if (_closing)
         {
@@ -456,7 +470,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Update our control settings
-        COLORREF bg = newAppearance.DefaultBackground();
+        const auto bg = newAppearance.DefaultBackground();
         _BackgroundColorChanged(bg);
 
         // Set TSF Foreground
@@ -467,10 +481,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Update the terminal core with its new Core settings
         _terminal->UpdateAppearance(newAppearance);
 
-        auto lock = _terminal->LockForWriting();
-
         // Update DxEngine settings under the lock
-        _renderEngine->SetSelectionBackground(newAppearance.SelectionBackground());
+        _renderEngine->SetSelectionBackground(til::color{ newAppearance.SelectionBackground() });
         _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
         _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
         _renderer->TriggerRedrawAll();
@@ -561,12 +573,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // see GH#1082: Initialize background color so we don't get a
             // fade/flash when _BackgroundColorChanged is called
-            uint32_t color = _settings.DefaultBackground();
-            winrt::Windows::UI::Color bgColor{};
-            bgColor.R = GetRValue(color);
-            bgColor.G = GetGValue(color);
-            bgColor.B = GetBValue(color);
-            bgColor.A = 255;
+            auto bgColor = til::color{ _settings.DefaultBackground() }.with_alpha(0xff);
 
             acrylic.FallbackColor(bgColor);
             acrylic.TintColor(bgColor);
@@ -605,7 +612,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - color: The background color to use as a uint32 (aka DWORD COLORREF)
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::_BackgroundColorChanged(const COLORREF color)
+    winrt::fire_and_forget TermControl::_BackgroundColorChanged(const til::color color)
     {
         til::color newBgColor{ color };
 
@@ -799,9 +806,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);
             LOG_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
-            // Update DxEngine's SelectionBackground
-            dxEngine->SetSelectionBackground(_settings.SelectionBackground());
-
             const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
             const auto width = vp.Width();
             const auto height = vp.Height();
@@ -819,8 +823,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // the first paint will be ignored!
             dxEngine->SetWarningCallback(std::bind(&TermControl::_RendererWarning, this, std::placeholders::_1));
 
-            dxEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-            dxEngine->SetPixelShaderPath(_settings.PixelShaderPath());
             dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
             dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
@@ -910,7 +912,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             this->Focus(FocusState::Programmatic);
 
             // Now that the renderer is set up, update the appearance for initialization
-            UpdateAppearance(_settings);
+            _UpdateAppearanceFromUIThreadUnderLock(_settings);
 
             _initializedTerminal = true;
         } // scope for TerminalLock
@@ -1382,11 +1384,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     mode = ::Terminal::SelectionExpansionMode::Line;
                 }
 
-                // Capture the position of the first click when no selection is active
-                if (mode == ::Terminal::SelectionExpansionMode::Cell && !_terminal->IsSelectionActive())
+                // Capture the position of the first click
+                if (mode == ::Terminal::SelectionExpansionMode::Cell)
                 {
                     _singleClickTouchdownPos = cursorPosition;
-                    _lastMouseClickPosNoSelection = cursorPosition;
+                    if (!_terminal->IsSelectionActive())
+                    {
+                        _lastMouseClickPosNoSelection = cursorPosition;
+                    }
                 }
 
                 // We reset the active selection if one of the conditions apply:
@@ -1415,6 +1420,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // (expand both "start" and "end" selection points)
                     _terminal->MultiClickSelection(terminalPosition, mode);
                     _selectionNeedsToBeCopied = true;
+                }
+
+                if (_terminal->IsSelectionActive())
+                {
+                    // GH#9787: if selection is active we don't want to track the touchdown position
+                    // so that dragging the mouse will extend the selection rather than starting the new one
+                    _singleClickTouchdownPos = std::nullopt;
                 }
 
                 _renderer->TriggerSelection();
@@ -1739,7 +1751,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 {
                     _settings.UseAcrylic(false);
                     _InitializeBackgroundBrush();
-                    COLORREF bg = _settings.DefaultBackground();
+                    const auto bg = _settings.DefaultBackground();
                     _BackgroundColorChanged(bg);
                 }
                 else
@@ -1844,7 +1856,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Clear the regex pattern tree so the renderer does not try to render them while scrolling
-        _terminal->ClearPatternTree();
+        {
+            // We're taking the lock here instead of in ClearPatternTree because ClearPatternTree is
+            // sometimes called from an already-locked context. Here, we are sure we are not
+            // already under lock (since it is not an internal scroll bar update)
+            // TODO GH#9617: refine locking around pattern tree
+            auto lock = _terminal->LockForWriting();
+            _terminal->ClearPatternTree();
+        }
 
         const auto newValue = static_cast<int>(args.NewValue());
 
@@ -2155,8 +2174,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //      actually fail. We need a way to gracefully fallback.
         _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
 
-        // If the actual font isn't what was requested...
-        if (_actualFont.GetFaceName() != _desiredFont.GetFaceName())
+        // If the actual font went through the last-chance fallback routines...
+        if (_actualFont.GetFallback())
         {
             // Then warn the user that we picked something because we couldn't find their font.
 
@@ -2478,6 +2497,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Clear the regex pattern tree so the renderer does not try to render them while scrolling
+        // We're **NOT** taking the lock here unlike _ScrollbarChangeHandler because
+        // we are already under lock (since this usually happens as a result of writing).
+        // TODO GH#9617: refine locking around pattern tree
         _terminal->ClearPatternTree();
 
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
@@ -2518,6 +2540,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         hstring hstr{ _terminal->GetWorkingDirectory() };
         return hstr;
+    }
+
+    bool TermControl::BracketedPasteEnabled() const noexcept
+    {
+        return _terminal->IsXtermBracketedPasteModeEnabled();
     }
 
     // Method Description:
@@ -2562,7 +2589,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                   TextBuffer::GenHTML(bufferData,
                                                       _actualFont.GetUnscaledSize().Y,
                                                       _actualFont.GetFaceName(),
-                                                      _settings.DefaultBackground()) :
+                                                      til::color{ _settings.DefaultBackground() }) :
                                   "";
 
         // convert to RTF format
@@ -2570,7 +2597,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  TextBuffer::GenRTF(bufferData,
                                                     _actualFont.GetUnscaledSize().Y,
                                                     _actualFont.GetFaceName(),
-                                                    _settings.DefaultBackground()) :
+                                                    til::color{ _settings.DefaultBackground() }) :
                                  "";
 
         if (!_settings.CopyOnSelect())
@@ -3306,7 +3333,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControl::TabColor() noexcept
     {
         auto coreColor = _terminal->GetTabColor();
-        return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(coreColor.value()) : nullptr;
+        return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(til::color{ coreColor.value() }) : nullptr;
     }
 
     // Method Description:
@@ -3378,8 +3405,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _lastHoveredCell = terminalPosition;
 
+        uint16_t newId{ 0u };
+        // we can't use auto here because we're pre-declaring newInterval.
+        decltype(_terminal->GetHyperlinkIntervalFromPosition(COORD{})) newInterval{ std::nullopt };
         if (terminalPosition.has_value())
         {
+            auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
+
             const auto uri = _terminal->GetHyperlinkAtPosition(*terminalPosition);
             if (!uri.empty())
             {
@@ -3405,15 +3437,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
                 OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
             }
-        }
 
-        const uint16_t newId = terminalPosition.has_value() ? _terminal->GetHyperlinkIdAtPosition(*terminalPosition) : 0u;
-        const auto newInterval = terminalPosition.has_value() ? _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition) : std::nullopt;
+            newId = _terminal->GetHyperlinkIdAtPosition(*terminalPosition);
+            newInterval = _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition);
+        }
 
         // If the hyperlink ID changed or the interval changed, trigger a redraw all
         // (so this will happen both when we move onto a link and when we move off a link)
         if (newId != _lastHoveredId || (newInterval != _lastHoveredInterval))
         {
+            auto lock = _terminal->LockForWriting();
             _lastHoveredId = newId;
             _lastHoveredInterval = newInterval;
             _renderEngine->UpdateHyperlinkHoveredId(newId);

@@ -207,11 +207,11 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Attempts to update the settings of this tab's tree of panes.
     // Arguments:
-    // - settings: The new TerminalSettings to apply to any matching controls
+    // - settings: The new TerminalSettingsCreateResult to apply to any matching controls
     // - profile: The GUID of the profile these settings should apply to.
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateSettings(const TerminalSettingsStruct& settings, const GUID& profile)
+    void TerminalTab::UpdateSettings(const TerminalSettingsCreateResult& settings, const GUID& profile)
     {
         _rootPane->UpdateSettings(settings, profile);
 
@@ -666,6 +666,11 @@ namespace winrt::TerminalApp::implementation
 
         _RecalculateAndApplyReadOnly();
 
+        if (const auto control{ pane->GetTerminalControl() })
+        {
+            control.TaskbarProgressChanged();
+        }
+
         // Raise our own ActivePaneChanged event.
         _ActivePaneChangedHandlers();
     }
@@ -788,7 +793,7 @@ namespace winrt::TerminalApp::implementation
         closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_ClosedHandlers(nullptr, nullptr);
+                tab->_CloseRequestedHandlers(nullptr, nullptr);
             }
         });
         closeTabMenuItem.Text(RS_(L"TabClose"));

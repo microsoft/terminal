@@ -26,12 +26,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
         winrt::fire_and_forget UpdateSettings();
-        winrt::fire_and_forget UpdateAppearance(IControlAppearance newAppearance);
+        winrt::fire_and_forget UpdateAppearance(const IControlAppearance newAppearance);
 
         hstring Title();
         hstring GetProfileName() const;
         hstring WorkingDirectory() const;
 
+        bool BracketedPasteEnabled() const noexcept;
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void PasteTextFromClipboard();
         void Close();
@@ -197,15 +198,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
-        void _UpdateSettingsFromUIThread(IControlSettings newSettings);
-        void _UpdateAppearanceFromUIThread(IControlAppearance newAppearance);
+        void _UpdateSettingsFromUIThreadUnderLock(IControlSettings newSettings);
+        void _UpdateAppearanceFromUIThreadUnderLock(IControlAppearance newAppearance);
         bool _isReadOnly{ false };
 
         void _ApplyUISettings(const IControlSettings&);
-        void _UpdateSettingsOnUIThread();
         void _UpdateSystemParameterSettings() noexcept;
         void _InitializeBackgroundBrush();
-        winrt::fire_and_forget _BackgroundColorChanged(const COLORREF color);
+        winrt::fire_and_forget _BackgroundColorChanged(const til::color color);
         bool _InitializeTerminal();
         void _UpdateFont(const bool initialUpdate = false);
         void _SetFontSize(int fontSize);

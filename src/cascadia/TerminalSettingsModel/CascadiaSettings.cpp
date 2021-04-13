@@ -104,7 +104,7 @@ void CascadiaSettings::_CopyProfileInheritanceTree(winrt::com_ptr<CascadiaSettin
     {
         winrt::com_ptr<Profile> profileImpl;
         profileImpl.copy_from(winrt::get_self<Profile>(profile));
-        dummyRootSource->InsertParent(profileImpl);
+        Profile::InsertParentHelper(dummyRootSource, profileImpl);
     }
 
     auto dummyRootClone{ winrt::make_self<Profile>() };

@@ -93,23 +93,27 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
     profile->_Origin = source->_Origin;
 
     // Copy over the appearance
+    const auto weakRefToProfile = weak_ref<Model::Profile>(*profile);
     winrt::com_ptr<AppearanceConfig> sourceDefaultAppearanceImpl;
     sourceDefaultAppearanceImpl.copy_from(winrt::get_self<AppearanceConfig>(source->_DefaultAppearance));
-    profile->_DefaultAppearance = *AppearanceConfig::CopyAppearance(sourceDefaultAppearanceImpl);
+    auto copiedDefaultAppearance = AppearanceConfig::CopyAppearance(sourceDefaultAppearanceImpl, weakRefToProfile);
+    profile->_DefaultAppearance = *copiedDefaultAppearance;
 
     if (source->_UnfocusedAppearance.has_value())
     {
-        if (source->_UnfocusedAppearance.value() == nullptr)
-        {
-            profile->_UnfocusedAppearance = nullptr;
-        }
-        else
+        Model::AppearanceConfig unfocused{ nullptr };
+        if (source->_UnfocusedAppearance.value() != nullptr)
         {
             // Copy over the unfocused appearance
             winrt::com_ptr<AppearanceConfig> sourceUnfocusedAppearanceImpl;
             sourceUnfocusedAppearanceImpl.copy_from(winrt::get_self<AppearanceConfig>(source->_UnfocusedAppearance.value()));
-            profile->_UnfocusedAppearance = *AppearanceConfig::CopyAppearance(sourceUnfocusedAppearanceImpl);
+            auto copiedUnfocusedAppearance = AppearanceConfig::CopyAppearance(sourceUnfocusedAppearanceImpl, weakRefToProfile);
+
+            // Make sure to add the default appearance as a parent
+            copiedUnfocusedAppearance->InsertParent(copiedDefaultAppearance);
+            unfocused = *copiedUnfocusedAppearance;
         }
+        profile->_UnfocusedAppearance = unfocused;
     }
 
     return profile;
@@ -139,7 +143,7 @@ winrt::com_ptr<Profile> Profile::CloneInheritanceGraph(winrt::com_ptr<Profile> s
             if (kv != visited.end())
             {
                 // add this Profile's clone as a parent
-                cloneGraph->InsertParent(kv->second);
+                InsertParentHelper(cloneGraph, kv->second);
             }
             else
             {
@@ -148,7 +152,7 @@ winrt::com_ptr<Profile> Profile::CloneInheritanceGraph(winrt::com_ptr<Profile> s
                 winrt::com_ptr<Profile> clone{ CopySettings(sourceParent) };
 
                 // add the new copy to the cloneGraph
-                cloneGraph->InsertParent(clone);
+                InsertParentHelper(cloneGraph, clone);
 
                 // copy the sub-graph at "clone"
                 CloneInheritanceGraph(sourceParent, clone, visited);
@@ -162,6 +166,26 @@ winrt::com_ptr<Profile> Profile::CloneInheritanceGraph(winrt::com_ptr<Profile> s
 
     // we have no more to explore down this path.
     return cloneGraph;
+}
+
+// Method Description:
+// - Inserts a parent profile into a child profile, at the specified index if one was provided
+// - Makes sure to call _FinalizeInheritance after inserting the parent
+// Arguments:
+// - child: the child profile to insert the parent into
+// - parent: the parent profile to insert into the child
+// - index: an optional index value to insert the parent into
+void Profile::InsertParentHelper(winrt::com_ptr<Profile> child, winrt::com_ptr<Profile> parent, std::optional<size_t> index)
+{
+    if (index)
+    {
+        child->InsertParent(index.value(), parent);
+    }
+    else
+    {
+        child->InsertParent(parent);
+    }
+    child->_FinalizeInheritance();
 }
 
 // Method Description:
@@ -329,7 +353,7 @@ void Profile::LayerJson(const Json::Value& json)
 
     if (json.isMember(JsonKey(UnfocusedAppearanceKey)))
     {
-        auto unfocusedAppearance{ winrt::make_self<implementation::AppearanceConfig>() };
+        auto unfocusedAppearance{ winrt::make_self<implementation::AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
 
         // If an unfocused appearance is defined in this profile, any undefined parameters are
         // taken from this profile's default appearance, so add it as a parent
@@ -351,6 +375,23 @@ winrt::hstring Profile::EvaluatedStartingDirectory() const
     }
     // treated as "inherit directory from parent process"
     return path;
+}
+
+void Profile::_FinalizeInheritance()
+{
+    if (auto defaultAppearanceImpl = get_self<AppearanceConfig>(_DefaultAppearance))
+    {
+        // Clear any existing parents first, we don't want duplicates from any previous
+        // calls to this function
+        defaultAppearanceImpl->ClearParents();
+        for (auto& parent : _parents)
+        {
+            if (auto parentDefaultAppearanceImpl = parent->_DefaultAppearance.try_as<AppearanceConfig>())
+            {
+                defaultAppearanceImpl->InsertParent(parentDefaultAppearanceImpl);
+            }
+        }
+    }
 }
 
 winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig Profile::DefaultAppearance()
