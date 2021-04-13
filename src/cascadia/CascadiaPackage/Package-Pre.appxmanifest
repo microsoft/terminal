@@ -75,6 +75,7 @@
             Enabled="false"
             DisplayName="ms-resource:AppNamePre" />
         </uap5:Extension>
+        <!-- DISABLED FOR 1.8
         <uap3:Extension Category="windows.appExtension">
             <uap3:AppExtension Name="com.microsoft.windows.console.host"
                 Id="OpenConsole-Pre"
@@ -97,6 +98,7 @@
                 </uap3:Properties>
             </uap3:AppExtension>
         </uap3:Extension>
+        -->
         <com:Extension Category="windows.comInterface">
             <com:ComInterface>
                 <com:ProxyStub Id="1833E661-CC81-4DD0-87C6-C2F74BD39EFA" DisplayName="OpenConsoleHandoffProxy" Path="OpenConsoleProxy.dll"/>
