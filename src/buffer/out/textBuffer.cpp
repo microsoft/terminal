@@ -281,9 +281,9 @@ bool TextBuffer::_AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribut
 // - false otherwise (out of memory)
 bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute)
 {
-    // Assert the buffer state is ready for this character
-    // This function corrects most errors. If this is false, we had an uncorrectable one.
-    FAIL_FAST_IF(!(_AssertValidDoubleByteSequence(dbcsAttribute))); // Shouldn't be uncorrectable sequences unless something is very wrong.
+    // This function corrects most errors. If this is false, we had an uncorrectable one which
+    // older versions of conhost simply let pass by unflinching.
+    LOG_HR_IF(E_NOT_VALID_STATE, !(_AssertValidDoubleByteSequence(dbcsAttribute))); // Shouldn't be uncorrectable sequences unless something is very wrong.
 
     bool fSuccess = true;
     // Now compensate if we don't have enough space for the upcoming double byte sequence
