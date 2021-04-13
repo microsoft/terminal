@@ -425,18 +425,6 @@
     <value>Actions</value>
     <comment>Header for the "actions" menu item. This navigates to a page that lets you see and modify commands, key bindings, and actions that can be done in the app.</comment>
   </data>
-  <data name="PreviewConnection_DefaultText" xml:space="preserve">
-    <value>Default text</value>
-  </data>
-  <data name="PreviewConnection_RedText" xml:space="preserve">
-    <value>Red text</value>
-  </data>
-  <data name="PreviewConnection_GreenText" xml:space="preserve">
-    <value>Green text</value>
-  </data>
-  <data name="PreviewConnection_BlueText" xml:space="preserve">
-    <value>Blue text</value>
-  </data>
   <data name="Profile_AcrylicOpacity.Header" xml:space="preserve">
     <value>Acrylic opacity</value>
     <comment>Header for a control to determine the level of opacity for the acrylic rendering material. The user can choose to make the acrylic background of the app more or less opaque.</comment>

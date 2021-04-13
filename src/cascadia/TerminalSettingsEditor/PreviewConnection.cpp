@@ -7,6 +7,9 @@
 
 using namespace ::winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::winrt::Windows::Foundation;
+
+static constexpr std::wstring_view PreviewText{ L"Windows Terminal\r\nCopyright (c) Microsoft Corporation.\r\n\nC:\\Windows\\Terminal>  " };
+
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     PreviewConnection::PreviewConnection() noexcept
@@ -15,11 +18,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void PreviewConnection::Start() noexcept
     {
-        _TerminalOutputHandlers(fmt::format(L"{}\r\n\x1b[31m{}\r\n\x1b[32m{}\r\n\x1b[34m{}",
-                                            RS_(L"PreviewConnection_DefaultText"),
-                                            RS_(L"PreviewConnection_RedText"),
-                                            RS_(L"PreviewConnection_GreenText"),
-                                            RS_(L"PreviewConnection_BlueText")));
+        _TerminalOutputHandlers(PreviewText);
     }
 
     void PreviewConnection::WriteInput(hstring const& /*data*/)
