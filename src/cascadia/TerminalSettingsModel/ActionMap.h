@@ -69,7 +69,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     struct ActionMap : ActionMapT<ActionMap>, IInheritable<ActionMap>
     {
-        ActionMap() = default;
+        ActionMap();
 
         // views
         Windows::Foundation::Collections::IMapView<hstring, Model::Command> NameMap();
@@ -93,6 +93,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _PopulateNameMap(std::unordered_map<hstring, Model::Command>& nameMap, std::set<size_t>& visitedActionIDs) const;
 
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
+        Windows::Foundation::Collections::IMap<hstring, Model::Command> _NestedCommands{ nullptr };
         std::unordered_map<Control::KeyChord, size_t, KeyChordHash, KeyChordEquality> _KeyMap;
         std::unordered_map<size_t, Model::Command> _ActionMap;
 

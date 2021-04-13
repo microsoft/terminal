@@ -11,6 +11,11 @@ using namespace winrt::Microsoft::Terminal::Control;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    ActionMap::ActionMap() :
+        _NestedCommands{ single_threaded_map<hstring, Model::Command>() }
+    {
+    }
+
     // Method Description:
     // - Retrieves the Command in the ActionList, if it's valid
     // - We internally store invalid commands as full commands.
@@ -96,6 +101,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             parent->_PopulateNameMap(nameMap, visitedActionIDs);
         }
+
+        // Add NestedCommands to NameMap _after_ we handle our parents.
+        // This allows us to override whatever our parents tell us.
+        for (const auto& [name, cmd] : _NestedCommands)
+        {
+            nameMap.insert_or_assign(name, cmd);
+        }
     }
 
     com_ptr<ActionMap> ActionMap::Copy() const
@@ -125,6 +137,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return;
         }
 
+        // _Always_ add nested commands
+        if (cmd.HasNestedCommands())
+        {
+            // But check if it actually has a name to bind to first
+            const auto name{ cmd.Name() };
+            if (!name.empty())
+            {
+                _NestedCommands.Insert(name, cmd);
+            }
+            return;
+        }
+
         // General Case:
         //  Add the new command to the NameMap and KeyMap (whichever is applicable).
         //  These maps direct you to an entry in the ActionMap.
@@ -148,7 +172,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             oldCmd = actionPair->second;
 
             // Update Name
-            const auto cmdImpl{get_self<Command>(cmd)};
+            const auto cmdImpl{ get_self<Command>(cmd) };
             if (cmdImpl->HasName())
             {
                 // This command has a name, check if it's new.
@@ -160,12 +184,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     auto oldCmdImpl{ get_self<Command>(oldCmd) };
                     oldCmdImpl->Name(newName);
                 }
+
+                // Handle a collision with NestedCommands
+                _NestedCommands.TryRemove(newName);
             }
         }
         else
         {
             // add this action in for the first time
             _ActionMap.insert({ actionID, cmd });
+
+            // Handle a collision with NestedCommands
+            _NestedCommands.TryRemove(cmd.Name());
         }
 
         // Update KeyMap

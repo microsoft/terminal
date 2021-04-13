@@ -88,8 +88,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // name was explicitly set, return that value.
             return hstring{ _name.value() };
         }
-
-        return get_self<ActionAndArgs>(_action)->GenerateName();
+        else if (_action)
+        {
+            // generate a name from our action
+            return get_self<ActionAndArgs>(_action)->GenerateName();
+        }
+        else
+        {
+            // we have no name
+            return {};
+        }
     }
 
     void Command::Name(const hstring& value)
@@ -281,8 +289,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             if (result->_subcommands.Size() == 0)
             {
+                const std::string x{ json.toStyledString().c_str() };
+                OutputDebugString(til::u8u16(x).c_str());
                 warnings.push_back(SettingsLoadWarnings::FailedToParseSubCommands);
-                return nullptr;
+                result->_action = make<ActionAndArgs>();
             }
 
             nested = true;
@@ -314,13 +324,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 result->_action = make<ActionAndArgs>();
             }
 
-            // If an iterable command doesn't have a name set, we'll still just
-            // try and generate a fake name for the command give the string we
-            // currently have. It'll probably generate something like "New tab,
-            // profile: ${profile.name}". This string will only be temporarily
-            // used internally, so there's no problem.
-            result->_name = _nameFromJson(json);
-
             // GH#4239 - If the user provided more than one key
             // chord to a "keys" array, warn the user here.
             // TODO: GH#1334 - remove this check.
@@ -338,10 +341,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 }
             }
         }
-        else
-        {
-            result->_name = _nameFromJson(json);
-        }
+
+        // If an iterable command doesn't have a name set, we'll still just
+        // try and generate a fake name for the command give the string we
+        // currently have. It'll probably generate something like "New tab,
+        // profile: ${profile.name}". This string will only be temporarily
+        // used internally, so there's no problem.
+        result->_name = _nameFromJson(json);
 
         // Stash the original json value in this object. If the command is
         // iterable, we'll need to re-parse it later, once we know what all the
@@ -374,7 +380,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 try
                 {
                     const auto result = Command::FromJson(value, warnings);
-                    if (!result || !result->Action() || result->Action().Action() == ShortcutAction::Invalid)
+                    if (result->Action().Action() == ShortcutAction::Invalid && !result->HasNestedCommands())
                     {
                         // If there wasn't a parsed command, then try to get the
                         // name from the json blob. If that name currently
