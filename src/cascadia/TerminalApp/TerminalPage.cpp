@@ -2868,7 +2868,7 @@ namespace winrt::TerminalApp::implementation
     // - For any actions that are to be previewed here, MAKE SURE TO RESTORE THE
     //   STATE IN `TerminalPage::_EndPreview`. That method is called to revert
     //   the terminal to the state it was in at the start of the preview.
-    // - Currently, only SetColorScheme actions are previewable.
+    // - Currently, only SetColorScheme actions are preview-able.
     // Arguments:
     // - args: The Command that's trying to be previewed, or nullptr if we should stop the preview.
     // Return Value:
@@ -2891,9 +2891,9 @@ namespace winrt::TerminalApp::implementation
             }
             }
 
-            // Other ideas for actions that could be previewable:
+            // Other ideas for actions that could be preview-able:
             // * Set Font size
-            // * Set acrylic true/false/opactity?
+            // * Set acrylic true/false/opacity?
             // * SetPixelShaderPath?
             // * SetWindowTheme (light/dark/system/<some theme from #3327>)?
 
