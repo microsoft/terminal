@@ -33,7 +33,7 @@
                 <TextBlock FontFamily="{x:Bind Name}"
                            Text="{x:Bind LocalizedName}" />
             </DataTemplate>
-
+            <model:IconPathConverter x:Key="IconSourceConverter" />
             <local:ColorToBrushConverter x:Key="ColorToBrushConverter" />
             <local:PercentageConverter x:Key="PercentageConverter" />
             <local:FontWeightConverter x:Key="FontWeightConverter" />
@@ -59,11 +59,54 @@
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind State.Profile.IsBaseLayer}" />
 
-        <Border x:Name="ControlPreview"
-                Height="160"
-                MaxWidth="640"
-                Margin="8,0,8,0"
-                HorizontalAlignment="Stretch" />
+        <Grid Height="184">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="24"/>
+                <RowDefinition Height="160"/>
+            </Grid.RowDefinitions>
+            <Grid Grid.Row="0"
+                  Margin="8,0,8,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto"/>
+                </Grid.ColumnDefinitions>
+                <Border CornerRadius="2,2,0,0"
+                        MinWidth="128"
+                        Background="DimGray">
+                    <Grid VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="32"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="28"/>
+                        </Grid.ColumnDefinitions>
+                        <IconSourceElement Grid.Column="0"
+                                           Width="16"
+                                           Height="16"
+                                           Margin="8,0,8,0"
+                                           VerticalAlignment="Bottom"
+                                           IconSource="{x:Bind State.Profile.Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" >
+                        </IconSourceElement>
+                        <TextBlock Grid.Column="1"
+                                   Text="{x:Bind State.Profile.Name, Mode=OneWay}"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"/>
+                        <IconSourceElement Grid.Column="2"
+                                           Width="16"
+                                           Height="16"
+                                           Margin="8,0,4,0"
+                                           VerticalAlignment="Bottom">
+                            <IconSourceElement.IconSource>
+                                <FontIconSource Glyph="&#xE711;"
+                                                FontSize="12"/>
+                            </IconSourceElement.IconSource>
+                        </IconSourceElement>
+                    </Grid>
+                </Border>
+            </Grid>
+            <Border x:Name="ControlPreview"
+                    Grid.Row="1"
+                    Margin="8,0,8,0"
+                    HorizontalAlignment="Stretch" />
+        </Grid>
 
         <Pivot x:Name="ProfilesPivot"
                Grid.Row="1"
@@ -783,5 +826,23 @@
                 </ScrollViewer>
             </PivotItem>
         </Pivot>
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState>
+                    <VisualState.StateTriggers>
+                        <!--
+                            Official guidance states that 640 is the breakpoint between small and medium devices.
+                            Since MinWindowWidth is an inclusive range, we need to add 1 to it.
+                        -->
+                        <AdaptiveTrigger MinWindowWidth="641" />
+                    </VisualState.StateTriggers>
+
+                    <VisualState.Setters>
+                        <Setter Target="ControlPreview.HorizontalAlignment" Value="Left" />
+                        <Setter Target="ControlPreview.Width" Value="640" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
     </Grid>
 </Page>
