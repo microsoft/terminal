@@ -61,42 +61,41 @@
 
         <Grid Height="184">
             <Grid.RowDefinitions>
-                <RowDefinition Height="24"/>
-                <RowDefinition Height="160"/>
+                <RowDefinition Height="24" />
+                <RowDefinition Height="160" />
             </Grid.RowDefinitions>
             <Grid Grid.Row="0"
                   Margin="8,0,8,0">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="auto" />
                 </Grid.ColumnDefinitions>
-                <Border CornerRadius="2,2,0,0"
-                        MinWidth="128"
-                        Background="DimGray">
+                <Border MinWidth="128"
+                        Background="DimGray"
+                        CornerRadius="2,2,0,0">
                     <Grid VerticalAlignment="Center">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="32"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="28"/>
+                            <ColumnDefinition Width="32" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="28" />
                         </Grid.ColumnDefinitions>
                         <IconSourceElement Grid.Column="0"
                                            Width="16"
                                            Height="16"
                                            Margin="8,0,8,0"
                                            VerticalAlignment="Bottom"
-                                           IconSource="{x:Bind State.Profile.Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" >
-                        </IconSourceElement>
+                                           IconSource="{x:Bind State.Profile.Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
                         <TextBlock Grid.Column="1"
-                                   Text="{x:Bind State.Profile.Name, Mode=OneWay}"
+                                   VerticalAlignment="Center"
                                    FontSize="12"
-                                   VerticalAlignment="Center"/>
+                                   Text="{x:Bind State.Profile.Name, Mode=OneWay}" />
                         <IconSourceElement Grid.Column="2"
                                            Width="16"
                                            Height="16"
                                            Margin="8,0,4,0"
                                            VerticalAlignment="Bottom">
                             <IconSourceElement.IconSource>
-                                <FontIconSource Glyph="&#xE711;"
-                                                FontSize="12"/>
+                                <FontIconSource FontSize="12"
+                                                Glyph="&#xE711;" />
                             </IconSourceElement.IconSource>
                         </IconSourceElement>
                     </Grid>
