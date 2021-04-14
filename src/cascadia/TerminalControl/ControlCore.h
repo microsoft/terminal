@@ -66,14 +66,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void Close();
 
 #pragma region ICoreState
-        // existing
-        Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
         const size_t TaskbarState() const noexcept;
         const size_t TaskbarProgress() const noexcept;
+
         hstring Title();
+        Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
         hstring WorkingDirectory() const;
+
         TerminalConnection::ConnectionState ConnectionState() const;
-        // new
+
         int ScrollOffset();
         int ViewHeight() const;
         int BufferHeight() const;

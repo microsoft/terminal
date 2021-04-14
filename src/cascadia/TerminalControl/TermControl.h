@@ -30,11 +30,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::fire_and_forget UpdateSettings();
         winrt::fire_and_forget UpdateAppearance(const IControlAppearance newAppearance);
 
-        hstring Title();
         hstring GetProfileName() const;
-        hstring WorkingDirectory() const;
 
-        bool BracketedPasteEnabled() const noexcept;
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void PasteTextFromClipboard();
         void Close();
@@ -42,9 +39,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::Foundation::Size MinimumSize();
         float SnapDimensionToGrid(const bool widthOrHeight, const float dimension);
 
-        void ScrollViewport(int viewTop);
+#pragma region ICoreState
+        const size_t TaskbarState() const noexcept;
+        const size_t TaskbarProgress() const noexcept;
+
+        hstring Title();
+        Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
+        hstring WorkingDirectory() const;
+
+        TerminalConnection::ConnectionState ConnectionState() const;
+
         int ScrollOffset();
         int ViewHeight() const;
+        int BufferHeight() const;
+
+        bool BracketedPasteEnabled() const noexcept;
+#pragma endregion
+
+        void ScrollViewport(int viewTop);
 
         void AdjustFontSize(int fontSizeDelta);
         void ResetFontSize();
@@ -74,7 +86,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
         const Windows::UI::Xaml::Thickness GetPadding();
 
-        TerminalConnection::ConnectionState ConnectionState() const;
         IControlSettings Settings() const;
 
         static Windows::Foundation::Size GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi);
@@ -85,12 +96,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                                const ScrollbarState& scrollState,
                                                                const winrt::hstring& padding,
                                                                const uint32_t dpi);
-
-        Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
-
-        // winrt::fire_and_forget TaskbarProgressChanged();
-        const size_t TaskbarState() const noexcept;
-        const size_t TaskbarProgress() const noexcept;
 
         bool ReadOnly() const noexcept;
         void ToggleReadOnly();

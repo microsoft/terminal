@@ -16,10 +16,6 @@ using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
 using namespace ::Microsoft::Terminal::Core;
 using namespace ::Microsoft::Console::VirtualTerminal;
-// namespace winrt
-// {
-//     using namespace Windows::Foundation;
-// };
 
 namespace ControlUnitTests
 {
@@ -183,7 +179,7 @@ namespace ControlUnitTests
         const auto modifiers = ControlKeyStates();
         expectedBufferHeight = 41;
         expectedTop = 20;
-        // DebugBreak();
+
         interactivity->MouseWheel(modifiers,
                                   WHEEL_DELTA,
                                   til::point{ 0, 0 },
