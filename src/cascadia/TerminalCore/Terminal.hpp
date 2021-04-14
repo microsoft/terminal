@@ -263,6 +263,7 @@ private:
     bool _altGrAliasing;
     bool _suppressApplicationTitle;
     bool _bracketedPasteMode;
+    bool _trimBlockSelection;
 
     size_t _taskbarState;
     size_t _taskbarProgress;

@@ -11,6 +11,7 @@
     // Selection
     "copyOnSelect": false,
     "copyFormatting": true,
+    "trimBlockSelection": false,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
 
     // Tab UI
