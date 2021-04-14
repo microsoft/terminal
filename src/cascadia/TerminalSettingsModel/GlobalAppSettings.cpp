@@ -47,7 +47,6 @@ static constexpr std::string_view DisableAnimationsKey{ "disableAnimations" };
 static constexpr std::string_view StartupActionsKey{ "startupActions" };
 static constexpr std::string_view FocusFollowMouseKey{ "focusFollowMouse" };
 static constexpr std::string_view WindowingBehaviorKey{ "windowingBehavior" };
-static constexpr std::string_view GlobalHotkeyKey{ "globalHotkey" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
@@ -318,34 +317,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, DisableAnimationsKey, _DisableAnimations);
 
     JsonUtils::GetValueForKey(json, StartupActionsKey, _StartupActions);
-
-    try
-    {
-        const auto keys = json[JsonKey(GlobalHotkeyKey)];
-        const auto validString = keys.isString();
-        const auto validArray = keys.isArray() && keys.size() == 1;
-
-        // GH#4239 - If the user provided more than one key
-        // chord to a "keys" array, warn the user here.
-        // TODO: GH#1334 - remove this check.
-        if (keys.isArray() && keys.size() > 1)
-        {
-            // TODO: add a warning
-            // warnings.push_back(SettingsLoadWarnings::TooManyKeysForChord);
-        }
-
-        if (validString || validArray)
-        {
-            const auto keyChordString = keys.isString() ? winrt::to_hstring(keys.asString()) : winrt::to_hstring(keys[0].asString());
-
-            const auto chord = KeyChordSerialization::FromString(keyChordString);
-            _GlobalHotkey = chord;
-        }
-    }
-    catch (...)
-    {
-        // TODO: add a settings warning
-    }
 
     JsonUtils::GetValueForKey(json, FocusFollowMouseKey, _FocusFollowMouse);
 

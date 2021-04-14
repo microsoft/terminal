@@ -1382,11 +1382,6 @@ namespace winrt::TerminalApp::implementation
         return _root ? _root->AlwaysOnTop() : false;
     }
 
-    // KeyChord AppLogic::GlobalHotkey()
-    // {
-    //     return _settings.GlobalSettings().GlobalHotkey();
-    // }
-
     Windows::Foundation::Collections::IMap<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::ActionAndArgs> AppLogic::GlobalHotkeys()
     {
         return _settings.GlobalSettings().KeyMap().FetchGlobalHotkeys();

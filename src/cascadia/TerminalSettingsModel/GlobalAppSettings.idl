@@ -68,7 +68,6 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(String, StartupActions);
         INHERITABLE_SETTING(Boolean, FocusFollowMouse);
         INHERITABLE_SETTING(WindowingMode, WindowingBehavior);
-        INHERITABLE_SETTING(Microsoft.Terminal.Control.KeyChord, GlobalHotkey);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);
