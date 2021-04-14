@@ -221,13 +221,26 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::ProfileDe
 // - a reference to the new profile
 winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::CreateNewProfile()
 {
+    if (_allProfiles.Size() == std::numeric_limits<uint32_t>::max())
+    {
+        // Shouldn't really happen
+        return nullptr;
+    }
+
+    winrt::hstring newName{};
+    for (uint32_t candidateIndex = 0; candidateIndex < _allProfiles.Size() + 1; candidateIndex++)
+    {
+        // There is a theoretical unsigned integer wraparound, which is OK
+        newName = fmt::format(L"Profile {}", _allProfiles.Size() + 1 + candidateIndex);
+        if (std::none_of(begin(_allProfiles), end(_allProfiles), [&](auto&& profile) { return profile.Name() == newName; }))
+        {
+            break;
+        }
+    }
+
     auto newProfile{ _userDefaultProfileSettings->CreateChild() };
-    _allProfiles.Append(*newProfile);
-
-    // Give the new profile a distinct name so a guid is properly generated
-    const winrt::hstring newName{ fmt::format(L"Profile {}", _allProfiles.Size()) };
     newProfile->Name(newName);
-
+    _allProfiles.Append(*newProfile);
     return *newProfile;
 }
 
