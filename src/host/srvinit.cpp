@@ -322,6 +322,7 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
 
     HANDLE const hThread = CreateThread(nullptr, 0, ConsoleIoThread, connectMessage, 0, nullptr);
     RETURN_HR_IF(E_HANDLE, hThread == nullptr);
+    LOG_IF_FAILED(SetThreadDescription(hThread, L"Console Driver Message IO Thread"));
     LOG_IF_WIN32_BOOL_FALSE(CloseHandle(hThread)); // The thread will run on its own and close itself. Free the associated handle.
 
     // See MSFT:19918626
