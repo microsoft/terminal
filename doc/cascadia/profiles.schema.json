@@ -902,7 +902,7 @@
         },
         "trimBlockSelection": {
           "default": false,
-          "description": "When set to true, trailing whitespaces will be removed from text in rectangular (block) selection while copied to your clipboard. When set to false, the white-spaces will be preserved.",
+          "description": "When set to true, trailing white-spaces will be removed from text in rectangular (block) selection while copied to your clipboard. When set to false, the white-spaces will be preserved.",
           "type": "boolean"
         },
         "disableAnimations": {
