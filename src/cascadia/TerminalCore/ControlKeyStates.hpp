@@ -7,7 +7,7 @@
 // https://docs.microsoft.com/en-us/windows/console/key-event-record-str
 //
 // Since we also want to be able to encode win-key info in this structure, we'll
-// add those valuse manually here
+// add those values manually here
 constexpr DWORD RIGHT_WIN_PRESSED = 0x0200;
 constexpr DWORD LEFT_WIN_PRESSED = 0x0400;
 

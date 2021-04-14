@@ -1360,6 +1360,11 @@ namespace winrt::TerminalApp::implementation
             buffer += L"Alt+";
         }
 
+        if (WI_IsFlagSet(modifiers, KeyModifiers::Windows))
+        {
+            buffer += L"Win+";
+        }
+
         return buffer;
     }
 
