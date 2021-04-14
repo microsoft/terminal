@@ -719,9 +719,9 @@ namespace winrt::TerminalApp::implementation
                 const auto newName = realArgs.Name();
                 const auto request = winrt::make_self<implementation::RenameWindowRequestedArgs>(newName);
                 _RenameWindowRequestedHandlers(*this, *request);
+                args.Handled(true);
             }
         }
-        args.Handled(false);
     }
 
     void TerminalPage::_HandleOpenWindowRenamer(const IInspectable& /*sender*/,
