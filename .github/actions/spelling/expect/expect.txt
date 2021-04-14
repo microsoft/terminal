@@ -1009,6 +1009,7 @@ horiz
 HORZ
 hostable
 hostlib
+hotkeys
 HPA
 HPAINTBUFFER
 HPCON

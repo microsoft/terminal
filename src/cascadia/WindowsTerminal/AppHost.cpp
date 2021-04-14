@@ -637,7 +637,7 @@ winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
 
 // Method Description:
 // - Called whenever a registered hotkey is pressed. We'll look up the
-//   GlobalSummonArgs for the specifed hotkey, then dispatch a call to the
+//   GlobalSummonArgs for the specified hotkey, then dispatch a call to the
 //   Monarch with the selection information.
 // - If the monarch finds a match for the window name (or no name was provided),
 //   it'll set FoundMatch=true.
