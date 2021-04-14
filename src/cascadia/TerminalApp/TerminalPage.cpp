@@ -2601,15 +2601,65 @@ namespace winrt::TerminalApp::implementation
     {
         return _WindowName;
     }
-    void TerminalPage::WindowName(const winrt::hstring& value)
+
+    winrt::fire_and_forget TerminalPage::WindowName(const winrt::hstring& value)
     {
-        if (_WindowName != value)
+        const bool changed = _WindowName != value;
+        if (changed)
         {
             _WindowName = value;
-            _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+        }
+        auto weakThis{ get_weak() };
+        // On the foreground thread, raise property changed notifications, and
+        // display the success toast.
+        co_await resume_foreground(Dispatcher());
+        if (auto page{ weakThis.get() })
+        {
+            if (changed)
+            {
+                page->_PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+                page->_PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"RenameSucceededText" });
+
+                // DON'T display the confirmation if this is the name we were
+                // given on startup!
+                if (_page->_startupState == StartupState::Initialized)
+                {
+                    page->_DisplayRenameSuccessToast();
+                }
+            }
         }
     }
 
+    // Method Description:
+    // - Display the rename succeeded toast. If this is the first time we're
+    //   being called, load the TeachingTip manually and wire it up to the Toast
+    //   object.
+    // - This should be called on the UI thread.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_DisplayRenameSuccessToast()
+    {
+        // If we haven't ever loaded the TeachingTip, then do so now and
+        // create the toast for it.
+        if (_windowRenameSucceededToast == nullptr)
+        {
+            if (MUX::Controls::TeachingTip tip{ FindName(L"RenameSucceededToast").try_as<MUX::Controls::TeachingTip>() })
+            {
+                _windowRenameSucceededToast = std::make_shared<Toast>(tip);
+                // Make sure to use the weak ref when setting up this
+                // callback.
+                tip.Closed({ get_weak(), &TerminalPage::_FocusActiveControl });
+            }
+        }
+        _UpdateTeachingTipTheme(RenameSucceededToast().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
+
+        if (_windowRenameSucceededToast != nullptr)
+        {
+            _windowRenameSucceededToast->Open();
+        }
+    }
     // WindowId is a otherwise generic WINRT_OBSERVABLE_PROPERTY, but it needs
     // to raise a PropertyChanged for WindowIdForDisplay, instead of
     // WindowId.
@@ -2650,6 +2700,20 @@ namespace winrt::TerminalApp::implementation
         return _WindowName.empty() ?
                    winrt::hstring{ fmt::format(L"<{}>", RS_(L"UnnamedWindowName")) } :
                    _WindowName;
+    }
+
+    // Method Description:
+    // - Returns a string of text like "Successfully renamed window to
+    //   "{WindowNameForDisplay()}"". This is used for the RenameSucceededToast
+    //   when a rename is successful.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a string for displaying the name of the window.
+    winrt::hstring TerminalPage::RenameSucceededText() const noexcept
+    {
+        return winrt::hstring{ fmt::format(std::wstring_view(RS_(L"RenameSucceededText")),
+                                           std::wstring_view(WindowNameForDisplay())) };
     }
 
     // Method Description:

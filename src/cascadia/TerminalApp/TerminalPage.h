@@ -102,11 +102,12 @@ namespace winrt::TerminalApp::implementation
         // WINRT_OBSERVABLE_PROPERTY's, but we want them to raise
         // WindowNameForDisplay and WindowIdForDisplay instead
         winrt::hstring WindowName() const noexcept;
-        void WindowName(const winrt::hstring& value);
+        winrt::fire_and_forget WindowName(const winrt::hstring& value);
         uint64_t WindowId() const noexcept;
         void WindowId(const uint64_t& value);
         winrt::hstring WindowIdForDisplay() const noexcept;
         winrt::hstring WindowNameForDisplay() const noexcept;
+        winrt::hstring RenameSucceededText() const noexcept;
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
@@ -175,6 +176,7 @@ namespace winrt::TerminalApp::implementation
 
         std::shared_ptr<Toast> _windowIdToast{ nullptr };
         std::shared_ptr<Toast> _windowRenameFailedToast{ nullptr };
+        std::shared_ptr<Toast> _windowRenameSucceededToast{ nullptr };
 
         void _ShowAboutDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseWarningDialog();
@@ -327,6 +329,7 @@ namespace winrt::TerminalApp::implementation
         void _WindowRenamerActionClick(const IInspectable& sender, const IInspectable& eventArgs);
         void _RequestWindowRename(const winrt::hstring& newName);
         void _WindowRenamerKeyUp(const IInspectable& sender, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+        void _DisplayRenameSuccessToast();
 
         void _UpdateTeachingTipTheme(winrt::Windows::UI::Xaml::FrameworkElement element);
 
