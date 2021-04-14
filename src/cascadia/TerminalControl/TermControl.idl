@@ -18,6 +18,7 @@ namespace Microsoft.Terminal.Control
         void UpdateSettings();
 
         Microsoft.Terminal.Control.IControlSettings Settings { get; };
+        Microsoft.Terminal.Control.IControlAppearance UnfocusedAppearance;
 
         event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
         event FontSizeChangedEventArgs FontSizeChanged;
@@ -44,6 +45,7 @@ namespace Microsoft.Terminal.Control
 
         String Title { get; };
 
+        Boolean BracketedPasteEnabled { get; };
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();
         void Close();

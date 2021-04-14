@@ -147,13 +147,24 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - settings: The new TerminalSettings to apply to any matching controls
     // - profile: The GUID of the profile these settings should apply to.
-    void LeafPane::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
+    void LeafPane::UpdateSettings(const TerminalSettingsCreateResult& settings, const GUID& profile)
     {
         if (profile == _profile)
         {
+            auto controlSettings = _control.Settings().as<TerminalSettings>();
             // Update the parent of the control's settings object (and not the object itself) so
             // that any overrides made by the control don't get affected by the reload
-            _control.Settings().as<TerminalSettings>().SetParent(settings);
+            controlSettings.SetParent(settings.DefaultSettings());
+            auto unfocusedSettings{ settings.UnfocusedSettings() };
+            if (unfocusedSettings)
+            {
+                // Note: the unfocused settings needs to be entirely unchanged _except_ we need to
+                // set its parent to the settings object that lives in the control. This is because
+                // the overrides made by the control live in that settings object, so we want to make
+                // sure the unfocused settings inherit from that.
+                unfocusedSettings.SetParent(controlSettings);
+            }
+            _control.UnfocusedAppearance(unfocusedSettings);
             _control.UpdateSettings();
         }
     }

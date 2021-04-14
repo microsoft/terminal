@@ -130,35 +130,6 @@ bool ConhostInternalGetSet::SetConsoleCursorPosition(const COORD position)
     return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleCursorPositionImpl(info, clampedPosition));
 }
 
-// Routine Description:
-// - Connects the GetConsoleCursorInfo API call directly into our Driver Message servicing call inside Conhost.exe
-// Arguments:
-// - cursorInfo - Structure to receive console cursor rendering info
-// Return Value:
-// - true if successful (see DoSrvGetConsoleCursorInfo). false otherwise.
-bool ConhostInternalGetSet::GetConsoleCursorInfo(CONSOLE_CURSOR_INFO& cursorInfo) const
-{
-    bool visible;
-    DWORD size;
-
-    ServiceLocator::LocateGlobals().api.GetConsoleCursorInfoImpl(_io.GetActiveOutputBuffer(), size, visible);
-    cursorInfo.bVisible = visible;
-    cursorInfo.dwSize = size;
-    return true;
-}
-
-// Routine Description:
-// - Connects the SetConsoleCursorInfo API call directly into our Driver Message servicing call inside Conhost.exe
-// Arguments:
-// - cursorInfo - Updated size/visibility information to modify the cursor rendering behavior.
-// Return Value:
-// - true if successful (see DoSrvSetConsoleCursorInfo). false otherwise.
-bool ConhostInternalGetSet::SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO& cursorInfo)
-{
-    const bool visible = !!cursorInfo.bVisible;
-    return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleCursorInfoImpl(_io.GetActiveOutputBuffer(), cursorInfo.dwSize, visible));
-}
-
 // Method Description:
 // - Retrieves the current TextAttribute of the active screen buffer.
 // Arguments:

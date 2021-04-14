@@ -64,7 +64,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - settings: The new TerminalSettings to apply to any matching controls
     // - profile: The GUID of the profile these settings should apply to
-    void ParentPane::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
+    void ParentPane::UpdateSettings(const TerminalSettingsCreateResult& settings, const GUID& profile)
     {
         _firstChild.UpdateSettings(settings, profile);
         _secondChild.UpdateSettings(settings, profile);

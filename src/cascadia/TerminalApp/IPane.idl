@@ -26,7 +26,7 @@ namespace TerminalApp
 
         void Shutdown();
         void ClearActive();
-        void UpdateSettings(Microsoft.Terminal.Settings.Model.TerminalSettings settings, Guid profile);
+        void UpdateSettings(Microsoft.Terminal.Settings.Model.TerminalSettingsCreateResult settings, Guid profile);
 
         void ResizeContent(Windows.Foundation.Size newSize);
         Single CalcSnappedDimensionSingle(Boolean widthOrHeight, Single dimension);
