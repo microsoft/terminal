@@ -2891,7 +2891,7 @@ namespace winrt::TerminalApp::implementation
             }
             }
 
-            // Other ideas for actions that could be preview-able:
+            // GH#9818 Other ideas for actions that could be preview-able:
             // * Set Font size
             // * Set acrylic true/false/opacity?
             // * SetPixelShaderPath?
