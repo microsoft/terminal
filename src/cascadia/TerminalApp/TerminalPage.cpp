@@ -2622,7 +2622,7 @@ namespace winrt::TerminalApp::implementation
 
                 // DON'T display the confirmation if this is the name we were
                 // given on startup!
-                if (_page->_startupState == StartupState::Initialized)
+                if (page->_startupState == StartupState::Initialized)
                 {
                     page->_DisplayRenameSuccessToast();
                 }
