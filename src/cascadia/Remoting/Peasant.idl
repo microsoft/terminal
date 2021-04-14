@@ -41,12 +41,12 @@ namespace Microsoft.Terminal.Remoting
         void ActivateWindow(WindowActivatedArgs args);
         WindowActivatedArgs GetLastActivatedArgs();
 
-        void Summon();
-        String WindowName { get; };
-        void RequestIdentifyWindows(); // Tells us to raise a IdentifyWindowsRequested
         void DisplayWindowId(); // Tells us to display its own ID (which causes a DisplayWindowIdRequested to be raised)
 
+        String WindowName { get; };
+        void RequestIdentifyWindows(); // Tells us to raise a IdentifyWindowsRequested
         void RequestRename(RenameRequestArgs args); // Tells us to raise a RenameRequested
+        void Summon();
 
         event Windows.Foundation.TypedEventHandler<Object, WindowActivatedArgs> WindowActivated;
         event Windows.Foundation.TypedEventHandler<Object, CommandlineArgs> ExecuteCommandlineRequested;

@@ -681,12 +681,26 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
     }
 
+    // Method Description:
+    // - Attempt to summon a window. `args` contains information about which
+    //   window we should try to summon:
+    //   * if a WindowName is provided, we'll try to find a window with exactly
+    //     that name, and fail if there isn't one.
+    // - Calls Peasant::Summon on the matching peasant (which might be an RPC call)
+    // - This should only ever be called by the WindowManager in the monarch
+    //   process itself. The monarch is the one registering for global hotkeys,
+    //   so it's the one calling this method.
+    // Arguments:
+    // - args: contains information about the window that should be summoned.
+    // Return Value:
+    // - <none>
+    // - Sets args.FoundMatch when a window matching args is found successfully.
     void Monarch::SummonWindow(const Remoting::SummonWindowSelectionArgs& args)
     {
+        const auto searchedForName{ args.WindowName() };
         try
         {
             args.FoundMatch(false);
-            const auto searchedForName{ args.WindowName() };
             uint64_t windowId = 0;
             // If no name was provided, then just summon the MRU window.
             if (searchedForName.empty())
@@ -706,6 +720,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
         catch (...)
         {
+            LOG_CAUGHT_EXCEPTION();
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_SummonWindow_Failed",
+                              TraceLoggingWideString(searchedForName.c_str(), "searchedForName", "The name of the window we tried to summon"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
         }
     }
 }

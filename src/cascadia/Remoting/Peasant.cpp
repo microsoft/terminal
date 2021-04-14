@@ -117,9 +117,23 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return _lastActivatedArgs;
     }
 
+    // Method Description:
+    // - Summon this peasant to become the active window. Currently, it just
+    //   causes the peasant to become the active window wherever the window
+    //   already was.
+    // - Will raise a SummonRequested event to ask the hosting window to handle for us.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void Peasant::Summon()
     {
         _SummonRequestedHandlers(*this, nullptr);
+
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Peasant_Summon",
+                          TraceLoggingUInt64(GetID(), "peasantID", "Our ID"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 
     // Method Description:

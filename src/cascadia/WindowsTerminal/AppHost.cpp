@@ -635,15 +635,28 @@ winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
     _window->SetGlobalHotkeys(_hotkeys);
 }
 
+// Method Description:
+// - Called whenever a registered hotkey is pressed. We'll look up the
+//   GlobalSummonArgs for the specifed hotkey, then dispatch a call to the
+//   Monarch with the selection information.
+// - If the monarch finds a match for the window name (or no name was provided),
+//   it'll set FoundMatch=true.
+// - If FoundMatch is false, and a name was provided, then we should create a
+//   new window with the given name.
+// Arguments:
+// - hotkeyIndex: the index of the entry in _hotkeys that was pressed.
+// Return Value:
+// - <none>
 void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
 {
     if (hotkeyIndex < 0 || hotkeyIndex > _hotkeys.size())
     {
         return;
     }
+    // Lookup the matching keychord
     Control::KeyChord kc = _hotkeys.at(hotkeyIndex);
-    const auto& actionAndArgs = _hotkeyActions.Lookup(kc);
-    if (actionAndArgs)
+    // Get the stored ActionAndArgs for that chord
+    if (const auto& actionAndArgs{ _hotkeyActions.Lookup(kc) })
     {
         if (const auto& summonArgs{ actionAndArgs.Args().try_as<Settings::Model::GlobalSummonArgs>() })
         {
@@ -652,7 +665,7 @@ void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
             _windowManager.SummonWindow(args);
             if (args.FoundMatch())
             {
-                // Excellent, the window was found.
+                // Excellent, the window was found. We have nothing else to do here.
             }
             else
             {
@@ -663,6 +676,16 @@ void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
     }
 }
 
+// Method Description:
+// - Called when the monarch failed to summon a window for a given set of
+//   SummonWindowSelectionArgs. In this case, we should create the specified
+//   window ourselves.
+// - This is to support the scenario like `globalSummon(Name="_quake")` being
+//   used to summon the window if it already exists, or create it if it doesn't.
+// Arguments:
+// - args: Contains information on how we should name the window
+// Return Value:
+// - <none>
 winrt::fire_and_forget AppHost::_createNewTerminalWindow(Settings::Model::GlobalSummonArgs args)
 {
     // Hop to the BG thread
