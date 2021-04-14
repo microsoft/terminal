@@ -138,6 +138,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return keyModifiers;
     }
 
+    // Method Description:
+    // - Build a map of all the globalSummon actions.
+    // - quakeMode actions are included in this, but expanded to the equivalent
+    //   set of GlobalSummonArgs
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a map of KeyChord -> ActionAndArgs containing all globally bindable actions.
     Windows::Foundation::Collections::IMap<Control::KeyChord, Model::ActionAndArgs> KeyMapping::FetchGlobalHotkeys()
     {
         std::unordered_map<Control::KeyChord, Model::ActionAndArgs, KeyChordHash, KeyChordEquality> justGlobals;
@@ -153,7 +161,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // Manually replace the QuakeMode action with a globalSummon
                 // that has the appropriate action args.
                 auto args = winrt::make_self<GlobalSummonArgs>();
+
+                // We want to summon the window with the name "_quake" specifically.
                 args->Name(L"_quake");
+
                 Model::ActionAndArgs actionAndArgs{ ShortcutAction::GlobalSummon, *args };
                 justGlobals[k] = actionAndArgs;
             }

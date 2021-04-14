@@ -902,6 +902,12 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
     }
 }
 
+// Method Description:
+// - Call UnregisterHotKey once for each entry in hotkeyList, to unset all the bound global hotkeys.
+// Arguments:
+// - hotkeyList: a list of hotkeys to unbind
+// Return Value:
+// - <none>
 void IslandWindow::UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList)
 {
     for (int i = 0; i < hotkeyList.size(); i++)
@@ -911,6 +917,15 @@ void IslandWindow::UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Co
     }
 }
 
+// Method Description:
+// - Call RegisterHotKey once for each entry in hotkeyList, to attempt to
+//   register that keybinding as a global hotkey.
+// - When these keys are pressed, we'll get a WM_HOTKEY message with the payload
+//   containing the index we registered here.
+// Arguments:
+// - hotkeyList: a list of hotkeys to bind
+// Return Value:
+// - <none>
 void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList)
 {
     int index = 0;
