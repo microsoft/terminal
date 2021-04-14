@@ -61,6 +61,7 @@ namespace winrt::TerminalApp::implementation
         void ClosePane();
 
         void SetTabText(winrt::hstring title);
+        winrt::hstring GetTabText() const;
         void ResetTabText();
         void ActivateTabRenamer();
 

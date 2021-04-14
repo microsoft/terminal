@@ -510,6 +510,11 @@ namespace winrt::TerminalApp::implementation
         UpdateTitle();
     }
 
+    winrt::hstring TerminalTab::GetTabText() const
+    {
+        return _runtimeTabText;
+    }
+
     void TerminalTab::ResetTabText()
     {
         _runtimeTabText = L"";
