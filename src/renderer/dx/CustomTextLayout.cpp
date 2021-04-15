@@ -150,8 +150,9 @@ CATCH_RETURN()
 
 // Routine Description:
 // - Uses the internal text information and the analyzers/font information from construction
-//   to determine the complexity of the text. If the text is determined to be entirely simple,
-//   we'll have more chances to optimize the layout process.
+//   to determine the complexity of the text. During the process we break the text into initial
+//   runs based on their complexity. This allows us to further optimize the layout process
+//   of simple runs.
 // Arguments:
 // - <none> - Uses internal state
 // Return Value:
@@ -173,7 +174,7 @@ CATCH_RETURN()
         while (pos < textLength)
         {
             const HRESULT hr = _fontRenderData->Analyzer()->GetTextComplexity(
-                _text.c_str() + pos,
+                &_text.at(pos),
                 textLength,
                 _fontInUse,
                 &isTextSimple,
