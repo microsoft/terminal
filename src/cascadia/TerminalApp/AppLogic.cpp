@@ -1424,7 +1424,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    bool AppLogic::IsQuakeWindow() const
+    bool AppLogic::IsQuakeWindow() const noexcept
     {
         return _root->IsQuakeWindow();
     }

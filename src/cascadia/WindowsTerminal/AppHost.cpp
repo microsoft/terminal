@@ -57,7 +57,8 @@ AppHost::AppHost() noexcept :
         _window = std::make_unique<IslandWindow>();
     }
 
-    _window->IsQuakeWindow(_logic.IsQuakeWindow());
+    // Update our own internal state tracking if we're in quake mode or not.
+    _IsQuakeWindowChanged(nullptr, nullptr);
 
     // Tell the window to callback to us when it's about to handle a WM_CREATE
     auto pfn = std::bind(&AppHost::_HandleCreateWindow,
@@ -244,6 +245,7 @@ void AppHost::Initialize()
     _logic.FullscreenChanged({ this, &AppHost::_FullscreenChanged });
     _logic.FocusModeChanged({ this, &AppHost::_FocusModeChanged });
     _logic.AlwaysOnTopChanged({ this, &AppHost::_AlwaysOnTopChanged });
+    _logic.RaiseVisualBell({ this, &AppHost::_RaiseVisualBell });
 
     _logic.Create();
 
@@ -399,14 +401,6 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
 
     til::point origin{ ::base::saturated_cast<ptrdiff_t>(proposedRect.left),
                        ::base::saturated_cast<ptrdiff_t>(proposedRect.top) };
-    if (centerOnLaunch)
-    {
-        // Move our proposed location into the center of that specific monitor.
-        origin = til::point{
-            nearestMonitorInfo.rcWork.left + ((desktopDimensions.width() / 2) - (dimensions.width() / 2)),
-            nearestMonitorInfo.rcWork.top + ((desktopDimensions.height() / 2) - (dimensions.height() / 2))
-        };
-    }
 
     if (_logic.IsQuakeWindow())
     {
@@ -416,8 +410,8 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
         const til::size availableSpace = desktopDimensions + nonClientSize;
 
         origin = til::point{
-            nearestMonitorInfo.rcWork.left - (nonClientSize.width() / 2),
-            nearestMonitorInfo.rcWork.top
+            ::base::saturated_cast<ptrdiff_t>(nearestMonitorInfo.rcWork.left - (nonClientSize.width() / 2)),
+            ::base::saturated_cast<ptrdiff_t>(nearestMonitorInfo.rcWork.top)
         };
         dimensions = til::size{
             availableSpace.width(),
@@ -425,9 +419,16 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
         };
         launchMode = LaunchMode::FocusMode;
     }
+    else if (centerOnLaunch)
+    {
+        // Move our proposed location into the center of that specific monitor.
+        origin = til::point{
+            ::base::saturated_cast<ptrdiff_t>(nearestMonitorInfo.rcWork.left + ((desktopDimensions.width() / 2) - (dimensions.width() / 2))),
+            ::base::saturated_cast<ptrdiff_t>(nearestMonitorInfo.rcWork.top + ((desktopDimensions.height() / 2) - (dimensions.height() / 2)))
+        };
+    }
 
     const til::rectangle newRect{ origin, dimensions };
-    // const auto newPos = Viewport::FromDimensions(origin, dimensions);
     bool succeeded = SetWindowPos(hwnd,
                                   nullptr,
                                   newRect.left<int>(),

@@ -170,7 +170,7 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     {
         // If we haven't been given the callback that would adjust the dimension,
         // then we can't do anything, so just bail out.
-        return FALSE;
+        return false;
     }
 
     LPRECT winRect = reinterpret_cast<LPRECT>(lParam);
@@ -182,8 +182,9 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     // optional parameter so give two UINTs.
     UINT dpix = USER_DEFAULT_SCREEN_DPI;
     UINT dpiy = USER_DEFAULT_SCREEN_DPI;
-    // If this fails, we'll use the default of 96.
-    GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
+    // If this fails, we'll use the default of 96. I think it can only fail for
+    // bad parameters, which we won't have, so no big deal.
+    LOG_IF_FAILED(GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy));
 
     const auto widthScale = base::ClampedNumeric<float>(dpix) / USER_DEFAULT_SCREEN_DPI;
     const long minWidthScaled = minimumWidth * widthScale;
@@ -196,7 +197,7 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     auto clientHeight = winRect->bottom - winRect->top - nonClientSize.cy;
 
     // If we're the quake window, prevent resizing on all sides except the
-    // bottom. This also applies to resising with the Alt+Space menu
+    // bottom. This also applies to resizing with the Alt+Space menu
     if (IsQuakeWindow() && wParam != WMSZ_BOTTOM)
     {
         // Stuff our current window size into the lParam, and return true. This
@@ -254,7 +255,7 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
         break;
     }
 
-    return TRUE;
+    return true;
 }
 
 // Method Description:
@@ -929,7 +930,8 @@ void IslandWindow::IsQuakeWindow(bool isQuakeWindow) noexcept
     if (_isQuakeWindow != isQuakeWindow)
     {
         _isQuakeWindow = isQuakeWindow;
-        if (IsQuakeWindow())
+        // Don't enter quake mode if we don't have an HWND yet
+        if (IsQuakeWindow() && _window)
         {
             _enterQuakeMode();
         }
@@ -938,20 +940,26 @@ void IslandWindow::IsQuakeWindow(bool isQuakeWindow) noexcept
 
 void IslandWindow::_enterQuakeMode()
 {
+    if (!_window)
+    {
+        return;
+    }
+
     RECT windowRect = GetWindowRect();
     HMONITOR hmon = MonitorFromRect(&windowRect, MONITOR_DEFAULTTONEAREST);
     MONITORINFO nearestMonitorInfo;
 
     UINT dpix = USER_DEFAULT_SCREEN_DPI;
     UINT dpiy = USER_DEFAULT_SCREEN_DPI;
-    // If this fails, we'll use the default of 96.
-    GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
+    // If this fails, we'll use the default of 96. I think it can only fail for
+    // bad parameters, which we won't have, so no big deal.
+    LOG_IF_FAILED(GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy));
 
     nearestMonitorInfo.cbSize = sizeof(MONITORINFO);
     // Get monitor dimensions:
     GetMonitorInfo(hmon, &nearestMonitorInfo);
-    const til::size desktopDimensions{ gsl::narrow<short>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
-                                       gsl::narrow<short>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
+    const til::size desktopDimensions{ ::base::saturated_cast<ptrdiff_t>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
+                                       ::base::saturated_cast<ptrdiff_t>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
 
     // If we just use rcWork by itself, we'll fail to account for the invisible
     // space reserved for the resize handles. So retrieve that size here.
@@ -959,8 +967,8 @@ void IslandWindow::_enterQuakeMode()
     const til::size availableSpace = desktopDimensions + ncSize;
 
     const til::point origin{
-        ::base::saturated_cast<short>(nearestMonitorInfo.rcWork.left - (ncSize.width() / 2)),
-        ::base::saturated_cast<short>(nearestMonitorInfo.rcWork.top)
+        ::base::saturated_cast<ptrdiff_t>(nearestMonitorInfo.rcWork.left - (ncSize.width() / 2)),
+        ::base::saturated_cast<ptrdiff_t>(nearestMonitorInfo.rcWork.top)
     };
     const til::size dimensions{
         availableSpace.width(),

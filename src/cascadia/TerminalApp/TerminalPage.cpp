@@ -42,6 +42,8 @@ namespace winrt
     using IInspectable = Windows::Foundation::IInspectable;
 }
 
+static constexpr std::wstring_view QuakeWindowName{ L"_quake" };
+
 namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage() :
@@ -2613,9 +2615,9 @@ namespace winrt::TerminalApp::implementation
             // If we're entering quake mode, or leaving it
             if (IsQuakeWindow() != oldIsQuakeMode)
             {
-                // If we're entering QM from ~FM, then this will enter FM
-                // If we're entering QM from FM, then this will do nothing
-                // If we're leaving QM (we're already in FM), then this will do nothing
+                // If we're entering Quake Mode from ~Focus Mode, then this will enter Focus Mode
+                // If we're entering Quake Mode from Focus Mode, then this will do nothing
+                // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
                 _SetFocusMode(_isInFocusMode);
                 _IsQuakeWindowChangedHandlers(*this, nullptr);
             }
@@ -2755,8 +2757,8 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    bool TerminalPage::IsQuakeWindow() const
+    bool TerminalPage::IsQuakeWindow() const noexcept
     {
-        return WindowName() == L"_quake";
+        return WindowName() == QuakeWindowName;
     }
 }
