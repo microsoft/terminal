@@ -516,8 +516,6 @@ namespace winrt::TerminalApp::implementation
             if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual))
             {
                 // Bubble this event up to app host, starting with bubbling to the hosting tab
-                // todo: figure out how to raise this event with nullptr
-                // have tried - nullptr, IPane{ nullptr }, LeafPane{ nullptr }
                 _PaneRaiseBellHandlers(nullptr, WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual));
             }
         }

@@ -372,7 +372,7 @@ namespace winrt::TerminalApp::implementation
     //   UI tree. We'll also clear the internal state, so the pane can display its
     //   borders correctly.
     // - The caller should make sure to have removed the zoomed pane from the UI
-    //   tree _before_ calling this. (todo: we don't do this but it still works?)
+    //   tree _before_ calling this.
     // Arguments:
     // - zoomedPane: This is the pane which we're attempting to un-zoom.
     void ParentPane::Restore(IPane paneToUnzoom)
@@ -527,7 +527,6 @@ namespace winrt::TerminalApp::implementation
     //   each of the child panes, and are given a size in pixels, based off the
     //   available space, and the percent of the space they respectively consume,
     //   which is stored in _desiredSplitPosition
-    // todo: is this comment old? I don't see how there's 3 rows/cols
     void ParentPane::_CreateRowColDefinitions()
     {
         const auto first = _desiredSplitPosition * 100.0f;

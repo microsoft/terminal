@@ -408,8 +408,7 @@ namespace winrt::TerminalApp::implementation
         // splitting panes during startup (from a commandline), then it's
         // possible that the focus events won't propagate immediately. Updating
         // the focus here will give the same effect though.
-        // todo: do we need this?
-        //_UpdateActivePane(second);
+        _UpdateActivePane(newLeafPane);
     }
 
     // Method Description:
@@ -820,8 +819,6 @@ namespace winrt::TerminalApp::implementation
         closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                //tab->_rootPane->Close();
-                // todo: confirm that shutdown is the correct replacement
                 tab->_rootPane.Shutdown();
                 tab->_CloseRequestedHandlers(nullptr, nullptr);
             }
