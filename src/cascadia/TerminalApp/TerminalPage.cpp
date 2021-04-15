@@ -1360,6 +1360,11 @@ namespace winrt::TerminalApp::implementation
             buffer += L"Alt+";
         }
 
+        if (WI_IsFlagSet(modifiers, KeyModifiers::Windows))
+        {
+            buffer += L"Win+";
+        }
+
         return buffer;
     }
 
@@ -2708,8 +2713,12 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_RequestWindowRename(const winrt::hstring& newName)
     {
         auto request = winrt::make<implementation::RenameWindowRequestedArgs>(newName);
-        // The WindowRenamer is _not_ a Toast - we want it to stay open until the user dismisses it.
-        WindowRenamer().IsOpen(false);
+        // The WindowRenamer is _not_ a Toast - we want it to stay open until
+        // the user dismisses it.
+        if (WindowRenamer())
+        {
+            WindowRenamer().IsOpen(false);
+        }
         _RenameWindowRequestedHandlers(*this, request);
         // We can't just use request.Successful here, because the handler might
         // (will) be handling this asynchronously, so when control returns to

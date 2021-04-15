@@ -48,6 +48,7 @@ public:
     std::wstring GetClientCommandline() const;
     std::wstring GetVtMode() const;
     bool GetForceV1() const;
+    bool GetForceNoHandoff() const;
 
     short GetWidth() const;
     short GetHeight() const;
@@ -68,6 +69,7 @@ public:
     static const std::wstring_view HANDLE_PREFIX;
     static const std::wstring_view CLIENT_COMMANDLINE_ARG;
     static const std::wstring_view FORCE_V1_ARG;
+    static const std::wstring_view FORCE_NO_HANDOFF_ARG;
     static const std::wstring_view FILEPATH_LEADER_PREFIX;
     static const std::wstring_view WIDTH_ARG;
     static const std::wstring_view HEIGHT_ARG;
@@ -89,6 +91,7 @@ private:
                      const short width,
                      const short height,
                      const bool forceV1,
+                     const bool forceNoHandoff,
                      const bool headless,
                      const bool createServerHandle,
                      const DWORD serverHandle,
@@ -103,6 +106,7 @@ private:
         _width(width),
         _height(height),
         _forceV1(forceV1),
+        _forceNoHandoff(forceNoHandoff),
         _headless(headless),
         _createServerHandle(createServerHandle),
         _serverHandle(serverHandle),
@@ -127,6 +131,7 @@ private:
 
     std::wstring _vtMode;
 
+    bool _forceNoHandoff;
     bool _forceV1;
     bool _headless;
 
