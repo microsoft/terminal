@@ -33,7 +33,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT STDMETHODCALLTYPE Draw(_In_opt_ void* clientDrawingContext,
                                                      _In_ IDWriteTextRenderer* renderer,
                                                      FLOAT originX,
-                                                     FLOAT originY) noexcept;
+                                                     FLOAT originY);
 
         // IDWriteTextAnalysisSource methods
         [[nodiscard]] HRESULT STDMETHODCALLTYPE GetTextAtPosition(UINT32 textPosition,

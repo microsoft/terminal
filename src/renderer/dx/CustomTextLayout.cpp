@@ -132,8 +132,7 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::Draw(_In_opt_ void* clientDrawingContext,
                                                                _In_ IDWriteTextRenderer* renderer,
                                                                FLOAT originX,
-                                                               FLOAT originY) noexcept
-try
+                                                               FLOAT originY)
 {
     const auto drawingContext = static_cast<const DrawingContext*>(clientDrawingContext);
     _formatInUse = drawingContext->useItalicFont ? _fontRenderData->ItalicTextFormat().Get() : _fontRenderData->DefaultTextFormat().Get();
@@ -152,7 +151,6 @@ try
 
     return S_OK;
 }
-CATCH_RETURN()
 
 // Routine Description:
 // - Uses the internal text information and the analyzers/font information from construction

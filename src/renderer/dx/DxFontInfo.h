@@ -16,16 +16,16 @@ namespace Microsoft::Console::Render
         DxFontInfo() noexcept;
 
         DxFontInfo(std::wstring_view familyName,
-                   DWRITE_FONT_WEIGHT weight,
-                   DWRITE_FONT_STYLE style,
-                   DWRITE_FONT_STRETCH stretch);
-
-        DxFontInfo(std::wstring_view familyName,
                    unsigned int weight,
                    DWRITE_FONT_STYLE style,
                    DWRITE_FONT_STRETCH stretch);
 
-        std::wstring GetFamilyName() const;
+        DxFontInfo(std::wstring_view familyName,
+                   DWRITE_FONT_WEIGHT weight,
+                   DWRITE_FONT_STYLE style,
+                   DWRITE_FONT_STRETCH stretch);
+
+        std::wstring_view GetFamilyName() const noexcept;
         void SetFamilyName(const std::wstring_view familyName);
 
         DWRITE_FONT_WEIGHT GetWeight() const noexcept;

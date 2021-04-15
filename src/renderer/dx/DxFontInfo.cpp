@@ -23,6 +23,14 @@ DxFontInfo::DxFontInfo() noexcept :
 }
 
 DxFontInfo::DxFontInfo(std::wstring_view familyName,
+                       unsigned int weight,
+                       DWRITE_FONT_STYLE style,
+                       DWRITE_FONT_STRETCH stretch) :
+    DxFontInfo(familyName, static_cast<DWRITE_FONT_WEIGHT>(weight), style, stretch)
+{
+}
+
+DxFontInfo::DxFontInfo(std::wstring_view familyName,
                        DWRITE_FONT_WEIGHT weight,
                        DWRITE_FONT_STYLE style,
                        DWRITE_FONT_STRETCH stretch) :
@@ -34,19 +42,7 @@ DxFontInfo::DxFontInfo(std::wstring_view familyName,
 {
 }
 
-DxFontInfo::DxFontInfo(std::wstring_view familyName,
-                       unsigned int weight,
-                       DWRITE_FONT_STYLE style,
-                       DWRITE_FONT_STRETCH stretch) :
-    _familyName(familyName),
-    _weight(static_cast<DWRITE_FONT_WEIGHT>(weight)),
-    _style(style),
-    _stretch(stretch),
-    _didFallback(false)
-{
-}
-
-std::wstring DxFontInfo::GetFamilyName() const
+std::wstring_view DxFontInfo::GetFamilyName() const noexcept
 {
     return _familyName;
 }
