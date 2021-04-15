@@ -153,6 +153,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _CursorHeight = appearance.CursorHeight();
         if (!appearance.ColorSchemeName().empty())
         {
+            // TODO: Edit this scheme to apply a random scheme
             if (const auto scheme = schemes.TryLookup(appearance.ColorSchemeName()))
             {
                 ApplyColorScheme(scheme);
