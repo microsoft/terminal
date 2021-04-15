@@ -381,6 +381,9 @@ void Profile::_FinalizeInheritance()
 {
     if (auto defaultAppearanceImpl = get_self<AppearanceConfig>(_DefaultAppearance))
     {
+        // Clear any existing parents first, we don't want duplicates from any previous
+        // calls to this function
+        defaultAppearanceImpl->ClearParents();
         for (auto& parent : _parents)
         {
             if (auto parentDefaultAppearanceImpl = parent->_DefaultAppearance.try_as<AppearanceConfig>())

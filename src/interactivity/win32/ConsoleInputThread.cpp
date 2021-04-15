@@ -27,6 +27,7 @@ HANDLE ConsoleInputThread::Start()
     {
         _hThread = hThread;
         _dwThreadId = dwThreadId;
+        LOG_IF_FAILED(SetThreadDescription(hThread, L"Win32 Window Message Input Thread"));
     }
 
     return hThread;
