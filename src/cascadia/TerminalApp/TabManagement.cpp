@@ -189,7 +189,7 @@ namespace winrt::TerminalApp::implementation
             newTabImpl->UpdateIcon(profile.Icon());
         }
 
-        tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
+        tabViewItem.PointerReleased({ this, &TerminalPage::_OnTabClick });
 
         // When the tab requests close, try to close it (prompt for approval, if required)
         newTabImpl->CloseRequested([weakTab, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
