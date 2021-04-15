@@ -77,6 +77,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _subcommands ? _subcommands.Size() > 0 : false;
     }
 
+    bool Command::IsNestedCommand() const
+    {
+        return _nestedCommand;
+    }
+
     bool Command::HasName() const noexcept
     {
         return _name.has_value();
@@ -278,6 +283,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // Initialize our list of subcommands.
             result->_subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
+            result->_nestedCommand = true;
             auto nestedWarnings = Command::LayerJson(result->_subcommands, nestedCommandsJson);
             // It's possible that the nested commands have some warnings
             warnings.insert(warnings.end(), nestedWarnings.begin(), nestedWarnings.end());
@@ -297,6 +303,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             // create an "invalid" ActionAndArgs
             result->_ActionAndArgs = make<implementation::ActionAndArgs>();
+            result->_nestedCommand = true;
         }
 
         JsonUtils::GetValueForKey(json, IconKey, result->_iconPath);

@@ -126,7 +126,7 @@ namespace TerminalAppLocalTests
         {
             auto command = nameMap.TryLookup(L"iterable command ${profile.name}");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -150,7 +150,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"iterable command profile0");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -168,7 +168,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"iterable command profile1");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -186,7 +186,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"iterable command profile2");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -253,7 +253,7 @@ namespace TerminalAppLocalTests
         {
             auto command = nameMap.TryLookup(L"Split pane, profile: ${profile.name}");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -277,7 +277,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"Split pane, profile: profile0");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -295,7 +295,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"Split pane, profile: profile1");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -313,7 +313,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"Split pane, profile: profile2");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -382,7 +382,7 @@ namespace TerminalAppLocalTests
         {
             auto command = nameMap.TryLookup(L"iterable command ${profile.name}");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -406,7 +406,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"iterable command profile0");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -424,7 +424,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"iterable command profile1\"");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -442,7 +442,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"iterable command profile2");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -521,8 +521,9 @@ namespace TerminalAppLocalTests
 
         auto rootCommand = expandedCommands.Lookup(L"Connect to ssh...");
         VERIFY_IS_NOT_NULL(rootCommand);
-        auto rootActionAndArgs = rootCommand.Action();
-        VERIFY_IS_NULL(rootActionAndArgs);
+        auto rootActionAndArgs = rootCommand.ActionAndArgs();
+        VERIFY_IS_NOT_NULL(rootActionAndArgs);
+        VERIFY_ARE_EQUAL(ShortcutAction::Invalid, rootActionAndArgs.Action());
 
         VERIFY_ARE_EQUAL(2u, rootCommand.NestedCommands().Size());
 
@@ -530,7 +531,7 @@ namespace TerminalAppLocalTests
             winrt::hstring commandName{ L"first.com" };
             auto command = rootCommand.NestedCommands().Lookup(commandName);
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
 
             VERIFY_IS_FALSE(command.HasNestedCommands());
@@ -539,7 +540,7 @@ namespace TerminalAppLocalTests
             winrt::hstring commandName{ L"second.com" };
             auto command = rootCommand.NestedCommands().Lookup(commandName);
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
 
             VERIFY_IS_FALSE(command.HasNestedCommands());
@@ -615,23 +616,25 @@ namespace TerminalAppLocalTests
 
         auto grandparentCommand = expandedCommands.Lookup(L"grandparent");
         VERIFY_IS_NOT_NULL(grandparentCommand);
-        auto grandparentActionAndArgs = grandparentCommand.Action();
-        VERIFY_IS_NULL(grandparentActionAndArgs);
+        auto grandparentActionAndArgs = grandparentCommand.ActionAndArgs();
+        VERIFY_IS_NOT_NULL(grandparentActionAndArgs);
+        VERIFY_ARE_EQUAL(ShortcutAction::Invalid, grandparentActionAndArgs.Action());
 
         VERIFY_ARE_EQUAL(1u, grandparentCommand.NestedCommands().Size());
 
         winrt::hstring parentName{ L"parent" };
         auto parent = grandparentCommand.NestedCommands().Lookup(parentName);
         VERIFY_IS_NOT_NULL(parent);
-        auto parentActionAndArgs = parent.Action();
-        VERIFY_IS_NULL(parentActionAndArgs);
+        auto parentActionAndArgs = parent.ActionAndArgs();
+        VERIFY_IS_NOT_NULL(parentActionAndArgs);
+        VERIFY_ARE_EQUAL(ShortcutAction::Invalid, parentActionAndArgs.Action());
 
         VERIFY_ARE_EQUAL(2u, parent.NestedCommands().Size());
         {
             winrt::hstring childName{ L"child1" };
             auto child = parent.NestedCommands().Lookup(childName);
             VERIFY_IS_NOT_NULL(child);
-            auto childActionAndArgs = child.Action();
+            auto childActionAndArgs = child.ActionAndArgs();
             VERIFY_IS_NOT_NULL(childActionAndArgs);
 
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, childActionAndArgs.Action());
@@ -651,7 +654,7 @@ namespace TerminalAppLocalTests
             winrt::hstring childName{ L"child2" };
             auto child = parent.NestedCommands().Lookup(childName);
             VERIFY_IS_NOT_NULL(child);
-            auto childActionAndArgs = child.Action();
+            auto childActionAndArgs = child.ActionAndArgs();
             VERIFY_IS_NOT_NULL(childActionAndArgs);
 
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, childActionAndArgs.Action());
@@ -741,8 +744,9 @@ namespace TerminalAppLocalTests
             winrt::hstring commandName{ name + L"..." };
             auto command = expandedCommands.Lookup(commandName);
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
-            VERIFY_IS_NULL(actionAndArgs);
+            auto actionAndArgs = command.ActionAndArgs();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::Invalid, actionAndArgs.Action());
 
             VERIFY_IS_TRUE(command.HasNestedCommands());
             VERIFY_ARE_EQUAL(3u, command.NestedCommands().Size());
@@ -751,7 +755,7 @@ namespace TerminalAppLocalTests
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, profile: {}", name) };
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
-                auto childActionAndArgs = childCommand.Action();
+                auto childActionAndArgs = childCommand.ActionAndArgs();
                 VERIFY_IS_NOT_NULL(childActionAndArgs);
 
                 VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
@@ -772,7 +776,7 @@ namespace TerminalAppLocalTests
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, split: horizontal, profile: {}", name) };
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
-                auto childActionAndArgs = childCommand.Action();
+                auto childActionAndArgs = childCommand.ActionAndArgs();
                 VERIFY_IS_NOT_NULL(childActionAndArgs);
 
                 VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
@@ -793,7 +797,7 @@ namespace TerminalAppLocalTests
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, split: vertical, profile: {}", name) };
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
-                auto childActionAndArgs = childCommand.Action();
+                auto childActionAndArgs = childCommand.ActionAndArgs();
                 VERIFY_IS_NOT_NULL(childActionAndArgs);
 
                 VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
@@ -873,8 +877,9 @@ namespace TerminalAppLocalTests
 
         auto rootCommand = expandedCommands.Lookup(L"New Tab With Profile...");
         VERIFY_IS_NOT_NULL(rootCommand);
-        auto rootActionAndArgs = rootCommand.Action();
-        VERIFY_IS_NULL(rootActionAndArgs);
+        auto rootActionAndArgs = rootCommand.ActionAndArgs();
+        VERIFY_IS_NOT_NULL(rootActionAndArgs);
+        VERIFY_ARE_EQUAL(ShortcutAction::Invalid, rootActionAndArgs.Action());
 
         VERIFY_ARE_EQUAL(3u, rootCommand.NestedCommands().Size());
 
@@ -883,7 +888,7 @@ namespace TerminalAppLocalTests
             winrt::hstring commandName{ fmt::format(L"New tab, profile: {}", name) };
             auto command = rootCommand.NestedCommands().Lookup(commandName);
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
 
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -975,8 +980,9 @@ namespace TerminalAppLocalTests
 
         auto rootCommand = expandedCommands.Lookup(L"New Pane...");
         VERIFY_IS_NOT_NULL(rootCommand);
-        auto rootActionAndArgs = rootCommand.Action();
-        VERIFY_IS_NULL(rootActionAndArgs);
+        auto rootActionAndArgs = rootCommand.ActionAndArgs();
+        VERIFY_IS_NOT_NULL(rootActionAndArgs);
+        VERIFY_ARE_EQUAL(ShortcutAction::Invalid, rootActionAndArgs.Action());
 
         VERIFY_ARE_EQUAL(3u, rootCommand.NestedCommands().Size());
 
@@ -985,8 +991,9 @@ namespace TerminalAppLocalTests
             winrt::hstring commandName{ name + L"..." };
             auto command = rootCommand.NestedCommands().Lookup(commandName);
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
-            VERIFY_IS_NULL(actionAndArgs);
+            auto actionAndArgs = command.ActionAndArgs();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::Invalid, actionAndArgs.Action());
 
             VERIFY_IS_TRUE(command.HasNestedCommands());
             VERIFY_ARE_EQUAL(3u, command.NestedCommands().Size());
@@ -996,7 +1003,7 @@ namespace TerminalAppLocalTests
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, profile: {}", name) };
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
-                auto childActionAndArgs = childCommand.Action();
+                auto childActionAndArgs = childCommand.ActionAndArgs();
                 VERIFY_IS_NOT_NULL(childActionAndArgs);
 
                 VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
@@ -1017,7 +1024,7 @@ namespace TerminalAppLocalTests
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, split: horizontal, profile: {}", name) };
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
-                auto childActionAndArgs = childCommand.Action();
+                auto childActionAndArgs = childCommand.ActionAndArgs();
                 VERIFY_IS_NOT_NULL(childActionAndArgs);
 
                 VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
@@ -1038,7 +1045,7 @@ namespace TerminalAppLocalTests
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, split: vertical, profile: {}", name) };
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
-                auto childActionAndArgs = childCommand.Action();
+                auto childActionAndArgs = childCommand.ActionAndArgs();
                 VERIFY_IS_NOT_NULL(childActionAndArgs);
 
                 VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
@@ -1114,7 +1121,7 @@ namespace TerminalAppLocalTests
         {
             auto command = nameMap.TryLookup(L"iterable command ${scheme.name}");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -1143,7 +1150,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"iterable command scheme_0");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -1161,7 +1168,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"iterable command scheme_1");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -1179,7 +1186,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"iterable command scheme_2");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();

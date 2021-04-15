@@ -106,7 +106,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // This allows us to override whatever our parents tell us.
         for (const auto& [name, cmd] : _NestedCommands)
         {
-            nameMap.insert_or_assign(name, cmd);
+            //nameMap.insert_or_assign(name, cmd);
+            if (cmd.HasNestedCommands())
+            {
+                // add a valid cmd
+                nameMap.insert_or_assign(name, cmd);
+            }
+            else
+            {
+                // remove the invalid cmd
+                nameMap.erase(name);
+            }
         }
     }
 
@@ -118,9 +128,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             actionMap->_KeyMap.insert(pair);
         });
 
-        for(const auto& [actionID, cmd] : _ActionMap)
+        for (const auto& [actionID, cmd] : _ActionMap)
         {
             actionMap->_ActionMap.insert({ actionID, *(get_self<Command>(cmd)->Copy()) });
+        }
+
+        for (const auto& [name, cmd] : _NestedCommands)
+        {
+            actionMap->_NestedCommands.Insert(name, *(get_self<Command>(cmd)->Copy()));
         }
 
         return actionMap;
@@ -138,8 +153,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return;
         }
 
-        // _Always_ add nested commands
-        if (cmd.HasNestedCommands())
+        // Handle nested commands
+        const auto cmdImpl{ get_self<Command>(cmd) };
+        if (cmdImpl->IsNestedCommand())
         {
             // But check if it actually has a name to bind to first
             const auto name{ cmd.Name() };
