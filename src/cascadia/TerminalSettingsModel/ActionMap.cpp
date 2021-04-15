@@ -55,28 +55,60 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //    an invalid state for the `ActionMap`
     Windows::Foundation::Collections::IMapView<hstring, Model::Command> ActionMap::NameMap()
     {
-        if (_NameMapCache)
+        if (!_NameMapCache)
         {
-            return _NameMapCache.GetView();
+            // populate _NameMapCache
+            std::unordered_map<hstring, Model::Command> nameMap{};
+            std::set<InternalActionID> visitedActionIDs{ ActionHash()(make<implementation::ActionAndArgs>()) };
+            _PopulateNameMapWithNestedCommands(nameMap);
+            _PopulateNameMapWithStandardCommands(nameMap, visitedActionIDs);
+
+            _NameMapCache = single_threaded_map<hstring, Model::Command>(std::move(nameMap));
+        }
+        return _NameMapCache.GetView();
+    }
+
+    // Method Description:
+    // - Populates the provided nameMap with all of our nested commands and our parents nested commands
+    // - Performs a top-down approach by going to the root first, then recursively adding the nested commands layer-by-layer
+    // Arguments:
+    // - nameMap: the nameMap we're populating. This maps the name (hstring) of a command to the command itself.
+    void ActionMap::_PopulateNameMapWithNestedCommands(std::unordered_map<hstring, Model::Command>& nameMap) const
+    {
+        // Update NameMap with our parents.
+        // Starting with this means we're doing a top-down approach.
+        for (const auto& parent : _parents)
+        {
+            parent->_PopulateNameMapWithNestedCommands(nameMap);
         }
 
-        std::unordered_map<hstring, Model::Command> nameMap{};
-        std::set<InternalActionID> visitedActionIDs{ ActionHash()(make<implementation::ActionAndArgs>()) };
-        _PopulateNameMap(nameMap, visitedActionIDs);
-
-        _NameMapCache = single_threaded_map<hstring, Model::Command>(std::move(nameMap));
-        return _NameMapCache.GetView();
+        // Add NestedCommands to NameMap _after_ we handle our parents.
+        // This allows us to override whatever our parents tell us.
+        for (const auto& [name, cmd] : _NestedCommands)
+        {
+            if (cmd.HasNestedCommands())
+            {
+                // add a valid cmd
+                nameMap.insert_or_assign(name, cmd);
+            }
+            else
+            {
+                // remove the invalid cmd
+                nameMap.erase(name);
+            }
+        }
     }
 
     // Method Description:
     // - Populates the provided nameMap with all of our actions and our parents actions
     //    while omitting the actions that were already added before
+    // - This needs to be a bottom up approach to ensure that we only add each action (identified by action ID) once.
     // Arguments:
     // - nameMap: the nameMap we're populating. This maps the name (hstring) of a command to the command itself.
     //             There should only ever by one of each command (identified by the actionID) in the nameMap.
     // - visitedActionIDs: the actionIDs that we've already added to the nameMap. Commands with a matching actionID
     //                      have already been added, and should be ignored.
-    void ActionMap::_PopulateNameMap(std::unordered_map<hstring, Model::Command>& nameMap, std::set<InternalActionID>& visitedActionIDs) const
+    void ActionMap::_PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap, std::set<InternalActionID>& visitedActionIDs) const
     {
         // Update NameMap and visitedActionIDs with our current layer
         for (const auto& [actionID, cmd] : _ActionMap)
@@ -99,24 +131,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Update NameMap and visitedActionIDs with our parents
         for (const auto& parent : _parents)
         {
-            parent->_PopulateNameMap(nameMap, visitedActionIDs);
-        }
-
-        // Add NestedCommands to NameMap _after_ we handle our parents.
-        // This allows us to override whatever our parents tell us.
-        for (const auto& [name, cmd] : _NestedCommands)
-        {
-            //nameMap.insert_or_assign(name, cmd);
-            if (cmd.HasNestedCommands())
-            {
-                // add a valid cmd
-                nameMap.insert_or_assign(name, cmd);
-            }
-            else
-            {
-                // remove the invalid cmd
-                nameMap.erase(name);
-            }
+            parent->_PopulateNameMapWithStandardCommands(nameMap, visitedActionIDs);
         }
     }
 

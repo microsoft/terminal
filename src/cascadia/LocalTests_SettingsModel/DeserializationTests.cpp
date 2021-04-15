@@ -2432,7 +2432,7 @@ namespace SettingsModelLocalTests
 
         VerifyParseSucceeded(settingsJson);
         VerifyParseSucceeded(settings1Json);
-        
+
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
         settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);

@@ -92,7 +92,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::optional<Model::Command> _GetActionByID(InternalActionID actionID) const;
         std::optional<Model::Command> _GetActionByKeyChordInternal(Control::KeyChord const& keys) const;
 
-        void _PopulateNameMap(std::unordered_map<hstring, Model::Command>& nameMap, std::set<InternalActionID>& visitedActionIDs) const;
+        void _PopulateNameMapWithNestedCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
+        void _PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap, std::set<InternalActionID>& visitedActionIDs) const;
 
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NestedCommands{ nullptr };
