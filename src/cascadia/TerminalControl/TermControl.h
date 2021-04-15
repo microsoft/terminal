@@ -145,6 +145,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::shared_ptr<ThrottledFunc<>> _updatePatternLocations;
 
+        std::shared_ptr<ThrottledFunc<>> _playWarningBell;
+
         struct ScrollBarUpdate
         {
             std::optional<double> newValue;
@@ -198,8 +200,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
-        void _UpdateSettingsFromUIThread(IControlSettings newSettings);
-        void _UpdateAppearanceFromUIThread(IControlAppearance newAppearance);
+        void _UpdateSettingsFromUIThreadUnderLock(IControlSettings newSettings);
+        void _UpdateAppearanceFromUIThreadUnderLock(IControlAppearance newAppearance);
         bool _isReadOnly{ false };
 
         void _ApplyUISettings(const IControlSettings&);

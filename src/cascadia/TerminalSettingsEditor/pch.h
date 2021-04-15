@@ -29,7 +29,6 @@
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Storage.h>
 #include <winrt/Windows.Storage.AccessCache.h>
-#include <winrt/Windows.Storage.Pickers.h>
 
 #include <winrt/Windows.UI.h>
 #include <winrt/Windows.UI.Core.h>
@@ -54,7 +53,8 @@
 #include <winrt/Microsoft.Terminal.Control.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
 
-#include "shobjidl_core.h"
+#include <shlobj.h>
+#include <shobjidl_core.h>
 #include <dwrite.h>
 #include <dwrite_1.h>
 

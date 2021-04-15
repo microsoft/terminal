@@ -954,6 +954,10 @@ namespace TerminalAppLocalTests
 
     void TabTests::TestWindowRenameSuccessful()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        END_TEST_METHOD_PROPERTIES()
+
         auto page = _commonSetup();
         page->RenameWindowRequested([&page](auto&&, const winrt::TerminalApp::RenameWindowRequestedArgs args) {
             // In the real terminal, this would bounce up to the monarch and
@@ -980,6 +984,10 @@ namespace TerminalAppLocalTests
     }
     void TabTests::TestWindowRenameFailure()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        END_TEST_METHOD_PROPERTIES()
+
         auto page = _commonSetup();
         page->RenameWindowRequested([&page](auto&&, auto&&) {
             // In the real terminal, this would bounce up to the monarch and

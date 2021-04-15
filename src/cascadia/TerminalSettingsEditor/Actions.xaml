@@ -49,8 +49,6 @@
                     <Grid HorizontalAlignment="Stretch"
                           ColumnSpacing="8">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="16" />
-                            <!--  icon  -->
                             <ColumnDefinition Width="Auto" />
                             <!--  command label  -->
                             <ColumnDefinition Width="*" />
@@ -59,7 +57,7 @@
                             <!--  gutter for scrollbar  -->
                         </Grid.ColumnDefinitions>
 
-                        <TextBlock Grid.Column="1"
+                        <TextBlock Grid.Column="0"
                                    HorizontalAlignment="Left"
                                    Text="{x:Bind Name, Mode=OneWay}" />
 
@@ -71,7 +69,7 @@
                             AutomationProperties to Raw here, unlike in the
                             CommandPalette. We're not quite sure why.
                         -->
-                        <Border Grid.Column="2"
+                        <Border Grid.Column="1"
                                 Padding="2,0,2,0"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Center"

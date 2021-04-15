@@ -39,6 +39,9 @@ constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 // The minimum delay between updating the locations of regex patterns
 constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
 
+// The minimum delay between emitting warning bells
+constexpr const auto TerminalWarningBellInterval = std::chrono::milliseconds(1000);
+
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::CopyFormat);
 
 namespace winrt::Microsoft::Terminal::Control::implementation
@@ -91,7 +94,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#8969: pre-seed working directory to prevent potential races
         _terminal->SetWorkingDirectory(_settings.StartingDirectory());
 
-        auto pfnWarningBell = std::bind(&TermControl::_TerminalWarningBell, this);
+        auto pfnWarningBell = [this]() {
+            _playWarningBell->Run();
+        };
         _terminal->SetWarningBellCallback(pfnWarningBell);
 
         auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
@@ -165,6 +170,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             },
             UpdatePatternLocationsInterval,
+            Dispatcher());
+
+        _playWarningBell = std::make_shared<ThrottledFunc<>>(
+            [weakThis = get_weak()]() {
+                if (auto control{ weakThis.get() })
+                {
+                    control->_TerminalWarningBell();
+                }
+            },
+            TerminalWarningBellInterval,
             Dispatcher());
 
         _updateScrollBar = std::make_shared<ThrottledFunc<ScrollBarUpdate>>(
@@ -306,13 +321,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // terminal.
         co_await winrt::resume_foreground(Dispatcher());
 
-        _UpdateSettingsFromUIThread(_settings);
+        // Take the lock before calling the helper functions to update the settings and appearance
+        auto lock = _terminal->LockForWriting();
+
+        _UpdateSettingsFromUIThreadUnderLock(_settings);
+
         auto appearance = _settings.try_as<IControlAppearance>();
         if (!_focused && _UnfocusedAppearance)
         {
             appearance = _UnfocusedAppearance;
         }
-        _UpdateAppearanceFromUIThread(appearance);
+        _UpdateAppearanceFromUIThreadUnderLock(appearance);
     }
 
     // Method Description:
@@ -323,7 +342,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // Dispatch a call to the UI thread
         co_await winrt::resume_foreground(Dispatcher());
-        _UpdateAppearanceFromUIThread(newAppearance);
+
+        // Take the lock before calling the helper function to update the appearance
+        auto lock = _terminal->LockForWriting();
+        _UpdateAppearanceFromUIThreadUnderLock(newAppearance);
     }
 
     // Method Description:
@@ -366,16 +388,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   issue that causes one of our hstring -> wstring_view conversions to result in garbage,
     //   but only from a coroutine context. See GH#8723.
     // - INVARIANT: This method must be called from the UI thread.
+    // - INVARIANT: This method can only be called if the caller has the writing lock on the terminal.
     // Arguments:
     // - newSettings: the new settings to set
-    void TermControl::_UpdateSettingsFromUIThread(IControlSettings newSettings)
+    void TermControl::_UpdateSettingsFromUIThreadUnderLock(IControlSettings newSettings)
     {
         if (_closing)
         {
             return;
         }
-
-        auto lock = _terminal->LockForWriting();
 
         // Update our control settings
         _ApplyUISettings(_settings);
@@ -420,10 +441,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     // Method Description:
     // - Updates the appearance
-    // - This should only be called from the UI thread
+    // - INVARIANT: This method must be called from the UI thread.
+    // - INVARIANT: This method can only be called if the caller has the writing lock on the terminal.
     // Arguments:
     // - newAppearance: the new appearance to set
-    void TermControl::_UpdateAppearanceFromUIThread(IControlAppearance newAppearance)
+    void TermControl::_UpdateAppearanceFromUIThreadUnderLock(IControlAppearance newAppearance)
     {
         if (_closing)
         {
@@ -472,14 +494,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TSFInputControl().Foreground(foregroundBrush);
 
         // Update the terminal core with its new Core settings
-        auto lock = _terminal->LockForWriting();
         _terminal->UpdateAppearance(newAppearance);
 
-        // Update DxEngine settings under the lock
-        _renderEngine->SetSelectionBackground(til::color{ newAppearance.SelectionBackground() });
-        _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
-        _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
-        _renderer->TriggerRedrawAll();
+        if (_renderEngine)
+        {
+            // Update DxEngine settings under the lock
+            _renderEngine->SetSelectionBackground(til::color{ newAppearance.SelectionBackground() });
+            _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
+            _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
+            _renderer->TriggerRedrawAll();
+        }
     }
 
     // Method Description:
@@ -800,9 +824,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);
             LOG_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
-            // Update DxEngine's SelectionBackground
-            dxEngine->SetSelectionBackground(til::color{ _settings.SelectionBackground() });
-
             const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
             const auto width = vp.Width();
             const auto height = vp.Height();
@@ -820,8 +841,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // the first paint will be ignored!
             dxEngine->SetWarningCallback(std::bind(&TermControl::_RendererWarning, this, std::placeholders::_1));
 
-            dxEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-            dxEngine->SetPixelShaderPath(_settings.PixelShaderPath());
             dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
             dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
@@ -909,6 +928,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             //      we're not technically a part of the UI tree yet, so focusing us
             //      becomes a no-op.
             this->Focus(FocusState::Programmatic);
+
+            // Now that the renderer is set up, update the appearance for initialization
+            _UpdateAppearanceFromUIThreadUnderLock(_settings);
 
             _initializedTerminal = true;
         } // scope for TerminalLock
@@ -1416,6 +1438,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // (expand both "start" and "end" selection points)
                     _terminal->MultiClickSelection(terminalPosition, mode);
                     _selectionNeedsToBeCopied = true;
+                }
+
+                if (_terminal->IsSelectionActive())
+                {
+                    // GH#9787: if selection is active we don't want to track the touchdown position
+                    // so that dragging the mouse will extend the selection rather than starting the new one
+                    _singleClickTouchdownPos = std::nullopt;
                 }
 
                 _renderer->TriggerSelection();
