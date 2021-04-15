@@ -2056,9 +2056,12 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_SetFocusMode(const bool inFocusMode)
     {
-        if (inFocusMode != FocusMode())
+        // If we're the quake window, we must always be in focus mode.
+        // Prevent leaving focus mode here.
+        const bool newInFocusMode = inFocusMode || IsQuakeWindow();
+        if (newInFocusMode != FocusMode())
         {
-            _isInFocusMode = inFocusMode || IsQuakeWindow();
+            _isInFocusMode = newInFocusMode;
             _UpdateTabView();
             _FocusModeChangedHandlers(*this, nullptr);
         }
@@ -2270,7 +2273,7 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalPage::FocusMode() const
     {
-        return _isInFocusMode || IsQuakeWindow();
+        return _isInFocusMode;
     }
 
     bool TerminalPage::Fullscreen() const
@@ -2618,7 +2621,7 @@ namespace winrt::TerminalApp::implementation
                 // If we're entering Quake Mode from ~Focus Mode, then this will enter Focus Mode
                 // If we're entering Quake Mode from Focus Mode, then this will do nothing
                 // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
-                _SetFocusMode(_isInFocusMode);
+                _SetFocusMode(true);
                 _IsQuakeWindowChangedHandlers(*this, nullptr);
             }
         }
