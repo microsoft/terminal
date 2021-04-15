@@ -7,7 +7,7 @@ namespace Microsoft.Terminal.Settings.Model
 {
     runtimeclass TerminalSettingsCreateResult
     {
-        TerminalSettingsCreateResult(TerminalSettings defaultSettings, TerminalSettings unfocused);
+        TerminalSettingsCreateResult(TerminalSettings defaultSettings);
         TerminalSettings DefaultSettings { get; };
         TerminalSettings UnfocusedSettings { get; };
     }

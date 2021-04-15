@@ -37,6 +37,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _defaultSettings(defaultSettings),
             _unfocusedSettings(unfocusedSettings) {}
 
+        TerminalSettingsCreateResult(Model::TerminalSettings defaultSettings) :
+            _defaultSettings(defaultSettings),
+            _unfocusedSettings(nullptr) {}
+
         Model::TerminalSettings DefaultSettings() { return _defaultSettings; };
         Model::TerminalSettings UnfocusedSettings() { return _unfocusedSettings; };
 
