@@ -857,7 +857,7 @@ namespace winrt::TerminalApp::implementation
             newTabImpl->UpdateIcon(profile.Icon());
         }
 
-        tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
+        tabViewItem.PointerReleased({ this, &TerminalPage::_OnTabClick });
 
         // When the tab is closed, remove it from our list of tabs.
         newTabImpl->Closed([tabViewItem, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
