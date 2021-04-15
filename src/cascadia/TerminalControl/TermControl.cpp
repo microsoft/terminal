@@ -1128,6 +1128,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             modifiers.IsCtrlPressed(),
             modifiers.IsAltPressed(),
             modifiers.IsShiftPressed(),
+            modifiers.IsWinPressed(),
             vkey,
         });
         if (!success)
@@ -3010,12 +3011,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             ControlKeyStates flags;
         };
 
-        constexpr std::array<KeyModifier, 5> modifiers{ {
+        constexpr std::array<KeyModifier, 7> modifiers{ {
             { VirtualKey::RightMenu, ControlKeyStates::RightAltPressed },
             { VirtualKey::LeftMenu, ControlKeyStates::LeftAltPressed },
             { VirtualKey::RightControl, ControlKeyStates::RightCtrlPressed },
             { VirtualKey::LeftControl, ControlKeyStates::LeftCtrlPressed },
             { VirtualKey::Shift, ControlKeyStates::ShiftPressed },
+            { VirtualKey::RightWindows, ControlKeyStates::RightWinPressed },
+            { VirtualKey::LeftWindows, ControlKeyStates::LeftWinPressed },
         } };
 
         ControlKeyStates flags;
