@@ -13,6 +13,14 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    struct FontComparator
+    {
+        bool operator()(const Font& lhs, const Font& rhs) const
+        {
+            return lhs.LocalizedName() < rhs.LocalizedName();
+        }
+    };
+
     struct Font : FontT<Font>
     {
     public:
@@ -72,24 +80,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, Padding);
         OBSERVABLE_PROJECTED_SETTING(_profile, Commandline);
         OBSERVABLE_PROJECTED_SETTING(_profile, StartingDirectory);
-        OBSERVABLE_PROJECTED_SETTING(_profile, BackgroundImagePath);
-        OBSERVABLE_PROJECTED_SETTING(_profile, BackgroundImageOpacity);
-        OBSERVABLE_PROJECTED_SETTING(_profile, BackgroundImageStretchMode);
-        OBSERVABLE_PROJECTED_SETTING(_profile, BackgroundImageAlignment);
+        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), BackgroundImagePath);
+        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), BackgroundImageOpacity);
+        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), BackgroundImageStretchMode);
+        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_SETTING(_profile, AntialiasingMode);
-        OBSERVABLE_PROJECTED_SETTING(_profile, RetroTerminalEffect);
+        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), RetroTerminalEffect);
         OBSERVABLE_PROJECTED_SETTING(_profile, ForceFullRepaintRendering);
         OBSERVABLE_PROJECTED_SETTING(_profile, SoftwareRendering);
-        OBSERVABLE_PROJECTED_SETTING(_profile, ColorSchemeName);
-        OBSERVABLE_PROJECTED_SETTING(_profile, Foreground);
-        OBSERVABLE_PROJECTED_SETTING(_profile, Background);
-        OBSERVABLE_PROJECTED_SETTING(_profile, SelectionBackground);
-        OBSERVABLE_PROJECTED_SETTING(_profile, CursorColor);
+        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), ColorSchemeName);
+        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Foreground);
+        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Background);
+        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), SelectionBackground);
+        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), CursorColor);
         OBSERVABLE_PROJECTED_SETTING(_profile, HistorySize);
         OBSERVABLE_PROJECTED_SETTING(_profile, SnapOnInput);
         OBSERVABLE_PROJECTED_SETTING(_profile, AltGrAliasing);
-        OBSERVABLE_PROJECTED_SETTING(_profile, CursorShape);
-        OBSERVABLE_PROJECTED_SETTING(_profile, CursorHeight);
+        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), CursorShape);
+        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), CursorHeight);
         OBSERVABLE_PROJECTED_SETTING(_profile, BellStyle);
 
     private:
@@ -191,12 +199,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_PROPERTY(Editor::ProfilePageNavigationState, State, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);
-        GETSET_BINDABLE_ENUM_SETTING(CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle, State().Profile, CursorShape);
+        GETSET_BINDABLE_ENUM_SETTING(CursorShape, Microsoft::Terminal::Core::CursorStyle, State().Profile, CursorShape);
         GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, State().Profile, BackgroundImageStretchMode);
-        GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode, State().Profile, AntialiasingMode);
+        GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, State().Profile, AntialiasingMode);
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, State().Profile, CloseOnExit);
         GETSET_BINDABLE_ENUM_SETTING(BellStyle, Microsoft::Terminal::Settings::Model::BellStyle, State().Profile, BellStyle);
-        GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::TerminalControl::ScrollbarState, State().Profile, ScrollState);
+        GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::Control::ScrollbarState, State().Profile, ScrollState);
 
     private:
         void _UpdateBIAlignmentControl(const int32_t val);

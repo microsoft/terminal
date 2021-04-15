@@ -46,6 +46,7 @@
 #include "winrt/Windows.UI.Xaml.Markup.h"
 #include "winrt/Windows.UI.Xaml.Documents.h"
 #include "winrt/Windows.UI.Xaml.Automation.h"
+#include "winrt/Windows.UI.Xaml.Automation.Peers.h"
 #include "winrt/Windows.UI.ViewManagement.h"
 #include <winrt/Windows.ApplicationModel.h>
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
@@ -69,7 +70,8 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 #include <shellapi.h>
 #include <shobjidl_core.h>
 
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/Microsoft.Terminal.Core.h>
+#include <winrt/Microsoft.Terminal.Control.h>
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include <winrt/Microsoft.Terminal.Settings.Editor.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>

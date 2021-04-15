@@ -37,4 +37,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto profile{ winrt::unbox_value<Model::Profile>(value) };
         _State.Settings().GlobalSettings().DefaultProfile(profile.Guid());
     }
+
+    // TODO GH#9463 - Complete hookup of Terminal UX to choose defapp.
+    Windows::Foundation::Collections::IObservableVector<IInspectable> Launch::DefaultTerminals()
+    {
+        Windows::Foundation::Collections::IObservableVector<IInspectable> vec;
+        return vec;
+    }
+
+    IInspectable Launch::CurrentDefaultTerminal()
+    {
+        return nullptr;
+    }
+
+    void Launch::CurrentDefaultTerminal(const IInspectable& value)
+    {
+        value;
+    }
 }

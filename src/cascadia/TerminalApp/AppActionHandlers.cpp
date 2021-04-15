@@ -17,7 +17,7 @@ using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::TerminalApp;
 
@@ -89,15 +89,23 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleNextTab(const IInspectable& /*sender*/,
                                       const ActionEventArgs& args)
     {
-        _SelectNextTab(true);
-        args.Handled(true);
+        const auto& realArgs = args.ActionArgs().try_as<NextTabArgs>();
+        if (realArgs)
+        {
+            _SelectNextTab(true, realArgs.SwitcherMode());
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandlePrevTab(const IInspectable& /*sender*/,
                                       const ActionEventArgs& args)
     {
-        _SelectNextTab(false);
-        args.Handled(true);
+        const auto& realArgs = args.ActionArgs().try_as<PrevTabArgs>();
+        if (realArgs)
+        {
+            _SelectNextTab(false, realArgs.SwitcherMode());
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleSendInput(const IInspectable& /*sender*/,
@@ -244,8 +252,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<SwitchToTabArgs>())
         {
-            const auto handled = _SelectTab({ realArgs.TabIndex() });
-            args.Handled(handled);
+            _SelectTab({ realArgs.TabIndex() });
+            args.Handled(true);
         }
     }
 
@@ -376,7 +384,7 @@ namespace winrt::TerminalApp::implementation
                     if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
                     {
                         auto controlSettings = activeControl.Settings().as<TerminalSettings>();
-                        controlSettings->ApplyColorScheme(scheme);
+                        controlSettings.ApplyColorScheme(scheme);
                         activeControl.UpdateSettings();
                         args.Handled(true);
                     }
@@ -490,7 +498,7 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            // Since _RemoveTab is asynchronous, create a snapshot of the  tabs we want to remove
+            // Since _RemoveTabs is asynchronous, create a snapshot of the  tabs we want to remove
             std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
             if (index > 0)
             {
@@ -529,7 +537,7 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            // Since _RemoveTab is asynchronous, create a snapshot of the  tabs we want to remove
+            // Since _RemoveTabs is asynchronous, create a snapshot of the  tabs we want to remove
             std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
             std::copy(begin(_tabs) + index + 1, end(_tabs), std::back_inserter(tabsToRemove));
             _RemoveTabs(tabsToRemove);
@@ -544,8 +552,8 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleOpenTabSearch(const IInspectable& /*sender*/,
-                                            const ActionEventArgs& args)
+    void TerminalPage::_HandleTabSearch(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
     {
         CommandPalette().SetTabs(_tabs, _mruTabs);
         CommandPalette().EnableTabSearchMode();
@@ -658,9 +666,8 @@ namespace winrt::TerminalApp::implementation
             newTerminalArgs = NewTerminalArgs();
         }
 
-        auto [profileGuid, settings] = TerminalSettings::BuildSettings(_settings,
-                                                                       newTerminalArgs,
-                                                                       *_bindings);
+        const auto profileGuid{ _settings.GetProfileForArgs(newTerminalArgs) };
+        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
         // Manually fill in the evaluated profile.
         newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profileGuid));
@@ -668,4 +675,81 @@ namespace winrt::TerminalApp::implementation
         actionArgs.Handled(true);
     }
 
+    // Method Description:
+    // - Raise a IdentifyWindowsRequested event. This will bubble up to the
+    //   AppLogic, to the AppHost, to the Peasant, to the Monarch, then get
+    //   distributed down to _all_ the Peasants, as to display info about the
+    //   window in _every_ Peasant window.
+    // - This action is also buggy right now, because TeachingTips behave
+    //   weird in XAML Islands. See microsoft-ui-xaml#4382
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_HandleIdentifyWindows(const IInspectable& /*sender*/,
+                                              const ActionEventArgs& args)
+    {
+        _IdentifyWindowsRequestedHandlers(*this, nullptr);
+        args.Handled(true);
+    }
+
+    // Method Description:
+    // - Display the "Toast" with the name and ID of this window.
+    // - Unlike _HandleIdentifyWindow**s**, this event just displays the window
+    //   ID and name in the current window. It does not involve any bubbling
+    //   up/down the page/logic/host/manager/peasant/monarch.
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_HandleIdentifyWindow(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        IdentifyWindow();
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleRenameWindow(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<RenameWindowArgs>())
+            {
+                const auto newName = realArgs.Name();
+                const auto request = winrt::make_self<implementation::RenameWindowRequestedArgs>(newName);
+                _RenameWindowRequestedHandlers(*this, *request);
+                args.Handled(true);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleOpenWindowRenamer(const IInspectable& /*sender*/,
+                                                const ActionEventArgs& args)
+    {
+        if (WindowRenamer() == nullptr)
+        {
+            // We need to use FindName to lazy-load this object
+            if (MUX::Controls::TeachingTip tip{ FindName(L"WindowRenamer").try_as<MUX::Controls::TeachingTip>() })
+            {
+                tip.Closed({ get_weak(), &TerminalPage::_FocusActiveControl });
+            }
+        }
+
+        _UpdateTeachingTipTheme(WindowRenamer().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
+        WindowRenamer().IsOpen(true);
+
+        // PAIN: We can't immediately focus the textbox in the TeachingTip. It's
+        // not technically focusable until it is opened. However, it doesn't
+        // provide an event to tell us when it is opened. That's tracked in
+        // microsoft/microsoft-ui-xaml#1607. So for now, the user _needs_ to
+        // click on the text box manually.
+        //
+        // We're also not using a ContentDialog for this, because in Xaml
+        // Islands a text box in a ContentDialog won't receive _any_ keypresses.
+        // Fun!
+        // WindowRenamerTextBox().Focus(FocusState::Programmatic);
+
+        args.Handled(true);
+    }
 }

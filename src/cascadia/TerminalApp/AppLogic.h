@@ -4,6 +4,7 @@
 #pragma once
 
 #include "AppLogic.g.h"
+#include "FindTargetWindowResult.g.h"
 #include "TerminalPage.h"
 #include "Jumplist.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
@@ -18,6 +19,19 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
+    struct FindTargetWindowResult : FindTargetWindowResultT<FindTargetWindowResult>
+    {
+        WINRT_PROPERTY(int32_t, WindowId, -1);
+        WINRT_PROPERTY(winrt::hstring, WindowName, L"");
+
+    public:
+        FindTargetWindowResult(const int32_t id, const winrt::hstring& name) :
+            _WindowId{ id }, _WindowName{ name } {};
+
+        FindTargetWindowResult(const int32_t id) :
+            FindTargetWindowResult(id, L""){};
+    };
+
     struct AppLogic : AppLogicT<AppLogic, IInitializeWithWindow>
     {
     public:
@@ -38,13 +52,20 @@ namespace winrt::TerminalApp::implementation
 
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
         int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd);
-        int32_t FindTargetWindow(array_view<const winrt::hstring> actions);
+        TerminalApp::FindTargetWindowResult FindTargetWindow(array_view<const winrt::hstring> actions);
         winrt::hstring ParseCommandlineMessage();
         bool ShouldExitEarly();
 
         bool FocusMode() const;
         bool Fullscreen() const;
         bool AlwaysOnTop() const;
+
+        void IdentifyWindow();
+        void RenameFailed();
+        winrt::hstring WindowName();
+        void WindowName(const winrt::hstring& name);
+        uint64_t WindowId();
+        void WindowId(const uint64_t& id);
 
         Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);
         bool CenterOnLaunch();
@@ -69,7 +90,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
 
         // -------------------------------- WinRT Events ---------------------------------
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RequestedThemeChanged, _requestedThemeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::ElementTheme);
+        TYPED_EVENT(RequestedThemeChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::ElementTheme);
 
     private:
         bool _isUwp{ false };
@@ -98,8 +119,8 @@ namespace winrt::TerminalApp::implementation
         ::TerminalApp::AppCommandlineArgs _appArgs;
         ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
         int _ParseArgs(winrt::array_view<const hstring>& args);
-        static int32_t _doFindTargetWindow(winrt::array_view<const hstring> args,
-                                           const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior);
+        static TerminalApp::FindTargetWindowResult _doFindTargetWindow(winrt::array_view<const hstring> args,
+                                                                       const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior);
 
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);
         void _ShowLoadWarningsDialog();
@@ -135,6 +156,8 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(AlwaysOnTopChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, AlwaysOnTopChanged);
         FORWARDED_TYPED_EVENT(RaiseVisualBell, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, RaiseVisualBell);
         FORWARDED_TYPED_EVENT(SetTaskbarProgress, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, SetTaskbarProgress);
+        FORWARDED_TYPED_EVENT(IdentifyWindowsRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, IdentifyWindowsRequested);
+        FORWARDED_TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs, _root, RenameWindowRequested);
 
 #ifdef UNIT_TESTING
         friend class TerminalAppLocalTests::CommandlineTest;
