@@ -50,6 +50,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static std::vector<SettingsLoadWarnings> LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command>& commands,
                                                            const Json::Value& json);
         bool HasNestedCommands() const;
+        bool IsNestedCommand() const;
         Windows::Foundation::Collections::IMapView<winrt::hstring, Model::Command> NestedCommands() const;
 
         bool HasName() const noexcept;
@@ -77,6 +78,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::vector<Control::KeyChord> _keyMappings;
         std::optional<std::wstring> _name;
         std::optional<std::wstring> _iconPath;
+        bool _nestedCommand{ false };
 
         static std::vector<Model::Command> _expandCommand(Command* const expandable,
                                                           Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,

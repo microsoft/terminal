@@ -45,7 +45,7 @@
 //   additional args, this can be nullptr.
 
 template<>
-static size_t HashProperty(const winrt::Microsoft::Terminal::Settings::Model::IActionArgs& args)
+_TIL_INLINEPREFIX size_t HashProperty(const winrt::Microsoft::Terminal::Settings::Model::IActionArgs& args)
 {
     return gsl::narrow_cast<size_t>(args.Hash());
 }

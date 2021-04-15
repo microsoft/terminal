@@ -1918,7 +1918,12 @@ namespace SettingsModelLocalTests
         const auto settingsObject = VerifyParseSucceeded(badSettings);
         auto settings = implementation::CascadiaSettings::FromJson(settingsObject);
 
-        VERIFY_ARE_EQUAL(0u, settings->_globals->_actionMap->_KeyMap.size());
+        // KeyMap: ctrl+a/b are mapped to "invalid"
+        // ActionMap: "splitPane" and "invalid" are the only deserialized actions
+        // NameMap: "splitPane" has no key binding, but it is still added to the name map
+        VERIFY_ARE_EQUAL(2u, settings->_globals->_actionMap->_KeyMap.size());
+        VERIFY_ARE_EQUAL(2u, settings->_globals->_actionMap->_ActionMap.size());
+        VERIFY_ARE_EQUAL(1u, settings->_globals->_actionMap->NameMap().Size());
 
         VERIFY_ARE_EQUAL(4u, settings->_globals->_keybindingsWarnings.size());
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::TooManyKeysForChord, settings->_globals->_keybindingsWarnings.at(0));
@@ -1962,7 +1967,10 @@ namespace SettingsModelLocalTests
 
         auto settings = implementation::CascadiaSettings::FromJson(settingsObject);
 
-        VERIFY_ARE_EQUAL(0u, settings->_globals->_actionMap->_KeyMap.size());
+        VERIFY_ARE_EQUAL(3u, settings->_globals->_actionMap->_KeyMap.size());
+        VERIFY_IS_NULL(settings->_globals->_actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('a') }));
+        VERIFY_IS_NULL(settings->_globals->_actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('b') }));
+        VERIFY_IS_NULL(settings->_globals->_actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('c') }));
 
         for (const auto& warning : settings->_globals->_keybindingsWarnings)
         {
@@ -2191,7 +2199,7 @@ namespace SettingsModelLocalTests
         {
             auto command = nameMap.TryLookup(L"Split pane, split: vertical");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -2207,7 +2215,7 @@ namespace SettingsModelLocalTests
         {
             auto command = nameMap.TryLookup(L"ctrl+b");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -2223,7 +2231,7 @@ namespace SettingsModelLocalTests
         {
             auto command = nameMap.TryLookup(L"ctrl+c");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -2239,7 +2247,7 @@ namespace SettingsModelLocalTests
         {
             auto command = nameMap.TryLookup(L"Split pane, split: horizontal");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -2424,7 +2432,7 @@ namespace SettingsModelLocalTests
 
         VerifyParseSucceeded(settingsJson);
         VerifyParseSucceeded(settings1Json);
-
+        
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
         settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);
@@ -2433,7 +2441,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
 
         settings->_ValidateSettings();
-        const auto& nameMap{ settings->ActionMap().NameMap() };
+        auto nameMap{ settings->ActionMap().NameMap() };
         _logCommandNames(nameMap);
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
@@ -2444,7 +2452,9 @@ namespace SettingsModelLocalTests
         settings->_ParseJsonString(settings1Json, false);
         settings->LayerJson(settings->_userSettings);
         settings->_ValidateSettings();
-        _logCommandNames(settings->ActionMap().NameMap());
+
+        nameMap = settings->ActionMap().NameMap();
+        _logCommandNames(nameMap);
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
         VERIFY_ARE_EQUAL(0u, nameMap.Size());
     }
@@ -2517,7 +2527,7 @@ namespace SettingsModelLocalTests
 
         const auto& actionMap{ settings->ActionMap() };
         settings->_ValidateSettings();
-        const auto& nameMap{ actionMap.NameMap() };
+        auto nameMap{ actionMap.NameMap() };
         _logCommandNames(nameMap);
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
@@ -2539,7 +2549,9 @@ namespace SettingsModelLocalTests
         settings->_ParseJsonString(settings1Json, false);
         settings->LayerJson(settings->_userSettings);
         settings->_ValidateSettings();
-        _logCommandNames(settings->ActionMap().NameMap());
+
+        nameMap = settings->ActionMap().NameMap();
+        _logCommandNames(nameMap);
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
         VERIFY_ARE_EQUAL(1u, nameMap.Size());
 
@@ -2548,7 +2560,7 @@ namespace SettingsModelLocalTests
             auto commandProj = nameMap.TryLookup(commandName);
 
             VERIFY_IS_NOT_NULL(commandProj);
-            auto actionAndArgs = commandProj.Action();
+            auto actionAndArgs = commandProj.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();

@@ -44,6 +44,6 @@ public:
 
         const auto cmd = actionMap.GetActionByKeyChord(kc);
         VERIFY_IS_NOT_NULL(cmd, L"Expected to find an action bound to the given KeyChord");
-        return cmd.Action();
+        return cmd.ActionAndArgs();
     };
 };

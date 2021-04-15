@@ -176,14 +176,14 @@ std::vector<wil::com_ptr<T>> SafeArrayToOwningVector(SAFEARRAY* safeArray)
 
 // This is a helper template function for hashing multiple variables in conjunction to each other.
 template<typename T>
-static size_t HashProperty(const T& val)
+size_t HashProperty(const T& val)
 {
     std::hash<T> hashFunc;
     return hashFunc(val);
 }
 
 template<typename T, typename... Args>
-static size_t HashProperty(const T& val, Args&&... more)
+size_t HashProperty(const T& val, Args&&... more)
 {
     return HashProperty(val) ^ HashProperty(std::forward<Args>(more)...);
 }
