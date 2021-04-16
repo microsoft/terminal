@@ -958,8 +958,8 @@ void IslandWindow::_enterQuakeMode()
     nearestMonitorInfo.cbSize = sizeof(MONITORINFO);
     // Get monitor dimensions:
     GetMonitorInfo(hmon, &nearestMonitorInfo);
-    const til::size desktopDimensions{ ::base::saturated_cast<ptrdiff_t>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
-                                       ::base::saturated_cast<ptrdiff_t>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
+    const til::size desktopDimensions{ (nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
+                                       (nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
 
     // If we just use rcWork by itself, we'll fail to account for the invisible
     // space reserved for the resize handles. So retrieve that size here.
@@ -967,8 +967,8 @@ void IslandWindow::_enterQuakeMode()
     const til::size availableSpace = desktopDimensions + ncSize;
 
     const til::point origin{
-        ::base::saturated_cast<ptrdiff_t>(nearestMonitorInfo.rcWork.left - (ncSize.width() / 2)),
-        ::base::saturated_cast<ptrdiff_t>(nearestMonitorInfo.rcWork.top)
+        ::base::ClampSub<long>(nearestMonitorInfo.rcWork.left, (ncSize.width() / 2)),
+        (nearestMonitorInfo.rcWork.top)
     };
     const til::size dimensions{
         availableSpace.width(),
