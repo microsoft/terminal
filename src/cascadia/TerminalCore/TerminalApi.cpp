@@ -36,6 +36,11 @@ void Terminal::SetTextAttributes(const TextAttribute& attrs) noexcept
     _buffer->SetCurrentAttributes(attrs);
 }
 
+Viewport Terminal::GetBufferSize() noexcept
+{
+    return _buffer->GetSize();
+}
+
 bool Terminal::SetCursorPosition(short x, short y) noexcept
 try
 {
