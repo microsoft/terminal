@@ -2118,7 +2118,7 @@ namespace SettingsModelLocalTests
         // * A and D share the same name, so they'll only generate a single action.
         // * F's name is set manually to `null`
         const auto& nameMap{ actionMap->NameMap() };
-        VERIFY_ARE_EQUAL(4u, nameMap.Size());
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
 
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('A') };
@@ -2197,36 +2197,14 @@ namespace SettingsModelLocalTests
         Log::Comment(L"Now verify the commands");
         _logCommandNames(nameMap);
         {
+            // This was renamed to "ctrl+c" in C. So this does not exist.
             auto command = nameMap.TryLookup(L"Split pane, split: vertical");
-            VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.ActionAndArgs();
-            VERIFY_IS_NOT_NULL(actionAndArgs);
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NULL(command);
         }
         {
+            // This was renamed to "ctrl+c" in C. So this does not exist.
             auto command = nameMap.TryLookup(L"ctrl+b");
-            VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.ActionAndArgs();
-            VERIFY_IS_NOT_NULL(actionAndArgs);
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NULL(command);
         }
         {
             auto command = nameMap.TryLookup(L"ctrl+c");
@@ -2245,20 +2223,9 @@ namespace SettingsModelLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
         }
         {
+            // This was renamed to null (aka removed from the name map) in F. So this does not exist.
             auto command = nameMap.TryLookup(L"Split pane, split: horizontal");
-            VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.ActionAndArgs();
-            VERIFY_IS_NOT_NULL(actionAndArgs);
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Horizontal, realArgs.SplitStyle());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_NULL(command);
         }
     }
 

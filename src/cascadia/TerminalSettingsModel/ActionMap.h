@@ -36,7 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         std::size_t operator()(const Control::KeyChord& key) const
         {
-            return ::HashProperty(key.Modifiers(), key.Vkey());
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(key.Modifiers(), key.Vkey());
         }
     };
 

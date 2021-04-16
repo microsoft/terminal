@@ -51,6 +51,8 @@ namespace SettingsModelLocalTests
         TEST_METHOD(TestToggleCommandPaletteArgs);
         TEST_METHOD(TestMoveTabArgs);
 
+        TEST_METHOD(TestGetKeyBindingForAction);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -637,6 +639,65 @@ namespace SettingsModelLocalTests
             VERIFY_IS_NOT_NULL(invalidActionMap);
             VERIFY_ARE_EQUAL(0u, invalidActionMap->_KeyMap.size());
             VERIFY_THROWS(invalidActionMap->LayerJson(bindingsInvalidJson);, std::exception);
+        }
+    }
+
+    void KeyBindingsTests::TestGetKeyBindingForAction()
+    {
+        const std::string bindings0String{ R"([ { "command": "closeWindow", "keys": "ctrl+a" } ])" };
+        const std::string bindings1String{ R"([ { "command": { "action": "copy", "singleLine": true }, "keys": "ctrl+b" } ])" };
+        const std::string bindings2String{ R"([ { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+c" } ])" };
+
+        const auto bindings0Json = VerifyParseSucceeded(bindings0String);
+        const auto bindings1Json = VerifyParseSucceeded(bindings1String);
+        const auto bindings2Json = VerifyParseSucceeded(bindings2String);
+
+        auto VerifyKeyChordEquality = [](const KeyChord& expected, const KeyChord& actual) {
+            if (expected)
+            {
+                VERIFY_IS_NOT_NULL(actual);
+                VERIFY_ARE_EQUAL(expected.Modifiers(), actual.Modifiers());
+                VERIFY_ARE_EQUAL(expected.Vkey(), actual.Vkey());
+            }
+            else
+            {
+                VERIFY_IS_NULL(actual);
+            }
+        };
+
+        auto actionMap = winrt::make_self<implementation::ActionMap>();
+        VERIFY_IS_NOT_NULL(actionMap);
+        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
+
+        {
+            Log::Comment(L"simple command: no args");
+            actionMap->LayerJson(bindings0Json);
+            VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
+            const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::CloseWindow) };
+            VerifyKeyChordEquality({ KeyModifiers::Ctrl, static_cast<int32_t>('A') }, kbd);
+        }
+        {
+            Log::Comment(L"command with args");
+            actionMap->LayerJson(bindings1Json);
+            VERIFY_ARE_EQUAL(2u, actionMap->_KeyMap.size());
+
+            auto args{ winrt::make_self<implementation::CopyTextArgs>() };
+            args->SingleLine(true);
+
+            const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::CopyText, *args) };
+            VerifyKeyChordEquality({ KeyModifiers::Ctrl, static_cast<int32_t>('B') }, kbd);
+        }
+        {
+            Log::Comment(L"command with new terminal args");
+            actionMap->LayerJson(bindings2Json);
+            VERIFY_ARE_EQUAL(3u, actionMap->_KeyMap.size());
+
+            auto newTerminalArgs{ winrt::make_self<implementation::NewTerminalArgs>() };
+            newTerminalArgs->ProfileIndex(0);
+            auto args{ winrt::make_self<implementation::NewTabArgs>(*newTerminalArgs) };
+
+            const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::NewTab, *args) };
+            VerifyKeyChordEquality({ KeyModifiers::Ctrl, static_cast<int32_t>('C') }, kbd);
         }
     }
 }

@@ -46,6 +46,7 @@
     <ClInclude Include="IInheritable.h" />
     <ClInclude Include="IDynamicProfileGenerator.h" />
     <ClInclude Include="JsonUtils.h" />
+    <ClInclude Include="HashUtils.h" />
     <ClInclude Include="KeyChordSerialization.h">
       <DependentUpon>KeyChordSerialization.idl</DependentUpon>
     </ClInclude>

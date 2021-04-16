@@ -111,7 +111,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         if (!_name.has_value() || _name.value() != value)
         {
             _name = value;
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Name" });
         }
     }
 
@@ -216,7 +215,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         if (!_iconPath.has_value() || _iconPath.value() != val)
         {
             _iconPath = val;
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"IconPath" });
         }
     }
 
@@ -248,6 +246,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 return JsonUtils::GetValue<std::wstring>(name);
             }
+        }
+        else if (json.isMember(JsonKey(NameKey)))
+        {
+            // { "name": null, "command": "copy" } will land in this case, which
+            // should also be used for unbinding.
+            return std::wstring{};
         }
 
         return std::nullopt;

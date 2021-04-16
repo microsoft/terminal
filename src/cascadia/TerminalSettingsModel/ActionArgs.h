@@ -34,6 +34,7 @@
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
+#include "HashUtils.h"
 #include "TerminalWarnings.h"
 
 #include "TerminalSettingsSerializationHelpers.h"
@@ -45,7 +46,13 @@
 //   additional args, this can be nullptr.
 
 template<>
-_TIL_INLINEPREFIX size_t HashProperty(const winrt::Microsoft::Terminal::Settings::Model::IActionArgs& args)
+constexpr size_t Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(const winrt::Microsoft::Terminal::Settings::Model::IActionArgs& args)
+{
+    return gsl::narrow_cast<size_t>(args.Hash());
+}
+
+template<>
+constexpr size_t Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& args)
 {
     return gsl::narrow_cast<size_t>(args.Hash());
 }
@@ -132,7 +139,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_Commandline, _StartingDirectory, _TabTitle, _TabColor, _ProfileIndex, _Profile, _SuppressApplicationTitle, _ColorScheme);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Commandline, _StartingDirectory, _TabTitle, _TabColor, _ProfileIndex, _Profile, _SuppressApplicationTitle, _ColorScheme);
         }
     };
 
@@ -176,7 +183,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_SingleLine, _CopyFormatting);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_SingleLine, _CopyFormatting);
         }
     };
 
@@ -214,7 +221,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_TerminalArgs);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_TerminalArgs);
         }
     };
 
@@ -254,7 +261,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_TabIndex);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_TabIndex);
         }
     };
 
@@ -299,7 +306,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_ResizeDirection);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_ResizeDirection);
         }
     };
 
@@ -347,7 +354,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_FocusDirection);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_FocusDirection);
         }
     };
 
@@ -385,7 +392,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_Delta);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Delta);
         }
     };
 
@@ -426,7 +433,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_Input);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Input);
         }
     };
 
@@ -497,7 +504,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_SplitStyle, _TerminalArgs, _SplitMode, _SplitSize);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_SplitStyle, _TerminalArgs, _SplitMode, _SplitSize);
         }
     };
 
@@ -537,7 +544,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_Target);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Target);
         }
     };
 
@@ -581,7 +588,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_SchemeName);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_SchemeName);
         }
     };
 
@@ -619,7 +626,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_TabColor);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_TabColor);
         }
     };
 
@@ -657,7 +664,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_Title);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Title);
         }
     };
 
@@ -701,7 +708,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_Commandline);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Commandline);
         }
     };
 
@@ -741,7 +748,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_Index);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Index);
         }
     };
 
@@ -781,7 +788,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_Index);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Index);
         }
     };
 
@@ -828,7 +835,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_Direction);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Direction);
         }
     };
 
@@ -866,7 +873,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_RowsToScroll);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_RowsToScroll);
         }
     };
 
@@ -904,7 +911,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_RowsToScroll);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_RowsToScroll);
         }
     };
 
@@ -944,7 +951,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_LaunchMode);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_LaunchMode);
         }
     };
 
@@ -991,7 +998,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_Direction);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Direction);
         }
     };
 
@@ -1029,7 +1036,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_TerminalArgs);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_TerminalArgs);
         }
     };
 
@@ -1066,7 +1073,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_SwitcherMode);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_SwitcherMode);
         }
     };
 
@@ -1103,7 +1110,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_SwitcherMode);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_SwitcherMode);
         }
     };
 
@@ -1140,7 +1147,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return HashProperty(_Name);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Name);
         }
     };
 }

@@ -106,6 +106,7 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean Equals(NewTerminalArgs other);
         String GenerateName();
         String ToCommandline();
+        UInt64 Hash();
     };
 
     [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
