@@ -202,9 +202,9 @@ try
     // We also find the default here while we have the list of available ones so
     // we can return the opaque structure instead of the raw IID.
     IID defCon;
-    RETURN_IF_FAILED(s_GetDefaultConsoleId(defCon));
+    LOG_IF_FAILED(s_GetDefaultConsoleId(defCon));
     IID defTerm;
-    RETURN_IF_FAILED(s_GetDefaultTerminalId(defTerm));
+    LOG_IF_FAILED(s_GetDefaultTerminalId(defTerm));
 
     // The default one is the 0th one because that's supposed to be the inbox conhost one.
     DelegationPackage chosenPackage = packages.at(0);

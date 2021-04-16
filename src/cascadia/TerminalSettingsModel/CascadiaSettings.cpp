@@ -48,7 +48,9 @@ CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles) :
     _allProfiles{ winrt::single_threaded_observable_vector<Model::Profile>() },
     _activeProfiles{ winrt::single_threaded_observable_vector<Model::Profile>() },
     _warnings{ winrt::single_threaded_vector<SettingsLoadWarnings>() },
-    _deserializationErrorMessage{ L"" }
+    _deserializationErrorMessage{ L"" },
+    _defaultTerminals{ winrt::single_threaded_observable_vector<Model::DefaultTerminal>() },
+    _currentDefaultTerminal{ nullptr }
 {
     if (addDynamicProfiles)
     {
@@ -327,6 +329,8 @@ void CascadiaSettings::_ValidateSettings()
     _ValidateColorSchemesInCommands();
 
     _ValidateNoGlobalsKey();
+
+    _ValidateDefaultApplication();
 }
 
 // Method Description:
@@ -847,6 +851,25 @@ void CascadiaSettings::_ValidateNoGlobalsKey()
     }
 }
 
+// Method Description:
+// - Pulls up the list of valid default applications and the currently selected one
+//   and ensures that those items are valid for presentation and selection.zs
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void CascadiaSettings::_ValidateDefaultApplication()
+{
+    _defaultTerminals.Clear();
+   
+    for (const auto& term : Model::DefaultTerminal::Available())
+    {
+        _defaultTerminals.Append(term);
+    }
+
+    _currentDefaultTerminal = Model::DefaultTerminal::Current();
+}
+
 // Method Description
 // - Replaces known tokens DEFAULT_PROFILE, PRODUCT and VERSION in the settings template
 //   with their expected values. DEFAULT_PROFILE is updated to match PowerShell Core's GUID
@@ -998,4 +1021,37 @@ winrt::hstring CascadiaSettings::ApplicationVersion()
     CATCH_LOG();
 
     return RS_(L"ApplicationVersionUnknown");
+}
+
+// Method Description:
+// - Returns an iterable collection of all available terminals.
+// Arguments:
+// - <none>
+// Return Value:
+// - an iterable collection of all available terminals that could be the default.
+IObservableVector<winrt::Microsoft::Terminal::Settings::Model::DefaultTerminal> CascadiaSettings::DefaultTerminals() const noexcept
+{
+    return _defaultTerminals;
+}
+
+// Method Description:
+// - Returns the currently selected default terminal application
+// Arguments:
+// - <none>
+// Return Value:
+// - the selected default terminal application
+winrt::Microsoft::Terminal::Settings::Model::DefaultTerminal CascadiaSettings::CurrentDefaultTerminal() const noexcept
+{
+    return _currentDefaultTerminal;
+}
+
+// Method Description:
+// - Sets the current default terminal application
+// Arguments:
+// - terminal - Terminal from `DefaultTerminals` list to set as default
+// Return Value:
+// - <none>
+void CascadiaSettings::CurrentDefaultTerminal(winrt::Microsoft::Terminal::Settings::Model::DefaultTerminal terminal)
+{
+    _currentDefaultTerminal = terminal;
 }

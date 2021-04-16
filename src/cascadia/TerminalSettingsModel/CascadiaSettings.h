@@ -98,6 +98,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::guid GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const;
 
+        Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> DefaultTerminals() const noexcept;
+        Model::DefaultTerminal CurrentDefaultTerminal() const noexcept;
+        void CurrentDefaultTerminal(Model::DefaultTerminal terminal);
+
     private:
         com_ptr<GlobalAppSettings> _globals;
         Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles;
@@ -105,6 +109,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Windows::Foundation::Collections::IVector<Model::SettingsLoadWarnings> _warnings;
         Windows::Foundation::IReference<SettingsLoadErrors> _loadError;
         hstring _deserializationErrorMessage;
+
+        Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> _defaultTerminals;
+        Model::DefaultTerminal _currentDefaultTerminal;
 
         std::vector<std::unique_ptr<::Microsoft::Terminal::Settings::Model::IDynamicProfileGenerator>> _profileGenerators;
 
@@ -156,6 +163,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _ValidateKeybindings();
         void _ValidateColorSchemesInCommands();
         void _ValidateNoGlobalsKey();
+        void _ValidateDefaultApplication();
 
         bool _HasInvalidColorScheme(const Model::Command& command);
 
