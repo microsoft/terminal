@@ -14,4 +14,4 @@ uk
 winui
 appshellintegration
 cppreference
-gyfcat
+gfycat

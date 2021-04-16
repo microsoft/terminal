@@ -5,8 +5,14 @@ Licensed under the MIT license.
 Class Name:
 - SummonWindowSelectionArgs.h
 
-Abstract: TODO!
-
+Abstract:
+- This is a helper class for determining which window a should be summoned when
+  a global hotkey is pressed. Parameters from a GlobalSummon action will be
+  filled in here. The Monarch will use these to find the window that matches
+  these args, and Summon() that Peasant.
+- When the monarch finds a match, it will set FoundMatch to true. If it doesn't,
+  then the Monarch window might need to create a new window matching these args
+  instead.
 --*/
 
 #pragma once
