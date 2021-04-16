@@ -200,7 +200,7 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
     // If the system collection missed, try the files sitting next to our binary.
     if (!familyExists)
     {
-        auto&& nearbyCollection = NearbyCollection(dwriteFactory);
+        auto&& nearbyCollection = _NearbyCollection(dwriteFactory);
 
         // May be null on OS below Windows 10. If null, just skip the attempt.
         if (nearbyCollection)
@@ -309,7 +309,7 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 // - dwriteFactory - The DWrite factory to use
 // Return Value:
 // - DirectWrite font collection. May be null if one cannot be created.
-[[nodiscard]] const Microsoft::WRL::ComPtr<IDWriteFontCollection1>& DxFontInfo::NearbyCollection(gsl::not_null<IDWriteFactory1*> dwriteFactory) const
+[[nodiscard]] const Microsoft::WRL::ComPtr<IDWriteFontCollection1>& DxFontInfo::_NearbyCollection(gsl::not_null<IDWriteFactory1*> dwriteFactory) const
 {
     // Magic static so we only attempt to grovel the hard disk once no matter how many instances
     // of the font collection itself we require.

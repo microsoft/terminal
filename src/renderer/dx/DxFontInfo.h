@@ -53,7 +53,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] std::wstring _GetFontFamilyName(gsl::not_null<IDWriteFontFamily*> const fontFamily,
                                                       std::wstring& localeName);
 
-        [[nodiscard]] const Microsoft::WRL::ComPtr<IDWriteFontCollection1>& NearbyCollection(gsl::not_null<IDWriteFactory1*> dwriteFactory) const;
+        [[nodiscard]] const Microsoft::WRL::ComPtr<IDWriteFontCollection1>& _NearbyCollection(gsl::not_null<IDWriteFactory1*> dwriteFactory) const;
 
         [[nodiscard]] static std::vector<std::filesystem::path> s_GetNearbyFonts();
 
