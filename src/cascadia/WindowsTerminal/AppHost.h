@@ -28,7 +28,7 @@ private:
     bool _shouldCreateWindow{ false };
     winrt::Microsoft::Terminal::Remoting::WindowManager _windowManager{ nullptr };
 
-    std::vector<winrt::Microsoft::Terminal::Control::KeyChord> _hotkeys{ nullptr };
+    std::vector<winrt::Microsoft::Terminal::Control::KeyChord> _hotkeys{};
     winrt::Windows::Foundation::Collections::IMap<winrt::Microsoft::Terminal::Control::KeyChord, winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _hotkeyActions{ nullptr };
 
     void _HandleCommandlineArgs();

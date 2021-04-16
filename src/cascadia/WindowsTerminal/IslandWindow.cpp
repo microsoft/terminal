@@ -910,10 +910,15 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 // - <none>
 void IslandWindow::UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList)
 {
+    TraceLoggingWrite(g_hWindowsTerminalProvider,
+                      "UnsetHotkeys",
+                      TraceLoggingDescription("Emitted when clearing previously set hotkeys"),
+                      TraceLoggingInt64(hotkeyList.size(), "numHotkeys", "The number of hotkeys to unset"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
     for (int i = 0; i < hotkeyList.size(); i++)
     {
-        LOG_IF_WIN32_BOOL_FALSE(UnregisterHotKey(_window.get(),
-                                                 1));
+        LOG_IF_WIN32_BOOL_FALSE(UnregisterHotKey(_window.get(), i));
     }
 }
 
@@ -928,6 +933,11 @@ void IslandWindow::UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Co
 // - <none>
 void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList)
 {
+    TraceLoggingWrite(g_hWindowsTerminalProvider,
+                      "SetGlobalHotkeys",
+                      TraceLoggingDescription("Emitted when setting hotkeys"),
+                      TraceLoggingInt64(hotkeyList.size(), "numHotkeys", "The number of hotkeys to set"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     int index = 0;
     for (const auto& hotkey : hotkeyList)
     {
