@@ -39,6 +39,9 @@ constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 // The minimum delay between updating the locations of regex patterns
 constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
 
+// The minimum delay between emitting warning bells
+constexpr const auto TerminalWarningBellInterval = std::chrono::milliseconds(1000);
+
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::CopyFormat);
 
 namespace winrt::Microsoft::Terminal::Control::implementation
@@ -70,6 +73,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->TransparencyChanged({ get_weak(), &TermControl::_coreTransparencyChanged });
         _core->ReceivedOutput({ get_weak(), &TermControl::_coreReceivedOutput });
         _core->RaiseNotice({ get_weak(), &TermControl::_coreRaisedNotice });
+        _core->WarningBell({ get_weak(), &TermControl::_coreWarningBell });
 
         _interactivity->OpenHyperlink({ get_weak(), &TermControl::_HyperlinkHandler });
         _interactivity->ScrollPositionChanged({ get_weak(), &TermControl::_ScrollPositionChanged });
@@ -106,6 +110,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             },
             UpdatePatternLocationsInterval,
+            Dispatcher());
+
+        _playWarningBell = std::make_shared<ThrottledFunc<>>(
+            [weakThis = get_weak()]() {
+                if (auto control{ weakThis.get() })
+                {
+                    control->_WarningBellHandlers(*control, nullptr);
+                }
+            },
+            TerminalWarningBellInterval,
             Dispatcher());
 
         _updateScrollBar = std::make_shared<ThrottledFunc<ScrollBarUpdate>>(
@@ -908,6 +922,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             modifiers.IsCtrlPressed(),
             modifiers.IsAltPressed(),
             modifiers.IsShiftPressed(),
+            modifiers.IsWinPressed(),
             vkey,
         });
         if (!success)
@@ -2019,12 +2034,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             ControlKeyStates flags;
         };
 
-        constexpr std::array<KeyModifier, 5> modifiers{ {
+        constexpr std::array<KeyModifier, 7> modifiers{ {
             { VirtualKey::RightMenu, ControlKeyStates::RightAltPressed },
             { VirtualKey::LeftMenu, ControlKeyStates::LeftAltPressed },
             { VirtualKey::RightControl, ControlKeyStates::RightCtrlPressed },
             { VirtualKey::LeftControl, ControlKeyStates::LeftCtrlPressed },
             { VirtualKey::Shift, ControlKeyStates::ShiftPressed },
+            { VirtualKey::RightWindows, ControlKeyStates::RightWinPressed },
+            { VirtualKey::LeftWindows, ControlKeyStates::LeftWinPressed },
         } };
 
         ControlKeyStates flags;
@@ -2473,5 +2490,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         return uiButton;
+    }
+
+    void TermControl::_coreWarningBell(const IInspectable& /*sender*/, const IInspectable& /*args*/)
+    {
+        _playWarningBell->Run();
     }
 }

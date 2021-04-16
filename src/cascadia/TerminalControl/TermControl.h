@@ -109,7 +109,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         FORWARDED_TYPED_EVENT(CopyToClipboard,        IInspectable, Control::CopyToClipboardEventArgs, _core, CopyToClipboard);
         FORWARDED_TYPED_EVENT(TitleChanged,           IInspectable, Control::TitleChangedEventArgs, _core, TitleChanged);
-        FORWARDED_TYPED_EVENT(WarningBell,            IInspectable, IInspectable, _core, WarningBell);
         FORWARDED_TYPED_EVENT(TabColorChanged,        IInspectable, IInspectable, _core, TabColorChanged);
         FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable, _core, TaskbarProgressChanged);
         FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable, _core, ConnectionStateChanged);
@@ -122,6 +121,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(ReadOnlyChanged,           IInspectable, IInspectable);
         TYPED_EVENT(FocusFollowMouseRequested, IInspectable, IInspectable);
         TYPED_EVENT(Initialized,               Control::TermControl, Windows::UI::Xaml::RoutedEventArgs);
+        TYPED_EVENT(WarningBell,               IInspectable, IInspectable);
         // clang-format on
 
         WINRT_PROPERTY(IControlAppearance, UnfocusedAppearance);
@@ -144,6 +144,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::shared_ptr<ThrottledFunc<>> _tsfTryRedrawCanvas;
         std::shared_ptr<ThrottledFunc<>> _updatePatternLocations;
+
+        std::shared_ptr<ThrottledFunc<>> _playWarningBell;
 
         struct ScrollBarUpdate
         {
@@ -242,6 +244,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::fire_and_forget _coreTransparencyChanged(const IInspectable& sender, const Control::TransparencyChangedEventArgs& args);
         void _coreReceivedOutput(const IInspectable& sender, const IInspectable& args);
         void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
+        void _coreWarningBell(const IInspectable& sender, const IInspectable& args);
     };
 }
 
