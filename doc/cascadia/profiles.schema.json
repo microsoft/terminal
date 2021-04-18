@@ -170,6 +170,8 @@
     },
     "Icon": {
       "description": "Image file location or an emoji to be used as an icon. Displays within the tab, the dropdown menu, and jumplist.",
+      "width": "number",
+      "length": "number",
       "type": [
         "string",
         "null"
