@@ -657,6 +657,17 @@ bool ConhostInternalGetSet::InsertLines(const size_t count)
 }
 
 // Method Description:
+// - Resets the internal "virtual bottom" tracker to the top of the buffer.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::ResetBottom()
+{
+    _io.GetActiveOutputBuffer().ResetBottom();
+}
+
+// Method Description:
 // - Connects the MoveToBottom call directly into our Driver Message servicing
 //      call inside Conhost.exe
 // Arguments:

@@ -113,13 +113,14 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
         // Set up viewport
         pScreen->_viewport = Viewport::FromDimensions({ 0, 0 },
                                                       pScreen->_IsInPtyMode() ? coordScreenBufferSize : coordWindowSize);
-        pScreen->UpdateBottom();
 
         // Set up text buffer
         pScreen->_textBuffer = std::make_unique<TextBuffer>(coordScreenBufferSize,
                                                             defaultAttributes,
                                                             uiCursorSize,
                                                             pScreen->_renderTarget);
+
+        pScreen->UpdateBottom();
 
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         pScreen->_textBuffer->GetCursor().SetColor(gci.GetCursorColor());
@@ -2520,13 +2521,30 @@ TextBufferCellIterator SCREEN_INFORMATION::GetCellDataAt(const COORD at, const V
 
 // Method Description:
 // - Updates our internal "virtual bottom" tracker with wherever the viewport
-//      currently is.
+//      currently is. This is only used to move the bottom further down, unless
+//      the buffer has shrunk, and the viewport needs to be moved back up to
+//      fit within the new buffer range.
 // - <none>
 // Return Value:
 // - <none>
 void SCREEN_INFORMATION::UpdateBottom()
 {
-    _virtualBottom = _viewport.BottomInclusive();
+    // We clamp it so it's at least as low as the current viewport bottom,
+    // but no lower than the bottom of the buffer.
+    _virtualBottom = std::clamp(_virtualBottom, _viewport.BottomInclusive(), GetBufferSize().BottomInclusive());
+}
+
+// Method Description:
+// - Resets the internal "virtual bottom" tracker to the top of the buffer.
+//      Used when the scrollback buffer has been completely cleared.
+// - <none>
+// Return Value:
+// - <none>
+void SCREEN_INFORMATION::ResetBottom()
+{
+    // The virtual bottom points to the last line of the viewport, so at the
+    // top of the buffer it should be one less than the viewport height.
+    _virtualBottom = _viewport.Height() - 1;
 }
 
 // Method Description:
