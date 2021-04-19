@@ -126,6 +126,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
                 _NotifyChanges(L"ShowAllFonts", L"UsingMonospaceFont");
             }
+            else if (viewModelProperty == L"Name" || viewModelProperty == L"TabTitle")
+            {
+                _NotifyChanges(L"TabDisplayName");
+            }
         });
 
         // Cache the original BG image path. If the user clicks "Use desktop
