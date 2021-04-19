@@ -51,6 +51,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void UseParentProcessDirectory(const bool useParent);
         bool UseCustomStartingDirectory();
 
+        // tab display name
+        winrt::hstring TabDisplayName();
+
         // font face
         static void UpdateFontList() noexcept;
         Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() const noexcept;

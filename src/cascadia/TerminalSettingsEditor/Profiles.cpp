@@ -423,6 +423,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    hstring ProfileViewModel::TabDisplayName()
+    {
+        return TabTitle().empty() ? Name() : TabTitle();
+    }
+
     bool ProfileViewModel::BackgroundImageSettingsVisible()
     {
         return IsBaseLayer() || BackgroundImagePath() != L"";

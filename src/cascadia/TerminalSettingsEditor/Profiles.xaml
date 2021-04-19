@@ -87,7 +87,7 @@
                         <TextBlock Grid.Column="1"
                                    VerticalAlignment="Center"
                                    FontSize="12"
-                                   Text="{x:Bind State.Profile.Name, Mode=OneWay}" />
+                                   Text="{x:Bind State.Profile.TabDisplayName, Mode=OneWay}" />
                         <IconSourceElement Grid.Column="2"
                                            Width="16"
                                            Height="16"
