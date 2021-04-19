@@ -4,6 +4,7 @@
 
 #include "../../terminal/adapter/DispatchTypes.hpp"
 #include "../../buffer/out/TextAttribute.hpp"
+#include "../../types/inc/Viewport.hpp"
 
 namespace Microsoft::Terminal::Core
 {
@@ -22,6 +23,7 @@ namespace Microsoft::Terminal::Core
         virtual TextAttribute GetTextAttributes() const noexcept = 0;
         virtual void SetTextAttributes(const TextAttribute& attrs) noexcept = 0;
 
+        virtual Microsoft::Console::Types::Viewport GetBufferSize() noexcept = 0;
         virtual bool SetCursorPosition(short x, short y) noexcept = 0;
         virtual COORD GetCursorPosition() noexcept = 0;
         virtual bool SetCursorVisibility(const bool visible) noexcept = 0;
