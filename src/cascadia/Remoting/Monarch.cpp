@@ -705,7 +705,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // If no name was provided, then just summon the MRU window.
             if (searchedForName.empty())
             {
-                windowId = _getMostRecentPeasantID(true);
+                // TODO!: let this optionally be true, in the SummonWindowSelectionArgs
+                windowId = _getMostRecentPeasantID(false);
             }
             else
             {

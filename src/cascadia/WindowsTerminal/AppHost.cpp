@@ -8,6 +8,7 @@
 #include "../types/inc/User32Utils.hpp"
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "resource.h"
+#include "VirtualDesktopUtils.h"
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
@@ -721,10 +722,52 @@ winrt::fire_and_forget AppHost::_createNewTerminalWindow(Settings::Model::Global
     co_return;
 }
 
+GUID _currentlyActiveDesktop()
+{
+    // // HWND desktop = GetDesktopWindow();
+
+    // static const wchar_t* const PSEUDO_WINDOW_CLASS = L"Pseudo1ConsoleWindow";
+    // WNDCLASS pseudoClass{ 0 };
+    // pseudoClass.lpszClassName = PSEUDO_WINDOW_CLASS;
+    // pseudoClass.lpfnWndProc = DefWindowProc;
+    // RegisterClass(&pseudoClass);
+    // // Attempt to create window
+    // wil::unique_hwnd hwnd{ CreateWindowExW(
+    //     0, PSEUDO_WINDOW_CLASS, nullptr, WS_OVERLAPPEDWINDOW, 0, 0, 0, 0, HWND_DESKTOP, nullptr, nullptr, nullptr) };
+    // HWND h = hwnd.get();
+    // GUID currentDesktopGuid{ 0 };
+    // try
+    // {
+    //     const auto manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
+    //     if (manager)
+    //     {
+    //         DebugBreak();
+    //         LOG_IF_FAILED(manager->GetWindowDesktopId(h, &currentDesktopGuid));
+    //     }
+    // }
+    // CATCH_LOG();
+    GUID currentDesktopGuid;
+    VirtualDesktopUtils::GetCurrentVirtualDesktopId(&currentDesktopGuid);
+    return currentDesktopGuid;
+}
+
 void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                             const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     _window->SummonWindow();
+
+    const auto currentWindowDesktop{ _CurrentDesktopGuid() };
+    const auto currentlyActiveDesktop{ _currentlyActiveDesktop() };
+    // DebugBreak();
+    try
+    {
+        const auto manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
+        if (manager)
+        {
+            LOG_IF_FAILED(manager->MoveWindowToDesktop(_window->GetHandle(), currentlyActiveDesktop));
+        }
+    }
+    CATCH_LOG();
 }
 
 GUID AppHost::_CurrentDesktopGuid()

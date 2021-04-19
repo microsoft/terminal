@@ -916,7 +916,7 @@ void IslandWindow::UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Co
                       TraceLoggingInt64(hotkeyList.size(), "numHotkeys", "The number of hotkeys to unset"),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 
-    for (size_t i = 0; i < hotkeyList.size(); i++)
+    for (int i = 0; i < ::base::saturated_cast<int>(hotkeyList.size()); i++)
     {
         LOG_IF_WIN32_BOOL_FALSE(UnregisterHotKey(_window.get(), i));
     }
