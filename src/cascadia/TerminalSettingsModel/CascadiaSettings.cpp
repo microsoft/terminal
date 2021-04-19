@@ -84,6 +84,9 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     settings->_userSettings = _userSettings;
     settings->_defaultSettings = _defaultSettings;
 
+    settings->_defaultTerminals = _defaultTerminals;
+    settings->_currentDefaultTerminal = _currentDefaultTerminal;
+
     _CopyProfileInheritanceTree(settings);
 
     return *settings;
@@ -329,8 +332,6 @@ void CascadiaSettings::_ValidateSettings()
     _ValidateColorSchemesInCommands();
 
     _ValidateNoGlobalsKey();
-
-    _ValidateDefaultApplication();
 }
 
 // Method Description:
@@ -851,25 +852,6 @@ void CascadiaSettings::_ValidateNoGlobalsKey()
     }
 }
 
-// Method Description:
-// - Pulls up the list of valid default applications and the currently selected one
-//   and ensures that those items are valid for presentation and selection.zs
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void CascadiaSettings::_ValidateDefaultApplication()
-{
-    _defaultTerminals.Clear();
-   
-    for (const auto& term : Model::DefaultTerminal::Available())
-    {
-        _defaultTerminals.Append(term);
-    }
-
-    _currentDefaultTerminal = Model::DefaultTerminal::Current();
-}
-
 // Method Description
 // - Replaces known tokens DEFAULT_PROFILE, PRODUCT and VERSION in the settings template
 //   with their expected values. DEFAULT_PROFILE is updated to match PowerShell Core's GUID
@@ -1021,6 +1003,24 @@ winrt::hstring CascadiaSettings::ApplicationVersion()
     CATCH_LOG();
 
     return RS_(L"ApplicationVersionUnknown");
+}
+
+// Method Description:
+// - Forces a refresh of all default terminal state
+// Arguments:
+// - <none>
+// Return Value:
+// - <none> - Updates internal state
+void CascadiaSettings::RefreshDefaultTerminals()
+{
+    _defaultTerminals.Clear();
+
+    for (const auto& term : Model::DefaultTerminal::Available())
+    {
+        _defaultTerminals.Append(term);
+    }
+
+    _currentDefaultTerminal = Model::DefaultTerminal::Current();
 }
 
 // Method Description:

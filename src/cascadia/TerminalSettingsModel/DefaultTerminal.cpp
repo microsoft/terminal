@@ -14,12 +14,39 @@ std::optional<Model::DefaultTerminal> DefaultTerminal::_current;
 DefaultTerminal::DefaultTerminal(DelegationConfig::DelegationPackage pkg) :
     _pkg(pkg)
 {
-
 }
 
 winrt::hstring DefaultTerminal::Name() const
 {
-    return winrt::to_hstring(_pkg.terminal.name.c_str());
+    // TODO:
+    //[3:10 PM] Dustin Howett
+    //you can make defaultName a wstring_view and return either winrt::hstring{ _pkg.terminal.name } or winrt : hstring{ defaultName }
+
+    //                                                                                                          [3:10 PM] Dustin Howett this will ensure that we don't need to copy defaultName every time
+
+    static const std::wstring defaultName{ L"Windows Console Host" };
+    const auto& name = _pkg.terminal.name.empty() ? defaultName : _pkg.terminal.name;
+    return winrt::hstring{ name };
+}
+
+winrt::hstring DefaultTerminal::Version() const
+{
+    const auto name = fmt::format(L"{}.{}.{}.{}", _pkg.terminal.version.major, _pkg.terminal.version.minor, _pkg.terminal.version.build, _pkg.terminal.version.revision);
+    return winrt::hstring{ name };
+}
+
+winrt::hstring DefaultTerminal::Author() const
+{
+    static const std::wstring defaultName{ L"Microsoft Corporation" };
+    const auto& name = _pkg.terminal.author.empty() ? defaultName : _pkg.terminal.author;
+    return winrt::hstring{ name };
+}
+
+winrt::hstring DefaultTerminal::Icon() const
+{
+    static const std::wstring defaultName{ L"\uE756" };
+    const auto& name = defaultName;
+    return winrt::hstring{ name };
 }
 
 void DefaultTerminal::Refresh()

@@ -38,6 +38,7 @@
             <StackPanel Style="{StaticResource SettingsStackStyle}">
                 <!--  Default Profile  -->
                 <local:SettingContainer x:Uid="Globals_DefaultProfile"
+                                        MinWidth="300"
                                         Margin="0">
                     <ComboBox x:Name="DefaultProfile"
                               ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}"
@@ -72,9 +73,58 @@
                 <!--  Default Terminal  -->
                 <local:SettingContainer x:Uid="Globals_DefaultTerminal">
                     <ComboBox x:Name="DefaultTerminal"
+                              MinWidth="300"
                               ItemsSource="{x:Bind State.Settings.DefaultTerminals, Mode=OneWay}"
                               SelectedItem="{x:Bind State.Settings.CurrentDefaultTerminal, Mode=TwoWay}"
-                              Style="{StaticResource ComboBoxSettingStyle}" />
+                              Style="{StaticResource ComboBoxSettingStyle}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="SettingsModel:DefaultTerminal">
+                                <Grid HorizontalAlignment="Stretch"
+                                      ColumnSpacing="8">
+
+                                    <Grid.ColumnDefinitions>
+                                        <!--  icon  -->
+                                        <ColumnDefinition Width="16" />
+                                        <!-- profile name and author -->
+                                        <ColumnDefinition Width="*" />
+                                        <!-- version -->
+                                        <ColumnDefinition Width="48" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <!-- profile name -->
+                                        <RowDefinition Height="Auto" />
+                                        <!-- author and version -->
+                                        <RowDefinition Height="14"/>
+                                    </Grid.RowDefinitions>
+
+                                    <IconSourceElement Grid.Column="0"
+                                                       Grid.Row="0"
+                                                       Grid.RowSpan="2"
+                                                       VerticalAlignment="Center"
+                                                       Width="16"
+                                                       Height="16"
+                                                       IconSource="{x:Bind Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
+
+                                    <TextBlock Grid.Column="1"
+                                               Grid.Row="0"
+                                               Grid.ColumnSpan="2"
+                                               Text="{x:Bind Name}" />
+
+                                    <TextBlock Grid.Column ="1"
+                                               Grid.Row="1"
+                                               FontSize="12"
+                                               Text="{x:Bind Author}" />
+
+                                    <TextBlock Grid.Column ="2"
+                                               Grid.Row="1"
+                                               FontSize="12"
+                                               Text="{x:Bind Version}" />
+
+                                </Grid>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
                 </local:SettingContainer>
 
                 <!--  Start on User Login  -->

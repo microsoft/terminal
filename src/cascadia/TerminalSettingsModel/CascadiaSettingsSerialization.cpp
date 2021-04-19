@@ -1348,6 +1348,8 @@ void CascadiaSettings::WriteSettingsToDisk() const
 
     const auto styledString{ Json::writeString(wbuilder, ToJson()) };
     _WriteSettings(styledString, settingsPath);
+
+    Model::DefaultTerminal::Current(_currentDefaultTerminal);
 }
 
 // Method Description:

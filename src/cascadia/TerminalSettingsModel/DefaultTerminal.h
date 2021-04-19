@@ -15,6 +15,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         DefaultTerminal(DelegationConfig::DelegationPackage pkg);
 
         hstring Name() const;
+        hstring Author() const;
+        hstring Version() const;
+        hstring Icon() const;
 
         static void Refresh();
         static Windows::Foundation::Collections::IVectorView<Model::DefaultTerminal> Available();

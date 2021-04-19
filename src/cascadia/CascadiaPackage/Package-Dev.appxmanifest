@@ -10,6 +10,7 @@
   xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
   xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
   xmlns:desktop5="http://schemas.microsoft.com/appx/manifest/desktop/windows10/5"
+  xmlns:desktop6="http://schemas.microsoft.com/appx/manifest/desktop/windows10/6"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
   IgnorableNamespaces="uap mp rescap uap3">
@@ -23,6 +24,7 @@
     <DisplayName>Windows Terminal Dev</DisplayName>
     <PublisherDisplayName>A Lone Developer</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
+    <desktop6:RegistryWriteVirtualization>disabled</desktop6:RegistryWriteVirtualization>
   </Properties>
 
   <Dependencies>
@@ -134,5 +136,6 @@
   <Capabilities>
     <Capability Name="internetClient" />
     <rescap:Capability Name="runFullTrust" />
+    <rescap:Capability Name="unvirtualizedResources" />
   </Capabilities>
 </Package>

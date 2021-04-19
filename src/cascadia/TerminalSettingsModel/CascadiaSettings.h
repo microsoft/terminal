@@ -98,6 +98,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::guid GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const;
 
+        void RefreshDefaultTerminals();
+
         Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> DefaultTerminals() const noexcept;
         Model::DefaultTerminal CurrentDefaultTerminal() const noexcept;
         void CurrentDefaultTerminal(Model::DefaultTerminal terminal);
@@ -163,7 +165,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _ValidateKeybindings();
         void _ValidateColorSchemesInCommands();
         void _ValidateNoGlobalsKey();
-        void _ValidateDefaultApplication();
 
         bool _HasInvalidColorScheme(const Model::Command& command);
 
