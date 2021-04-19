@@ -65,7 +65,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->Write(str);
 
             // NOTE: We're raising an event here to inform the TermControl that
-            // output has been recieved, so it can queue up a throttled
+            // output has been received, so it can queue up a throttled
             // UpdatePatternLocations call. In the future, we should have the
             // _updatePatternLocations ThrottledFunc internal to this class, and
             // run on this object's dispatcher queue.

@@ -284,7 +284,7 @@ namespace ControlUnitTests
                                     terminalPosition1);
         Log::Comment(L"Verify that there's one selection");
         VERIFY_IS_TRUE(core->HasSelection());
-        VERIFY_ARE_EQUAL(1, core->_terminal->GetSelectionRects().size());
+        VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
 
         Log::Comment(L"Drag the mouse down a whole row");
         const til::point terminalPosition2{ 1, 1 };
@@ -297,7 +297,7 @@ namespace ControlUnitTests
                                     terminalPosition2);
         Log::Comment(L"Verify that there's now two selections (one on each row)");
         VERIFY_IS_TRUE(core->HasSelection());
-        VERIFY_ARE_EQUAL(2, core->_terminal->GetSelectionRects().size());
+        VERIFY_ARE_EQUAL(2u, core->_terminal->GetSelectionRects().size());
 
         Log::Comment(L"Release the mouse");
         interactivity->PointerReleased(noMouseDown,
@@ -307,7 +307,7 @@ namespace ControlUnitTests
                                        terminalPosition2);
         Log::Comment(L"Verify that there's still two selections");
         VERIFY_IS_TRUE(core->HasSelection());
-        VERIFY_ARE_EQUAL(2, core->_terminal->GetSelectionRects().size());
+        VERIFY_ARE_EQUAL(2u, core->_terminal->GetSelectionRects().size());
 
         Log::Comment(L"click outside the current selection");
         const til::point terminalPosition3{ 2, 2 };
@@ -321,7 +321,7 @@ namespace ControlUnitTests
                                       terminalPosition3);
         Log::Comment(L"Verify that there's now no selection");
         VERIFY_IS_FALSE(core->HasSelection());
-        VERIFY_ARE_EQUAL(0, core->_terminal->GetSelectionRects().size());
+        VERIFY_ARE_EQUAL(0u, core->_terminal->GetSelectionRects().size());
 
         Log::Comment(L"Drag the mouse");
         const til::point terminalPosition4{ 3, 2 };
@@ -334,6 +334,6 @@ namespace ControlUnitTests
                                     terminalPosition4);
         Log::Comment(L"Verify that there's now one selection");
         VERIFY_IS_TRUE(core->HasSelection());
-        VERIFY_ARE_EQUAL(1, core->_terminal->GetSelectionRects().size());
+        VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
     }
 }

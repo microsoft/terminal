@@ -2303,7 +2303,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                           const Control::OpenHyperlinkEventArgs& args)
     {
         // Save things we need to resume later.
-        Control::OpenHyperlinkEventArgs heldargs = args;
+        Control::OpenHyperlinkEventArgs heldArgs = args;
         auto strongThis{ get_strong() };
 
         // Pop the rest of this function to the tail of the UI thread

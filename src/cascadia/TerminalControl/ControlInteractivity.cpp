@@ -116,7 +116,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // Note to future self: This should return false if there's no
             // selection to copy. If there's no selection, returning false will
-            // indicate that the actions that trigered this should _not_ be
+            // indicate that the actions that triggered this should _not_ be
             // marked as handled, so ctrl+c without a selection can still send
             // ^C
 
