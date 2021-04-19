@@ -70,7 +70,7 @@
                     <ColumnDefinition Width="auto" />
                 </Grid.ColumnDefinitions>
                 <Border MinWidth="128"
-                        Background="DimGray"
+                        Background="#333333"
                         CornerRadius="2,2,0,0">
                     <Grid VerticalAlignment="Center">
                         <Grid.ColumnDefinitions>
