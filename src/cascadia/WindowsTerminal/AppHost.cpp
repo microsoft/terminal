@@ -649,7 +649,7 @@ winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
 // - <none>
 void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
 {
-    if (hotkeyIndex < 0 || hotkeyIndex > _hotkeys.size())
+    if (hotkeyIndex < 0 || static_cast<size_t>(hotkeyIndex) > _hotkeys.size())
     {
         return;
     }
