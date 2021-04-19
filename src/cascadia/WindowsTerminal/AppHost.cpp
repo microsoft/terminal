@@ -663,6 +663,13 @@ void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
         {
             Remoting::SummonWindowSelectionArgs args;
             args.WindowName(summonArgs.Name());
+
+            // desktop:any - MoveToCurrentDesktop=false, OnCurrentDesktop=false
+            // desktop:toCurrent - MoveToCurrentDesktop=true, OnCurrentDesktop=false
+            // desktop:onCurrent - MoveToCurrentDesktop=false, OnCurrentDesktop=true
+            args.OnCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::OnCurrent);
+            args.SummonBehavior().MoveToCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::ToCurrent);
+
             _windowManager.SummonWindow(args);
             if (args.FoundMatch())
             {
@@ -722,52 +729,25 @@ winrt::fire_and_forget AppHost::_createNewTerminalWindow(Settings::Model::Global
     co_return;
 }
 
-GUID _currentlyActiveDesktop()
-{
-    // // HWND desktop = GetDesktopWindow();
-
-    // static const wchar_t* const PSEUDO_WINDOW_CLASS = L"Pseudo1ConsoleWindow";
-    // WNDCLASS pseudoClass{ 0 };
-    // pseudoClass.lpszClassName = PSEUDO_WINDOW_CLASS;
-    // pseudoClass.lpfnWndProc = DefWindowProc;
-    // RegisterClass(&pseudoClass);
-    // // Attempt to create window
-    // wil::unique_hwnd hwnd{ CreateWindowExW(
-    //     0, PSEUDO_WINDOW_CLASS, nullptr, WS_OVERLAPPEDWINDOW, 0, 0, 0, 0, HWND_DESKTOP, nullptr, nullptr, nullptr) };
-    // HWND h = hwnd.get();
-    // GUID currentDesktopGuid{ 0 };
-    // try
-    // {
-    //     const auto manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
-    //     if (manager)
-    //     {
-    //         DebugBreak();
-    //         LOG_IF_FAILED(manager->GetWindowDesktopId(h, &currentDesktopGuid));
-    //     }
-    // }
-    // CATCH_LOG();
-    GUID currentDesktopGuid;
-    VirtualDesktopUtils::GetCurrentVirtualDesktopId(&currentDesktopGuid);
-    return currentDesktopGuid;
-}
-
 void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                            const winrt::Windows::Foundation::IInspectable& /*args*/)
+                            const Remoting::SummonWindowBehavior& args)
 {
     _window->SummonWindow();
 
-    const auto currentWindowDesktop{ _CurrentDesktopGuid() };
-    const auto currentlyActiveDesktop{ _currentlyActiveDesktop() };
-    // DebugBreak();
-    try
+    if (args != nullptr && args.MoveToCurrentDesktop())
     {
-        const auto manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
-        if (manager)
+        try
         {
-            LOG_IF_FAILED(manager->MoveWindowToDesktop(_window->GetHandle(), currentlyActiveDesktop));
+            const auto manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
+            if (manager)
+            {
+                GUID currentlyActiveDesktop;
+                VirtualDesktopUtils::GetCurrentVirtualDesktopId(&currentlyActiveDesktop);
+                LOG_IF_FAILED(manager->MoveWindowToDesktop(_window->GetHandle(), currentlyActiveDesktop));
+            }
         }
+        CATCH_LOG();
     }
-    CATCH_LOG();
 }
 
 GUID AppHost::_CurrentDesktopGuid()

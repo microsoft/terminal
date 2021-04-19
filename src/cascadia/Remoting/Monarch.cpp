@@ -705,8 +705,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // If no name was provided, then just summon the MRU window.
             if (searchedForName.empty())
             {
-                // TODO!: let this optionally be true, in the SummonWindowSelectionArgs
-                windowId = _getMostRecentPeasantID(false);
+                // Use the value of the `desktop` arg to determine if we should
+                // limit to the current desktop (desktop:onCurrent) or not
+                // (desktop:any or desktop:toCurrent)
+                windowId = _getMostRecentPeasantID(args.OnCurrentDesktop());
             }
             else
             {
@@ -715,7 +717,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             }
             if (auto targetPeasant{ _getPeasant(windowId) })
             {
-                targetPeasant.Summon();
+                targetPeasant.Summon(args.SummonBehavior());
                 args.FoundMatch(true);
             }
         }

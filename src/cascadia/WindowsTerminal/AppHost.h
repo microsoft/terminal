@@ -59,7 +59,7 @@ private:
                         const winrt::Windows::Foundation::IInspectable& args);
     void _GlobalHotkeyPressed(const long hotkeyIndex);
     void _HandleSummon(const winrt::Windows::Foundation::IInspectable& sender,
-                       const winrt::Windows::Foundation::IInspectable& args);
+                       const winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior& args);
 
     winrt::fire_and_forget _IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable sender,
                                                      const winrt::Windows::Foundation::IInspectable args);

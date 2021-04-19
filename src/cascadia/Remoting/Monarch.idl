@@ -21,12 +21,14 @@ namespace Microsoft.Terminal.Remoting
     [default_interface] runtimeclass SummonWindowSelectionArgs {
         SummonWindowSelectionArgs();
         String WindowName;
+        Boolean OnCurrentDesktop;
         // Other options:
-        // * CurrentDesktop
         // * CurrentMonitor
 
         Boolean FoundMatch;
+        SummonWindowBehavior SummonBehavior;
     }
+
 
     [default_interface] runtimeclass Monarch {
         Monarch();

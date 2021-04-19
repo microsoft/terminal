@@ -30,6 +30,13 @@ namespace Microsoft.Terminal.Remoting
         Windows.Foundation.DateTime ActivatedTime { get; };
     };
 
+    [default_interface] runtimeclass SummonWindowBehavior {
+        SummonWindowBehavior();
+        Boolean MoveToCurrentDesktop;
+        // Other options:
+        // * CurrentMonitor
+    }
+
     interface IPeasant
     {
         CommandlineArgs InitialArgs { get; };
@@ -46,14 +53,14 @@ namespace Microsoft.Terminal.Remoting
         String WindowName { get; };
         void RequestIdentifyWindows(); // Tells us to raise a IdentifyWindowsRequested
         void RequestRename(RenameRequestArgs args); // Tells us to raise a RenameRequested
-        void Summon();
+        void Summon(SummonWindowBehavior behavior);
 
         event Windows.Foundation.TypedEventHandler<Object, WindowActivatedArgs> WindowActivated;
         event Windows.Foundation.TypedEventHandler<Object, CommandlineArgs> ExecuteCommandlineRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> DisplayWindowIdRequested;
         event Windows.Foundation.TypedEventHandler<Object, RenameRequestArgs> RenameRequested;
-        event Windows.Foundation.TypedEventHandler<Object, Object> SummonRequested;
+        event Windows.Foundation.TypedEventHandler<Object, SummonWindowBehavior> SummonRequested;
     };
 
     [default_interface] runtimeclass Peasant : IPeasant

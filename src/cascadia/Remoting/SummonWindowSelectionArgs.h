@@ -29,6 +29,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         WINRT_PROPERTY(winrt::hstring, WindowName);
         WINRT_PROPERTY(bool, FoundMatch, true);
+        WINRT_PROPERTY(bool, OnCurrentDesktop, false);
+        WINRT_PROPERTY(SummonWindowBehavior, SummonBehavior);
     };
 }
 

@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 //
-// Shamelessly copied from PowerToys
+// Shamelessly copied from microsoft/PowerToys, at
+// https://github.com/microsoft/PowerToys/blob/master/src/modules/fancyzones/lib/VirtualDesktopUtils.cpp
 
 #include "pch.h"
 
