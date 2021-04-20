@@ -22,7 +22,6 @@ namespace ControlUnitTests
         BEGIN_TEST_CLASS(ControlCoreTests)
         END_TEST_CLASS()
 
-        TEST_METHOD(OnStackSettings);
         TEST_METHOD(ComPtrSettings);
         TEST_METHOD(InstantiateCore);
         TEST_METHOD(TestInitialize);
@@ -42,32 +41,21 @@ namespace ControlUnitTests
         std::tuple<winrt::com_ptr<MockControlSettings>, winrt::com_ptr<MockConnection>> _createSettingsAndConnection()
         {
             Log::Comment(L"Create settings object");
-            winrt::com_ptr<MockControlSettings> settings;
-            settings.attach(new MockControlSettings());
+            auto settings = winrt::make_self<MockControlSettings>();
+            VERIFY_IS_NOT_NULL(settings);
 
             Log::Comment(L"Create connection object");
-            winrt::com_ptr<MockConnection> conn;
-            conn.attach(new MockConnection());
+            auto conn = winrt::make_self<MockConnection>();
             VERIFY_IS_NOT_NULL(conn);
 
             return { settings, conn };
         }
     };
 
-    void ControlCoreTests::OnStackSettings()
-    {
-        Log::Comment(L"Just make sure we can instantiate a settings obj on the stack");
-
-        MockControlSettings settings;
-
-        Log::Comment(L"Verify literally any setting, it doesn't matter");
-        VERIFY_ARE_EQUAL(DEFAULT_FOREGROUND, settings.DefaultForeground());
-    }
     void ControlCoreTests::ComPtrSettings()
     {
         Log::Comment(L"Just make sure we can instantiate a settings obj in a com_ptr");
-        winrt::com_ptr<MockControlSettings> settings;
-        settings.attach(new MockControlSettings());
+        auto settings = winrt::make_self<MockControlSettings>();
 
         Log::Comment(L"Verify literally any setting, it doesn't matter");
         VERIFY_ARE_EQUAL(DEFAULT_FOREGROUND, settings->DefaultForeground());
@@ -200,7 +188,7 @@ namespace ControlUnitTests
         auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
         VERIFY_IS_NOT_NULL(core);
 
-        VERIFY_ARE_EQUAL(L"Impact", std::wstring{ core->_actualFont.GetFaceName() });
+        VERIFY_ARE_EQUAL(L"Impact", std::wstring_view{ core->_actualFont.GetFaceName() });
     }
 
 }

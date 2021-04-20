@@ -42,12 +42,11 @@ namespace ControlUnitTests
         _createSettingsAndConnection()
         {
             Log::Comment(L"Create settings object");
-            winrt::com_ptr<MockControlSettings> settings;
-            settings.attach(new MockControlSettings());
+            auto settings = winrt::make_self<MockControlSettings>();
+            VERIFY_IS_NOT_NULL(settings);
 
             Log::Comment(L"Create connection object");
-            winrt::com_ptr<MockConnection> conn;
-            conn.attach(new MockConnection());
+            auto conn = winrt::make_self<MockConnection>();
             VERIFY_IS_NOT_NULL(conn);
 
             return { settings, conn };
