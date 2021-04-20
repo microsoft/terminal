@@ -79,11 +79,12 @@
                         <ComboBox.ItemTemplate>
                             <DataTemplate x:DataType="SettingsModel:DefaultTerminal">
                                 <Grid HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Stretch"
                                       ColumnSpacing="8">
 
                                     <Grid.ColumnDefinitions>
                                         <!--  icon  -->
-                                        <ColumnDefinition Width="16" />
+                                        <ColumnDefinition Width="24" />
                                         <!--  profile name and author  -->
                                         <ColumnDefinition Width="*" />
                                         <!--  version  -->
@@ -92,16 +93,16 @@
 
                                     <Grid.RowDefinitions>
                                         <!--  profile name  -->
-                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
                                         <!--  author and version  -->
-                                        <RowDefinition Height="14" />
+                                        <RowDefinition Height="*" />
                                     </Grid.RowDefinitions>
 
                                     <IconSourceElement Grid.Row="0"
                                                        Grid.RowSpan="2"
                                                        Grid.Column="0"
-                                                       Width="16"
-                                                       Height="16"
+                                                       Width="24"
+                                                       Height="24"
                                                        VerticalAlignment="Center"
                                                        IconSource="{x:Bind Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
 
@@ -112,12 +113,12 @@
 
                                     <TextBlock Grid.Row="1"
                                                Grid.Column="1"
-                                               FontSize="12"
+                                               Foreground="{StaticResource SystemBaseMediumColor}"
                                                Text="{x:Bind Author}" />
 
                                     <TextBlock Grid.Row="1"
                                                Grid.Column="2"
-                                               FontSize="12"
+                                               Foreground="{StaticResource SystemBaseMediumColor}"
                                                Text="{x:Bind Version}" />
 
                                 </Grid>
