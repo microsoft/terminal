@@ -252,7 +252,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
         // old buffer's.
         const auto oldBufferAttributes = _buffer->GetCurrentAttributes();
         newTextBuffer = std::make_unique<TextBuffer>(bufferSize,
-                                                     TextAttribute(),
+                                                     TextAttribute{},
                                                      0, // temporarily set size to 0 so it won't render.
                                                      _buffer->GetRenderTarget());
 
@@ -281,7 +281,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
         newViewportTop = oldRows.mutableViewportTop;
         newVisibleTop = oldRows.visibleViewportTop;
 
-        // Restore the actve text attributes
+        // Restore the active text attributes
         newTextBuffer->SetCurrentAttributes(oldBufferAttributes);
     }
     CATCH_RETURN();

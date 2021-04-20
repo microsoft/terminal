@@ -216,6 +216,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(HyperlinkIdConsistency);
 
+    TEST_METHOD(ResizeInitializeBufferWithDefaultAttrs);
+
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
     void _flushFirstFrame();
@@ -2900,11 +2902,13 @@ void ConptyRoundtripTests::ResizeInitializeBufferWithDefaultAttrs()
     auto conhostGreenAttrs = TextAttribute();
 
     // Conhost and Terminal store attributes in different bits.
-    conhostGreenAttrs.SetIndexedAttributes(std::nullopt,
-                                           { static_cast<BYTE>(FOREGROUND_GREEN) });
+    // conhostGreenAttrs.SetIndexedAttributes(std::nullopt,
+    //                                        { static_cast<BYTE>(FOREGROUND_GREEN) });
+    conhostGreenAttrs.SetIndexedBackground(FOREGROUND_GREEN);
     auto terminalGreenAttrs = TextAttribute();
-    terminalGreenAttrs.SetIndexedAttributes(std::nullopt,
-                                            { static_cast<BYTE>(XTERM_GREEN_ATTR) });
+    // terminalGreenAttrs.SetIndexedAttributes(std::nullopt,
+    //                                         { static_cast<BYTE>(XTERM_GREEN_ATTR) });
+    terminalGreenAttrs.SetIndexedBackground(XTERM_GREEN_ATTR);
 
     const size_t width = static_cast<size_t>(TerminalViewWidth);
 
@@ -2946,7 +2950,7 @@ void ConptyRoundtripTests::ResizeInitializeBufferWithDefaultAttrs()
         {
             Log::Comment(NoThrowString().Format(L"Checking row %d...", row));
 
-            VERIFY_IS_FALSE(tb.GetRowByOffset(row).GetCharRow().WasWrapForced());
+            VERIFY_IS_FALSE(tb.GetRowByOffset(row).WasWrapForced());
 
             const bool hasChar = row < 3;
             const auto actualDefaultAttrs = isTerminal ? TextAttribute() : defaultAttrs;
