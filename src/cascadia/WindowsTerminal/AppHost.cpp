@@ -729,6 +729,30 @@ winrt::fire_and_forget AppHost::_createNewTerminalWindow(Settings::Model::Global
     co_return;
 }
 
+// Method Description:
+// - Helper to initialize our instance of IVirtualDesktopManager. If we already
+//   got one, then this will just return true. Otherwise, we'll try and init a
+//   new instance of one, and store that.
+// - This will return false if we weren't able to initialize one, which I'm not
+//   sure is actually possible.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff _desktopManager points to a non-null instance of IVirtualDesktopManager
+bool AppHost::_LazyLoadDesktopManager()
+{
+    if (_desktopManager == nullptr)
+    {
+        try
+        {
+            _desktopManager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
+        }
+        CATCH_LOG();
+    }
+
+    return _desktopManager != nullptr;
+}
+
 void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                             const Remoting::SummonWindowBehavior& args)
 {
@@ -736,32 +760,23 @@ void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*se
 
     if (args != nullptr && args.MoveToCurrentDesktop())
     {
-        try
+        if (_LazyLoadDesktopManager())
         {
-            const auto manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
-            if (manager)
-            {
-                GUID currentlyActiveDesktop;
-                VirtualDesktopUtils::GetCurrentVirtualDesktopId(&currentlyActiveDesktop);
-                LOG_IF_FAILED(manager->MoveWindowToDesktop(_window->GetHandle(), currentlyActiveDesktop));
-            }
+            GUID currentlyActiveDesktop;
+            VirtualDesktopUtils::GetCurrentVirtualDesktopId(&currentlyActiveDesktop);
+            LOG_IF_FAILED(_desktopManager->MoveWindowToDesktop(_window->GetHandle(), currentlyActiveDesktop));
         }
-        CATCH_LOG();
     }
 }
 
 GUID AppHost::_CurrentDesktopGuid()
 {
     GUID currentDesktopGuid{ 0 };
-    try
+    const auto manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
+    if (_LazyLoadDesktopManager())
     {
-        const auto manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
-        if (manager)
-        {
-            LOG_IF_FAILED(manager->GetWindowDesktopId(_window->GetHandle(), &currentDesktopGuid));
-        }
+        LOG_IF_FAILED(_desktopManager->GetWindowDesktopId(_window->GetHandle(), &currentDesktopGuid));
     }
-    CATCH_LOG();
     return currentDesktopGuid;
 }
 
