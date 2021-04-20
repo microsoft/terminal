@@ -150,7 +150,7 @@ namespace ControlUnitTests
 
     void ControlInteractivityTests::TestPanWithTouch()
     {
-        VERIFY_IS_TRUE(false);
+        VERIFY_IS_TRUE(false, L"TODO: Implement this test");
     }
     void ControlInteractivityTests::TestScrollWithMouse()
     {

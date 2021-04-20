@@ -65,18 +65,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _interactivity = winrt::make_self<ControlInteractivity>(settings, connection);
         _core = _interactivity->GetCore();
 
-        _core->BackgroundColorChanged({ get_weak(), &TermControl::_BackgroundColorChangedHandler });
+        // These all need weak refs - they could be triggered by the connection,
+        // which would happen off the UI thread.
         _core->ScrollPositionChanged({ get_weak(), &TermControl::_ScrollPositionChanged });
         _core->CursorPositionChanged({ get_weak(), &TermControl::_CursorPositionChanged });
         _core->RendererEnteredErrorState({ get_weak(), &TermControl::_RendererEnteredErrorState });
-        _core->FontSizeChanged({ get_weak(), &TermControl::_coreFontSizeChanged });
-        _core->TransparencyChanged({ get_weak(), &TermControl::_coreTransparencyChanged });
-        _core->ReceivedOutput({ get_weak(), &TermControl::_coreReceivedOutput });
-        _core->RaiseNotice({ get_weak(), &TermControl::_coreRaisedNotice });
         _core->WarningBell({ get_weak(), &TermControl::_coreWarningBell });
+        _core->ReceivedOutput({ get_weak(), &TermControl::_coreReceivedOutput });
 
-        _interactivity->OpenHyperlink({ get_weak(), &TermControl::_HyperlinkHandler });
-        _interactivity->ScrollPositionChanged({ get_weak(), &TermControl::_ScrollPositionChanged });
+        // These callbacks can only really be triggered by UI interactions. So
+        // they don't need weak refs - they can't be triggered unless we're
+        // alive.
+        _core->BackgroundColorChanged({ this, &TermControl::_BackgroundColorChangedHandler });
+        _core->FontSizeChanged({ this, &TermControl::_coreFontSizeChanged });
+        _core->TransparencyChanged({ this, &TermControl::_coreTransparencyChanged });
+        _core->RaiseNotice({ this, &TermControl::_coreRaisedNotice });
+        _core->HoveredHyperlinkChanged({ this, &TermControl::_hoveredHyperlinkChanged });
+        _interactivity->OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
+        _interactivity->ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
+
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
         _layoutUpdatedRevoker = SwapChainPanel().LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
@@ -149,8 +156,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
         _ApplyUISettings(_settings);
-
-        _core->HoveredHyperlinkChanged({ get_weak(), &TermControl::_hoveredHyperlinkChanged });
     }
 
     // Method Description:
@@ -351,14 +356,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TSFInputControl().Foreground(foregroundBrush);
 
         _core->UpdateAppearance(newAppearance);
-        // // Update the terminal core with its new Core settings
-        // _terminal->UpdateAppearance(newAppearance);
-
-        // // Update DxEngine settings under the lock
-        // _renderEngine->SetSelectionBackground(til::color{ newAppearance.SelectionBackground() });
-        // _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
-        // _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
-        // _renderer->TriggerRedrawAll();
     }
 
     // Method Description:
@@ -567,7 +564,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core->ConnectionState();
     }
 
-    winrt::fire_and_forget TermControl::RenderEngineSwapChainChanged(const IInspectable& /*sender*/, const IInspectable& /*args*/)
+    winrt::fire_and_forget TermControl::RenderEngineSwapChainChanged(IInspectable /*sender*/, IInspectable /*args*/)
     {
         // This event is only registered during terminal initialization,
         // so we don't need to check _initializedTerminal.
@@ -593,10 +590,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - hr: an  HRESULT describing the warning
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::_RendererWarning(const IInspectable& /*sender*/,
-                                                         const Control::RendererWarningArgs& args)
+    winrt::fire_and_forget TermControl::_RendererWarning(IInspectable /*sender*/,
+                                                         Control::RendererWarningArgs args)
     {
-        const HRESULT hr = static_cast<HRESULT>(args.Result());
+        const auto hr = static_cast<HRESULT>(args.Result());
 
         auto weakThis{ get_weak() };
         co_await winrt::resume_foreground(Dispatcher());
@@ -651,7 +648,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return false;
         }
 
-        // IMPORTANT! Set this callback up sooner than later. If we do it
+        // IMPORTANT! Set this callback up sooner rather than later. If we do it
         // after Enable, then it'll be possible to paint the frame once
         // _before_ the warning handler is set up, and then warnings from
         // the first paint will be ignored!
@@ -1065,7 +1062,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                            TermControl::GetPressedMouseButtons(point),
                                            TermControl::PointerToMouseButtons(point),
                                            point.Timestamp(),
-                                           ControlKeyStates(args.KeyModifiers()),
+                                           ControlKeyStates{ args.KeyModifiers() },
                                            _focused,
                                            _GetTerminalPosition(cursorPosition));
         }
@@ -1254,8 +1251,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <unused>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::_coreTransparencyChanged(const IInspectable& /*sender*/,
-                                                                 const Control::TransparencyChangedEventArgs& /*args*/)
+    winrt::fire_and_forget TermControl::_coreTransparencyChanged(IInspectable /*sender*/,
+                                                                 Control::TransparencyChangedEventArgs /*args*/)
     {
         co_await resume_foreground(Dispatcher());
         try
@@ -2170,8 +2167,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - e: The DragEventArgs from the Drop event
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::_DragDropHandler(Windows::Foundation::IInspectable const& /*sender*/,
-                                                         DragEventArgs const e)
+    winrt::fire_and_forget TermControl::_DragDropHandler(Windows::Foundation::IInspectable /*sender*/,
+                                                         DragEventArgs e)
     {
         if (_closing)
         {
@@ -2299,11 +2296,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Checks if the uri is valid and sends an event if so
     // Arguments:
     // - The uri
-    winrt::fire_and_forget TermControl::_HyperlinkHandler(const IInspectable& /*sender*/,
-                                                          const Control::OpenHyperlinkEventArgs& args)
+    winrt::fire_and_forget TermControl::_HyperlinkHandler(IInspectable /*sender*/,
+                                                          Control::OpenHyperlinkEventArgs args)
     {
         // Save things we need to resume later.
-        Control::OpenHyperlinkEventArgs heldArgs = args;
         auto strongThis{ get_strong() };
 
         // Pop the rest of this function to the tail of the UI thread
@@ -2317,8 +2313,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     // Method Description:
     // - Produces the error dialog that notifies the user that rendering cannot proceed.
-    winrt::fire_and_forget TermControl::_RendererEnteredErrorState(IInspectable const& /*sender*/,
-                                                                   IInspectable const& /*args*/)
+    winrt::fire_and_forget TermControl::_RendererEnteredErrorState(IInspectable /*sender*/,
+                                                                   IInspectable /*args*/)
     {
         auto strongThis{ get_strong() };
         co_await Dispatcher(); // pop up onto the UI thread
@@ -2348,6 +2344,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControl::TabColor() noexcept
     {
+        // NOTE TO FUTURE READERS: TabColor is down in the Core for the
+        // hypothetical future where we allow an application to set the tab
+        // color with VT sequences like they're currently allowed to with the
+        // title.
         return _core->TabColor();
     }
 
@@ -2397,8 +2397,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->UpdateHoveredCell(std::nullopt);
     }
 
-    winrt::fire_and_forget TermControl::_hoveredHyperlinkChanged(const IInspectable& sender,
-                                                                 const IInspectable& args)
+    winrt::fire_and_forget TermControl::_hoveredHyperlinkChanged(IInspectable sender,
+                                                                 IInspectable args)
     {
         auto weakThis{ get_weak() };
         co_await resume_foreground(Dispatcher());

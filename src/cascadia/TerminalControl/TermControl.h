@@ -65,13 +65,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SendInput(const winrt::hstring& input);
         void ToggleShaderEffects();
 
-        winrt::fire_and_forget RenderEngineSwapChainChanged(const IInspectable& sender, const IInspectable& args);
+        winrt::fire_and_forget RenderEngineSwapChainChanged(IInspectable sender, IInspectable args);
         void _AttachDxgiSwapChainToXaml(IDXGISwapChain1* swapChain);
-        winrt::fire_and_forget _RendererEnteredErrorState(const IInspectable& sender, const IInspectable& args);
+        winrt::fire_and_forget _RendererEnteredErrorState(IInspectable sender, IInspectable args);
 
         void _RenderRetryButton_Click(IInspectable const& button, IInspectable const& args);
-        winrt::fire_and_forget _RendererWarning(const IInspectable& sender,
-                                                const Control::RendererWarningArgs& args);
+        winrt::fire_and_forget _RendererWarning(IInspectable sender,
+                                                Control::RendererWarningArgs args);
 
         void CreateSearchBoxControl();
 
@@ -130,8 +130,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
 
-        winrt::com_ptr<ControlCore> _core{ nullptr };
-        winrt::com_ptr<ControlInteractivity> _interactivity{ nullptr };
+        winrt::com_ptr<ControlCore> _core;
+        winrt::com_ptr<ControlInteractivity> _interactivity;
 
         bool _initializedTerminal;
 
@@ -193,10 +193,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _GotFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void _LostFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
 
-        winrt::fire_and_forget _DragDropHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const e);
+        winrt::fire_and_forget _DragDropHandler(Windows::Foundation::IInspectable sender, Windows::UI::Xaml::DragEventArgs e);
         void _DragOverHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const& e);
 
-        winrt::fire_and_forget _HyperlinkHandler(Windows::Foundation::IInspectable const& sender, Control::OpenHyperlinkEventArgs const& e);
+        winrt::fire_and_forget _HyperlinkHandler(Windows::Foundation::IInspectable sender, Control::OpenHyperlinkEventArgs e);
 
         void _CursorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _BlinkTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
@@ -237,12 +237,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _CurrentCursorPositionHandler(const IInspectable& sender, const CursorPositionEventArgs& eventArgs);
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
 
-        winrt::fire_and_forget _hoveredHyperlinkChanged(const IInspectable& sender, const IInspectable& args);
+        winrt::fire_and_forget _hoveredHyperlinkChanged(IInspectable sender, IInspectable args);
 
         void _coreFontSizeChanged(const int fontWidth,
                                   const int fontHeight,
                                   const bool isInitialChange);
-        winrt::fire_and_forget _coreTransparencyChanged(const IInspectable& sender, const Control::TransparencyChangedEventArgs& args);
+        winrt::fire_and_forget _coreTransparencyChanged(IInspectable sender, Control::TransparencyChangedEventArgs args);
         void _coreReceivedOutput(const IInspectable& sender, const IInspectable& args);
         void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
         void _coreWarningBell(const IInspectable& sender, const IInspectable& args);
