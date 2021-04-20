@@ -26,6 +26,12 @@ winrt::hstring DefaultTerminal::Name() const
 
 winrt::hstring DefaultTerminal::Version() const
 {
+    // If there's no version information... return empty string instead.
+    if (DelegationConfig::PkgVersion{} == _pkg.terminal.version)
+    {
+        return winrt::hstring{};
+    }
+
     const auto name = fmt::format(std::wstring_view(RS_(L"TerminalVersionPattern")), _pkg.terminal.version.major, _pkg.terminal.version.minor, _pkg.terminal.version.build, _pkg.terminal.version.revision);
     return winrt::hstring{ name };
 }
