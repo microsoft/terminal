@@ -63,8 +63,6 @@ namespace Microsoft.Terminal.Control
         void ToggleShaderEffects();
         void SendInput(String input);
 
-        // void TaskbarProgressChanged();
-
         Boolean ReadOnly { get; };
         void ToggleReadOnly();
     }

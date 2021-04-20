@@ -45,9 +45,6 @@
     <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalControl\TerminalControlLib.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)\src\types\lib\types.vcxproj" />
 
-    <!-- If you don't reference these projects here, the
-    _ConsoleGenerateAdditionalWinmdManifests step won't gather the winmd's -->
-    <!-- <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalControl\dll\TerminalControl.vcxproj" /> -->
   </ItemGroup>
 
   <ItemGroup>

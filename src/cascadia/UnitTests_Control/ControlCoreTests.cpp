@@ -38,6 +38,20 @@ namespace ControlUnitTests
 
             return true;
         }
+
+        std::tuple<winrt::com_ptr<MockControlSettings>, winrt::com_ptr<MockConnection>> _createSettingsAndConnection()
+        {
+            Log::Comment(L"Create settings object");
+            winrt::com_ptr<MockControlSettings> settings;
+            settings.attach(new MockControlSettings());
+
+            Log::Comment(L"Create connection object");
+            winrt::com_ptr<MockConnection> conn;
+            conn.attach(new MockConnection());
+            VERIFY_IS_NOT_NULL(conn);
+
+            return { settings, conn };
+        }
     };
 
     void ControlCoreTests::OnStackSettings()
@@ -61,14 +75,7 @@ namespace ControlUnitTests
 
     void ControlCoreTests::InstantiateCore()
     {
-        Log::Comment(L"Create settings object");
-        winrt::com_ptr<MockControlSettings> settings;
-        settings.attach(new MockControlSettings());
-
-        Log::Comment(L"Create connection object");
-        winrt::com_ptr<MockConnection> conn;
-        conn.attach(new MockConnection());
-        VERIFY_IS_NOT_NULL(conn);
+        auto [settings, conn] = _createSettingsAndConnection();
 
         Log::Comment(L"Create ControlCore object");
         auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
@@ -77,14 +84,7 @@ namespace ControlUnitTests
 
     void ControlCoreTests::TestInitialize()
     {
-        Log::Comment(L"Create settings object");
-        winrt::com_ptr<MockControlSettings> settings;
-        settings.attach(new MockControlSettings());
-
-        Log::Comment(L"Create connection object");
-        winrt::com_ptr<MockConnection> conn;
-        conn.attach(new MockConnection());
-        VERIFY_IS_NOT_NULL(conn);
+        auto [settings, conn] = _createSettingsAndConnection();
 
         Log::Comment(L"Create ControlCore object");
         auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
@@ -100,10 +100,7 @@ namespace ControlUnitTests
 
     void ControlCoreTests::TestAdjustAcrylic()
     {
-        winrt::com_ptr<MockControlSettings> settings;
-        settings.attach(new MockControlSettings());
-        winrt::com_ptr<MockConnection> conn;
-        conn.attach(new MockConnection());
+        auto [settings, conn] = _createSettingsAndConnection();
 
         settings->UseAcrylic(true);
         settings->TintOpacity(0.5f);
@@ -150,7 +147,7 @@ namespace ControlUnitTests
         core->AdjustOpacity(0.1);
 
         Log::Comment(L"Increasing opacity more doesn't actually change it to be >1.0");
-        // DebugBreak();
+
         expectedOpacity = 1.0;
         core->AdjustOpacity(0.1);
 
@@ -174,14 +171,7 @@ namespace ControlUnitTests
     void ControlCoreTests::TestFreeAfterClose()
     {
         {
-            Log::Comment(L"Create settings object");
-            winrt::com_ptr<MockControlSettings> settings;
-            settings.attach(new MockControlSettings());
-
-            Log::Comment(L"Create connection object");
-            winrt::com_ptr<MockConnection> conn;
-            conn.attach(new MockConnection());
-            VERIFY_IS_NOT_NULL(conn);
+            auto [settings, conn] = _createSettingsAndConnection();
 
             Log::Comment(L"Create ControlCore object");
             auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
@@ -197,20 +187,14 @@ namespace ControlUnitTests
     void ControlCoreTests::TestFontInitializedInCtor()
     {
         // This is to catch a dumb programming mistake I made while working on
-        // the ore/control split. We want the font initialized in the ctor,
+        // the core/control split. We want the font initialized in the ctor,
         // before we even get to Core::Initialize.
 
-        Log::Comment(L"Create settings object");
-        winrt::com_ptr<MockControlSettings> settings;
-        settings.attach(new MockControlSettings());
+        auto [settings, conn] = _createSettingsAndConnection();
+
         // Make sure to use something dumb like "Impact" as a font name here so
         // that you don't default to Cascadia*
         settings->FontFace(L"Impact");
-
-        Log::Comment(L"Create connection object");
-        winrt::com_ptr<MockConnection> conn;
-        conn.attach(new MockConnection());
-        VERIFY_IS_NOT_NULL(conn);
 
         Log::Comment(L"Create ControlCore object");
         auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);

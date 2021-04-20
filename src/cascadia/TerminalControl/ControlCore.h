@@ -1,5 +1,17 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+//
+// Module Name:
+// - ControlCore.h
+//
+// Abstract:
+// - This encapsulates a `Terminal` instance, a `DxEngine` and `Renderer`, and
+//   an `ITerminalConnection`. This is intended to everything that someone might
+//   need to stand up a terminal instance in a control, but without any regard
+//   for how the UX works.
+//
+// Author:
+// - Mike Griese (zadjii-msft) 01-Apr-2021
 
 #pragma once
 

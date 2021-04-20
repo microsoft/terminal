@@ -1,5 +1,18 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+//
+// Module Name:
+// - ControlInteractivity.h
+//
+// Abstract:
+// - This is a wrapper for the `ControlCore`. It holds the logic for things like
+//   double-click, right click copy/paste, selection, etc. This is intended to
+//   be a UI framework-independent abstraction. The methods this layer exposes
+//   can be called the same from both the WinUI `TermControl` and the WPF
+//   control.
+//
+// Author:
+// - Mike Griese (zadjii-msft) 01-Apr-2021
 
 #pragma once
 

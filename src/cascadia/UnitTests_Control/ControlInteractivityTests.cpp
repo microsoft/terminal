@@ -36,6 +36,47 @@ namespace ControlUnitTests
 
             return true;
         }
+
+        std::tuple<winrt::com_ptr<MockControlSettings>,
+                   winrt::com_ptr<MockConnection>>
+        _createSettingsAndConnection()
+        {
+            Log::Comment(L"Create settings object");
+            winrt::com_ptr<MockControlSettings> settings;
+            settings.attach(new MockControlSettings());
+
+            Log::Comment(L"Create connection object");
+            winrt::com_ptr<MockConnection> conn;
+            conn.attach(new MockConnection());
+            VERIFY_IS_NOT_NULL(conn);
+
+            return { settings, conn };
+        }
+
+        std::tuple<winrt::com_ptr<Control::implementation::ControlCore>,
+                   winrt::com_ptr<Control::implementation::ControlInteractivity>>
+        _createCoreAndInteractivity(Control::IControlSettings settings,
+                                    TerminalConnection::ITerminalConnection conn)
+        {
+            Log::Comment(L"Create ControlInteractivity object");
+            auto interactivity = winrt::make_self<Control::implementation::ControlInteractivity>(settings, conn);
+            VERIFY_IS_NOT_NULL(interactivity);
+            auto core = interactivity->_core;
+            VERIFY_IS_NOT_NULL(core);
+
+            return { core, interactivity };
+        }
+
+        void _standardInit(winrt::com_ptr<Control::implementation::ControlCore> core,
+                           winrt::com_ptr<Control::implementation::ControlInteractivity> interactivity)
+        {
+            // "Cascadia Mono" ends up with an actual size of 9x19 at 96DPI. So
+            // let's just arbitrarily start with a 270x380px (30x20 chars) window
+            core->InitializeTerminal(270, 380, 1.0, 1.0);
+            VERIFY_IS_TRUE(core->_initializedTerminal);
+            VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
+            interactivity->Initialize();
+        }
     };
 
     void ControlInteractivityTests::TestAdjustAcrylic()
@@ -45,19 +86,12 @@ namespace ControlUnitTests
 
         WEX::TestExecution::SetVerifyOutput verifyOutputScope{ WEX::TestExecution::VerifyOutputSettings::LogOnlyFailures };
 
-        winrt::com_ptr<MockControlSettings> settings;
-        settings.attach(new MockControlSettings());
-        winrt::com_ptr<MockConnection> conn;
-        conn.attach(new MockConnection());
+        auto [settings, conn] = _createSettingsAndConnection();
 
         settings->UseAcrylic(true);
         settings->TintOpacity(0.5f);
 
-        Log::Comment(L"Create ControlInteractivity object");
-        auto interactivity = winrt::make_self<Control::implementation::ControlInteractivity>(*settings, *conn);
-        VERIFY_IS_NOT_NULL(interactivity);
-        auto core = interactivity->_core;
-        VERIFY_IS_NOT_NULL(core);
+        auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
 
         // A callback to make sure that we're raising TransparencyChanged events
         double expectedOpacity = 0.5;
@@ -123,25 +157,9 @@ namespace ControlUnitTests
     {
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
 
-        winrt::com_ptr<MockControlSettings> settings;
-        settings.attach(new MockControlSettings());
-        winrt::com_ptr<MockConnection> conn;
-        conn.attach(new MockConnection());
-
-        settings->UseAcrylic(true);
-        settings->TintOpacity(0.5f);
-
-        Log::Comment(L"Create ControlInteractivity object");
-        auto interactivity = winrt::make_self<Control::implementation::ControlInteractivity>(*settings, *conn);
-        VERIFY_IS_NOT_NULL(interactivity);
-        auto core = interactivity->_core;
-        VERIFY_IS_NOT_NULL(core);
-        // "Cascadia Mono" ends up with an actual size of 9x19 at 96DPI. So
-        // let's just arbitrarily start with a 270x380px (30x20 chars) window
-        core->InitializeTerminal(270, 380, 1.0, 1.0);
-        VERIFY_IS_TRUE(core->_initializedTerminal);
-        VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
-        interactivity->Initialize();
+        auto [settings, conn] = _createSettingsAndConnection();
+        auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
+        _standardInit(core, interactivity);
         // For the sake of this test, scroll one line at a time
         interactivity->_rowsToScroll = 1;
 
@@ -231,25 +249,9 @@ namespace ControlUnitTests
         // This is a test for GH#9725
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
 
-        winrt::com_ptr<MockControlSettings> settings;
-        settings.attach(new MockControlSettings());
-        winrt::com_ptr<MockConnection> conn;
-        conn.attach(new MockConnection());
-
-        settings->UseAcrylic(true);
-        settings->TintOpacity(0.5f);
-
-        Log::Comment(L"Create ControlInteractivity object");
-        auto interactivity = winrt::make_self<Control::implementation::ControlInteractivity>(*settings, *conn);
-        VERIFY_IS_NOT_NULL(interactivity);
-        auto core = interactivity->_core;
-        VERIFY_IS_NOT_NULL(core);
-        // "Cascadia Mono" ends up with an actual size of 9x19 at 96DPI. So
-        // let's just arbitrarily start with a 270x380px (30x20 chars) window
-        core->InitializeTerminal(270, 380, 1.0, 1.0);
-        VERIFY_IS_TRUE(core->_initializedTerminal);
-        VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
-        interactivity->Initialize();
+        auto [settings, conn] = _createSettingsAndConnection();
+        auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
+        _standardInit(core, interactivity);
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
