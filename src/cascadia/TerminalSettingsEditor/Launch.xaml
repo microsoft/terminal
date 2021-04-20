@@ -84,39 +84,39 @@
                                     <Grid.ColumnDefinitions>
                                         <!--  icon  -->
                                         <ColumnDefinition Width="16" />
-                                        <!-- profile name and author -->
+                                        <!--  profile name and author  -->
                                         <ColumnDefinition Width="*" />
-                                        <!-- version -->
+                                        <!--  version  -->
                                         <ColumnDefinition Width="48" />
                                     </Grid.ColumnDefinitions>
 
                                     <Grid.RowDefinitions>
-                                        <!-- profile name -->
+                                        <!--  profile name  -->
                                         <RowDefinition Height="Auto" />
-                                        <!-- author and version -->
-                                        <RowDefinition Height="14"/>
+                                        <!--  author and version  -->
+                                        <RowDefinition Height="14" />
                                     </Grid.RowDefinitions>
 
-                                    <IconSourceElement Grid.Column="0"
-                                                       Grid.Row="0"
+                                    <IconSourceElement Grid.Row="0"
                                                        Grid.RowSpan="2"
-                                                       VerticalAlignment="Center"
+                                                       Grid.Column="0"
                                                        Width="16"
                                                        Height="16"
+                                                       VerticalAlignment="Center"
                                                        IconSource="{x:Bind Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
 
-                                    <TextBlock Grid.Column="1"
-                                               Grid.Row="0"
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="1"
                                                Grid.ColumnSpan="2"
                                                Text="{x:Bind Name}" />
 
-                                    <TextBlock Grid.Column ="1"
-                                               Grid.Row="1"
+                                    <TextBlock Grid.Row="1"
+                                               Grid.Column="1"
                                                FontSize="12"
                                                Text="{x:Bind Author}" />
 
-                                    <TextBlock Grid.Column ="2"
-                                               Grid.Row="1"
+                                    <TextBlock Grid.Row="1"
+                                               Grid.Column="2"
                                                FontSize="12"
                                                Text="{x:Bind Version}" />
 
