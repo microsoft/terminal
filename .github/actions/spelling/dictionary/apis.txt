@@ -54,6 +54,7 @@ istream
 IStringable
 ITab
 ITaskbar
+IUri
 IVirtual
 LCID
 llabs
