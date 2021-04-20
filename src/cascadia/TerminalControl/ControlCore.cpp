@@ -210,20 +210,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
             dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
-            // Update DxEngine's AntialiasingMode
-            switch (_settings.AntialiasingMode())
-            {
-            case TextAntialiasingMode::Cleartype:
-                dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
-                break;
-            case TextAntialiasingMode::Aliased:
-                dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
-                break;
-            case TextAntialiasingMode::Grayscale:
-            default:
-                dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
-                break;
-            }
+            _updateAntiAliasingMode(dxEngine.get());
 
             // GH#5098: Inform the engine of the opacity of the default text background.
             if (_settings.UseAcrylic())
@@ -542,20 +529,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
         _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
-
-        switch (_settings.AntialiasingMode())
-        {
-        case TextAntialiasingMode::Cleartype:
-            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
-            break;
-        case TextAntialiasingMode::Aliased:
-            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
-            break;
-        case TextAntialiasingMode::Grayscale:
-        default:
-            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
-            break;
-        }
+        _updateAntiAliasingMode(_renderEngine.get());
 
         // TODO!: UpdateAppearance() ?
 
@@ -582,6 +556,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
             _renderer->TriggerRedrawAll();
+        }
+    }
+
+    void ControlCore::_updateAntiAliasingMode(::Microsoft::Console::Render::DxEngine* const dxEngine)
+    {
+        // Update DxEngine's AntialiasingMode
+        switch (_settings.AntialiasingMode())
+        {
+        case TextAntialiasingMode::Cleartype:
+            dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
+            break;
+        case TextAntialiasingMode::Aliased:
+            dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
+            break;
+        case TextAntialiasingMode::Grayscale:
+        default:
+            dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+            break;
         }
     }
 

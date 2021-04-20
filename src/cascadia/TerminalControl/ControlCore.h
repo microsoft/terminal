@@ -230,6 +230,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _raiseHoveredHyperlinkChanged();
         void _raiseReadOnlyWarning();
+        void _updateAntiAliasingMode(::Microsoft::Console::Render::DxEngine* const dxEngine);
 
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;
