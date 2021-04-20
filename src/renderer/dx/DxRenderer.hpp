@@ -70,7 +70,7 @@ namespace Microsoft::Console::Render
 
         void SetSoftwareRendering(bool enable) noexcept;
 
-        HANDLE GetSwapChainHandle();
+        ::Microsoft::WRL::ComPtr<IDXGISwapChain1> GetSwapChain();
 
         // IRenderEngine Members
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
@@ -212,7 +212,6 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushBackground;
 
         ::Microsoft::WRL::ComPtr<IDXGIFactory2> _dxgiFactory2;
-        ::Microsoft::WRL::ComPtr<IDXGIFactoryMedia> _dxgiFactoryMedia;
         ::Microsoft::WRL::ComPtr<IDXGIDevice> _dxgiDevice;
         ::Microsoft::WRL::ComPtr<IDXGISurface> _dxgiSurface;
 

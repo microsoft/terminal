@@ -1192,9 +1192,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    HANDLE ControlCore::GetSwapChainHandle() const
+    IDXGISwapChain1* ControlCore::GetSwapChain() const
     {
-        return _renderEngine->GetSwapChainHandle();
+        return _renderEngine->GetSwapChain().Get();
     }
 
     void ControlCore::_rendererWarning(const HRESULT hr)

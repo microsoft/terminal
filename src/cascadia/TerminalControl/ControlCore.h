@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void UpdateAppearance(IControlAppearance newAppearance);
         void SizeChanged(const double width, const double height);
         void ScaleChanged(const double scaleX, const double scaleY);
-        HANDLE GetSwapChainHandle() const;
+        IDXGISwapChain1* GetSwapChain() const;
 
         void AdjustFontSize(int fontSizeDelta);
         void ResetFontSize();

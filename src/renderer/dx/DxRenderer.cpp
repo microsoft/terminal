@@ -79,7 +79,6 @@ DxEngine::DxEngine() :
     _backgroundColor{ 0 },
     _selectionBackground{},
     _haveDeviceResources{ false },
-    _swapChainHandle{ INVALID_HANDLE_VALUE },
     _swapChainDesc{ 0 },
     _swapChainFrameLatencyWaitableObject{ INVALID_HANDLE_VALUE },
     _recreateDeviceRequested{ false },
@@ -619,13 +618,6 @@ try
         }
         case SwapChainMode::ForComposition:
         {
-            if (!_swapChainHandle)
-            {
-                RETURN_IF_FAILED(DCompositionCreateSurfaceHandle(GENERIC_ALL, nullptr, &_swapChainHandle));
-            }
-
-            RETURN_IF_FAILED(_dxgiFactory2.As(&_dxgiFactoryMedia));
-
             // Use the given target size for compositions.
             _swapChainDesc.Width = _displaySizePixels.width<UINT>();
             _swapChainDesc.Height = _displaySizePixels.height<UINT>();
@@ -635,11 +627,10 @@ try
             // It's 100% required to use scaling mode stretch for composition. There is no other choice.
             _swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
 
-            RETURN_IF_FAILED(_dxgiFactoryMedia->CreateSwapChainForCompositionSurfaceHandle(_d3dDevice.Get(),
-                                                                                           _swapChainHandle.get(),
-                                                                                           &_swapChainDesc,
-                                                                                           nullptr,
-                                                                                           &_dxgiSwapChain));
+            RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForComposition(_d3dDevice.Get(),
+                                                                          &_swapChainDesc,
+                                                                          nullptr,
+                                                                          &_dxgiSwapChain));
             break;
         }
         default:
@@ -1012,14 +1003,14 @@ try
 }
 CATCH_LOG()
 
-HANDLE DxEngine::GetSwapChainHandle()
+Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 {
-    if (!_swapChainHandle)
+    if (_dxgiSwapChain.Get() == nullptr)
     {
         THROW_IF_FAILED(_CreateDeviceResources(true));
     }
 
-    return _swapChainHandle.get();
+    return _dxgiSwapChain;
 }
 
 void DxEngine::_InvalidateRectangle(const til::rectangle& rc)

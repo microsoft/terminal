@@ -66,8 +66,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ToggleShaderEffects();
 
         winrt::fire_and_forget RenderEngineSwapChainChanged(const IInspectable& sender, const IInspectable& args);
-        void _AttachDxgiSwapChainToXaml(HANDLE swapChainHandle);
+        void _AttachDxgiSwapChainToXaml(IDXGISwapChain1* swapChain);
         winrt::fire_and_forget _RendererEnteredErrorState(const IInspectable& sender, const IInspectable& args);
+
         void _RenderRetryButton_Click(IInspectable const& button, IInspectable const& args);
         winrt::fire_and_forget _RendererWarning(const IInspectable& sender,
                                                 const Control::RendererWarningArgs& args);
