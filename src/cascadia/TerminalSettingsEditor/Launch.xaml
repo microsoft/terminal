@@ -38,7 +38,6 @@
             <StackPanel Style="{StaticResource SettingsStackStyle}">
                 <!--  Default Profile  -->
                 <local:SettingContainer x:Uid="Globals_DefaultProfile"
-                                        MinWidth="300"
                                         Margin="0">
                     <ComboBox x:Name="DefaultProfile"
                               ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}"
