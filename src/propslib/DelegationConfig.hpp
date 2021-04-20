@@ -40,6 +40,7 @@ public:
         std::wstring name;
         std::wstring author;
         std::wstring pfn;
+        std::wstring logo;
         PkgVersion version;
 
         bool IsFromSamePackage(const DelegationBase& other) const

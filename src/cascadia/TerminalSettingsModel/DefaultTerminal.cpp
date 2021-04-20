@@ -45,7 +45,7 @@ winrt::hstring DefaultTerminal::Author() const
 winrt::hstring DefaultTerminal::Icon() const
 {
     static const std::wstring defaultName{ L"\uE756" };
-    const auto& name = defaultName;
+    const auto& name = _pkg.terminal.logo.empty() ? defaultName : _pkg.terminal.logo;
     return winrt::hstring{ name };
 }
 

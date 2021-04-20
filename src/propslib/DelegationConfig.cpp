@@ -84,6 +84,13 @@ HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
         RETURN_IF_FAILED(extensionPackage2->get_PublisherDisplayName(publisher.GetAddressOf()));
         extensionMetadata.author = std::wstring{ publisher.GetRawBuffer(nullptr) };
 
+        ComPtr<IUriRuntimeClass> logoUri;
+        RETURN_IF_FAILED(extensionPackage2->get_Logo(logoUri.GetAddressOf()));
+
+        HString logo;
+        RETURN_IF_FAILED(logoUri->get_AbsoluteUri(logo.GetAddressOf()));
+        extensionMetadata.logo = std::wstring{ logo.GetRawBuffer(nullptr) };
+
         HString pfn;
         RETURN_IF_FAILED(extensionPackageId->get_FamilyName(pfn.GetAddressOf()));
         extensionMetadata.pfn = std::wstring{ pfn.GetRawBuffer(nullptr) };
