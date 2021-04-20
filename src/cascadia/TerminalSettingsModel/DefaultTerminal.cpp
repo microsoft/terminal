@@ -5,6 +5,8 @@
 #include "DefaultTerminal.h"
 #include "DefaultTerminal.g.cpp"
 
+#include <LibraryResources.h>
+
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
@@ -18,35 +20,26 @@ DefaultTerminal::DefaultTerminal(DelegationConfig::DelegationPackage pkg) :
 
 winrt::hstring DefaultTerminal::Name() const
 {
-    // TODO:
-    //[3:10 PM] Dustin Howett
-    //you can make defaultName a wstring_view and return either winrt::hstring{ _pkg.terminal.name } or winrt : hstring{ defaultName }
-
-    //                                                                                                          [3:10 PM] Dustin Howett this will ensure that we don't need to copy defaultName every time
-
-    static const std::wstring defaultName{ L"Windows Console Host" };
-    const auto& name = _pkg.terminal.name.empty() ? defaultName : _pkg.terminal.name;
-    return winrt::hstring{ name };
+    static const std::wstring def{ RS_(L"InboxWindowsConsoleName") };
+    return _pkg.terminal.name.empty() ? winrt::hstring{ def } : winrt::hstring{ _pkg.terminal.name };
 }
 
 winrt::hstring DefaultTerminal::Version() const
 {
-    const auto name = fmt::format(L"{}.{}.{}.{}", _pkg.terminal.version.major, _pkg.terminal.version.minor, _pkg.terminal.version.build, _pkg.terminal.version.revision);
+    const auto name = fmt::format(std::wstring_view(RS_(L"TerminalVersionPattern")), _pkg.terminal.version.major, _pkg.terminal.version.minor, _pkg.terminal.version.build, _pkg.terminal.version.revision);
     return winrt::hstring{ name };
 }
 
 winrt::hstring DefaultTerminal::Author() const
 {
-    static const std::wstring defaultName{ L"Microsoft Corporation" };
-    const auto& name = _pkg.terminal.author.empty() ? defaultName : _pkg.terminal.author;
-    return winrt::hstring{ name };
+    static const std::wstring def{ RS_(L"InboxWindowsConsoleAuthor") };
+    return _pkg.terminal.author.empty() ? winrt::hstring{ def } : winrt::hstring{ _pkg.terminal.author };
 }
 
 winrt::hstring DefaultTerminal::Icon() const
 {
-    static const std::wstring defaultName{ L"\uE756" };
-    const auto& name = _pkg.terminal.logo.empty() ? defaultName : _pkg.terminal.logo;
-    return winrt::hstring{ name };
+    static const std::wstring_view def{ L"\uE756" };
+    return _pkg.terminal.logo.empty() ? winrt::hstring{ def } : winrt::hstring{ _pkg.terminal.logo };
 }
 
 void DefaultTerminal::Refresh()
