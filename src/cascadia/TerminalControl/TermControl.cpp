@@ -1054,13 +1054,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             const auto contactRect = point.Properties().ContactRect();
             auto anchor = winrt::Windows::Foundation::Point{ contactRect.X, contactRect.Y };
-            _interactivity->Touched(anchor);
+            _interactivity->TouchPressed(anchor);
         }
         else
         {
             _interactivity->PointerPressed(cursorPosition,
                                            TermControl::GetPressedMouseButtons(point),
-                                           TermControl::PointerToMouseButtons(point),
+                                           TermControl::GetPointerUpdateKind(point),
                                            point.Timestamp(),
                                            ControlKeyStates{ args.KeyModifiers() },
                                            _focused,
@@ -1101,7 +1101,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _interactivity->PointerMoved(cursorPosition,
                                          TermControl::GetPressedMouseButtons(point),
-                                         TermControl::PointerToMouseButtons(point),
+                                         TermControl::GetPointerUpdateKind(point),
                                          ControlKeyStates(args.KeyModifiers()),
                                          _focused,
                                          terminalPosition);
@@ -1169,7 +1169,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             type == Windows::Devices::Input::PointerDeviceType::Pen)
         {
             _interactivity->PointerReleased(TermControl::GetPressedMouseButtons(point),
-                                            TermControl::PointerToMouseButtons(point),
+                                            TermControl::GetPointerUpdateKind(point),
                                             ControlKeyStates(args.KeyModifiers()),
                                             _focused,
                                             terminalPosition);
@@ -1203,16 +1203,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _RestorePointerCursorHandlers(*this, nullptr);
 
         const auto point = args.GetCurrentPoint(*this);
-        const auto props = point.Properties();
-        const TerminalInput::MouseButtonState state{ props.IsLeftButtonPressed(),
-                                                     props.IsMiddleButtonPressed(),
-                                                     props.IsRightButtonPressed() };
-        auto mousePosition = point.Position();
 
         auto result = _interactivity->MouseWheel(ControlKeyStates{ args.KeyModifiers() },
                                                  point.Properties().MouseWheelDelta(),
-                                                 _GetTerminalPosition(mousePosition),
-                                                 state);
+                                                 _GetTerminalPosition(point.Position()),
+                                                 TermControl::GetPressedMouseButtons(point));
         if (result)
         {
             args.Handled(true);
@@ -2459,7 +2454,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                 point.Properties().IsRightButtonPressed() };
     }
 
-    unsigned int TermControl::PointerToMouseButtons(const winrt::Windows::UI::Input::PointerPoint point)
+    unsigned int TermControl::GetPointerUpdateKind(const winrt::Windows::UI::Input::PointerPoint point)
     {
         const auto props = point.Properties();
 

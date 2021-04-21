@@ -102,7 +102,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ToggleReadOnly();
 
         static ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point);
-        static unsigned int PointerToMouseButtons(const winrt::Windows::UI::Input::PointerPoint point);
+        static unsigned int GetPointerUpdateKind(const winrt::Windows::UI::Input::PointerPoint point);
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off

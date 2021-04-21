@@ -230,7 +230,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlInteractivity::Touched(const winrt::Windows::Foundation::Point contactPoint)
+    void ControlInteractivity::TouchPressed(const winrt::Windows::Foundation::Point contactPoint)
     {
         _touchAnchor = contactPoint;
     }

@@ -55,7 +55,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                             const bool focused,
                             const til::point terminalPosition);
-        void Touched(const winrt::Windows::Foundation::Point contactPoint);
+        void TouchPressed(const winrt::Windows::Foundation::Point contactPoint);
+
         void PointerMoved(const winrt::Windows::Foundation::Point mouseCursorPosition,
                           ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
                           const unsigned int pointerUpdateKind,
@@ -64,12 +65,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                           const til::point terminalPosition);
         void TouchMoved(const winrt::Windows::Foundation::Point newTouchPoint,
                         const bool focused);
+
         void PointerReleased(::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
                              const unsigned int pointerUpdateKind,
                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                              const bool focused,
                              const til::point terminalPosition);
         void TouchReleased();
+
         bool MouseWheel(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                         const int32_t delta,
                         const til::point terminalPosition,
