@@ -24,7 +24,6 @@ namespace ControlUnitTests
         TEST_CLASS(ControlInteractivityTests)
 
         TEST_METHOD(TestAdjustAcrylic);
-        TEST_METHOD(TestPanWithTouch);
         TEST_METHOD(TestScrollWithMouse);
 
         TEST_METHOD(CreateSubsequentSelectionWithDragging);
@@ -147,10 +146,6 @@ namespace ControlUnitTests
         }
     }
 
-    void ControlInteractivityTests::TestPanWithTouch()
-    {
-        VERIFY_IS_TRUE(false, L"TODO: Implement this test");
-    }
     void ControlInteractivityTests::TestScrollWithMouse()
     {
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
