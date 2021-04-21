@@ -60,7 +60,8 @@
                             <ToolTipService.ToolTip>
                                 <ToolTip x:Name="LinkTip"
                                          Placement="Mouse">
-                                    <TextBlock IsTextSelectionEnabled="True">
+                                    <TextBlock IsTextSelectionEnabled="True"
+                                               TextWrapping="Wrap">
                                         <Run x:Name="HoveredUri" /> <LineBreak />
                                         <Run x:Uid="HowToOpenRun"
                                              FontStyle="Italic" />
