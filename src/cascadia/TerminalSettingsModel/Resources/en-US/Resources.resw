@@ -399,8 +399,4 @@
     <value>Windows Console Host</value>
     <comment>Name describing the usage of the classic windows console as the terminal UI. (`conhost.exe`)</comment>
   </data>
-  <data name="TerminalVersionPattern" xml:space="preserve">
-    <value>{0}.{1}.{2}.{3}</value>
-    <comment>Pattern for representing a version. 0 is major. 1 is minor. 2 is build. 3 is revision.</comment>
-  </data>
 </root>

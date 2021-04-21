@@ -32,7 +32,7 @@ winrt::hstring DefaultTerminal::Version() const
         return winrt::hstring{};
     }
 
-    const auto name = fmt::format(std::wstring_view(RS_(L"TerminalVersionPattern")), _pkg.terminal.version.major, _pkg.terminal.version.minor, _pkg.terminal.version.build, _pkg.terminal.version.revision);
+    const auto name = fmt::format(L"{}.{}.{}.{}", _pkg.terminal.version.major, _pkg.terminal.version.minor, _pkg.terminal.version.build, _pkg.terminal.version.revision);
     return winrt::hstring{ name };
 }
 
