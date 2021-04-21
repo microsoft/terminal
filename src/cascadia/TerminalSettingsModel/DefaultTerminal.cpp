@@ -86,6 +86,6 @@ Model::DefaultTerminal DefaultTerminal::Current()
 
 void DefaultTerminal::Current(const Model::DefaultTerminal& term)
 {
-    THROW_IF_FAILED(DelegationConfig::s_SetDefaultByPackage(winrt::get_self<DefaultTerminal>(term)->_pkg));
+    THROW_IF_FAILED(DelegationConfig::s_SetDefaultByPackage(winrt::get_self<DefaultTerminal>(term)->_pkg, true));
     _current = term;
 }

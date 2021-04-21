@@ -239,20 +239,20 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultConsoleById(const IID& iid) noexcept
+[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultConsoleById(const IID& iid, const bool useRegExe) noexcept
 {
-    return s_Set(DELEGATION_CONSOLE_KEY_NAME, iid);
+    return s_Set(DELEGATION_CONSOLE_KEY_NAME, iid, useRegExe);
 }
 
-[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultTerminalById(const IID& iid) noexcept
+[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultTerminalById(const IID& iid, const bool useRegExe) noexcept
 {
-    return s_Set(DELEGATION_TERMINAL_KEY_NAME, iid);
+    return s_Set(DELEGATION_TERMINAL_KEY_NAME, iid, useRegExe);
 }
 
-[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultByPackage(const DelegationPackage& package) noexcept
+[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultByPackage(const DelegationPackage& package, const bool useRegExe) noexcept
 {
-    RETURN_IF_FAILED(s_SetDefaultConsoleById(package.console.clsid));
-    RETURN_IF_FAILED(s_SetDefaultTerminalById(package.terminal.clsid));
+    RETURN_IF_FAILED(s_SetDefaultConsoleById(package.console.clsid, useRegExe));
+    RETURN_IF_FAILED(s_SetDefaultTerminalById(package.terminal.clsid, useRegExe));
     return S_OK;
 }
 
@@ -307,23 +307,64 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT DelegationConfig::s_Set(PCWSTR value, const CLSID clsid) noexcept
+[[nodiscard]] HRESULT DelegationConfig::s_Set(PCWSTR value, const CLSID clsid, const bool useRegExe) noexcept
 try
 {
-    wil::unique_hkey currentUserKey;
-    wil::unique_hkey consoleKey;
+    // BODGY
+    // A Centennial application is not allowed to write the system registry and is redirected
+    // to a per-package copy-on-write hive.
+    // The restricted capability "unvirtualizedResources" can be combined with
+    // desktop6:RegistryWriteVirtualization to opt-out... but...
+    // - It will no longer be double-click installable through the App Installer
+    // - It requires a special exception to submit to the store
+    // - There MAY be some cleanup logic where the app catalog may try to undo
+    //   whatever the package did.
+    // This works around it by shelling out to reg.exe because somehow that's just peachy.
+    if (useRegExe)
+    {
+        wil::unique_cotaskmem_string str;
+        RETURN_IF_FAILED(StringFromCLSID(clsid, &str));
 
-    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_OpenConsoleKey(&currentUserKey, &consoleKey));
+        auto regExePath = wil::ExpandEnvironmentStringsW<std::wstring>(L"%WINDIR%\\System32\\reg.exe");
 
-    // Create method for registry is a "create if not exists, otherwise open" function.
-    wil::unique_hkey startupKey;
-    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_CreateKey(consoleKey.get(), L"%%Startup", &startupKey));
+        auto command = wil::str_printf<std::wstring>(L"%s ADD HKCU\\Console\\%%%%Startup /v %s /t REG_SZ /d %s /f", regExePath.c_str(), value, str.get() );
 
-    wil::unique_cotaskmem_string str;
-    RETURN_IF_FAILED(StringFromCLSID(clsid, &str));
+        wil::unique_process_information pi;
+        STARTUPINFOEX siex{ 0 };
+        siex.StartupInfo.cb = sizeof(siex);
 
-    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_SetValue(startupKey.get(), value, REG_SZ, reinterpret_cast<BYTE*>(str.get()), gsl::narrow<DWORD>(wcslen(str.get()) * sizeof(wchar_t))));
+        RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
+            nullptr,
+            command.data(),
+            nullptr, // lpProcessAttributes
+            nullptr, // lpThreadAttributes
+            false, // bInheritHandles
+            EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT | CREATE_NO_WINDOW, // dwCreationFlags
+            nullptr, // lpEnvironment
+            nullptr,
+            &siex.StartupInfo, // lpStartupInfo
+            &pi // lpProcessInformation
+            ));
 
-    return S_OK;
+        return S_OK;
+    }
+    else
+    {
+        wil::unique_hkey currentUserKey;
+        wil::unique_hkey consoleKey;
+
+        RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_OpenConsoleKey(&currentUserKey, &consoleKey));
+
+        // Create method for registry is a "create if not exists, otherwise open" function.
+        wil::unique_hkey startupKey;
+        RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_CreateKey(consoleKey.get(), L"%%Startup", &startupKey));
+
+        wil::unique_cotaskmem_string str;
+        RETURN_IF_FAILED(StringFromCLSID(clsid, &str));
+
+        RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_SetValue(startupKey.get(), value, REG_SZ, reinterpret_cast<BYTE*>(str.get()), gsl::narrow<DWORD>(wcslen(str.get()) * sizeof(wchar_t))));
+
+        return S_OK;
+    }
 }
 CATCH_RETURN()
