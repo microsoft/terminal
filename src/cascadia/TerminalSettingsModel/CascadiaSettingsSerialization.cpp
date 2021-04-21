@@ -1345,15 +1345,5 @@ Json::Value CascadiaSettings::ToJson() const
     }
     json[JsonKey(SchemesKey)] = schemes;
 
-    // "actions"/"keybindings" will be whatever blob we had in the file
-    if (_userSettings.isMember(JsonKey(LegacyKeybindingsKey)))
-    {
-        json[JsonKey(LegacyKeybindingsKey)] = _userSettings[JsonKey(LegacyKeybindingsKey)];
-    }
-    if (_userSettings.isMember(JsonKey(ActionsKey)))
-    {
-        json[JsonKey(ActionsKey)] = _userSettings[JsonKey(ActionsKey)];
-    }
-
     return json;
 }

@@ -19,6 +19,13 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    com_ptr<ActionMap> ActionMap::FromJson(const Json::Value& json)
+    {
+        auto result = make_self<ActionMap>();
+        result->LayerJson(json);
+        return result;
+    }
+
     // Method Description:
     // - Deserialize an ActionMap from the array `json`. The json array should contain
     //   an array of serialized `Command` objects.
@@ -47,6 +54,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         return warnings;
+    }
+
+    Json::Value ActionMap::ToJson() const
+    {
+        Json::Value actionList{ Json::ValueType::arrayValue };
+        for (const auto& [_, cmd] : _ActionMap)
+        {
+            const auto cmdImpl{ winrt::get_self<implementation::Command>(cmd) };
+            const auto& cmdJsonArray{ cmdImpl->ToJson() };
+            for (const auto& cmdJson : cmdJsonArray)
+            {
+                actionList.append(cmdJson);
+            }
+        }
+        return actionList;
     }
 
     // Method Description:

@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "AllShortcutActions.h"
 #include "ActionArgs.h"
 #include "ActionAndArgs.h"
 #include "ActionAndArgs.g.cpp"
@@ -29,10 +30,10 @@ static constexpr std::string_view RenameTabKey{ "renameTab" };
 static constexpr std::string_view OpenTabRenamerKey{ "openTabRenamer" };
 static constexpr std::string_view ResetFontSizeKey{ "resetFontSize" };
 static constexpr std::string_view ResizePaneKey{ "resizePane" };
-static constexpr std::string_view ScrolldownKey{ "scrollDown" };
-static constexpr std::string_view ScrolldownpageKey{ "scrollDownPage" };
-static constexpr std::string_view ScrollupKey{ "scrollUp" };
-static constexpr std::string_view ScrolluppageKey{ "scrollUpPage" };
+static constexpr std::string_view ScrollDownKey{ "scrollDown" };
+static constexpr std::string_view ScrollDownPageKey{ "scrollDownPage" };
+static constexpr std::string_view ScrollUpKey{ "scrollUp" };
+static constexpr std::string_view ScrollUpPageKey{ "scrollUpPage" };
 static constexpr std::string_view ScrollToTopKey{ "scrollToTop" };
 static constexpr std::string_view ScrollToBottomKey{ "scrollToBottom" };
 static constexpr std::string_view SendInputKey{ "sendInput" };
@@ -65,6 +66,9 @@ static constexpr std::string_view ActionKey{ "action" };
 // This key is reserved to remove a keybinding, instead of mapping it to an action.
 static constexpr std::string_view UnboundKey{ "unbound" };
 
+#define KEY_TO_ACTION_PAIR(action) { action##Key, ShortcutAction::##action },
+#define ACTION_TO_KEY_PAIR(action) { ShortcutAction::##action, action##Key },
+
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     using namespace ::Microsoft::Terminal::Settings::Model;
@@ -78,59 +82,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // the map are all const for the lifetime of the app, we have nothing to worry
     // about here.
     const std::map<std::string_view, ShortcutAction, std::less<>> ActionAndArgs::ActionKeyNamesMap{
-        { AdjustFontSizeKey, ShortcutAction::AdjustFontSize },
-        { CloseOtherTabsKey, ShortcutAction::CloseOtherTabs },
-        { ClosePaneKey, ShortcutAction::ClosePane },
-        { CloseTabKey, ShortcutAction::CloseTab },
-        { CloseTabsAfterKey, ShortcutAction::CloseTabsAfter },
-        { CloseWindowKey, ShortcutAction::CloseWindow },
-        { CopyTextKey, ShortcutAction::CopyText },
-        { DuplicateTabKey, ShortcutAction::DuplicateTab },
-        { ExecuteCommandlineKey, ShortcutAction::ExecuteCommandline },
-        { FindKey, ShortcutAction::Find },
-        { MoveFocusKey, ShortcutAction::MoveFocus },
-        { NewTabKey, ShortcutAction::NewTab },
-        { NextTabKey, ShortcutAction::NextTab },
-        { OpenNewTabDropdownKey, ShortcutAction::OpenNewTabDropdown },
-        { OpenSettingsKey, ShortcutAction::OpenSettings },
-        { OpenTabColorPickerKey, ShortcutAction::OpenTabColorPicker },
-        { PasteTextKey, ShortcutAction::PasteText },
-        { PrevTabKey, ShortcutAction::PrevTab },
-        { RenameTabKey, ShortcutAction::RenameTab },
-        { OpenTabRenamerKey, ShortcutAction::OpenTabRenamer },
-        { ResetFontSizeKey, ShortcutAction::ResetFontSize },
-        { ResizePaneKey, ShortcutAction::ResizePane },
-        { ScrolldownKey, ShortcutAction::ScrollDown },
-        { ScrolldownpageKey, ShortcutAction::ScrollDownPage },
-        { ScrollupKey, ShortcutAction::ScrollUp },
-        { ScrolluppageKey, ShortcutAction::ScrollUpPage },
-        { ScrollToTopKey, ShortcutAction::ScrollToTop },
-        { ScrollToBottomKey, ShortcutAction::ScrollToBottom },
-        { SendInputKey, ShortcutAction::SendInput },
-        { SetColorSchemeKey, ShortcutAction::SetColorScheme },
-        { SetTabColorKey, ShortcutAction::SetTabColor },
-        { SplitPaneKey, ShortcutAction::SplitPane },
-        { SwitchToTabKey, ShortcutAction::SwitchToTab },
-        { TabSearchKey, ShortcutAction::TabSearch },
-        { ToggleAlwaysOnTopKey, ShortcutAction::ToggleAlwaysOnTop },
-        { ToggleCommandPaletteKey, ShortcutAction::ToggleCommandPalette },
-        { ToggleFocusModeKey, ShortcutAction::ToggleFocusMode },
-        { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
-        { TogglePaneZoomKey, ShortcutAction::TogglePaneZoom },
-        { LegacyToggleRetroEffectKey, ShortcutAction::ToggleShaderEffects },
-        { ToggleShaderEffectsKey, ShortcutAction::ToggleShaderEffects },
-        { MoveTabKey, ShortcutAction::MoveTab },
-        { BreakIntoDebuggerKey, ShortcutAction::BreakIntoDebugger },
-        { UnboundKey, ShortcutAction::Invalid },
-        { FindMatchKey, ShortcutAction::FindMatch },
-        { TogglePaneReadOnlyKey, ShortcutAction::TogglePaneReadOnly },
-        { NewWindowKey, ShortcutAction::NewWindow },
-        { IdentifyWindowKey, ShortcutAction::IdentifyWindow },
-        { IdentifyWindowsKey, ShortcutAction::IdentifyWindows },
-        { RenameWindowKey, ShortcutAction::RenameWindow },
-        { OpenWindowRenamerKey, ShortcutAction::OpenWindowRenamer },
-        { GlobalSummonKey, ShortcutAction::GlobalSummon },
-        { QuakeModeKey, ShortcutAction::QuakeMode },
+
+#define ON_ALL_ACTIONS(action) KEY_TO_ACTION_PAIR(action)
+        ALL_SHORTCUT_ACTIONS
+#undef ON_ALL_ACTIONS
+    };
+
+    static const std::map<ShortcutAction, std::string_view, std::less<>> ActionToStringMap{
+#define ON_ALL_ACTIONS(action) ACTION_TO_KEY_PAIR(action)
+        ALL_SHORTCUT_ACTIONS
+#undef ON_ALL_ACTIONS
     };
 
     using ParseResult = std::tuple<IActionArgs, std::vector<SettingsLoadWarnings>>;
@@ -168,6 +129,36 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { ShortcutAction::RenameWindow, RenameWindowArgs::FromJson },
         { ShortcutAction::GlobalSummon, GlobalSummonArgs::FromJson },
         { ShortcutAction::QuakeMode, GlobalSummonArgs::QuakeModeFromJson },
+
+        { ShortcutAction::Invalid, nullptr },
+    };
+
+    using ActionArgSerializerFunction = std::function<Json::Value(IActionArgs)>;
+    static const std::map<ShortcutAction, ActionArgSerializerFunction, std::less<>> argSerializers{
+        { ShortcutAction::AdjustFontSize, AdjustFontSizeArgs::ToJson },
+        { ShortcutAction::CloseOtherTabs, CloseOtherTabsArgs::ToJson },
+        { ShortcutAction::CloseTabsAfter, CloseTabsAfterArgs::ToJson },
+        { ShortcutAction::CopyText, CopyTextArgs::ToJson },
+        { ShortcutAction::ExecuteCommandline, ExecuteCommandlineArgs::ToJson },
+        { ShortcutAction::MoveFocus, MoveFocusArgs::ToJson },
+        { ShortcutAction::NewTab, NewTabArgs::ToJson },
+        { ShortcutAction::OpenSettings, OpenSettingsArgs::ToJson },
+        { ShortcutAction::RenameTab, RenameTabArgs::ToJson },
+        { ShortcutAction::ResizePane, ResizePaneArgs::ToJson },
+        { ShortcutAction::SendInput, SendInputArgs::ToJson },
+        { ShortcutAction::SetColorScheme, SetColorSchemeArgs::ToJson },
+        { ShortcutAction::SetTabColor, SetTabColorArgs::ToJson },
+        { ShortcutAction::SplitPane, SplitPaneArgs::ToJson },
+        { ShortcutAction::SwitchToTab, SwitchToTabArgs::ToJson },
+        { ShortcutAction::ScrollUp, ScrollUpArgs::ToJson },
+        { ShortcutAction::ScrollDown, ScrollDownArgs::ToJson },
+        { ShortcutAction::MoveTab, MoveTabArgs::ToJson },
+        { ShortcutAction::ToggleCommandPalette, ToggleCommandPaletteArgs::ToJson },
+        { ShortcutAction::FindMatch, FindMatchArgs::ToJson },
+        { ShortcutAction::NewWindow, NewWindowArgs::ToJson },
+        { ShortcutAction::PrevTab, PrevTabArgs::ToJson },
+        { ShortcutAction::NextTab, NextTabArgs::ToJson },
+        { ShortcutAction::RenameWindow, RenameWindowArgs::ToJson },
 
         { ShortcutAction::Invalid, nullptr },
     };
@@ -269,6 +260,49 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         //      { name: "foo", action: "unbound" }
         // will _remove_ the "foo" command, by returning an "invalid" action here.
         return make_self<ActionAndArgs>(action, args);
+    }
+
+    Json::Value ActionAndArgs::ToJson(const Model::ActionAndArgs& val)
+    {
+        if (val)
+        {
+            if (!val.Args())
+            {
+                // "command": "copy"
+                const auto shortcutActionIter{ ActionToStringMap.find(val.Action()) };
+                if (shortcutActionIter != ActionToStringMap.end())
+                {
+                    return JsonKey(shortcutActionIter->second);
+                }
+            }
+            else
+            {
+                // "command": { "action": "copy", "singleLine": false }
+                Json::Value result{ Json::ValueType::objectValue };
+
+                // Set the action args, if any
+                const auto actionArgSerializerIter{ argSerializers.find(val.Action()) };
+                if (actionArgSerializerIter != argSerializers.end())
+                {
+                    auto pfn{ actionArgSerializerIter->second };
+                    if (pfn)
+                    {
+                        result = pfn(val.Args());
+                    }
+                }
+
+                // Set the "action" part
+                const auto shortcutActionIter{ ActionToStringMap.find(val.Action()) };
+                result[JsonKey(ActionKey)] = shortcutActionIter == ActionToStringMap.end() ?
+                                                 JsonKey(UnboundKey) :
+                                                 JsonKey(shortcutActionIter->second);
+
+                return result;
+            }
+        }
+
+        // "command": null
+        return { Json::ValueType::nullValue };
     }
 
     com_ptr<ActionAndArgs> ActionAndArgs::Copy() const
