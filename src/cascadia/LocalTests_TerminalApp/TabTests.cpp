@@ -1151,7 +1151,7 @@ namespace TerminalAppLocalTests
         });
 
         TestOnUIThread([&page]() {
-            Log::Comment(L"Emulate commiting the SetColorScheme action");
+            Log::Comment(L"Emulate committing the SetColorScheme action");
 
             SetColorSchemeArgs args{ L"Vintage" };
             page->_EndPreviewColorScheme();
@@ -1316,7 +1316,7 @@ namespace TerminalAppLocalTests
         });
 
         TestOnUIThread([&page]() {
-            Log::Comment(L"Emulate commiting the SetColorScheme action");
+            Log::Comment(L"Emulate committing the SetColorScheme action");
 
             SetColorSchemeArgs args{ L"One Half Light" };
             page->_EndPreviewColorScheme();
