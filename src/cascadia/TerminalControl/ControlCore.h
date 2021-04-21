@@ -40,15 +40,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     TerminalConnection::ITerminalConnection connection);
         ~ControlCore();
 
-        bool InitializeTerminal(const double actualWidth,
-                                const double actualHeight,
-                                const double compositionScaleX,
-                                const double compositionScaleY);
+        bool Initialize(const double actualWidth,
+                        const double actualHeight,
+                        const double compositionScale);
 
         void UpdateSettings(const IControlSettings& settings);
-        void UpdateAppearance(IControlAppearance newAppearance);
+        void UpdateAppearance(const IControlAppearance& newAppearance);
         void SizeChanged(const double width, const double height);
-        void ScaleChanged(const double scaleX, const double scaleY);
+        void ScaleChanged(const double scale);
         IDXGISwapChain1* GetSwapChain() const;
 
         void AdjustFontSize(int fontSizeDelta);
@@ -68,10 +67,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ResumeRendering();
 
         void UpdatePatternLocations();
-        void UpdateHoveredCell(const std::optional<COORD>& terminalPosition);
+        void UpdateHoveredCell(const std::optional<til::point>& terminalPosition);
         winrt::hstring GetHyperlink(const til::point position) const;
         winrt::hstring GetHoveredUriText() const;
-        std::optional<COORD> GetHoveredCell() const;
+        std::optional<til::point> GetHoveredCell() const;
 
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
 
@@ -103,7 +102,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool SendCharEvent(const wchar_t ch,
                            const WORD scanCode,
                            const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
-        bool SendMouseEvent(const COORD viewportPos,
+        bool SendMouseEvent(const til::point viewportPos,
                             const unsigned int uiButton,
                             const ::Microsoft::Terminal::Core::ControlKeyStates states,
                             const short wheelDelta,
@@ -184,7 +183,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate{ std::nullopt };
 
-        std::optional<COORD> _lastHoveredCell{ std::nullopt };
+        std::optional<til::point> _lastHoveredCell{ std::nullopt };
         // Track the last hyperlink ID we hovered over
         uint16_t _lastHoveredId{ 0 };
 
@@ -196,8 +195,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // rendering to.
         double _panelWidth{ 0 };
         double _panelHeight{ 0 };
-        double _compositionScaleX{ 0 };
-        double _compositionScaleY{ 0 };
+        double _compositionScale{ 0 };
 
         winrt::fire_and_forget _asyncCloseConnection();
 
@@ -211,9 +209,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _sendInputToConnection(std::wstring_view wstr);
 
 #pragma region TerminalCoreCallbacks
-        void _terminalCopyToClipboard(const std::wstring_view& wstr);
+        void _terminalCopyToClipboard(std::wstring_view wstr);
         void _terminalWarningBell();
-        void _terminalTitleChanged(const std::wstring_view& wstr);
+        void _terminalTitleChanged(std::wstring_view wstr);
         void _terminalTabColorChanged(const std::optional<til::color> color);
         void _terminalBackgroundColorChanged(const COLORREF color);
         void _terminalScrollPositionChanged(const int viewTop,

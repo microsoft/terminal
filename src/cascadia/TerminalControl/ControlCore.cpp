@@ -116,15 +116,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Close();
     }
 
-    bool ControlCore::InitializeTerminal(const double actualWidth,
-                                         const double actualHeight,
-                                         const double compositionScaleX,
-                                         const double compositionScaleY)
+    bool ControlCore::Initialize(const double actualWidth,
+                                 const double actualHeight,
+                                 const double compositionScale)
     {
         _panelWidth = actualWidth;
         _panelHeight = actualHeight;
-        _compositionScaleX = compositionScaleX;
-        _compositionScaleY = compositionScaleY;
+        _compositionScale = compositionScale;
 
         { // scope for terminalLock
             auto terminalLock = _terminal->LockForWriting();
@@ -134,8 +132,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 return false;
             }
 
-            const auto windowWidth = actualWidth * compositionScaleX;
-            const auto windowHeight = actualHeight * compositionScaleY;
+            const auto windowWidth = actualWidth * compositionScale;
+            const auto windowHeight = actualHeight * compositionScale;
 
             if (windowWidth == 0 || windowHeight == 0)
             {
@@ -340,7 +338,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return handled;
     }
 
-    bool ControlCore::SendMouseEvent(const COORD viewportPos,
+    bool ControlCore::SendMouseEvent(const til::point viewportPos,
                                      const unsigned int uiButton,
                                      const ControlKeyStates states,
                                      const short wheelDelta,
@@ -433,7 +431,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Updates last hovered cell, renders / removes rendering of hyper-link if required
     // Arguments:
     // - terminalPosition: The terminal position of the pointer
-    void ControlCore::UpdateHoveredCell(const std::optional<COORD>& terminalPosition)
+    void ControlCore::UpdateHoveredCell(const std::optional<til::point>& terminalPosition)
     {
         if (terminalPosition == _lastHoveredCell)
         {
@@ -445,7 +443,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _lastHoveredCell = terminalPosition;
         uint16_t newId{ 0u };
         // we can't use auto here because we're pre-declaring newInterval.
-        decltype(_terminal->GetHyperlinkIntervalFromPosition(COORD{})) newInterval{ std::nullopt };
+        decltype(_terminal->GetHyperlinkIntervalFromPosition(til::point{})) newInterval{ std::nullopt };
         if (terminalPosition.has_value())
         {
             auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
@@ -493,7 +491,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return { L"" };
     }
 
-    std::optional<COORD> ControlCore::GetHoveredCell() const
+    std::optional<til::point> ControlCore::GetHoveredCell() const
     {
         return _lastHoveredCell;
     }
@@ -543,7 +541,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::UpdateAppearance(IControlAppearance newAppearance)
+    void ControlCore::UpdateAppearance(const IControlAppearance& newAppearance)
     {
         // Update the terminal core with its new Core settings
         _terminal->UpdateAppearance(newAppearance);
@@ -590,7 +588,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::_updateFont(const bool initialUpdate)
     {
         const int newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) *
-                                            _compositionScaleX);
+                                            _compositionScale);
 
         // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
         //      actually fail. We need a way to gracefully fallback.
@@ -675,8 +673,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::_refreshSizeUnderLock()
     {
-        const auto widthInPixels = _panelWidth * _compositionScaleX;
-        const auto heightInPixels = _panelHeight * _compositionScaleY;
+        const auto widthInPixels = _panelWidth * _compositionScale;
+        const auto heightInPixels = _panelHeight * _compositionScale;
 
         _doResizeUnderLock(widthInPixels, heightInPixels);
     }
@@ -739,33 +737,30 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _doResizeUnderLock(scaledWidth, scaledHeight);
     }
 
-    void ControlCore::ScaleChanged(const double scaleX,
-                                   const double scaleY)
+    void ControlCore::ScaleChanged(const double scale)
     {
         if (!_renderEngine)
         {
             return;
         }
 
-        _compositionScaleX = scaleX;
-        _compositionScaleY = scaleY;
-
         const auto currentEngineScale = _renderEngine->GetScaling();
         // If we're getting a notification to change to the DPI we already
         // have, then we're probably just beginning the DPI change. Since
         // we'll get _another_ event with the real DPI, do nothing here for
         // now. We'll also skip the next resize in _swapChainSizeChanged.
-        const bool dpiWasUnchanged = currentEngineScale == scaleX;
+        const bool dpiWasUnchanged = currentEngineScale == scale;
         if (dpiWasUnchanged)
         {
             return;
         }
 
-        const auto dpi = (float)(scaleX * USER_DEFAULT_SCREEN_DPI);
+        const auto dpi = (float)(scale * USER_DEFAULT_SCREEN_DPI);
 
         const auto actualFontOldSize = _actualFont.GetSize();
 
         auto lock = _terminal->LockForWriting();
+        _compositionScale = scale;
 
         _renderer->TriggerFontChange(::base::saturated_cast<int>(dpi),
                                      _desiredFont,
@@ -816,7 +811,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     // Called when the Terminal wants to set something to the clipboard, i.e.
     // when an OSC 52 is emitted.
-    void ControlCore::_terminalCopyToClipboard(const std::wstring_view& wstr)
+    void ControlCore::_terminalCopyToClipboard(std::wstring_view wstr)
     {
         auto copyArgs = winrt::make_self<implementation::CopyToClipboardEventArgs>(winrt::hstring(wstr));
         _CopyToClipboardHandlers(*this, *copyArgs);
@@ -901,7 +896,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     til::size ControlCore::FontSizeInDips() const
     {
         const til::size fontSize{ GetFont().GetSize() };
-        return fontSize.scale(til::math::rounding, 1.0f / ::base::saturated_cast<float>(_compositionScaleX));
+        return fontSize.scale(til::math::rounding, 1.0f / ::base::saturated_cast<float>(_compositionScale));
     }
 
     TerminalConnection::ConnectionState ControlCore::ConnectionState() const
@@ -996,7 +991,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - wstr: the new title of this terminal.
     // Return Value:
     // - <none>
-    void ControlCore::_terminalTitleChanged(const std::wstring_view& wstr)
+    void ControlCore::_terminalTitleChanged(std::wstring_view wstr)
     {
         auto titleArgs = winrt::make_self<TitleChangedEventArgs>(winrt::hstring{ wstr });
         _TitleChangedHandlers(*this, *titleArgs);

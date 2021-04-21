@@ -143,7 +143,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     scrollBar.Maximum(update.newMaximum);
                     scrollBar.Minimum(update.newMinimum);
                     scrollBar.ViewportSize(update.newViewportSize);
-                    scrollBar.LargeChange(std::max(update.newViewportSize - 1, 0.)); // scroll one "screenful" at a time when the scroll bar is clicked
+                    // scroll one full screen worth at a time when the scroll bar is clicked
+                    scrollBar.LargeChange(std::max(update.newViewportSize - 1, 0.));
 
                     control->_isInternalScrollBarUpdate = false;
                 }
@@ -654,10 +655,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // the first paint will be ignored!
         _core->RendererWarning({ get_weak(), &TermControl::_RendererWarning });
 
-        const auto coreInitialized = _core->InitializeTerminal(panelWidth,
-                                                               panelHeight,
-                                                               panelScaleX,
-                                                               panelScaleY);
+        const auto coreInitialized = _core->Initialize(panelWidth,
+                                                       panelHeight,
+                                                       panelScaleX);
         if (!coreInitialized)
         {
             return false;
@@ -1585,9 +1585,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                              Windows::Foundation::IInspectable const& /*args*/)
     {
         const auto scaleX = sender.CompositionScaleX();
-        const auto scaleY = sender.CompositionScaleY();
 
-        _core->ScaleChanged(scaleX, scaleY);
+        _core->ScaleChanged(scaleX);
     }
 
     // Method Description:
@@ -1711,7 +1710,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Initiate a paste operation.
     void TermControl::PasteTextFromClipboard()
     {
-        _interactivity->PasteTextFromClipboard();
+        _interactivity->RequestPasteTextFromClipboard();
     }
 
     void TermControl::Close()
@@ -2416,8 +2415,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                     // Compute the location of the top left corner of the cell in DIPS
                     const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
-                    const til::point startPos{ lastHoveredCell->X,
-                                               lastHoveredCell->Y };
+                    const til::point startPos{ lastHoveredCell->x(),
+                                               lastHoveredCell->y() };
                     const til::size fontSize{ _core->GetFont().GetSize() };
                     const til::point posInPixels{ startPos * fontSize };
                     const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };

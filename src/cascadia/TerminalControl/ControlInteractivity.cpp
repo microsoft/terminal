@@ -131,7 +131,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     // Method Description:
     // - Initiate a paste operation.
-    void ControlInteractivity::PasteTextFromClipboard()
+    void ControlInteractivity::RequestPasteTextFromClipboard()
     {
         // attach ControlInteractivity::_sendPastedTextToConnection() as the
         // clipboardDataHandler. This is called when the clipboard data is
@@ -220,7 +220,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // CopyOnSelect right click always pastes
             if (_core->CopyOnSelect() || !_core->HasSelection())
             {
-                PasteTextFromClipboard();
+                RequestPasteTextFromClipboard();
             }
             else
             {

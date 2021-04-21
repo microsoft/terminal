@@ -19,8 +19,7 @@ namespace ControlUnitTests
 {
     class ControlCoreTests
     {
-        BEGIN_TEST_CLASS(ControlCoreTests)
-        END_TEST_CLASS()
+        TEST_CLASS(ControlCoreTests)
 
         TEST_METHOD(ComPtrSettings);
         TEST_METHOD(InstantiateCore);
@@ -81,7 +80,7 @@ namespace ControlUnitTests
         VERIFY_IS_FALSE(core->_initializedTerminal);
         // "Cascadia Mono" ends up with an actual size of 9x19 at 96DPI. So
         // let's just arbitrarily start with a 270x380px (30x20 chars) window
-        core->InitializeTerminal(270, 380, 1.0, 1.0);
+        core->Initialize(270, 380, 1.0);
         VERIFY_IS_TRUE(core->_initializedTerminal);
         VERIFY_ARE_EQUAL(30, core->_terminal->GetViewport().Width());
     }
@@ -117,7 +116,7 @@ namespace ControlUnitTests
         VERIFY_IS_FALSE(core->_initializedTerminal);
         // "Cascadia Mono" ends up with an actual size of 9x19 at 96DPI. So
         // let's just arbitrarily start with a 270x380px (30x20 chars) window
-        core->InitializeTerminal(270, 380, 1.0, 1.0);
+        core->Initialize(270, 380, 1.0);
         VERIFY_IS_TRUE(core->_initializedTerminal);
 
         Log::Comment(L"Increasing opacity till fully opaque");

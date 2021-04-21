@@ -21,8 +21,7 @@ namespace ControlUnitTests
 {
     class ControlInteractivityTests
     {
-        BEGIN_TEST_CLASS(ControlInteractivityTests)
-        END_TEST_CLASS()
+        TEST_CLASS(ControlInteractivityTests)
 
         TEST_METHOD(TestAdjustAcrylic);
         TEST_METHOD(TestPanWithTouch);
@@ -71,7 +70,7 @@ namespace ControlUnitTests
         {
             // "Cascadia Mono" ends up with an actual size of 9x19 at 96DPI. So
             // let's just arbitrarily start with a 270x380px (30x20 chars) window
-            core->InitializeTerminal(270, 380, 1.0, 1.0);
+            core->Initialize(270, 380, 1.0);
             VERIFY_IS_TRUE(core->_initializedTerminal);
             VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
             interactivity->Initialize();
