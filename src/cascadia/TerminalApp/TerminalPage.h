@@ -321,6 +321,13 @@ namespace winrt::TerminalApp::implementation
         void _HidePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
         void _RestorePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
 
+        void _PreviewActionHandler(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::Command& args);
+        void _EndPreview();
+        void _EndPreviewColorScheme();
+        void _PreviewColorScheme(const Microsoft::Terminal::Settings::Model::SetColorSchemeArgs& args);
+        winrt::Microsoft::Terminal::Settings::Model::Command _lastPreviewedCommand{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Model::TerminalSettings _originalSettings{ nullptr };
+
         void _OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
         void _HandleToggleInboundPty(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
 

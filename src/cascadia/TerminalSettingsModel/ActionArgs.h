@@ -498,6 +498,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct SetColorSchemeArgs : public SetColorSchemeArgsT<SetColorSchemeArgs>
     {
         SetColorSchemeArgs() = default;
+        SetColorSchemeArgs(winrt::hstring name) :
+            _SchemeName{ name } {};
         WINRT_PROPERTY(winrt::hstring, SchemeName, L"");
 
         static constexpr std::string_view NameKey{ "colorScheme" };
@@ -1045,6 +1047,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(NewTabArgs);
     BASIC_FACTORY(MoveFocusArgs);
     BASIC_FACTORY(SplitPaneArgs);
+    BASIC_FACTORY(SetColorSchemeArgs);
     BASIC_FACTORY(ExecuteCommandlineArgs);
     BASIC_FACTORY(CloseOtherTabsArgs);
     BASIC_FACTORY(CloseTabsAfterArgs);
