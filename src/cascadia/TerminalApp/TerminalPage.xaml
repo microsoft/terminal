@@ -133,12 +133,6 @@
                          x:Load="False"
                          IsLightDismissEnabled="True" />
 
-        <mux:TeachingTip x:Name="RenameSucceededToast"
-                         x:Uid="RenameSucceededToast"
-                         x:Load="False"
-                         IsLightDismissEnabled="True"
-                         Subtitle="{x:Bind RenameSucceededText, Mode=OneWay}" />
-
         <mux:TeachingTip x:Name="WindowRenamer"
                          x:Uid="WindowRenamer"
                          Title="{x:Bind WindowIdForDisplay}"

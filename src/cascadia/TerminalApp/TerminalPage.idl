@@ -32,7 +32,6 @@ namespace TerminalApp
         UInt64 WindowId;
         String WindowNameForDisplay { get; };
         String WindowIdForDisplay { get; };
-        String RenameSucceededText { get; };
         void RenameFailed();
 
         // We cannot use the default XAML APIs because we want to make sure

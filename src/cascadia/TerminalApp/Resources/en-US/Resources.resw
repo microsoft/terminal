@@ -618,13 +618,6 @@
   <data name="RenameFailedToast.Subtitle" xml:space="preserve">
     <value>Another window with that name already exists</value>
   </data>
-  <data name="RenameSucceededToast.Title" xml:space="preserve">
-    <value>Successfully renamed window</value>
-  </data>
-  <data name="RenameSucceededText" xml:space="preserve">
-    <value>Successfully renamed window to "{}"</value>
-    <comment>{} will be replaced by the new name assigned by the user</comment>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>Maximize</value>
   </data>
