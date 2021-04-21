@@ -61,23 +61,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         });
 
         // This event is explicitly revoked in the destructor: does not need weak_ref
-        auto onReceiveOutputFn = [this](const hstring str) {
-            _terminal->Write(str);
-
-            // NOTE: We're raising an event here to inform the TermControl that
-            // output has been received, so it can queue up a throttled
-            // UpdatePatternLocations call. In the future, we should have the
-            // _updatePatternLocations ThrottledFunc internal to this class, and
-            // run on this object's dispatcher queue.
-            //
-            // We're not doing that quite yet, because the Core will eventually
-            // be out-of-proc from the UI thread, and won't be able to just use
-            // the UI thread as the dispatcher queue thread.
-            //
-            // See TODO: https://github.com/microsoft/terminal/projects/5#card-50760282
-            _ReceivedOutputHandlers(*this, nullptr);
-        };
-        _connectionOutputEventToken = _connection.TerminalOutput(onReceiveOutputFn);
+        _connectionOutputEventToken = _connection.TerminalOutput({ this, &ControlCore::_connectionOutputHandler });
 
         _terminal->SetWriteInputCallback([this](std::wstring& wstr) {
             _sendInputToConnection(wstr);
@@ -449,13 +433,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (newId != _lastHoveredId ||
             (newInterval != _lastHoveredInterval))
         {
-            auto lock = _terminal->LockForWriting();
+            // Introduce scope for lock - we don't want to raise the
+            // HoveredHyperlinkChanged event under lock, because then handlers
+            // wouldn't be able to ask us about the hyperlink text/position
+            // without deadlocking us.
+            {
+                auto lock = _terminal->LockForWriting();
 
-            _lastHoveredId = newId;
-            _lastHoveredInterval = newInterval;
-            _renderEngine->UpdateHyperlinkHoveredId(newId);
-            _renderer->UpdateLastHoveredInterval(newInterval);
-            _renderer->TriggerRedrawAll();
+                _lastHoveredId = newId;
+                _lastHoveredInterval = newInterval;
+                _renderEngine->UpdateHyperlinkHoveredId(newId);
+                _renderer->UpdateLastHoveredInterval(newInterval);
+                _renderer->TriggerRedrawAll();
+            }
 
             _HoveredHyperlinkChangedHandlers(*this, nullptr);
         }
@@ -475,7 +465,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return winrt::hstring{ _terminal->GetHyperlinkAtPosition(*_lastHoveredCell) };
         }
-        return { L"" };
+        return {};
     }
 
     std::optional<til::point> ControlCore::GetHoveredCell() const
@@ -960,6 +950,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::_terminalWarningBell()
     {
+        // Since this can only ever be triggered by output from the connection,
+        // then the Terminal already has the write lock when calling this
+        // callback.
         _WarningBellHandlers(*this, nullptr);
     }
 
@@ -974,6 +967,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::_terminalTitleChanged(std::wstring_view wstr)
     {
+        // Since this can only ever be triggered by output from the connection,
+        // then the Terminal already has the write lock when calling this
+        // callback.
         _TitleChangedHandlers(*this, winrt::make<TitleChangedEventArgs>(winrt::hstring{ wstr }));
     }
 
@@ -1121,7 +1117,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (auto localConnection{ std::exchange(_connection, nullptr) })
         {
             // Close the connection on the background thread.
-            co_await winrt::resume_background();
+            co_await winrt::resume_background(); // ** DO NOT INTERACT WITH THE CONTROLCORE AFTER THIS LINE **
+
+            // Here, the ControlCore very well might be gone.
+            // _asyncCloseConnection is called on the dtor, so it's entirely
+            // possible that the background thread is resuming after we've been
+            // cleaned up.
+
             localConnection.Close();
             // connection is destroyed.
         }
@@ -1170,6 +1172,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     IDXGISwapChain1* ControlCore::GetSwapChain() const
     {
+        // This is called by:
+        // * TermControl::RenderEngineSwapChainChanged, who is only registered
+        //   after Core::Initialize() is called.
+        // * TermControl::_InitializeTerminal, after the call to Initialize, for
+        //   _AttachDxgiSwapChainToXaml.
+        // In both cases, we'll have a _renderEngine by then.
         return _renderEngine->GetSwapChain().Get();
     }
 
@@ -1199,6 +1207,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
+        // SetCursorOn will take the write lock for you.
         _terminal->SetCursorOn(!_terminal->IsCursorOn());
     }
 
@@ -1321,4 +1330,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));
         _RaiseNoticeHandlers(*this, std::move(noticeArgs));
     }
+    void ControlCore::_connectionOutputHandler(const hstring& hstr)
+    {
+        _terminal->Write(hstr);
+
+        // NOTE: We're raising an event here to inform the TermControl that
+        // output has been received, so it can queue up a throttled
+        // UpdatePatternLocations call. In the future, we should have the
+        // _updatePatternLocations ThrottledFunc internal to this class, and
+        // run on this object's dispatcher queue.
+        //
+        // We're not doing that quite yet, because the Core will eventually
+        // be out-of-proc from the UI thread, and won't be able to just use
+        // the UI thread as the dispatcher queue thread.
+        //
+        // See TODO: https://github.com/microsoft/terminal/projects/5#card-50760282
+        _ReceivedOutputHandlers(*this, nullptr);
+    }
+
 }

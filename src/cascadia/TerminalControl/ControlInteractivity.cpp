@@ -23,6 +23,8 @@ using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 
+static constexpr unsigned int MAX_CLICK_COUNT = 3;
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     ControlInteractivity::ControlInteractivity(IControlSettings settings,
@@ -114,11 +116,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_core)
         {
-            // Note to future self: This should return false if there's no
-            // selection to copy. If there's no selection, returning false will
-            // indicate that the actions that triggered this should _not_ be
-            // marked as handled, so ctrl+c without a selection can still send
-            // ^C
+            // Return false if there's no selection to copy. If there's no
+            // selection, returning false will indicate that the actions that
+            // triggered this should _not_ be marked as handled, so ctrl+c
+            // without a selection can still send ^C
+            if (!_core->HasSelection())
+            {
+                return false;
+            }
 
             // Mark the current selection as copied
             _selectionNeedsToBeCopied = false;
@@ -185,7 +190,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // between single-, double-, and triple-click. To increase the
             // number of acceptable click states, simply increment
             // MAX_CLICK_COUNT and add another if-statement
-            const unsigned int MAX_CLICK_COUNT = 3;
             const auto multiClickMapper = clickCount > MAX_CLICK_COUNT ? ((clickCount + MAX_CLICK_COUNT - 1) % MAX_CLICK_COUNT) + 1 : clickCount;
 
             // Capture the position of the first click when no selection is active

@@ -226,6 +226,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _raiseReadOnlyWarning();
         void _updateAntiAliasingMode(::Microsoft::Console::Render::DxEngine* const dxEngine);
+        void _connectionOutputHandler(const hstring& hstr);
 
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;

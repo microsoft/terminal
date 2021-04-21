@@ -47,7 +47,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void Initialize();
         winrt::com_ptr<ControlCore> GetCore();
 
-#pragma region InputMethods
+#pragma region Input Methods
         void PointerPressed(const til::point mouseCursorPosition,
                             ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
                             const unsigned int pointerUpdateKind,

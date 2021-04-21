@@ -2436,12 +2436,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                            const int fontHeight,
                                            const bool isInitialChange)
     {
+        // Don't try to inspect the core here. The Core is raising this while
+        // it's holding its write lock.
         _FontSizeChangedHandlers(fontWidth, fontHeight, isInitialChange);
     }
 
     void TermControl::_coreRaisedNotice(const IInspectable& /*sender*/,
                                         const Control::NoticeEventArgs& eventArgs)
     {
+        // Don't try to inspect the core here. The Core might be raising this
+        // while it's holding its write lock.
         _RaiseNoticeHandlers(*this, eventArgs);
     }
 
