@@ -134,6 +134,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // note: Menu is the Alt VK_MENU
             keyModifiers |= Windows::System::VirtualKeyModifiers::Menu;
         }
+        if (WI_IsFlagSet(modifiers, KeyModifiers::Windows))
+        {
+            keyModifiers |= Windows::System::VirtualKeyModifiers::Windows;
+        }
 
         return keyModifiers;
     }
