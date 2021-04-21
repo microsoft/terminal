@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2021-02-23
-last updated: 2021-04-13
+last updated: 2021-04-21
 issue id: #653
 ---
 
@@ -613,7 +613,7 @@ work would be needed:
 * [ ] Add a `globalSummon` action. `AppHost` would need to be able to get _all_
   of these actions, and register all of them. Each one would need to be assigned
   a unique ID, so `WM_HOTKEY` can identify which hotkey was pressed.
-    - This could be comitted without any other args to the `globalHotkeys`. in
+    - This could be committed without any other args to the `globalHotkeys`. In
       this initial version, the behavior would be summoning the MRU window,
       where it is, no dropdown, to start with. From there, we'd add the
       remaining properties:
