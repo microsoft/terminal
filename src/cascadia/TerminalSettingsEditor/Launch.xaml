@@ -70,10 +70,9 @@
                 </local:SettingContainer>
 
                 <!--  Default Terminal  -->
-                <local:SettingContainer x:Uid="Globals_DefaultTerminal"
-                                        x:Name="DefaultTerminalDropdown"
-                                        x:Load="false"
-                                        >
+                <local:SettingContainer x:Name="DefaultTerminalDropdown"
+                                        x:Uid="Globals_DefaultTerminal"
+                                        x:Load="false">
                     <ComboBox x:Name="DefaultTerminal"
                               ItemsSource="{x:Bind State.Settings.DefaultTerminals, Mode=OneWay}"
                               SelectedItem="{x:Bind State.Settings.CurrentDefaultTerminal, Mode=TwoWay}"

@@ -1023,7 +1023,7 @@ void CascadiaSettings::RefreshDefaultTerminals()
     _currentDefaultTerminal = Model::DefaultTerminal::Current();
 }
 
-// Helper to do the version check 
+// Helper to do the version check
 static bool _isOnBuildWithDefTerm() noexcept
 {
     OSVERSIONINFOEXW osver{ 0 };
