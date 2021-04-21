@@ -1063,7 +1063,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                            TermControl::GetPointerUpdateKind(point),
                                            point.Timestamp(),
                                            ControlKeyStates{ args.KeyModifiers() },
-                                           _focused,
                                            _GetTerminalPosition(cursorPosition));
         }
 

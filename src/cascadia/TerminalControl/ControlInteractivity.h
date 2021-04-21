@@ -53,7 +53,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                             const unsigned int pointerUpdateKind,
                             const uint64_t timestamp,
                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                            const bool focused,
                             const til::point terminalPosition);
         void TouchPressed(const winrt::Windows::Foundation::Point contactPoint);
 

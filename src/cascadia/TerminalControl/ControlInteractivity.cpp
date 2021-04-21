@@ -156,7 +156,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                               const unsigned int pointerUpdateKind,
                                               const uint64_t timestamp,
                                               const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                                              const bool /*focused*/,
                                               const til::point terminalPosition)
     {
         const auto altEnabled = modifiers.IsAltPressed();
@@ -267,31 +266,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             SetEndSelectionPoint(terminalPosition);
-
-            // TODO: Make sure this still works
-            //
-            // const double cursorBelowBottomDist = cursorPosition.Y - SwapChainPanel().Margin().Top - SwapChainPanel().ActualHeight();
-            // const double cursorAboveTopDist = -1 * cursorPosition.Y + SwapChainPanel().Margin().Top;
-
-            // constexpr double MinAutoScrollDist = 2.0; // Arbitrary value
-            // double newAutoScrollVelocity = 0.0;
-            // if (cursorBelowBottomDist > MinAutoScrollDist)
-            // {
-            //     newAutoScrollVelocity = _getAutoScrollSpeed(cursorBelowBottomDist);
-            // }
-            // else if (cursorAboveTopDist > MinAutoScrollDist)
-            // {
-            //     newAutoScrollVelocity = -1.0 * _getAutoScrollSpeed(cursorAboveTopDist);
-            // }
-
-            // if (newAutoScrollVelocity != 0)
-            // {
-            //     _tryStartAutoScroll(point, newAutoScrollVelocity);
-            // }
-            // else
-            // {
-            //     _tryStopAutoScroll(ptr.PointerId());
-            // }
         }
 
         _core->UpdateHoveredCell(terminalPosition);

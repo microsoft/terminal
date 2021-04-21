@@ -267,7 +267,6 @@ namespace ControlUnitTests
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
                                       modifiers,
-                                      true, // focused,
                                       terminalPosition0);
         Log::Comment(L"Verify that there's not yet a selection");
 
@@ -318,7 +317,6 @@ namespace ControlUnitTests
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
                                       modifiers,
-                                      true, // focused,
                                       terminalPosition3);
         Log::Comment(L"Verify that there's now no selection");
         VERIFY_IS_FALSE(core->HasSelection());
