@@ -72,7 +72,6 @@
                 <!--  Default Terminal  -->
                 <local:SettingContainer x:Uid="Globals_DefaultTerminal">
                     <ComboBox x:Name="DefaultTerminal"
-                              MinWidth="300"
                               ItemsSource="{x:Bind State.Settings.DefaultTerminals, Mode=OneWay}"
                               SelectedItem="{x:Bind State.Settings.CurrentDefaultTerminal, Mode=TwoWay}"
                               Style="{StaticResource ComboBoxSettingStyle}">

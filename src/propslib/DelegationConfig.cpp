@@ -84,12 +84,18 @@ HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
         RETURN_IF_FAILED(extensionPackage2->get_PublisherDisplayName(publisher.GetAddressOf()));
         extensionMetadata.author = std::wstring{ publisher.GetRawBuffer(nullptr) };
 
+        // Try to get the logo. Don't completely bail if we fail to get it. It's non-critical.
         ComPtr<IUriRuntimeClass> logoUri;
-        RETURN_IF_FAILED(extensionPackage2->get_Logo(logoUri.GetAddressOf()));
+        LOG_IF_FAILED(extensionPackage2->get_Logo(logoUri.GetAddressOf()));
 
-        HString logo;
-        RETURN_IF_FAILED(logoUri->get_AbsoluteUri(logo.GetAddressOf()));
-        extensionMetadata.logo = std::wstring{ logo.GetRawBuffer(nullptr) };
+        // If we did manage to get one, extract the string and store in the structure
+        if (logoUri)
+        {
+            HString logo;
+
+            RETURN_IF_FAILED(logoUri->get_AbsoluteUri(logo.GetAddressOf()));
+            extensionMetadata.logo = std::wstring{ logo.GetRawBuffer(nullptr) };
+        }
 
         HString pfn;
         RETURN_IF_FAILED(extensionPackageId->get_FamilyName(pfn.GetAddressOf()));

@@ -1,5 +1,20 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
+
+Module Name:
+- DefaultTerminal.h
+
+Abstract:
+- A Default Terminal is an application that can register
+  as the handler window or "terminal" for a command-line
+  application. This class is the model for presenting
+  handler options in the Windows Terminal Settings UI.
+
+Author(s):
+- Michael Niksa <miniksa> - 20-Apr-2021
+
+--*/
 
 #pragma once
 
