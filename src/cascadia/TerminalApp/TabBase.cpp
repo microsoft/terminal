@@ -45,35 +45,19 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        // Close
-        Controls::MenuFlyoutItem closeTabMenuItem;
-        Controls::FontIcon closeSymbol;
-        closeSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
-        closeSymbol.Glyph(L"\xE711");
-
-        closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
-            if (auto tab{ weakThis.get() })
-            {
-                tab->_CloseRequestedHandlers(nullptr, nullptr);
-            }
-        });
-        closeTabMenuItem.Text(RS_(L"TabClose"));
-        closeTabMenuItem.Icon(closeSymbol);
-
         // Build the menu
         Controls::MenuFlyout newTabFlyout;
-        newTabFlyout.Items().Append(_CreateCloseSubMenu());
-        newTabFlyout.Items().Append(closeTabMenuItem);
+        _AppendCloseMenuItems(newTabFlyout);
         TabViewItem().ContextFlyout(newTabFlyout);
     }
 
     // Method Description:
-    // - Creates a sub-menu containing menu items to close multiple tabs
+    // - Append the close menu items to the context menu flyout
     // Arguments:
-    // - <none>
+    // - flyout - the menu flyout to which the close items must be appended
     // Return Value:
-    // - the created MenuFlyoutSubItem
-    Controls::MenuFlyoutSubItem TabBase::_CreateCloseSubMenu()
+    // - <none>
+    void TabBase::_AppendCloseMenuItems(winrt::Windows::UI::Xaml::Controls::MenuFlyout flyout)
     {
         auto weakThis{ get_weak() };
 
@@ -95,12 +79,30 @@ namespace winrt::TerminalApp::implementation
         });
         _closeOtherTabsMenuItem.Text(RS_(L"TabCloseOther"));
 
-        Controls::MenuFlyoutSubItem closeSubMenu;
-        closeSubMenu.Text(RS_(L"TabCloseSubMenu"));
-        closeSubMenu.Items().Append(_closeTabsAfterMenuItem);
-        closeSubMenu.Items().Append(_closeOtherTabsMenuItem);
+        // Close
+        Controls::MenuFlyoutItem closeTabMenuItem;
+        Controls::FontIcon closeSymbol;
+        closeSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+        closeSymbol.Glyph(L"\xE711");
 
-        return closeSubMenu;
+        closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_CloseRequestedHandlers(nullptr, nullptr);
+            }
+        });
+        closeTabMenuItem.Text(RS_(L"TabClose"));
+        closeTabMenuItem.Icon(closeSymbol);
+
+        // GH#8238 append the close menu items to the flyout itself until crash in XAML is fixed
+        //Controls::MenuFlyoutSubItem closeSubMenu;
+        //closeSubMenu.Text(RS_(L"TabCloseSubMenu"));
+        //closeSubMenu.Items().Append(_closeTabsAfterMenuItem);
+        //closeSubMenu.Items().Append(_closeOtherTabsMenuItem);
+        //flyout.Items().Append(closeSubMenu);
+        flyout.Items().Append(_closeTabsAfterMenuItem);
+        flyout.Items().Append(_closeOtherTabsMenuItem);
+        flyout.Items().Append(closeTabMenuItem);
     }
 
     // Method Description:
