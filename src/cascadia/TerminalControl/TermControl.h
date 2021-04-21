@@ -169,8 +169,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
-        void _UpdateSettingsFromUIThreadUnderLock(IControlSettings newSettings);
-        void _UpdateAppearanceFromUIThreadUnderLock(IControlAppearance newAppearance);
+        void _UpdateSettingsFromUIThread(IControlSettings newSettings);
+        void _UpdateAppearanceFromUIThread(IControlAppearance newAppearance);
         void _ApplyUISettings(const IControlSettings&);
 
         void _InitializeBackgroundBrush();

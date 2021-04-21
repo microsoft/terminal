@@ -473,11 +473,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _lastHoveredCell;
     }
 
+    // Method Description:
+    // - Updates the settings of the current terminal.
+    // - INVARIANT: This method can only be called if the caller DOES NOT HAVE writing lock on the terminal.
     void ControlCore::UpdateSettings(const IControlSettings& settings)
     {
-        _settings = settings;
-
         auto lock = _terminal->LockForWriting();
+
+        _settings = settings;
 
         // Initialize our font information.
         const auto fontFace = _settings.FontFace();
@@ -518,8 +521,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    // Method Description:
+    // - Updates the appearance of the current terminal.
+    // - INVARIANT: This method can only be called if the caller DOES NOT HAVE writing lock on the terminal.
     void ControlCore::UpdateAppearance(const IControlAppearance& newAppearance)
     {
+        auto lock = _terminal->LockForWriting();
+
         // Update the terminal core with its new Core settings
         _terminal->UpdateAppearance(newAppearance);
 
@@ -809,6 +817,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // extract text from buffer
+        // RetrieveSelectedTextFromBuffer will lock while it's reading
         const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(singleLine);
 
         // convert text: vector<string> --> string
@@ -845,7 +854,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // send data up for clipboard
         _CopyToClipboardHandlers(*this,
-                                 winrt::make<CopyToClipboardEventArgs>(winrt::hstring(textData),
+                                 winrt::make<CopyToClipboardEventArgs>(winrt::hstring{ textData },
                                                                        winrt::to_hstring(htmlData),
                                                                        winrt::to_hstring(rtfData),
                                                                        formats));
@@ -1051,6 +1060,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     std::vector<std::wstring> ControlCore::SelectedText(bool trimTrailingWhitespace) const
     {
+        // RetrieveSelectedTextFromBuffer will lock while it's reading
         return _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace).text;
     }
 
@@ -1117,7 +1127,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (auto localConnection{ std::exchange(_connection, nullptr) })
         {
             // Close the connection on the background thread.
-            co_await winrt::resume_background(); // ** DO NOT INTERACT WITH THE CONTROLCORE AFTER THIS LINE **
+            co_await winrt::resume_background(); // ** DO NOT INTERACT WITH THE CONTROL CORE AFTER THIS LINE **
 
             // Here, the ControlCore very well might be gone.
             // _asyncCloseConnection is called on the dtor, so it's entirely

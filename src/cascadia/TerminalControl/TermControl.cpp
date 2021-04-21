@@ -258,17 +258,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // terminal.
         co_await winrt::resume_foreground(Dispatcher());
 
-        // // Take the lock before calling the helper functions to update the settings and appearance
-        // auto lock = _terminal->LockForWriting();
-
-        _UpdateSettingsFromUIThreadUnderLock(_settings);
+        _UpdateSettingsFromUIThread(_settings);
 
         auto appearance = _settings.try_as<IControlAppearance>();
         if (!_focused && _UnfocusedAppearance)
         {
             appearance = _UnfocusedAppearance;
         }
-        _UpdateAppearanceFromUIThreadUnderLock(appearance);
+        _UpdateAppearanceFromUIThread(appearance);
     }
 
     // Method Description:
@@ -280,9 +277,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Dispatch a call to the UI thread
         co_await winrt::resume_foreground(Dispatcher());
 
-        // // Take the lock before calling the helper function to update the appearance
-        // auto lock = _terminal->LockForWriting();
-        _UpdateAppearanceFromUIThreadUnderLock(newAppearance);
+        _UpdateAppearanceFromUIThread(newAppearance);
     }
 
     // Method Description:
@@ -291,10 +286,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   issue that causes one of our hstring -> wstring_view conversions to result in garbage,
     //   but only from a coroutine context. See GH#8723.
     // - INVARIANT: This method must be called from the UI thread.
-    // - INVARIANT: This method can only be called if the caller has the writing lock on the terminal.
     // Arguments:
     // - newSettings: the new settings to set
-    void TermControl::_UpdateSettingsFromUIThreadUnderLock(IControlSettings newSettings)
+    void TermControl::_UpdateSettingsFromUIThread(IControlSettings newSettings)
     {
         if (_closing)
         {
@@ -310,10 +304,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Method Description:
     // - Updates the appearance
     // - INVARIANT: This method must be called from the UI thread.
-    // - INVARIANT: This method can only be called if the caller has the writing lock on the terminal.
     // Arguments:
     // - newAppearance: the new appearance to set
-    void TermControl::_UpdateAppearanceFromUIThreadUnderLock(IControlAppearance newAppearance)
+    void TermControl::_UpdateAppearanceFromUIThread(IControlAppearance newAppearance)
     {
         if (_closing)
         {
@@ -725,7 +718,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Now that the renderer is set up, update the appearance for initialization
-        _UpdateAppearanceFromUIThreadUnderLock(_settings);
+        _UpdateAppearanceFromUIThread(_settings);
 
         // Focus the control here. If we do it during control initialization, then
         //      focus won't actually get passed to us. I believe this is because
@@ -2415,8 +2408,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                     // Compute the location of the top left corner of the cell in DIPS
                     const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
-                    const til::point startPos{ lastHoveredCell->x(),
-                                               lastHoveredCell->y() };
+                    const til::point startPos{ *lastHoveredCell };
                     const til::size fontSize{ _core->GetFont().GetSize() };
                     const til::point posInPixels{ startPos * fontSize };
                     const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
@@ -2437,7 +2429,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                            const bool isInitialChange)
     {
         // Don't try to inspect the core here. The Core is raising this while
-        // it's holding its write lock.
+        // it's holding its write lock. If the handlers calls back to some
+        // method on the TermControl on the same thread, and that _method_ calls
+        // to ControlCore, we might be in danger of deadlocking.
         _FontSizeChangedHandlers(fontWidth, fontHeight, isInitialChange);
     }
 
@@ -2445,7 +2439,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                         const Control::NoticeEventArgs& eventArgs)
     {
         // Don't try to inspect the core here. The Core might be raising this
-        // while it's holding its write lock.
+        // while it's holding its write lock. If the handlers calls back to some
+        // method on the TermControl on the same thread, and _that_ method calls
+        // to ControlCore, we might be in danger of deadlocking.
         _RaiseNoticeHandlers(*this, eventArgs);
     }
 

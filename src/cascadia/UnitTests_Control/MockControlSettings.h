@@ -46,7 +46,7 @@ namespace ControlUnitTests
         WINRT_PROPERTY(bool, UseAcrylic, false);
         WINRT_PROPERTY(double, TintOpacity, 0.5);
         WINRT_PROPERTY(winrt::hstring, Padding, DEFAULT_PADDING);
-        WINRT_PROPERTY(winrt::hstring, FontFace, DEFAULT_FONT_FACE);
+        WINRT_PROPERTY(winrt::hstring, FontFace, L"Consolas");
         WINRT_PROPERTY(int32_t, FontSize, DEFAULT_FONT_SIZE);
 
         WINRT_PROPERTY(winrt::Windows::UI::Text::FontWeight, FontWeight);
