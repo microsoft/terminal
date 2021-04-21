@@ -328,6 +328,15 @@ namespace winrt::TerminalApp::implementation
                 }
 
                 _CreateNewTabFromSettings(profileGuid.value(), settingsCreateResult);
+
+                const auto runtimeTabText{ tab.GetTabText() };
+                if (!runtimeTabText.empty())
+                {
+                    if (auto newTab{ _GetFocusedTabImpl() })
+                    {
+                        newTab->SetTabText(runtimeTabText);
+                    }
+                }
             }
         }
         CATCH_LOG();

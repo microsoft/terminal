@@ -61,6 +61,7 @@ namespace winrt::TerminalApp::implementation
         void ClosePane();
 
         void SetTabText(winrt::hstring title);
+        winrt::hstring GetTabText() const;
         void ResetTabText();
         void ActivateTabRenamer();
 
@@ -101,8 +102,6 @@ namespace winrt::TerminalApp::implementation
         winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
         std::optional<winrt::Windows::UI::Color> _themeTabColor{};
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
-        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeOtherTabsMenuItem{};
-        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
         winrt::TerminalApp::TabHeaderControl _headerControl{};
         winrt::TerminalApp::TerminalTabStatus _tabStatus{};
 
