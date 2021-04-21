@@ -565,7 +565,8 @@ bool AppHost::HasWindow()
 void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*sender*/,
                                    Remoting::CommandlineArgs args)
 {
-    // TODO! Should we summon the window whenever we dispatch a commandline to it? methinks yes, but not in this PR.
+    // Summon the window whenever we dispatch a commandline to it. This will
+    // make it obvious when a new tab/pane is created in a window.
     _window->SummonWindow();
     _logic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory());
 }
