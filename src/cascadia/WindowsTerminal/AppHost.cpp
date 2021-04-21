@@ -660,8 +660,8 @@ void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
     {
         if (const auto& summonArgs{ actionAndArgs.Args().try_as<Settings::Model::GlobalSummonArgs>() })
         {
-            Remoting::SummonWindowSelectionArgs args;
-            args.WindowName(summonArgs.Name());
+            Remoting::SummonWindowSelectionArgs args{ summonArgs.Name() };
+
             _windowManager.SummonWindow(args);
             if (args.FoundMatch())
             {

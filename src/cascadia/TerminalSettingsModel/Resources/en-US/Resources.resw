@@ -391,4 +391,10 @@
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
     <value>Rename window...</value>
   </data>
+  <data name="GlobalSummonCommandKey" xml:space="preserve">
+    <value>Summon the Terminal window</value>
+  </data>
+  <data name="QuakeModeCommandKey" xml:space="preserve">
+    <value>Summon Quake window</value>
+  </data>
 </root>

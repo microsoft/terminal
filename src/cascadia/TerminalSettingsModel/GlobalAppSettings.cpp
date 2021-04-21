@@ -16,7 +16,6 @@ using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
 using namespace winrt::Microsoft::UI::Xaml::Controls;
-using namespace winrt::Microsoft::Terminal::Control;
 
 static constexpr std::string_view LegacyKeybindingsKey{ "keybindings" };
 static constexpr std::string_view ActionsKey{ "actions" };

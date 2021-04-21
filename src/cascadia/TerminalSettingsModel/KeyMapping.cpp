@@ -146,6 +146,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - Build a map of all the globalSummon actions.
     // - quakeMode actions are included in this, but expanded to the equivalent
     //   set of GlobalSummonArgs
+    // - This is only ever called in two scenarios:
+    //    - on becoming the monarch (which only happens once per window)
+    //    - when the settings reload (and the cache would inevitably be dirty)
+    //   So it's perfectly reasonable to not cache these results.
     // Arguments:
     // - <none>
     // Return Value:
