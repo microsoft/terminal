@@ -97,7 +97,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool TrySendKeyEvent(const WORD vkey,
                              const WORD scanCode,
                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                             const bool eitherWinPressed,
                              const bool keyDown);
         bool SendCharEvent(const wchar_t ch,
                            const WORD scanCode,
@@ -121,8 +120,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool HasSelection() const;
         bool CopyOnSelect() const;
         std::vector<std::wstring> SelectedText(bool trimTrailingWhitespace) const;
-        void SetSelectionAnchor(winrt::Windows::Foundation::Point const& position);
-        void SetEndSelectionPoint(winrt::Windows::Foundation::Point const& position);
+        void SetSelectionAnchor(til::point const& position);
+        void SetEndSelectionPoint(til::point const& position);
 
         void Search(const winrt::hstring& text,
                     const bool goForward,
@@ -205,7 +204,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _doResizeUnderLock(const double newWidth,
                                 const double newHeight);
 
-        void _sendInputToConnection(const winrt::hstring& wstr);
         void _sendInputToConnection(std::wstring_view wstr);
 
 #pragma region TerminalCoreCallbacks
@@ -226,7 +224,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _renderEngineSwapChainChanged();
 #pragma endregion
 
-        void _raiseHoveredHyperlinkChanged();
         void _raiseReadOnlyWarning();
         void _updateAntiAliasingMode(::Microsoft::Console::Render::DxEngine* const dxEngine);
 

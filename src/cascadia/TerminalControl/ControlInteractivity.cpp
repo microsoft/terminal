@@ -498,19 +498,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _core->UserScrollViewport(newValue);
 
-        // _core->ScrollOffset() is new set to newValue
-        auto scrollArgs = winrt::make_self<ScrollPositionChangedArgs>(_core->ScrollOffset(),
-                                                                      _core->ViewHeight(),
-                                                                      _core->BufferHeight());
-        _ScrollPositionChangedHandlers(*this, *scrollArgs);
+        // _core->ScrollOffset() is now set to newValue
+        _ScrollPositionChangedHandlers(*this,
+                                       winrt::make<ScrollPositionChangedArgs>(_core->ScrollOffset(),
+                                                                              _core->ViewHeight(),
+                                                                              _core->BufferHeight()));
     }
 
     void ControlInteractivity::_hyperlinkHandler(const std::wstring_view uri)
     {
-        // Save things we need to resume later.
-        winrt::hstring heldUri{ uri };
-        auto hyperlinkArgs = winrt::make_self<OpenHyperlinkEventArgs>(heldUri);
-        _OpenHyperlinkHandlers(*this, *hyperlinkArgs);
+        _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
     }
 
     bool ControlInteractivity::_canSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers)

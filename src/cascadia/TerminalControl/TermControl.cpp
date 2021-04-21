@@ -99,6 +99,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
         });
 
+        // Many of these ThrottledFunc's should be inside ControlCore. However,
+        // currently they depend on the Dispatcher() of the UI thread, which the
+        // Core eventually won't have access to. When we get to
+        // https://github.com/microsoft/terminal/projects/5#card-50760282
+        // then we'll move the applicable ones.
         _tsfTryRedrawCanvas = std::make_shared<ThrottledFunc<>>(
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() })
@@ -570,13 +575,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // This event is only registered during terminal initialization,
         // so we don't need to check _initializedTerminal.
         // We also don't lock for things that come back from the renderer.
-        auto chain = _core->GetSwapChain();
         auto weakThis{ get_weak() };
 
         co_await winrt::resume_foreground(Dispatcher());
 
         if (auto control{ weakThis.get() })
         {
+            const auto chain = control->_core->GetSwapChain();
             _AttachDxgiSwapChainToXaml(chain);
         }
     }
@@ -972,11 +977,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                        const bool keyDown)
     {
         const CoreWindow window = CoreWindow::GetForCurrentThread();
-        const auto leftWinKeyState = window.GetKeyState(VirtualKey::LeftWindows);
-        const auto rightWinKeyState = window.GetKeyState(VirtualKey::RightWindows);
-        const auto isLeftWinKeyDown = WI_IsFlagSet(leftWinKeyState, CoreVirtualKeyStates::Down);
-        const auto isRightWinKeyDown = WI_IsFlagSet(rightWinKeyState, CoreVirtualKeyStates::Down);
-        const bool eitherWinPressed = isLeftWinKeyDown || isRightWinKeyDown;
 
         if (vkey == VK_ESCAPE ||
             vkey == VK_RETURN)
@@ -991,7 +991,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  _core->TrySendKeyEvent(vkey,
                                                         scanCode,
                                                         modifiers,
-                                                        eitherWinPressed,
                                                         keyDown) :
                                  true;
 
@@ -2128,10 +2127,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_FontInfoHandler(const IInspectable& /*sender*/,
                                        const FontInfoEventArgs& eventArgs)
     {
+        const auto fontInfo = _core->GetFont();
         eventArgs.FontSize(CharacterDimensions());
-        eventArgs.FontFace(_core->GetFont().GetFaceName());
+        eventArgs.FontFace(fontInfo.GetFaceName());
         ::winrt::Windows::UI::Text::FontWeight weight;
-        weight.Weight = static_cast<uint16_t>(_core->GetFont().GetWeight());
+        weight.Weight = static_cast<uint16_t>(fontInfo.GetWeight());
         eventArgs.FontWeight(weight);
     }
 

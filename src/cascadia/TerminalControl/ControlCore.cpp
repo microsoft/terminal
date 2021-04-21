@@ -73,6 +73,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // We're not doing that quite yet, because the Core will eventually
             // be out-of-proc from the UI thread, and won't be able to just use
             // the UI thread as the dispatcher queue thread.
+            //
+            // See TODO: https://github.com/microsoft/terminal/projects/5#card-50760282
             _ReceivedOutputHandlers(*this, nullptr);
         };
         _connectionOutputEventToken = _connection.TerminalOutput(onReceiveOutputFn);
@@ -240,18 +242,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - wstr: the string of characters to write to the terminal connection.
     // Return Value:
     // - <none>
-    void ControlCore::_sendInputToConnection(const winrt::hstring& wstr)
-    {
-        if (_isReadOnly)
-        {
-            _raiseReadOnlyWarning();
-        }
-        else
-        {
-            _connection.WriteInput(wstr);
-        }
-    }
-
     void ControlCore::_sendInputToConnection(std::wstring_view wstr)
     {
         if (_isReadOnly)
@@ -290,12 +280,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Arguments:
     // - vkey: The vkey of the key pressed.
     // - scanCode: The scan code of the key pressed.
-    // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
+    // - modifiers: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
     // - keyDown: If true, the key was pressed, otherwise the key was released.
     bool ControlCore::TrySendKeyEvent(const WORD vkey,
                                       const WORD scanCode,
                                       const ControlKeyStates modifiers,
-                                      const bool eitherWinPressed,
                                       const bool keyDown)
     {
         // When there is a selection active, escape should clear it and NOT flow through
@@ -314,7 +303,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             keyDown)
         {
             // GH#8791 - don't dismiss selection if Windows key was also pressed as a key-combination.
-            if (!eitherWinPressed)
+            if (!modifiers.IsWinPressed())
             {
                 _terminal->ClearSelection();
                 _renderer->TriggerSelection();
@@ -329,23 +318,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // If the terminal translated the key, mark the event as handled.
         // This will prevent the system from trying to get the character out
         // of it and sending us a CharacterReceived event.
-        const auto handled = vkey ? _terminal->SendKeyEvent(vkey,
-                                                            scanCode,
-                                                            modifiers,
-                                                            keyDown) :
-                                    true;
-
-        return handled;
+        return vkey ? _terminal->SendKeyEvent(vkey,
+                                              scanCode,
+                                              modifiers,
+                                              keyDown) :
+                      true;
     }
 
     bool ControlCore::SendMouseEvent(const til::point viewportPos,
                                      const unsigned int uiButton,
                                      const ControlKeyStates states,
                                      const short wheelDelta,
-                                     const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state)
+                                     const TerminalInput::MouseButtonState state)
     {
         return _terminal->SendMouseEvent(viewportPos, uiButton, states, wheelDelta, state);
     }
+
     void ControlCore::UserScrollViewport(const int viewTop)
     {
         // Clear the regex pattern tree so the renderer does not try to render them while scrolling
@@ -358,6 +346,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::AdjustOpacity(const double adjustment)
     {
+        if (adjustment == 0)
+        {
+            return;
+        }
+
         auto newOpacity = std::clamp(_settings.TintOpacity() + adjustment,
                                      0.0,
                                      1.0);
@@ -464,13 +457,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderer->UpdateLastHoveredInterval(newInterval);
             _renderer->TriggerRedrawAll();
 
-            _raiseHoveredHyperlinkChanged();
+            _HoveredHyperlinkChangedHandlers(*this, nullptr);
         }
-    }
-
-    void ControlCore::_raiseHoveredHyperlinkChanged()
-    {
-        _HoveredHyperlinkChangedHandlers(*this, nullptr);
     }
 
     winrt::hstring ControlCore::GetHyperlink(const til::point pos) const
@@ -485,8 +473,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
         if (_lastHoveredCell.has_value())
         {
-            const winrt::hstring uri{ _terminal->GetHyperlinkAtPosition(*_lastHoveredCell) };
-            return uri;
+            return winrt::hstring{ _terminal->GetHyperlinkAtPosition(*_lastHoveredCell) };
         }
         return { L"" };
     }
@@ -504,7 +491,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Initialize our font information.
         const auto fontFace = _settings.FontFace();
-        const short fontHeight = gsl::narrow_cast<short>(_settings.FontSize());
+        const short fontHeight = ::base::saturated_cast<short>(_settings.FontSize());
         const auto fontWeight = _settings.FontWeight();
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up
@@ -773,20 +760,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::SetSelectionAnchor(Windows::Foundation::Point const& position)
+    void ControlCore::SetSelectionAnchor(til::point const& position)
     {
         auto lock = _terminal->LockForWriting();
-        _terminal->SetSelectionAnchor(til::point{ til::math::rounding,
-                                                  position.X,
-                                                  position.Y });
+        _terminal->SetSelectionAnchor(position);
     }
 
     // Method Description:
     // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
     // Arguments:
-    // - ~~cursorPosition: in pixels, relative to the origin of the control~~
-    // - cursorPosition: in cells
-    void ControlCore::SetEndSelectionPoint(Windows::Foundation::Point const& position)
+    // - position: the point in terminal coordinates (in cells, not pixels)
+    void ControlCore::SetEndSelectionPoint(til::point const& position)
     {
         if (!_terminal->IsSelectionActive())
         {
@@ -800,9 +784,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const short lastVisibleRow = std::max<short>(_terminal->GetViewport().Height() - 1, 0);
         const short lastVisibleCol = std::max<short>(_terminal->GetViewport().Width() - 1, 0);
 
-        til::point terminalPosition{ til::math::rounding,
-                                     std::clamp<float>(position.X, 0, lastVisibleCol),
-                                     std::clamp<float>(position.Y, 0, lastVisibleRow) };
+        til::point terminalPosition{
+            std::clamp<short>(position.x<short>(), 0, lastVisibleCol),
+            std::clamp<short>(position.y<short>(), 0, lastVisibleRow)
+        };
 
         // save location (for rendering) + render
         _terminal->SetSelectionEnd(terminalPosition);
@@ -813,8 +798,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // when an OSC 52 is emitted.
     void ControlCore::_terminalCopyToClipboard(std::wstring_view wstr)
     {
-        auto copyArgs = winrt::make_self<implementation::CopyToClipboardEventArgs>(winrt::hstring(wstr));
-        _CopyToClipboardHandlers(*this, *copyArgs);
+        _CopyToClipboardHandlers(*this, winrt::make<implementation::CopyToClipboardEventArgs>(winrt::hstring{ wstr }));
     }
 
     // Method Description:
@@ -870,11 +854,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // send data up for clipboard
-        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData),
-                                                                   winrt::to_hstring(htmlData),
-                                                                   winrt::to_hstring(rtfData),
-                                                                   formats);
-        _CopyToClipboardHandlers(*this, *copyArgs);
+        _CopyToClipboardHandlers(*this,
+                                 winrt::make<CopyToClipboardEventArgs>(winrt::hstring(textData),
+                                                                       winrt::to_hstring(htmlData),
+                                                                       winrt::to_hstring(rtfData),
+                                                                       formats));
         return true;
     }
 
@@ -906,14 +890,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     hstring ControlCore::Title()
     {
-        hstring hstr{ _terminal->GetConsoleTitle() };
-        return hstr;
+        return hstring{ _terminal->GetConsoleTitle() };
     }
 
     hstring ControlCore::WorkingDirectory() const
     {
-        hstring hstr{ _terminal->GetWorkingDirectory() };
-        return hstr;
+        return hstring{ _terminal->GetWorkingDirectory() };
     }
 
     bool ControlCore::BracketedPasteEnabled() const noexcept
@@ -963,8 +945,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - The height of the terminal in lines of text
     int ControlCore::ViewHeight() const
     {
-        const auto viewPort = _terminal->GetViewport();
-        return viewPort.Height();
+        return _terminal->GetViewport().Height();
     }
 
     // Function Description:
@@ -993,8 +974,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::_terminalTitleChanged(std::wstring_view wstr)
     {
-        auto titleArgs = winrt::make_self<TitleChangedEventArgs>(winrt::hstring{ wstr });
-        _TitleChangedHandlers(*this, *titleArgs);
+        _TitleChangedHandlers(*this, winrt::make<TitleChangedEventArgs>(winrt::hstring{ wstr }));
     }
 
     // Method Description:
@@ -1047,8 +1027,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // TODO GH#9617: refine locking around pattern tree
         _terminal->ClearPatternTree();
 
-        auto scrollArgs = winrt::make_self<ScrollPositionChangedArgs>(viewTop, viewHeight, bufferSize);
-        _ScrollPositionChangedHandlers(*this, *scrollArgs);
+        _ScrollPositionChangedHandlers(*this,
+                                       winrt::make<ScrollPositionChangedArgs>(viewTop,
+                                                                              viewHeight,
+                                                                              bufferSize));
     }
 
     void ControlCore::_terminalCursorPositionChanged()
@@ -1073,8 +1055,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     std::vector<std::wstring> ControlCore::SelectedText(bool trimTrailingWhitespace) const
     {
-        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
-        return bufferData.text;
+        return _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace).text;
     }
 
     ::Microsoft::Console::Types::IUiaData* ControlCore::GetUiaData() const
@@ -1194,8 +1175,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::_rendererWarning(const HRESULT hr)
     {
-        auto args{ winrt::make_self<RendererWarningArgs>(hr) };
-        _RendererWarningHandlers(*this, *args);
+        _RendererWarningHandlers(*this, winrt::make<RendererWarningArgs>(hr));
     }
 
     void ControlCore::_renderEngineSwapChainChanged()
