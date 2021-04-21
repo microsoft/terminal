@@ -63,7 +63,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Return Value:
     // - if the click is in the same position as the last click and within the timeout, the number of clicks within that time window
     // - otherwise, 1
-    unsigned int ControlInteractivity::_numberOfClicks(winrt::Windows::Foundation::Point clickPos,
+    unsigned int ControlInteractivity::_numberOfClicks(til::point clickPos,
                                                        Timestamp clickTime)
     {
         // if click occurred at a different location or past the multiClickTimer...
@@ -151,7 +151,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->PasteText(winrt::hstring{ wstr });
     }
 
-    void ControlInteractivity::PointerPressed(const winrt::Windows::Foundation::Point mouseCursorPosition,
+    void ControlInteractivity::PointerPressed(const til::point mouseCursorPosition,
                                               TerminalInput::MouseButtonState buttonState,
                                               const unsigned int pointerUpdateKind,
                                               const uint64_t timestamp,
@@ -229,12 +229,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlInteractivity::TouchPressed(const winrt::Windows::Foundation::Point contactPoint)
+    void ControlInteractivity::TouchPressed(const til::point contactPoint)
     {
         _touchAnchor = contactPoint;
     }
 
-    void ControlInteractivity::PointerMoved(const winrt::Windows::Foundation::Point mouseCursorPosition,
+    void ControlInteractivity::PointerMoved(const til::point mouseCursorPosition,
                                             TerminalInput::MouseButtonState buttonState,
                                             const unsigned int pointerUpdateKind,
                                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
@@ -252,8 +252,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 // Figure out if the user's moved a quarter of a cell's smaller axis away from the clickdown point
                 auto& touchdownPoint{ *_singleClickTouchdownPos };
-                auto distance{ std::sqrtf(std::powf(mouseCursorPosition.X - touchdownPoint.X, 2) +
-                                          std::powf(mouseCursorPosition.Y - touchdownPoint.Y, 2)) };
+                float dx = ::base::saturated_cast<float>(mouseCursorPosition.x() - touchdownPoint.x());
+                float dy = ::base::saturated_cast<float>(mouseCursorPosition.y() - touchdownPoint.y());
+                auto distance{ std::sqrtf(std::powf(dx, 2) +
+                                          std::powf(dy, 2)) };
 
                 const auto fontSizeInDips{ _core->FontSizeInDips() };
                 if (distance >= (std::min(fontSizeInDips.width(), fontSizeInDips.height()) / 4.f))
@@ -271,7 +273,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->UpdateHoveredCell(terminalPosition);
     }
 
-    void ControlInteractivity::TouchMoved(const winrt::Windows::Foundation::Point newTouchPoint,
+    void ControlInteractivity::TouchMoved(const til::point newTouchPoint,
                                           const bool focused)
     {
         if (focused &&
@@ -284,7 +286,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto fontSizeInDips{ _core->FontSizeInDips() };
 
             // Get the difference between the point we've dragged to and the start of the touch.
-            const float dy = newTouchPoint.Y - anchor.Y;
+            const float dy = ::base::saturated_cast<float>(newTouchPoint.y() - anchor.y());
 
             // Start viewport scroll after we've moved more than a half row of text
             if (std::abs(dy) > (fontSizeInDips.height<float>() / 2.0f))

@@ -173,7 +173,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const COORD windowSize{ static_cast<short>(windowWidth),
                                     static_cast<short>(windowHeight) };
 
-            // Fist set up the dx engine with the window size in pixels.
+            // First set up the dx engine with the window size in pixels.
             // Then, using the font, get the number of characters that can fit.
             // Resize our terminal connection to match that size, and initialize the terminal with that size.
             const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);

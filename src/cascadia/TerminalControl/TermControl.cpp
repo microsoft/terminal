@@ -1048,17 +1048,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             Focus(FocusState::Pointer);
         }
-        const auto cursorPosition = point.Position();
 
         if (type == Windows::Devices::Input::PointerDeviceType::Touch)
         {
             const auto contactRect = point.Properties().ContactRect();
-            auto anchor = winrt::Windows::Foundation::Point{ contactRect.X, contactRect.Y };
+            auto anchor = til::point{ til::math::rounding, contactRect.X, contactRect.Y };
             _interactivity->TouchPressed(anchor);
         }
         else
         {
-            _interactivity->PointerPressed(cursorPosition,
+            const auto cursorPosition = point.Position();
+            _interactivity->PointerPressed(til::point{ til::math::rounding, cursorPosition },
                                            TermControl::GetPressedMouseButtons(point),
                                            TermControl::GetPointerUpdateKind(point),
                                            point.Timestamp(),
@@ -1098,7 +1098,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (type == Windows::Devices::Input::PointerDeviceType::Mouse ||
             type == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            _interactivity->PointerMoved(cursorPosition,
+            _interactivity->PointerMoved(til::point{ til::math::rounding, cursorPosition },
                                          TermControl::GetPressedMouseButtons(point),
                                          TermControl::GetPointerUpdateKind(point),
                                          ControlKeyStates(args.KeyModifiers()),
@@ -1134,7 +1134,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         else if (type == Windows::Devices::Input::PointerDeviceType::Touch)
         {
             const auto contactRect = point.Properties().ContactRect();
-            winrt::Windows::Foundation::Point newTouchPoint{ contactRect.X, contactRect.Y };
+            til::point newTouchPoint{ til::math::rounding, contactRect.X, contactRect.Y };
 
             _interactivity->TouchMoved(newTouchPoint, _focused);
         }

@@ -48,21 +48,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::com_ptr<ControlCore> GetCore();
 
 #pragma region InputMethods
-        void PointerPressed(const winrt::Windows::Foundation::Point mouseCursorPosition,
+        void PointerPressed(const til::point mouseCursorPosition,
                             ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
                             const unsigned int pointerUpdateKind,
                             const uint64_t timestamp,
                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                             const til::point terminalPosition);
-        void TouchPressed(const winrt::Windows::Foundation::Point contactPoint);
+        void TouchPressed(const til::point contactPoint);
 
-        void PointerMoved(const winrt::Windows::Foundation::Point mouseCursorPosition,
+        void PointerMoved(const til::point mouseCursorPosition,
                           ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
                           const unsigned int pointerUpdateKind,
                           const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                           const bool focused,
                           const til::point terminalPosition);
-        void TouchMoved(const winrt::Windows::Foundation::Point newTouchPoint,
+        void TouchMoved(const til::point newTouchPoint,
                         const bool focused);
 
         void PointerReleased(::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
@@ -89,7 +89,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.
-        std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
+        std::optional<til::point> _touchAnchor;
 
         using Timestamp = uint64_t;
 
@@ -98,10 +98,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Timestamp _multiClickTimer;
         unsigned int _multiClickCounter;
         Timestamp _lastMouseClickTimestamp;
-        std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPos;
-        std::optional<winrt::Windows::Foundation::Point> _singleClickTouchdownPos;
+        std::optional<til::point> _lastMouseClickPos;
+        std::optional<til::point> _singleClickTouchdownPos;
         std::optional<til::point> _singleClickTouchdownTerminalPos;
-        std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPosNoSelection;
+        std::optional<til::point> _lastMouseClickPosNoSelection;
         // This field tracks whether the selection has changed meaningfully
         // since it was last copied. It's generally used to prevent copyOnSelect
         // from firing when the pointer _just happens_ to be released over the
@@ -114,7 +114,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval{ std::nullopt };
 
-        unsigned int _numberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
+        unsigned int _numberOfClicks(til::point clickPos, Timestamp clickTime);
         void _updateSystemParameterSettings() noexcept;
         bool _trySendMouseEvent(const unsigned int updateKind,
                                 const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
