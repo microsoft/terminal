@@ -228,7 +228,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _ClearKeyboardState(const WORD vkey, const WORD scanCode) const noexcept;
         bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
 
-        const til::point _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
+        const til::point _toTerminalOrigin(winrt::Windows::Foundation::Point cursorPosition);
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
         void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);

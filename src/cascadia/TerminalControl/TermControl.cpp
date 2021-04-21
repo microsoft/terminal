@@ -65,11 +65,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _interactivity = winrt::make_self<ControlInteractivity>(settings, connection);
         _core = _interactivity->GetCore();
 
+        // Use a manual revoker on the output event, so we can immediately stop
+        // worrying about it on destruction.
         _coreOutputEventToken = _core->ReceivedOutput({ this, &TermControl::_coreReceivedOutput });
+
+        // These events might all be triggered by the connection, but that
+        // should be drained and closed before we complete destruction. So these
+        // are safe.
         _core->ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
         _core->WarningBell({ this, &TermControl::_coreWarningBell });
         _core->CursorPositionChanged({ this, &TermControl::_CursorPositionChanged });
 
+        // This event is specifically triggered by the renderer thread, a BG thread. Use a weak ref here.
         _core->RendererEnteredErrorState({ get_weak(), &TermControl::_RendererEnteredErrorState });
 
         // These callbacks can only really be triggered by UI interactions. So
@@ -388,10 +395,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _InitializeBackgroundBrush();
 
-        // TODO!: I added the following, do we still need it?
         const auto bg = newSettings.DefaultBackground();
         _changeBackgroundColor(bg);
-        // </TODO!>
 
         // Apply padding as swapChainPanel's margin
         auto newMargin = _ParseThicknessFromPadding(newSettings.Padding());
@@ -1049,12 +1054,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         else
         {
             const auto cursorPosition = point.Position();
-            _interactivity->PointerPressed(til::point{ til::math::rounding, cursorPosition },
-                                           TermControl::GetPressedMouseButtons(point),
+            _interactivity->PointerPressed(TermControl::GetPressedMouseButtons(point),
                                            TermControl::GetPointerUpdateKind(point),
                                            point.Timestamp(),
                                            ControlKeyStates{ args.KeyModifiers() },
-                                           _GetTerminalPosition(cursorPosition));
+                                           _toTerminalOrigin(cursorPosition));
         }
 
         args.Handled(true);
@@ -1078,7 +1082,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
         const auto cursorPosition = point.Position();
-        const auto terminalPosition = _GetTerminalPosition(cursorPosition);
+        const auto pixelPosition = _toTerminalOrigin(cursorPosition);
         const auto type = ptr.PointerDeviceType();
 
         if (!_focused && _settings.FocusFollowMouse())
@@ -1089,12 +1093,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (type == Windows::Devices::Input::PointerDeviceType::Mouse ||
             type == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            _interactivity->PointerMoved(til::point{ til::math::rounding, cursorPosition },
-                                         TermControl::GetPressedMouseButtons(point),
+            _interactivity->PointerMoved(TermControl::GetPressedMouseButtons(point),
                                          TermControl::GetPointerUpdateKind(point),
                                          ControlKeyStates(args.KeyModifiers()),
                                          _focused,
-                                         terminalPosition);
+                                         pixelPosition);
 
             if (_focused && point.Properties().IsLeftButtonPressed())
             {
@@ -1150,7 +1153,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
         const auto cursorPosition = point.Position();
-        const auto terminalPosition = _GetTerminalPosition(cursorPosition);
+        const auto pixelPosition = _toTerminalOrigin(cursorPosition);
         const auto type = ptr.PointerDeviceType();
 
         _ReleasePointerCapture(sender, args);
@@ -1161,8 +1164,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _interactivity->PointerReleased(TermControl::GetPressedMouseButtons(point),
                                             TermControl::GetPointerUpdateKind(point),
                                             ControlKeyStates(args.KeyModifiers()),
-                                            _focused,
-                                            terminalPosition);
+                                            pixelPosition);
         }
         else if (type == Windows::Devices::Input::PointerDeviceType::Touch)
         {
@@ -1196,7 +1198,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto result = _interactivity->MouseWheel(ControlKeyStates{ args.KeyModifiers() },
                                                  point.Properties().MouseWheelDelta(),
-                                                 _GetTerminalPosition(point.Position()),
+                                                 _toTerminalOrigin(point.Position()),
                                                  TermControl::GetPressedMouseButtons(point));
         if (result)
         {
@@ -1224,7 +1226,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TerminalInput::MouseButtonState state{ leftButtonDown,
                                                midButtonDown,
                                                rightButtonDown };
-        return _interactivity->MouseWheel(modifiers, delta, _GetTerminalPosition(location), state);
+        return _interactivity->MouseWheel(modifiers, delta, _toTerminalOrigin(location), state);
     }
 
     // Method Description:
@@ -1614,7 +1616,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - cursorPosition: in pixels, relative to the origin of the control
     void TermControl::_SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition)
     {
-        _interactivity->SetEndSelectionPoint(_GetTerminalPosition(cursorPosition));
+        _interactivity->SetEndSelectionPoint(_toTerminalOrigin(cursorPosition));
     }
 
     // Method Description:
@@ -2044,15 +2046,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Gets the corresponding viewport terminal position for the cursor
-    //    by excluding the padding and normalizing with the font size.
-    //    This is used for selection.
+    // - Gets the corresponding viewport pixel position for the cursor
+    //    by excluding the padding.
     // Arguments:
     // - cursorPosition: the (x,y) position of a given cursor (i.e.: mouse cursor).
     //    NOTE: origin (0,0) is top-left.
     // Return Value:
-    // - the corresponding viewport terminal position for the given Point parameter
-    const til::point TermControl::_GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition)
+    // - the corresponding viewport terminal position (in pixels) for the given Point parameter
+    const til::point TermControl::_toTerminalOrigin(winrt::Windows::Foundation::Point cursorPosition)
     {
         // cursorPosition is DIPs, relative to SwapChainPanel origin
         const til::point cursorPosInDIPs{ til::math::rounding, cursorPosition };
@@ -2064,11 +2065,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Convert it to pixels
         const til::point relativeToMarginInPixels{ relativeToMarginInDIPs * SwapChainPanel().CompositionScaleX() };
 
-        // Get the size of the font, which is in pixels
-        const til::size fontSize{ _core->GetFont().GetSize() };
-
-        // Convert the location in pixels to characters within the current viewport.
-        return til::point{ relativeToMarginInPixels / fontSize };
+        return relativeToMarginInPixels;
     }
 
     // Method Description:

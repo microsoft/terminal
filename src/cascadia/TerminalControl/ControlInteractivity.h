@@ -48,40 +48,37 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::com_ptr<ControlCore> GetCore();
 
 #pragma region Input Methods
-        void PointerPressed(const til::point mouseCursorPosition,
-                            ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
+        void PointerPressed(::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
                             const unsigned int pointerUpdateKind,
                             const uint64_t timestamp,
                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                            const til::point terminalPosition);
+                            const til::point pixelPosition);
         void TouchPressed(const til::point contactPoint);
 
-        void PointerMoved(const til::point mouseCursorPosition,
-                          ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
+        void PointerMoved(::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
                           const unsigned int pointerUpdateKind,
                           const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                           const bool focused,
-                          const til::point terminalPosition);
+                          const til::point pixelPosition);
         void TouchMoved(const til::point newTouchPoint,
                         const bool focused);
 
         void PointerReleased(::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
                              const unsigned int pointerUpdateKind,
                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                             const bool focused,
-                             const til::point terminalPosition);
+                             const til::point pixelPosition);
         void TouchReleased();
 
         bool MouseWheel(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                         const int32_t delta,
-                        const til::point terminalPosition,
+                        const til::point pixelPosition,
                         const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
 #pragma endregion
 
         bool CopySelectionToClipboard(bool singleLine,
                                       const Windows::Foundation::IReference<CopyFormat>& formats);
         void RequestPasteTextFromClipboard();
-        void SetEndSelectionPoint(const til::point terminalPosition);
+        void SetEndSelectionPoint(const til::point pixelPosition);
 
     private:
         winrt::com_ptr<ControlCore> _core{ nullptr };
@@ -128,6 +125,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _sendPastedTextToConnection(std::wstring_view wstr);
         void _updateScrollbar(const int newValue);
+        til::point _getTerminalPosition(const til::point& pixelPosition);
 
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
