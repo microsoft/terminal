@@ -208,6 +208,7 @@ namespace winrt::TerminalApp::implementation
         titleRun.Text(_CreateToolTipTitle());
 
         auto textBlock = WUX::Controls::TextBlock{};
+        textBlock.TextWrapping(WUX::TextWrapping::Wrap);
         textBlock.TextAlignment(WUX::TextAlignment::Center);
         textBlock.Inlines().Append(titleRun);
 
