@@ -16,3 +16,4 @@ appshellintegration
 cppreference
 gfycat
 what3words
+Guake
