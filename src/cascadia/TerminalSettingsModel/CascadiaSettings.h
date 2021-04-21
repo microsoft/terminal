@@ -100,6 +100,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void RefreshDefaultTerminals();
 
+        static bool IsDefaultTerminalAvailable() noexcept;
         Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> DefaultTerminals() const noexcept;
         Model::DefaultTerminal CurrentDefaultTerminal() const noexcept;
         void CurrentDefaultTerminal(Model::DefaultTerminal terminal);

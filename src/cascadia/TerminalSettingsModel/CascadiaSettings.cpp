@@ -1023,6 +1023,33 @@ void CascadiaSettings::RefreshDefaultTerminals()
     _currentDefaultTerminal = Model::DefaultTerminal::Current();
 }
 
+// Helper to do the version check 
+static bool _isOnBuildWithDefTerm() noexcept
+{
+    OSVERSIONINFOEXW osver{ 0 };
+    osver.dwOSVersionInfoSize = sizeof(osver);
+    osver.dwBuildNumber = 21359;
+
+    DWORDLONG dwlConditionMask = 0;
+    VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+    return VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask);
+}
+
+// Method Description:
+// - Determines if we're on an OS platform that supports
+//   the default terminal handoff functionality.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if OS supports default termianl. False otherwise.
+bool CascadiaSettings::IsDefaultTerminalAvailable() noexcept
+{
+    // Cached on first use since the OS version shouldn't change while we're running.
+    static bool isAvailable = _isOnBuildWithDefTerm();
+    return isAvailable;
+}
+
 // Method Description:
 // - Returns an iterable collection of all available terminals.
 // Arguments:

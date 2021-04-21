@@ -45,6 +45,7 @@ namespace Microsoft.Terminal.Settings.Model
         Guid GetProfileForArgs(NewTerminalArgs newTerminalArgs);
 
         void RefreshDefaultTerminals();
+        static Boolean IsDefaultTerminalAvailable { get; };
         Windows.Foundation.Collections.IObservableVector<DefaultTerminal> DefaultTerminals { get; };
         DefaultTerminal CurrentDefaultTerminal;
     }

@@ -170,6 +170,7 @@ blog
 Blt
 BLUESCROLL
 bmp
+BODGY
 BOLDFONT
 BOOLIFY
 bools
