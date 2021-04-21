@@ -88,6 +88,11 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestWindowRenameSuccessful);
         TEST_METHOD(TestWindowRenameFailure);
 
+        TEST_METHOD(TestControlSettingsHasParent);
+        TEST_METHOD(TestPreviewCommitScheme);
+        TEST_METHOD(TestPreviewDismissScheme);
+        TEST_METHOD(TestPreviewSchemeWhilePreviewing);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             return true;
@@ -578,6 +583,75 @@ namespace TerminalAppLocalTests
                     "tabTitle" : "Profile 3",
                     "historySize": 4
                 }
+            ],
+            "schemes":
+            [
+                {
+                    "name": "Campbell",
+                    "foreground": "#CCCCCC",
+                    "background": "#0C0C0C",
+                    "cursorColor": "#FFFFFF",
+                    "black": "#0C0C0C",
+                    "red": "#C50F1F",
+                    "green": "#13A10E",
+                    "yellow": "#C19C00",
+                    "blue": "#0037DA",
+                    "purple": "#881798",
+                    "cyan": "#3A96DD",
+                    "white": "#CCCCCC",
+                    "brightBlack": "#767676",
+                    "brightRed": "#E74856",
+                    "brightGreen": "#16C60C",
+                    "brightYellow": "#F9F1A5",
+                    "brightBlue": "#3B78FF",
+                    "brightPurple": "#B4009E",
+                    "brightCyan": "#61D6D6",
+                    "brightWhite": "#F2F2F2"
+                },
+                {
+                    "name": "Vintage",
+                    "foreground": "#C0C0C0",
+                    "background": "#000000",
+                    "cursorColor": "#FFFFFF",
+                    "black": "#000000",
+                    "red": "#800000",
+                    "green": "#008000",
+                    "yellow": "#808000",
+                    "blue": "#000080",
+                    "purple": "#800080",
+                    "cyan": "#008080",
+                    "white": "#C0C0C0",
+                    "brightBlack": "#808080",
+                    "brightRed": "#FF0000",
+                    "brightGreen": "#00FF00",
+                    "brightYellow": "#FFFF00",
+                    "brightBlue": "#0000FF",
+                    "brightPurple": "#FF00FF",
+                    "brightCyan": "#00FFFF",
+                    "brightWhite": "#FFFFFF"
+                },
+                {
+                    "name": "One Half Light",
+                    "foreground": "#383A42",
+                    "background": "#FAFAFA",
+                    "cursorColor": "#4F525D",
+                    "black": "#383A42",
+                    "red": "#E45649",
+                    "green": "#50A14F",
+                    "yellow": "#C18301",
+                    "blue": "#0184BC",
+                    "purple": "#A626A4",
+                    "cyan": "#0997B3",
+                    "white": "#FAFAFA",
+                    "brightBlack": "#4F525D",
+                    "brightRed": "#DF6C75",
+                    "brightGreen": "#98C379",
+                    "brightYellow": "#E4C07A",
+                    "brightBlue": "#61AFEF",
+                    "brightPurple": "#C577DD",
+                    "brightCyan": "#56B5C1",
+                    "brightWhite": "#FFFFFF"
+                }
             ]
         })" };
 
@@ -1012,4 +1086,260 @@ namespace TerminalAppLocalTests
                             L"The window name should not have changed, we should have rejected the change.");
         });
     }
+
+    void TabTests::TestControlSettingsHasParent()
+    {
+        Log::Comment(L"Ensure that when we create a control, it always has a parent TerminalSettings");
+
+        auto page = _commonSetup();
+        VERIFY_IS_NOT_NULL(page);
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            const auto& originalSettings = controlSettings.GetParent();
+            VERIFY_IS_NOT_NULL(originalSettings);
+        });
+    }
+
+    void TabTests::TestPreviewCommitScheme()
+    {
+        Log::Comment(L"Preview a color scheme. Make sure it's applied, then committed accordingly");
+
+        auto page = _commonSetup();
+        VERIFY_IS_NOT_NULL(page);
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            const auto& originalSettings = controlSettings.GetParent();
+            VERIFY_IS_NOT_NULL(originalSettings);
+
+            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, controlSettings.DefaultBackground());
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Emulate previewing the SetColorScheme action");
+            SetColorSchemeArgs args{ L"Vintage" };
+            page->_PreviewColorScheme(args);
+        });
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            const auto& previewSettings = controlSettings.GetParent();
+            VERIFY_IS_NOT_NULL(previewSettings);
+
+            const auto& originalSettings = previewSettings.GetParent();
+            VERIFY_IS_NOT_NULL(originalSettings);
+
+            Log::Comment(L"Color should be changed to the preview");
+            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
+            VERIFY_ARE_EQUAL(originalSettings, page->_originalSettings);
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Emulate committing the SetColorScheme action");
+
+            SetColorSchemeArgs args{ L"Vintage" };
+            page->_EndPreviewColorScheme();
+            page->_HandleSetColorScheme(nullptr, ActionEventArgs{ args });
+        });
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            const auto& originalSettings = controlSettings.GetParent();
+            VERIFY_IS_NOT_NULL(originalSettings);
+
+            const auto& grandparentSettings = originalSettings.GetParent();
+            VERIFY_IS_NULL(grandparentSettings);
+
+            Log::Comment(L"Color should be changed");
+            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
+            VERIFY_ARE_EQUAL(nullptr, page->_originalSettings);
+        });
+    }
+
+    void TabTests::TestPreviewDismissScheme()
+    {
+        Log::Comment(L"Preview a color scheme. Make sure it's applied, then dismissed accordingly");
+
+        auto page = _commonSetup();
+        VERIFY_IS_NOT_NULL(page);
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            const auto& originalSettings = controlSettings.GetParent();
+            VERIFY_IS_NOT_NULL(originalSettings);
+
+            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, controlSettings.DefaultBackground());
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Emulate previewing the SetColorScheme action");
+            SetColorSchemeArgs args{ L"Vintage" };
+            page->_PreviewColorScheme(args);
+        });
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            const auto& previewSettings = controlSettings.GetParent();
+            VERIFY_IS_NOT_NULL(previewSettings);
+
+            const auto& originalSettings = previewSettings.GetParent();
+            VERIFY_IS_NOT_NULL(originalSettings);
+
+            Log::Comment(L"Color should be changed to the preview");
+            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
+            VERIFY_ARE_EQUAL(originalSettings, page->_originalSettings);
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Emulate dismissing the SetColorScheme action");
+            page->_EndPreviewColorScheme();
+        });
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            const auto& originalSettings = controlSettings.GetParent();
+            VERIFY_IS_NOT_NULL(originalSettings);
+
+            const auto& grandparentSettings = originalSettings.GetParent();
+            VERIFY_IS_NULL(grandparentSettings);
+
+            Log::Comment(L"Color should be the same as it originally was");
+            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, controlSettings.DefaultBackground());
+            VERIFY_ARE_EQUAL(nullptr, page->_originalSettings);
+        });
+    }
+
+    void TabTests::TestPreviewSchemeWhilePreviewing()
+    {
+        Log::Comment(L"Preview a color scheme, then preview another scheme. ");
+
+        Log::Comment(L"Preview a color scheme. Make sure it's applied, then committed accordingly");
+
+        auto page = _commonSetup();
+        VERIFY_IS_NOT_NULL(page);
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            const auto& originalSettings = controlSettings.GetParent();
+            VERIFY_IS_NOT_NULL(originalSettings);
+
+            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, controlSettings.DefaultBackground());
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Emulate previewing the SetColorScheme action");
+            SetColorSchemeArgs args{ L"Vintage" };
+            page->_PreviewColorScheme(args);
+        });
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            const auto& previewSettings = controlSettings.GetParent();
+            VERIFY_IS_NOT_NULL(previewSettings);
+
+            const auto& originalSettings = previewSettings.GetParent();
+            VERIFY_IS_NOT_NULL(originalSettings);
+
+            Log::Comment(L"Color should be changed to the preview");
+            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
+            VERIFY_ARE_EQUAL(originalSettings, page->_originalSettings);
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Now, preview another scheme");
+            SetColorSchemeArgs args{ L"One Half Light" };
+            page->_PreviewColorScheme(args);
+        });
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            const auto& previewSettings = controlSettings.GetParent();
+            VERIFY_IS_NOT_NULL(previewSettings);
+
+            const auto& originalSettings = previewSettings.GetParent();
+            VERIFY_IS_NOT_NULL(originalSettings);
+
+            Log::Comment(L"Color should be changed to the preview");
+            VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, controlSettings.DefaultBackground());
+            VERIFY_ARE_EQUAL(originalSettings, page->_originalSettings);
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Emulate committing the SetColorScheme action");
+
+            SetColorSchemeArgs args{ L"One Half Light" };
+            page->_EndPreviewColorScheme();
+            page->_HandleSetColorScheme(nullptr, ActionEventArgs{ args });
+        });
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            const auto& originalSettings = controlSettings.GetParent();
+            VERIFY_IS_NOT_NULL(originalSettings);
+
+            const auto& grandparentSettings = originalSettings.GetParent();
+            VERIFY_IS_NULL(grandparentSettings);
+
+            Log::Comment(L"Color should be changed");
+            VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, controlSettings.DefaultBackground());
+            VERIFY_ARE_EQUAL(nullptr, page->_originalSettings);
+        });
+    }
+
 }
