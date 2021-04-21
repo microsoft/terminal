@@ -54,16 +54,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct PasteFromClipboardEventArgs : public PasteFromClipboardEventArgsT<PasteFromClipboardEventArgs>
     {
     public:
-        PasteFromClipboardEventArgs(std::function<void(std::wstring)> clipboardDataHandler) :
+        PasteFromClipboardEventArgs(std::function<void(std::wstring_view)> clipboardDataHandler) :
             m_clipboardDataHandler(clipboardDataHandler) {}
 
         void HandleClipboardData(hstring value)
         {
-            m_clipboardDataHandler(static_cast<std::wstring>(value));
+            m_clipboardDataHandler(value);
         };
 
     private:
-        std::function<void(std::wstring)> m_clipboardDataHandler;
+        std::function<void(std::wstring_view)> m_clipboardDataHandler;
     };
 
     struct OpenHyperlinkEventArgs : public OpenHyperlinkEventArgsT<OpenHyperlinkEventArgs>

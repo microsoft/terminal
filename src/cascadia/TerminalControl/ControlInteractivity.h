@@ -135,7 +135,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _hyperlinkHandler(const std::wstring_view uri);
         bool _canSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
 
-        void _sendPastedTextToConnection(const std::wstring& wstr);
+        void _sendPastedTextToConnection(std::wstring_view wstr);
         void _updateScrollbar(const int newValue);
 
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);

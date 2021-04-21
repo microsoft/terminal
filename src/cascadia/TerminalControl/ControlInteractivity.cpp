@@ -146,7 +146,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Method Description:
     // - Pre-process text pasted (presumably from the clipboard)
     //   before sending it over the terminal's connection.
-    void ControlInteractivity::_sendPastedTextToConnection(const std::wstring& wstr)
+    void ControlInteractivity::_sendPastedTextToConnection(std::wstring_view wstr)
     {
         _core->PasteText(winrt::hstring{ wstr });
     }
