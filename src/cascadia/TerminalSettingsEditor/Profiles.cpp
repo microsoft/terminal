@@ -170,7 +170,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             BackgroundImagePath(L"desktopWallpaper");
         }
-        else if (HasBackgroundImagePath())
+        else
         {
             // Restore the path we had previously cached. This might be the
             // empty string.
@@ -207,7 +207,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             StartingDirectory(L"");
         }
-        else if (HasStartingDirectory())
+        else
         {
             // Restore the path we had previously cached as long as it wasn't empty
             // If it was empty, set the starting directory to %USERPROFILE%
