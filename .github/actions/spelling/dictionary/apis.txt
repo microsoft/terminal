@@ -3,6 +3,7 @@ ACCESSDENIED
 alignof
 bitfield
 bitfields
+BUILDNUMBER
 CLASSNOTAVAILABLE
 cmdletbinding
 COLORPROPERTY
@@ -14,6 +15,7 @@ dataobject
 DERR
 dlldata
 DONTADDTORECENT
+DWORDLONG
 environstrings
 EXPCMDFLAGS
 EXPCMDSTATE
@@ -76,6 +78,8 @@ NOREDIRECTIONBITMAP
 ntprivapi
 oaidl
 ocidl
+osver
+OSVERSIONINFOEXW
 otms
 OUTLINETEXTMETRICW
 overridable

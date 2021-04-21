@@ -1042,7 +1042,7 @@ static bool _isOnBuildWithDefTerm() noexcept
 // Arguments:
 // - <none>
 // Return Value:
-// - True if OS supports default termianl. False otherwise.
+// - True if OS supports default terminal. False otherwise.
 bool CascadiaSettings::IsDefaultTerminalAvailable() noexcept
 {
     // Cached on first use since the OS version shouldn't change while we're running.
