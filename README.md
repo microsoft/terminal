@@ -241,7 +241,7 @@ Visual Studio.
 
 ## Documentation
 
-All project documentation is located at aka.ms/terminal-docs. If you would like
+All project documentation is located at [aka.ms/terminal-docs](https://aka.ms/terminal-docs). If you would like
 to contribute to the documentation, please submit a pull request on the [Windows
 Terminal Documentation repo](https://github.com/MicrosoftDocs/terminal).
 
