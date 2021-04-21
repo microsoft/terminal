@@ -181,7 +181,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (_canSendVTMouseInput(modifiers))
         {
-            _trySendMouseEvent(pointerUpdateKind, buttonState, modifiers, terminalPosition);
+            _core->SendMouseEvent(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
         }
         else if (buttonState.isLeftButtonDown)
         {
@@ -248,7 +248,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Short-circuit isReadOnly check to avoid warning dialog
         if (focused && !_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
-            _trySendMouseEvent(pointerUpdateKind, buttonState, modifiers, terminalPosition);
+            _core->SendMouseEvent(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
         }
         else if (focused && buttonState.isLeftButtonDown)
         {
@@ -323,7 +323,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Short-circuit isReadOnly check to avoid warning dialog
         if (!_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
-            _trySendMouseEvent(pointerUpdateKind, buttonState, modifiers, terminalPosition);
+            _core->SendMouseEvent(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
             return;
         }
 
@@ -345,32 +345,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlInteractivity::TouchReleased()
     {
         _touchAnchor = std::nullopt;
-    }
-
-    // Method Description:
-    // - Send this particular mouse event to the terminal.
-    //   See Terminal::SendMouseEvent for more information.
-    // Arguments:
-    // - point: the PointerPoint object representing a mouse event from our XAML input handler
-    bool ControlInteractivity::_trySendMouseEvent(const unsigned int updateKind,
-                                                  const TerminalInput::MouseButtonState buttonState,
-                                                  const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                                                  const til::point terminalPosition)
-    {
-        return _core->SendMouseEvent(terminalPosition, updateKind, modifiers, 0, buttonState);
-    }
-
-    // Method Description:
-    // - Send this particular mouse event to the terminal.
-    //   See Terminal::SendMouseEvent for more information.
-    // Arguments:
-    // - point: the PointerPoint object representing a mouse event from our XAML input handler
-    bool ControlInteractivity::_trySendMouseWheelEvent(const short scrollDelta,
-                                                       const TerminalInput::MouseButtonState buttonState,
-                                                       const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                                                       const til::point terminalPosition)
-    {
-        return _core->SendMouseEvent(terminalPosition, WM_MOUSEWHEEL, modifiers, scrollDelta, buttonState);
     }
 
     // Method Description:

@@ -21,7 +21,9 @@ namespace ControlUnitTests
 {
     class ControlInteractivityTests
     {
-        TEST_CLASS(ControlInteractivityTests)
+        BEGIN_TEST_CLASS(ControlInteractivityTests)
+            TEST_CLASS_PROPERTY(L"TestTimeout", L"0:0:10") // 10s timeout
+        END_TEST_CLASS()
 
         TEST_METHOD(TestAdjustAcrylic);
         TEST_METHOD(TestScrollWithMouse);
@@ -32,6 +34,11 @@ namespace ControlUnitTests
         {
             winrt::init_apartment(winrt::apartment_type::single_threaded);
 
+            return true;
+        }
+        TEST_CLASS_CLEANUP(ClassCleanup)
+        {
+            winrt::uninit_apartment();
             return true;
         }
 

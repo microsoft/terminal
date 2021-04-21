@@ -167,6 +167,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::optional<Windows::UI::Xaml::DispatcherTimer> _cursorTimer;
         std::optional<Windows::UI::Xaml::DispatcherTimer> _blinkTimer;
 
+        event_token _coreOutputEventToken;
+
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
         void _UpdateSettingsFromUIThread(IControlSettings newSettings);

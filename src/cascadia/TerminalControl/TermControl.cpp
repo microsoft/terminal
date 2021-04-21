@@ -65,13 +65,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _interactivity = winrt::make_self<ControlInteractivity>(settings, connection);
         _core = _interactivity->GetCore();
 
-        // These all need weak refs - they could be triggered by the connection,
-        // which would happen off the UI thread.
-        _core->ScrollPositionChanged({ get_weak(), &TermControl::_ScrollPositionChanged });
-        _core->CursorPositionChanged({ get_weak(), &TermControl::_CursorPositionChanged });
+        _coreOutputEventToken = _core->ReceivedOutput({ this, &TermControl::_coreReceivedOutput });
+        _core->ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
+        _core->WarningBell({ this, &TermControl::_coreWarningBell });
+        _core->CursorPositionChanged({ this, &TermControl::_CursorPositionChanged });
+
         _core->RendererEnteredErrorState({ get_weak(), &TermControl::_RendererEnteredErrorState });
-        _core->WarningBell({ get_weak(), &TermControl::_coreWarningBell });
-        _core->ReceivedOutput({ get_weak(), &TermControl::_coreReceivedOutput });
 
         // These callbacks can only really be triggered by UI interactions. So
         // they don't need weak refs - they can't be triggered unless we're
@@ -1709,6 +1708,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (!_closing.exchange(true))
         {
+            _core->ReceivedOutput(_coreOutputEventToken);
+
             _RestorePointerCursorHandlers(*this, nullptr);
 
             // Disconnect the TSF input control so it doesn't receive EditContext events.

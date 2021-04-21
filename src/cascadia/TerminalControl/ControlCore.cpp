@@ -417,6 +417,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // GH#9618 - lock while we're reading from the terminal, and if we need
         // to update something, then lock again to write the terminal.
+
         _lastHoveredCell = terminalPosition;
         uint16_t newId{ 0u };
         // we can't use auto here because we're pre-declaring newInterval.
@@ -508,8 +509,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
         _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
         _updateAntiAliasingMode(_renderEngine.get());
-
-        // TODO!: UpdateAppearance() ?
 
         // Refresh our font with the renderer
         const auto actualFontOldSize = _actualFont.GetSize();

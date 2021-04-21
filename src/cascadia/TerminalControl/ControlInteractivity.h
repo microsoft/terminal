@@ -116,14 +116,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         unsigned int _numberOfClicks(til::point clickPos, Timestamp clickTime);
         void _updateSystemParameterSettings() noexcept;
-        bool _trySendMouseEvent(const unsigned int updateKind,
-                                const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
-                                const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                                const til::point terminalPosition);
-        bool _trySendMouseWheelEvent(const short scrollDelta,
-                                     const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
-                                     const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                                     const til::point terminalPosition);
 
         void _mouseTransparencyHandler(const double mouseDelta);
         void _mouseZoomHandler(const double mouseDelta);

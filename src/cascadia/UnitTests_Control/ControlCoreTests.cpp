@@ -19,7 +19,9 @@ namespace ControlUnitTests
 {
     class ControlCoreTests
     {
-        TEST_CLASS(ControlCoreTests)
+        BEGIN_TEST_CLASS(ControlCoreTests)
+            TEST_CLASS_PROPERTY(L"TestTimeout", L"0:0:10") // 10s timeout
+        END_TEST_CLASS()
 
         TEST_METHOD(ComPtrSettings);
         TEST_METHOD(InstantiateCore);
@@ -34,6 +36,11 @@ namespace ControlUnitTests
         {
             winrt::init_apartment(winrt::apartment_type::single_threaded);
 
+            return true;
+        }
+        TEST_CLASS_CLEANUP(ClassCleanup)
+        {
+            winrt::uninit_apartment();
             return true;
         }
 
