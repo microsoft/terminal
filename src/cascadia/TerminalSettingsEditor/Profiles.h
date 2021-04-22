@@ -52,7 +52,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool UseCustomStartingDirectory();
 
         // tab display name
-        winrt::hstring TabDisplayName();
+        winrt::hstring TabDisplayName() const;
 
         // font face
         static void UpdateFontList() noexcept;

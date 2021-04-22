@@ -238,6 +238,7 @@
                 <ScrollViewer>
                     <StackPanel>
                         <StackPanel Style="{StaticResource PivotStackStyle}">
+                            <!--  Control Preview  -->
                             <Border x:Name="ControlPreview"
                                     Height="160"
                                     MinWidth="350" />

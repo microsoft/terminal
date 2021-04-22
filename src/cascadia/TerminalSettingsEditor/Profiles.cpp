@@ -427,7 +427,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    hstring ProfileViewModel::TabDisplayName()
+    hstring ProfileViewModel::TabDisplayName() const
     {
         return TabTitle().empty() ? Name() : TabTitle();
     }
@@ -445,7 +445,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Profiles::Profiles() :
         _ColorSchemeList{ single_threaded_observable_vector<ColorScheme>() },
-        _previewControl{ Control::TermControl(Model::TerminalSettings(), make<PreviewConnection>()) }
+        _previewControl{ Control::TermControl(Model::TerminalSettings{}, make<PreviewConnection>()) }
     {
         InitializeComponent();
 
