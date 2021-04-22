@@ -234,11 +234,9 @@ namespace SettingsModelLocalTests
         const std::string actionsString2A{ R"([
                                                 { "command": { "action": "setTabColor" } }
                                             ])" };
-
         const std::string actionsString2B{ R"([
                                                 { "command": { "action": "setTabColor", "color": "#112233" } }
                                             ])" };
-
         const std::string actionsString2C{ R"([
                                                 { "command": { "action": "copy" } },
                                                 { "command": { "action": "copy", "singleLine": true, "copyFormatting": "html" } }
@@ -262,8 +260,38 @@ namespace SettingsModelLocalTests
         const std::string actionsString6{ R"([
                                                 { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+g" },
                                             ])" };
+
         const std::string actionsString7{ R"([
                                                 { "command": { "action": "renameWindow", "name": null }, "keys": "ctrl+h" }
+                                            ])" };
+
+        const std::string actionsString8{ R"([
+                                                {
+                                                    "name": "Change font size...",
+                                                    "commands": [
+                                                        { "command": { "action": "adjustFontSize", "delta": 1 } },
+                                                        { "command": { "action": "adjustFontSize", "delta": -1 } },
+                                                        { "command": "resetFontSize" },
+                                                    ]
+                                                }
+                                            ])" };
+
+        const std::string actionsString9{ R"([
+                                                {
+                                                    "name": "New tab",
+                                                    "commands": [
+                                                        {
+                                                            "iterateOn": "profiles",
+                                                            "icon": "${profile.icon}",
+                                                            "name": "${profile.name}",
+                                                            "command": { "action": "newTab", "profile": "${profile.name}" }
+                                                        }
+                                                    ]
+                                                }
+                                            ])" };
+
+        const std::string actionsString10{ R"([
+                                                { "command": "unbound", "keys": "ctrl+c" }
                                             ])" };
 
         Log::Comment(L"simple command");
@@ -288,6 +316,15 @@ namespace SettingsModelLocalTests
 
         Log::Comment(L"complex command with meaningful null arg");
         RoundtripTest<implementation::ActionMap>(actionsString7);
+
+        Log::Comment(L"nested command");
+        RoundtripTest<implementation::ActionMap>(actionsString8);
+
+        Log::Comment(L"iterable command");
+        RoundtripTest<implementation::ActionMap>(actionsString9);
+
+        Log::Comment(L"unbound command");
+        RoundtripTest<implementation::ActionMap>(actionsString10);
     }
 
     void SerializationTests::CascadiaSettings()

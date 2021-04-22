@@ -393,7 +393,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         Json::Value cmdList{ Json::ValueType::arrayValue };
 
-        if (_keyMappings.empty())
+        if (_nestedCommand)
+        {
+            // handle nested command
+            // For nested commands, we can trust _originalJson to be correct.
+            // In fact, we _need_ to use it here because we don't actually deserialize `iterateOn`
+            //   until we expand the command.
+            cmdList.append(_originalJson);
+        }
+        else if (_keyMappings.empty())
         {
             // only write out one command
             Json::Value cmdJson{ Json::ValueType::objectValue };

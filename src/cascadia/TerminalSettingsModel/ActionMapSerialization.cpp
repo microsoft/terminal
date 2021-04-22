@@ -68,6 +68,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 actionList.append(cmdJson);
             }
         }
+        for (const auto& [_, cmd] : _NestedCommands)
+        {
+            const auto cmdImpl{ winrt::get_self<implementation::Command>(cmd) };
+            const auto& cmdJsonArray{ cmdImpl->ToJson() };
+            for (const auto& cmdJson : cmdJsonArray)
+            {
+                actionList.append(cmdJson);
+            }
+        }
         return actionList;
     }
 

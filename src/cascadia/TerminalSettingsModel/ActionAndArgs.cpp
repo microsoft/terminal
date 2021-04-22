@@ -158,9 +158,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { ShortcutAction::NewWindow, NewWindowArgs::ToJson },
         { ShortcutAction::PrevTab, PrevTabArgs::ToJson },
         { ShortcutAction::NextTab, NextTabArgs::ToJson },
-        { ShortcutAction::RenameWindow, RenameWindowArgs::ToJson },
-
-        { ShortcutAction::Invalid, nullptr },
+        { ShortcutAction::RenameWindow, RenameWindowArgs::ToJson }
     };
 
     // Function Description:
@@ -301,8 +299,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
-        // "command": null
-        return { Json::ValueType::nullValue };
+        // "command": "unbound"
+        return JsonKey(UnboundKey);
     }
 
     com_ptr<ActionAndArgs> ActionAndArgs::Copy() const
