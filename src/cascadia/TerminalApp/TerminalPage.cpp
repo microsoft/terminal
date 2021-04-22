@@ -2624,7 +2624,6 @@ namespace winrt::TerminalApp::implementation
             {
                 page->_PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowName" });
                 page->_PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
-                page->_PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"RenameSucceededText" });
 
                 // DON'T display the confirmation if this is the name we were
                 // given on startup!
