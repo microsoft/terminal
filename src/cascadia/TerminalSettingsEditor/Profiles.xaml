@@ -59,54 +59,6 @@
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind State.Profile.IsBaseLayer}" />
 
-        <Grid Height="184">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="24" />
-                <RowDefinition Height="160" />
-            </Grid.RowDefinitions>
-            <Grid Grid.Row="0"
-                  Margin="8,0,8,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="auto" />
-                </Grid.ColumnDefinitions>
-                <Border MinWidth="128"
-                        Background="#333333"
-                        CornerRadius="2,2,0,0">
-                    <Grid VerticalAlignment="Center">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="32" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="28" />
-                        </Grid.ColumnDefinitions>
-                        <IconSourceElement Grid.Column="0"
-                                           Width="16"
-                                           Height="16"
-                                           Margin="8,0,8,0"
-                                           VerticalAlignment="Bottom"
-                                           IconSource="{x:Bind State.Profile.Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
-                        <TextBlock Grid.Column="1"
-                                   VerticalAlignment="Center"
-                                   FontSize="12"
-                                   Text="{x:Bind State.Profile.TabDisplayName, Mode=OneWay}" />
-                        <IconSourceElement Grid.Column="2"
-                                           Width="16"
-                                           Height="16"
-                                           Margin="8,0,4,0"
-                                           VerticalAlignment="Bottom">
-                            <IconSourceElement.IconSource>
-                                <FontIconSource FontSize="12"
-                                                Glyph="&#xE711;" />
-                            </IconSourceElement.IconSource>
-                        </IconSourceElement>
-                    </Grid>
-                </Border>
-            </Grid>
-            <Border x:Name="ControlPreview"
-                    Grid.Row="1"
-                    Margin="8,0,8,0"
-                    HorizontalAlignment="Stretch" />
-        </Grid>
-
         <Pivot x:Name="ProfilesPivot"
                Grid.Row="1"
                Margin="1,0,0,0"
@@ -286,6 +238,10 @@
                 <ScrollViewer>
                     <StackPanel>
                         <StackPanel Style="{StaticResource PivotStackStyle}">
+                            <Border x:Name="ControlPreview"
+                                    Height="160"
+                                    MinWidth="350" />
+
                             <!--  Grouping: Text  -->
                             <TextBlock x:Uid="Profile_TextHeader"
                                        Style="{StaticResource SubtitleTextBlockStyle}" />
@@ -825,23 +781,5 @@
                 </ScrollViewer>
             </PivotItem>
         </Pivot>
-        <VisualStateManager.VisualStateGroups>
-            <VisualStateGroup>
-                <VisualState>
-                    <VisualState.StateTriggers>
-                        <!--
-                            Official guidance states that 640 is the breakpoint between small and medium devices.
-                            Since MinWindowWidth is an inclusive range, we need to add 1 to it.
-                        -->
-                        <AdaptiveTrigger MinWindowWidth="641" />
-                    </VisualState.StateTriggers>
-
-                    <VisualState.Setters>
-                        <Setter Target="ControlPreview.HorizontalAlignment" Value="Left" />
-                        <Setter Target="ControlPreview.Width" Value="640" />
-                    </VisualState.Setters>
-                </VisualState>
-            </VisualStateGroup>
-        </VisualStateManager.VisualStateGroups>
     </Grid>
 </Page>
