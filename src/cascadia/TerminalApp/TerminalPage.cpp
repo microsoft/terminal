@@ -2607,12 +2607,32 @@ namespace winrt::TerminalApp::implementation
     {
         return _WindowName;
     }
-    void TerminalPage::WindowName(const winrt::hstring& value)
+
+    winrt::fire_and_forget TerminalPage::WindowName(const winrt::hstring& value)
     {
-        if (_WindowName != value)
+        const bool changed = _WindowName != value;
+        if (changed)
         {
             _WindowName = value;
-            _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+        }
+        auto weakThis{ get_weak() };
+        // On the foreground thread, raise property changed notifications, and
+        // display the success toast.
+        co_await resume_foreground(Dispatcher());
+        if (auto page{ weakThis.get() })
+        {
+            if (changed)
+            {
+                page->_PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowName" });
+                page->_PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+
+                // DON'T display the confirmation if this is the name we were
+                // given on startup!
+                if (page->_startupState == StartupState::Initialized)
+                {
+                    page->IdentifyWindow();
+                }
+            }
         }
     }
 

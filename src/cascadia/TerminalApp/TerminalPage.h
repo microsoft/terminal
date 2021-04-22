@@ -102,7 +102,7 @@ namespace winrt::TerminalApp::implementation
         // WINRT_OBSERVABLE_PROPERTY's, but we want them to raise
         // WindowNameForDisplay and WindowIdForDisplay instead
         winrt::hstring WindowName() const noexcept;
-        void WindowName(const winrt::hstring& value);
+        winrt::fire_and_forget WindowName(const winrt::hstring& value);
         uint64_t WindowId() const noexcept;
         void WindowId(const uint64_t& value);
         winrt::hstring WindowIdForDisplay() const noexcept;
