@@ -1092,7 +1092,7 @@ winrt::com_ptr<ColorScheme> CascadiaSettings::_FindMatchingColorScheme(const Jso
         {
             return winrt::get_self<ColorScheme>(scheme)->get_strong();
         }
-        else if (*schemeName == winrt::to_hstring("_random"))
+        else if (*schemeName == winrt::to_hstring(L"_random"))
         {
             if (auto scheme{ _globals->ColorSchemes().TryLookup(L"Campbell") })
             {
