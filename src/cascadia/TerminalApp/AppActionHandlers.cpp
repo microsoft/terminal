@@ -388,6 +388,16 @@ namespace winrt::TerminalApp::implementation
                         activeControl.UpdateSettings();
                         args.Handled(true);
                     }
+                    else if (realArgs.SchemeName() == winrt::to_hstring(L"_random"))
+                    {
+                        if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(L"Campbell"))
+                        {
+                            auto controlSettings = activeControl.Settings().as<TerminalSettings>();
+                            controlSettings.ApplyColorScheme(scheme);
+                            activeControl.UpdateSettings();
+                            args.Handled(true);
+                        }
+                    }
                 }
             }
         }
