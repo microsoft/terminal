@@ -210,7 +210,7 @@
     <comment>Header for a control to toggle whether selected text should be copied to the clipboard automatically, or not.</comment>
   </data>
   <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
-    <value>Remove trailing white-spaces when copying text in rectangular selection to clipboard</value>
+    <value>Remove trailing white-space in rectangular selection</value>
     <comment>Header for a control to toggle whether a text selected with block selection should be trimmed of white spaces when copied to the clipboard, or not.</comment>
   </data>
   <data name="Globals_KeybindingsDisclaimer.Text" xml:space="preserve">
