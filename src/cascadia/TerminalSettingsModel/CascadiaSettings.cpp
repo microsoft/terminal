@@ -550,10 +550,10 @@ void CascadiaSettings::_ValidateAllSchemesExist()
         }
     }
 
-    if (foundInvalidScheme)
-    {
-        _warnings.Append(SettingsLoadWarnings::UnknownColorScheme);
-    }
+    // if (foundInvalidScheme)
+    // {
+    //     _warnings.Append(SettingsLoadWarnings::UnknownColorScheme);
+    // }
 }
 
 // Method Description:
@@ -789,14 +789,15 @@ void CascadiaSettings::_ValidateColorSchemesInCommands()
         }
     }
 
-    if (foundInvalidScheme)
-    {
-        _warnings.Append(SettingsLoadWarnings::InvalidColorSchemeInCmd);
-    }
+    // if (foundInvalidScheme)
+    // {
+    //     _warnings.Append(SettingsLoadWarnings::InvalidColorSchemeInCmd);
+    // }
 }
 
 bool CascadiaSettings::_HasInvalidColorScheme(const Model::Command& command)
 {
+    return false;
     bool invalid{ false };
     if (command.HasNestedCommands())
     {
