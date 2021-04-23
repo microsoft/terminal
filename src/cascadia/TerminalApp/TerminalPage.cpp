@@ -1048,15 +1048,10 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        hostingTab.TaskbarProgressChanged([weakThis](const auto& s, const auto& args) {
-            if (auto page{ weakThis.get() })
-            {
-                page->_SetTaskbarProgressHandler(s, args);
-            }
-        });
-
-        // Add an event handler for when the terminal wants to set a progress indicator on the taskbar
-        term.SetTaskbarProgress({ this, &TerminalPage::_SetTaskbarProgressHandler });
+        // Add an event handler for when the terminal or tab wants to set a
+        // progress indicator on the taskbar
+        hostingTab.TaskbarProgressChanged({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
+        term.SetTaskbarProgress({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
 
         // TODO GH#3327: Once we support colorizing the NewTab button based on
         // the color of the tab, we'll want to make sure to call
