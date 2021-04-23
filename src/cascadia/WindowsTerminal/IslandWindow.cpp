@@ -981,7 +981,7 @@ winrt::fire_and_forget IslandWindow::SummonWindow()
     // restore-down the window.
     if (IsIconic(_window.get()))
     {
-        // LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
+        LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
 
         // auto success = AnimateWindow(_window.get(), 200, AW_SLIDE | AW_VER_POSITIVE);
         // auto success = AnimateWindow(_window.get(), 200, AW_ACTIVATE | AW_SLIDE | AW_VER_POSITIVE);
@@ -999,7 +999,6 @@ winrt::fire_and_forget IslandWindow::SummonWindow()
     auto detachThread = wil::scope_exit([windowThreadProcessId, currentThreadId]() {
         LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, false));
     });
-    LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
     // LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_SHOW));
     LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_HIDE));
 
@@ -1016,6 +1015,8 @@ winrt::fire_and_forget IslandWindow::SummonWindow()
         auto gle = GetLastError();
         gle;
     }
+
+    LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
