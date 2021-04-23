@@ -173,6 +173,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SetColorSchemeArgs : IActionArgs
     {
+        SetColorSchemeArgs(String name);
         String SchemeName { get; };
     };
 
