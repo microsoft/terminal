@@ -1872,7 +1872,8 @@ namespace RemotingUnitTests
 
     void RemotingTests::TestSummonOnCurrent()
     {
-        Log::Comment(L"TODO!");
+        Log::Comment(L"Tests summoning a window, using OnCurrentDesktop to only"
+                     L"select windows on the current desktop.");
 
         const winrt::guid guid1{ Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
         const winrt::guid guid2{ Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
@@ -1990,6 +1991,7 @@ namespace RemotingUnitTests
         args.OnCurrentDesktop(true);
         m0->SummonWindow(args);
         VERIFY_IS_TRUE(args.FoundMatch());
+
         {
             Log::Comment(L"Activate the first peasant, first desktop");
             Remoting::WindowActivatedArgs activatedArgs{ p1->GetID(),
@@ -2134,10 +2136,288 @@ namespace RemotingUnitTests
 
     void RemotingTests::TestSummonOnCurrentWithName()
     {
-        VERIFY_IS_TRUE(false, L"TODO! write tests");
+        Log::Comment(L"Test that specifying a WindowName forces us to ignore OnCurrentDesktop");
+
+        const winrt::guid guid1{ Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
+        const winrt::guid guid2{ Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
+
+        constexpr auto monarch0PID = 12345u;
+        constexpr auto peasant1PID = 23456u;
+        constexpr auto peasant2PID = 34567u;
+        constexpr auto peasant3PID = 45678u;
+
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+
+        com_ptr<Remoting::implementation::Peasant> p3;
+        p3.attach(new Remoting::implementation::Peasant(peasant3PID));
+
+        VERIFY_IS_NOT_NULL(m0);
+        VERIFY_IS_NOT_NULL(p1);
+        VERIFY_IS_NOT_NULL(p2);
+        VERIFY_IS_NOT_NULL(p3);
+        p1->WindowName(L"one");
+        p2->WindowName(L"two");
+        p3->WindowName(L"three");
+
+        VERIFY_ARE_EQUAL(0, p1->GetID());
+        VERIFY_ARE_EQUAL(0, p2->GetID());
+        VERIFY_ARE_EQUAL(0, p3->GetID());
+
+        m0->AddPeasant(*p1);
+        m0->AddPeasant(*p2);
+        m0->AddPeasant(*p3);
+
+        VERIFY_ARE_EQUAL(1, p1->GetID());
+        VERIFY_ARE_EQUAL(2, p2->GetID());
+        VERIFY_ARE_EQUAL(3, p3->GetID());
+
+        VERIFY_ARE_EQUAL(3u, m0->_peasants.size());
+
+        bool p1ExpectedToBeSummoned = false;
+        bool p2ExpectedToBeSummoned = false;
+        bool p3ExpectedToBeSummoned = false;
+
+        p1->SummonRequested([&](auto&&, auto&&) {
+            Log::Comment(L"p1 summoned");
+            VERIFY_IS_TRUE(p1ExpectedToBeSummoned);
+        });
+        p2->SummonRequested([&](auto&&, auto&&) {
+            Log::Comment(L"p2 summoned");
+            VERIFY_IS_TRUE(p2ExpectedToBeSummoned);
+        });
+        p3->SummonRequested([&](auto&&, auto&&) {
+            Log::Comment(L"p3 summoned");
+            VERIFY_IS_TRUE(p3ExpectedToBeSummoned);
+        });
+
+        {
+            Log::Comment(L"Activate the first peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p1->GetID(),
+                                                         p1->GetPID(), // USE PID as HWND, because these values don't _really_ matter
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p1->ActivateWindow(activatedArgs);
+        }
+        {
+            Log::Comment(L"Activate the second peasant, second desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p2->GetID(),
+                                                         p2->GetPID(), // USE PID as HWND, because these values don't _really_ matter
+                                                         guid2,
+                                                         winrt::clock().now() };
+            p2->ActivateWindow(activatedArgs);
+        }
+        {
+            Log::Comment(L"Activate the third peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p3->GetID(),
+                                                         p3->GetPID(), // USE PID as HWND, because these values don't _really_ matter
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p3->ActivateWindow(activatedArgs);
+        }
+
+        Log::Comment(L"Create a mock IVirtualDesktopManager to handle checking if a window is on a given desktop");
+        winrt::com_ptr<MockDesktopManager> manager;
+        manager.attach(new MockDesktopManager());
+        m0->_desktopManager = manager.try_as<IVirtualDesktopManager>();
+
+        auto firstCallback = [&](HWND h, BOOL* result) -> HRESULT {
+            Log::Comment(L"firstCallback: Checking if window is on desktop 1");
+
+            const uint64_t hwnd = reinterpret_cast<uint64_t>(h);
+            if (hwnd == peasant1PID || hwnd == peasant3PID)
+            {
+                *result = true;
+            }
+            else if (hwnd == peasant2PID)
+            {
+                *result = false;
+            }
+            else
+            {
+                VERIFY_IS_TRUE(false, L"IsWindowOnCurrentVirtualDesktop called with unexpected value");
+            }
+            return S_OK;
+        };
+        manager->pfnIsWindowOnCurrentVirtualDesktop = firstCallback;
+
+        Remoting::SummonWindowSelectionArgs args;
+
+        Log::Comment(L"Summon window three - it is the MRU on desktop 1");
+        p3ExpectedToBeSummoned = true;
+        args.OnCurrentDesktop(true);
+        m0->SummonWindow(args);
+        VERIFY_IS_TRUE(args.FoundMatch());
+
+        Log::Comment(L"Look for window 1 by name. When given a name, we don't care about OnCurrentDesktop.");
+        p1ExpectedToBeSummoned = true;
+        p2ExpectedToBeSummoned = false;
+        p3ExpectedToBeSummoned = false;
+        args.FoundMatch(false);
+        args.WindowName(L"one");
+        args.OnCurrentDesktop(true);
+        m0->SummonWindow(args);
+        VERIFY_IS_TRUE(args.FoundMatch());
+
+        Log::Comment(L"Look for window 2 by name. When given a name, we don't care about OnCurrentDesktop.");
+        p1ExpectedToBeSummoned = false;
+        p2ExpectedToBeSummoned = true;
+        p3ExpectedToBeSummoned = false;
+        args.FoundMatch(false);
+        args.WindowName(L"two");
+        args.OnCurrentDesktop(true);
+        m0->SummonWindow(args);
+        VERIFY_IS_TRUE(args.FoundMatch());
+
+        Log::Comment(L"Look for window 3 by name. When given a name, we don't care about OnCurrentDesktop.");
+        p1ExpectedToBeSummoned = false;
+        p2ExpectedToBeSummoned = false;
+        p3ExpectedToBeSummoned = true;
+        args.FoundMatch(false);
+        args.WindowName(L"three");
+        args.OnCurrentDesktop(true);
+        m0->SummonWindow(args);
+        VERIFY_IS_TRUE(args.FoundMatch());
     }
+
     void RemotingTests::TestSummonOnCurrentDeadWindow()
     {
-        VERIFY_IS_TRUE(false, L"TODO! write tests");
+        Log::Comment(L"Test that we can summon a window on the current desktop,"
+                     L" when the MRU window on that desktop dies.");
+
+        const winrt::guid guid1{ Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
+        const winrt::guid guid2{ Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
+
+        constexpr auto monarch0PID = 12345u;
+        constexpr auto peasant1PID = 23456u;
+        constexpr auto peasant2PID = 34567u;
+        constexpr auto peasant3PID = 45678u;
+
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+
+        com_ptr<Remoting::implementation::Peasant> p3;
+        p3.attach(new Remoting::implementation::Peasant(peasant3PID));
+
+        VERIFY_IS_NOT_NULL(m0);
+        VERIFY_IS_NOT_NULL(p1);
+        VERIFY_IS_NOT_NULL(p2);
+        VERIFY_IS_NOT_NULL(p3);
+        p1->WindowName(L"one");
+        p2->WindowName(L"two");
+        p3->WindowName(L"three");
+
+        VERIFY_ARE_EQUAL(0, p1->GetID());
+        VERIFY_ARE_EQUAL(0, p2->GetID());
+        VERIFY_ARE_EQUAL(0, p3->GetID());
+
+        m0->AddPeasant(*p1);
+        m0->AddPeasant(*p2);
+        m0->AddPeasant(*p3);
+
+        VERIFY_ARE_EQUAL(1, p1->GetID());
+        VERIFY_ARE_EQUAL(2, p2->GetID());
+        VERIFY_ARE_EQUAL(3, p3->GetID());
+
+        VERIFY_ARE_EQUAL(3u, m0->_peasants.size());
+
+        bool p1ExpectedToBeSummoned = false;
+        bool p2ExpectedToBeSummoned = false;
+        bool p3ExpectedToBeSummoned = false;
+
+        p1->SummonRequested([&](auto&&, auto&&) {
+            Log::Comment(L"p1 summoned");
+            VERIFY_IS_TRUE(p1ExpectedToBeSummoned);
+        });
+        p2->SummonRequested([&](auto&&, auto&&) {
+            Log::Comment(L"p2 summoned");
+            VERIFY_IS_TRUE(p2ExpectedToBeSummoned);
+        });
+        p3->SummonRequested([&](auto&&, auto&&) {
+            Log::Comment(L"p3 summoned");
+            VERIFY_IS_TRUE(p3ExpectedToBeSummoned);
+        });
+
+        {
+            Log::Comment(L"Activate the first peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p1->GetID(),
+                                                         p1->GetPID(), // USE PID as HWND, because these values don't _really_ matter
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p1->ActivateWindow(activatedArgs);
+        }
+        {
+            Log::Comment(L"Activate the second peasant, second desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p2->GetID(),
+                                                         p2->GetPID(), // USE PID as HWND, because these values don't _really_ matter
+                                                         guid2,
+                                                         winrt::clock().now() };
+            p2->ActivateWindow(activatedArgs);
+        }
+        {
+            Log::Comment(L"Activate the third peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p3->GetID(),
+                                                         p3->GetPID(), // USE PID as HWND, because these values don't _really_ matter
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p3->ActivateWindow(activatedArgs);
+        }
+
+        Log::Comment(L"Create a mock IVirtualDesktopManager to handle checking if a window is on a given desktop");
+        winrt::com_ptr<MockDesktopManager> manager;
+        manager.attach(new MockDesktopManager());
+        m0->_desktopManager = manager.try_as<IVirtualDesktopManager>();
+
+        auto firstCallback = [&](HWND h, BOOL* result) -> HRESULT {
+            Log::Comment(L"firstCallback: Checking if window is on desktop 1");
+
+            const uint64_t hwnd = reinterpret_cast<uint64_t>(h);
+            if (hwnd == peasant1PID || hwnd == peasant3PID)
+            {
+                *result = true;
+            }
+            else if (hwnd == peasant2PID)
+            {
+                *result = false;
+            }
+            else
+            {
+                VERIFY_IS_TRUE(false, L"IsWindowOnCurrentVirtualDesktop called with unexpected value");
+            }
+            return S_OK;
+        };
+        manager->pfnIsWindowOnCurrentVirtualDesktop = firstCallback;
+
+        Remoting::SummonWindowSelectionArgs args;
+
+        Log::Comment(L"Summon window three - it is the MRU on desktop 1");
+        p3ExpectedToBeSummoned = true;
+        args.OnCurrentDesktop(true);
+        m0->SummonWindow(args);
+        VERIFY_IS_TRUE(args.FoundMatch());
+
+        Log::Comment(L"Kill window 3. Window 1 is now the MRU on desktop 1.");
+        RemotingTests::_killPeasant(m0, p3->GetID());
+
+        Log::Comment(L"Summon window three - it is the MRU on desktop 1");
+        p1ExpectedToBeSummoned = true;
+        p2ExpectedToBeSummoned = false;
+        p3ExpectedToBeSummoned = false;
+        args.FoundMatch(false);
+        args.OnCurrentDesktop(true);
+        m0->SummonWindow(args);
+        VERIFY_IS_TRUE(args.FoundMatch());
     }
 }
