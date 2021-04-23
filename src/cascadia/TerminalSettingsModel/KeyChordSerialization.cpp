@@ -11,8 +11,9 @@ using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 static constexpr std::wstring_view CTRL_KEY{ L"ctrl" };
 static constexpr std::wstring_view SHIFT_KEY{ L"shift" };
 static constexpr std::wstring_view ALT_KEY{ L"alt" };
+static constexpr std::wstring_view WIN_KEY{ L"win" };
 
-static constexpr int MAX_CHORD_PARTS = 4;
+static constexpr int MAX_CHORD_PARTS = 5; // win+ctrl+alt+shift+key
 
 // clang-format off
 static const std::unordered_map<std::wstring_view, int32_t> vkeyNamePairs {
@@ -143,6 +144,10 @@ KeyChord KeyChordSerialization::FromString(const winrt::hstring& hstr)
         {
             modifiers |= KeyModifiers::Shift;
         }
+        else if (lowercase == WIN_KEY)
+        {
+            modifiers |= KeyModifiers::Windows;
+        }
         else
         {
             bool foundKey = false;
@@ -224,6 +229,11 @@ winrt::hstring KeyChordSerialization::ToString(const KeyChord& chord)
     std::wstring buffer{ L"" };
 
     // Add modifiers
+    if (WI_IsFlagSet(modifiers, KeyModifiers::Windows))
+    {
+        buffer += WIN_KEY;
+        buffer += L"+";
+    }
     if (WI_IsFlagSet(modifiers, KeyModifiers::Ctrl))
     {
         buffer += CTRL_KEY;

@@ -144,6 +144,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::shared_ptr<ThrottledFunc<>> _updatePatternLocations;
 
+        std::shared_ptr<ThrottledFunc<>> _playWarningBell;
+
         struct ScrollBarUpdate
         {
             std::optional<double> newValue;

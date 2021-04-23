@@ -182,6 +182,7 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
     RETURN_LAST_ERROR_IF_NULL(hThread);
     _hThread.reset(hThread);
     _dwThreadId = dwThreadId;
+    LOG_IF_FAILED(SetThreadDescription(hThread, L"ConPTY Signal Handler Thread"));
 
     return S_OK;
 }

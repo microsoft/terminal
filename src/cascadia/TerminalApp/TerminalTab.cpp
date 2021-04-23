@@ -510,6 +510,11 @@ namespace winrt::TerminalApp::implementation
         UpdateTitle();
     }
 
+    winrt::hstring TerminalTab::GetTabText() const
+    {
+        return _runtimeTabText;
+    }
+
     void TerminalTab::ResetTabText()
     {
         _runtimeTabText = L"";
@@ -784,21 +789,6 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        // Close
-        Controls::MenuFlyoutItem closeTabMenuItem;
-        Controls::FontIcon closeSymbol;
-        closeSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
-        closeSymbol.Glyph(L"\xE711");
-
-        closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
-            if (auto tab{ weakThis.get() })
-            {
-                tab->_CloseRequestedHandlers(nullptr, nullptr);
-            }
-        });
-        closeTabMenuItem.Text(RS_(L"TabClose"));
-        closeTabMenuItem.Icon(closeSymbol);
-
         // "Color..."
         Controls::MenuFlyoutItem chooseColorMenuItem;
         Controls::FontIcon colorPickSymbol;
@@ -870,8 +860,7 @@ namespace winrt::TerminalApp::implementation
         newTabFlyout.Items().Append(renameTabMenuItem);
         newTabFlyout.Items().Append(duplicateTabMenuItem);
         newTabFlyout.Items().Append(menuSeparator);
-        newTabFlyout.Items().Append(_CreateCloseSubMenu());
-        newTabFlyout.Items().Append(closeTabMenuItem);
+        _AppendCloseMenuItems(newTabFlyout);
         TabViewItem().ContextFlyout(newTabFlyout);
     }
 

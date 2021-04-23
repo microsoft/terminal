@@ -492,6 +492,11 @@ public:
         return TRUE;
     }
 
+    void ResetBottom() override
+    {
+        Log::Comment(L"ResetBottom MOCK called...");
+    }
+
     bool MoveToBottom() const override
     {
         Log::Comment(L"MoveToBottom MOCK called...");

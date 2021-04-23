@@ -88,6 +88,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool DeleteLines(const size_t count) = 0;
         virtual bool InsertLines(const size_t count) = 0;
 
+        virtual void ResetBottom() = 0;
         virtual bool MoveToBottom() const = 0;
 
         virtual bool PrivateGetColorTableEntry(const size_t index, COLORREF& value) const = 0;

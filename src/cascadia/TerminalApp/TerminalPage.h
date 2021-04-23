@@ -102,7 +102,7 @@ namespace winrt::TerminalApp::implementation
         // WINRT_OBSERVABLE_PROPERTY's, but we want them to raise
         // WindowNameForDisplay and WindowIdForDisplay instead
         winrt::hstring WindowName() const noexcept;
-        void WindowName(const winrt::hstring& value);
+        winrt::fire_and_forget WindowName(const winrt::hstring& value);
         uint64_t WindowId() const noexcept;
         void WindowId(const uint64_t& value);
         winrt::hstring WindowIdForDisplay() const noexcept;
@@ -320,6 +320,13 @@ namespace winrt::TerminalApp::implementation
         Windows::UI::Core::CoreCursor _defaultPointerCursor{ nullptr };
         void _HidePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
         void _RestorePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
+
+        void _PreviewActionHandler(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::Command& args);
+        void _EndPreview();
+        void _EndPreviewColorScheme();
+        void _PreviewColorScheme(const Microsoft::Terminal::Settings::Model::SetColorSchemeArgs& args);
+        winrt::Microsoft::Terminal::Settings::Model::Command _lastPreviewedCommand{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Model::TerminalSettings _originalSettings{ nullptr };
 
         void _OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
         void _HandleToggleInboundPty(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
