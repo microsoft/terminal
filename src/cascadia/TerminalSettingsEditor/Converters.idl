@@ -58,9 +58,4 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         DesktopWallpaperToEmptyStringConverter();
     };
-
-    runtimeclass NullCheckToVisibilityConverter : [default] Windows.UI.Xaml.Data.IValueConverter
-    {
-        NullCheckToVisibilityConverter();
-    };
 }
