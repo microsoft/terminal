@@ -5,11 +5,13 @@
 #include "Actions.h"
 #include "Actions.g.cpp"
 #include "ActionsPageNavigationState.g.cpp"
-#include "EnumEntry.h"
+#include "KeyBindingContainer.h"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
@@ -18,8 +20,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Actions::Actions()
     {
         InitializeComponent();
-
-        _filteredActions = winrt::single_threaded_observable_vector<Command>();
     }
 
     void Actions::OnNavigatedTo(const NavigationEventArgs& e)
@@ -39,26 +39,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             keyBindingList.push_back(command);
         }
         std::sort(begin(keyBindingList), end(keyBindingList), CommandComparator{});
-        _filteredActions = single_threaded_observable_vector<Command>(std::move(keyBindingList));
+
+        for (const auto& cmd : keyBindingList)
+        {
+            //const auto& container{ make<KeyBindingContainer>(cmd) };
+            const auto& container{ make<CommandViewModel>(cmd) };
+            KeyBindingListView().Items().Append(container);
+        }
     }
-
-    Collections::IObservableVector<Command> Actions::FilteredActions()
-    {
-        return _filteredActions;
-    }
-
-    void Actions::_OpenSettingsClick(const IInspectable& /*sender*/,
-                                     const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
-    {
-        const CoreWindow window = CoreWindow::GetForCurrentThread();
-        const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
-        const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
-        const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
-                                WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
-
-        const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
-
-        _State.RequestOpenJson(target);
-    }
-
 }

@@ -1,0 +1,238 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<ListViewItem x:Class="Microsoft.Terminal.Settings.Editor.KeyBindingContainer"
+              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+              xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+              xmlns:model="using:Microsoft.Terminal.Settings.Model"
+              HorizontalContentAlignment="Stretch"
+              AutomationProperties.AcceleratorKey="{x:Bind Action.KeyChordText, Mode=OneWay}"
+              AutomationProperties.Name="{x:Bind Action.Name, Mode=OneWay}"
+              mc:Ignorable="d">
+
+    <ListViewItem.Resources>
+        <ResourceDictionary>
+            <!--  These resources are HEAVILY copied from the command palette  -->
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <!--  TextBox colors !  -->
+                    <SolidColorBrush x:Key="TextControlBackground"
+                                     Color="#333333" />
+                    <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush"
+                                     Color="#B5B5B5" />
+                    <SolidColorBrush x:Key="TextControlForeground"
+                                     Color="#B5B5B5" />
+                    <SolidColorBrush x:Key="TextControlBorderBrush"
+                                     Color="#404040" />
+                    <SolidColorBrush x:Key="TextControlButtonForeground"
+                                     Color="#B5B5B5" />
+
+                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver"
+                                     Color="#404040" />
+                    <SolidColorBrush x:Key="TextControlForegroundPointerOver"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver"
+                                     Color="#404040" />
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver"
+                                     Color="#FF4343" />
+
+                    <SolidColorBrush x:Key="TextControlBackgroundFocused"
+                                     Color="#333333" />
+                    <SolidColorBrush x:Key="TextControlForegroundFocused"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="TextControlBorderBrushFocused"
+                                     Color="#404040" />
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPressed"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="TextControlButtonBackgroundPressed"
+                                     Color="#FF4343" />
+
+                    <!--  KeyChordText styles  -->
+                    <Style x:Key="KeyChordBorderStyle"
+                           TargetType="Border">
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="CornerRadius" Value="1" />
+                        <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
+                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+                    <Style x:Key="KeyChordTextBlockStyle"
+                           TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <!--  TextBox colors !  -->
+                    <SolidColorBrush x:Key="TextControlBackground"
+                                     Color="#CCCCCC" />
+                    <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush"
+                                     Color="#636363" />
+                    <SolidColorBrush x:Key="TextControlBorderBrush"
+                                     Color="#636363" />
+                    <SolidColorBrush x:Key="TextControlButtonForeground"
+                                     Color="#636363" />
+
+                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver"
+                                     Color="#DADADA" />
+                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver"
+                                     Color="#636363" />
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver"
+                                     Color="#FF4343" />
+
+                    <SolidColorBrush x:Key="TextControlBackgroundFocused"
+                                     Color="#CCCCCC" />
+                    <SolidColorBrush x:Key="TextControlBorderBrushFocused"
+                                     Color="#636363" />
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPressed"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="TextControlButtonBackgroundPressed"
+                                     Color="#FF4343" />
+
+                    <!--  KeyChordText styles  -->
+                    <Style x:Key="KeyChordBorderStyle"
+                           TargetType="Border">
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="CornerRadius" Value="1" />
+                        <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
+                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+                    <Style x:Key="KeyChordTextBlockStyle"
+                           TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+
+                    <!--  KeyChordText styles (use XAML defaults for High Contrast theme)  -->
+                    <Style x:Key="KeyChordBorderStyle"
+                           TargetType="Border" />
+                    <Style x:Key="KeyChordTextBlockStyle"
+                           TargetType="TextBlock" />
+
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
+            <local:StringIsEmptyConverter x:Key="CommandKeyChordVisibilityConverter" />
+            <model:IconPathConverter x:Key="IconSourceConverter" />
+        </ResourceDictionary>
+    </ListViewItem.Resources>
+
+    <!--This layout is strongly inspired by the Command Palette-->
+    <Grid ColumnSpacing="8">
+        <Grid.ColumnDefinitions>
+            <!--  command label  -->
+            <ColumnDefinition Width="*"
+                              MaxWidth="400" />
+            <!--  key chord  -->
+            <ColumnDefinition Width="*"
+                              MaxWidth="100" />
+            <!--  edit button  -->
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Grid.Column="0"
+                   Text="{x:Bind Action.Name, Mode=OneWay}" />
+
+        <!--
+            Inexplicably, we don't need to set the
+            AutomationProperties to Raw here, unlike in the
+            CommandPalette. We're not quite sure why.
+        -->
+        <Border Grid.Column="1"
+                Padding="2,0,2,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Style="{ThemeResource KeyChordBorderStyle}">
+
+            <TextBlock FontSize="12"
+                       Style="{ThemeResource KeyChordTextBlockStyle}"
+                       Text="{x:Bind Action.KeyChordText, Mode=OneWay}" />
+        </Border>
+
+        <!--  Edit Button  -->
+        <Button x:Name="EditButton"
+                Grid.Column="2"
+                Padding="3">
+            <!--CARLOS: Click="Edit_Click">-->
+            <FontIcon FontSize="12"
+                      Glyph="&#xE70F;" />
+        </Button>
+
+        <!--  Edit Mode Controls  -->
+        <StackPanel x:Name="EditModeStackPanel"
+                    Grid.Column="2"
+                    Orientation="Horizontal"
+                    Visibility="Collapsed">
+            
+            <!--  Cancel editing the action  -->
+            <Button x:Uid="EditCancel">
+                <!--CARLOS Click="EditCancel_Click">-->
+                <FontIcon FontSize="12"
+                          Glyph="&#xE711;" />
+            </Button>
+
+            <!--  Delete the current key binding  -->
+            <Button x:Uid="Delete">
+                <!--CARLOS Click="Delete_Click">-->
+                <Button.Content>
+                    <FontIcon FontSize="12"
+                              Glyph="&#xE74D;" />
+                </Button.Content>
+                <Button.Resources>
+                    <ResourceDictionary>
+                        <ResourceDictionary.ThemeDictionaries>
+                            <ResourceDictionary x:Key="Light">
+                                <SolidColorBrush x:Key="ButtonBackground"
+                                                 Color="Firebrick" />
+                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                                 Color="#C23232" />
+                                <SolidColorBrush x:Key="ButtonBackgroundPressed"
+                                                 Color="#A21212" />
+                                <SolidColorBrush x:Key="ButtonForeground"
+                                                 Color="White" />
+                                <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                 Color="White" />
+                                <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                 Color="White" />
+                            </ResourceDictionary>
+                            <ResourceDictionary x:Key="Dark">
+                                <SolidColorBrush x:Key="ButtonBackground"
+                                                 Color="Firebrick" />
+                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                                 Color="#C23232" />
+                                <SolidColorBrush x:Key="ButtonBackgroundPressed"
+                                                 Color="#A21212" />
+                                <SolidColorBrush x:Key="ButtonForeground"
+                                                 Color="White" />
+                                <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                 Color="White" />
+                                <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                 Color="White" />
+                            </ResourceDictionary>
+                            <ResourceDictionary x:Key="HighContrast">
+                                <SolidColorBrush x:Key="ButtonBackground"
+                                                 Color="{ThemeResource SystemColorButtonFaceColor}" />
+                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                                 Color="{ThemeResource SystemColorHighlightColor}" />
+                                <SolidColorBrush x:Key="ButtonBackgroundPressed"
+                                                 Color="{ThemeResource SystemColorHighlightColor}" />
+                                <SolidColorBrush x:Key="ButtonForeground"
+                                                 Color="{ThemeResource SystemColorButtonTextColor}" />
+                                <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                 Color="{ThemeResource SystemColorHighlightTextColor}" />
+                                <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                 Color="{ThemeResource SystemColorHighlightTextColor}" />
+                            </ResourceDictionary>
+                        </ResourceDictionary.ThemeDictionaries>
+                    </ResourceDictionary>
+                </Button.Resources>
+            </Button>
+
+        </StackPanel>
+    </Grid>
+</ListViewItem>

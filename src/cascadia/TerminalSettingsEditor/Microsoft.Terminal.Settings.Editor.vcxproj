@@ -81,6 +81,9 @@
     <ClInclude Include="Interaction.h">
       <DependentUpon>Interaction.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="KeyBindingContainer.h">
+      <DependentUpon>KeyBindingContainer.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Launch.h">
       <DependentUpon>Launch.xaml</DependentUpon>
     </ClInclude>
@@ -116,6 +119,9 @@
     </Page>
     <Page Include="Interaction.xaml">
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="KeyBindingContainer.xaml">
+      <Type>Designer</Type>
     </Page>
     <Page Include="Launch.xaml">
       <SubType>Designer</SubType>
@@ -178,6 +184,9 @@
     <ClCompile Include="Interaction.cpp">
       <DependentUpon>Interaction.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="KeyBindingContainer.cpp">
+      <DependentUpon>KeyBindingContainer.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="Launch.cpp">
       <DependentUpon>Launch.xaml</DependentUpon>
     </ClCompile>
@@ -214,6 +223,10 @@
     </Midl>
     <Midl Include="ColorSchemes.idl">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="KeyBindingContainer.idl">
+      <DependentUpon>KeyBindingContainer.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="Launch.idl">

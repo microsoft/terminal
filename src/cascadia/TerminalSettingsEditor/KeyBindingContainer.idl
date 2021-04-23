@@ -1,0 +1,14 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass KeyBindingContainer : Windows.UI.Xaml.Controls.ListViewItem
+    {
+        KeyBindingContainer(Microsoft.Terminal.Settings.Model.Command cmd);
+
+        Microsoft.Terminal.Settings.Model.Command Action { get; };
+
+        //event Windows.Foundation.TypedEventHandler<KeyBindingContainer, Object> Unbind;
+    };
+}
