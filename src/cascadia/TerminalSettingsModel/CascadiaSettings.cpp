@@ -261,7 +261,11 @@ void CascadiaSettings::ClearWarnings()
 
 void CascadiaSettings::AppendWarning(SettingsLoadWarnings warning)
 {
-    _warnings.Append(warning);
+    warning = warning;
+    int i = 0;
+    ++i;
+    return;
+    // _warnings.Append(warning);
 }
 
 winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Settings::Model::SettingsLoadErrors> CascadiaSettings::GetLoadingError()
@@ -382,15 +386,15 @@ void CascadiaSettings::_ValidateDefaultProfileExists()
         }
     }
 
-    if (nullDefaultProfile || defaultProfileNotInProfiles)
-    {
-        _warnings.Append(Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::MissingDefaultProfile);
-        // Use the first profile as the new default
+    // if (nullDefaultProfile || defaultProfileNotInProfiles)
+    // {
+    //     _warnings.Append(Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::MissingDefaultProfile);
+    //     // Use the first profile as the new default
 
-        // _temporarily_ set the default profile to the first profile. Because
-        // we're adding a warning, this settings change won't be re-serialized.
-        GlobalSettings().DefaultProfile(_allProfiles.GetAt(0).Guid());
-    }
+    //     // _temporarily_ set the default profile to the first profile. Because
+    //     // we're adding a warning, this settings change won't be re-serialized.
+    //     GlobalSettings().DefaultProfile(_allProfiles.GetAt(0).Guid());
+    // }
 }
 
 // Method Description:
@@ -425,10 +429,10 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
         _allProfiles.RemoveAt(*iter);
     }
 
-    if (foundDupe)
-    {
-        _warnings.Append(Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::DuplicateProfile);
-    }
+    // if (foundDupe)
+    // {
+    //     _warnings.Append(Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::DuplicateProfile);
+    // }
 }
 
 // Method Description:
@@ -630,15 +634,15 @@ void CascadiaSettings::_ValidateMediaResources()
         }
     }
 
-    if (invalidBackground)
-    {
-        _warnings.Append(SettingsLoadWarnings::InvalidBackgroundImage);
-    }
+    // if (invalidBackground)
+    // {
+    //     _warnings.Append(SettingsLoadWarnings::InvalidBackgroundImage);
+    // }
 
-    if (invalidIcon)
-    {
-        _warnings.Append(SettingsLoadWarnings::InvalidIcon);
-    }
+    // if (invalidIcon)
+    // {
+    //     _warnings.Append(SettingsLoadWarnings::InvalidIcon);
+    // }
 }
 
 // Method Description:
@@ -758,15 +762,16 @@ std::optional<winrt::guid> CascadiaSettings::_GetProfileGuidByIndex(std::optiona
 void CascadiaSettings::_ValidateKeybindings()
 {
     auto keybindingWarnings = _globals->KeybindingsWarnings();
+    return;
 
-    if (!keybindingWarnings.empty())
-    {
-        _warnings.Append(SettingsLoadWarnings::AtLeastOneKeybindingWarning);
-        for (auto warning : keybindingWarnings)
-        {
-            _warnings.Append(warning);
-        }
-    }
+    // if (!keybindingWarnings.empty())
+    // {
+    //     _warnings.Append(SettingsLoadWarnings::AtLeastOneKeybindingWarning);
+    //     for (auto warning : keybindingWarnings)
+    //     {
+    //         _warnings.Append(warning);
+    //     }
+    // }
 }
 
 // Method Description:
@@ -841,11 +846,14 @@ bool CascadiaSettings::_HasInvalidColorScheme(const Model::Command& command)
 //   we find any invalid background images.
 void CascadiaSettings::_ValidateNoGlobalsKey()
 {
-    // use isMember here. If you use [], you're actually injecting "globals": null.
-    if (_userSettings.isMember("globals"))
-    {
-        _warnings.Append(SettingsLoadWarnings::LegacyGlobalsProperty);
-    }
+    int i = 0;
+    ++i;
+    return;
+    // // use isMember here. If you use [], you're actually injecting "globals": null.
+    // if (_userSettings.isMember("globals"))
+    // {
+    //     _warnings.Append(SettingsLoadWarnings::LegacyGlobalsProperty);
+    // }
 }
 
 // Method Description

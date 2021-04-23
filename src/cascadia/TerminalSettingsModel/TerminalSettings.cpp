@@ -165,8 +165,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 ApplyColorScheme(scheme);
             }
-            // else if (std::strcmp(appearance.ColorSchemeName().c_str(), "_random"))
-            // else if (std::strcmp(appearance.ColorSchemeName().c_str(), "_random"))
             else if (appearance.ColorSchemeName() == winrt::to_hstring(L"_random"))
             {
                 const auto scheme = schemes.TryLookup(winrt::to_hstring(L"Tango Light"));
