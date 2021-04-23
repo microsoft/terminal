@@ -373,7 +373,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         {
             // send focus to the child window
             SetFocus(_interopWindowHandle);
-            // return 0; // eat the message
+            return 0;
         }
         break;
     }
@@ -918,7 +918,7 @@ void IslandWindow::UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Co
 
     for (int i = 0; i < ::base::saturated_cast<int>(hotkeyList.size()); i++)
     {
-        LOG_IF_WIN32_BOOL_FALSE(UnregisterHotKey(_window.get(), i));
+        LOG_IF_WIN32_BOOL_FALSE(UnregisterHotKey(_window.get(), static_cast<int>(i)));
     }
 }
 

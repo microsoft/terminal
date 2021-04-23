@@ -231,11 +231,18 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_selectedCommandChanged(const IInspectable& /*sender*/,
                                                  const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
+        const auto selectedCommand = _filteredActionsView().SelectedItem();
+        const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
         if (_currentMode == CommandPaletteMode::TabSwitchMode)
         {
-            const auto selectedCommand = _filteredActionsView().SelectedItem();
-            const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
             _switchToTab(filteredCommand);
+        }
+        else if (_currentMode == CommandPaletteMode::ActionMode && filteredCommand != nullptr)
+        {
+            if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            {
+                _PreviewActionHandlers(*this, actionPaletteItem.Command());
+            }
         }
     }
 
@@ -1083,6 +1090,8 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_close()
     {
         Visibility(Visibility::Collapsed);
+
+        _PreviewActionHandlers(*this, nullptr);
 
         // Reset visibility in case anchor mode tab switcher just finished.
         _searchBox().Visibility(Visibility::Visible);

@@ -566,7 +566,8 @@ bool AppHost::HasWindow()
 void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*sender*/,
                                    Remoting::CommandlineArgs args)
 {
-    // TODO! Should we summon the window whenever we dispatch a commandline to it? methinks yes, but not in this PR.
+    // Summon the window whenever we dispatch a commandline to it. This will
+    // make it obvious when a new tab/pane is created in a window.
     _window->SummonWindow();
     _logic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory());
 }
@@ -661,8 +662,7 @@ void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
     {
         if (const auto& summonArgs{ actionAndArgs.Args().try_as<Settings::Model::GlobalSummonArgs>() })
         {
-            Remoting::SummonWindowSelectionArgs args;
-            args.WindowName(summonArgs.Name());
+            Remoting::SummonWindowSelectionArgs args{ summonArgs.Name() };
 
             // desktop:any - MoveToCurrentDesktop=false, OnCurrentDesktop=false
             // desktop:toCurrent - MoveToCurrentDesktop=true, OnCurrentDesktop=false

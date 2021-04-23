@@ -586,6 +586,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring GlobalSummonArgs::GenerateName() const
     {
-        return L"";
+        std::wstringstream ss;
+        ss << std::wstring_view(RS_(L"GlobalSummonCommandKey"));
+
+        // "Summon the Terminal window"
+        // "Summon the Terminal window, name:\"{_Name}\""
+        if (!_Name.empty())
+        {
+            ss << L", name: ";
+            ss << std::wstring_view(_Name);
+        }
+        return winrt::hstring{ ss.str() };
     }
 }

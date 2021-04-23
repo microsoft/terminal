@@ -1199,6 +1199,7 @@ jpeg
 jpg
 JPN
 json
+jsonc
 jsoncpp
 jsprovider
 jumplist

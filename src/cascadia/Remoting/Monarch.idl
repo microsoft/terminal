@@ -20,9 +20,10 @@ namespace Microsoft.Terminal.Remoting
 
     [default_interface] runtimeclass SummonWindowSelectionArgs {
         SummonWindowSelectionArgs();
+        SummonWindowSelectionArgs(String windowName);
         String WindowName;
         Boolean OnCurrentDesktop;
-        // Other options:
+        // TODO GH#8888 Other options:
         // * CurrentMonitor
 
         Boolean FoundMatch;

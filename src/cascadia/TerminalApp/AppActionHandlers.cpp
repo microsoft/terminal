@@ -383,8 +383,27 @@ namespace winrt::TerminalApp::implementation
                 {
                     if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
                     {
+                        // Start by getting the current settings of the control
                         auto controlSettings = activeControl.Settings().as<TerminalSettings>();
-                        controlSettings.ApplyColorScheme(scheme);
+                        auto parentSettings = controlSettings;
+                        // Those are the _runtime_ settings however. What we
+                        // need to do is:
+                        //
+                        //   1. Blow away any colors set in the runtime settings.
+                        //   2. Apply the color scheme to the parent settings.
+                        //
+                        // 1 is important to make sure that the effects of
+                        // something like `colortool` are cleared when setting
+                        // the scheme.
+                        if (controlSettings.GetParent() != nullptr)
+                        {
+                            parentSettings = controlSettings.GetParent();
+                        }
+
+                        // ApplyColorScheme(nullptr) will clear the old color scheme.
+                        controlSettings.ApplyColorScheme(nullptr);
+                        parentSettings.ApplyColorScheme(scheme);
+
                         activeControl.UpdateSettings();
                         args.Handled(true);
                     }
@@ -756,11 +775,19 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleGlobalSummon(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {
+        // Manually return false. These shouldn't ever get here, except for when
+        // we fail to register for the global hotkey. In that case, returning
+        // false here will let the underlying terminal still process the key, as
+        // if it wasn't bound at all.
         args.Handled(false);
     }
     void TerminalPage::_HandleQuakeMode(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {
+        // Manually return false. These shouldn't ever get here, except for when
+        // we fail to register for the global hotkey. In that case, returning
+        // false here will let the underlying terminal still process the key, as
+        // if it wasn't bound at all.
         args.Handled(false);
     }
 }
