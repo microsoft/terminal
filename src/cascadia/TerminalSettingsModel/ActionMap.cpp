@@ -139,18 +139,27 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto actionMap{ make_self<ActionMap>() };
 
+        // copy _KeyMap (KeyChord --> ID)
         std::for_each(_KeyMap.begin(), _KeyMap.end(), [actionMap](const auto& pair) {
             actionMap->_KeyMap.insert(pair);
         });
 
+        // copy _ActionMap (ID --> Command)
         for (const auto& [actionID, cmd] : _ActionMap)
         {
             actionMap->_ActionMap.insert({ actionID, *(get_self<Command>(cmd)->Copy()) });
         }
 
+        // copy _NestedCommands (Name --> Command)
         for (const auto& [name, cmd] : _NestedCommands)
         {
             actionMap->_NestedCommands.Insert(name, *(get_self<Command>(cmd)->Copy()));
+        }
+
+        // repeat this for each of our parents
+        for (const auto& parent : _parents)
+        {
+            actionMap->_parents.push_back(std::move(parent->Copy()));
         }
 
         return actionMap;

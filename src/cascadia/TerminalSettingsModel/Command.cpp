@@ -72,12 +72,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _subcommands ? _subcommands.GetView() : nullptr;
     }
 
+    // Function Description:
+    // - reports if the current command has nested commands
+    // - This CANNOT detect { "name": "foo", "commands": null }
     bool Command::HasNestedCommands() const
     {
         return _subcommands ? _subcommands.Size() > 0 : false;
     }
 
-    bool Command::IsNestedCommand() const
+    // Function Description:
+    // - reports if the current command IS a nested command
+    // - This CAN be used to detect cases like { "name": "foo", "commands": null }
+    bool Command::IsNestedCommand() const noexcept
     {
         return _nestedCommand;
     }
