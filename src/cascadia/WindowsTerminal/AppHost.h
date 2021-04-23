@@ -71,7 +71,7 @@ private:
                                                   const winrt::TerminalApp::RenameWindowRequestedArgs args);
 
     GUID _CurrentDesktopGuid();
-    void _LazyLoadDesktopManager();
+    bool _LazyLoadDesktopManager();
 
     winrt::fire_and_forget _setupGlobalHotkeys();
     winrt::fire_and_forget _createNewTerminalWindow(winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs args);
