@@ -58,7 +58,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             std::size_t hashedArgs;
             if (const auto& args{ actionAndArgs.Args() })
             {
-                hashedArgs = args.Hash();
+                hashedArgs = gsl::narrow_cast<size_t>(args.Hash());
             }
             else
             {
