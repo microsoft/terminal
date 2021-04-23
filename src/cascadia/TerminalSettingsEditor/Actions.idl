@@ -5,11 +5,42 @@ import "EnumEntry.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
+    runtimeclass RebindKeysEventArgs
+    {
+        Microsoft.Terminal.Control.KeyChord OldKeys { get; };
+        Microsoft.Terminal.Control.KeyChord NewKeys { get; };
+    }
+
+    runtimeclass KeyBindingViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        // Settings Model side
+        String Name { get; };
+        String KeyChordText { get; };
+
+        // UI side
+        String UIAHelpText { get; };
+        Boolean ShowEditButton { get; };
+        Boolean IsInEditMode { get; };
+        String ProposedKeys;
+        Windows.UI.Xaml.Controls.Flyout AcceptChangesFlyout;
+
+        void EnterHoverMode();
+        void ExitHoverMode();
+        void FocusContainer();
+        void UnfocusContainer();
+        void FocusEditButton();
+        void UnfocusEditButton();
+        void ToggleEditMode();
+        void AttemptAcceptChanges();
+        void DeleteKeyBinding();
+
+        event Windows.Foundation.TypedEventHandler<KeyBindingViewModel, RebindKeysEventArgs> RebindKeysRequested;
+        event Windows.Foundation.TypedEventHandler<KeyBindingViewModel, Microsoft.Terminal.Control.KeyChord> DeleteKeyBindingRequested;
+    }
+
     runtimeclass ActionsPageNavigationState
     {
         Microsoft.Terminal.Settings.Model.CascadiaSettings Settings;
-        void RequestOpenJson(Microsoft.Terminal.Settings.Model.SettingsTarget target);
-        event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.SettingsTarget> OpenJson;
     };
 
     [default_interface] runtimeclass Actions : Windows.UI.Xaml.Controls.Page
@@ -17,7 +48,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Actions();
         ActionsPageNavigationState State { get; };
 
-        IObservableVector<Microsoft.Terminal.Settings.Model.Command> FilteredActions { get; };
-
+        IObservableVector<KeyBindingViewModel> KeyBindingList { get; };
     }
 }

@@ -286,14 +286,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == actionsTag)
         {
-            auto actionsState{ winrt::make<ActionsPageNavigationState>(_settingsClone) };
-            actionsState.OpenJson([weakThis = get_weak()](auto&&, auto&& arg) {
-                if (auto self{ weakThis.get() })
-                {
-                    self->_OpenJsonHandlers(nullptr, arg);
-                }
-            });
-            contentFrame().Navigate(xaml_typename<Editor::Actions>(), actionsState);
+            contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsPageNavigationState>(_settingsClone));
         }
         else if (clickedItemTag == colorSchemesTag)
         {

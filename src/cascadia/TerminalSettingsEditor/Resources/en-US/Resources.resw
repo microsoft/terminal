@@ -1087,4 +1087,26 @@
     <value>If checked, show all installed fonts in the list above. Otherwise, only show the list of monospace fonts.</value>
     <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
   </data>
+  <data name="Actions_DeleteConfirmationButton.Content" xml:space="preserve">
+    <value>Yes, delete key binding</value>
+  </data>
+  <data name="Actions_DeleteConfirmationMessage.Text" xml:space="preserve">
+    <value>Are you sure you want to delete this key binding?</value>
+  </data>
+  <data name="Actions_InvalidKeyChordMessage" xml:space="preserve">
+    <value>Invalid key chord. Please enter a valid key chord.</value>
+  </data>
+  <data name="Actions_RenameConflictConfirmationAcceptButton" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Actions_RenameConflictConfirmationMessage" xml:space="preserve">
+    <value>The provided key chord is already being used by the following action:</value>
+  </data>
+  <data name="Actions_RenameConflictConfirmationQuestion" xml:space="preserve">
+    <value>Would you like to overwrite that key binding?</value>
+  </data>
+  <data name="Actions_UnnamedCommandName" xml:space="preserve">
+    <value>&lt;unnamed command&gt;</value>
+    <comment>{Locked="&lt;"} {Locked="&gt;"} The text shown when referring to a command that is unnamed.</comment>
+  </data>
 </root>
