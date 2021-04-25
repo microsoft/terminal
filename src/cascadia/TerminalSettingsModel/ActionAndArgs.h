@@ -18,10 +18,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static Json::Value ToJson(const Model::ActionAndArgs& val);
 
         ActionAndArgs() = default;
+        ActionAndArgs(ShortcutAction action);
         ActionAndArgs(ShortcutAction action, IActionArgs args) :
             _Action{ action },
             _Args{ args } {};
-        com_ptr<ActionAndArgs> Copy() const;
+        Model::ActionAndArgs Copy() const;
+
+        bool Equals(const Model::ActionAndArgs& otherAction);
+        size_t Hash();
 
         hstring GenerateName() const;
 

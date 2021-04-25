@@ -5,6 +5,7 @@
 #include "ActionAndArgs.g.cpp"
 
 #include "JsonUtils.h"
+#include "HashUtils.h"
 
 #include <LibraryResources.h>
 
@@ -116,6 +117,62 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ALL_SHORTCUT_ACTIONS_WITH_ARGS
 #undef ON_ALL_ACTIONS_WITH_ARGS
     };
+
+    ActionAndArgs::ActionAndArgs(ShortcutAction action)
+    {
+        // Find the deserializer
+        const auto deserializersIter = argSerializerMap.find(action);
+        if (deserializersIter != argSerializerMap.end())
+        {
+            auto pfn = deserializersIter->second.first;
+            if (pfn)
+            {
+                // Call the deserializer on an empty JSON object.
+                // This ensures that we have a valid ActionArgs
+                std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> parseWarnings;
+                std::tie(_Args, parseWarnings) = pfn({});
+            }
+
+            // if an arg parser was registered, but failed,
+            // return the invalid ActionAndArgs we started with.
+            if (pfn && _Args == nullptr)
+            {
+                return;
+            }
+        }
+
+        // Either...
+        // (1) we don't have a deserializer, so it's ok for _Args to be null, or
+        // (2) we had one AND it worked, so _Args is set up properly
+        _Action = action;
+    }
+
+    bool ActionAndArgs::Equals(const Model::ActionAndArgs& otherAction)
+    {
+        if (!otherAction)
+        {
+            return false;
+        }
+
+        return Hash() == get_self<ActionAndArgs>(otherAction)->Hash();
+    }
+
+    size_t ActionAndArgs::Hash()
+    {
+        size_t hashedAction{ HashUtils::HashProperty(_Action) };
+
+        size_t hashedArgs{};
+        if (const auto& args{ _Args })
+        {
+            hashedArgs = gsl::narrow_cast<size_t>(args.Hash());
+        }
+        else
+        {
+            std::hash<IActionArgs> argsHash;
+            hashedArgs = argsHash(nullptr);
+        }
+        return hashedAction ^ hashedArgs;
+    }
 
     // Function Description:
     // - Attempts to match a string to a ShortcutAction. If there's no match, then
@@ -263,11 +320,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return static_cast<std::string>(UnboundKey);
     }
 
-    com_ptr<ActionAndArgs> ActionAndArgs::Copy() const
+    Model::ActionAndArgs ActionAndArgs::Copy() const
     {
-        auto copy{ winrt::make_self<ActionAndArgs>() };
-        copy->_Action = _Action;
-        copy->_Args = _Args ? _Args.Copy() : IActionArgs{ nullptr };
+        auto copy{ winrt::make<ActionAndArgs>() };
+        copy.Action(_Action);
+        copy.Args(_Args ? _Args.Copy() : IActionArgs{ nullptr });
         return copy;
     }
 

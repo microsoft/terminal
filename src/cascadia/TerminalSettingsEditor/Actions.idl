@@ -5,10 +5,18 @@ import "EnumEntry.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    runtimeclass RebindKeysEventArgs
+    runtimeclass ModifyKeyBindingEventArgs
     {
         Microsoft.Terminal.Control.KeyChord OldKeys { get; };
         Microsoft.Terminal.Control.KeyChord NewKeys { get; };
+        Microsoft.Terminal.Settings.Editor.ActionAndArgsViewModel OldActionVM { get; };
+        Microsoft.Terminal.Settings.Editor.ActionAndArgsViewModel NewActionVM { get; };
+    }
+
+    runtimeclass ActionAndArgsViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Name { get; };
+        Microsoft.Terminal.Settings.Model.ActionAndArgs ActionData { get; };
     }
 
     runtimeclass KeyBindingViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -21,6 +29,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean ShowEditButton { get; };
         Boolean IsInEditMode { get; };
         String ProposedKeys;
+        ActionAndArgsViewModel ProposedAction;
         Windows.UI.Xaml.Controls.Flyout AcceptChangesFlyout;
         String EditButtonName { get; };
         String CancelButtonName { get; };
@@ -34,11 +43,12 @@ namespace Microsoft.Terminal.Settings.Editor
         void ActionLostFocus();
         void EditButtonGettingFocus();
         void EditButtonLosingFocus();
+        IObservableVector<ActionAndArgsViewModel> AvailableActions { get; };
         void ToggleEditMode();
         void AttemptAcceptChanges();
         void DeleteKeyBinding();
 
-        event Windows.Foundation.TypedEventHandler<KeyBindingViewModel, RebindKeysEventArgs> RebindKeysRequested;
+        event Windows.Foundation.TypedEventHandler<KeyBindingViewModel, ModifyKeyBindingEventArgs> ModifyKeyBindingRequested;
         event Windows.Foundation.TypedEventHandler<KeyBindingViewModel, Microsoft.Terminal.Control.KeyChord> DeleteKeyBindingRequested;
     }
 

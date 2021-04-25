@@ -42,7 +42,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto command{ winrt::make_self<Command>() };
         command->_name = _name;
-        command->_ActionAndArgs = *get_self<implementation::ActionAndArgs>(_ActionAndArgs)->Copy();
+        command->_ActionAndArgs = _ActionAndArgs.Copy();
         command->_keyMappings = _keyMappings;
         command->_iconPath = _iconPath;
         command->_IterateOn = _IterateOn;

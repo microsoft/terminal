@@ -198,7 +198,21 @@
                         <!--  Command Name  -->
                         <TextBlock Grid.Column="0"
                                    Style="{StaticResource KeyBindingNameTextBlockStyle}"
-                                   Text="{x:Bind Name, Mode=OneWay}" />
+                                   Text="{x:Bind Name, Mode=OneWay}"
+                                   Visibility="{x:Bind IsInEditMode, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}" />
+
+                        <!--  Edit Mode: Action Combo-box  -->
+                        <ComboBox Grid.Column="0"
+                                  VerticalAlignment="Center"
+                                  ItemsSource="{x:Bind AvailableActions}"
+                                  SelectedItem="{x:Bind ProposedAction, Mode=TwoWay}"
+                                  Visibility="{x:Bind IsInEditMode, Mode=OneWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="local:ActionAndArgsViewModel">
+                                    <TextBlock Text="{x:Bind Name}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
 
                         <!--  Key Chord Text  -->
                         <Border Grid.Column="1"

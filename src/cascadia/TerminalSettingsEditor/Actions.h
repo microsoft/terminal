@@ -4,9 +4,10 @@
 #pragma once
 
 #include "Actions.g.h"
+#include "ActionAndArgsViewModel.g.h"
 #include "KeyBindingViewModel.g.h"
 #include "ActionsPageNavigationState.g.h"
-#include "RebindKeysEventArgs.g.h"
+#include "ModifyKeyBindingEventArgs.g.h"
 #include "Utils.h"
 #include "ViewModelHelpers.h"
 
@@ -20,25 +21,51 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     };
 
-    struct RebindKeysEventArgs : RebindKeysEventArgsT<RebindKeysEventArgs>
+    struct ActionAndArgsViewModelComparator
+    {
+        bool operator()(const Editor::ActionAndArgsViewModel& lhs, const Editor::ActionAndArgsViewModel& rhs) const
+        {
+            return lhs.Name() < rhs.Name();
+        }
+    };
+
+    struct ModifyKeyBindingEventArgs : ModifyKeyBindingEventArgsT<ModifyKeyBindingEventArgs>
     {
     public:
-        RebindKeysEventArgs(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys) :
+        ModifyKeyBindingEventArgs(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys, const Editor::ActionAndArgsViewModel& oldActionVM, const Editor::ActionAndArgsViewModel& newActionVM) :
             _OldKeys{ oldKeys },
-            _NewKeys{ newKeys } {}
+            _NewKeys{ newKeys },
+            _OldActionVM{ oldActionVM },
+            _NewActionVM{ newActionVM } {}
 
         WINRT_PROPERTY(Control::KeyChord, OldKeys, nullptr);
         WINRT_PROPERTY(Control::KeyChord, NewKeys, nullptr);
+        WINRT_PROPERTY(Editor::ActionAndArgsViewModel, OldActionVM, nullptr);
+        WINRT_PROPERTY(Editor::ActionAndArgsViewModel, NewActionVM, nullptr);
+    };
+
+    struct ActionAndArgsViewModel : ActionAndArgsViewModelT<ActionAndArgsViewModel>, ViewModelHelper<ActionAndArgsViewModel>
+    {
+    public:
+        ActionAndArgsViewModel(hstring name, const Model::ActionAndArgs& actionData) :
+            _Name{ name },
+            _ActionData{ actionData } {};
+
+        hstring Name() const noexcept { return _Name; }
+        Model::ActionAndArgs ActionData() const noexcept { return _ActionData.Copy(); }
+
+    private:
+        hstring _Name;
+        Model::ActionAndArgs _ActionData{ nullptr };
     };
 
     struct KeyBindingViewModel : KeyBindingViewModelT<KeyBindingViewModel>, ViewModelHelper<KeyBindingViewModel>
     {
     public:
-        KeyBindingViewModel(const Control::KeyChord& keys, const Settings::Model::Command& cmd);
+        KeyBindingViewModel(const Control::KeyChord& keys, const Editor::ActionAndArgsViewModel& actionViewModel, const Windows::Foundation::Collections::IObservableVector<Editor::ActionAndArgsViewModel>& availableActions);
 
-        hstring Name() const { return _Command.Name(); }
+        hstring Name() const { return _CurrentAction.Name(); }
         hstring KeyChordText() const { return _KeyChordText; }
-        Settings::Model::Command Command() const { return _Command; };
 
         // UIA Text
         hstring EditButtonName() const noexcept;
@@ -59,20 +86,29 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void AttemptAcceptChanges(hstring newKeyChordText);
         void DeleteKeyBinding() { _DeleteKeyBindingRequestedHandlers(*this, _Keys); }
 
-        VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsInEditMode, false);
+        // ProposedAction:   the entry selected by the combo box; may disagree with the settings model.
+        // CurrentAction:    the combo box item that maps to the settings model value.
+        // AvailableActions: the list of options in the combo box; both actions above must be in this list.
+        VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::ActionAndArgsViewModel, ProposedAction, nullptr);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::ActionAndArgsViewModel, CurrentAction, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ActionAndArgsViewModel>, AvailableActions, nullptr);
+
+        // ProposedKeys: the text shown in the text box; may disagree with the settings model.
+        // Keys:         the key chord bound in the settings model.
         VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, ProposedKeys);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Control::KeyChord, Keys, nullptr);
+
+        VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsInEditMode, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::UI::Xaml::Controls::Flyout, AcceptChangesFlyout, nullptr);
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsAutomationPeerAttached, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsHovered, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsContainerFocused, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsEditButtonFocused, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::UI::Xaml::Media::Brush, ContainerBackground, nullptr);
-        TYPED_EVENT(RebindKeysRequested, Editor::KeyBindingViewModel, Editor::RebindKeysEventArgs);
+        TYPED_EVENT(ModifyKeyBindingRequested, Editor::KeyBindingViewModel, Editor::ModifyKeyBindingEventArgs);
         TYPED_EVENT(DeleteKeyBindingRequested, Editor::KeyBindingViewModel, Terminal::Control::KeyChord);
 
     private:
-        Settings::Model::Command _Command{ nullptr };
         hstring _KeyChordText{};
     };
 
@@ -97,11 +133,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_PROPERTY(Editor::ActionsPageNavigationState, State, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::KeyBindingViewModel>, KeyBindingList);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ActionAndArgsViewModel>, AvailableActionAndArgs);
 
     private:
         void _ViewModelPropertyChangedHandler(const Windows::Foundation::IInspectable& senderVM, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
         void _ViewModelDeleteKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const Control::KeyChord& args);
-        void _ViewModelRebindKeysHandler(const Editor::KeyBindingViewModel& senderVM, const Editor::RebindKeysEventArgs& args);
+        void _ViewModelModifyKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const Editor::ModifyKeyBindingEventArgs& args);
 
         std::optional<uint32_t> _GetContainerIndexByKeyChord(const Control::KeyChord& keys);
 

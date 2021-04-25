@@ -23,6 +23,9 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass ActionAndArgs {
         ActionAndArgs();
         ActionAndArgs(ShortcutAction action, IActionArgs args);
+        ActionAndArgs Copy();
+
+        Boolean Equals(ActionAndArgs otherAction);
 
         IActionArgs Args;
         ShortcutAction Action;
