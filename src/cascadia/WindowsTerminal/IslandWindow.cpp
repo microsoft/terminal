@@ -965,13 +965,16 @@ void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal
 // - <none>
 // Return Value:
 // - <none>
-winrt::fire_and_forget IslandWindow::SummonWindow()
+winrt::fire_and_forget IslandWindow::SummonWindow(const bool toggleVisibility)
 {
     // On the foreground thread:
     co_await winrt::resume_foreground(_rootGrid.Dispatcher());
 
-    HWND foregroundWindow = GetForegroundWindow();
-    if (foregroundWindow == _window.get())
+    // * If the user doesn't want to toggleVisibility, then just always try to
+    //   activate.
+    // * If the user does want to toggleVisibility, then dismiss the window if
+    //   we're the current foreground window.
+    if (toggleVisibility && GetForegroundWindow() == _window.get())
     {
         _globalDismissWindow();
     }

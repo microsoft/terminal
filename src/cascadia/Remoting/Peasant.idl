@@ -33,6 +33,7 @@ namespace Microsoft.Terminal.Remoting
     [default_interface] runtimeclass SummonWindowBehavior {
         SummonWindowBehavior();
         Boolean MoveToCurrentDesktop;
+        Boolean ToggleVisibility;
         // Other options:
         // * CurrentMonitor
     }

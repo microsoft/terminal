@@ -41,7 +41,7 @@ public:
     void UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList);
     void SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList);
 
-    winrt::fire_and_forget SummonWindow();
+    winrt::fire_and_forget SummonWindow(const bool toggleVisibility);
 
 #pragma endregion
 
