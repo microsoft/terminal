@@ -247,7 +247,15 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
 {
     THROW_HR_IF_NULL(E_INVALIDARG, source);
 
-    auto duplicated{ _userDefaultProfileSettings->CreateChild() };
+    winrt::com_ptr<Profile> duplicated;
+    if (_userDefaultProfileSettings)
+    {
+        duplicated = _userDefaultProfileSettings->CreateChild();
+    }
+    else
+    {
+        duplicated = winrt::make_self<Profile>();
+    }
     _allProfiles.Append(*duplicated);
 
     if (!source.Hidden())
