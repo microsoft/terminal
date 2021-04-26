@@ -1009,6 +1009,7 @@ horiz
 HORZ
 hostable
 hostlib
+hotkeys
 HPA
 HPAINTBUFFER
 HPCON
@@ -1204,6 +1205,7 @@ jpeg
 jpg
 JPN
 json
+jsonc
 jsoncpp
 jsprovider
 jumplist
@@ -2403,6 +2405,7 @@ titlebar
 TITLEISLINKNAME
 TJson
 tl
+TLambda
 TLEN
 Tlg
 Tlgdata

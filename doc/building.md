@@ -9,7 +9,13 @@ git submodule update --init --recursive
 
 OpenConsole.sln may be built from within Visual Studio or from the command-line using a set of convenience scripts & tools in the **/tools** directory:
 
-When using Visual Studio, be sure to set up the path for code formatting. This can be done in Visual Studio by going to Tools > Options > Text Editor > C++ > Formatting and checking "Use custom clang-format.exe file" and choosing the clang-format.exe in the repository at /dep/llvm/clang-format.exe by clicking "browse" right under the check box.
+When using Visual Studio, be sure to set up the path for code formatting. To download the required clang-format.exe file, follow one of the building instructions below and run:
+```powershell
+Import-Module .\tools\OpenConsole.psm1
+Set-MsBuildDevEnvironment
+Get-Format
+```
+After, go to Tools > Options > Text Editor > C++ > Formatting and checking "Use custom clang-format.exe file" in Visual Studio and choose the clang-format.exe in the repository at /packages/clang-format.win-x86.10.0.0/tools/clang-format.exe by clicking "browse" right under the check box.
 
 ### Building in PowerShell
 

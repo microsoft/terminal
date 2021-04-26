@@ -588,7 +588,7 @@ namespace winrt::TerminalApp::implementation
         // Use the default profile to determine how big of a window we need.
         const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
 
-        auto proposedSize = TermControl::GetProposedDimensions(settings, dpi);
+        auto proposedSize = TermControl::GetProposedDimensions(settings.DefaultSettings(), dpi);
 
         const float scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
 
@@ -928,12 +928,32 @@ namespace winrt::TerminalApp::implementation
         _ApplyTheme(_settings.GlobalSettings().Theme());
     }
 
+    // Function Description:
+    // Returns the current app package or nullptr.
+    // TRANSITIONAL
+    // Exists to work around a compiler bug. This function encapsulates the
+    // exception handling that we used to keep around calls to Package::Current,
+    // so that when it's called inside a coroutine and fails it doesn't explode
+    // terribly.
+    static winrt::Windows::ApplicationModel::Package GetCurrentPackageNoThrow() noexcept
+    {
+        try
+        {
+            return winrt::Windows::ApplicationModel::Package::Current();
+        }
+        catch (...)
+        {
+            // discard any exception -- literally pretend we're not in a package
+        }
+        return nullptr;
+    }
+
     fire_and_forget AppLogic::_ApplyStartupTaskStateChange()
     try
     {
         // First, make sure we're running in a packaged context. This method
         // won't work, and will crash mysteriously if we're running unpackaged.
-        const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
+        const auto package{ GetCurrentPackageNoThrow() };
         if (package == nullptr)
         {
             return;

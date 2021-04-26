@@ -207,11 +207,11 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Attempts to update the settings of this tab's tree of panes.
     // Arguments:
-    // - settings: The new TerminalSettings to apply to any matching controls
+    // - settings: The new TerminalSettingsCreateResult to apply to any matching controls
     // - profile: The GUID of the profile these settings should apply to.
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
+    void TerminalTab::UpdateSettings(const TerminalSettingsCreateResult& settings, const GUID& profile)
     {
         _rootPane->UpdateSettings(settings, profile);
 
@@ -510,6 +510,11 @@ namespace winrt::TerminalApp::implementation
         UpdateTitle();
     }
 
+    winrt::hstring TerminalTab::GetTabText() const
+    {
+        return _runtimeTabText;
+    }
+
     void TerminalTab::ResetTabText()
     {
         _runtimeTabText = L"";
@@ -666,6 +671,11 @@ namespace winrt::TerminalApp::implementation
 
         _RecalculateAndApplyReadOnly();
 
+        if (const auto control{ pane->GetTerminalControl() })
+        {
+            control.TaskbarProgressChanged();
+        }
+
         // Raise our own ActivePaneChanged event.
         _ActivePaneChangedHandlers();
     }
@@ -779,21 +789,6 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        // Close
-        Controls::MenuFlyoutItem closeTabMenuItem;
-        Controls::FontIcon closeSymbol;
-        closeSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
-        closeSymbol.Glyph(L"\xE711");
-
-        closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
-            if (auto tab{ weakThis.get() })
-            {
-                tab->_CloseRequestedHandlers(nullptr, nullptr);
-            }
-        });
-        closeTabMenuItem.Text(RS_(L"TabClose"));
-        closeTabMenuItem.Icon(closeSymbol);
-
         // "Color..."
         Controls::MenuFlyoutItem chooseColorMenuItem;
         Controls::FontIcon colorPickSymbol;
@@ -865,8 +860,7 @@ namespace winrt::TerminalApp::implementation
         newTabFlyout.Items().Append(renameTabMenuItem);
         newTabFlyout.Items().Append(duplicateTabMenuItem);
         newTabFlyout.Items().Append(menuSeparator);
-        newTabFlyout.Items().Append(_CreateCloseSubMenu());
-        newTabFlyout.Items().Append(closeTabMenuItem);
+        _AppendCloseMenuItems(newTabFlyout);
         TabViewItem().ContextFlyout(newTabFlyout);
     }
 

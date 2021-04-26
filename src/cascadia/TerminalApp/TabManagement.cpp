@@ -83,9 +83,9 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingUInt32(tabCount, "TabCount", "Count of tabs currently opened in TerminalApp"),
             TraceLoggingBool(usedManualProfile, "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
             TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
-            TraceLoggingBool(settings.UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
-            TraceLoggingFloat64(settings.TintOpacity(), "TintOpacity", "Opacity preference from the settings"),
-            TraceLoggingWideString(settings.FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
+            TraceLoggingBool(settings.DefaultSettings().UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
+            TraceLoggingFloat64(settings.DefaultSettings().TintOpacity(), "TintOpacity", "Opacity preference from the settings"),
+            TraceLoggingWideString(settings.DefaultSettings().FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
             TraceLoggingWideString(schemeName.data(), "SchemeName", "Color scheme set in the settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
@@ -99,11 +99,11 @@ namespace winrt::TerminalApp::implementation
     // - profileGuid: ID to use to lookup profile settings for this connection
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
     // - existingConnection: optionally receives a connection from the outside world instead of attempting to create one
-    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings, TerminalConnection::ITerminalConnection existingConnection)
+    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, const TerminalSettingsCreateResult& settings, TerminalConnection::ITerminalConnection existingConnection)
     {
         // Initialize the new tab
         // Create a connection based on the values in our settings object if we weren't given one.
-        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profileGuid, settings);
+        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profileGuid, settings.DefaultSettings());
 
         TerminalConnection::ITerminalConnection debugConnection{ nullptr };
         if (_settings.GlobalSettings().DebugFeaturesEnabled())
@@ -189,7 +189,7 @@ namespace winrt::TerminalApp::implementation
             newTabImpl->UpdateIcon(profile.Icon());
         }
 
-        tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
+        tabViewItem.PointerReleased({ this, &TerminalPage::_OnTabClick });
 
         // When the tab requests close, try to close it (prompt for approval, if required)
         newTabImpl->CloseRequested([weakTab, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
@@ -319,15 +319,24 @@ namespace winrt::TerminalApp::implementation
             const auto& profileGuid = tab.GetFocusedProfile();
             if (profileGuid.has_value())
             {
-                const auto settings{ TerminalSettings::CreateWithProfileByID(_settings, profileGuid.value(), *_bindings) };
+                const auto settingsCreateResult{ TerminalSettings::CreateWithProfileByID(_settings, profileGuid.value(), *_bindings) };
                 const auto workingDirectory = tab.GetActiveTerminalControl().WorkingDirectory();
                 const auto validWorkingDirectory = !workingDirectory.empty();
                 if (validWorkingDirectory)
                 {
-                    settings.StartingDirectory(workingDirectory);
+                    settingsCreateResult.DefaultSettings().StartingDirectory(workingDirectory);
                 }
 
-                _CreateNewTabFromSettings(profileGuid.value(), settings);
+                _CreateNewTabFromSettings(profileGuid.value(), settingsCreateResult);
+
+                const auto runtimeTabText{ tab.GetTabText() };
+                if (!runtimeTabText.empty())
+                {
+                    if (auto newTab{ _GetFocusedTabImpl() })
+                    {
+                        newTab->SetTabText(runtimeTabText);
+                    }
+                }
             }
         }
         CATCH_LOG();
@@ -402,13 +411,8 @@ namespace winrt::TerminalApp::implementation
             if (tabSwitchMode == TabSwitcherMode::MostRecentlyUsed)
             {
                 const auto newSelectedTab = _mruTabs.GetAt(0);
-
-                uint32_t newSelectedIndex;
-                if (_tabs.IndexOf(newSelectedTab, newSelectedIndex))
-                {
-                    _UpdatedSelectedTab(newSelectedIndex);
-                    _tabView.SelectedItem(newSelectedTab.TabViewItem());
-                }
+                _UpdatedSelectedTab(newSelectedTab);
+                _tabView.SelectedItem(newSelectedTab.TabViewItem());
             }
             else
             {
@@ -427,13 +431,13 @@ namespace winrt::TerminalApp::implementation
                 const auto newSelectedIndex = std::clamp<int32_t>(tabIndex - 1, 0, _tabs.Size());
                 // _UpdatedSelectedTab will do the work of setting up the new tab as
                 // the focused one, and unfocusing all the others.
-                _UpdatedSelectedTab(newSelectedIndex);
+                auto newSelectedTab{ _tabs.GetAt(newSelectedIndex) };
+                _UpdatedSelectedTab(newSelectedTab);
 
                 // Also, we need to _manually_ set the SelectedItem of the tabView
                 // here. If we don't, then the TabView will technically not have a
                 // selected item at all, which can make things like ClosePane not
                 // work correctly.
-                auto newSelectedTab{ _tabs.GetAt(newSelectedIndex) };
                 _tabView.SelectedItem(newSelectedTab.TabViewItem());
             }
         }
@@ -490,15 +494,15 @@ namespace winrt::TerminalApp::implementation
     {
         if (tabIndex >= 0 && tabIndex < _tabs.Size())
         {
+            auto tab{ _tabs.GetAt(tabIndex) };
             if (_startupState == StartupState::InStartup)
             {
-                auto tab{ _tabs.GetAt(tabIndex) };
                 _tabView.SelectedItem(tab.TabViewItem());
-                _UpdatedSelectedTab(tabIndex);
+                _UpdatedSelectedTab(tab);
             }
             else
             {
-                _SetFocusedTabIndex(tabIndex);
+                _SetFocusedTab(tab);
             }
 
             return true;
@@ -584,10 +588,10 @@ namespace winrt::TerminalApp::implementation
     //   in TerminalPage::_OnTabSelectionChanged, where we'll mark the new tab
     //   as focused.
     // Arguments:
-    // - tabIndex: the index in the list of tabs to focus.
+    // - tab: tab to focus.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::_SetFocusedTabIndex(const uint32_t tabIndex)
+    winrt::fire_and_forget TerminalPage::_SetFocusedTab(const winrt::TerminalApp::TabBase tab)
     {
         // GH#1117: This is a workaround because _tabView.SelectedIndex(tabIndex)
         //          sometimes set focus to an incorrect tab after removing some tabs
@@ -597,8 +601,12 @@ namespace winrt::TerminalApp::implementation
 
         if (auto page{ weakThis.get() })
         {
-            auto tabToFocus = page->_tabs.GetAt(tabIndex);
-            _tabView.SelectedItem(tabToFocus.TabViewItem());
+            // Make sure the tab was not removed
+            uint32_t tabIndex{};
+            if (_tabs.IndexOf(tab, tabIndex))
+            {
+                _tabView.SelectedItem(tab.TabViewItem());
+            }
         }
     }
 
@@ -722,7 +730,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_UpdatedSelectedTab(const int32_t index)
+    void TerminalPage::_UpdatedSelectedTab(const winrt::TerminalApp::TabBase& tab)
     {
         // Unfocus all the tabs.
         for (auto tab : _tabs)
@@ -730,41 +738,36 @@ namespace winrt::TerminalApp::implementation
             tab.Focus(FocusState::Unfocused);
         }
 
-        if (index >= 0)
+        try
         {
-            try
+            _tabContent.Children().Clear();
+            _tabContent.Children().Append(tab.Content());
+
+            // GH#7409: If the tab switcher is open, then we _don't_ want to
+            // automatically focus the new tab here. The tab switcher wants
+            // to be able to "preview" the selected tab as the user tabs
+            // through the menu, but if we toss the focus to the control
+            // here, then the user won't be able to navigate the ATS any
+            // longer.
+            //
+            // When the tab switcher is eventually dismissed, the focus will
+            // get tossed back to the focused terminal control, so we don't
+            // need to worry about focus getting lost.
+            if (CommandPalette().Visibility() != Visibility::Visible)
             {
-                auto tab{ _tabs.GetAt(index) };
-
-                _tabContent.Children().Clear();
-                _tabContent.Children().Append(tab.Content());
-
-                // GH#7409: If the tab switcher is open, then we _don't_ want to
-                // automatically focus the new tab here. The tab switcher wants
-                // to be able to "preview" the selected tab as the user tabs
-                // through the menu, but if we toss the focus to the control
-                // here, then the user won't be able to navigate the ATS any
-                // longer.
-                //
-                // When the tab switcher is eventually dismissed, the focus will
-                // get tossed back to the focused terminal control, so we don't
-                // need to worry about focus getting lost.
-                if (CommandPalette().Visibility() != Visibility::Visible)
-                {
-                    tab.Focus(FocusState::Programmatic);
-                    _UpdateMRUTab(index);
-                }
-
-                tab.TabViewItem().StartBringIntoView();
-
-                // Raise an event that our title changed
-                if (_settings.GlobalSettings().ShowTitleInTitlebar())
-                {
-                    _TitleChangedHandlers(*this, tab.Title());
-                }
+                tab.Focus(FocusState::Programmatic);
+                _UpdateMRUTab(tab);
             }
-            CATCH_LOG();
+
+            tab.TabViewItem().StartBringIntoView();
+
+            // Raise an event that our title changed
+            if (_settings.GlobalSettings().ShowTitleInTitlebar())
+            {
+                _TitleChangedHandlers(*this, tab.Title());
+            }
         }
+        CATCH_LOG();
     }
 
     // Method Description:
@@ -779,7 +782,11 @@ namespace winrt::TerminalApp::implementation
         {
             auto tabView = sender.as<MUX::Controls::TabView>();
             auto selectedIndex = tabView.SelectedIndex();
-            _UpdatedSelectedTab(selectedIndex);
+            if (selectedIndex >= 0 && selectedIndex < gsl::narrow_cast<int32_t>(_tabs.Size()))
+            {
+                const auto tab{ _tabs.GetAt(selectedIndex) };
+                _UpdatedSelectedTab(tab);
+            }
         }
     }
 
@@ -803,13 +810,12 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Bumps the tab in its in-order index up to the top of the mru list.
     // Arguments:
-    // - index: the in-order index of the tab to bump.
+    // - tab: tab to bump.
     // Return Value:
     // - <none>
-    void TerminalPage::_UpdateMRUTab(const uint32_t index)
+    void TerminalPage::_UpdateMRUTab(const winrt::TerminalApp::TabBase& tab)
     {
         uint32_t mruIndex;
-        const auto tab = _tabs.GetAt(index);
         if (_mruTabs.IndexOf(tab, mruIndex))
         {
             if (mruIndex > 0)
@@ -891,10 +897,10 @@ namespace winrt::TerminalApp::implementation
         if (focusAlways || !_newTabButton.Flyout().IsOpen())
         {
             // Return focus to the active control
-            if (auto index{ _GetFocusedTabIndex() })
+            if (auto tab{ _GetFocusedTab() })
             {
-                _tabs.GetAt(*index).Focus(FocusState::Programmatic);
-                _UpdateMRUTab(index.value());
+                tab.Focus(FocusState::Programmatic);
+                _UpdateMRUTab(tab);
             }
         }
     }

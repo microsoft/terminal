@@ -29,10 +29,8 @@ namespace Microsoft::Console::VirtualTerminal
     {
     public:
         virtual ~ConGetSet() = default;
-        virtual bool GetConsoleCursorInfo(CONSOLE_CURSOR_INFO& cursorInfo) const = 0;
         virtual bool GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) const = 0;
         virtual bool SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) = 0;
-        virtual bool SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO& cursorInfo) = 0;
         virtual bool SetConsoleCursorPosition(const COORD position) = 0;
 
         virtual bool PrivateIsVtInputEnabled() const = 0;
@@ -90,6 +88,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool DeleteLines(const size_t count) = 0;
         virtual bool InsertLines(const size_t count) = 0;
 
+        virtual void ResetBottom() = 0;
         virtual bool MoveToBottom() const = 0;
 
         virtual bool PrivateGetColorTableEntry(const size_t index, COLORREF& value) const = 0;

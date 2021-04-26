@@ -39,6 +39,9 @@ constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 // The minimum delay between updating the locations of regex patterns
 constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
 
+// The minimum delay between emitting warning bells
+constexpr const auto TerminalWarningBellInterval = std::chrono::milliseconds(1000);
+
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::CopyFormat);
 
 namespace winrt::Microsoft::Terminal::Control::implementation
@@ -91,7 +94,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#8969: pre-seed working directory to prevent potential races
         _terminal->SetWorkingDirectory(_settings.StartingDirectory());
 
-        auto pfnWarningBell = std::bind(&TermControl::_TerminalWarningBell, this);
+        auto pfnWarningBell = [this]() {
+            _playWarningBell->Run();
+        };
         _terminal->SetWarningBellCallback(pfnWarningBell);
 
         auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
@@ -165,6 +170,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             },
             UpdatePatternLocationsInterval,
+            Dispatcher());
+
+        _playWarningBell = std::make_shared<ThrottledFunc<>>(
+            [weakThis = get_weak()]() {
+                if (auto control{ weakThis.get() })
+                {
+                    control->_TerminalWarningBell();
+                }
+            },
+            TerminalWarningBellInterval,
             Dispatcher());
 
         _updateScrollBar = std::make_shared<ThrottledFunc<ScrollBarUpdate>>(
@@ -295,70 +310,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Given new settings for this profile, applies the settings to the current terminal.
-    // - This method is separate from UpdateSettings because there is an apparent optimizer
-    //   issue that causes one of our hstring -> wstring_view conversions to result in garbage,
-    //   but only from a coroutine context. See GH#8723.
-    // - INVARIANT: This method must be called from the UI thread.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TermControl::_UpdateSettingsOnUIThread()
-    {
-        if (_closing)
-        {
-            return;
-        }
-
-        auto lock = _terminal->LockForWriting();
-
-        // Update our control settings
-        _ApplyUISettings(_settings);
-
-        // Update the terminal core with its new Core settings
-        _terminal->UpdateSettings(_settings);
-
-        if (!_initializedTerminal)
-        {
-            // If we haven't initialized, there's no point in continuing.
-            // Initialization will handle the renderer settings.
-            return;
-        }
-
-        // Update DxEngine settings under the lock
-        _renderEngine->SetSelectionBackground(til::color{ _settings.SelectionBackground() });
-
-        _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-        _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
-        _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
-        _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
-
-        switch (_settings.AntialiasingMode())
-        {
-        case TextAntialiasingMode::Cleartype:
-            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
-            break;
-        case TextAntialiasingMode::Aliased:
-            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
-            break;
-        case TextAntialiasingMode::Grayscale:
-        default:
-            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
-            break;
-        }
-
-        // Refresh our font with the renderer
-        const auto actualFontOldSize = _actualFont.GetSize();
-        _UpdateFont();
-        const auto actualFontNewSize = _actualFont.GetSize();
-        if (actualFontNewSize != actualFontOldSize)
-        {
-            _RefreshSizeUnderLock();
-        }
-    }
-
-    // Method Description:
     // - Given Settings having been updated, applies the settings to the current terminal.
     // Return Value:
     // - <none>
@@ -370,11 +321,31 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // terminal.
         co_await winrt::resume_foreground(Dispatcher());
 
-        // If 'weakThis' is locked, then we can safely work with 'this'
-        if (auto control{ weakThis.get() })
+        // Take the lock before calling the helper functions to update the settings and appearance
+        auto lock = _terminal->LockForWriting();
+
+        _UpdateSettingsFromUIThreadUnderLock(_settings);
+
+        auto appearance = _settings.try_as<IControlAppearance>();
+        if (!_focused && _UnfocusedAppearance)
         {
-            _UpdateSettingsOnUIThread();
+            appearance = _UnfocusedAppearance;
         }
+        _UpdateAppearanceFromUIThreadUnderLock(appearance);
+    }
+
+    // Method Description:
+    // - Dispatches a call to the UI thread and updates the appearance
+    // Arguments:
+    // - newAppearance: the new appearance to set
+    winrt::fire_and_forget TermControl::UpdateAppearance(const IControlAppearance newAppearance)
+    {
+        // Dispatch a call to the UI thread
+        co_await winrt::resume_foreground(Dispatcher());
+
+        // Take the lock before calling the helper function to update the appearance
+        auto lock = _terminal->LockForWriting();
+        _UpdateAppearanceFromUIThreadUnderLock(newAppearance);
     }
 
     // Method Description:
@@ -412,6 +383,130 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
+    // - Updates the settings of the current terminal.
+    // - This method is separate from UpdateSettings because there is an apparent optimizer
+    //   issue that causes one of our hstring -> wstring_view conversions to result in garbage,
+    //   but only from a coroutine context. See GH#8723.
+    // - INVARIANT: This method must be called from the UI thread.
+    // - INVARIANT: This method can only be called if the caller has the writing lock on the terminal.
+    // Arguments:
+    // - newSettings: the new settings to set
+    void TermControl::_UpdateSettingsFromUIThreadUnderLock(IControlSettings newSettings)
+    {
+        if (_closing)
+        {
+            return;
+        }
+
+        // Update our control settings
+        _ApplyUISettings(_settings);
+
+        // Update the terminal core with its new Core settings
+        _terminal->UpdateSettings(_settings);
+
+        if (!_initializedTerminal)
+        {
+            // If we haven't initialized, there's no point in continuing.
+            // Initialization will handle the renderer settings.
+            return;
+        }
+
+        // Update DxEngine settings under the lock
+        _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
+        _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+
+        switch (_settings.AntialiasingMode())
+        {
+        case TextAntialiasingMode::Cleartype:
+            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
+            break;
+        case TextAntialiasingMode::Aliased:
+            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
+            break;
+        case TextAntialiasingMode::Grayscale:
+        default:
+            _renderEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+            break;
+        }
+
+        // Refresh our font with the renderer
+        const auto actualFontOldSize = _actualFont.GetSize();
+        _UpdateFont();
+        const auto actualFontNewSize = _actualFont.GetSize();
+        if (actualFontNewSize != actualFontOldSize)
+        {
+            _RefreshSizeUnderLock();
+        }
+    }
+
+    // Method Description:
+    // - Updates the appearance
+    // - INVARIANT: This method must be called from the UI thread.
+    // - INVARIANT: This method can only be called if the caller has the writing lock on the terminal.
+    // Arguments:
+    // - newAppearance: the new appearance to set
+    void TermControl::_UpdateAppearanceFromUIThreadUnderLock(IControlAppearance newAppearance)
+    {
+        if (_closing)
+        {
+            return;
+        }
+
+        if (!newAppearance.BackgroundImage().empty())
+        {
+            Windows::Foundation::Uri imageUri{ newAppearance.BackgroundImage() };
+
+            // Check if the image brush is already pointing to the image
+            // in the modified settings; if it isn't (or isn't there),
+            // set a new image source for the brush
+            auto imageSource = BackgroundImage().Source().try_as<Media::Imaging::BitmapImage>();
+
+            if (imageSource == nullptr ||
+                imageSource.UriSource() == nullptr ||
+                imageSource.UriSource().RawUri() != imageUri.RawUri())
+            {
+                // Note that BitmapImage handles the image load asynchronously,
+                // which is especially important since the image
+                // may well be both large and somewhere out on the
+                // internet.
+                Media::Imaging::BitmapImage image(imageUri);
+                BackgroundImage().Source(image);
+            }
+
+            // Apply stretch, opacity and alignment settings
+            BackgroundImage().Stretch(newAppearance.BackgroundImageStretchMode());
+            BackgroundImage().Opacity(newAppearance.BackgroundImageOpacity());
+            BackgroundImage().HorizontalAlignment(newAppearance.BackgroundImageHorizontalAlignment());
+            BackgroundImage().VerticalAlignment(newAppearance.BackgroundImageVerticalAlignment());
+        }
+        else
+        {
+            BackgroundImage().Source(nullptr);
+        }
+
+        // Update our control settings
+        const auto bg = newAppearance.DefaultBackground();
+        _BackgroundColorChanged(bg);
+
+        // Set TSF Foreground
+        Media::SolidColorBrush foregroundBrush{};
+        foregroundBrush.Color(static_cast<til::color>(newAppearance.DefaultForeground()));
+        TSFInputControl().Foreground(foregroundBrush);
+
+        // Update the terminal core with its new Core settings
+        _terminal->UpdateAppearance(newAppearance);
+
+        if (_renderEngine)
+        {
+            // Update DxEngine settings under the lock
+            _renderEngine->SetSelectionBackground(til::color{ newAppearance.SelectionBackground() });
+            _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
+            _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
+            _renderer->TriggerRedrawAll();
+        }
+    }
+
+    // Method Description:
     // - Style our UI elements based on the values in our _settings, and set up
     //   other control-specific settings. This method will be called whenever
     //   the settings are reloaded.
@@ -426,9 +521,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_ApplyUISettings(const IControlSettings& newSettings)
     {
         _InitializeBackgroundBrush();
-
-        const auto bg = newSettings.DefaultBackground();
-        _BackgroundColorChanged(bg);
 
         // Apply padding as swapChainPanel's margin
         auto newMargin = _ParseThicknessFromPadding(newSettings.Padding());
@@ -447,10 +539,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _actualFont = { fontFace, 0, fontWeight.Weight, { 0, fontHeight }, CP_UTF8, false };
         _desiredFont = { _actualFont };
 
-        // set TSF Foreground
-        Media::SolidColorBrush foregroundBrush{};
-        foregroundBrush.Color(static_cast<til::color>(newSettings.DefaultForeground()));
-        TSFInputControl().Foreground(foregroundBrush);
         TSFInputControl().Margin(newMargin);
 
         // Apply settings for scrollbar
@@ -533,38 +621,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 _renderEngine->SetDefaultTextBackgroundOpacity(1.0f);
             }
-        }
-
-        if (!_settings.BackgroundImage().empty())
-        {
-            Windows::Foundation::Uri imageUri{ _settings.BackgroundImage() };
-
-            // Check if the image brush is already pointing to the image
-            // in the modified settings; if it isn't (or isn't there),
-            // set a new image source for the brush
-            auto imageSource = BackgroundImage().Source().try_as<Media::Imaging::BitmapImage>();
-
-            if (imageSource == nullptr ||
-                imageSource.UriSource() == nullptr ||
-                imageSource.UriSource().RawUri() != imageUri.RawUri())
-            {
-                // Note that BitmapImage handles the image load asynchronously,
-                // which is especially important since the image
-                // may well be both large and somewhere out on the
-                // internet.
-                Media::Imaging::BitmapImage image(imageUri);
-                BackgroundImage().Source(image);
-            }
-
-            // Apply stretch, opacity and alignment settings
-            BackgroundImage().Stretch(_settings.BackgroundImageStretchMode());
-            BackgroundImage().Opacity(_settings.BackgroundImageOpacity());
-            BackgroundImage().HorizontalAlignment(_settings.BackgroundImageHorizontalAlignment());
-            BackgroundImage().VerticalAlignment(_settings.BackgroundImageVerticalAlignment());
-        }
-        else
-        {
-            BackgroundImage().Source(nullptr);
         }
     }
 
@@ -768,9 +824,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);
             LOG_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
-            // Update DxEngine's SelectionBackground
-            dxEngine->SetSelectionBackground(til::color{ _settings.SelectionBackground() });
-
             const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
             const auto width = vp.Width();
             const auto height = vp.Height();
@@ -788,8 +841,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // the first paint will be ignored!
             dxEngine->SetWarningCallback(std::bind(&TermControl::_RendererWarning, this, std::placeholders::_1));
 
-            dxEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-            dxEngine->SetPixelShaderPath(_settings.PixelShaderPath());
             dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
             dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
@@ -877,6 +928,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             //      we're not technically a part of the UI tree yet, so focusing us
             //      becomes a no-op.
             this->Focus(FocusState::Programmatic);
+
+            // Now that the renderer is set up, update the appearance for initialization
+            _UpdateAppearanceFromUIThreadUnderLock(_settings);
 
             _initializedTerminal = true;
         } // scope for TerminalLock
@@ -1074,6 +1128,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             modifiers.IsCtrlPressed(),
             modifiers.IsAltPressed(),
             modifiers.IsShiftPressed(),
+            modifiers.IsWinPressed(),
             vkey,
         });
         if (!success)
@@ -1384,6 +1439,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // (expand both "start" and "end" selection points)
                     _terminal->MultiClickSelection(terminalPosition, mode);
                     _selectionNeedsToBeCopied = true;
+                }
+
+                if (_terminal->IsSelectionActive())
+                {
+                    // GH#9787: if selection is active we don't want to track the touchdown position
+                    // so that dragging the mouse will extend the selection rather than starting the new one
+                    _singleClickTouchdownPos = std::nullopt;
                 }
 
                 _renderer->TriggerSelection();
@@ -2004,6 +2066,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _UpdateSystemParameterSettings();
+
+        // Only update the appearance here if an unfocused config exists -
+        // if an unfocused config does not exist then we never would have switched
+        // appearances anyway so there's no need to switch back upon gaining focus
+        if (_UnfocusedAppearance)
+        {
+            UpdateAppearance(_settings);
+        }
     }
 
     // Method Description
@@ -2054,6 +2124,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_blinkTimer.has_value())
         {
             _blinkTimer.value().Stop();
+        }
+
+        // Check if there is an unfocused config we should set the appearance to
+        // upon losing focus
+        if (_UnfocusedAppearance)
+        {
+            UpdateAppearance(_UnfocusedAppearance);
         }
     }
 
@@ -2934,12 +3011,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             ControlKeyStates flags;
         };
 
-        constexpr std::array<KeyModifier, 5> modifiers{ {
+        constexpr std::array<KeyModifier, 7> modifiers{ {
             { VirtualKey::RightMenu, ControlKeyStates::RightAltPressed },
             { VirtualKey::LeftMenu, ControlKeyStates::LeftAltPressed },
             { VirtualKey::RightControl, ControlKeyStates::RightCtrlPressed },
             { VirtualKey::LeftControl, ControlKeyStates::LeftCtrlPressed },
             { VirtualKey::Shift, ControlKeyStates::ShiftPressed },
+            { VirtualKey::RightWindows, ControlKeyStates::RightWinPressed },
+            { VirtualKey::LeftWindows, ControlKeyStates::LeftWinPressed },
         } };
 
         ControlKeyStates flags;

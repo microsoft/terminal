@@ -237,6 +237,7 @@ namespace winrt::TerminalApp::implementation
         CommandPalette().DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
         CommandPalette().CommandLineExecutionRequested({ this, &TerminalPage::_OnCommandLineExecutionRequested });
         CommandPalette().SwitchToTabRequested({ this, &TerminalPage::_OnSwitchToTabRequested });
+        CommandPalette().PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
 
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
@@ -1198,7 +1199,7 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
-            TerminalSettings controlSettings{ nullptr };
+            TerminalSettingsCreateResult controlSettings{ nullptr };
             GUID realGuid;
             bool profileFound = false;
 
@@ -1213,7 +1214,7 @@ namespace winrt::TerminalApp::implementation
                     const auto validWorkingDirectory = !workingDirectory.empty();
                     if (validWorkingDirectory)
                     {
-                        controlSettings.StartingDirectory(workingDirectory);
+                        controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
                     }
                     realGuid = current_guid.value();
                 }
@@ -1236,7 +1237,7 @@ namespace winrt::TerminalApp::implementation
                 controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
             }
 
-            const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
+            const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings.DefaultSettings());
 
             const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
             const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
@@ -1360,6 +1361,11 @@ namespace winrt::TerminalApp::implementation
         if (WI_IsFlagSet(modifiers, KeyModifiers::Alt))
         {
             buffer += L"Alt+";
+        }
+
+        if (WI_IsFlagSet(modifiers, KeyModifiers::Windows))
+        {
+            buffer += L"Win+";
         }
 
         return buffer;
@@ -1787,9 +1793,16 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    TermControl TerminalPage::_InitControl(const TerminalSettings& settings, const ITerminalConnection& connection)
+    TermControl TerminalPage::_InitControl(const TerminalSettingsCreateResult& settings, const ITerminalConnection& connection)
     {
-        return TermControl{ TerminalSettings::CreateWithParent(settings), connection };
+        // Give term control a child of the settings so that any overrides go in the child
+        // This way, when we do a settings reload we just update the parent and the overrides remain
+        const auto child = TerminalSettings::CreateWithParent(settings);
+        TermControl term{ child.DefaultSettings(), connection };
+
+        term.UnfocusedAppearance(child.UnfocusedSettings()); // It is okay for the unfocused settings to be null
+
+        return term;
     }
 
     // Method Description:
@@ -2607,22 +2620,42 @@ namespace winrt::TerminalApp::implementation
     {
         return _WindowName;
     }
-    void TerminalPage::WindowName(const winrt::hstring& value)
+
+    winrt::fire_and_forget TerminalPage::WindowName(const winrt::hstring& value)
     {
         const bool oldIsQuakeMode = IsQuakeWindow();
-        if (_WindowName != value)
+        const bool changed = _WindowName != value;
+        if (changed)
         {
             _WindowName = value;
-            _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
-
-            // If we're entering quake mode, or leaving it
-            if (IsQuakeWindow() != oldIsQuakeMode)
+        }
+        auto weakThis{ get_weak() };
+        // On the foreground thread, raise property changed notifications, and
+        // display the success toast.
+        co_await resume_foreground(Dispatcher());
+        if (auto page{ weakThis.get() })
+        {
+            if (changed)
             {
-                // If we're entering Quake Mode from ~Focus Mode, then this will enter Focus Mode
-                // If we're entering Quake Mode from Focus Mode, then this will do nothing
-                // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
-                _SetFocusMode(true);
-                _IsQuakeWindowChangedHandlers(*this, nullptr);
+                page->_PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowName" });
+                page->_PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+
+                // DON'T display the confirmation if this is the name we were
+                // given on startup!
+                if (page->_startupState == StartupState::Initialized)
+                {
+                    page->IdentifyWindow();
+
+                    // If we're entering quake mode, or leaving it
+                    if (IsQuakeWindow() != oldIsQuakeMode)
+                    {
+                        // If we're entering Quake Mode from ~Focus Mode, then this will enter Focus Mode
+                        // If we're entering Quake Mode from Focus Mode, then this will do nothing
+                        // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
+                        _SetFocusMode(true);
+                        _IsQuakeWindowChangedHandlers(*this, nullptr);
+                    }
+                }
             }
         }
     }
@@ -2725,8 +2758,12 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_RequestWindowRename(const winrt::hstring& newName)
     {
         auto request = winrt::make<implementation::RenameWindowRequestedArgs>(newName);
-        // The WindowRenamer is _not_ a Toast - we want it to stay open until the user dismisses it.
-        WindowRenamer().IsOpen(false);
+        // The WindowRenamer is _not_ a Toast - we want it to stay open until
+        // the user dismisses it.
+        if (WindowRenamer())
+        {
+            WindowRenamer().IsOpen(false);
+        }
         _RenameWindowRequestedHandlers(*this, request);
         // We can't just use request.Successful here, because the handler might
         // (will) be handling this asynchronously, so when control returns to

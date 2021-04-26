@@ -23,6 +23,7 @@
 namespace winrt::Microsoft::Terminal::Core
 {
     struct ICoreSettings;
+    struct ICoreAppearance;
 }
 
 namespace Microsoft::Terminal::Core
@@ -63,6 +64,7 @@ public:
                             Microsoft::Console::Render::IRenderTarget& renderTarget);
 
     void UpdateSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings);
+    void UpdateAppearance(const winrt::Microsoft::Terminal::Core::ICoreAppearance& appearance);
 
     // Write goes through the parser
     void Write(std::wstring_view stringView);
@@ -84,6 +86,7 @@ public:
     bool ExecuteChar(wchar_t wch) noexcept override;
     TextAttribute GetTextAttributes() const noexcept override;
     void SetTextAttributes(const TextAttribute& attrs) noexcept override;
+    Microsoft::Console::Types::Viewport GetBufferSize() noexcept override;
     bool SetCursorPosition(short x, short y) noexcept override;
     COORD GetCursorPosition() noexcept override;
     bool SetCursorVisibility(const bool visible) noexcept override;
@@ -261,6 +264,7 @@ private:
     bool _altGrAliasing;
     bool _suppressApplicationTitle;
     bool _bracketedPasteMode;
+    bool _trimBlockSelection;
 
     size_t _taskbarState;
     size_t _taskbarProgress;

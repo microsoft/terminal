@@ -113,13 +113,14 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
         // Set up viewport
         pScreen->_viewport = Viewport::FromDimensions({ 0, 0 },
                                                       pScreen->_IsInPtyMode() ? coordScreenBufferSize : coordWindowSize);
-        pScreen->UpdateBottom();
 
         // Set up text buffer
         pScreen->_textBuffer = std::make_unique<TextBuffer>(coordScreenBufferSize,
                                                             defaultAttributes,
                                                             uiCursorSize,
                                                             pScreen->_renderTarget);
+
+        pScreen->UpdateBottom();
 
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         pScreen->_textBuffer->GetCursor().SetColor(gci.GetCursorColor());
@@ -1411,10 +1412,16 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 
     // First allocate a new text buffer to take the place of the current one.
     std::unique_ptr<TextBuffer> newTextBuffer;
+
+    // GH#3848 - Stash away the current attributes the old text buffer is using.
+    // We'll initialize the new buffer with the default attributes, but after
+    // the resize, we'll want to make sure that the new buffer's current
+    // attributes (the ones used for printing new text) match the old buffer's.
+    const auto oldPrimaryAttributes = _textBuffer->GetCurrentAttributes();
     try
     {
         newTextBuffer = std::make_unique<TextBuffer>(coordNewScreenSize,
-                                                     GetAttributes(),
+                                                     TextAttribute{},
                                                      0,
                                                      _renderTarget); // temporarily set size to 0 so it won't render.
     }
@@ -1442,6 +1449,8 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         COORD coordCursorHeightDiff = { 0 };
         coordCursorHeightDiff.Y = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
         LOG_IF_FAILED(SetViewportOrigin(false, coordCursorHeightDiff, true));
+
+        _textBuffer->SetCurrentAttributes(oldPrimaryAttributes);
 
         _textBuffer.swap(newTextBuffer);
     }
@@ -2520,13 +2529,30 @@ TextBufferCellIterator SCREEN_INFORMATION::GetCellDataAt(const COORD at, const V
 
 // Method Description:
 // - Updates our internal "virtual bottom" tracker with wherever the viewport
-//      currently is.
+//      currently is. This is only used to move the bottom further down, unless
+//      the buffer has shrunk, and the viewport needs to be moved back up to
+//      fit within the new buffer range.
 // - <none>
 // Return Value:
 // - <none>
 void SCREEN_INFORMATION::UpdateBottom()
 {
-    _virtualBottom = _viewport.BottomInclusive();
+    // We clamp it so it's at least as low as the current viewport bottom,
+    // but no lower than the bottom of the buffer.
+    _virtualBottom = std::clamp(_virtualBottom, _viewport.BottomInclusive(), GetBufferSize().BottomInclusive());
+}
+
+// Method Description:
+// - Resets the internal "virtual bottom" tracker to the top of the buffer.
+//      Used when the scrollback buffer has been completely cleared.
+// - <none>
+// Return Value:
+// - <none>
+void SCREEN_INFORMATION::ResetBottom()
+{
+    // The virtual bottom points to the last line of the viewport, so at the
+    // top of the buffer it should be one less than the viewport height.
+    _virtualBottom = _viewport.Height() - 1;
 }
 
 // Method Description:
@@ -2682,26 +2708,6 @@ bool SCREEN_INFORMATION::IsCursorInMargins(const COORD cursorPosition) const noe
     }
     const auto margins = GetAbsoluteScrollMargins().ToInclusive();
     return cursorPosition.Y <= margins.Bottom && cursorPosition.Y >= margins.Top;
-}
-
-// Method Description:
-// - Gets the region of the buffer that should be used for scrolling within the
-//      scroll margins. If the scroll margins aren't set, it returns the entire
-//      buffer size.
-// Arguments:
-// - <none>
-// Return Value:
-// - The area of the buffer within the scroll margins
-Viewport SCREEN_INFORMATION::GetScrollingRegion() const noexcept
-{
-    const auto buffer = GetBufferSize();
-    const bool marginsSet = AreMarginsSet();
-    const auto marginRect = GetAbsoluteScrollMargins().ToInclusive();
-    const auto margin = Viewport::FromInclusive({ buffer.Left(),
-                                                  marginsSet ? marginRect.Top : buffer.Top(),
-                                                  buffer.RightInclusive(),
-                                                  marginsSet ? marginRect.Bottom : buffer.BottomInclusive() });
-    return margin;
 }
 
 // Routine Description:

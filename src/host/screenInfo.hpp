@@ -202,7 +202,6 @@ public:
     void SetScrollMargins(const Microsoft::Console::Types::Viewport margins);
     bool AreMarginsSet() const noexcept;
     bool IsCursorInMargins(const COORD cursorPosition) const noexcept;
-    Microsoft::Console::Types::Viewport GetScrollingRegion() const noexcept;
 
     [[nodiscard]] NTSTATUS UseAlternateScreenBuffer();
     void UseMainScreenBuffer();
@@ -226,6 +225,7 @@ public:
     void SetTerminalConnection(_In_ Microsoft::Console::ITerminalOutputConnection* const pTtyConnection);
 
     void UpdateBottom();
+    void ResetBottom();
     void MoveToBottom();
 
     Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;

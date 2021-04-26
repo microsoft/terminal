@@ -252,8 +252,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<SwitchToTabArgs>())
         {
-            const auto handled = _SelectTab({ realArgs.TabIndex() });
-            args.Handled(handled);
+            _SelectTab({ realArgs.TabIndex() });
+            args.Handled(true);
         }
     }
 
@@ -383,8 +383,27 @@ namespace winrt::TerminalApp::implementation
                 {
                     if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
                     {
+                        // Start by getting the current settings of the control
                         auto controlSettings = activeControl.Settings().as<TerminalSettings>();
-                        controlSettings.ApplyColorScheme(scheme);
+                        auto parentSettings = controlSettings;
+                        // Those are the _runtime_ settings however. What we
+                        // need to do is:
+                        //
+                        //   1. Blow away any colors set in the runtime settings.
+                        //   2. Apply the color scheme to the parent settings.
+                        //
+                        // 1 is important to make sure that the effects of
+                        // something like `colortool` are cleared when setting
+                        // the scheme.
+                        if (controlSettings.GetParent() != nullptr)
+                        {
+                            parentSettings = controlSettings.GetParent();
+                        }
+
+                        // ApplyColorScheme(nullptr) will clear the old color scheme.
+                        controlSettings.ApplyColorScheme(nullptr);
+                        parentSettings.ApplyColorScheme(scheme);
+
                         activeControl.UpdateSettings();
                         args.Handled(true);
                     }
@@ -719,9 +738,9 @@ namespace winrt::TerminalApp::implementation
                 const auto newName = realArgs.Name();
                 const auto request = winrt::make_self<implementation::RenameWindowRequestedArgs>(newName);
                 _RenameWindowRequestedHandlers(*this, *request);
+                args.Handled(true);
             }
         }
-        args.Handled(false);
     }
 
     void TerminalPage::_HandleOpenWindowRenamer(const IInspectable& /*sender*/,

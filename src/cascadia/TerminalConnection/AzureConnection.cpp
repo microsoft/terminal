@@ -132,6 +132,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         THROW_LAST_ERROR_IF_NULL(_hOutputThread);
 
+        LOG_IF_FAILED(SetThreadDescription(_hOutputThread.get(), L"AzureConnection Output Thread"));
+
         _transitionToState(ConnectionState::Connecting);
     }
 

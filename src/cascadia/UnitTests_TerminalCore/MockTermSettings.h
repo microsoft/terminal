@@ -12,7 +12,7 @@ using namespace winrt::Microsoft::Terminal::Core;
 
 namespace TerminalCoreUnitTests
 {
-    class MockTermSettings : public winrt::implements<MockTermSettings, ICoreSettings>
+    class MockTermSettings : public winrt::implements<MockTermSettings, ICoreSettings, ICoreAppearance>
     {
     public:
         MockTermSettings(int32_t historySize, int32_t initialRows, int32_t initialCols) :
@@ -40,8 +40,10 @@ namespace TerminalCoreUnitTests
         bool SuppressApplicationTitle() { return _suppressApplicationTitle; }
         til::color SelectionBackground() { return COLOR_WHITE; }
         bool ForceVTInput() { return false; }
+        ICoreAppearance UnfocusedAppearance() { return {}; };
         winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color> TabColor() { return nullptr; }
         winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color> StartingTabColor() { return nullptr; }
+        bool TrimBlockSelection() { return false; }
 
         // other implemented methods
         til::color GetColorTableEntry(int32_t) const { return 123; }
@@ -64,8 +66,10 @@ namespace TerminalCoreUnitTests
         void SuppressApplicationTitle(bool suppressApplicationTitle) { _suppressApplicationTitle = suppressApplicationTitle; }
         void SelectionBackground(til::color) {}
         void ForceVTInput(bool) {}
+        void UnfocusedAppearance(ICoreAppearance) {}
         void TabColor(const IInspectable&) {}
         void StartingTabColor(const IInspectable&) {}
+        void TrimBlockSelection(bool) {}
 
     private:
         int32_t _historySize;

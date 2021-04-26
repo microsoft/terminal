@@ -52,7 +52,8 @@ Terminal::Terminal() :
     _blockSelection{ false },
     _selection{ std::nullopt },
     _taskbarState{ 0 },
-    _taskbarProgress{ 0 }
+    _taskbarProgress{ 0 },
+    _trimBlockSelection{ false }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -112,55 +113,14 @@ void Terminal::CreateFromSettings(ICoreSettings settings,
 // - settings: an ICoreSettings with new settings values for us to use.
 void Terminal::UpdateSettings(ICoreSettings settings)
 {
-    // Set the default background as transparent to prevent the
-    // DX layer from overwriting the background image or acrylic effect
-    til::color newBackgroundColor{ settings.DefaultBackground() };
-    _defaultBg = newBackgroundColor.with_alpha(0);
-    _defaultFg = settings.DefaultForeground();
-
-    CursorType cursorShape = CursorType::VerticalBar;
-    switch (settings.CursorShape())
-    {
-    case CursorStyle::Underscore:
-        cursorShape = CursorType::Underscore;
-        break;
-    case CursorStyle::FilledBox:
-        cursorShape = CursorType::FullBox;
-        break;
-    case CursorStyle::EmptyBox:
-        cursorShape = CursorType::EmptyBox;
-        break;
-    case CursorStyle::Vintage:
-        cursorShape = CursorType::Legacy;
-        break;
-    case CursorStyle::DoubleUnderscore:
-        cursorShape = CursorType::DoubleUnderscore;
-        break;
-    default:
-    case CursorStyle::Bar:
-        cursorShape = CursorType::VerticalBar;
-        break;
-    }
-
-    if (_buffer)
-    {
-        _buffer->GetCursor().SetStyle(settings.CursorHeight(),
-                                      til::color{ settings.CursorColor() },
-                                      cursorShape);
-    }
-
-    _defaultCursorShape = cursorShape;
-
-    for (int i = 0; i < 16; i++)
-    {
-        _colorTable.at(i) = til::color{ settings.GetColorTableEntry(i) };
-    }
+    UpdateAppearance(settings);
 
     _snapOnInput = settings.SnapOnInput();
     _altGrAliasing = settings.AltGrAliasing();
     _wordDelimiters = settings.WordDelimiters();
     _suppressApplicationTitle = settings.SuppressApplicationTitle();
     _startingTitle = settings.StartingTitle();
+    _trimBlockSelection = settings.TrimBlockSelection();
 
     _terminalInput->ForceDisableWin32InputMode(settings.ForceVTInput());
 
@@ -188,6 +148,58 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     // size is smaller than where the mutable viewport currently is, we'll want
     // to make sure to rotate the buffer contents upwards, so the mutable viewport
     // remains at the bottom of the buffer.
+}
+
+// Method Description:
+// - Update our internal properties to match the new values in the provided
+//   CoreAppearance object.
+// Arguments:
+// - appearance: an ICoreAppearance with new settings values for us to use.
+void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
+{
+    // Set the default background as transparent to prevent the
+    // DX layer from overwriting the background image or acrylic effect
+    til::color newBackgroundColor{ appearance.DefaultBackground() };
+    _defaultBg = newBackgroundColor.with_alpha(0);
+    _defaultFg = appearance.DefaultForeground();
+
+    for (int i = 0; i < 16; i++)
+    {
+        _colorTable.at(i) = til::color{ appearance.GetColorTableEntry(i) };
+    }
+
+    CursorType cursorShape = CursorType::VerticalBar;
+    switch (appearance.CursorShape())
+    {
+    case CursorStyle::Underscore:
+        cursorShape = CursorType::Underscore;
+        break;
+    case CursorStyle::FilledBox:
+        cursorShape = CursorType::FullBox;
+        break;
+    case CursorStyle::EmptyBox:
+        cursorShape = CursorType::EmptyBox;
+        break;
+    case CursorStyle::Vintage:
+        cursorShape = CursorType::Legacy;
+        break;
+    case CursorStyle::DoubleUnderscore:
+        cursorShape = CursorType::DoubleUnderscore;
+        break;
+    default:
+    case CursorStyle::Bar:
+        cursorShape = CursorType::VerticalBar;
+        break;
+    }
+
+    if (_buffer)
+    {
+        _buffer->GetCursor().SetStyle(appearance.CursorHeight(),
+                                      til::color{ appearance.CursorColor() },
+                                      cursorShape);
+    }
+
+    _defaultCursorShape = cursorShape;
 }
 
 // Method Description:
@@ -235,8 +247,14 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     std::unique_ptr<TextBuffer> newTextBuffer;
     try
     {
+        // GH#3848 - Stash away the current attributes the old text buffer is
+        // using. We'll initialize the new buffer with the default attributes,
+        // but after the resize, we'll want to make sure that the new buffer's
+        // current attributes (the ones used for printing new text) match the
+        // old buffer's.
+        const auto oldBufferAttributes = _buffer->GetCurrentAttributes();
         newTextBuffer = std::make_unique<TextBuffer>(bufferSize,
-                                                     _buffer->GetCurrentAttributes(),
+                                                     TextAttribute{},
                                                      0, // temporarily set size to 0 so it won't render.
                                                      _buffer->GetRenderTarget());
 
@@ -264,6 +282,9 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 
         newViewportTop = oldRows.mutableViewportTop;
         newVisibleTop = oldRows.visibleViewportTop;
+
+        // Restore the active text attributes
+        newTextBuffer->SetCurrentAttributes(oldBufferAttributes);
     }
     CATCH_RETURN();
 
