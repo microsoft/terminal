@@ -673,6 +673,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // callbacks (and locking problems)
         _core->SwapChainChanged({ get_weak(), &TermControl::RenderEngineSwapChainChanged });
 
+        // !! LOAD BEARING !!
+        // Make sure you enable painting _AFTER_ calling _AttachDxgiSwapChainToXaml
+        //
+        // If you EnablePainting first, then you almost certainly won't have any
+        // problems when running in Debug. However, in Release, you'll run into
+        // issues where the Renderer starts trying to paint before we've
+        // actually attached the swapchain to anything, and the DxEngine is not
+        // prepared to handle that.
+        _core->EnablePainting();
+
         auto bufferHeight = _core->BufferHeight();
 
         ScrollBar().Maximum(bufferHeight - bufferHeight);
@@ -680,11 +690,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ScrollBar().Value(0);
         ScrollBar().ViewportSize(bufferHeight);
         ScrollBar().LargeChange(std::max(bufferHeight - 1, 0)); // scroll one "screenful" at a time when the scroll bar is clicked
-
-        // Mild worry that doing EnablePainting in Core::InitializeTerminal,
-        // before we _AttachDxgiSwapChainToXaml will break
-        //
-        // localPointerToThread->EnablePainting();
 
         // Set up blinking cursor
         int blinkTime = GetCaretBlinkTime();

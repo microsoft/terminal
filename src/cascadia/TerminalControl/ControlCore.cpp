@@ -205,11 +205,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             THROW_IF_FAILED(dxEngine->Enable());
             _renderEngine = std::move(dxEngine);
 
-            // In the past we did _attachDxgiSwapChainToXaml _before_ calling
-            // EnablePainting. There's mild worry that doing EnablePainting
-            // first will break something, but this seems to work.
-            localPointerToThread->EnablePainting();
-
             _initializedTerminal = true;
         } // scope for TerminalLock
 
@@ -219,6 +214,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         return true;
     }
+
+    // Method Description:
+    // - Tell the renderer to start painting.
+    // - !! IMPORTANT !! Make sure that we've attached our swap chain to an
+    //   actual target before calling this.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void ControlCore::EnablePainting()
+    {
+        if (_initializedTerminal)
+        {
+            _renderer->EnablePainting();
+        }
+    }
+
     // Method Description:
     // - Writes the given sequence as input to the active terminal connection.
     // - This method has been overloaded to allow zero-copy winrt::param::hstring optimizations.
