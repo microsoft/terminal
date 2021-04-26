@@ -3,6 +3,9 @@
 //
 // Shamelessly copied from microsoft/PowerToys, at
 // https://github.com/microsoft/PowerToys/blob/master/src/modules/fancyzones/lib/VirtualDesktopUtils.cpp
+//
+// The code style is left untouched, as to make contributions from/to the
+// upstream source easier.
 
 #include "pch.h"
 
