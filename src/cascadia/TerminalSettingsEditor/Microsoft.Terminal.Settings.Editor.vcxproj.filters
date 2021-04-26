@@ -20,11 +20,11 @@
     <Midl Include="Converters.idl">
       <Filter>Converters</Filter>
     </Midl>
+    <Midl Include="SettingContainer.idl" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Microsoft.Terminal.Settings.Editor.def" />
     <None Include="packages.config" />
-    <None Include="PropertySheet.props" />
+    <None Include="$(ProjectName).def" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="CommonResources.xaml" />
@@ -35,6 +35,8 @@
     <Page Include="MainPage.xaml" />
     <Page Include="Profiles.xaml" />
     <Page Include="Rendering.xaml" />
+    <Page Include="Actions.xaml" />
+    <Page Include="SettingContainerStyle.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Converters">
