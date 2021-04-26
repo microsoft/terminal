@@ -121,7 +121,7 @@
     <value>Create New Button</value>
   </data>
   <data name="AddProfile_AddNewTextBlock.Text" xml:space="preserve">
-    <value>Create new</value>
+    <value>New empty profile</value>
     <comment>Button label that creates a new profile with default settings.</comment>
   </data>
   <data name="AddProfile_Duplicate.Header" xml:space="preserve">
