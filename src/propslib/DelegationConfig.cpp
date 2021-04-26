@@ -315,7 +315,7 @@ try
     // to a per-package copy-on-write hive.
     // The restricted capability "unvirtualizedResources" can be combined with
     // desktop6:RegistryWriteVirtualization to opt-out... but...
-    // - It will no longer be double-click installable through the App Installer
+    // - It will no longer be possible to double-click install through the App Installer
     // - It requires a special exception to submit to the store
     // - There MAY be some cleanup logic where the app catalog may try to undo
     //   whatever the package did.
@@ -327,11 +327,11 @@ try
 
         auto regExePath = wil::ExpandEnvironmentStringsW<std::wstring>(L"%WINDIR%\\System32\\reg.exe");
 
-        auto command = wil::str_printf<std::wstring>(L"%s ADD HKCU\\Console\\%%%%Startup /v %s /t REG_SZ /d %s /f", regExePath.c_str(), value, str.get() );
+        auto command = wil::str_printf<std::wstring>(L"%s ADD HKCU\\Console\\%%%%Startup /v %s /t REG_SZ /d %s /f", regExePath.c_str(), value, str.get());
 
         wil::unique_process_information pi;
-        STARTUPINFOEX siex{ 0 };
-        siex.StartupInfo.cb = sizeof(siex);
+        STARTUPINFOEX siEx{ 0 };
+        siEx.StartupInfo.cb = sizeof(siEx);
 
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
             nullptr,
@@ -342,7 +342,7 @@ try
             EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT | CREATE_NO_WINDOW, // dwCreationFlags
             nullptr, // lpEnvironment
             nullptr,
-            &siex.StartupInfo, // lpStartupInfo
+            &siEx.StartupInfo, // lpStartupInfo
             &pi // lpProcessInformation
             ));
 
