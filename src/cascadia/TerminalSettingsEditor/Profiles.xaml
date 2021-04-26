@@ -241,7 +241,7 @@
                             <!--  Control Preview  -->
                             <Border x:Name="ControlPreview"
                                     Height="160"
-                                    MinWidth="350" />
+                                    Width="350" />
 
                             <!--  Grouping: Text  -->
                             <TextBlock x:Uid="Profile_TextHeader"
