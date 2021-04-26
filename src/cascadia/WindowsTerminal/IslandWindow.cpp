@@ -1006,6 +1006,14 @@ void IslandWindow::_globalActivateWindow()
     if (IsIconic(_window.get()))
     {
         LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
+
+        // auto success = AnimateWindow(_window.get(), 200, AW_SLIDE | AW_VER_POSITIVE);
+        // auto success = AnimateWindow(_window.get(), 200, AW_ACTIVATE | AW_SLIDE | AW_VER_POSITIVE);
+        // if (!success)
+        // {
+        //     auto gle = GetLastError();
+        //     gle;
+        // }
     }
     const DWORD windowThreadProcessId = GetWindowThreadProcessId(GetForegroundWindow(), nullptr);
     const DWORD currentThreadId = GetCurrentThreadId();
@@ -1015,12 +1023,24 @@ void IslandWindow::_globalActivateWindow()
     auto detachThread = wil::scope_exit([windowThreadProcessId, currentThreadId]() {
         LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, false));
     });
-    LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
-    LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_SHOW));
+    // LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_SHOW));
+    LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_HIDE));
 
-    // Activate the window too. This will force us to the virtual desktop this
-    // window is on, if it's on another virtual desktop.
-    LOG_LAST_ERROR_IF_NULL(SetActiveWindow(_window.get()));
+    // // Activate the window too. This will force us to the virtual desktop this
+    // // window is on, if it's on another virtual desktop.
+    // LOG_LAST_ERROR_IF_NULL(SetActiveWindow(_window.get()));
+    // AnimateWindow(_window.get(), 200, AW_ACTIVATE | AW_SLIDE | AW_VER_POSITIVE);
+    // LOG_IF_WIN32_BOOL_FALSE(AnimateWindow(_window.get(), 200, AW_ACTIVATE | AW_SLIDE | AW_VER_POSITIVE));
+    // auto success = AnimateWindow(_window.get(), 200, AW_SLIDE | AW_VER_POSITIVE);
+    auto success = AnimateWindow(_window.get(), 200, AW_SLIDE | AW_VER_POSITIVE);
+    // auto success = AnimateWindow(_window.get(), 200, AW_BLEND); // Hey this actually worked with a SW_HIDE right before it
+    if (!success)
+    {
+        auto gle = GetLastError();
+        gle;
+    }
+
+    LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
 }
 
 // Method Description:
