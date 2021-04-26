@@ -399,8 +399,8 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
     const til::size desktopDimensions{ gsl::narrow<short>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
                                        gsl::narrow<short>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
 
-    til::point origin{ ::base::saturated_cast<ptrdiff_t>(proposedRect.left),
-                       ::base::saturated_cast<ptrdiff_t>(proposedRect.top) };
+    til::point origin{ (proposedRect.left),
+                       (proposedRect.top) };
 
     if (_logic.IsQuakeWindow())
     {
@@ -410,8 +410,8 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
         const til::size availableSpace = desktopDimensions + nonClientSize;
 
         origin = til::point{
-            ::base::saturated_cast<ptrdiff_t>(nearestMonitorInfo.rcWork.left - (nonClientSize.width() / 2)),
-            ::base::saturated_cast<ptrdiff_t>(nearestMonitorInfo.rcWork.top)
+            ::base::ClampSub<long>(nearestMonitorInfo.rcWork.left, (nonClientSize.width() / 2)),
+            (nearestMonitorInfo.rcWork.top)
         };
         dimensions = til::size{
             availableSpace.width(),
@@ -423,8 +423,8 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
     {
         // Move our proposed location into the center of that specific monitor.
         origin = til::point{
-            ::base::saturated_cast<ptrdiff_t>(nearestMonitorInfo.rcWork.left + ((desktopDimensions.width() / 2) - (dimensions.width() / 2))),
-            ::base::saturated_cast<ptrdiff_t>(nearestMonitorInfo.rcWork.top + ((desktopDimensions.height() / 2) - (dimensions.height() / 2)))
+            (nearestMonitorInfo.rcWork.left + ((desktopDimensions.width() / 2) - (dimensions.width() / 2))),
+            (nearestMonitorInfo.rcWork.top + ((desktopDimensions.height() / 2) - (dimensions.height() / 2)))
         };
     }
 
