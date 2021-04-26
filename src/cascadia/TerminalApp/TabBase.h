@@ -52,7 +52,7 @@ namespace winrt::TerminalApp::implementation
         virtual void _CreateContextMenu();
         virtual winrt::hstring _CreateToolTipTitle();
 
-        winrt::Windows::UI::Xaml::Controls::MenuFlyoutSubItem _CreateCloseSubMenu();
+        void _AppendCloseMenuItems(winrt::Windows::UI::Xaml::Controls::MenuFlyout flyout);
         void _EnableCloseMenuItems();
         void _CloseTabsAfter();
         void _CloseOtherTabs();

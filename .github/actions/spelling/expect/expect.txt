@@ -1009,6 +1009,7 @@ horiz
 HORZ
 hostable
 hostlib
+hotkeys
 HPA
 HPAINTBUFFER
 HPCON
@@ -1198,6 +1199,7 @@ jpeg
 jpg
 JPN
 json
+jsonc
 jsoncpp
 jsprovider
 jumplist

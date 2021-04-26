@@ -235,6 +235,7 @@ namespace winrt::TerminalApp::implementation
         CommandPalette().DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
         CommandPalette().CommandLineExecutionRequested({ this, &TerminalPage::_OnCommandLineExecutionRequested });
         CommandPalette().SwitchToTabRequested({ this, &TerminalPage::_OnSwitchToTabRequested });
+        CommandPalette().PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
 
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
@@ -1358,6 +1359,11 @@ namespace winrt::TerminalApp::implementation
         if (WI_IsFlagSet(modifiers, KeyModifiers::Alt))
         {
             buffer += L"Alt+";
+        }
+
+        if (WI_IsFlagSet(modifiers, KeyModifiers::Windows))
+        {
+            buffer += L"Win+";
         }
 
         return buffer;
@@ -2601,12 +2607,32 @@ namespace winrt::TerminalApp::implementation
     {
         return _WindowName;
     }
-    void TerminalPage::WindowName(const winrt::hstring& value)
+
+    winrt::fire_and_forget TerminalPage::WindowName(const winrt::hstring& value)
     {
-        if (_WindowName != value)
+        const bool changed = _WindowName != value;
+        if (changed)
         {
             _WindowName = value;
-            _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+        }
+        auto weakThis{ get_weak() };
+        // On the foreground thread, raise property changed notifications, and
+        // display the success toast.
+        co_await resume_foreground(Dispatcher());
+        if (auto page{ weakThis.get() })
+        {
+            if (changed)
+            {
+                page->_PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowName" });
+                page->_PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+
+                // DON'T display the confirmation if this is the name we were
+                // given on startup!
+                if (page->_startupState == StartupState::Initialized)
+                {
+                    page->IdentifyWindow();
+                }
+            }
         }
     }
 
@@ -2708,8 +2734,12 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_RequestWindowRename(const winrt::hstring& newName)
     {
         auto request = winrt::make<implementation::RenameWindowRequestedArgs>(newName);
-        // The WindowRenamer is _not_ a Toast - we want it to stay open until the user dismisses it.
-        WindowRenamer().IsOpen(false);
+        // The WindowRenamer is _not_ a Toast - we want it to stay open until
+        // the user dismisses it.
+        if (WindowRenamer())
+        {
+            WindowRenamer().IsOpen(false);
+        }
         _RenameWindowRequestedHandlers(*this, request);
         // We can't just use request.Successful here, because the handler might
         // (will) be handling this asynchronously, so when control returns to
@@ -2742,4 +2772,5 @@ namespace winrt::TerminalApp::implementation
             WindowRenamer().IsOpen(false);
         }
     }
+
 }
