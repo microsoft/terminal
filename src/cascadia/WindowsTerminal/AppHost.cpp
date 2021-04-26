@@ -764,7 +764,32 @@ void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*se
         if (_LazyLoadDesktopManager())
         {
             GUID currentlyActiveDesktop;
-            VirtualDesktopUtils::GetCurrentVirtualDesktopId(&currentlyActiveDesktop);
+            // GAH
+            //
+            // VirtualDesktopUtils::GetCurrentVirtualDesktopId(&currentlyActiveDesktop);
+            //
+            // The registry hack that VirtualDesktopUtils uses doesn't always
+            // work. Sometimes,
+            // HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\SessionInfo\1\VirtualDesktops\CurrentVirtualDesktop
+            // doesn't exist!
+            //
+            // Then alternatively, we could try:
+            //
+            // _desktopManager->GetWindowDesktopId(GetForegroundWindow(), &currentlyActiveDesktop)
+            //
+            // BUT if the foreground window is set to "show on all desktops",
+            // then that doesn't really work either! It seems like in that case,
+            // the OS still thinks that the desktop ID for that window is the
+            // desktop that window was activated on. So if you have 3 desktops,
+            // and activate a "Show on all desktops" window on desktop 3, then
+            // switch to desktop 1, then
+            // GetWindowDesktopId(GetForegroundWindow(),...) will still get you
+            // desktop 3's GUID!
+            //
+            // It is currently unclear if that's _expected_, a bug in recent
+            // Windows builds, or an oversight entirely.
+
+            LOG_IF_FAILED(_desktopManager->GetWindowDesktopId(GetForegroundWindow(), &currentlyActiveDesktop));
             LOG_IF_FAILED(_desktopManager->MoveWindowToDesktop(_window->GetHandle(), currentlyActiveDesktop));
         }
     }
