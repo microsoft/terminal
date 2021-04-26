@@ -960,9 +960,7 @@ void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal
 }
 
 // Method Description:
-// - Force activate this window. This method will bring us to the foreground and
-//   activate us. If the window is minimized, it will restore the window. If the
-//   window is on another desktop, the OS will switch to that desktop.
+// - TODO! update this
 // Arguments:
 // - <none>
 // Return Value:
@@ -972,6 +970,27 @@ winrt::fire_and_forget IslandWindow::SummonWindow()
     // On the foreground thread:
     co_await winrt::resume_foreground(_rootGrid.Dispatcher());
 
+    HWND foregroundWindow = GetForegroundWindow();
+    if (foregroundWindow == _window.get())
+    {
+        _globalDismissWindow();
+    }
+    else
+    {
+        _globalActivateWindow();
+    }
+}
+
+// Method Description:
+// - Force activate this window. This method will bring us to the foreground and
+//   activate us. If the window is minimized, it will restore the window. If the
+//   window is on another desktop, the OS will switch to that desktop.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void IslandWindow::_globalActivateWindow()
+{
     // From: https://stackoverflow.com/a/59659421
     // > The trick is to make windows ‘think’ that our process and the target
     // > window (hwnd) are related by attaching the threads (using
@@ -997,6 +1016,18 @@ winrt::fire_and_forget IslandWindow::SummonWindow()
     // Activate the window too. This will force us to the virtual desktop this
     // window is on, if it's on another virtual desktop.
     LOG_LAST_ERROR_IF_NULL(SetActiveWindow(_window.get()));
+}
+
+// Method Description:
+// - Minimize the window. This is called when the window is summoned, but is
+//   already active
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void IslandWindow::_globalDismissWindow()
+{
+    LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_MINIMIZE));
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

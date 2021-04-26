@@ -91,6 +91,9 @@ protected:
     void _OnGetMinMaxInfo(const WPARAM wParam, const LPARAM lParam);
     long _calculateTotalSize(const bool isWidth, const long clientSize, const long nonClientSize);
 
+    void _globalActivateWindow();
+    void _globalDismissWindow();
+
 private:
     // This minimum width allows for width the tabs fit
     static constexpr long minimumWidth = 460L;
