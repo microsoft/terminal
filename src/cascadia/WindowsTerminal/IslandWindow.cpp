@@ -960,9 +960,11 @@ void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal
 }
 
 // Method Description:
-// - TODO! update this
+// - Summon the window, or possibly dismiss it. If toggleVisibility is true,
+//   then we'll dismiss (minimize) the window if it's currently active.
+//   Otherwise, we'll always just try to activate the window.
 // Arguments:
-// - <none>
+// - toggleVisibility: controls how we should behave when already in the foreground.
 // Return Value:
 // - <none>
 winrt::fire_and_forget IslandWindow::SummonWindow(const bool toggleVisibility)
