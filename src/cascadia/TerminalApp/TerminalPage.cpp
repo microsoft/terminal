@@ -42,6 +42,8 @@ namespace winrt
     using IInspectable = Windows::Foundation::IInspectable;
 }
 
+static constexpr std::wstring_view QuakeWindowName{ L"_quake" };
+
 namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage() :
@@ -2062,9 +2064,20 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::ToggleFocusMode()
     {
-        _isInFocusMode = !_isInFocusMode;
-        _UpdateTabView();
-        _FocusModeChangedHandlers(*this, nullptr);
+        _SetFocusMode(!_isInFocusMode);
+    }
+
+    void TerminalPage::_SetFocusMode(const bool inFocusMode)
+    {
+        // If we're the quake window, we must always be in focus mode.
+        // Prevent leaving focus mode here.
+        const bool newInFocusMode = inFocusMode || IsQuakeWindow();
+        if (newInFocusMode != FocusMode())
+        {
+            _isInFocusMode = newInFocusMode;
+            _UpdateTabView();
+            _FocusModeChangedHandlers(*this, nullptr);
+        }
     }
 
     // Method Description:
@@ -2610,6 +2623,7 @@ namespace winrt::TerminalApp::implementation
 
     winrt::fire_and_forget TerminalPage::WindowName(const winrt::hstring& value)
     {
+        const bool oldIsQuakeMode = IsQuakeWindow();
         const bool changed = _WindowName != value;
         if (changed)
         {
@@ -2631,6 +2645,16 @@ namespace winrt::TerminalApp::implementation
                 if (page->_startupState == StartupState::Initialized)
                 {
                     page->IdentifyWindow();
+
+                    // If we're entering quake mode, or leaving it
+                    if (IsQuakeWindow() != oldIsQuakeMode)
+                    {
+                        // If we're entering Quake Mode from ~Focus Mode, then this will enter Focus Mode
+                        // If we're entering Quake Mode from Focus Mode, then this will do nothing
+                        // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
+                        _SetFocusMode(true);
+                        _IsQuakeWindowChangedHandlers(*this, nullptr);
+                    }
                 }
             }
         }
@@ -2773,4 +2797,8 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    bool TerminalPage::IsQuakeWindow() const noexcept
+    {
+        return WindowName() == QuakeWindowName;
+    }
 }
