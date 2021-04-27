@@ -1099,109 +1099,123 @@ void IslandWindow::_globalActivateWindow()
         }
 
         {
-            // Attempt 5
-            //
-            // This more closely emulates how Animate window works. When I did
-            // something dumb like the above, where each loop I just did
-            // height+=dy, it worked smooth, but _slow_. The animation took way
-            // longer than 200ms.
-            //
-            // So I tried doing a thing where we animate the window size to some
-            // fraction of the full size, based on the amount of time elapsed.
-            // Turns out, the restore animation itself takes about 200ms, so
-            // this hapens while the window is restoring, which looks just
-            // fucking crazy.
-            //
-            // Maybe the only way for this to work sensibly is with a hide/show?
-            // So that the window doesn't restore, it just pops back to 0, then
-            // animates from there.
-            //
+            // // Attempt 5
+            // //
+            // // This more closely emulates how Animate window works. When I did
+            // // something dumb like the above, where each loop I just did
+            // // height+=dy, it worked smooth, but _slow_. The animation took way
+            // // longer than 200ms.
+            // //
+            // // So I tried doing a thing where we animate the window size to some
+            // // fraction of the full size, based on the amount of time elapsed.
+            // // Turns out, the restore animation itself takes about 200ms, so
+            // // this hapens while the window is restoring, which looks just
+            // // fucking crazy.
+            // //
+            // // Maybe the only way for this to work sensibly is with a hide/show?
+            // // So that the window doesn't restore, it just pops back to 0, then
+            // // animates from there.
+            // //
 
-            // LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
-            // LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_SHOW));
+            // // LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
+            // // LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_SHOW));
 
-            // Attempt 6:
-            //
-            // Undocumented, but  SetWindowPlacement with SW_RESTORE _doesn't_
-            // animate the window. However, now the window appears at the full
-            // size, then animates to the right size. I wonder...
+            // // Attempt 6:
+            // //
+            // // Undocumented, but  SetWindowPlacement with SW_RESTORE _doesn't_
+            // // animate the window. However, now the window appears at the full
+            // // size, then animates to the right size. I wonder...
 
-            // // 6b: TODO set the window to have no height before the restore
+            // // // 6b: TODO set the window to have no height before the restore
+            // // SetWindowPos(_window.get(),
+            // //              NULL,
+            // //              fullWindowSize.top<int>(),
+            // //              fullWindowSize.left<int>(),
+            // //              fullWindowSize.width<int>(),
+            // //              24, //0, // neither 0 nor 24 worked here
+            // //              SWP_NOMOVE | SWP_NOSENDCHANGING);
+
+            // WINDOWPLACEMENT wpc;
+            // wpc.length = sizeof(WINDOWPLACEMENT);
+            // GetWindowPlacement(_window.get(), &wpc);
+
+            // // 6c. Stash the normal position as the thing to resize first
+            // til::rectangle normalWorkspacePos{ wpc.rcNormalPosition };
+
+            // wpc.showCmd = SW_RESTORE;
+            // // // 6a: set the window's size to have no height during the SetWindowPlacement
+            // // wpc.rcNormalPosition.bottom = wpc.rcNormalPosition.top;
+            // // // /6a: it's definitely not this one :(
+
+            // // 6c: make sure we start from having basically nothing visible, so
+            // // that the animation doesn't hop from full size to tiny on the
+            // // first frame.
+            // wpc.rcNormalPosition.bottom = wpc.rcNormalPosition.top + 32;
+            // SetWindowPlacement(_window.get(), &wpc);
+
+            // til::rectangle badWindowPos{ GetWindowRect() };
+            // til::rectangle fullWindowSize{ badWindowPos.origin(), normalWorkspacePos.size() };
+
+            // const double animationDuration = 200; // in ms
+            // const double frameDuration = 1; // in ms
+            // const double frames = animationDuration / frameDuration;
+            // const double dy = fullWindowSize.height<int>() / frames;
+            // double currentHeight = 0;
+
+            // auto start = std::chrono::system_clock::now();
+            // for (int i = 0; i < frames; i++)
+            // {
+            //     auto end = std::chrono::system_clock::now();
+            //     double dt = ::base::saturated_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
+            //     if (dt > animationDuration)
+            //     {
+            //         break;
+            //     }
+            //     if (dt > 0)
+            //     {
+            //         currentHeight = ::base::saturated_cast<double>((dt / animationDuration) * fullWindowSize.height<double>());
+
+            //         SetWindowPos(_window.get(),
+            //                      NULL,
+            //                      fullWindowSize.top<int>(),
+            //                      fullWindowSize.left<int>(),
+            //                      fullWindowSize.width<int>(),
+            //                      ::base::saturated_cast<int>(currentHeight),
+            //                      SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSENDCHANGING);
+            //     }
+            //     // start the animation timer after the first frame. This didn't
+            //     // actually really do anything. In both debug and release, we
+            //     // only really get like 2 frames of the animation when it's set
+            //     // to a duration of 200ms, which is basically pointless. It's
+            //     // way smoother for 2000ms, but that's also _SO_ slow.
+            //     if (i == 0)
+            //     {
+            //         start = end;
+            //     }
+
+            //     // Sleep(::base::saturated_cast<int>(frameDuration));
+            // }
             // SetWindowPos(_window.get(),
             //              NULL,
             //              fullWindowSize.top<int>(),
             //              fullWindowSize.left<int>(),
             //              fullWindowSize.width<int>(),
-            //              24, //0, // neither 0 nor 24 worked here
+            //              fullWindowSize.height<int>(),
             //              SWP_NOMOVE | SWP_NOSENDCHANGING);
+        }
 
+        {
+            // attempt 7: This flashes when it appears, then is hidden, and the
+            // borders appear while animating.
             WINDOWPLACEMENT wpc;
             wpc.length = sizeof(WINDOWPLACEMENT);
             GetWindowPlacement(_window.get(), &wpc);
-
-            // 6c. Stash the normal position as the thing to resize first
-            til::rectangle normalWorkspacePos{ wpc.rcNormalPosition };
-
             wpc.showCmd = SW_RESTORE;
-            // // 6a: set the window's size to have no height during the SetWindowPlacement
-            // wpc.rcNormalPosition.bottom = wpc.rcNormalPosition.top;
-            // // /6a: it's definitely not this one :(
-
-            // 6c: make sure we start from having basically nothing visible, so
-            // that the animation doesn't hop from full size to tiny on the
-            // first frame.
-            wpc.rcNormalPosition.bottom = wpc.rcNormalPosition.top + 32;
+            SetWindowPlacement(_window.get(), &wpc);
+            wpc.showCmd = SW_HIDE;
             SetWindowPlacement(_window.get(), &wpc);
 
-            til::rectangle badWindowPos{ GetWindowRect() };
-            til::rectangle fullWindowSize{ badWindowPos.origin(), normalWorkspacePos.size() };
-
-            const double animationDuration = 200; // in ms
-            const double frameDuration = 1; // in ms
-            const double frames = animationDuration / frameDuration;
-            const double dy = fullWindowSize.height<int>() / frames;
-            double currentHeight = 0;
-
-            auto start = std::chrono::system_clock::now();
-            for (int i = 0; i < frames; i++)
-            {
-                auto end = std::chrono::system_clock::now();
-                double dt = ::base::saturated_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
-                if (dt > animationDuration)
-                {
-                    break;
-                }
-                if (dt > 0)
-                {
-                    currentHeight = ::base::saturated_cast<double>((dt / animationDuration) * fullWindowSize.height<double>());
-
-                    SetWindowPos(_window.get(),
-                                 NULL,
-                                 fullWindowSize.top<int>(),
-                                 fullWindowSize.left<int>(),
-                                 fullWindowSize.width<int>(),
-                                 ::base::saturated_cast<int>(currentHeight),
-                                 SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSENDCHANGING);
-                }
-                // start the animation timer after the first frame. This didn't
-                // actually really do anything. In both debug and release, we
-                // only really get like 2 frames of the animation when it's set
-                // to a duration of 200ms, which is basically pointless. It's
-                // way smoother for 2000ms, but that's also _SO_ slow.
-                if (i == 0)
-                {
-                    start = end;
-                }
-
-                // Sleep(::base::saturated_cast<int>(frameDuration));
-            }
-            SetWindowPos(_window.get(),
-                         NULL,
-                         fullWindowSize.top<int>(),
-                         fullWindowSize.left<int>(),
-                         fullWindowSize.width<int>(),
-                         fullWindowSize.height<int>(),
-                         SWP_NOMOVE | SWP_NOSENDCHANGING);
+            AnimateWindow(_window.get(), 200, AW_SLIDE | AW_VER_POSITIVE);
         }
     }
     else
