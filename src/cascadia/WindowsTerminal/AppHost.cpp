@@ -24,6 +24,8 @@ using namespace ::Microsoft::Console::Types;
 // "If the high-order bit is 1, the key is down; otherwise, it is up."
 static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 
+static const wchar_t* const PSEUDO_WINDOW_CLASS = L"PseudoWindow";
+
 AppHost::AppHost() noexcept :
     _app{},
     _windowManager{},
@@ -757,15 +759,28 @@ GUID AppHost::_fakeGetCurrentDesktop()
 {
     GUID currentlyActiveDesktop;
 
-    static const wchar_t* const PSEUDO_WINDOW_CLASS = L"PseudoWindow";
-    WNDCLASS pseudoClass{ 0 };
-    pseudoClass.lpszClassName = PSEUDO_WINDOW_CLASS;
-    pseudoClass.lpfnWndProc = DefWindowProc;
-    RegisterClass(&pseudoClass);
+    // *** magic static ***
+    // Only initialize the psuedo class once over the lifetime of the process
+    static ATOM pseudoClassAtom{ []() {
+        WNDCLASS pseudoClass{ 0 };
+        pseudoClass.lpszClassName = PSEUDO_WINDOW_CLASS;
+        pseudoClass.lpfnWndProc = DefWindowProc;
+        return RegisterClass(&pseudoClass);
+    }() };
+
+    // WS_OVERLAPPEDWINDOW, HWND_MESSAGE: flashes a window
+    // WS_CHILD, HWND_MESSAGE: doesn't work at all
+    // WS_CHILD, HWND_DESKTOP: doesn't work at all
+    // WS_TILED, HWND_DESKTOP: flashes a window
+    // WS_TILED, HWND_MESSAGE: doesn't work at all
+    // WS_TILED, HWND_DESKTOP, ShowWindow(SW_HIDE): doesn't work at all
+    // WS_POPUP, HWND_DESKTOP: Works 25% of the time?
+    // WS_POPUP, HWND_DESKTOP, Sleep(1): Works 100% of the time?!?
+
     wil::unique_hwnd hwnd{ CreateWindowExW(0,
                                            PSEUDO_WINDOW_CLASS,
                                            nullptr,
-                                           WS_OVERLAPPEDWINDOW,
+                                           WS_POPUP, //WS_TILED, // WS_CHILD,
                                            0,
                                            0,
                                            0,
@@ -774,7 +789,8 @@ GUID AppHost::_fakeGetCurrentDesktop()
                                            nullptr,
                                            nullptr,
                                            nullptr) };
-    ShowWindow(hwnd.get(), SW_SHOW);
+    ShowWindow(hwnd.get(), SW_SHOWNORMAL);
+    Sleep(1); // !! LOAD BEARING !!
     LOG_IF_FAILED(_desktopManager->GetWindowDesktopId(hwnd.get(), &currentlyActiveDesktop));
 
     return currentlyActiveDesktop;
