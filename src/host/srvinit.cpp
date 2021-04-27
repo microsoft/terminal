@@ -23,9 +23,12 @@
 #include "renderData.hpp"
 #include "../renderer/base/renderer.hpp"
 
-#include "ITerminalHandoff.h"
 #include "../inc/conint.h"
 #include "../propslib/DelegationConfig.hpp"
+
+#ifndef __INSIDE_WINDOWS
+#include "ITerminalHandoff.h"
+#endif // __INSIDE_WINDOWS
 
 #pragma hdrstop
 
@@ -358,11 +361,14 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
 //   errors from the creating the thread for the
 //   standard IO thread loop for the server to process messages
 //   from the driver... or an S_OK success.
-[[nodiscard]] HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
-                                              HANDLE driverInputEvent,
-                                              PCONSOLE_API_MSG connectMessage)
+[[nodiscard]] HRESULT ConsoleEstablishHandoff([[maybe_unused]] _In_ HANDLE Server,
+                                              [[maybe_unused]] HANDLE driverInputEvent,
+                                              [[maybe_unused]] PCONSOLE_API_MSG connectMessage)
 try
 {
+#ifdef __INSIDE_WINDOWS
+    return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+#else // !__INSIDE_WINDOWS
     auto& g = ServiceLocator::LocateGlobals();
     g.handoffTarget = true;
 
@@ -427,6 +433,7 @@ try
     RETURN_IF_FAILED(consoleArgs.ParseCommandline());
 
     return ConsoleCreateIoThread(Server, &consoleArgs, driverInputEvent, connectMessage);
+#endif // __INSIDE_WINDOWS
 }
 CATCH_RETURN()
 
