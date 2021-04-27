@@ -33,6 +33,7 @@ namespace TerminalApp
         String WindowNameForDisplay { get; };
         String WindowIdForDisplay { get; };
         void RenameFailed();
+        Boolean IsQuakeWindow();
 
         // We cannot use the default XAML APIs because we want to make sure
         // that there's only one application-global dialog visible at a time,
@@ -54,5 +55,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
         event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
         event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
     }
 }

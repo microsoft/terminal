@@ -74,4 +74,7 @@ private:
     winrt::fire_and_forget _createNewTerminalWindow(winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs args);
     void _HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::Foundation::IInspectable& args);
+
+    void _IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable& sender,
+                               const winrt::Windows::Foundation::IInspectable& args);
 };
