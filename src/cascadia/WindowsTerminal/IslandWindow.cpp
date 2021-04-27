@@ -1050,12 +1050,12 @@ void IslandWindow::_globalActivateWindow()
         //     LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
         // }
 
-        {
-            // Attempt 2:
-            LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
-            LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_HIDE));
-            AnimateWindow(_window.get(), 200, AW_SLIDE | AW_VER_POSITIVE);
-        }
+        // {
+        //     // Attempt 2:
+        //     LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
+        //     LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_HIDE));
+        //     AnimateWindow(_window.get(), 200, AW_SLIDE | AW_VER_POSITIVE);
+        // }
 
         // {
         //     // Attempt 3:
@@ -1066,6 +1066,37 @@ void IslandWindow::_globalActivateWindow()
         //         gle;
         //     }
         // }
+
+        {
+            // Attempt 4
+            LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
+
+            til::rectangle fullWindowSize{ GetWindowRect() };
+            const int animationDuration = 200; // in ms
+            const int frameDuration = 1; // in ms
+            const int frames = animationDuration / frameDuration;
+            const int dy = fullWindowSize.height<int>() / frames;
+            int currentHeight = 0;
+
+            for (int i = 0; i < frames; i++)
+            {
+                wil::unique_hrgn rgn{ CreateRectRgn(0,
+                                                    0,
+                                                    fullWindowSize.width<int>(),
+                                                    currentHeight) };
+
+                // SetWindowRgn(_window.get(), rgn.get(), true);
+                SetWindowRgn(_interopWindowHandle, rgn.get(), true);
+                currentHeight += dy;
+                // Sleep(frameDuration);
+            }
+            // SetWindowRgn(_window.get(), nullptr, true);
+            SetWindowRgn(_interopWindowHandle, nullptr, true);
+
+            // Animating the child window, the Xaml Island, looks pretty slick.
+            // But that means we'll have the solid back plate visible during the
+            // whole animation.
+        }
     }
     else
     {
