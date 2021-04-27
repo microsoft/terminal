@@ -276,6 +276,7 @@ If you would like to ask a question that you feel doesn't warrant an issue
 * Carlos Zamora, Developer: [@cazamor_msft](https://twitter.com/cazamor_msft)
 * Leon Liang, Developer: [@leonmsft](https://twitter.com/leonmsft)
 * Pankaj Bhojwani, Developer
+* Leonard Hecker, Developer: [@LeonardHecker](https://twitter.com/LeonardHecker)
 
 ## Developer Guidance
 

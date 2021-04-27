@@ -5,6 +5,7 @@ bitfield
 bitfields
 CLASSNOTAVAILABLE
 cmdletbinding
+colspan
 COLORPROPERTY
 COMDLG
 CXICON

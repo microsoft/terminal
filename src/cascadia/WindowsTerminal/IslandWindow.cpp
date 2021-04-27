@@ -170,7 +170,7 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     {
         // If we haven't been given the callback that would adjust the dimension,
         // then we can't do anything, so just bail out.
-        return FALSE;
+        return false;
     }
 
     LPRECT winRect = reinterpret_cast<LPRECT>(lParam);
@@ -182,8 +182,9 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     // optional parameter so give two UINTs.
     UINT dpix = USER_DEFAULT_SCREEN_DPI;
     UINT dpiy = USER_DEFAULT_SCREEN_DPI;
-    // If this fails, we'll use the default of 96.
-    GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
+    // If this fails, we'll use the default of 96. I think it can only fail for
+    // bad parameters, which we won't have, so no big deal.
+    LOG_IF_FAILED(GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy));
 
     const auto widthScale = base::ClampedNumeric<float>(dpix) / USER_DEFAULT_SCREEN_DPI;
     const long minWidthScaled = minimumWidth * widthScale;
@@ -194,6 +195,16 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     clientWidth = std::max(minWidthScaled, clientWidth);
 
     auto clientHeight = winRect->bottom - winRect->top - nonClientSize.cy;
+
+    // If we're the quake window, prevent resizing on all sides except the
+    // bottom. This also applies to resizing with the Alt+Space menu
+    if (IsQuakeWindow() && wParam != WMSZ_BOTTOM)
+    {
+        // Stuff our current window size into the lParam, and return true. This
+        // will tell User32 to use our current dimensions to resize to.
+        ::GetWindowRect(_window.get(), winRect);
+        return true;
+    }
 
     if (wParam != WMSZ_TOP && wParam != WMSZ_BOTTOM)
     {
@@ -244,7 +255,31 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
         break;
     }
 
-    return TRUE;
+    return true;
+}
+
+// Method Description:
+// - Handle the WM_MOVING message
+// - If we're the quake window, then we don't want to be able to be moved.
+//   Immediately return our current window position, which will prevent us from
+//   being moved at all.
+// Arguments:
+// - lParam: a LPRECT with the proposed window position, that should be filled
+//   with the resultant position.
+// Return Value:
+// - true iff we handled this message.
+LRESULT IslandWindow::_OnMoving(const WPARAM /*wParam*/, const LPARAM lParam)
+{
+    LPRECT winRect = reinterpret_cast<LPRECT>(lParam);
+    // If we're the quake window, prevent moving the window
+    if (IsQuakeWindow())
+    {
+        // Stuff our current window into the lParam, and return true. This
+        // will tell User32 to use our current position to move to.
+        ::GetWindowRect(_window.get(), winRect);
+        return true;
+    }
+    return false;
 }
 
 void IslandWindow::Initialize()
@@ -404,6 +439,10 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     case WM_SIZING:
     {
         return _OnSizing(wparam, lparam);
+    }
+    case WM_MOVING:
+    {
+        return _OnMoving(wparam, lparam);
     }
     case WM_CLOSE:
     {
@@ -749,6 +788,7 @@ void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)
     // Resize the window, with SWP_FRAMECHANGED, to trigger user32 to
     // recalculate the non/client areas
     const til::rectangle windowPos{ GetWindowRect() };
+
     SetWindowPos(GetHandle(),
                  HWND_TOP,
                  windowPos.left<int>(),
@@ -929,6 +969,71 @@ winrt::fire_and_forget IslandWindow::SummonWindow()
     });
     LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
     LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_SHOW));
+}
+
+bool IslandWindow::IsQuakeWindow() const noexcept
+{
+    return _isQuakeWindow;
+}
+
+void IslandWindow::IsQuakeWindow(bool isQuakeWindow) noexcept
+{
+    if (_isQuakeWindow != isQuakeWindow)
+    {
+        _isQuakeWindow = isQuakeWindow;
+        // Don't enter quake mode if we don't have an HWND yet
+        if (IsQuakeWindow() && _window)
+        {
+            _enterQuakeMode();
+        }
+    }
+}
+
+void IslandWindow::_enterQuakeMode()
+{
+    if (!_window)
+    {
+        return;
+    }
+
+    RECT windowRect = GetWindowRect();
+    HMONITOR hmon = MonitorFromRect(&windowRect, MONITOR_DEFAULTTONEAREST);
+    MONITORINFO nearestMonitorInfo;
+
+    UINT dpix = USER_DEFAULT_SCREEN_DPI;
+    UINT dpiy = USER_DEFAULT_SCREEN_DPI;
+    // If this fails, we'll use the default of 96. I think it can only fail for
+    // bad parameters, which we won't have, so no big deal.
+    LOG_IF_FAILED(GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy));
+
+    nearestMonitorInfo.cbSize = sizeof(MONITORINFO);
+    // Get monitor dimensions:
+    GetMonitorInfo(hmon, &nearestMonitorInfo);
+    const til::size desktopDimensions{ (nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
+                                       (nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
+
+    // If we just use rcWork by itself, we'll fail to account for the invisible
+    // space reserved for the resize handles. So retrieve that size here.
+    const til::size ncSize{ GetTotalNonClientExclusiveSize(dpix) };
+    const til::size availableSpace = desktopDimensions + ncSize;
+
+    const til::point origin{
+        ::base::ClampSub<long>(nearestMonitorInfo.rcWork.left, (ncSize.width() / 2)),
+        (nearestMonitorInfo.rcWork.top)
+    };
+    const til::size dimensions{
+        availableSpace.width(),
+        availableSpace.height() / 2
+    };
+
+    const til::rectangle newRect{ origin, dimensions };
+    SetWindowPos(GetHandle(),
+                 HWND_TOP,
+                 newRect.left<int>(),
+                 newRect.top<int>(),
+                 newRect.width<int>(),
+                 newRect.height<int>(),
+                 SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

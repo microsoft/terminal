@@ -1009,6 +1009,7 @@ horiz
 HORZ
 hostable
 hostlib
+hotkeys
 HPA
 HPAINTBUFFER
 HPCON
@@ -1025,14 +1026,20 @@ hsl
 hstr
 hstring
 hsv
+HTBOTTOMLEFT
+HTBOTTOMRIGHT
 HTCAPTION
 HTCLIENT
+HTLEFT
 htm
 HTMAXBUTTON
 HTMINBUTTON
 html
 HTMLTo
+HTRIGHT
 HTTOP
+HTTOPLEFT
+HTTOPRIGHT
 hu
 hungapp
 HVP
@@ -1198,6 +1205,7 @@ jpeg
 jpg
 JPN
 json
+jsonc
 jsoncpp
 jsprovider
 jumplist

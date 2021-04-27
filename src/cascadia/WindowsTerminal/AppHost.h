@@ -59,4 +59,7 @@ private:
                                                   const winrt::TerminalApp::RenameWindowRequestedArgs args);
 
     GUID _CurrentDesktopGuid();
+
+    void _IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable& sender,
+                               const winrt::Windows::Foundation::IInspectable& args);
 };
