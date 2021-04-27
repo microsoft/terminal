@@ -1068,34 +1068,95 @@ void IslandWindow::_globalActivateWindow()
         // }
 
         {
-            // Attempt 4
+            // // Attempt 4
+            // LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
+
+            // til::rectangle fullWindowSize{ GetWindowRect() };
+            // const int animationDuration = 200; // in ms
+            // const int frameDuration = 1; // in ms
+            // const int frames = animationDuration / frameDuration;
+            // const int dy = fullWindowSize.height<int>() / frames;
+            // int currentHeight = 0;
+
+            // for (int i = 0; i < frames; i++)
+            // {
+            //     wil::unique_hrgn rgn{ CreateRectRgn(0,
+            //                                         0,
+            //                                         fullWindowSize.width<int>(),
+            //                                         currentHeight) };
+
+            //     // SetWindowRgn(_window.get(), rgn.get(), true);
+            //     SetWindowRgn(_interopWindowHandle, rgn.get(), true);
+            //     currentHeight += dy;
+            //     // Sleep(frameDuration);
+            // }
+            // // SetWindowRgn(_window.get(), nullptr, true);
+            // SetWindowRgn(_interopWindowHandle, nullptr, true);
+
+            // // Animating the child window, the Xaml Island, looks pretty slick.
+            // // But that means we'll have the solid back plate visible during the
+            // // whole animation.
+        }
+
+        {
+            // Attempt 5
+            //
+            // This more closely emulates how Animate window works. When I did
+            // something dumb like the above, where each loop I just did
+            // height+=dy, it worked smooth, but _slow_. The animation took way
+            // longer than 200ms.
+            //
+            // So I tried doing a thing where we animate the window size to some
+            // fraction of the full size, based on the amount of time elapsed.
+            // Turns out, the restore animation itself takes about 200ms, so
+            // this hapens while the window is restoring, which looks just
+            // fucking crazy.
+            //
+            // Maybe the only way for this to work sensibly is with a hide/show?
+            // So that the window doesn't restore, it just pops back to 0, then
+            // animates from there.
+            //
             LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
 
             til::rectangle fullWindowSize{ GetWindowRect() };
-            const int animationDuration = 200; // in ms
-            const int frameDuration = 1; // in ms
-            const int frames = animationDuration / frameDuration;
-            const int dy = fullWindowSize.height<int>() / frames;
-            int currentHeight = 0;
+            const double animationDuration = 200; // in ms
+            const double frameDuration = 1; // in ms
+            const double frames = animationDuration / frameDuration;
+            const double dy = fullWindowSize.height<int>() / frames;
+            double currentHeight = 0;
 
+            auto start = std::chrono::system_clock::now();
             for (int i = 0; i < frames; i++)
             {
-                wil::unique_hrgn rgn{ CreateRectRgn(0,
-                                                    0,
-                                                    fullWindowSize.width<int>(),
-                                                    currentHeight) };
+                auto end = std::chrono::system_clock::now();
+                auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+                // LONGLONG dt = nowInMillis - startInMillis;
+                if (dt > animationDuration)
+                {
+                    break;
+                }
+                if (dt > 0)
+                {
+                    currentHeight = ::base::saturated_cast<double>((dt / animationDuration) * fullWindowSize.height<int>());
 
-                // SetWindowRgn(_window.get(), rgn.get(), true);
-                SetWindowRgn(_interopWindowHandle, rgn.get(), true);
-                currentHeight += dy;
-                // Sleep(frameDuration);
+                    SetWindowPos(_window.get(),
+                                 NULL,
+                                 fullWindowSize.top<int>(),
+                                 fullWindowSize.left<int>(),
+                                 fullWindowSize.width<int>(),
+                                 ::base::saturated_cast<int>(currentHeight),
+                                 SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSENDCHANGING);
+                }
+
+                Sleep(::base::saturated_cast<int>(frameDuration));
             }
-            // SetWindowRgn(_window.get(), nullptr, true);
-            SetWindowRgn(_interopWindowHandle, nullptr, true);
-
-            // Animating the child window, the Xaml Island, looks pretty slick.
-            // But that means we'll have the solid back plate visible during the
-            // whole animation.
+            SetWindowPos(_window.get(),
+                         NULL,
+                         fullWindowSize.top<int>(),
+                         fullWindowSize.left<int>(),
+                         fullWindowSize.width<int>(),
+                         fullWindowSize.height<int>(),
+                         SWP_NOMOVE | SWP_NOSENDCHANGING);
         }
     }
     else
