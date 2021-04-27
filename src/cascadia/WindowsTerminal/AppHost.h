@@ -72,6 +72,7 @@ private:
 
     GUID _CurrentDesktopGuid();
     bool _LazyLoadDesktopManager();
+    GUID _fakeGetCurrentDesktop();
 
     winrt::fire_and_forget _setupGlobalHotkeys();
     winrt::fire_and_forget _createNewTerminalWindow(winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs args);

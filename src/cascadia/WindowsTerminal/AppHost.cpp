@@ -753,6 +753,33 @@ bool AppHost::_LazyLoadDesktopManager()
     return _desktopManager != nullptr;
 }
 
+GUID AppHost::_fakeGetCurrentDesktop()
+{
+    GUID currentlyActiveDesktop;
+
+    static const wchar_t* const PSEUDO_WINDOW_CLASS = L"PseudoWindow";
+    WNDCLASS pseudoClass{ 0 };
+    pseudoClass.lpszClassName = PSEUDO_WINDOW_CLASS;
+    pseudoClass.lpfnWndProc = DefWindowProc;
+    RegisterClass(&pseudoClass);
+    wil::unique_hwnd hwnd{ CreateWindowExW(0,
+                                           PSEUDO_WINDOW_CLASS,
+                                           nullptr,
+                                           WS_OVERLAPPEDWINDOW,
+                                           0,
+                                           0,
+                                           0,
+                                           0,
+                                           HWND_DESKTOP,
+                                           nullptr,
+                                           nullptr,
+                                           nullptr) };
+    ShowWindow(hwnd.get(), SW_SHOW);
+    LOG_IF_FAILED(_desktopManager->GetWindowDesktopId(hwnd.get(), &currentlyActiveDesktop));
+
+    return currentlyActiveDesktop;
+}
+
 void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                             const Remoting::SummonWindowBehavior& args)
 {
@@ -762,8 +789,9 @@ void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*se
     {
         if (_LazyLoadDesktopManager())
         {
-            GUID currentlyActiveDesktop;
-            VirtualDesktopUtils::GetCurrentVirtualDesktopId(&currentlyActiveDesktop);
+            // GUID currentlyActiveDesktop;
+            // VirtualDesktopUtils::GetCurrentVirtualDesktopId(&currentlyActiveDesktop);
+            auto currentlyActiveDesktop = _fakeGetCurrentDesktop();
             LOG_IF_FAILED(_desktopManager->MoveWindowToDesktop(_window->GetHandle(), currentlyActiveDesktop));
         }
     }

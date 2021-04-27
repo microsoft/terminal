@@ -6,7 +6,11 @@ Class Name:
 - SummonWindowBehavior.h
 
 Abstract:
-- TODO!
+- A helper class for encapsulating the various properties that control _how_ a
+  window should be summoned, when it is summoned. This will be created from the
+  properties in a GlobalSummonArgs, and passed into a SummonWindowSelectionArgs.
+  When the window is summoned, the Monarch will use these args in the
+  SummonWindowSelectionArgs to tell the peasant how to be summoned.
 
 --*/
 
