@@ -52,6 +52,7 @@ namespace TerminalApp
         String WindowName;
         UInt64 WindowId;
         void RenameFailed();
+        Boolean IsQuakeWindow();
 
         Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
         Boolean CenterOnLaunch { get; };
@@ -88,5 +89,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
         event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> SettingsChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
     }
 }

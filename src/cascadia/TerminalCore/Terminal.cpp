@@ -52,7 +52,8 @@ Terminal::Terminal() :
     _blockSelection{ false },
     _selection{ std::nullopt },
     _taskbarState{ 0 },
-    _taskbarProgress{ 0 }
+    _taskbarProgress{ 0 },
+    _trimBlockSelection{ false }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -119,6 +120,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _wordDelimiters = settings.WordDelimiters();
     _suppressApplicationTitle = settings.SuppressApplicationTitle();
     _startingTitle = settings.StartingTitle();
+    _trimBlockSelection = settings.TrimBlockSelection();
 
     _terminalInput->ForceDisableWin32InputMode(settings.ForceVTInput());
 
