@@ -205,9 +205,9 @@ We need a way to determine where an action came from to minimize how many action
               redirect `_KeyMap` to the newly added `Command` instead,
               and update the conflicting one.
 2. Load settings.json
-     - Add a parent to `ActionMap`
+     - Create a child for the `ActionMap`
          - The purpose of a parent is to continue a search when the current `ActionMap` can't find a `Command` for a query. The parent is intended to be immutable.
-     - Load the actions array like normal (see step 1)
+     - Load the actions array like normal into the child (see step 1)
 
 Introducing a parent mechanism to `ActionMap` allows it to understand where a `Command` came from. This allows us to minimize the number of actions we serialize when we write to disk, as opposed to serializing the entire list of actions.
 
@@ -225,11 +225,8 @@ There are several ways a command can be modified:
 - change the icon
 - change the action
 
-Changing the name and 
-
 It is important that these modifications are done through `ActionMap` instead of `Command`.
- This is to ensure that the `ActionMap` is always aligned with `Command`'s values. Thus,
- we can add the following functions to `ActionMap`:
+ This is to ensure that the `ActionMap` is always aligned with `Command`'s values. `Command` should only expose getters in the projected type to enforce this. Thus, we can add the following functions to `ActionMap`:
 
  ```c++
  runtimeclass ActionMap
@@ -247,10 +244,10 @@ It is important that these modifications are done through `ActionMap` instead of
 
 `SetName` will need to make sure to modify the `Command` in `_ActionMap` and regenerate `NameMap`.
 
-`SetIcon` will only need to modify the provided `Command`.
+`SetIcon` will only need to modify the provided `Command`. We can choose to not expose this in the `ActionMap`, but doing so makes the API consistent.
 
 `SetAction` will need to begin by updating the provided `Command`'s `ActionAndArgs`.
- If the generated name is being used, the name will need to be updated.
+ If the generated name is being used, the name will need to be updated. `_ActionMap` will need to be updated with a new `InternalActionID` for the new action. This is a major operation and so all views exposed will need to be regenerated.
 
 Regarding [Layering Actions](#layering-actions), if the `Command` does not exist in the current layer,
  but exists in a parent layer, we need to...
@@ -268,7 +265,7 @@ Removing a name is currently omitted from this spec because there
 
 The only kind of unbinding currently in scope is freeing a key chord such that
  no action is executed on that key stroke. To do this, simply `ActionMap::AddAction` a `Command` with...
- - `ActionAndArgs`: `ShorctutAction = Invalid` and `IActionArgs = nullptr`
+ - `ActionAndArgs`: `ShortcutAction = Invalid` and `IActionArgs = nullptr`
  - `Keys` being the provided key chord
 
 In explicitly storing an "unbound" action, we are explicitly saying that this key chord
