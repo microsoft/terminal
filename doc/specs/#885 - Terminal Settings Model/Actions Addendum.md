@@ -55,15 +55,16 @@ runtimeclass Command
     String Name;
 
     // The key binding that can be used to invoke this action.
-    // NOTE: This is really the only relevant change here.
-    //       We're actually holding the KeyChord instead of just the text.
-    IReference<KeyChord> Keys;
+    // NOTE: We're actually holding the KeyChord instead of just the text.
+    //       KeyChordText just serializes the relevant keychord
+    Microsoft.Terminal.Control.KeyChord Keys;
+    String KeyChordText;
 
     // The action itself.
-    ActionAndArgs Action;
+    ActionAndArgs ActionAndArgs;
 
-    // NOTE: nested and iterable command logic will still be here. But they are omitted
-    //       to make this section seem cleaner.
+    // NOTE: nested and iterable command logic will still be here,
+    //       But they are omitted to make this section seem cleaner.
 
     // Future Considerations:
     // - [#6899]: Action IDs --> add an identifier here
@@ -72,21 +73,21 @@ runtimeclass Command
 
 The goal here is to consolidate key binding actions and command palette actions into a single class.
  This will also require the following supplemental changes:
- - `Action::LayerJson`
+ - `Command::LayerJson`
    - This must combine the logic of `KeyMapping::LayerJson` and `Command::LayerJson`.
- - Key Chord text
-   - `String Action::KeyChordText{ get; }` _can_ be exposed to pass the text directly to the command palette.
-       This would depend on `Keys` and, thus, propagate changes automatically.
-   - Instead, we'll only expose `Keys`, and the caller (i.e. Command Palette) would be responsible for converting that
-      into a legible format.
+ - Key Chord data
+   - Internally, store a `vector<KeyChord> _keyMappings` to keep track of all the key chords associated with this action.
+   - `RegisterKey` and `EraseKey` update `_keyMappings`, and ensure that the latest key registered is at the end of the list.
+   - `Keys()` simply returns the last entry of `_keyMappings`, which is the latest key chord this action is bound to.
+   - `KeyChordText())` is exposed to pass the text directly to the command palette.
+       This depends on `Keys` and, thus, propagate changes automatically.
  - Observable properties
-   - Several members can be exposed as observable (as they are in `Command`) such as the name, key chord text, and icon.
-   - NOTE: `Command` has observable properties today. Ideally, we could remove `INotifyPropertyChanged` from the settings model
-      entirely, but this will be a longer process. We'll just not rely on this too much for now.
+   - `Command` has observable properties today, but does not need them because `Command` will never change while the app is running. 
  - Nested and iterable commands
    - `HasNestedCommands`, `NestedCommands{ get; }`, `IterateOn` will continue to be exposed.
    - A setter for these customizations will not be exposed until we find it necessary (i.e. adding support for customizing it in the Settings UI)
    - Command expansion can continue to be exposed here to reduce implementation cost.
+   - An additional `IsNestedCommand` is necessary to record a case where a nested command is being unbound `{ "commands": null, "name": "foo" }`.
 
 Overall, the `Command` class is simply being promoted to include the `KeyChord` it has.
  This allows the implementation cost of this step to be relatively small.
@@ -110,29 +111,33 @@ It makes sense to store these actions as maps. So, following step 1 above, we ca
 ```c++
 runtimeclass ActionMap
 {
-    Action GetActionByName(String name);
     ActionAndArgs GetActionByKeyChord(KeyChord keys);
 
     KeyChord GetKeyBindingForAction(ShortcutAction action);
     KeyChord GetKeyBindingForAction(ShortcutAction action, IActionArgs actionArgs);
+
+    IMapView<String, Command> NameMap { get; };
 
     // Future Considerations:
     // - [#6899]: Action IDs --> GetActionByID()
 }
 ```
 
-The getters will return null if a matching action or key chord is not found. Internally, we can
- store the actions as follows:
+The getters will return null if a matching action or key chord is not found. Since iterable commands need to be expanded at in TerminalApp, we'll just expose `NameMap`, then let TerminalApp perform the expansion as they do now. Internally, we can store the actions as follows:
 
 ```c++
-std::map<std::wstring, Action> _NameMap;
-std::map<KeyChord, Action> _KeyMap;
+std::map<KeyChord, InternalActionID> _KeyMap;
+std::map<InternalActionID, Command> _ActionMap;
 ```
 
-`GetActionByName` and `GetActionByKeyChord` will directly query the internal maps.
-`GetKeyBindingForAction` will iterate through the `_KeyMap` to find a match (similar to how it is now).
-See [Copying the `ActionMap`](#copying-the-actionmap) to learn more about how this system works when creating
- a clone of the settings model.
+`InternalActionID` will be a hash of `ActionAndArgs` such that two `ActionAndArgs` with the same `ShortcutAction` and `IActionArgs` output the same hash value.
+
+`GetActionByKeyChord` will use `_KeyMap` to find the `InternalActionID`, then use the `_ActionMap` to find the bound `Command`.
+`GetKeyBindingForAction` will hash the provided `ActionAndArgs` (constructed by the given parameters) and check `_ActionMap` for the given `InternalActionID`.
+
+`NameMap` will need to ensure every action in `_ActionMap` is added to the output name map if it has an associated name. This is done by simply iterating over `_ActionMap`. Nested commands must be added separately because they cannot be hashed.
+
+`ActionMap` will have an `AddAction(Command cmd)` that will update the internal state whenever a command is registered. If the given command is valid, we will check for collisions and resolve them. Otherwise, we will consider this an "unbound" action and update the internal state normally. It is important that we don't handle "unbound" actions differently because this ensures that we are explicitly unbinding a key chord.
 
 ### Step 3: Settings UI needs
 
@@ -140,23 +145,22 @@ After the former two steps are completed, the new representation of actions in t
  what we have today. In order to bind these new actions to the Settings UI, we need the following:
 
 1. Exposing the maps
-    - `ActionMap::KeyBindings` and `ActionMap::Commands` may need to be added to pass the full list of actions to
-      the Settings UI.
+    - `ActionMap::KeyBindings` and `ActionMap::Commands` may need to be added to pass the full list of actions to the Settings UI.
     - In doing this, we can already update the Settings UI to include a better view of our actions.
 2. Creating a copy of the settings model
     - The Settings UI operates by binding the XAML controls to a copy of the settings model.
-    - See [Copying the `ActionMap`](#copying-the-actionmap) in the potential issues.
-3. Modifying the `Action`s
-    - `ActionMap` must be responsible for changing `Action`s:
-        - If `Name` changes, update `_NameMap`
-        - If `Keys` changes, update `_KeyMap`
-        - Also update the `Action` itself
+    - Copying the `ActionMap` is fairly simple. Just copy the internal state and ensure that `Command::Copy` is called such that no reference to the original WinRT objects persist. Since we are using `InternalActionID`, we will not have to worry about multiple `Command` references existing within the same `ActionMap`.
+3. Modifying the `Command`s
+    - `ActionMap` must be responsible for changing `Command`s so that we can ensure `ActionMap` always has a correct internal state:
+        - It is important that `Command` only exposes getters (not setters) to ensure `ActionMap` is up to date.
+        - If a key chord is being changed, update the `_KeyMap` and the `Command` itself.
+        - If a key binding is being deleted, add an unbound action to the given key chord.
     - This is similar to how color schemes are maintained today.
     - In the event that name/key-chord is set to something that's already taken, we need to propagate those changes to
        the rest of `ActionMap`. As we do with the JSON, we respect the last name/key-chord set by the user. See [Modifying Actions](#modifying-actions)
        in potential issues.
 4. Serialization
-    - `Action::ToJson()` and `ActionMap::ToJson()` should perform most of the work for us.
+    - `Command::ToJson()` and `ActionMap::ToJson()` should perform most of the work for us. Simply iterate over the `_ActionMap` and call `Command::ToJson` on each action.
     - See [Unbinding actions](#unbinding-actions) in potential issues.
 
 
@@ -188,28 +192,6 @@ N/A
 
 ## Potential Issues
 
-### Copying the `ActionMap`
-
-The Settings UI needs `ActionMap::Copy()` so that it can bind XAML controls to the clone. However, the design
-above has two internal maps that own their `Action`s. Unfortunately, STL does not have multi-indexed data
-structures. To get around this issue, we can introduce internal action IDs to ensure we don't duplicate an action twice.
-
-```c++
-std::map<std::wstring, unsigned int> _NameMap;
-std::map<KeyChord, unsigned int> _KeyMap;
-
-// This could be stored as a `map<unsigned int, Action>`,
-//  but a vector provides this functionality much better.
-std::vector<Action> _ActionList;
-```
-
-With this design, the internal action ID can be saved as an `unsigned int`. This ID is never exposed.
- When an `Action` is added to the `ActionMap`, we update `_ActionList`.
-
-Now that there are no duplicates between `_NameMap` and `_KeyMap`, creating a copy of `_NameMap` and
- `_KeyMap` is trivial. We can iterate over `_ActionList` to create a copy of every `Action` stored
- and save it to a new `_ActionList`.
-
 ### Layering Actions
 
 We need a way to determine where an action came from to minimize how many actions we serialize when we
@@ -218,22 +200,22 @@ We need a way to determine where an action came from to minimize how many action
      - For each of the actions in the JSON...
          - Construct the `Command` (basically the `Command::LayerJson` we have today)
          - Add it to the `ActionMap`
-           - this should update `_NameMap`, `_KeyMap`, and `_ActionList` appropriately
-           - if the newly added name/key chord conflicts with a pre-existing one,
-              redirect `_NameMap` or `_KeyMap` to the newly added `Command` instead,
+           - this should update the internal state of `ActionMap` appropriately
+           - if the newly added key chord conflicts with a pre-existing one,
+              redirect `_KeyMap` to the newly added `Command` instead,
               and update the conflicting one.
 2. Load settings.json
      - Add a parent to `ActionMap`
-         - The purpose of a parent is to continue a search when the current `ActionMap`
-            can't find a `Command` for a query. The parent is intended to be immutable.
+         - The purpose of a parent is to continue a search when the current `ActionMap` can't find a `Command` for a query. The parent is intended to be immutable.
      - Load the actions array like normal (see step 1)
 
-Introducing a parent mechanism to `ActionMap` allows it to understand where a `Command`
- came from. This allows us to minimize the number of actions we serialize when we write
- to disk, as opposed to serializing the entire list of actions.
+Introducing a parent mechanism to `ActionMap` allows it to understand where a `Command` came from. This allows us to minimize the number of actions we serialize when we write to disk, as opposed to serializing the entire list of actions.
 
-`ActionMap` queries will need to check their parent when they cannot find a matching `Command`
- in their `_ActionList` (or sooner).
+`ActionMap` queries will need to check their parent when they cannot find a matching `InternalActionID` in their `_ActionMap`.
+
+Since `NameMap` is generated upon request, we will need to pass a `std::set<InternalActionID>` as we generate the `NameMap` across each layer. This will ensure that each `Command` is only added to the `NameMap` once. We will start from the current layer and move up the inheritance tree to ensure that the current layer takes priority.
+
+Nested commands will be saved to their own map since they do not have an `InternalActionID`. To ensure layering is accomplished correctly, we will need to start from the top-most parent and update `NameMap`. As we go down the inheritance tree, any conflicts are resolved by prioritizing the current layer (the child). This ensures that the current layer takes priority. 
 
 ### Modifying Actions
 
@@ -242,6 +224,8 @@ There are several ways a command can be modified:
 - change the name
 - change the icon
 - change the action
+
+Changing the name and 
 
 It is important that these modifications are done through `ActionMap` instead of `Command`.
  This is to ensure that the `ActionMap` is always aligned with `Command`'s values. Thus,
@@ -261,16 +245,12 @@ It is important that these modifications are done through `ActionMap` instead of
  If the new key chord was already taken, we also need to update the conflicting `Command`
  and remove its key chord.
 
-`SetName` will need to make sure to modify the `_NameMap` and the provided `Command`.
- We also need to iterate through the list of commands and see if the old name is still
- in use by another command. If that's the case, don't remove `_NameMap[oldName]`,
- instead retarget it.
+`SetName` will need to make sure to modify the `Command` in `_ActionMap` and regenerate `NameMap`.
 
 `SetIcon` will only need to modify the provided `Command`.
 
 `SetAction` will need to begin by updating the provided `Command`'s `ActionAndArgs`.
- If the generated name is being used, the name will need to be updated. As with `SetName`,
- we also need to update `_NameMap` and check if the old name is still in use by another command.
+ If the generated name is being used, the name will need to be updated.
 
 Regarding [Layering Actions](#layering-actions), if the `Command` does not exist in the current layer,
  but exists in a parent layer, we need to...
@@ -278,24 +258,23 @@ Regarding [Layering Actions](#layering-actions), if the `Command` does not exist
  2. store the duplicate in the current layer
  3. make the modification to the duplicate
 
-This ensures that the change propagates post-serialization.
+This ensures that the change persists post-serialization.
 
 ### Unbinding actions
 
-Removing a name or a key chord is currently omitted from this spec because there
- is no Settings UI use case for it at the moment. This class of scenarios is
+Removing a name is currently omitted from this spec because there
+ is no Settings UI use case for it at the moment. This scenario is
  designed for Command Palette customization.
 
 The only kind of unbinding currently in scope is freeing a key chord such that
- no action is executed on that key stroke. To do this...
- 1. On the existing `Action`, set `ShortcutAction = Unbound` and `IActionArgs = nullptr`
- 2. The associated name and `KeyChord` are mapped to this "unbound" action
+ no action is executed on that key stroke. To do this, simply `ActionMap::AddAction` a `Command` with...
+ - `ActionAndArgs`: `ShorctutAction = Invalid` and `IActionArgs = nullptr`
+ - `Keys` being the provided key chord
 
 In explicitly storing an "unbound" action, we are explicitly saying that this key chord
- must be passed through and this string must be removed from the command palette.
+ must be passed through and this string must be removed from the command palette. `AddAction` automatically handles updating the internal state of `ActionMap` and any conflicting `Commands`.
 
-We specifically need an "unbound" action for serialization. This way, we can output something like this
- in the JSON:
+This allows us to output something like this in the JSON:
 
 ```js
 { "command": "unbound", "keys": "ctrl+c" }
@@ -308,8 +287,8 @@ There are a number of ideas regarding actions that would be fairly trivial to im
 - [#6899]: Action IDs
   - As actions grow to become more widespread within Windows Terminal (i.e. dropdown and jumplist integration),
      a formal ID system would help users reference the same action throughout the app. With the internal
-     ID system introduced in the "copying the action map" section, we would simply introduce a new
-     `std:map<string, unsigned int> _ExternalIDMap` that is updated like the others, and add a `String ID`
+     ID system introduced earlier, we would simply introduce a new
+     `std:map<string, InternalActionID> _ExternalIDMap` that is updated like the others, and add a `String ID`
      property to `Action`.
 - [#8100] Source Tracking
   - Identifying where a setting came from can be very beneficial in the settings model and UI. For example,
