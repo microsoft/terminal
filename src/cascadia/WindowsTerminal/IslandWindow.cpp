@@ -1116,7 +1116,20 @@ void IslandWindow::_globalActivateWindow()
             // So that the window doesn't restore, it just pops back to 0, then
             // animates from there.
             //
-            LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
+
+            // LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
+            // LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_SHOW));
+
+            // Attempt 6:
+            //
+            // Undocumented, but  SetWindowPlacement with SW_RESTORE _doesn't_
+            // animate the window. However, now the window appears at the full
+            // size, then animates to the right size. I wonder...
+            WINDOWPLACEMENT wpc;
+            wpc.length = sizeof(WINDOWPLACEMENT);
+            GetWindowPlacement(_window.get(), &wpc);
+            wpc.showCmd = SW_RESTORE;
+            SetWindowPlacement(_window.get(), &wpc);
 
             til::rectangle fullWindowSize{ GetWindowRect() };
             const double animationDuration = 200; // in ms
