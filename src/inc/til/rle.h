@@ -444,7 +444,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return _at(position, applies)->first;
         }
 
-        [[nodiscard]] rle<T, S> substr(const S offset = 0, const S count = npos) const
+        [[nodiscard]] rle<T, S, N> substr(const S offset = 0, const S count = npos) const
         {
             // TODO: validate params
             const S startIndex = offset;
@@ -458,7 +458,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             substring.front().second = startApplies;
             substring.back().second = substring.back().second - endApplies + 1;
 
-            return til::rle<T, S>(substring, endIndex - startIndex + 1);
+            return til::rle<T, S, N>(substring, endIndex - startIndex + 1);
         }
 
         // Replaces every value seen in the run with a new one
@@ -472,6 +472,36 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     run.first = newValue;
                 }
             }
+        }
+
+        void replace(const S pos, const S length, const til::rle<T, S, N>& rle)
+        {
+            _merge(rle.cbegin(), rle.cend(), pos, length);
+        }
+
+        void replace(const S pos, const S length, const til::rle<T, S, N>& rle, S subpos, S sublen = npos)
+        {
+            const auto totalRle = rle.size();
+            const auto rleRemain = rle.size() - subpos;
+            const auto subend = sublen >= rleRemain ? rle.end() : rle.end() - (rleRemain - sublen);
+
+            const auto substart = rle.begin() + subpos;
+
+            _merge(substart, subend, pos, length);
+        }
+
+        void replace(const S pos, const S length, const S repeat, const T value)
+        {
+            // TODO: validate position in bounds?
+            std::pair<T, S> item{ value, length };
+            gsl::span<std::pair<T, S>> span{ &item, 1 };
+            _merge(span.begin(), span.end(), pos, length);
+        }
+
+        template<class Iter>
+        void replace(const S pos, const S length, Iter first, Iter last)
+        {
+            _merge(first, last, pos, length);
         }
 
         // Adjust the size of the run.
@@ -523,24 +553,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // If no start is specified, fills the entire list.
         void fill(const T value, const S start = gsl::narrow_cast<S>(0))
         {
-            insert(value, start, gsl::narrow_cast<S>(_size - start));
-        }
-
-        // Inserts this value at the given position for the given run length.
-        void insert(const T value, const S position, const S length = gsl::narrow_cast<S>(1))
-        {
-            // TODO: validate position in bounds?
-            std::pair<T, S> item{ value, length };
-            gsl::span<std::pair<T, S>> span{ &item, 1 };
-            _merge(span.begin(), span.end(), position);
-        }
-
-        // Inserts all values between first and last starting at the given position.
-        template<class Iter>
-        void assign(Iter first, Iter last, const S position = gsl::narrow_cast<S>(0))
-        {
-            //TODO: validate that it doesn't overrun?
-            _merge(first, last, position);
+            const auto length = gsl::narrow_cast<S>(_size - start);
+            replace(start, length, length, value);
         }
 
         constexpr bool operator==(const rle& other) const noexcept
@@ -714,10 +728,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return runPos;
         }
 
+        // Routine Description:
+        // - Combines the given "string" worth of value/length pairs into our
+        //   existing internally stored "string" of pairs.
+        // Arguments:
+        // - first/last - input iterators over the string of pairs to store
+        // - startIndex - location in our existing string to insert/cover/replace with the new data
+        // - coverLength - number of compressed values in our internal storage to "lose" to or "cover" with the new data offset from startIndex
         template<class Iter>
         void _merge(Iter first,
                     Iter last,
-                    const S startIndex)
+                    const S startIndex,
+                    const S givenCoverLength)
         {
             // Definitions:
             // Existing Run = The run length encoded color array we're already storing in memory before this was called.
@@ -727,146 +749,185 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // Example:
             // _size = 10.
             // Existing Run: R3 -> G5 -> B2
-            // Insert Run: Y1 -> N1 at startIndex = 5 and endIndex = 6
-            //            (rgInsertAttrs is a 2 length array with Y1->N1 in it and cInsertAttrs = 2)
+            // Insert Run: Y1 -> N1 at startIndex = 5 and coverLength = 2
+            //            (first to last is a 2 length iteration with Y1->N1 in it)
             // Final Run: R3 -> G2 -> Y1 -> N1 -> G1 -> B2
 
+            // How many "colors" are covered by all compressed pairs in the incoming new items list.
+            // e.g. Y2 -> N5 covers 7 total locations as YYNNNNNN if it were uncompressed.
             const auto newItemsTotalCoverage = std::accumulate(first, last, (S)0, [](S value, auto& item) -> S {
                 return value + gsl::narrow_cast<S>(item.second);
             });
 
+            // How many pairs are in the new items iterators
+            // e.g. Y2 -> N5 is 2 pairs
             const auto newItemsSize = std::distance(first, last);
 
-            // If the insertion size is 1, do some pre-processing to
-            // see if we can get this done quickly.
-            if (newItemsSize == 1)
+            // If npos was specified as the cover length,
+            // we will presume covering until the end of the string.
+            const auto coverLength = givenCoverLength == npos ? _size - startIndex : givenCoverLength;
+
+            // ---
+            // In the simple case, we're given the same length of both and it's a directly replace.
+            // e.g. Y2->N5 and a `coverLength` of 7. This means we would do, for an original R3->G5->B2 and startIndex = 2...
+            // R3->G5->B2 is RRRGGGGGBB (10 columns total)
+            // Y2->N5 at 2 is  YYNNNNN (7 columns covered)
+            // so the result RRYYNNNNNB or compressed is R2->Y2->N5->B1 (10 columns total)
+            // ---
+            // In the complicated cases, we're given a larger or smaller coverLength because the caller wants to
+            // either truncate out or pad out part of the data as they're covering up.
+            // e.g. Y2->N5 and a `coverLength` of 0. This means we would do, for an original R3->G5->B2 and startIndex = 2...
+            // R3->G5->B2 is RRRGGGGGBB (10 columns total)
+            // Y2->N5 at 2 is  YYNNNNN (7 columns inserted where the Y is aligned, but covering nothing... so the rest slides right...)
+            // so the result RRYYNNNNNRGGGGGBB or compressed R2->Y2->N5->R1->G5->B1 (17 columns total)
+            // This is a "grow" case.
+            // -OR-
+            // e.g. Y2->N5 and a `coverLength` of 8 (or more)
+            // R3->G5->B2 is RRRGGGGGBB (10 columns total)
+            // Y2->N5 at 2 is  YYNNNNN (8 columns covered truncating an extra after the final N)
+            // so the result RRYYNNNNN or compressed is R2->Y2->N5 (9 columns total)
+            // This is a "shrink" case.
+            // ---
+            // The math is done like this because S is usually unsigned and we want to floor at 0.
+            const auto grow = newItemsTotalCoverage > coverLength ? newItemsTotalCoverage - coverLength : 0;
+            const auto shrink = coverLength > newItemsTotalCoverage ? coverLength - newItemsTotalCoverage : 0;
+
+            // TODO: GH#XXXX - unlock shortcuts for grow/shrink runs.
+            if (coverLength == newItemsTotalCoverage)
             {
-                // Get the new color attribute we're trying to apply
-                const T NewAttr = first->first;
+                // If the insertion size is 1, do some pre-processing to
+                // see if we can get this done quickly.
 
-                // If the existing run was only 1 element...
-                // ...and the new color is the same as the old, we don't have to do anything and can exit quick.
-                if (_list.size() == 1 && _list.at(0).first == NewAttr)
+                if (newItemsSize == 1)
                 {
-                    return;
-                }
-                // .. otherwise if we internally have a list of 2 or more and we're about to insert a single color
-                // it's possible that we just walk left-to-right through the row and find a quick exit.
-                else if (startIndex >= 0 && newItemsTotalCoverage == 1)
-                {
-                    // First we try to find the run where the insertion happens, using lowerBound and upperBound to track
-                    // where we are currently at.
-                    const auto begin = _list.begin();
-                    S lowerBound = 0;
-                    S upperBound = 0;
-                    for (S i = 0; i < _list.size(); i++)
+                    // Get the new color attribute we're trying to apply
+                    const T NewAttr = first->first;
+
+                    // If the existing run was only 1 element...
+                    // ...and the new color is the same as the old...
+                    if (_list.size() == 1 && _list.front().first == NewAttr)
                     {
-                        const auto curr = begin + i;
-                        upperBound += curr->second;
-
-                        if (startIndex >= lowerBound && startIndex < upperBound)
+                        // ... then we don't have to do anything but return.
+                        return;
+                    }
+                    // .. otherwise if we internally have a list of 2 or more and we're about to insert a single color
+                    // it's possible that we just walk left-to-right through the row and find a quick exit.
+                    else if (startIndex >= 0 && newItemsTotalCoverage == 1)
+                    {
+                        // First we try to find the run where the insertion happens, using lowerBound and upperBound to track
+                        // where we are currently at.
+                        const auto begin = _list.begin();
+                        S lowerBound = 0;
+                        S upperBound = 0;
+                        for (S i = 0; i < _list.size(); i++)
                         {
-                            // The run that we try to insert into has the same color as the new one.
-                            // e.g.
-                            // AAAAABBBBBBBCCC
-                            //       ^
-                            // AAAAABBBBBBBCCC
-                            //
-                            // 'B' is the new color and '^' represents where startIndex is. We don't have to
-                            // do anything.
-                            if (curr->first == NewAttr)
-                            {
-                                return;
-                            }
+                            const auto curr = begin + i;
+                            upperBound += curr->second;
 
-                            // If the current run has length of exactly one, we can simply change the attribute
-                            // of the current run.
-                            // e.g.
-                            // AAAAABCCCCCCCCC
-                            //      ^
-                            // AAAAADCCCCCCCCC
-                            //
-                            // Here 'D' is the new color.
-                            if (curr->second == 1)
+                            if (startIndex >= lowerBound && startIndex < upperBound)
                             {
-                                curr->first = NewAttr;
-                                return;
-                            }
-
-                            // If the insertion happens at current run's lower boundary...
-                            if (startIndex == lowerBound && i > 0)
-                            {
-                                const auto prev = std::prev(curr, 1);
-                                // ... and the previous run has the same color as the new one, we can
-                                // just adjust the counts in the existing two elements in our internal list.
+                                // The run that we try to insert into has the same color as the new one.
                                 // e.g.
                                 // AAAAABBBBBBBCCC
-                                //      ^
-                                // AAAAAABBBBBBCCC
+                                //       ^
+                                // AAAAABBBBBBBCCC
                                 //
-                                // Here 'A' is the new color.
-                                if (NewAttr == prev->first)
+                                // 'B' is the new color and '^' represents where startIndex is. We don't have to
+                                // do anything.
+                                if (curr->first == NewAttr)
                                 {
-                                    prev->second++;
-                                    curr->second--;
-
-                                    // If we just reduced the right half to zero, just erase it out of the list.
-                                    if (curr->second == 0)
-                                    {
-                                        _list.erase(curr);
-                                    }
-
                                     return;
+                                }
+
+                                // If the current run has length of exactly one, we can simply change the attribute
+                                // of the current run.
+                                // e.g.
+                                // AAAAABCCCCCCCCC
+                                //      ^
+                                // AAAAADCCCCCCCCC
+                                //
+                                // Here 'D' is the new color.
+                                if (curr->second == 1)
+                                {
+                                    curr->first = NewAttr;
+                                    return;
+                                }
+
+                                // If the insertion happens at current run's lower boundary...
+                                if (startIndex == lowerBound && i > 0)
+                                {
+                                    const auto prev = std::prev(curr, 1);
+                                    // ... and the previous run has the same color as the new one, we can
+                                    // just adjust the counts in the existing two elements in our internal list.
+                                    // e.g.
+                                    // AAAAABBBBBBBCCC
+                                    //      ^
+                                    // AAAAAABBBBBBCCC
+                                    //
+                                    // Here 'A' is the new color.
+                                    if (NewAttr == prev->first)
+                                    {
+                                        prev->second++;
+                                        curr->second--;
+
+                                        // If we just reduced the right half to zero, just erase it out of the list.
+                                        if (curr->second == 0)
+                                        {
+                                            _list.erase(curr);
+                                        }
+
+                                        return;
+                                    }
+                                }
+
+                                // If the insertion happens at current run's upper boundary...
+                                if (startIndex == upperBound - 1 && i + 1 < _list.size())
+                                {
+                                    // ...then let's try our luck with the next run if possible. This is basically the opposite
+                                    // of what we did with the previous run.
+                                    // e.g.
+                                    // AAAAAABBBBBBCCC
+                                    //      ^
+                                    // AAAAABBBBBBBCCC
+                                    //
+                                    // Here 'B' is the new color.
+                                    const auto next = std::next(curr, 1);
+                                    if (NewAttr == next->first)
+                                    {
+                                        curr->second--;
+                                        next->second++;
+
+                                        if (curr->second == 0)
+                                        {
+                                            _list.erase(curr);
+                                        }
+
+                                        return;
+                                    }
                                 }
                             }
 
-                            // If the insertion happens at current run's upper boundary...
-                            if (startIndex == upperBound - 1 && i + 1 < _list.size())
+                            // Advance one run in the _list.
+                            lowerBound = upperBound;
+
+                            // The lowerBound is larger than startIndex, which means we fail to find an early exit at the run
+                            // where the insertion happens. We can just break out.
+                            if (lowerBound > startIndex)
                             {
-                                // ...then let's try our luck with the next run if possible. This is basically the opposite
-                                // of what we did with the previous run.
-                                // e.g.
-                                // AAAAAABBBBBBCCC
-                                //      ^
-                                // AAAAABBBBBBBCCC
-                                //
-                                // Here 'B' is the new color.
-                                const auto next = std::next(curr, 1);
-                                if (NewAttr == next->first)
-                                {
-                                    curr->second--;
-                                    next->second++;
-
-                                    if (curr->second == 0)
-                                    {
-                                        _list.erase(curr);
-                                    }
-
-                                    return;
-                                }
+                                break;
                             }
-                        }
-
-                        // Advance one run in the _list.
-                        lowerBound = upperBound;
-
-                        // The lowerBound is larger than startIndex, which means we fail to find an early exit at the run
-                        // where the insertion happens. We can just break out.
-                        if (lowerBound > startIndex)
-                        {
-                            break;
                         }
                     }
                 }
-            }
 
-            // If we're about to cover the entire existing run with a new one, we can also make an optimization.
-            if (startIndex == 0 && newItemsTotalCoverage == _size)
-            {
-                // Just dump what we're given over what we have and call it a day.
-                _list.assign(first, last);
+                // If we're about to cover the entire existing run with a new one, we can also make an optimization.
+                if (startIndex == 0 && newItemsTotalCoverage == _size)
+                {
+                    // Just dump what we're given over what we have and call it a day.
+                    _list.assign(first, last);
 
-                return;
+                    return;
+                }
             }
 
             // In the worst case scenario, we will need a new run that is the length of
@@ -881,28 +942,27 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             newRun.reserve(cNewRun);
 
             // We will start analyzing from the beginning of our existing run.
-            // Use some pointers to keep track of where we are in walking through our runs.
+            // Use some iterators to keep track of where we are in walking through our runs.
 
             // Get the existing run that we'll be updating/manipulating.
-            const auto existingRun = _list.begin();
-            auto pExistingRunPos = existingRun;
-            const auto pExistingRunEnd = _list.end();
-            auto pInsertRunPos = first;
-            S cInsertRunRemaining = gsl::narrow_cast<S>(newItemsSize);
-            S iExistingRunCoverage = 0;
+            auto existingPos = _list.begin();
+            const auto existingEnd = _list.end();
+            auto incomingPos = first;
+            S incomingRemaining = gsl::narrow_cast<S>(newItemsSize);
+            S existingCoverage = 0;
 
             // Copy the existing run into the new buffer up to the "start index" where the new run will be injected.
             // If the new run starts at 0, we have nothing to copy from the beginning.
             if (startIndex != 0)
             {
                 // While we're less than the desired insertion position...
-                while (iExistingRunCoverage < startIndex)
+                while (existingCoverage < startIndex)
                 {
                     // Add up how much length we can cover by copying an item from the existing run.
-                    iExistingRunCoverage += pExistingRunPos->second;
+                    existingCoverage += existingPos->second;
 
                     // Copy it to the new run buffer and advance both pointers.
-                    newRun.push_back(*pExistingRunPos++);
+                    newRun.push_back(*existingPos++);
                 }
 
                 // When we get to this point, we've copied full segments from the original existing run
@@ -925,26 +985,26 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 S length = newRun.back().second;
 
                 // If we've covered more cells already than the start of the attributes to be inserted...
-                if (iExistingRunCoverage > startIndex)
+                if (existingCoverage > startIndex)
                 {
                     // ..then subtract some of the length of the final cell we copied.
                     // We want to take remove the difference in distance between the cells we've covered in the new
                     // run and the insertion point.
                     // (This turns G5 into G2 from Example 2 just above)
-                    length -= (iExistingRunCoverage - startIndex);
+                    length -= (existingCoverage - startIndex);
                 }
 
                 // Now we're still on that "last cell copied" into the new run.
                 // If the color of that existing copied cell matches the color of the first segment
                 // of the run we're about to insert, we can just increment the length to extend the coverage.
-                if (newRun.back().first == pInsertRunPos->first)
+                if (newRun.back().first == incomingPos->first)
                 {
-                    length += pInsertRunPos->second;
+                    length += incomingPos->second;
 
                     // Since the color matched, we have already "used up" part of the insert run
                     // and can skip it in our big "memcopy" step below that will copy the bulk of the insert run.
-                    cInsertRunRemaining--;
-                    pInsertRunPos++;
+                    incomingRemaining--;
+                    incomingPos++;
                 }
 
                 // We're done manipulating the length. Store it back.
@@ -952,24 +1012,24 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
 
             // Bulk copy the majority (or all, depending on circumstance) of the insert run into the final run buffer.
-            std::copy_n(pInsertRunPos, cInsertRunRemaining, std::back_inserter(newRun));
+            std::copy_n(incomingPos, incomingRemaining, std::back_inserter(newRun));
 
             // We're technically done with the insert run now and have 0 remaining, but won't bother updating its pointers
             // and counts any further because we won't use them.
 
-            const S endIndex = startIndex + newItemsTotalCoverage - 1;
+            const S endIndex = startIndex + shrink + (newItemsTotalCoverage - grow) - 1;
 
             // Now we need to move our pointer for the original existing run forward and update our counts
             // on how many cells we could have copied from the source before finishing off the new run.
-            while (iExistingRunCoverage <= endIndex)
+            while (existingCoverage <= endIndex)
             {
-                FAIL_FAST_IF(!(pExistingRunPos != pExistingRunEnd));
-                iExistingRunCoverage += pExistingRunPos->second;
-                pExistingRunPos++;
+                FAIL_FAST_IF(!(existingPos != existingEnd));
+                existingCoverage += existingPos->second;
+                existingPos++;
             }
 
             // If we still have original existing run cells remaining, copy them into the final new run.
-            if (pExistingRunPos != pExistingRunEnd || iExistingRunCoverage != (endIndex + 1))
+            if (existingPos != existingEnd || existingCoverage != (endIndex + 1))
             {
                 // We advanced the existing run pointer and its count to on or past the end of what the insertion run filled in.
                 // If this ended up being past the end of what the insertion run covers, we have to account for the cells after
@@ -985,19 +1045,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 //   (which is R3 -> G4 -> Y2 -> B1 -> X5)
                 //   we would need to grab a piece of that B2 we already skipped past.
                 // iExistingRunCoverage = 10. endIndex = 8. endIndex+1 = 9. 10 > 9. So we skipped something.
-                if (iExistingRunCoverage > (endIndex + 1))
+                if (existingCoverage > (endIndex + 1))
                 {
                     // Back up the existing run pointer so we can grab the piece we skipped.
-                    pExistingRunPos--;
+                    existingPos--;
 
                     // If the color matches what's already in our run, just increment the count value.
                     // This case is slightly off from the example above. This case is for if the B2 above was actually Y2.
                     // That Y2 from the existing run is the same color as the Y2 we just filled a few columns left in the final run
                     // so we can just adjust the final run's column count instead of adding another segment here.
-                    if (newRun.back().first == pExistingRunPos->first)
+                    if (newRun.back().first == existingPos->first)
                     {
                         S length = newRun.back().second;
-                        length += (iExistingRunCoverage - (endIndex + 1));
+                        length += (existingCoverage - (endIndex + 1));
                         newRun.back().second = length;
                     }
                     else
@@ -1009,15 +1069,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                         newRun.emplace_back();
 
                         // Copy the existing run's color information to the new run
-                        newRun.back().first = pExistingRunPos->first;
+                        newRun.back().first = existingPos->first;
 
                         // Adjust the length of that copied color to cover only the reduced number of columns needed
                         // now that some have been replaced by the insert run.
-                        newRun.back().second = iExistingRunCoverage - (endIndex + 1);
+                        newRun.back().second = existingCoverage - (endIndex + 1);
                     }
 
                     // Now that we're done recovering a piece of the existing run we skipped, move the pointer forward again.
-                    pExistingRunPos++;
+                    existingPos++;
                 }
 
                 // OK. In this case, we didn't skip anything. The end of the insert run fell right at a boundary
@@ -1031,21 +1091,21 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 // New Run desired when done = R3 -> B7
                 // Existing run pointer is on B2.
                 // We want to merge the 2 from the B2 into the B5 so we get B7.
-                else if (newRun.back().first == pExistingRunPos->first)
+                else if (newRun.back().first == existingPos->first)
                 {
                     // Add the value from the existing run into the current new run position.
                     S length = newRun.back().second;
-                    length += pExistingRunPos->second;
+                    length += existingPos->second;
                     newRun.back().second = length;
 
                     // Advance the existing run position since we consumed its value and merged it in.
-                    pExistingRunPos++;
+                    existingPos++;
                 }
 
                 // Now bulk copy any segments left in the original existing run
-                if (pExistingRunPos < pExistingRunEnd)
+                if (existingPos < existingEnd)
                 {
-                    std::copy_n(pExistingRunPos, (pExistingRunEnd - pExistingRunPos), std::back_inserter(newRun));
+                    std::copy_n(existingPos, (existingEnd - existingPos), std::back_inserter(newRun));
                 }
             }
 

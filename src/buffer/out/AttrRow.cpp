@@ -117,7 +117,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
                                                const size_t /*cBufferWidth*/)
 try
 {
-    mybase::assign(newAttrs.begin(), newAttrs.end(), gsl::narrow<UINT>(iStart));
+    mybase::replace(iStart, mybase::npos, newAttrs.begin(), newAttrs.end());
 
     return S_OK;
 }
