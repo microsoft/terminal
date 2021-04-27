@@ -40,6 +40,8 @@ namespace ControlUnitTests
         WINRT_PROPERTY(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, StartingTabColor, nullptr);
 
         winrt::Microsoft::Terminal::Core::ICoreAppearance UnfocusedAppearance() { return {}; };
+
+        WINRT_PROPERTY(bool, TrimBlockSelection, false);
         // ------------------------ End of Core Settings -----------------------
 
         WINRT_PROPERTY(winrt::hstring, ProfileName);
