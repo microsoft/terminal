@@ -12,6 +12,7 @@ CXICON
 CYICON
 D2DERR_SHADER_COMPILE_FAILED
 dataobject
+dcomp
 DERR
 dlldata
 DONTADDTORECENT
@@ -127,9 +128,12 @@ wsregex
 wwinmain
 XDocument
 XElement
+xhash
 xlocmes
 xlocmon
 xlocnum
 xloctime
 XParse
 xstring
+xtree
+xutility
