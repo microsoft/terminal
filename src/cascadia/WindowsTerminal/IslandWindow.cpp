@@ -1125,13 +1125,37 @@ void IslandWindow::_globalActivateWindow()
             // Undocumented, but  SetWindowPlacement with SW_RESTORE _doesn't_
             // animate the window. However, now the window appears at the full
             // size, then animates to the right size. I wonder...
+
+            // // 6b: TODO set the window to have no height before the restore
+            // SetWindowPos(_window.get(),
+            //              NULL,
+            //              fullWindowSize.top<int>(),
+            //              fullWindowSize.left<int>(),
+            //              fullWindowSize.width<int>(),
+            //              24, //0, // neither 0 nor 24 worked here
+            //              SWP_NOMOVE | SWP_NOSENDCHANGING);
+
             WINDOWPLACEMENT wpc;
             wpc.length = sizeof(WINDOWPLACEMENT);
             GetWindowPlacement(_window.get(), &wpc);
+
+            // 6c. Stash the normal position as the thing to resize first
+            til::rectangle normalWorkspacePos{ wpc.rcNormalPosition };
+
             wpc.showCmd = SW_RESTORE;
+            // // 6a: set the window's size to have no height during the SetWindowPlacement
+            // wpc.rcNormalPosition.bottom = wpc.rcNormalPosition.top;
+            // // /6a: it's definitely not this one :(
+
+            // 6c: make sure we start from having basically nothing visible, so
+            // that the animation doesn't hop from full size to tiny on the
+            // first frame.
+            wpc.rcNormalPosition.bottom = wpc.rcNormalPosition.top + 32;
             SetWindowPlacement(_window.get(), &wpc);
 
-            til::rectangle fullWindowSize{ GetWindowRect() };
+            til::rectangle badWindowPos{ GetWindowRect() };
+            til::rectangle fullWindowSize{ badWindowPos.origin(), normalWorkspacePos.size() };
+
             const double animationDuration = 200; // in ms
             const double frameDuration = 1; // in ms
             const double frames = animationDuration / frameDuration;
@@ -1142,15 +1166,14 @@ void IslandWindow::_globalActivateWindow()
             for (int i = 0; i < frames; i++)
             {
                 auto end = std::chrono::system_clock::now();
-                auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-                // LONGLONG dt = nowInMillis - startInMillis;
+                double dt = ::base::saturated_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
                 if (dt > animationDuration)
                 {
                     break;
                 }
                 if (dt > 0)
                 {
-                    currentHeight = ::base::saturated_cast<double>((dt / animationDuration) * fullWindowSize.height<int>());
+                    currentHeight = ::base::saturated_cast<double>((dt / animationDuration) * fullWindowSize.height<double>());
 
                     SetWindowPos(_window.get(),
                                  NULL,
@@ -1160,8 +1183,17 @@ void IslandWindow::_globalActivateWindow()
                                  ::base::saturated_cast<int>(currentHeight),
                                  SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSENDCHANGING);
                 }
+                // start the animation timer after the first frame. This didn't
+                // actually really do anything. In both debug and release, we
+                // only really get like 2 frames of the animation when it's set
+                // to a duration of 200ms, which is basically pointless. It's
+                // way smoother for 2000ms, but that's also _SO_ slow.
+                if (i == 0)
+                {
+                    start = end;
+                }
 
-                Sleep(::base::saturated_cast<int>(frameDuration));
+                // Sleep(::base::saturated_cast<int>(frameDuration));
             }
             SetWindowPos(_window.get(),
                          NULL,
