@@ -755,30 +755,30 @@ bool AppHost::_LazyLoadDesktopManager()
     return _desktopManager != nullptr;
 }
 
-static wil::unique_event windowCreated;
+// static wil::unique_event windowCreated;
 GUID AppHost::_fakeGetCurrentDesktop()
 {
     GUID currentlyActiveDesktop;
 
-    static bool createEvent{ []() {
-        windowCreated.create();
-        return true;
-    }() };
-    static auto fakeWndProc = [](HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) -> LRESULT {
-        if (message == WM_SHOWWINDOW && wparam)
-        {
-            windowCreated.SetEvent();
-        }
-        return DefWindowProc(window, message, wparam, lparam);
-    };
+    // static bool createEvent{ []() {
+    //     windowCreated.create();
+    //     return true;
+    // }() };
+    // static auto fakeWndProc = [](HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) -> LRESULT {
+    //     if (message == WM_SHOWWINDOW && wparam)
+    //     {
+    //         windowCreated.SetEvent();
+    //     }
+    //     return DefWindowProc(window, message, wparam, lparam);
+    // };
 
     // *** magic static ***
     // Only initialize the psuedo class once over the lifetime of the process
     static ATOM pseudoClassAtom{ []() {
         WNDCLASS pseudoClass{ 0 };
         pseudoClass.lpszClassName = PSEUDO_WINDOW_CLASS;
-        // pseudoClass.lpfnWndProc = DefWindowProc;
-        pseudoClass.lpfnWndProc = fakeWndProc;
+        pseudoClass.lpfnWndProc = DefWindowProc;
+        // pseudoClass.lpfnWndProc = fakeWndProc;
         return RegisterClass(&pseudoClass);
     }() };
 
@@ -794,11 +794,20 @@ GUID AppHost::_fakeGetCurrentDesktop()
                                            nullptr,
                                            nullptr,
                                            nullptr) };
-    windowCreated.ResetEvent();
-    ShowWindow(hwnd.get(), SW_SHOWNORMAL);
+    // windowCreated.ResetEvent();
+
+    // ShowWindow(hwnd.get(), SW_SHOWNORMAL);
     // Sleep(1); // !! LOAD BEARING !!
 
-    WaitForSingleObject(windowCreated.get(), INFINITE);
+    BOOL onCurrent = false;
+    while (!onCurrent)
+    {
+        ShowWindow(hwnd.get(), SW_HIDE);
+        ShowWindow(hwnd.get(), SW_RESTORE);
+        _desktopManager->IsWindowOnCurrentVirtualDesktop(hwnd.get(), &onCurrent);
+    }
+
+    // WaitForSingleObject(windowCreated.get(), INFINITE);
 
     LOG_IF_FAILED(_desktopManager->GetWindowDesktopId(hwnd.get(), &currentlyActiveDesktop));
 
