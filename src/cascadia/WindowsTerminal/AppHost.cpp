@@ -755,30 +755,56 @@ bool AppHost::_LazyLoadDesktopManager()
     return _desktopManager != nullptr;
 }
 
-// static wil::unique_event windowCreated;
+static wil::unique_event windowCreated;
 GUID AppHost::_fakeGetCurrentDesktop()
 {
     GUID currentlyActiveDesktop;
 
-    // static bool createEvent{ []() {
-    //     windowCreated.create();
-    //     return true;
-    // }() };
-    // static auto fakeWndProc = [](HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) -> LRESULT {
-    //     if (message == WM_SHOWWINDOW && wparam)
-    //     {
-    //         windowCreated.SetEvent();
-    //     }
-    //     return DefWindowProc(window, message, wparam, lparam);
-    // };
+    static bool createEvent{ []() {
+        windowCreated.create();
+        return true;
+    }() };
+    static auto fakeWndProc = [](HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) -> LRESULT {
+        switch (message)
+        {
+        case WM_SHOWWINDOW:
+        {
+            OutputDebugString(L"WM_SHOWWINDOW\n");
+            break;
+        }
+        case WM_ACTIVATE:
+        {
+            OutputDebugString(L"WM_ACTIVATE\n");
+
+            break;
+        }
+        case WM_CREATE:
+        {
+            OutputDebugString(L"WM_CREATE\n");
+            // PostMessage(window, WM_USER + 100, 0, 0);
+            break;
+        }
+        case WM_USER + 100:
+        {
+            OutputDebugString(L"WM_USER + 100\n");
+            windowCreated.SetEvent();
+        }
+        }
+
+        // if (message == WM_ACTIVATE)
+        // {
+        //     windowCreated.SetEvent();
+        // }
+        return DefWindowProc(window, message, wparam, lparam);
+    };
 
     // *** magic static ***
     // Only initialize the psuedo class once over the lifetime of the process
     static ATOM pseudoClassAtom{ []() {
         WNDCLASS pseudoClass{ 0 };
         pseudoClass.lpszClassName = PSEUDO_WINDOW_CLASS;
-        pseudoClass.lpfnWndProc = DefWindowProc;
-        // pseudoClass.lpfnWndProc = fakeWndProc;
+        // pseudoClass.lpfnWndProc = DefWindowProc;
+        pseudoClass.lpfnWndProc = fakeWndProc;
         return RegisterClass(&pseudoClass);
     }() };
 
@@ -794,20 +820,31 @@ GUID AppHost::_fakeGetCurrentDesktop()
                                            nullptr,
                                            nullptr,
                                            nullptr) };
-    // windowCreated.ResetEvent();
 
-    // ShowWindow(hwnd.get(), SW_SHOWNORMAL);
-    // Sleep(1); // !! LOAD BEARING !!
-
-    BOOL onCurrent = false;
-    while (!onCurrent)
     {
-        ShowWindow(hwnd.get(), SW_HIDE);
-        ShowWindow(hwnd.get(), SW_RESTORE);
-        _desktopManager->IsWindowOnCurrentVirtualDesktop(hwnd.get(), &onCurrent);
+        // // Attempt 1:
+        // ShowWindow(hwnd.get(), SW_SHOWNORMAL);
+        // Sleep(1); // !! LOAD BEARING !!
     }
 
-    // WaitForSingleObject(windowCreated.get(), INFINITE);
+    OutputDebugString(L"after CreateWindowExW");
+    windowCreated.ResetEvent();
+    OutputDebugString(L"after ResetEvent");
+    ShowWindow(hwnd.get(), SW_SHOWNORMAL);
+    // PostMessage(hwnd.get(), WM_USER + 100, 0, 0);
+    WaitForSingleObject(windowCreated.get(), INFINITE);
+    OutputDebugString(L"after WaitForSingleObject");
+
+    {
+        // // Attempt 3
+        // BOOL onCurrent = false;
+        // while (!onCurrent)
+        // {
+        //     ShowWindow(hwnd.get(), SW_HIDE);
+        //     ShowWindow(hwnd.get(), SW_RESTORE);
+        //     _desktopManager->IsWindowOnCurrentVirtualDesktop(hwnd.get(), &onCurrent);
+        // }
+    }
 
     LOG_IF_FAILED(_desktopManager->GetWindowDesktopId(hwnd.get(), &currentlyActiveDesktop));
 
