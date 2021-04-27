@@ -1205,17 +1205,168 @@ void IslandWindow::_globalActivateWindow()
         }
 
         {
-            // attempt 7: This flashes when it appears, then is hidden, and the
-            // borders appear while animating.
+            // // attempt 7: This flashes when it appears, then is hidden, and the
+            // // borders appear while animating.
+            // WINDOWPLACEMENT wpc;
+            // wpc.length = sizeof(WINDOWPLACEMENT);
+            // GetWindowPlacement(_window.get(), &wpc);
+            // wpc.showCmd = SW_RESTORE;
+            // SetWindowPlacement(_window.get(), &wpc);
+            // wpc.showCmd = SW_HIDE;
+            // SetWindowPlacement(_window.get(), &wpc);
+
+            // AnimateWindow(_window.get(), 200, AW_SLIDE | AW_VER_POSITIVE);
+        }
+
+        {
+            // // Attempt 8:
+            // //
+            // // This is attempt #4, but with the added fun of trying to make the
+            // // root hwnd transparent during the animation. I thought I could use
+            // // this to hide the root while animating.
+            // //
+            // // Unfortunately, that just makes everything^* transparent. So
+            // // that's not right.
+            // WINDOWPLACEMENT wpc;
+            // wpc.length = sizeof(WINDOWPLACEMENT);
+            // GetWindowPlacement(_window.get(), &wpc);
+            // wpc.showCmd = SW_RESTORE;
+            // SetWindowPlacement(_window.get(), &wpc);
+
+            // til::rectangle fullWindowSize{ GetWindowRect() };
+            // const double animationDuration = 200; // in ms
+            // const double frameDuration = 1; // in ms
+            // const double frames = animationDuration / frameDuration;
+            // const double dy = fullWindowSize.height<double>() / frames;
+            // double currentHeight = 0;
+
+            // auto originalExStyle = GetWindowLong(_window.get(), GWL_EXSTYLE);
+            // ::SetWindowLong(_window.get(),
+            //                 GWL_EXSTYLE,
+            //                 originalExStyle | WS_EX_LAYERED);
+            // ::SetLayeredWindowAttributes(_window.get(), 0, 64, LWA_ALPHA);
+
+            // for (int i = 0; i < frames; i++)
+            // {
+            //     wil::unique_hrgn rgn{ CreateRectRgn(0,
+            //                                         0,
+            //                                         fullWindowSize.width<int>(),
+            //                                         ::base::saturated_cast<int>(currentHeight)) };
+
+            //     // SetWindowRgn(_window.get(), rgn.get(), true);
+            //     SetWindowRgn(_interopWindowHandle, rgn.get(), true);
+            //     currentHeight += dy;
+            //     // Sleep(frameDuration);
+            // }
+            // // SetWindowRgn(_window.get(), nullptr, true);
+            // SetWindowRgn(_interopWindowHandle, nullptr, true);
+
+            // ::SetLayeredWindowAttributes(_window.get(), 0, 255, LWA_ALPHA);
+            // ::SetWindowLong(_window.get(),
+            //                 GWL_EXSTYLE,
+            //                 originalExStyle);
+        }
+
+        {
+            // // Attempt 9:
+            // //
+            // // This is attempt #4, bith trying to do it to the root hwnd.
+            // WINDOWPLACEMENT wpc;
+            // wpc.length = sizeof(WINDOWPLACEMENT);
+            // GetWindowPlacement(_window.get(), &wpc);
+            // wpc.showCmd = SW_RESTORE;
+            // SetWindowPlacement(_window.get(), &wpc);
+
+            // til::rectangle fullWindowSize{ GetWindowRect() };
+            // til::size ncSize{ GetTotalNonClientExclusiveSize(_currentDpi) };
+            // const double animationDuration = 200; // in ms
+            // const double frameDuration = 1; // in ms
+            // const double frames = animationDuration / frameDuration;
+            // const double dy = fullWindowSize.height<double>() / frames;
+            // double currentHeight = 0;
+
+            // for (int i = 0; i < frames; i++)
+            // {
+            //     // // 9a - window shifts slightly to the left, and a small black
+            //     // // rect visible along the right side.
+            //     //
+            //     // wil::unique_hrgn rgn{ CreateRectRgn(ncSize.width<int>() / 2,
+            //     //                                     0,
+            //     //                                     fullWindowSize.width<int>() - ncSize.width<int>(),
+            //     //                                     ::base::saturated_cast<int>(currentHeight)) };
+
+            //     // // 9b - same as 9a.
+            //     // wil::unique_hrgn rgn{ CreateRectRgn(-ncSize.width<int>() / 2,
+            //     //                                     0,
+            //     //                                     fullWindowSize.width<int>() + ncSize.width<int>(),
+            //     //                                     ::base::saturated_cast<int>(currentHeight)) };
+
+            //     // // 9c - Window shifts noticably farther to the right, though black region remains the same.
+            //     // wil::unique_hrgn rgn{ CreateRectRgn(ncSize.width<int>(),
+            //     //                                     0,
+            //     //                                     fullWindowSize.width<int>(),
+            //     //                                     ::base::saturated_cast<int>(currentHeight)) };
+
+            //     // // 9d -
+            //     // wil::unique_hrgn rgn{ CreateRectRgn(0,
+            //     //                                     0,
+            //     //                                     fullWindowSize.width<int>(),
+            //     //                                     ::base::saturated_cast<int>(currentHeight)) };
+            //     // // SetWindowPos(_interopWindowHandle, nullptr, ncSize.width<int>() / 2, 0, fullWindowSize.width<int>(), fullWindowSize.height<int>(), SWP_SHOWWINDOW | SWP_NOACTIVATE);
+            //     // SetWindowPos(_interopWindowHandle, nullptr, 0, 0, fullWindowSize.width<int>() + ncSize.width<int>() / 2, fullWindowSize.height<int>(), SWP_SHOWWINDOW | SWP_NOACTIVATE);
+
+            //     // 9e -
+            //     wil::unique_hrgn rgn{ CreateRectRgn(0,
+            //                                         0,
+            //                                         fullWindowSize.width<int>() + ncSize.width<int>(),
+            //                                         ::base::saturated_cast<int>(currentHeight)) };
+            //     // SetWindowPos(_interopWindowHandle, nullptr, ncSize.width<int>() / 2, 0, fullWindowSize.width<int>(), fullWindowSize.height<int>(), SWP_SHOWWINDOW | SWP_NOACTIVATE);
+            //     SetWindowPos(_interopWindowHandle, nullptr, 0, 0, fullWindowSize.width<int>() + ncSize.width<int>() / 2, fullWindowSize.height<int>(), SWP_SHOWWINDOW | SWP_NOACTIVATE);
+
+            //     // SEtting the last param to false did nothing noticable.
+            //     SetWindowRgn(_window.get(), rgn.get(), true);
+
+            //     // SetWindowRgn(_window.get(), rgn.get(), false);
+            //     currentHeight += dy;
+            //     // Sleep(frameDuration);
+            // }
+            // SetWindowRgn(_window.get(), nullptr, true);
+        }
+
+        {
+            // Attempt 10
             WINDOWPLACEMENT wpc;
             wpc.length = sizeof(WINDOWPLACEMENT);
             GetWindowPlacement(_window.get(), &wpc);
             wpc.showCmd = SW_RESTORE;
             SetWindowPlacement(_window.get(), &wpc);
-            wpc.showCmd = SW_HIDE;
-            SetWindowPlacement(_window.get(), &wpc);
 
-            AnimateWindow(_window.get(), 200, AW_SLIDE | AW_VER_POSITIVE);
+            til::rectangle fullWindowSize{ GetWindowRect() };
+
+            const double animationDuration = 200; // in ms
+            const double frameDuration = 1; // in ms
+            const double frames = animationDuration / frameDuration;
+            const double dy = fullWindowSize.height<int>() / frames;
+            double currentHeight = 0;
+
+            auto start = std::chrono::system_clock::now();
+            for (int i = 0; i < frames; i++)
+            {
+                auto end = std::chrono::system_clock::now();
+
+                double dt = ::base::saturated_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
+
+                currentHeight = ::base::saturated_cast<double>((dt / animationDuration) * fullWindowSize.height<double>());
+
+                wil::unique_hrgn rgn{ CreateRectRgn(0,
+                                                    0,
+                                                    fullWindowSize.width<int>(),
+                                                    ::base::saturated_cast<int>(currentHeight)) };
+
+                SetWindowRgn(_interopWindowHandle, rgn.get(), true);
+                // currentHeight += dy;
+            }
+            SetWindowRgn(_interopWindowHandle, nullptr, true);
         }
     }
     else
