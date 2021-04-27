@@ -755,27 +755,32 @@ bool AppHost::_LazyLoadDesktopManager()
     return _desktopManager != nullptr;
 }
 
+static wil::unique_event windowCreated;
 GUID AppHost::_fakeGetCurrentDesktop()
 {
     GUID currentlyActiveDesktop;
+
+    static bool createEvent{ []() {
+        windowCreated.create();
+        return true;
+    }() };
+    static auto fakeWndProc = [](HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) -> LRESULT {
+        if (message == WM_SHOWWINDOW && wparam)
+        {
+            windowCreated.SetEvent();
+        }
+        return DefWindowProc(window, message, wparam, lparam);
+    };
 
     // *** magic static ***
     // Only initialize the psuedo class once over the lifetime of the process
     static ATOM pseudoClassAtom{ []() {
         WNDCLASS pseudoClass{ 0 };
         pseudoClass.lpszClassName = PSEUDO_WINDOW_CLASS;
-        pseudoClass.lpfnWndProc = DefWindowProc;
+        // pseudoClass.lpfnWndProc = DefWindowProc;
+        pseudoClass.lpfnWndProc = fakeWndProc;
         return RegisterClass(&pseudoClass);
     }() };
-
-    // WS_OVERLAPPEDWINDOW, HWND_MESSAGE: flashes a window
-    // WS_CHILD, HWND_MESSAGE: doesn't work at all
-    // WS_CHILD, HWND_DESKTOP: doesn't work at all
-    // WS_TILED, HWND_DESKTOP: flashes a window
-    // WS_TILED, HWND_MESSAGE: doesn't work at all
-    // WS_TILED, HWND_DESKTOP, ShowWindow(SW_HIDE): doesn't work at all
-    // WS_POPUP, HWND_DESKTOP: Works 25% of the time?
-    // WS_POPUP, HWND_DESKTOP, Sleep(1): Works 100% of the time?!?
 
     wil::unique_hwnd hwnd{ CreateWindowExW(0,
                                            PSEUDO_WINDOW_CLASS,
@@ -789,8 +794,12 @@ GUID AppHost::_fakeGetCurrentDesktop()
                                            nullptr,
                                            nullptr,
                                            nullptr) };
+    windowCreated.ResetEvent();
     ShowWindow(hwnd.get(), SW_SHOWNORMAL);
-    Sleep(1); // !! LOAD BEARING !!
+    // Sleep(1); // !! LOAD BEARING !!
+
+    WaitForSingleObject(windowCreated.get(), INFINITE);
+
     LOG_IF_FAILED(_desktopManager->GetWindowDesktopId(hwnd.get(), &currentlyActiveDesktop));
 
     return currentlyActiveDesktop;
