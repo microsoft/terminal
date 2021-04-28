@@ -1,9 +1,5 @@
 name: "Bug report 🐛"
 description: Report errors or unexpected behavior
-title: ''
-labels: ''
-assignees: ''
-issue_body: true
 body:
 - type: markdown
   attributes:
@@ -44,7 +40,7 @@ body:
 - type: textarea
   attributes:
     label: Expected Behavior
-    description: If you want to include screenshots, paste them into the markdown editor below the form or follow up with a separate comment.
+    description: If you want to include screenshots, paste them into the markdown editor below.
     placeholder: What were you expecting?
   validations:
     required: false

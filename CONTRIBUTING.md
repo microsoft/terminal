@@ -43,7 +43,7 @@ If no existing item describes your issue/feature, great - please file a new issu
 * Have a question that you don't see answered in docs, videos, etc.? File an issue
 * Want to know if we're planning on building a particular feature? File an issue
 * Got a great idea for a new feature? File an issue/request/idea
-* Don't understand how to do something? File an issue/Community Guidance Request
+* Don't understand how to do something? File an issue
 * Found an existing issue that describes yours? Great - upvote and add additional commentary / info / repro-steps / etc.
 
 When you hit "New Issue", select the type of issue closest to what you want to report/ask/request:

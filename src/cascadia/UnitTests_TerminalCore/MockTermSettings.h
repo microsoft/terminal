@@ -43,6 +43,7 @@ namespace TerminalCoreUnitTests
         ICoreAppearance UnfocusedAppearance() { return {}; };
         winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color> TabColor() { return nullptr; }
         winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color> StartingTabColor() { return nullptr; }
+        bool TrimBlockSelection() { return false; }
 
         // other implemented methods
         til::color GetColorTableEntry(int32_t) const { return 123; }
@@ -68,6 +69,7 @@ namespace TerminalCoreUnitTests
         void UnfocusedAppearance(ICoreAppearance) {}
         void TabColor(const IInspectable&) {}
         void StartingTabColor(const IInspectable&) {}
+        void TrimBlockSelection(bool) {}
 
     private:
         int32_t _historySize;

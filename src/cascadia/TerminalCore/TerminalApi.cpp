@@ -36,6 +36,11 @@ void Terminal::SetTextAttributes(const TextAttribute& attrs) noexcept
     _buffer->SetCurrentAttributes(attrs);
 }
 
+Viewport Terminal::GetBufferSize() noexcept
+{
+    return _buffer->GetSize();
+}
+
 bool Terminal::SetCursorPosition(short x, short y) noexcept
 try
 {
@@ -471,6 +476,11 @@ try
     return true;
 }
 CATCH_LOG_RETURN_FALSE()
+
+til::color Terminal::GetDefaultBackground() const noexcept
+{
+    return _defaultBg;
+}
 
 bool Terminal::EnableWin32InputMode(const bool win32InputMode) noexcept
 {

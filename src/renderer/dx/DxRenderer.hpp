@@ -128,6 +128,8 @@ namespace Microsoft::Console::Render
         void SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept;
         void SetDefaultTextBackgroundOpacity(const float opacity) noexcept;
 
+        wil::unique_handle _swapChainHandle;
+
         void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept;
 
     protected:
