@@ -265,7 +265,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto fontSizeInDips{ _core->FontSizeInDips() };
                 if (distance >= (std::min(fontSizeInDips.width(), fontSizeInDips.height()) / 4.f))
                 {
-                    _core->SetSelectionAnchor(terminalPosition);
+                    // GH#9955.c: Make sure to use the temrinal location of the
+                    // _touchdown_ point here. We want to start the selection
+                    // from where the user initially clicked, not where they are
+                    // now.
+                    _core->SetSelectionAnchor(_getTerminalPosition(touchdownPoint));
+
                     // stop tracking the touchdown point
                     _singleClickTouchdownPos = std::nullopt;
                 }
