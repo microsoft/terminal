@@ -41,7 +41,7 @@ public:
     void UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList);
     void SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList);
 
-    winrt::fire_and_forget SummonWindow();
+    winrt::fire_and_forget SummonWindow(const bool toggleVisibility);
 
     bool IsQuakeWindow() const noexcept;
     void IsQuakeWindow(bool isQuakeWindow) noexcept;
@@ -92,6 +92,9 @@ protected:
 
     void _OnGetMinMaxInfo(const WPARAM wParam, const LPARAM lParam);
     long _calculateTotalSize(const bool isWidth, const long clientSize, const long nonClientSize);
+
+    void _globalActivateWindow();
+    void _globalDismissWindow();
 
     bool _isQuakeWindow{ false };
     void _enterQuakeMode();

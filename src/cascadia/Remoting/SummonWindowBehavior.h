@@ -22,10 +22,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     public:
         SummonWindowBehavior() = default;
         WINRT_PROPERTY(bool, MoveToCurrentDesktop, true);
+        WINRT_PROPERTY(bool, ToggleVisibility, true);
 
     public:
         SummonWindowBehavior(const Remoting::SummonWindowBehavior& other) :
-            _MoveToCurrentDesktop{ other.MoveToCurrentDesktop() } {};
+            _MoveToCurrentDesktop{ other.MoveToCurrentDesktop() },
+            _ToggleVisibility{ other.ToggleVisibility() } {};
     };
 }
 

@@ -1045,9 +1045,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GlobalSummonArgs() = default;
         WINRT_PROPERTY(winrt::hstring, Name, L"");
         WINRT_PROPERTY(Model::DesktopBehavior, Desktop, Model::DesktopBehavior::ToCurrent);
+        WINRT_PROPERTY(bool, ToggleVisibility, true);
 
         static constexpr std::string_view NameKey{ "name" };
         static constexpr std::string_view DesktopKey{ "desktop" };
+        static constexpr std::string_view ToggleVisibilityKey{ "toggleVisibility" };
 
     public:
         hstring GenerateName() const;
@@ -1057,7 +1059,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (auto otherAsUs = other.try_as<GlobalSummonArgs>())
             {
                 return otherAsUs->_Name == _Name &&
-                       otherAsUs->_Desktop == _Desktop;
+                       otherAsUs->_Desktop == _Desktop &&
+                       otherAsUs->_ToggleVisibility == _ToggleVisibility;
             }
             return false;
         };
@@ -1067,6 +1070,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto args = winrt::make_self<GlobalSummonArgs>();
             JsonUtils::GetValueForKey(json, NameKey, args->_Name);
             JsonUtils::GetValueForKey(json, DesktopKey, args->_Desktop);
+            JsonUtils::GetValueForKey(json, ToggleVisibilityKey, args->_ToggleVisibility);
             return { *args, {} };
         }
         IActionArgs Copy() const
@@ -1074,6 +1078,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<GlobalSummonArgs>() };
             copy->_Name = _Name;
             copy->_Desktop = _Desktop;
+            copy->_ToggleVisibility = _ToggleVisibility;
             return *copy;
         }
         // SPECIAL! This deserializer creates a GlobalSummonArgs with the

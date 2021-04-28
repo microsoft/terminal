@@ -38,17 +38,20 @@ namespace RemotingUnitTests
 {
     struct MockDesktopManager : implements<MockDesktopManager, IVirtualDesktopManager>
     {
-        HRESULT GetWindowDesktopId(HWND /*topLevelWindow*/, GUID* /*desktopId*/)
+        IFACEMETHOD(GetWindowDesktopId)
+        (HWND /*topLevelWindow*/, GUID* /*desktopId*/)
         {
             VERIFY_IS_TRUE(false, L"We shouldn't need GetWindowDesktopId in the tests.");
             return E_FAIL;
         }
-        HRESULT MoveWindowToDesktop(HWND /*topLevelWindow*/, REFGUID /*desktopId*/)
+        IFACEMETHOD(MoveWindowToDesktop)
+        (HWND /*topLevelWindow*/, REFGUID /*desktopId*/)
         {
             VERIFY_IS_TRUE(false, L"We shouldn't need GetWindowDesktopId in the tests.");
             return E_FAIL;
         }
-        HRESULT IsWindowOnCurrentVirtualDesktop(HWND topLevelWindow, BOOL* onCurrentDesktop)
+        IFACEMETHOD(IsWindowOnCurrentVirtualDesktop)
+        (HWND topLevelWindow, BOOL* onCurrentDesktop)
         {
             if (pfnIsWindowOnCurrentVirtualDesktop)
             {
