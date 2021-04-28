@@ -122,8 +122,4 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
 
-  <!-- Import this set of targets that fixes a VS bug that manifests when using
-  the TerminalAppLib project -->
-  <Import Project="../TerminalApp/dll/FixVisualStudioBug.targets" />
-
 </Project>
