@@ -972,17 +972,37 @@ winrt::fire_and_forget IslandWindow::SummonWindow(const bool toggleVisibility, c
     // On the foreground thread:
     co_await winrt::resume_foreground(_rootGrid.Dispatcher());
 
+    uint32_t actualDropdownDuration = dropdownDuration;
+    // If the user requested an animation, let's check if animations are enabled in the OS.
+    if (dropdownDuration > 0)
+    {
+        BOOL animationsEnabled = TRUE;
+        SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
+        if (!animationsEnabled)
+        {
+            // The OS has animations disabled - we should respect that and
+            // disable the animation here.
+            //
+            // We're doing this here, rather than in _doSlideAnimation, to
+            // preempt any other specific behavior that
+            // _globalActivateWindow/_globalDismissWindow might do if they think
+            // there should be an animation (like making the window appear with
+            // SetWindowPlacement rather than ShowWindow)
+            actualDropdownDuration = 0;
+        }
+    }
+
     // * If the user doesn't want to toggleVisibility, then just always try to
     //   activate.
     // * If the user does want to toggleVisibility, then dismiss the window if
     //   we're the current foreground window.
     if (toggleVisibility && GetForegroundWindow() == _window.get())
     {
-        _globalDismissWindow(dropdownDuration);
+        _globalDismissWindow(actualDropdownDuration);
     }
     else
     {
-        _globalActivateWindow(dropdownDuration);
+        _globalActivateWindow(actualDropdownDuration);
     }
 }
 
