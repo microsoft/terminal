@@ -29,6 +29,7 @@ namespace ControlUnitTests
         TEST_METHOD(TestScrollWithMouse);
 
         TEST_METHOD(CreateSubsequentSelectionWithDragging);
+        TEST_METHOD(ScrollWithSelection);
         TEST_METHOD(TestQuickDragOnSelect);
 
         TEST_CLASS_SETUP(ClassSetup)
@@ -330,6 +331,83 @@ namespace ControlUnitTests
         Log::Comment(L"Verify that there's now one selection");
         VERIFY_IS_TRUE(core->HasSelection());
         VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
+    }
+
+    void ControlInteractivityTests::ScrollWithSelection()
+    {
+        // This is a test for GH#9955.a
+        auto [settings, conn] = _createSettingsAndConnection();
+        auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
+        _standardInit(core, interactivity);
+        // For the sake of this test, scroll one line at a time
+        interactivity->_rowsToScroll = 1;
+
+        Log::Comment(L"Add some test to the terminal so we can scroll");
+        for (int i = 0; i < 40; ++i)
+        {
+            conn->WriteInput(L"Foo\r\n");
+        }
+        // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
+        VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
+        VERIFY_ARE_EQUAL(21, core->ScrollOffset());
+        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(41, core->BufferHeight());
+
+        // For this test, don't use any modifiers
+        const auto modifiers = ControlKeyStates();
+        const TerminalInput::MouseButtonState leftMouseDown{ true, false, false };
+        const TerminalInput::MouseButtonState noMouseDown{ false, false, false };
+
+        const til::size fontSize{ 9, 21 };
+
+        Log::Comment(L"Click on the terminal");
+        const til::point terminalPosition0{ 5, 5 };
+        const til::point cursorPosition0{ terminalPosition0 * fontSize };
+        interactivity->PointerPressed(leftMouseDown,
+                                      WM_LBUTTONDOWN, //pointerUpdateKind
+                                      0, // timestamp
+                                      modifiers,
+                                      cursorPosition0);
+
+        Log::Comment(L"Verify that there's not yet a selection");
+        VERIFY_IS_FALSE(core->HasSelection());
+
+        VERIFY_IS_TRUE(interactivity->_singleClickTouchdownPos.has_value());
+        VERIFY_ARE_EQUAL(cursorPosition0, interactivity->_singleClickTouchdownPos.value());
+
+        Log::Comment(L"Drag the mouse just a little");
+        // move not quite a whole cell, but enough to start a selection
+        const til::point cursorPosition1{ cursorPosition0 + til::point{ 6, 0 } };
+        interactivity->PointerMoved(leftMouseDown,
+                                    WM_LBUTTONDOWN, //pointerUpdateKind
+                                    modifiers,
+                                    true, // focused,
+                                    cursorPosition1);
+        Log::Comment(L"Verify that there's one selection");
+        VERIFY_IS_TRUE(core->HasSelection());
+        VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
+
+        Log::Comment(L"Verify the location of the selection");
+        // The viewport is on row 21, so the selection will be on:
+        // {(5, 5)+(0, 21)} to {(5, 5)+(0, 21)}
+        COORD expectedAnchor{ 5, 26 };
+        VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
+        VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionEnd());
+
+        Log::Comment(L"Scroll up a line, with the left mouse button selected");
+        interactivity->MouseWheel(modifiers,
+                                  WHEEL_DELTA,
+                                  cursorPosition1,
+                                  { true, false, false });
+
+        Log::Comment(L"Verify the location of the selection");
+        // The viewport is now on row 20, so the selection will be on:
+        // {(5, 5)+(0, 20)} to {(5, 5)+(0, 21)}
+        COORD newExpectedAnchor{ 5, 25 };
+        // Remember, the anchor is always before the end in the buffer. So yes,
+        // se started the selection on 5,26, but now that's the end.
+        VERIFY_ARE_EQUAL(newExpectedAnchor, core->_terminal->GetSelectionAnchor());
+        VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionEnd());
     }
 
     void ControlInteractivityTests::TestQuickDragOnSelect()
