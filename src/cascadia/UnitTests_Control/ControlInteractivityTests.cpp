@@ -348,8 +348,7 @@ namespace ControlUnitTests
         const til::size fontSize{ 9, 21 };
 
         Log::Comment(L"Click on the terminal");
-        const til::point terminalPosition0{ 6, 0 };
-        const til::point cursorPosition0 = terminalPosition0 * fontSize;
+        const til::point cursorPosition0{ 6, 0 };
         interactivity->PointerPressed(leftMouseDown,
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
@@ -358,6 +357,9 @@ namespace ControlUnitTests
 
         Log::Comment(L"Verify that there's not yet a selection");
         VERIFY_IS_FALSE(core->HasSelection());
+
+        VERIFY_IS_TRUE(interactivity->_singleClickTouchdownPos.has_value());
+        VERIFY_ARE_EQUAL(cursorPosition0, interactivity->_singleClickTouchdownPos.value());
 
         Log::Comment(L"Drag the mouse a lot. This simulates draging the mouse real fast.");
         const til::point cursorPosition1{ 6 + fontSize.width<int>() * 2, 0 };
