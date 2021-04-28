@@ -1,0 +1,16 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    runtimeclass DefaultTerminal
+    {
+        String Name { get; };
+        String Author { get; };
+        String Version { get; };
+        String Icon { get; };
+
+        static DefaultTerminal Current;
+        static Windows.Foundation.Collections.IVectorView<DefaultTerminal> Available { get; };
+    }
+}

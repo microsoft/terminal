@@ -16,6 +16,9 @@
 
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
+    <ClInclude Include="DefaultTerminal.h" >
+        <DependentUpon>DefaultTerminal.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="IconPathConverter.h">
       <DependentUpon>IconPathConverter.idl</DependentUpon>
     </ClInclude>
@@ -71,6 +74,9 @@
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
+    <ClCompile Include="DefaultTerminal.cpp">
+        <DependentUpon>DefaultTerminal.idl</DependentUpon>
+      </ClCompile>
     <ClCompile Include="IconPathConverter.cpp">
       <DependentUpon>IconPathConverter.idl</DependentUpon>
     </ClCompile>
@@ -137,6 +143,7 @@
     <Midl Include="CascadiaSettings.idl" />
     <Midl Include="ColorScheme.idl" />
     <Midl Include="Command.idl" />
+    <Midl Include="DefaultTerminal.idl" />
     <Midl Include="GlobalAppSettings.idl" />
     <Midl Include="IconPathConverter.idl" />
     <Midl Include="KeyMapping.idl" />
@@ -233,6 +240,6 @@
   <Target Name="_TerminalAppGenerateUserSettingsH" Inputs="userDefaults.json" Outputs="Generated Files\userDefaults.h" BeforeTargets="BeforeClCompile">
     <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile userDefaults.json -OutPath '&quot;Generated Files\userDefaults.h&quot;' -VariableName UserSettingsJson" />
   </Target>
-
+  
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>
