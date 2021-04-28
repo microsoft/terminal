@@ -863,7 +863,7 @@ namespace winrt::TerminalApp::implementation
         return _filteredActions;
     }
 
-    void CommandPalette::SetActionMap(const Microsoft::Terminal::Settings::Model::ActionMap& actionMap)
+    void CommandPalette::SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap)
     {
         _actionMap = actionMap;
     }

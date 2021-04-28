@@ -26,7 +26,7 @@ namespace winrt::TerminalApp::implementation
         _dispatch = dispatch;
     }
 
-    void AppKeyBindings::SetActionMap(const winrt::Microsoft::Terminal::Settings::Model::ActionMap& actionMap)
+    void AppKeyBindings::SetActionMap(const winrt::Microsoft::Terminal::Settings::Model::IActionMapView& actionMap)
     {
         _actionMap = actionMap;
     }

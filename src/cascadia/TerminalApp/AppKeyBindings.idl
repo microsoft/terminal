@@ -9,6 +9,6 @@ namespace TerminalApp
         AppKeyBindings();
 
         void SetDispatch(ShortcutActionDispatch dispatch);
-        void SetActionMap(Microsoft.Terminal.Settings.Model.ActionMap actionMap);
+        void SetActionMap(Microsoft.Terminal.Settings.Model.IActionMapView actionMap);
     }
 }

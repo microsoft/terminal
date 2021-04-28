@@ -926,8 +926,8 @@ namespace winrt::TerminalApp::implementation
     // - Configure the AppKeyBindings to use our ShortcutActionDispatch and the updated ActionMap
     //    as the object to handle dispatching ShortcutAction events.
     // Arguments:
-    // - bindings: An ActionMap object to wire up with our event handlers
-    void TerminalPage::_HookupKeyBindings(const ActionMap& actionMap) noexcept
+    // - bindings: An IActionMapView object to wire up with our event handlers
+    void TerminalPage::_HookupKeyBindings(const IActionMapView& actionMap) noexcept
     {
         _bindings->SetDispatch(*_actionDispatch);
         _bindings->SetActionMap(actionMap);
