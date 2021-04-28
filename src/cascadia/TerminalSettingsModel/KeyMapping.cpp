@@ -172,6 +172,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
                 // We want to summon the window with the name "_quake" specifically.
                 args->Name(L"_quake");
+                // We want the window to dropdown, with a 200ms duration.
+                args->DropdownDuration(200);
 
                 Model::ActionAndArgs actionAndArgs{ ShortcutAction::GlobalSummon, *args };
                 justGlobals[k] = actionAndArgs;

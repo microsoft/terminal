@@ -34,6 +34,7 @@ namespace Microsoft.Terminal.Remoting
         SummonWindowBehavior();
         Boolean MoveToCurrentDesktop;
         Boolean ToggleVisibility;
+        UInt32 DropdownDuration;
         // Other options:
         // * CurrentMonitor
     }

@@ -41,7 +41,7 @@ public:
     void UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList);
     void SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList);
 
-    winrt::fire_and_forget SummonWindow(const bool toggleVisibility);
+    winrt::fire_and_forget SummonWindow(const bool toggleVisibility, const uint32_t dropdownDuration);
 
 #pragma endregion
 
@@ -91,8 +91,11 @@ protected:
     void _OnGetMinMaxInfo(const WPARAM wParam, const LPARAM lParam);
     long _calculateTotalSize(const bool isWidth, const long clientSize, const long nonClientSize);
 
-    void _globalActivateWindow();
-    void _globalDismissWindow();
+    void _globalActivateWindow(const uint32_t dropdownDuration);
+    void _dropdownWindow(const uint32_t dropdownDuration);
+    void _slideUpWindow(const uint32_t dropdownDuration);
+    void _doSlideAnimation(const uint32_t dropdownDuration, const bool down);
+    void _globalDismissWindow(const uint32_t dropdownDuration);
 
 private:
     // This minimum width allows for width the tabs fit
