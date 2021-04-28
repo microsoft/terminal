@@ -4,8 +4,9 @@
 // Shamelessly copied from microsoft/PowerToys, at
 // https://github.com/microsoft/PowerToys/blob/master/src/modules/fancyzones/lib/VirtualDesktopUtils.cpp
 //
-// The code style is left untouched, as to make contributions from/to the
-// upstream source easier.
+// The code style is left (relatively) untouched, as to make contributions
+// from/to the upstream source easier. `NewGetCurrentDesktopId` was added in
+// April 2021.
 
 #include "pch.h"
 
@@ -22,6 +23,25 @@ namespace NonLocalizable
 
 namespace VirtualDesktopUtils
 {
+    // Look for the guid stored as the value `CurrentVirtualDesktop` under the
+    // key
+    // `HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\VirtualDesktops`
+    bool NewGetCurrentDesktopId(GUID* desktopId)
+    {
+        wil::unique_hkey key{};
+        if (RegOpenKeyExW(HKEY_CURRENT_USER, NonLocalizable::RegKeyVirtualDesktops, 0, KEY_ALL_ACCESS, &key) == ERROR_SUCCESS)
+        {
+            GUID value{};
+            DWORD size = sizeof(GUID);
+            if (RegQueryValueExW(key.get(), NonLocalizable::RegCurrentVirtualDesktop, 0, nullptr, reinterpret_cast<BYTE*>(&value), &size) == ERROR_SUCCESS)
+            {
+                *desktopId = value;
+                return true;
+            }
+        }
+        return false;
+    }
+
     bool GetDesktopIdFromCurrentSession(GUID* desktopId)
     {
         DWORD sessionId;
@@ -120,6 +140,14 @@ namespace VirtualDesktopUtils
 
     bool GetCurrentVirtualDesktopId(GUID* desktopId)
     {
+        // BODGY
+        // On newer Windows builds, the current virtual desktop is persisted to
+        // a totally different reg key. Look there first.
+        if (NewGetCurrentDesktopId(desktopId))
+        {
+            return true;
+        }
+
         // Explorer persists current virtual desktop identifier to registry on a per session basis, but only
         // after first virtual desktop switch happens. If the user hasn't switched virtual desktops in this
         // session, value in registry will be empty.
