@@ -47,6 +47,7 @@ ICustom
 IDialog
 IDirect
 IExplorer
+IFACEMETHOD
 IFile
 IInheritable
 IMap
