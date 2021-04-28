@@ -375,7 +375,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 continue;
             }
 
-            if (peasant.WindowName() == L"_quake")
+            if (peasant.WindowName() == QuakeWindowName)
             {
                 // The _quake window should never be treated as the MRU window.
                 // Skip it if we see it. Users can still target it with `wt -w

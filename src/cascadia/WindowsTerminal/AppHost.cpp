@@ -727,12 +727,7 @@ winrt::fire_and_forget AppHost::_createNewTerminalWindow(Settings::Model::Global
                     args.Name().empty() ? L"new" :
                                           args.Name())
     };
-    // Build the args to ShellExecuteEx. We need to use ShellExecuteEx so we
-    // can pass the SEE_MASK_NOASYNC flag. That flag allows us to safely
-    // call this on the background thread, and have ShellExecute _not_ call
-    // back to us on the main thread. Without this, if you close the
-    // Terminal quickly after the UAC prompt, the elevated WT will never
-    // actually spawn.
+
     SHELLEXECUTEINFOW seInfo{ 0 };
     seInfo.cbSize = sizeof(seInfo);
     seInfo.fMask = SEE_MASK_NOASYNC;

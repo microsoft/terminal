@@ -36,6 +36,7 @@
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
 #include "TerminalWarnings.h"
+#include "../inc/WindowingBehavior.h"
 
 #include "TerminalSettingsSerializationHelpers.h"
 
@@ -1069,6 +1070,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<GlobalSummonArgs>() };
             copy->_Name = _Name;
             return *copy;
+        }
+        // SPECIAL! This deserializer creates a GlobalSummonArgs with the
+        // default values for quakeMode
+        static FromJsonResult QuakeModeFromJson(const Json::Value& /*json*/)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<GlobalSummonArgs>();
+            args->_Name = QuakeWindowName;
+            return { *args, {} };
         }
     };
 
