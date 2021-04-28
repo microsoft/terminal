@@ -43,7 +43,8 @@ public:
 
     winrt::fire_and_forget SummonWindow(const bool toggleVisibility);
 
-#pragma endregion
+    bool IsQuakeWindow() const noexcept;
+    void IsQuakeWindow(bool isQuakeWindow) noexcept;
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
     DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
@@ -70,6 +71,7 @@ protected:
 
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
     [[nodiscard]] LRESULT _OnSizing(const WPARAM wParam, const LPARAM lParam);
+    [[nodiscard]] LRESULT _OnMoving(const WPARAM wParam, const LPARAM lParam);
 
     bool _borderless{ false };
     bool _alwaysOnTop{ false };
@@ -93,6 +95,9 @@ protected:
 
     void _globalActivateWindow();
     void _globalDismissWindow();
+
+    bool _isQuakeWindow{ false };
+    void _enterQuakeMode();
 
 private:
     // This minimum width allows for width the tabs fit

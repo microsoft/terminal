@@ -43,8 +43,10 @@ systemroot
 taskkill
 tasklist
 tdbuildteamid
+unvirtualized
 VCRT
 vcruntime
+Virtualization
 visualstudio
 vscode
 VSTHRD
