@@ -29,6 +29,7 @@ namespace ControlUnitTests
         TEST_METHOD(TestScrollWithMouse);
 
         TEST_METHOD(CreateSubsequentSelectionWithDragging);
+        TEST_METHOD(TestQuickDragOnSelect);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -329,5 +330,48 @@ namespace ControlUnitTests
         Log::Comment(L"Verify that there's now one selection");
         VERIFY_IS_TRUE(core->HasSelection());
         VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
+    }
+
+    void ControlInteractivityTests::TestQuickDragOnSelect()
+    {
+        // This is a test for GH#9955.c
+
+        auto [settings, conn] = _createSettingsAndConnection();
+        auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
+        _standardInit(core, interactivity);
+
+        // For this test, don't use any modifiers
+        const auto modifiers = ControlKeyStates();
+        const TerminalInput::MouseButtonState leftMouseDown{ true, false, false };
+        const TerminalInput::MouseButtonState noMouseDown{ false, false, false };
+
+        const til::size fontSize{ 9, 21 };
+
+        Log::Comment(L"Click on the terminal");
+        const til::point terminalPosition0{ 6, 0 };
+        const til::point cursorPosition0 = terminalPosition0 * fontSize;
+        interactivity->PointerPressed(leftMouseDown,
+                                      WM_LBUTTONDOWN, //pointerUpdateKind
+                                      0, // timestamp
+                                      modifiers,
+                                      cursorPosition0);
+
+        Log::Comment(L"Verify that there's not yet a selection");
+        VERIFY_IS_FALSE(core->HasSelection());
+
+        Log::Comment(L"Drag the mouse a lot. This simulates draging the mouse real fast.");
+        const til::point cursorPosition1{ 6 + fontSize.width<int>() * 2, 0 };
+        interactivity->PointerMoved(leftMouseDown,
+                                    WM_LBUTTONDOWN, //pointerUpdateKind
+                                    modifiers,
+                                    true, // focused,
+                                    cursorPosition1);
+        Log::Comment(L"Verify that there's one selection");
+        VERIFY_IS_TRUE(core->HasSelection());
+        VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
+
+        Log::Comment(L"Verify that it started on the first cell we clicked on, not the one we dragged to");
+        COORD expectedAnchor{ 0, 0 };
+        VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
     }
 }

@@ -197,7 +197,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (multiClickMapper == 1)
             {
                 _singleClickTouchdownPos = pixelPosition;
-                _singleClickTouchdownTerminalPos = terminalPosition;
 
                 if (!_core->HasSelection())
                 {
@@ -269,7 +268,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     _core->SetSelectionAnchor(terminalPosition);
                     // stop tracking the touchdown point
                     _singleClickTouchdownPos = std::nullopt;
-                    _singleClickTouchdownTerminalPos = std::nullopt;
                 }
             }
 
@@ -341,7 +339,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _singleClickTouchdownPos = std::nullopt;
-        _singleClickTouchdownTerminalPos = std::nullopt;
     }
 
     void ControlInteractivity::TouchReleased()

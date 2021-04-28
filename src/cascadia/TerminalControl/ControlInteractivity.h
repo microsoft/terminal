@@ -97,7 +97,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Timestamp _lastMouseClickTimestamp;
         std::optional<til::point> _lastMouseClickPos;
         std::optional<til::point> _singleClickTouchdownPos;
-        std::optional<til::point> _singleClickTouchdownTerminalPos;
         std::optional<til::point> _lastMouseClickPosNoSelection;
         // This field tracks whether the selection has changed meaningfully
         // since it was last copied. It's generally used to prevent copyOnSelect
