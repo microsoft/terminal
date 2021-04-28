@@ -375,7 +375,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 continue;
             }
 
-            if (limitToCurrentDesktop && _desktopManager)
+            if (peasant.WindowName() == L"_quake")
+            {
+                // The _quake window should never be treated as the MRU window.
+                // Skip it if we see it. Users can still target it with `wt -w
+                // _quake`, which will hit `_lookupPeasantIdForName` instead.
+            }
+            else if (limitToCurrentDesktop && _desktopManager)
             {
                 // Check if this peasant is actually on this desktop. We can't
                 // simply get the GUID of the current desktop. We have to ask if

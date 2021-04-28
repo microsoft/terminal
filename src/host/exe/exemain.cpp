@@ -5,10 +5,13 @@
 
 #include "ConsoleArguments.hpp"
 #include "srvinit.h"
-#include "CConsoleHandoff.h"
 #include "../server/Entrypoints.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../inc/conint.h"
+
+#ifndef __INSIDE_WINDOWS
+#include "CConsoleHandoff.h"
+#endif
 
 // Define TraceLogging provider
 TRACELOGGING_DEFINE_PROVIDER(
@@ -29,8 +32,8 @@ class DefaultOutOfProcModuleWithRegistrationFlag;
 template<int RegClsType, typename ModuleT = DefaultOutOfProcModuleWithRegistrationFlag<RegClsType>>
 class OutOfProcModuleWithRegistrationFlag : public Microsoft::WRL::Module<Microsoft::WRL::ModuleType::OutOfProc, ModuleT>
 {
-    using Elsewhere = Module<OutOfProc, ModuleT>;
-    using Super = Details::OutOfProcModuleBase<ModuleT>;
+    using Elsewhere = Microsoft::WRL::Module<Microsoft::WRL::ModuleType::OutOfProc, ModuleT>;
+    using Super = Microsoft::WRL::Details::OutOfProcModuleBase<ModuleT>;
 
 public:
     STDMETHOD(RegisterCOMObject)
@@ -181,6 +184,7 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
 
 // Routine Description:
 // - Called back when COM says there is nothing left for our server to do and we can tear down.
+#pragma warning (suppress : 4505) // this is unused, and therefore discarded, when built inside windows
 static void _releaseNotifier() noexcept
 {
     _comServerExitEvent.SetEvent();
@@ -239,7 +243,9 @@ int CALLBACK wWinMain(
     //    messages going forward.
     // 7. The out-of-box `OpenConsole.exe` can then attempt to lookup and invoke a `CTerminalHandoff` to ask a registered
     //    Terminal to become the UI. This OpenConsole.exe will put itself in PTY mode and let the Terminal handle user interaction.
+#ifndef __INSIDE_WINDOWS
     auto& module = OutOfProcModuleWithRegistrationFlag<REGCLS_SINGLEUSE>::Create(&_releaseNotifier);
+#endif
 
     // Register Trace provider by GUID
     TraceLoggingRegister(g_ConhostLauncherProvider);

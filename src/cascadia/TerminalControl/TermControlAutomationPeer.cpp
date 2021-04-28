@@ -199,7 +199,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #pragma region IControlAccessibilityInfo
     COORD TermControlAutomationPeer::GetFontSize() const
     {
-        return _termControl->GetActualFont().GetSize();
+        return _termControl->GetFontSize();
     }
 
     RECT TermControlAutomationPeer::GetBounds() const
