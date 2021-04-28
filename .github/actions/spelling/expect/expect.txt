@@ -170,10 +170,12 @@ blog
 Blt
 BLUESCROLL
 bmp
+BODGY
 BOLDFONT
 BOOLIFY
 bools
 boostorg
+Bopomofo
 Borland
 BOTTOMLEFT
 BOTTOMRIGHT
@@ -675,6 +677,7 @@ dwmapi
 dword
 dwrite
 dwriteglyphrundescriptionclustermap
+dwl
 dxgi
 dxgidwm
 dxinterop

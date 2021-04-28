@@ -397,4 +397,12 @@
   <data name="QuakeModeCommandKey" xml:space="preserve">
     <value>Summon Quake window</value>
   </data>
+  <data name="InboxWindowsConsoleAuthor" xml:space="preserve">
+    <value>Microsoft Corporation</value>
+    <comment>Paired with `InboxWindowsConsoleName`, this is the application author... which is us: Microsoft.</comment>
+  </data>
+  <data name="InboxWindowsConsoleName" xml:space="preserve">
+    <value>Windows Console Host</value>
+    <comment>Name describing the usage of the classic windows console as the terminal UI. (`conhost.exe`)</comment>
+  </data>
 </root>
