@@ -276,7 +276,18 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
         _activeProfiles.Append(*duplicated);
     }
 
-    const winrt::hstring newName{ fmt::format(L"{} ({})", source.Name(), RS_(L"CopySuffix")) };
+    winrt::hstring newName{ fmt::format(L"{} ({})", source.Name(), RS_(L"CopySuffix")) };
+
+    // Check if this name already exists and if so, append a number
+    for (uint32_t candidateIndex = 0; candidateIndex < _allProfiles.Size() + 1; ++candidateIndex)
+    {
+        if (std::none_of(begin(_allProfiles), end(_allProfiles), [&](auto&& profile) { return profile.Name() == newName; }))
+        {
+            break;
+        }
+        // There is a theoretical unsigned integer wraparound, which is OK
+        newName = fmt::format(L"{} ({}{})", source.Name(), RS_(L"CopySuffix"), candidateIndex);
+    }
     duplicated->Name(winrt::hstring(newName));
 
 #define DUPLICATE_SETTING_MACRO(settingName)                                                                                                   \
