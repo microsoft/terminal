@@ -153,6 +153,11 @@ namespace winrt::TerminalApp::implementation
             {
                 // Possibly update the icon of the tab.
                 page->_UpdateTabIcon(*tab);
+
+                // Update the taskbar progress as well. We'll raise our own
+                // SetTaskbarProgress event here, to get tell the hosting
+                // application to re-query this value from us.
+                page->_SetTaskbarProgressHandlers(*page, nullptr);
             }
         });
 
@@ -272,12 +277,17 @@ namespace winrt::TerminalApp::implementation
                                 (_tabs.Size() > 1) ||
                                 _settings.GlobalSettings().AlwaysShowTabs());
 
-        // collapse/show the tabs themselves
-        _tabView.Visibility(isVisible ? Visibility::Visible : Visibility::Collapsed);
-
-        // collapse/show the row that the tabs are in.
-        // NaN is the special value XAML uses for "Auto" sizing.
-        _tabRow.Height(isVisible ? NAN : 0);
+        if (_tabView)
+        {
+            // collapse/show the tabs themselves
+            _tabView.Visibility(isVisible ? Visibility::Visible : Visibility::Collapsed);
+        }
+        if (_tabRow)
+        {
+            // collapse/show the row that the tabs are in.
+            // NaN is the special value XAML uses for "Auto" sizing.
+            _tabRow.Height(isVisible ? NAN : 0);
+        }
     }
 
     // Method Description:

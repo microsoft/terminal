@@ -1,0 +1,25 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Control
+{
+    // These are properties of the TerminalCore that should be queryable by the
+    // rest of the app.
+    interface ICoreState
+    {
+        String Title { get; };
+        UInt64 TaskbarState { get; };
+        UInt64 TaskbarProgress { get; };
+
+        String WorkingDirectory { get; };
+
+        Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
+
+        Int32 ScrollOffset { get; };
+        Int32 ViewHeight { get; };
+
+        Boolean BracketedPasteEnabled { get; };
+
+        Microsoft.Terminal.TerminalConnection.ConnectionState ConnectionState { get; };
+    };
+}

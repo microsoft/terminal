@@ -3,6 +3,7 @@ ACCESSDENIED
 alignof
 bitfield
 bitfields
+BUILDNUMBER
 CLASSNOTAVAILABLE
 cmdletbinding
 colspan
@@ -12,9 +13,11 @@ CXICON
 CYICON
 D2DERR_SHADER_COMPILE_FAILED
 dataobject
+dcomp
 DERR
 dlldata
 DONTADDTORECENT
+DWORDLONG
 environstrings
 EXPCMDFLAGS
 EXPCMDSTATE
@@ -55,6 +58,7 @@ istream
 IStringable
 ITab
 ITaskbar
+IUri
 IVirtual
 LCID
 llabs
@@ -76,6 +80,8 @@ NOREDIRECTIONBITMAP
 ntprivapi
 oaidl
 ocidl
+osver
+OSVERSIONINFOEXW
 otms
 OUTLINETEXTMETRICW
 overridable
@@ -127,9 +133,12 @@ wsregex
 wwinmain
 XDocument
 XElement
+xhash
 xlocmes
 xlocmon
 xlocnum
 xloctime
 XParse
 xstring
+xtree
+xutility

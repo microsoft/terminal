@@ -46,7 +46,6 @@
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="$(ProjectName).def" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
@@ -111,7 +110,4 @@
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-  <!-- Import this set of targets that fixes a VS bug that manifests when using
-  the TerminalAppLib project -->
-  <Import Project="FixVisualStudioBug.targets" />
 </Project>

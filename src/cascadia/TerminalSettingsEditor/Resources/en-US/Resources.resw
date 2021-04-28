@@ -244,7 +244,7 @@
     <comment>A description for what the default profile is and when it's used.</comment>
   </data>
   <data name="Globals_DefaultTerminal.Header" xml:space="preserve">
-    <value>Default terminal</value>
+    <value>Default terminal application</value>
     <comment>Header for a drop down that permits the user to select which installed Terminal application will launch when command line tools like CMD are run from the Windows Explorer run box or start menu or anywhere else that they do not already have a graphical window assigned.</comment>
   </data>
   <data name="Globals_DefaultTerminal.HelpText" xml:space="preserve">
