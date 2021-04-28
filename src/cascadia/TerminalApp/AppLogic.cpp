@@ -1413,7 +1413,7 @@ namespace winrt::TerminalApp::implementation
 
     Windows::Foundation::Collections::IMap<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::ActionAndArgs> AppLogic::GlobalHotkeys()
     {
-        return _settings.GlobalSettings().KeyMap().FetchGlobalHotkeys();
+        return _settings.GlobalSettings().KeyMap().GlobalHotkeys();
     }
 
     void AppLogic::IdentifyWindow()
