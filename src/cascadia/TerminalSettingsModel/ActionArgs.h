@@ -36,6 +36,7 @@
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
 #include "TerminalWarnings.h"
+#include "../inc/WindowingBehavior.h"
 
 #include "TerminalSettingsSerializationHelpers.h"
 
@@ -1084,6 +1085,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_DropdownDuration = _DropdownDuration;
             copy->_ToggleVisibility = _ToggleVisibility;
             return *copy;
+        }
+        // SPECIAL! This deserializer creates a GlobalSummonArgs with the
+        // default values for quakeMode
+        static FromJsonResult QuakeModeFromJson(const Json::Value& /*json*/)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<GlobalSummonArgs>();
+            // We want to summon the window with the name "_quake" specifically.
+            args->_Name = QuakeWindowName;
+            // We want the window to dropdown, with a 200ms duration.
+            args->_DropdownDuration = 200;
+            return { *args, {} };
         }
     };
 

@@ -154,29 +154,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - <none>
     // Return Value:
     // - a map of KeyChord -> ActionAndArgs containing all globally bindable actions.
-    Windows::Foundation::Collections::IMap<Control::KeyChord, Model::ActionAndArgs> KeyMapping::FetchGlobalHotkeys()
+    Windows::Foundation::Collections::IMap<Control::KeyChord, Model::ActionAndArgs> KeyMapping::GlobalHotkeys()
     {
         std::unordered_map<Control::KeyChord, Model::ActionAndArgs, KeyChordHash, KeyChordEquality> justGlobals;
 
         for (const auto& [k, v] : _keyShortcuts)
         {
-            if (v.Action() == ShortcutAction::GlobalSummon)
+            if (v.Action() == ShortcutAction::GlobalSummon || v.Action() == ShortcutAction::QuakeMode)
             {
                 justGlobals[k] = v;
-            }
-            else if (v.Action() == ShortcutAction::QuakeMode)
-            {
-                // Manually replace the QuakeMode action with a globalSummon
-                // that has the appropriate action args.
-                auto args = winrt::make_self<GlobalSummonArgs>();
-
-                // We want to summon the window with the name "_quake" specifically.
-                args->Name(L"_quake");
-                // We want the window to dropdown, with a 200ms duration.
-                args->DropdownDuration(200);
-
-                Model::ActionAndArgs actionAndArgs{ ShortcutAction::GlobalSummon, *args };
-                justGlobals[k] = actionAndArgs;
             }
         }
 

@@ -48,7 +48,9 @@ CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles) :
     _allProfiles{ winrt::single_threaded_observable_vector<Model::Profile>() },
     _activeProfiles{ winrt::single_threaded_observable_vector<Model::Profile>() },
     _warnings{ winrt::single_threaded_vector<SettingsLoadWarnings>() },
-    _deserializationErrorMessage{ L"" }
+    _deserializationErrorMessage{ L"" },
+    _defaultTerminals{ winrt::single_threaded_observable_vector<Model::DefaultTerminal>() },
+    _currentDefaultTerminal{ nullptr }
 {
     if (addDynamicProfiles)
     {
@@ -81,6 +83,9 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     settings->_userSettingsString = _userSettingsString;
     settings->_userSettings = _userSettings;
     settings->_defaultSettings = _defaultSettings;
+
+    settings->_defaultTerminals = _defaultTerminals;
+    settings->_currentDefaultTerminal = _currentDefaultTerminal;
 
     _CopyProfileInheritanceTree(settings);
 
@@ -998,4 +1003,82 @@ winrt::hstring CascadiaSettings::ApplicationVersion()
     CATCH_LOG();
 
     return RS_(L"ApplicationVersionUnknown");
+}
+
+// Method Description:
+// - Forces a refresh of all default terminal state
+// Arguments:
+// - <none>
+// Return Value:
+// - <none> - Updates internal state
+void CascadiaSettings::RefreshDefaultTerminals()
+{
+    _defaultTerminals.Clear();
+
+    for (const auto& term : Model::DefaultTerminal::Available())
+    {
+        _defaultTerminals.Append(term);
+    }
+
+    _currentDefaultTerminal = Model::DefaultTerminal::Current();
+}
+
+// Helper to do the version check
+static bool _isOnBuildWithDefTerm() noexcept
+{
+    OSVERSIONINFOEXW osver{ 0 };
+    osver.dwOSVersionInfoSize = sizeof(osver);
+    osver.dwBuildNumber = 21359;
+
+    DWORDLONG dwlConditionMask = 0;
+    VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+    return VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask);
+}
+
+// Method Description:
+// - Determines if we're on an OS platform that supports
+//   the default terminal handoff functionality.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if OS supports default terminal. False otherwise.
+bool CascadiaSettings::IsDefaultTerminalAvailable() noexcept
+{
+    // Cached on first use since the OS version shouldn't change while we're running.
+    static bool isAvailable = _isOnBuildWithDefTerm();
+    return isAvailable;
+}
+
+// Method Description:
+// - Returns an iterable collection of all available terminals.
+// Arguments:
+// - <none>
+// Return Value:
+// - an iterable collection of all available terminals that could be the default.
+IObservableVector<winrt::Microsoft::Terminal::Settings::Model::DefaultTerminal> CascadiaSettings::DefaultTerminals() const noexcept
+{
+    return _defaultTerminals;
+}
+
+// Method Description:
+// - Returns the currently selected default terminal application
+// Arguments:
+// - <none>
+// Return Value:
+// - the selected default terminal application
+winrt::Microsoft::Terminal::Settings::Model::DefaultTerminal CascadiaSettings::CurrentDefaultTerminal() const noexcept
+{
+    return _currentDefaultTerminal;
+}
+
+// Method Description:
+// - Sets the current default terminal application
+// Arguments:
+// - terminal - Terminal from `DefaultTerminals` list to set as default
+// Return Value:
+// - <none>
+void CascadiaSettings::CurrentDefaultTerminal(winrt::Microsoft::Terminal::Settings::Model::DefaultTerminal terminal)
+{
+    _currentDefaultTerminal = terminal;
 }

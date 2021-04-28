@@ -167,6 +167,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { ShortcutAction::NextTab, NextTabArgs::FromJson },
         { ShortcutAction::RenameWindow, RenameWindowArgs::FromJson },
         { ShortcutAction::GlobalSummon, GlobalSummonArgs::FromJson },
+        { ShortcutAction::QuakeMode, GlobalSummonArgs::QuakeModeFromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };

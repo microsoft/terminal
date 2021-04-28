@@ -900,6 +900,11 @@
           "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied.",
           "$ref": "#/definitions/CopyFormat"
         },
+        "trimBlockSelection": {
+          "default": false,
+          "description": "When set to true, trailing white-spaces will be removed from text in rectangular (block) selection while copied to your clipboard. When set to false, the white-spaces will be preserved.",
+          "type": "boolean"
+        },
         "disableAnimations": {
           "default": false,
           "description": "When set to `true`, visual animations will be disabled across the application.",

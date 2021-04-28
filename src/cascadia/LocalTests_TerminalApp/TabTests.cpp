@@ -296,7 +296,7 @@ namespace TerminalAppLocalTests
             auto tab = page->_tabs.GetAt(0);
             auto tabImpl = page->_GetTerminalTabImpl(tab);
             page->_tabView.SelectedItem(tabImpl->TabViewItem());
-            page->_UpdatedSelectedTab(0);
+            page->_UpdatedSelectedTab(tab);
         });
         VERIFY_SUCCEEDED(result);
     }
@@ -984,10 +984,10 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Select the tabs from 0 to 3");
         RunOnUIThread([&page]() {
-            page->_UpdatedSelectedTab(0);
-            page->_UpdatedSelectedTab(1);
-            page->_UpdatedSelectedTab(2);
-            page->_UpdatedSelectedTab(3);
+            page->_UpdatedSelectedTab(page->_tabs.GetAt(0));
+            page->_UpdatedSelectedTab(page->_tabs.GetAt(1));
+            page->_UpdatedSelectedTab(page->_tabs.GetAt(2));
+            page->_UpdatedSelectedTab(page->_tabs.GetAt(3));
         });
 
         VERIFY_ARE_EQUAL(4u, page->_mruTabs.Size());
