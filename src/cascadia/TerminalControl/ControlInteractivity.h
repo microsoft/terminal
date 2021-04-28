@@ -83,6 +83,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     private:
         winrt::com_ptr<ControlCore> _core{ nullptr };
         unsigned int _rowsToScroll;
+        double _internalScrollbarPosition{ 0.0 };
 
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.
@@ -123,8 +124,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _canSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
 
         void _sendPastedTextToConnection(std::wstring_view wstr);
-        void _updateScrollbar(const int newValue);
+        void _updateScrollbar(const double newValue);
         til::point _getTerminalPosition(const til::point& pixelPosition);
+
+        void _coreScrollPositionChanged(const IInspectable& /*sender*/, const Control::ScrollPositionChangedArgs& args);
 
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
