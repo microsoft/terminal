@@ -8,6 +8,7 @@
 #include "../types/inc/User32Utils.hpp"
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "resource.h"
+#include "VirtualDesktopUtils.h"
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
@@ -686,6 +687,12 @@ void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
         {
             Remoting::SummonWindowSelectionArgs args{ summonArgs.Name() };
 
+            // desktop:any - MoveToCurrentDesktop=false, OnCurrentDesktop=false
+            // desktop:toCurrent - MoveToCurrentDesktop=true, OnCurrentDesktop=false
+            // desktop:onCurrent - MoveToCurrentDesktop=false, OnCurrentDesktop=true
+            args.OnCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::OnCurrent);
+            args.SummonBehavior().MoveToCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::ToCurrent);
+
             _windowManager.SummonWindow(args);
             if (args.FoundMatch())
             {
@@ -740,24 +747,65 @@ winrt::fire_and_forget AppHost::_createNewTerminalWindow(Settings::Model::Global
     co_return;
 }
 
-void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                            const winrt::Windows::Foundation::IInspectable& /*args*/)
+// Method Description:
+// - Helper to initialize our instance of IVirtualDesktopManager. If we already
+//   got one, then this will just return true. Otherwise, we'll try and init a
+//   new instance of one, and store that.
+// - This will return false if we weren't able to initialize one, which I'm not
+//   sure is actually possible.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff _desktopManager points to a non-null instance of IVirtualDesktopManager
+bool AppHost::_LazyLoadDesktopManager()
 {
-    _window->SummonWindow();
+    if (_desktopManager == nullptr)
+    {
+        try
+        {
+            _desktopManager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
+        }
+        CATCH_LOG();
+    }
+
+    return _desktopManager != nullptr;
 }
 
+void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                            const Remoting::SummonWindowBehavior& args)
+{
+    _window->SummonWindow();
+
+    if (args != nullptr && args.MoveToCurrentDesktop())
+    {
+        if (_LazyLoadDesktopManager())
+        {
+            GUID currentlyActiveDesktop{ 0 };
+            if (VirtualDesktopUtils::GetCurrentVirtualDesktopId(&currentlyActiveDesktop))
+            {
+                LOG_IF_FAILED(_desktopManager->MoveWindowToDesktop(_window->GetHandle(), currentlyActiveDesktop));
+            }
+            // If GetCurrentVirtualDesktopId failed, then just leave the window
+            // where it is. Nothing else to be done :/
+        }
+    }
+}
+
+// Method Description:
+// - This gets the GUID of the desktop our window is currently on. It does NOT
+//   get the GUID of the desktop that's currently active.
+// Arguments:
+// - <none>
+// Return Value:
+// - the GUID of the desktop our window is currently on
 GUID AppHost::_CurrentDesktopGuid()
 {
     GUID currentDesktopGuid{ 0 };
-    try
+    const auto manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
+    if (_LazyLoadDesktopManager())
     {
-        const auto manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
-        if (manager)
-        {
-            LOG_IF_FAILED(manager->GetWindowDesktopId(_window->GetHandle(), &currentDesktopGuid));
-        }
+        LOG_IF_FAILED(_desktopManager->GetWindowDesktopId(_window->GetHandle(), &currentDesktopGuid));
     }
-    CATCH_LOG();
     return currentDesktopGuid;
 }
 

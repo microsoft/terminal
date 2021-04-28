@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "Peasant.h"
 #include "CommandlineArgs.h"
+#include "SummonWindowBehavior.h"
 #include "Peasant.g.cpp"
 #include "../../types/inc/utils.hpp"
 
@@ -126,14 +127,17 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void Peasant::Summon()
+    void Peasant::Summon(const Remoting::SummonWindowBehavior& summonBehavior)
     {
-        _SummonRequestedHandlers(*this, nullptr);
+        auto localCopy = winrt::make<implementation::SummonWindowBehavior>(summonBehavior);
 
         TraceLoggingWrite(g_hRemotingProvider,
                           "Peasant_Summon",
                           TraceLoggingUInt64(GetID(), "peasantID", "Our ID"),
+                          TraceLoggingUInt64(localCopy->MoveToCurrentDesktop(), "MoveToCurrentDesktop", "true if we should move to the current desktop"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
+        _SummonRequestedHandlers(*this, localCopy);
     }
 
     // Method Description:

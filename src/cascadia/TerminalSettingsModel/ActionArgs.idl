@@ -84,6 +84,13 @@ namespace Microsoft.Terminal.Settings.Model
         Disabled,
     };
 
+    enum DesktopBehavior
+    {
+        Any,
+        ToCurrent,
+        OnCurrent,
+    };
+
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
@@ -256,5 +263,6 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass GlobalSummonArgs : IActionArgs
     {
         String Name { get; };
+        DesktopBehavior Desktop { get; };
     };
 }
