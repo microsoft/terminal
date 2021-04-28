@@ -97,6 +97,7 @@ private:
 
     std::tuple<size_t, size_t, size_t, size_t> _indicesForCol(size_t col, typename decltype(_data)::size_type hint = 0, size_t colstart = 0) const
     {
+        // WISHLIST: I want to be able to iterate *compressed runs* so that I don't need to sum up individual column counts one by one
         size_t c{ colstart };
         auto it{ _cwid.cbegin() + hint };
         while (it != _cwid.cend())
