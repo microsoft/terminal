@@ -22,10 +22,6 @@
         </Expand>
     </Type>
 
-    <Type Name="TextAttributeRun">
-        <DisplayString>Length={_cchLength} Attr={_attributes}</DisplayString>
-    </Type>
-
     <Type Name="Microsoft::Console::Types::Viewport">
         <!-- Can't call functions in here -->
         <DisplayString>{{LT({_sr.Left}, {_sr.Top}) RB({_sr.Right}, {_sr.Bottom}) [{_sr.Right-_sr.Left+1} x { _sr.Bottom-_sr.Top+1}]}}</DisplayString>

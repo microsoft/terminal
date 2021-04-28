@@ -11,8 +11,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     namespace details
     {
-        template<typename ParentIt>
-        class rle_const_iterator
+        template<typename T, typename S, typename ParentIt>
+        class rle_iterator
         {
             // If you use this as a sample for your own iterator, this looks
             // a bit daunting. But it's almost entirely boilerplate.
@@ -34,21 +34,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // 6. Fill in operator[] to go to the offset like an array index.
             // 7. Fill in operator== for equality. Gets == and != in one shot.
             // 8. Fill in operator< for comparison. Also covers > and <= and >=.
-            // Congrats, you have a const_iterator. Go implement the non-const
-            // inheriting from this. It's super simple once this is done.
-
-        private:
-            using size_type = typename ParentIt::value_type::second_type;
 
         public:
             using iterator_category = std::random_access_iterator_tag;
-            using value_type = typename ParentIt::value_type::first_type;
-            using pointer = const value_type*;
-            using reference = const value_type&;
+            using value_type = T;
+            using pointer = T*;
+            using reference = T&;
+            using size_type = S;
             using difference_type = typename ParentIt::difference_type;
 
-            rle_const_iterator(ParentIt it) :
-                _it(it),
+            explicit rle_iterator(ParentIt&& it) :
+                _it(std::forward<ParentIt>(it)),
                 _usage(1)
             {
             }
@@ -63,33 +59,33 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 return &operator*();
             }
 
-            rle_const_iterator& operator++() noexcept
+            rle_iterator& operator++()
             {
-                inc();
+                operator+=(1);
                 return *this;
             }
 
-            rle_const_iterator operator++(int) noexcept
+            rle_iterator operator++(int)
             {
-                rle_const_iterator tmp = *this;
-                inc();
+                rle_iterator tmp = *this;
+                operator+=(1);
                 return tmp;
             }
 
-            rle_const_iterator& operator--() noexcept
+            rle_iterator& operator--()
             {
-                dec();
+                operator-=(1);
                 return *this;
             }
 
-            rle_const_iterator operator--(int) noexcept
+            rle_iterator operator--(int)
             {
-                rle_const_iterator tmp = *this;
-                dec();
+                rle_iterator tmp = *this;
+                operator-=(1);
                 return tmp;
             }
 
-            rle_const_iterator& operator+=(const difference_type offset) noexcept
+            rle_iterator& operator+=(const difference_type offset)
             {
                 // TODO: Optional iterator debug
                 if (offset < 0) // negative direction
@@ -174,24 +170,24 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 return *this;
             }
 
-            [[nodiscard]] rle_const_iterator operator+(const difference_type offset) const noexcept
-            {
-                rle_const_iterator tmp = *this;
-                return tmp += offset;
-            }
-
-            rle_const_iterator& operator-=(const difference_type offset) noexcept
+            rle_iterator& operator-=(const difference_type offset)
             {
                 return *this += -offset;
             }
 
-            [[nodiscard]] rle_const_iterator operator-(const difference_type offset) const noexcept
+            [[nodiscard]] rle_iterator operator+(const difference_type offset) const
             {
-                rle_const_iterator tmp = *this;
+                auto tmp = *this;
+                return tmp += offset;
+            }
+
+            [[nodiscard]] rle_iterator operator-(const difference_type offset) const
+            {
+                auto tmp = *this;
                 return tmp -= offset;
             }
 
-            [[nodiscard]] difference_type operator-(const rle_const_iterator& right) const noexcept
+            [[nodiscard]] difference_type operator-(const rle_iterator& right) const
             {
                 // TODO: Optional iterator debug
 
@@ -235,232 +231,151 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 return accumulation;
             }
 
-            [[nodiscard]] reference operator[](const difference_type offset) const noexcept
+            [[nodiscard]] reference operator[](const difference_type offset) const
             {
                 return *operator+(offset);
             }
 
-            [[nodiscard]] bool operator==(const rle_const_iterator& right) const noexcept
+            [[nodiscard]] bool operator==(const rle_iterator& right) const noexcept
             {
                 // TODO: Optional iterator debug
                 return _it == right._it && _usage == right._usage;
             }
 
-            [[nodiscard]] bool operator!=(const rle_const_iterator& right) const noexcept
+            [[nodiscard]] bool operator!=(const rle_iterator& right) const noexcept
             {
                 return !(*this == right);
             }
 
-            [[nodiscard]] bool operator<(const rle_const_iterator& right) const noexcept
+            [[nodiscard]] bool operator<(const rle_iterator& right) const noexcept
             {
                 // TODO: Optional iterator debug
                 return _it < right._it || (_it == right._it && _usage < right._usage);
             }
 
-            [[nodiscard]] bool operator>(const rle_const_iterator& right) const noexcept
+            [[nodiscard]] bool operator>(const rle_iterator& right) const noexcept
             {
                 return right < *this;
             }
 
-            [[nodiscard]] bool operator<=(const rle_const_iterator& right) const noexcept
+            [[nodiscard]] bool operator<=(const rle_iterator& right) const noexcept
             {
                 return !(right < *this);
             }
 
-            [[nodiscard]] bool operator>=(const rle_const_iterator& right) const noexcept
+            [[nodiscard]] bool operator>=(const rle_iterator& right) const noexcept
             {
                 return !(*this < right);
             }
 
         private:
-            void inc() noexcept
-            {
-                // In this particular implementation, we need to use the advanced
-                // seeking logic of += for the run lengths, so don't do a shorthand
-                // for single increment/decrement. Forward it on.
-                operator+=(1);
-            }
-
-            void dec() noexcept
-            {
-                // In this particular implementation, we need to use the advanced
-                // seeking logic of += for the run lengths, so don't do a shorthand
-                // for single increment/decrement. Forward it on.
-                operator-=(1);
-            }
-
             ParentIt _it;
             size_type _usage;
         };
-
-        template<typename ParentIt>
-        class rle_iterator : public rle_const_iterator<ParentIt>
-        {
-        public:
-            // This looks like a lot, but seriously... we're defining nothing here.
-            // It's literally just stripping consts off of the const iterator and
-            // making those accessible.
-            // If you use this as a sample, all you have to change is:
-            // 1. Make it inherit correctly and align that with the template.
-            // 2. Fix mybase to match
-            // 3. value_type needs to be whatever makes sense to come off of *iterator
-            // 4. difference_type needs to come from somewhere else, probably.
-
-            using mybase = rle_const_iterator<ParentIt>;
-
-            using iterator_category = std::random_access_iterator_tag;
-            using value_type = typename ParentIt::value_type::first_type;
-            using pointer = value_type*;
-            using reference = value_type&;
-            using difference_type = typename ParentIt::difference_type;
-
-            // Use base's constructor.
-            using mybase::mybase;
-
-            [[nodiscard]] reference operator*() const noexcept
-            {
-                return const_cast<reference>(mybase::operator*());
-            }
-
-            [[nodiscard]] pointer operator->() const noexcept
-            {
-                return const_cast<std::remove_const_t<value_type>*>(mybase::operator->());
-            }
-
-            rle_iterator& operator++() noexcept
-            {
-                mybase::operator++();
-                return *this;
-            }
-
-            rle_iterator operator++(int) noexcept
-            {
-                rle_iterator tmp = *this;
-                mybase::operator++();
-                return tmp;
-            }
-
-            rle_iterator& operator--() noexcept
-            {
-                mybase::operator--();
-                return *this;
-            }
-
-            rle_iterator operator--(int) noexcept
-            {
-                rle_iterator tmp = *this;
-                mybase::operator--();
-                return tmp;
-            }
-
-            rle_iterator& operator+=(const difference_type offset) noexcept
-            {
-                mybase::operator+=(offset);
-                return *this;
-            }
-
-            [[nodiscard]] rle_iterator operator+(const difference_type offset) const noexcept
-            {
-                rle_iterator tmp = *this;
-                return tmp += offset;
-            }
-
-            rle_iterator& operator-=(const difference_type offset) noexcept
-            {
-                mybase::operator-=(offset);
-                return *this;
-            }
-
-            // Use base's difference method.
-            using mybase::operator-;
-
-            [[nodiscard]] rle_iterator operator-(const difference_type offset) const noexcept
-            {
-                rle_iterator tmp = *this;
-                return tmp -= offset;
-            }
-
-            [[nodiscard]] reference operator[](const difference_type offset) const noexcept
-            {
-                return const_cast<reference>(mybase::operator[](offset));
-            }
-        };
     };
 
-    template<typename T, typename S = size_t>
-    class rle
+    template<typename T, typename S = std::size_t, typename Container = std::vector<std::pair<T, S>>>
+    class basic_rle
     {
-    private:
-        boost::container::small_vector<std::pair<T, S>, 1> _list;
-        S _size;
-
-        rle(boost::container::small_vector<std::pair<T, S>, 1> list, S size) :
-            _list(list),
-            _size(size)
-        {
-
-        }
-
     public:
-        //using iterator = details::rle_iterator<typename decltype(_list)::iterator>;
-        using const_iterator = details::rle_const_iterator<typename decltype(_list)::const_iterator>;
-        //using reverse_iterator = std::reverse_iterator<iterator>;
+        using value_type = T;
+        using allocator_type = typename Container::allocator_type;
+        using pointer = typename Container::pointer;
+        using const_pointer = typename Container::const_pointer;
+        using reference = T&;
+        using const_reference = const T&;
+        using size_type = S;
+        using difference_type = S;
+
+        using iterator = details::rle_iterator<T, S, typename Container::iterator>;
+        using const_iterator = details::rle_iterator<const T, S, typename Container::const_iterator>;
+        using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-        rle(const S size, const T value) :
-            _size(size)
+        constexpr basic_rle() noexcept = default;
+
+        basic_rle(const basic_rle& other) :
+            _list(other._list), _size(other._size)
         {
-            fill(value);
         }
 
-        
+        basic_rle& operator=(const basic_rle& other)
+        {
+            _list = other._list;
+            _size = other._size;
+            return *this;
+        }
+
+        basic_rle(basic_rle&& other) noexcept :
+            _list(std::move(other._list)), _size(std::exchange(other._size, 0))
+        {
+        }
+
+        basic_rle& operator=(basic_rle&& other) noexcept
+        {
+            _list = std::move(other._list);
+            _size = std::exchange(other._size, 0);
+            return *this;
+        }
+
+        basic_rle(const size_type size, const value_type& value) :
+            _size(size)
+        {
+            assign(value);
+        }
+
+        void swap(basic_rle& other)
+        {
+            std::swap(_list, other._list);
+            std::swap(_size, other._size);
+        }
 
         // Returns the total length of all runs as encoded.
-        S size() const noexcept
+        size_type size() const noexcept
         {
             return _size;
         }
 
         // Get the value at the position
-        T at(S position) const
+        const_reference at(size_type position) const
         {
-            S applies;
+            size_type applies;
             return at(position, applies);
         }
 
         // Get the value at the position and for how much longer it applies.
-        T at(S position, S& applies) const
+        const_reference at(size_type position, size_type& applies) const
         {
             THROW_HR_IF(E_INVALIDARG, position >= _size);
             return _at(position, applies)->first;
         }
 
-        [[nodiscard]] rle<T, S> substr(const S offset = 0, const S count = std::numeric_limits<S>::max()) const
+        [[nodiscard]] basic_rle substr(const size_type offset = 0, const size_type count = std::numeric_limits<size_type>::max()) const
         {
             // TODO: validate params
-            const S startIndex = offset;
-            const S endIndex = std::min(_size - offset, count) + offset - 1;
+            const size_type startIndex = offset;
+            const size_type endIndex = std::min(_size - offset, count) + offset - 1;
 
-            S startApplies, endApplies;
+            size_type startApplies, endApplies;
             const auto firstRun{ _at(startIndex, startApplies) };
             const auto lastRun{ _at(endIndex, endApplies) };
 
-            decltype(_list) substring{ firstRun, lastRun + 1};
+            Container substring{ firstRun, lastRun + 1 };
             substring.front().second = startApplies;
             substring.back().second = substring.back().second - endApplies + 1;
 
-            return til::rle<T, S>(substring, endIndex - startIndex + 1);
+            return { std::move(substring), endIndex - startIndex + 1 };
         }
 
         // Replaces every value seen in the run with a new one
         // Does not change the length or position of the values.
-        void replace(const T oldValue, const T newValue)
+        void replace(const value_type oldValue, value_type newValue)
         {
             for (auto& run : _list)
             {
                 if (run.first == oldValue)
                 {
-                    run.first = newValue;
+                    run.first = std::move(newValue);
                 }
             }
         }
@@ -468,12 +383,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // Adjust the size of the run.
         // If new size is bigger, the last value is extended to new width.
         // If new size is smaller, the runs are cut to fit.
-        void resize(const S newSize)
+        void resize(const size_type newSize)
         {
-            THROW_HR_IF(E_INVALIDARG, 0 == newSize);
-
+            if (newSize <= 0)
+            {
+                _list.clear();
+            }
             // Easy case. If the new row is longer, increase the length of the last run by how much new space there is.
-            if (newSize > _size)
+            else if (newSize > _size)
             {
                 // Get the attribute that covers the final column of old width.
                 auto& run = _list.back();
@@ -488,7 +405,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             else
             {
                 // Get the attribute that covers the final column of the new width
-                S applies = 0;
+                size_type applies = 0;
                 auto run = _at(newSize - 1, applies);
 
                 // applies was given to us as "how many columns left from this point forward are covered by the returned run"
@@ -496,7 +413,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 // then when we called FindAttrIndex, it returned the B5 as the pIndexedRun and a 2 for how many more segments it covers
                 // after and including the 3rd column.
                 // B5-2 = B3, which is what we desire to cover the new 3 size buffer.
-                run->second = run->second - applies + 1;
+                //
+                // The const_cast doesn't invoke undefined behavior as this method,
+                // the this pointer and thus _list in turn aren't actually const here.
+                // It saves us from having to specialize _at() for non-const though.
+                const_cast<size_type&>(run->second) = run->second - applies + 1;
 
                 // Store that the new total width we represent is the new width.
                 _size = newSize;
@@ -510,75 +431,64 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 
-        // Places this value in every position from start to end.
-        // If no start is specified, fills the entire list.
-        void fill(const T value, const S start = gsl::narrow_cast<S>(0))
+        // Sets this value at the given start position until the end of this vector.
+        void assign(const value_type& value, const size_type start = 0)
         {
-            insert(value, start, gsl::narrow_cast<S>(_size - start));
+            assign(value, start, gsl::narrow_cast<size_type>(_size - start));
         }
 
-        // Inserts this value at the given position for the given run length.
-        void insert(const T value, const S position, const S length = gsl::narrow_cast<S>(1))
+        // Sets this value at the given start position for the given run length.
+        void assign(const value_type& value, const size_type start, const size_type length)
         {
             // TODO: validate position in bounds?
             std::pair<T, S> item{ value, length };
-            gsl::span<std::pair<T, S>> span{ &item, 1 };
-            _merge(span.begin(), span.end(), position);
+            _merge(&item, &item + 1, start);
         }
 
-        // Inserts all values between first and last starting at the given position.
-        template<class Iter>
-        void assign(Iter first, Iter last, const S position = gsl::narrow_cast<S>(0))
+        constexpr bool operator==(const basic_rle& other) const noexcept
         {
-            //TODO: validate that it doesn't overrun?
-            _merge(first, last, position);
+            return _size == other._size && _list == other._list;
         }
 
-        constexpr bool operator==(const rle& other) const noexcept
-        {
-            return _size == other._size &&
-                   std::equal(_list.cbegin(), _list.cend(), other._list.cbegin());
-        }
-
-        constexpr bool operator!=(const rle& other) const noexcept
+        constexpr bool operator!=(const basic_rle& other) const noexcept
         {
             return !(*this == other);
         }
 
-        /*[[nodiscard]] iterator begin() noexcept
+        [[nodiscard]] iterator begin() noexcept
         {
             return iterator(_list.begin());
-        }*/
+        }
 
         [[nodiscard]] const_iterator begin() const noexcept
         {
             return const_iterator(_list.begin());
         }
 
-        /*[[nodiscard]] iterator end() noexcept
+        [[nodiscard]] iterator end() noexcept
         {
             return iterator(_list.end());
-        }*/
+        }
 
         [[nodiscard]] const_iterator end() const noexcept
         {
             return const_iterator(_list.end());
         }
 
-        /*[[nodiscard]] reverse_iterator rbegin() noexcept
+        [[nodiscard]] reverse_iterator rbegin() noexcept
         {
             return reverse_iterator(end());
-        }*/
+        }
 
         [[nodiscard]] const_reverse_iterator rbegin() const noexcept
         {
             return const_reverse_iterator(end());
         }
 
-        /*[[nodiscard]] reverse_iterator rend() noexcept
+        [[nodiscard]] reverse_iterator rend() noexcept
         {
             return reverse_iterator(begin());
-        }*/
+        }
 
         [[nodiscard]] const_reverse_iterator rend() const noexcept
         {
@@ -623,54 +533,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
-    protected:
-        // TODO: get Dustin help to not duplicate this for constness.
-        auto _at(S position, S& applies) const
+    private:
+        basic_rle(Container&& list, size_type size) :
+            _list(std::forward<Container>(list)),
+            _size(size)
         {
-            FAIL_FAST_IF(!(position < _size)); // The requested index cannot be longer than the total length described by this set of Attrs.
-
-            S totalLength = 0;
-
-            FAIL_FAST_IF(!(_list.size() > 0)); // There should be a non-zero and positive number of items in the array.
-
-            // Scan through the internal array from position 0 adding up the lengths that each attribute applies to
-            auto runPos = _list.begin();
-            do
-            {
-                totalLength += runPos->second;
-
-                if (totalLength > position)
-                {
-                    // If we've just passed up the requested position with the length we added, break early
-                    break;
-                }
-
-                runPos++;
-            } while (runPos < _list.end());
-
-            // we should have broken before falling out the while case.
-            // if we didn't break, then this ATTR_ROW wasn't filled with enough attributes for the entire row of characters
-            FAIL_FAST_IF(runPos >= _list.end());
-
-            // The remaining iterator position is the position of the attribute that is applicable at the position requested (position)
-            // Calculate its remaining applicability if requested
-
-            // The length on which the found attribute applies is the total length seen so far minus the position we were searching for.
-            FAIL_FAST_IF(!(totalLength > position)); // The length of all attributes we counted up so far should be longer than the position requested or we'll underflow.
-
-            applies = totalLength - position;
-            FAIL_FAST_IF(!(applies > 0)); // An attribute applies for >0 characters
-            // MSFT: 17130145 - will restore this and add a better assert to catch the real issue.
-            //FAIL_FAST_IF(!(attrApplies <= _size)); // An attribute applies for a maximum of the total length available to us
-
-            return runPos;
         }
 
-        auto _at(S position, S& applies)
+        auto _at(size_type position, size_type& applies) const
         {
             FAIL_FAST_IF(!(position < _size)); // The requested index cannot be longer than the total length described by this set of Attrs.
 
-            S totalLength = 0;
+            size_type totalLength = 0;
 
             FAIL_FAST_IF(!(_list.size() > 0)); // There should be a non-zero and positive number of items in the array.
 
@@ -705,11 +579,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return runPos;
         }
 
-        template<class Iter>
-        void _merge(Iter first,
-                    Iter last,
-                    const S startIndex)
+        template<typename InputIterator>
+        void _merge(InputIterator first, InputIterator last, const size_type startIndex)
         {
+            // NOTE: This method assumes that the run length encoded slice in (first, last) is compact.
+            //       For instance if (first, last) contains [A2, A1, B3] instead of [A3, B3] it'll break this class.
+            //
             // Definitions:
             // Existing Run = The run length encoded color array we're already storing in memory before this was called.
             // Insert Run = The run length encoded color array that someone is asking us to inject into our stored memory run.
@@ -722,8 +597,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             //            (rgInsertAttrs is a 2 length array with Y1->N1 in it and cInsertAttrs = 2)
             // Final Run: R3 -> G2 -> Y1 -> N1 -> G1 -> B2
 
-            const auto newItemsTotalCoverage = std::accumulate(first, last, (S)0, [](S value, auto& item) -> S {
-                return value + gsl::narrow_cast<S>(item.second);
+            const auto newItemsTotalCoverage = std::accumulate(first, last, (size_type)0, [](size_type value, auto& item) -> size_type {
+                return value + gsl::narrow_cast<size_type>(item.second);
             });
 
             const auto newItemsSize = std::distance(first, last);
@@ -733,7 +608,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             if (newItemsSize == 1)
             {
                 // Get the new color attribute we're trying to apply
-                const T NewAttr = first->first;
+                const value_type NewAttr = first->first;
 
                 // If the existing run was only 1 element...
                 // ...and the new color is the same as the old, we don't have to do anything and can exit quick.
@@ -743,14 +618,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 }
                 // .. otherwise if we internally have a list of 2 or more and we're about to insert a single color
                 // it's possible that we just walk left-to-right through the row and find a quick exit.
-                else if (startIndex >= 0 && newItemsTotalCoverage == 1)
+                if (startIndex >= 0 && newItemsTotalCoverage == 1)
                 {
                     // First we try to find the run where the insertion happens, using lowerBound and upperBound to track
                     // where we are currently at.
                     const auto begin = _list.begin();
-                    S lowerBound = 0;
-                    S upperBound = 0;
-                    for (S i = 0; i < _list.size(); i++)
+                    size_type lowerBound = 0;
+                    size_type upperBound = 0;
+                    for (size_type i = 0; i < _list.size(); i++)
                     {
                         const auto curr = begin + i;
                         upperBound += curr->second;
@@ -867,8 +742,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // becomes R3->B2->Y2->B1->G2.
             // The original run was 3 long. The insertion run was 1 long. We need 1 more for the
             // fact that an existing piece of the run was split in half (to hold the latter half).
-            const S cNewRun = gsl::narrow_cast<S>(_list.size() + newItemsSize + 1);
-            decltype(_list) newRun;
+            const size_type cNewRun = gsl::narrow_cast<size_type>(_list.size() + newItemsSize + 1);
+            Container newRun;
             newRun.reserve(cNewRun);
 
             // We will start analyzing from the beginning of our existing run.
@@ -879,8 +754,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             auto pExistingRunPos = existingRun;
             const auto pExistingRunEnd = _list.end();
             auto pInsertRunPos = first;
-            S cInsertRunRemaining = gsl::narrow_cast<S>(newItemsSize);
-            S iExistingRunCoverage = 0;
+            size_type cInsertRunRemaining = gsl::narrow_cast<size_type>(newItemsSize);
+            size_type iExistingRunCoverage = 0;
 
             // Copy the existing run into the new buffer up to the "start index" where the new run will be injected.
             // If the new run starts at 0, we have nothing to copy from the beginning.
@@ -913,7 +788,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 //      the new/final run.
 
                 // Fetch out the length so we can fix it up based on the below conditions.
-                S length = newRun.back().second;
+                size_type length = newRun.back().second;
 
                 // If we've covered more cells already than the start of the attributes to be inserted...
                 if (iExistingRunCoverage > startIndex)
@@ -948,7 +823,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // We're technically done with the insert run now and have 0 remaining, but won't bother updating its pointers
             // and counts any further because we won't use them.
 
-            const S endIndex = startIndex + newItemsTotalCoverage - 1;
+            const size_type endIndex = startIndex + newItemsTotalCoverage - 1;
 
             // Now we need to move our pointer for the original existing run forward and update our counts
             // on how many cells we could have copied from the source before finishing off the new run.
@@ -987,7 +862,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     // so we can just adjust the final run's column count instead of adding another segment here.
                     if (newRun.back().first == pExistingRunPos->first)
                     {
-                        S length = newRun.back().second;
+                        size_type length = newRun.back().second;
                         length += (iExistingRunCoverage - (endIndex + 1));
                         newRun.back().second = length;
                     }
@@ -1025,7 +900,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 else if (newRun.back().first == pExistingRunPos->first)
                 {
                     // Add the value from the existing run into the current new run position.
-                    S length = newRun.back().second;
+                    size_type length = newRun.back().second;
                     length += pExistingRunPos->second;
                     newRun.back().second = length;
 
@@ -1042,13 +917,21 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             // OK, phew. We're done. Now we just need to free the existing run and store the new run in its place.
             _list.swap(newRun);
-            return;
         }
+
+        Container _list;
+        S _size{ 0 };
 
 #ifdef UNIT_TESTING
         friend class ::RunLengthEncodingTests;
 #endif
     };
+
+    template<typename T, typename S = std::size_t>
+    using rle = basic_rle<T, S, std::vector<std::pair<T, S>>>;
+
+    template<typename T, typename S = std::size_t, std::size_t N = 1>
+    using small_rle = basic_rle<T, S, boost::container::small_vector<std::pair<T, S>, N>>;
 };
 
 #ifdef __WEX_COMMON_H__

@@ -21,18 +21,24 @@ Revision History:
 #pragma once
 
 #include "til/rle.h"
+#include "TextAttribute.hpp"
 
-#include "TextAttributeRun.hpp"
-
-class ATTR_ROW final : public til::rle<TextAttribute, UINT>
+class ATTR_ROW final
 {
+    using rle_vector = til::small_rle<TextAttribute, UINT, 1>;
+
 public:
-    using mybase = til::rle<TextAttribute, UINT>;
+    using const_iterator = rle_vector::const_iterator;
 
-    using const_iterator = mybase::const_iterator;
-    using const_reverse_iterator = mybase::const_reverse_iterator;
+    ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr);
 
-    using mybase::mybase; // use base constructor
+    ~ATTR_ROW() = default;
+
+    ATTR_ROW(const ATTR_ROW&) = default;
+    ATTR_ROW& operator=(const ATTR_ROW&) = default;
+    ATTR_ROW(ATTR_ROW&&)
+    noexcept = default;
+    ATTR_ROW& operator=(ATTR_ROW&&) noexcept = default;
 
     TextAttribute GetAttrByColumn(const size_t column) const;
     TextAttribute GetAttrByColumn(const size_t column,
@@ -45,22 +51,21 @@ public:
 
     void Resize(const size_t newWidth);
 
-    [[nodiscard]] HRESULT InsertAttrRuns(const gsl::span<const TextAttributeRun> newAttrs,
-                                         const size_t iStart,
-                                         const size_t iEnd,
-                                         const size_t cBufferWidth);
+    void MergeAttrRun(const TextAttribute newAttr, const size_t start, const size_t length);
 
-    using mybase::begin;
-    using mybase::cbegin;
-    using mybase::cend;
-    using mybase::end;
+    const_iterator begin() const noexcept;
+    const_iterator end() const noexcept;
 
-    using mybase::operator==;
+    const_iterator cbegin() const noexcept;
+    const_iterator cend() const noexcept;
 
+    friend bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept;
     friend class ROW;
 
 private:
     void Reset(const TextAttribute attr);
+
+    rle_vector _data;
 
 #ifdef UNIT_TESTING
     friend class CommonState;

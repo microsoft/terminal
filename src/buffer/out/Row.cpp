@@ -114,7 +114,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
 
     if (it)
     {
-        // Accumulate usages of the same color so we can spend less time in InsertAttrRuns rewriting it.
+        // Accumulate usages of the same color so we can spend less time in MergeAttrRun rewriting it.
         auto currentColor = it->TextAttr();
         size_t colorUses = 0;
         size_t colorStarts = index;
@@ -133,12 +133,8 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
                 else
                 {
                     // Otherwise, commit this color into the run and save off the new one.
-                    const TextAttributeRun run{ colorUses, currentColor };
                     // Now commit the new color runs into the attr row.
-                    LOG_IF_FAILED(_attrRow.InsertAttrRuns({ &run, 1 },
-                                                          colorStarts,
-                                                          currentIndex - 1,
-                                                          _charRow.size()));
+                    _attrRow.MergeAttrRun(currentColor, colorStarts, colorUses);
                     currentColor = it->TextAttr();
                     colorUses = 1;
                     colorStarts = currentIndex;
@@ -198,11 +194,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
         // Now commit the final color into the attr row
         if (colorUses)
         {
-            const TextAttributeRun run{ colorUses, currentColor };
-            LOG_IF_FAILED(_attrRow.InsertAttrRuns({ &run, 1 },
-                                                  colorStarts,
-                                                  currentIndex - 1,
-                                                  _charRow.size()));
+            _attrRow.MergeAttrRun(currentColor, colorStarts, colorUses);
         }
     }
 
