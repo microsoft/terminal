@@ -1013,7 +1013,7 @@ winrt::fire_and_forget IslandWindow::SummonWindow(const bool toggleVisibility, c
 //   and **DOES NOT YIELD IT**. The window will be animating for the entire
 //   duration of dropdownDuration.
 // - At the end of the animation, we'll reset the window region, so that it's as
-//   if nothing occured.
+//   if nothing occurred.
 // Arguments:
 // - dropdownDuration: The duration to play the animation, in milliseconds. If
 //   0, we won't perform a dropdown animation.
@@ -1055,11 +1055,11 @@ void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool
         SetWindowRgn(_interopWindowHandle, rgn.get(), true);
 
         // Go immediately into another frame. This prevents the window from
-        // doing anything else (tearing our state). A Sleep() here is a little
-        // janky, causes the animation to not be as smooth.
+        // doing anything else (tearing our state). A Sleep() here will cause a
+        // weird stutter, and causes the animation to not be as smooth.
     }
 
-    // Reset the winddow.
+    // Reset the window.
     SetWindowRgn(_interopWindowHandle, nullptr, true);
 }
 
