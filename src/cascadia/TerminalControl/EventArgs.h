@@ -10,12 +10,12 @@
 #include "NoticeEventArgs.g.h"
 #include "ScrollPositionChangedArgs.g.h"
 #include "RendererWarningArgs.g.h"
+#include "TransparencyChangedEventArgs.g.h"
 #include "cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    struct TitleChangedEventArgs :
-        public TitleChangedEventArgsT<TitleChangedEventArgs>
+    struct TitleChangedEventArgs : public TitleChangedEventArgsT<TitleChangedEventArgs>
     {
     public:
         TitleChangedEventArgs(hstring title) :
@@ -24,8 +24,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         WINRT_PROPERTY(hstring, Title);
     };
 
-    struct CopyToClipboardEventArgs :
-        public CopyToClipboardEventArgsT<CopyToClipboardEventArgs>
+    struct CopyToClipboardEventArgs : public CopyToClipboardEventArgsT<CopyToClipboardEventArgs>
     {
     public:
         CopyToClipboardEventArgs(hstring text) :
@@ -52,24 +51,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::Foundation::IReference<CopyFormat> _formats;
     };
 
-    struct PasteFromClipboardEventArgs :
-        public PasteFromClipboardEventArgsT<PasteFromClipboardEventArgs>
+    struct PasteFromClipboardEventArgs : public PasteFromClipboardEventArgsT<PasteFromClipboardEventArgs>
     {
     public:
-        PasteFromClipboardEventArgs(std::function<void(std::wstring)> clipboardDataHandler) :
+        PasteFromClipboardEventArgs(std::function<void(std::wstring_view)> clipboardDataHandler) :
             m_clipboardDataHandler(clipboardDataHandler) {}
 
         void HandleClipboardData(hstring value)
         {
-            m_clipboardDataHandler(static_cast<std::wstring>(value));
+            m_clipboardDataHandler(value);
         };
 
     private:
-        std::function<void(std::wstring)> m_clipboardDataHandler;
+        std::function<void(std::wstring_view)> m_clipboardDataHandler;
     };
 
-    struct OpenHyperlinkEventArgs :
-        public OpenHyperlinkEventArgsT<OpenHyperlinkEventArgs>
+    struct OpenHyperlinkEventArgs : public OpenHyperlinkEventArgsT<OpenHyperlinkEventArgs>
     {
     public:
         OpenHyperlinkEventArgs(hstring uri) :
@@ -81,8 +78,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         hstring _uri;
     };
 
-    struct NoticeEventArgs :
-        public NoticeEventArgsT<NoticeEventArgs>
+    struct NoticeEventArgs : public NoticeEventArgsT<NoticeEventArgs>
     {
     public:
         NoticeEventArgs(const NoticeLevel level, const hstring& message) :
@@ -97,8 +93,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const hstring _message;
     };
 
-    struct ScrollPositionChangedArgs :
-        public ScrollPositionChangedArgsT<ScrollPositionChangedArgs>
+    struct ScrollPositionChangedArgs : public ScrollPositionChangedArgsT<ScrollPositionChangedArgs>
     {
     public:
         ScrollPositionChangedArgs(const int viewTop,
@@ -115,8 +110,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         WINRT_PROPERTY(int32_t, BufferSize);
     };
 
-    struct RendererWarningArgs :
-        public RendererWarningArgsT<RendererWarningArgs>
+    struct RendererWarningArgs : public RendererWarningArgsT<RendererWarningArgs>
     {
     public:
         RendererWarningArgs(const uint64_t hr) :
@@ -125,5 +119,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         WINRT_PROPERTY(uint64_t, Result);
+    };
+
+    struct TransparencyChangedEventArgs : public TransparencyChangedEventArgsT<TransparencyChangedEventArgs>
+    {
+    public:
+        TransparencyChangedEventArgs(const double opacity) :
+            _Opacity(opacity)
+        {
+        }
+
+        WINRT_PROPERTY(double, Opacity);
     };
 }

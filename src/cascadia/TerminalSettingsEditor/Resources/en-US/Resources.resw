@@ -209,6 +209,10 @@
     <value>Automatically copy selection to clipboard</value>
     <comment>Header for a control to toggle whether selected text should be copied to the clipboard automatically, or not.</comment>
   </data>
+  <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
+    <value>Remove trailing white-space in rectangular selection</value>
+    <comment>Header for a control to toggle whether a text selected with block selection should be trimmed of white spaces when copied to the clipboard, or not.</comment>
+  </data>
   <data name="Globals_KeybindingsDisclaimer.Text" xml:space="preserve">
     <value>Below are the currently bound keys, which can be modified by editing the JSON settings file.</value>
     <comment>A disclaimer located at the top of the actions page that presents the list of keybindings.</comment>

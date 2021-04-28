@@ -2166,6 +2166,7 @@ try
     if (_antialiasingMode != antialiasingMode)
     {
         _antialiasingMode = antialiasingMode;
+        _recreateDeviceRequested = true;
         LOG_IF_FAILED(InvalidateAll());
     }
 }
