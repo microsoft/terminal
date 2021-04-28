@@ -73,6 +73,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         const int32_t delta,
                         const til::point pixelPosition,
                         const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
+
+        void UpdateScrollbar(const double newValue);
+
 #pragma endregion
 
         bool CopySelectionToClipboard(bool singleLine,
@@ -124,7 +127,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _canSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
 
         void _sendPastedTextToConnection(std::wstring_view wstr);
-        void _updateScrollbar(const double newValue);
         til::point _getTerminalPosition(const til::point& pixelPosition);
 
         void _coreScrollPositionChanged(const IInspectable& /*sender*/, const Control::ScrollPositionChangedArgs& args);

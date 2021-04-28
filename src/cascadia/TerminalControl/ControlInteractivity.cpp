@@ -313,7 +313,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                 // Update the Core's viewport position, and raise a
                 // ScrollPositionChanged event to update the scrollbar
-                _updateScrollbar(newValue);
+                UpdateScrollbar(newValue);
 
                 // Use this point as our new scroll anchor.
                 _touchAnchor = newTouchPoint;
@@ -459,7 +459,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Update the Core's viewport position, and raise a
         // ScrollPositionChanged event to update the scrollbar
-        _updateScrollbar(newValue);
+        UpdateScrollbar(newValue);
 
         if (isLeftButtonPressed)
         {
@@ -485,12 +485,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - newValue: The new top of the viewport
     // Return Value:
     // - <none>
-    void ControlInteractivity::_updateScrollbar(const double newValue)
+    void ControlInteractivity::UpdateScrollbar(const double newValue)
     {
         // Set this as the new value of our internal scrollbar representation.
         // We're doing this so we can accumulate fractional amounts of a row to
         // scroll each time the mouse scrolls.
-        _internalScrollbarPosition = newValue;
+        _internalScrollbarPosition = std::clamp<double>(newValue, 0.0, _core->BufferHeight());
 
         // If the new scrollbar position, rounded to an int, is at a different
         // row, then actually update the scroll position in the core, and raise
