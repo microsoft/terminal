@@ -219,43 +219,44 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::ColorPickerChanged(IInspectable const& sender,
                                           ColorChangedEventArgs const& args)
     {
+        const til::color newColor{ args.NewColor() };
         if (const auto& picker{ sender.try_as<ColorPicker>() })
         {
             if (const auto& tag{ picker.Tag() })
             {
                 if (const auto index{ tag.try_as<uint8_t>() })
                 {
-                    CurrentColorScheme().SetColorTableEntry(*index, args.NewColor());
+                    CurrentColorScheme().SetColorTableEntry(*index, newColor);
                     if (index < ColorTableDivider)
                     {
-                        _CurrentNonBrightColorTable.GetAt(*index).Color(args.NewColor());
+                        _CurrentNonBrightColorTable.GetAt(*index).Color(newColor);
                     }
                     else
                     {
-                        _CurrentBrightColorTable.GetAt(*index - ColorTableDivider).Color(args.NewColor());
+                        _CurrentBrightColorTable.GetAt(*index - ColorTableDivider).Color(newColor);
                     }
                 }
                 else if (const auto stringTag{ tag.try_as<hstring>() })
                 {
                     if (stringTag == ForegroundColorTag)
                     {
-                        CurrentColorScheme().Foreground(args.NewColor());
-                        _CurrentForegroundColor.Color(args.NewColor());
+                        CurrentColorScheme().Foreground(newColor);
+                        _CurrentForegroundColor.Color(newColor);
                     }
                     else if (stringTag == BackgroundColorTag)
                     {
-                        CurrentColorScheme().Background(args.NewColor());
-                        _CurrentBackgroundColor.Color(args.NewColor());
+                        CurrentColorScheme().Background(newColor);
+                        _CurrentBackgroundColor.Color(newColor);
                     }
                     else if (stringTag == CursorColorTag)
                     {
-                        CurrentColorScheme().CursorColor(args.NewColor());
-                        _CurrentCursorColor.Color(args.NewColor());
+                        CurrentColorScheme().CursorColor(newColor);
+                        _CurrentCursorColor.Color(newColor);
                     }
                     else if (stringTag == SelectionBackgroundColorTag)
                     {
-                        CurrentColorScheme().SelectionBackground(args.NewColor());
-                        _CurrentSelectionBackgroundColor.Color(args.NewColor());
+                        CurrentColorScheme().SelectionBackground(newColor);
+                        _CurrentSelectionBackgroundColor.Color(newColor);
                     }
                 }
             }
@@ -397,19 +398,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         for (uint8_t i = 0; i < TableColorNames.size(); ++i)
         {
+            til::color currentColor{ colorScheme.Table()[i] };
             if (i < ColorTableDivider)
             {
-                _CurrentNonBrightColorTable.GetAt(i).Color(colorScheme.Table()[i]);
+                _CurrentNonBrightColorTable.GetAt(i).Color(currentColor);
             }
             else
             {
-                _CurrentBrightColorTable.GetAt(i - ColorTableDivider).Color(colorScheme.Table()[i]);
+                _CurrentBrightColorTable.GetAt(i - ColorTableDivider).Color(currentColor);
             }
         }
-        _CurrentForegroundColor.Color(colorScheme.Foreground());
-        _CurrentBackgroundColor.Color(colorScheme.Background());
-        _CurrentCursorColor.Color(colorScheme.CursorColor());
-        _CurrentSelectionBackgroundColor.Color(colorScheme.SelectionBackground());
+        _CurrentForegroundColor.Color(til::color{ colorScheme.Foreground() });
+        _CurrentBackgroundColor.Color(til::color{ colorScheme.Background() });
+        _CurrentCursorColor.Color(til::color{ colorScheme.CursorColor() });
+        _CurrentSelectionBackgroundColor.Color(til::color{ colorScheme.SelectionBackground() });
     }
 
     ColorTableEntry::ColorTableEntry(uint8_t index, Windows::UI::Color color)

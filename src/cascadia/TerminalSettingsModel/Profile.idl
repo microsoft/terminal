@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "IAppearanceConfig.idl";
 #include "IInheritable.idl.h"
 
 #define INHERITABLE_PROFILE_SETTING(Type, Name) \
@@ -15,7 +16,8 @@ namespace Microsoft.Terminal.Settings.Model
         Custom = 0,
         InBox,
         Generated,
-        Fragment
+        Fragment,
+        ProfilesDefaults
     };
 
     enum CloseOnExitMode
@@ -31,19 +33,6 @@ namespace Microsoft.Terminal.Settings.Model
         Audible = 0x1,
         Visual = 0x2,
         All = 0xffffffff
-    };
-
-    [flags]
-    enum ConvergedAlignment {
-        // low 4 bits are the horizontal
-        Horizontal_Center = 0x00,
-        Horizontal_Left = 0x01,
-        Horizontal_Right = 0x02,
-
-        // high 4 bits are the vertical
-        Vertical_Center = 0x00,
-        Vertical_Top = 0x10,
-        Vertical_Bottom = 0x20
     };
 
     [default_interface] runtimeclass Profile : Windows.Foundation.IStringable {
@@ -66,7 +55,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(String, Icon);
         INHERITABLE_PROFILE_SETTING(CloseOnExitMode, CloseOnExit);
         INHERITABLE_PROFILE_SETTING(String, TabTitle);
-        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, TabColor);
+        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, TabColor);
         INHERITABLE_PROFILE_SETTING(Boolean, SuppressApplicationTitle);
         INHERITABLE_PROFILE_SETTING(Boolean, UseAcrylic);
         INHERITABLE_PROFILE_SETTING(Double, AcrylicOpacity);
@@ -80,27 +69,16 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(String, StartingDirectory);
         String EvaluatedStartingDirectory { get; };
 
-        INHERITABLE_PROFILE_SETTING(String, BackgroundImagePath);
-        String ExpandedBackgroundImagePath { get; };
+        IAppearanceConfig DefaultAppearance { get; };
+        INHERITABLE_PROFILE_SETTING(IAppearanceConfig, UnfocusedAppearance);
 
-        INHERITABLE_PROFILE_SETTING(Double, BackgroundImageOpacity);
-        INHERITABLE_PROFILE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
-        INHERITABLE_PROFILE_SETTING(ConvergedAlignment, BackgroundImageAlignment);
         INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.TextAntialiasingMode, AntialiasingMode);
-        INHERITABLE_PROFILE_SETTING(Boolean, RetroTerminalEffect);
-        INHERITABLE_PROFILE_SETTING(String, PixelShaderPath);
         INHERITABLE_PROFILE_SETTING(Boolean, ForceFullRepaintRendering);
         INHERITABLE_PROFILE_SETTING(Boolean, SoftwareRendering);
-        INHERITABLE_PROFILE_SETTING(String, ColorSchemeName);
-        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Foreground);
-        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Background);
-        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, SelectionBackground);
-        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, CursorColor);
+
         INHERITABLE_PROFILE_SETTING(Int32, HistorySize);
         INHERITABLE_PROFILE_SETTING(Boolean, SnapOnInput);
         INHERITABLE_PROFILE_SETTING(Boolean, AltGrAliasing);
-        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
-        INHERITABLE_PROFILE_SETTING(UInt32, CursorHeight);
         INHERITABLE_PROFILE_SETTING(BellStyle, BellStyle);
     }
 }

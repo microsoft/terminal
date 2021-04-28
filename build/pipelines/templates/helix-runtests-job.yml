@@ -10,19 +10,11 @@ parameters:
   maxParallel: 4
   rerunPassesRequiredToAvoidFailure: 5
   taefQuery: ''
+  configuration: ''
+  platform: ''
   # if 'useBuildOutputFromBuildId' is set, we will default to using a build from this pipeline:
   useBuildOutputFromPipeline: $(System.DefinitionId)
-  matrix:
-    # Release_x86:
-    #   buildPlatform: 'x86'
-    #   buildConfiguration: 'release'
-    #   openHelixTargetQueues: 'windows.10.amd64.client19h1.open.xaml'
-    #   closedHelixTargetQueues: 'windows.10.amd64.client19h1.xaml'
-    Release_x64:
-      buildPlatform: 'x64'
-      buildConfiguration: 'release'
-      openHelixTargetQueues: 'windows.10.amd64.client19h1.open.xaml'
-      closedHelixTargetQueues: 'windows.10.amd64.client19h1.xaml'
+  openHelixTargetQueues: 'windows.10.amd64.client19h1.open.xaml'
 
 jobs:
 - job: ${{ parameters.name }}
@@ -33,10 +25,12 @@ jobs:
   timeoutInMinutes: 120
   strategy:
     maxParallel: ${{ parameters.maxParallel }}
-    matrix: ${{ parameters.matrix }}
   variables:
+    buildConfiguration: ${{ parameters.configuration }}
+    buildPlatform: ${{ parameters.platform }}
+    openHelixTargetQueues: ${{ parameters.openHelixTargetQueues }}
     artifactsDir: $(Build.SourcesDirectory)\Artifacts
-    taefPath: $(Build.SourcesDirectory)\build\Helix\packages\taef.redist.wlk.10.57.200731005-develop\build\Binaries\$(buildPlatform)
+    taefPath: $(Build.SourcesDirectory)\build\Helix\packages\Microsoft.Taef.10.58.210305002\build\Binaries\$(buildPlatform)
     helixCommonArgs: '/binaryLogger:$(Build.SourcesDirectory)/${{parameters.name}}.$(buildPlatform).$(buildConfiguration).binlog /p:HelixBuild=$(Build.BuildId).$(buildPlatform).$(buildConfiguration) /p:Platform=$(buildPlatform) /p:Configuration=$(buildConfiguration) /p:HelixType=${{parameters.helixType}} /p:TestSuite=${{parameters.testSuite}} /p:ProjFilesPath=$(Build.ArtifactStagingDirectory) /p:rerunPassesRequiredToAvoidFailure=${{parameters.rerunPassesRequiredToAvoidFailure}}'
 
 
@@ -97,9 +91,17 @@ jobs:
       filename: 'dir'
       arguments: '/s $(Build.SourcesDirectory)\HelixPayload'
 
+  - task: PowerShell@2
+    displayName: 'Make artifact directories'
+    inputs:
+      targetType: inline
+      script: |
+        New-Item -ItemType Directory -Force -Path "$(Build.ArtifactStagingDirectory)\$(BuildConfiguration)\"
+        New-Item -ItemType Directory -Force -Path "$(Build.ArtifactStagingDirectory)\$(BuildConfiguration)\$(BuildPlatform)\"
+
   - template: helix-createprojfile-steps.yml
     parameters:
-      condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
+      condition: and(succeeded(),eq('${{ parameters.testSuite }}','DevTestSuite'))
       testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\TerminalApp.LocalTests.dll'
       outputProjFileName: 'RunTestsInHelix-TerminalAppLocalTests.proj'
       testSuite: '${{ parameters.testSuite }}'
@@ -107,7 +109,7 @@ jobs:
 
   - template: helix-createprojfile-steps.yml
     parameters:
-      condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
+      condition: and(succeeded(),eq('${{ parameters.testSuite }}','DevTestSuite'))
       testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\SettingsModel.LocalTests.dll'
       outputProjFileName: 'RunTestsInHelix-SettingsModelLocalTests.proj'
       testSuite: '${{ parameters.testSuite }}'
@@ -116,9 +118,17 @@ jobs:
 
   - template: helix-createprojfile-steps.yml
     parameters:
-      condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
+      condition: and(succeeded(),eq('${{ parameters.testSuite }}','DevTestSuite'))
       testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\Conhost.UIA.Tests.dll'
       outputProjFileName: 'RunTestsInHelix-HostTestsUIA.proj'
+      testSuite: '${{ parameters.testSuite }}'
+      taefQuery: ${{ parameters.taefQuery }}
+
+  - template: helix-createprojfile-steps.yml
+    parameters:
+      condition: and(succeeded(),or(eq('${{ parameters.testSuite }}','PgoInstrumentationSuite'),eq('${{ parameters.testSuite }}','DevTestSuite')))
+      testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\WindowsTerminal.UIA.Tests.dll'
+      outputProjFileName: 'RunTestsInHelix-WindowsTerminalUIATests.proj'
       testSuite: '${{ parameters.testSuite }}'
       taefQuery: ${{ parameters.taefQuery }}
 

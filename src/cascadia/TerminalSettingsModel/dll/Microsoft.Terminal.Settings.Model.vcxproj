@@ -10,6 +10,7 @@
     <SubSystem>Console</SubSystem>
     <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <PgoTarget>true</PgoTarget>
   </PropertyGroup>
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
@@ -22,6 +23,7 @@
     <!-- Only put headers for winrt types in here. Don't put other header files
     in here - put them in the lib's vcxproj instead! -->
     <ClInclude Include="../ActionArgs.h" />
+    <ClInclude Include="../ActionMap.h" />
     <ClInclude Include="../CascadiaSettings.h" />
     <ClInclude Include="../ColorScheme.h" />
     <ClInclude Include="../Command.h" />
@@ -40,7 +42,6 @@
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="$(ProjectName).def" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
@@ -52,6 +53,9 @@
     -->
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
       <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\propslib\propslib.vcxproj">
+      <Project>{345FD5A4-B32B-4F29-BD1C-B033BD2C35CC}</Project>
     </ProjectReference>
     <!-- The midl compiler however, _will_ aggregate our winmd dependencies
     somehow. So make sure to only include top-level dependencies here (don't
@@ -112,8 +116,8 @@
     <Link>
       <AdditionalDependencies>User32.lib;WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <!-- TSM Lib contains a DllMain that we need to force the use of. -->
-      <AdditionalOptions Condition="'$(Platform)'=='Win32'">/INCLUDE:_DllMain@12</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Platform)'!='Win32'">/INCLUDE:DllMain</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Platform)'=='Win32'">/INCLUDE:_DllMain@12 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Platform)'!='Win32'">/INCLUDE:DllMain %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Reference>
       <!-- Do not propagate microsoft.ui.xaml upwards as a private dependency. -->

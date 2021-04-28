@@ -6,7 +6,8 @@
   <test name="terminalApp" type="unit" binary="UnitTests_TerminalApp\Terminal.App.Unit.Tests.dll" />
   <test name="localTerminalApp" type="unit" runInHostApp="true" binary="TerminalApp.LocalTests.dll" />
   <test name="localSettingsModel" type="unit" runInHostApp="true" binary="SettingsModel.LocalTests.dll" />
-  <test name="unitRemoting" type="unit" binary="Remoting.UnitTests.dll" />
+  <test name="unitRemoting" type="unit" binary="Remoting.Unit.Tests.dll" />
+  <test name="unitControl" type="unit" binary="Control.Unit.Tests.dll" />
   <test name="interactivityWin32" type="unit" binary="Conhost.Interactivity.Win32.Unit.Tests.dll" />
   <test name="terminal" type="unit" binary="ConParser.Unit.Tests.dll" />
   <test name="adapter" type="unit" binary="ConAdapter.Unit.Tests.dll" />

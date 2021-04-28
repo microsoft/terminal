@@ -40,6 +40,7 @@ public:
         std::wstring name;
         std::wstring author;
         std::wstring pfn;
+        std::wstring logo;
         PkgVersion version;
 
         bool IsFromSamePackage(const DelegationBase& other) const
@@ -80,9 +81,9 @@ public:
         }
     };
 
-    [[nodiscard]] static HRESULT s_GetAvailablePackages(std::vector<DelegationPackage>& packages, DelegationPackage& default) noexcept;
+    [[nodiscard]] static HRESULT s_GetAvailablePackages(std::vector<DelegationPackage>& packages, DelegationPackage& def) noexcept;
 
-    [[nodiscard]] static HRESULT s_SetDefaultByPackage(const DelegationPackage& pkg) noexcept;
+    [[nodiscard]] static HRESULT s_SetDefaultByPackage(const DelegationPackage& pkg, const bool useRegExe = false) noexcept;
 
     [[nodiscard]] static HRESULT s_GetDefaultConsoleId(IID& iid) noexcept;
     [[nodiscard]] static HRESULT s_GetDefaultTerminalId(IID& iid) noexcept;
@@ -91,9 +92,9 @@ private:
     [[nodiscard]] static HRESULT s_GetAvailableConsoles(std::vector<DelegationConsole>& consoles) noexcept;
     [[nodiscard]] static HRESULT s_GetAvailableTerminals(std::vector<DelegationTerminal>& terminals) noexcept;
 
-    [[nodiscard]] static HRESULT s_SetDefaultConsoleById(const IID& iid) noexcept;
-    [[nodiscard]] static HRESULT s_SetDefaultTerminalById(const IID& iid) noexcept;
+    [[nodiscard]] static HRESULT s_SetDefaultConsoleById(const IID& iid, const bool useRegExe) noexcept;
+    [[nodiscard]] static HRESULT s_SetDefaultTerminalById(const IID& iid, const bool useRegExe) noexcept;
 
     [[nodiscard]] static HRESULT s_Get(PCWSTR value, IID& iid) noexcept;
-    [[nodiscard]] static HRESULT s_Set(PCWSTR value, const CLSID clsid) noexcept;
+    [[nodiscard]] static HRESULT s_Set(PCWSTR value, const CLSID clsid, const bool useRegExe) noexcept;
 };

@@ -20,6 +20,7 @@
     <SubSystem>Console</SubSystem>
     <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <PgoTarget>true</PgoTarget>
     <!-- C++/WinRT sets the depth to 1 if there is a XAML file in the project
       Unfortunately for us, we need it to be 3. When the namespace merging
       depth is 1, Microsoft.Terminal.Control becomes "Microsoft",
@@ -37,6 +38,9 @@
   <ItemGroup>
     <ClInclude Include="Actions.h">
       <DependentUpon>Actions.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="AddProfile.h">
+      <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="ColorToBrushConverter.h">
       <DependentUpon>Converters.idl</DependentUpon>
@@ -105,6 +109,9 @@
     <Page Include="Actions.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="AddProfile.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="CommonResources.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -137,6 +144,9 @@
   <ItemGroup>
     <ClCompile Include="Actions.cpp">
       <DependentUpon>Actions.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="AddProfile.cpp">
+      <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="ColorToBrushConverter.cpp">
       <DependentUpon>Converters.idl</DependentUpon>
@@ -206,6 +216,10 @@
       <DependentUpon>Actions.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="AddProfile.idl">
+      <DependentUpon>AddProfile.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="Converters.idl" />
     <Midl Include="EnumEntry.idl" />
     <Midl Include="GlobalAppearance.idl">
@@ -247,7 +261,6 @@
     <OCResourceDirectory Include="Resources" />
     <None Include="$(ProjectName).def" />
     <None Include="packages.config" />
-    <None Include="PropertySheet.props" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
@@ -299,6 +312,12 @@
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
   </ItemGroup>
+
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalDependencies>shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
 
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" />

@@ -1,151 +1,182 @@
-﻿<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
-the MIT License. See LICENSE in the project root for license information. -->
-<Page
-    x:Class="Microsoft.Terminal.Settings.Editor.Actions"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:Microsoft.Terminal.Settings.Editor"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-    xmlns:SettingsModel="using:Microsoft.Terminal.Settings.Model"
-    mc:Ignorable="d">
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.Actions"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:SettingsModel="using:Microsoft.Terminal.Settings.Model"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
 
     <Page.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="CommonResources.xaml"/>
+                <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <local:StringIsEmptyConverter x:Key="CommandKeyChordVisibilityConverter"/>
+            <local:StringIsEmptyConverter x:Key="CommandKeyChordVisibilityConverter" />
 
-            <!-- Template for actions. This is _heavily_ copied from the command
-            palette, with modifications:
+            <!--
+                Template for actions. This is _heavily_ copied from the command
+                palette, with modifications:
                 * We don't need to use a HighlightedTextControl, because we're
-                  not filtering this list
+                not filtering this list
                 * We don't need the chevron for nested commands
                 * We're not displaying the icon
                 * We're binding directly to a Command, not a FilteredCommand
-
+                
                 If we wanted to reuse the command palette's list more directly,
                 that's theoretically possible, but then it would need to be
                 lifted out of TerminalApp and either moved into the
                 TerminalSettingsEditor or moved to it's own project consumed by
                 both TSE and TerminalApp.
-             -->
-            <DataTemplate x:Key="GeneralItemTemplate" x:DataType="SettingsModel:Command">
+            -->
+            <DataTemplate x:Key="GeneralItemTemplate"
+                          x:DataType="SettingsModel:Command">
 
-                <!-- This HorizontalContentAlignment="Stretch" is important
-                     to make sure it takes the entire width of the line -->
+                <!--
+                    This HorizontalContentAlignment="Stretch" is important
+                    to make sure it takes the entire width of the line
+                -->
                 <ListViewItem HorizontalContentAlignment="Stretch"
-                              AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
-                              AutomationProperties.AcceleratorKey="{x:Bind KeyChordText, Mode=OneWay}">
+                              AutomationProperties.AcceleratorKey="{x:Bind KeyChordText, Mode=OneWay}"
+                              AutomationProperties.Name="{x:Bind Name, Mode=OneWay}">
 
-                    <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" >
+                    <Grid HorizontalAlignment="Stretch"
+                          ColumnSpacing="8">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="16"/>
-                            <!-- icon -->
-                            <ColumnDefinition Width="Auto"/>
-                            <!-- command label -->
-                            <ColumnDefinition Width="*"/>
-                            <!-- key chord -->
-                            <ColumnDefinition Width="32"/>
-                            <!-- gutter for scrollbar -->
+                            <ColumnDefinition Width="Auto" />
+                            <!--  command label  -->
+                            <ColumnDefinition Width="*" />
+                            <!--  key chord  -->
+                            <ColumnDefinition Width="32" />
+                            <!--  gutter for scrollbar  -->
                         </Grid.ColumnDefinitions>
 
-                        <TextBlock Grid.Column="1"
+                        <TextBlock Grid.Column="0"
                                    HorizontalAlignment="Left"
-                                   Text="{x:Bind Name, Mode=OneWay}"/>
+                                   Text="{x:Bind Name, Mode=OneWay}" />
 
-                        <!-- The block for the key chord is only visible
-                                when there's actual text set as the label. See
-                                CommandKeyChordVisibilityConverter for details.
-                             Inexplicably, we don't need to set the
-                                 AutomationProperties to Raw here, unlike in the
-                                 CommandPalette. We're not quite sure why.-->
-                        <Border Grid.Column="2"
-                                Visibility="{x:Bind KeyChordText,
-                                             Mode=OneWay,
-                                             Converter={StaticResource CommandKeyChordVisibilityConverter}}"
-                                Style="{ThemeResource KeyChordBorderStyle}"
+                        <!--
+                            Inexplicably, we don't need to set the
+                            AutomationProperties to Raw here, unlike in the
+                            CommandPalette. We're not quite sure why.
+                        -->
+                        <Border Grid.Column="1"
                                 Padding="2,0,2,0"
                                 HorizontalAlignment="Right"
-                                VerticalAlignment="Center">
+                                VerticalAlignment="Center"
+                                Style="{ThemeResource KeyChordBorderStyle}">
 
-                            <TextBlock Style="{ThemeResource KeyChordTextBlockStyle}"
-                                       FontSize="12"
+                            <TextBlock FontSize="12"
+                                       Style="{ThemeResource KeyChordTextBlockStyle}"
                                        Text="{x:Bind KeyChordText, Mode=OneWay}" />
                         </Border>
                     </Grid>
                 </ListViewItem>
             </DataTemplate>
 
-            <!-- These resources again, HEAVILY copied from the command palette -->
+            <!--  These resources again, HEAVILY copied from the command palette  -->
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Dark">
-                    <!-- TextBox colors !-->
-                    <SolidColorBrush x:Key="TextControlBackground" Color="#333333"/>
-                    <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush" Color="#B5B5B5"/>
-                    <SolidColorBrush x:Key="TextControlForeground" Color="#B5B5B5"/>
-                    <SolidColorBrush x:Key="TextControlBorderBrush" Color="#404040"/>
-                    <SolidColorBrush x:Key="TextControlButtonForeground" Color="#B5B5B5"/>
+                    <!--  TextBox colors !  -->
+                    <SolidColorBrush x:Key="TextControlBackground"
+                                     Color="#333333" />
+                    <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush"
+                                     Color="#B5B5B5" />
+                    <SolidColorBrush x:Key="TextControlForeground"
+                                     Color="#B5B5B5" />
+                    <SolidColorBrush x:Key="TextControlBorderBrush"
+                                     Color="#404040" />
+                    <SolidColorBrush x:Key="TextControlButtonForeground"
+                                     Color="#B5B5B5" />
 
-                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#404040"/>
-                    <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="#FFFFFF"/>
-                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#404040"/>
-                    <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver" Color="#FF4343"/>
+                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver"
+                                     Color="#404040" />
+                    <SolidColorBrush x:Key="TextControlForegroundPointerOver"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver"
+                                     Color="#404040" />
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver"
+                                     Color="#FF4343" />
 
-                    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#333333"/>
-                    <SolidColorBrush x:Key="TextControlForegroundFocused" Color="#FFFFFF"/>
-                    <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#404040"/>
-                    <SolidColorBrush x:Key="TextControlButtonForegroundPressed" Color="#FFFFFF"/>
-                    <SolidColorBrush x:Key="TextControlButtonBackgroundPressed" Color="#FF4343"/>
+                    <SolidColorBrush x:Key="TextControlBackgroundFocused"
+                                     Color="#333333" />
+                    <SolidColorBrush x:Key="TextControlForegroundFocused"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="TextControlBorderBrushFocused"
+                                     Color="#404040" />
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPressed"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="TextControlButtonBackgroundPressed"
+                                     Color="#FF4343" />
 
                     <!--  KeyChordText styles  -->
-                    <Style x:Key="KeyChordBorderStyle" TargetType="Border">
+                    <Style x:Key="KeyChordBorderStyle"
+                           TargetType="Border">
                         <Setter Property="BorderThickness" Value="1" />
                         <Setter Property="CornerRadius" Value="1" />
                         <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
                         <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
-                    <Style x:Key="KeyChordTextBlockStyle" TargetType="TextBlock">
+                    <Style x:Key="KeyChordTextBlockStyle"
+                           TargetType="TextBlock">
                         <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
 
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Light">
-                    <!-- TextBox colors !-->
-                    <SolidColorBrush x:Key="TextControlBackground" Color="#CCCCCC"/>
-                    <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush" Color="#636363"/>
-                    <SolidColorBrush x:Key="TextControlBorderBrush" Color="#636363"/>
-                    <SolidColorBrush x:Key="TextControlButtonForeground" Color="#636363"/>
+                    <!--  TextBox colors !  -->
+                    <SolidColorBrush x:Key="TextControlBackground"
+                                     Color="#CCCCCC" />
+                    <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush"
+                                     Color="#636363" />
+                    <SolidColorBrush x:Key="TextControlBorderBrush"
+                                     Color="#636363" />
+                    <SolidColorBrush x:Key="TextControlButtonForeground"
+                                     Color="#636363" />
 
-                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#DADADA"/>
-                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#636363"/>
-                    <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver" Color="#FF4343"/>
+                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver"
+                                     Color="#DADADA" />
+                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver"
+                                     Color="#636363" />
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver"
+                                     Color="#FF4343" />
 
-                    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#CCCCCC"/>
-                    <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#636363"/>
-                    <SolidColorBrush x:Key="TextControlButtonForegroundPressed" Color="#FFFFFF"/>
-                    <SolidColorBrush x:Key="TextControlButtonBackgroundPressed" Color="#FF4343"/>
+                    <SolidColorBrush x:Key="TextControlBackgroundFocused"
+                                     Color="#CCCCCC" />
+                    <SolidColorBrush x:Key="TextControlBorderBrushFocused"
+                                     Color="#636363" />
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPressed"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="TextControlButtonBackgroundPressed"
+                                     Color="#FF4343" />
 
                     <!--  KeyChordText styles  -->
-                    <Style x:Key="KeyChordBorderStyle" TargetType="Border">
+                    <Style x:Key="KeyChordBorderStyle"
+                           TargetType="Border">
                         <Setter Property="BorderThickness" Value="1" />
                         <Setter Property="CornerRadius" Value="1" />
                         <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
                         <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
-                    <Style x:Key="KeyChordTextBlockStyle" TargetType="TextBlock">
+                    <Style x:Key="KeyChordTextBlockStyle"
+                           TargetType="TextBlock">
                         <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
 
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="HighContrast">
 
-                    <!--  KeyChordText styles (use XAML defaults for High Contrast theme) -->
-                    <Style x:Key="KeyChordBorderStyle" TargetType="Border"/>
-                    <Style x:Key="KeyChordTextBlockStyle" TargetType="TextBlock"/>
+                    <!--  KeyChordText styles (use XAML defaults for High Contrast theme)  -->
+                    <Style x:Key="KeyChordBorderStyle"
+                           TargetType="Border" />
+                    <Style x:Key="KeyChordTextBlockStyle"
+                           TargetType="TextBlock" />
 
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
@@ -157,30 +188,34 @@ the MIT License. See LICENSE in the project root for license information. -->
     <ScrollViewer>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <TextBlock x:Uid="Globals_KeybindingsDisclaimer"
-                       Style="{StaticResource DisclaimerStyle}"/>
+                       Style="{StaticResource DisclaimerStyle}" />
 
-            <!-- The Nav_OpenJSON resource just so happens to have a .Content
-            and .Tooltip that are _exactly_ what we're looking for here. -->
+            <!--
+                The Nav_OpenJSON resource just so happens to have a .Content
+                and .Tooltip that are _exactly_ what we're looking for here.
+            -->
 
             <HyperlinkButton x:Uid="Nav_OpenJSON"
                              Click="_OpenSettingsClick" />
 
-            <!-- Keybindings -->
+            <!--  Keybindings  -->
 
-            <!-- NOTE: Globals_Keybindings.Header is not defined, because that
-            would result in the page having "Keybindings" displayed twice, which
-            looks quite redundant -->
-            <ContentPresenter x:Uid="Globals_Keybindings" Margin="0">
+            <!--
+                NOTE: Globals_Keybindings.Header is not defined, because that
+                would result in the page having "Keybindings" displayed twice, which
+                looks quite redundant
+            -->
+            <ContentPresenter x:Uid="Globals_Keybindings"
+                              Margin="0">
 
                 <ListView HorizontalAlignment="Stretch"
                           VerticalAlignment="Stretch"
-                          SelectionMode="None"
-                          IsItemClickEnabled="False"
-                          CanReorderItems="False"
                           AllowDrop="False"
+                          CanReorderItems="False"
+                          IsItemClickEnabled="False"
+                          ItemTemplate="{StaticResource GeneralItemTemplate}"
                           ItemsSource="{x:Bind FilteredActions, Mode=OneWay}"
-                          ItemTemplate="{StaticResource GeneralItemTemplate}">
-                </ListView>
+                          SelectionMode="None" />
 
             </ContentPresenter>
 

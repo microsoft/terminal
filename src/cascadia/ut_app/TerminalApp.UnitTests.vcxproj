@@ -52,6 +52,7 @@
     <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalApp\TerminalAppLib.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalSettingsModel\Microsoft.Terminal.Settings.ModelLib.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)\src\types\lib\types.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\propslib\propslib.vcxproj" />
   </ItemGroup>
 
   <!-- ========================= Globals ======================== -->
@@ -71,6 +72,13 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <!--
+      SettingsModelLib contains a DllMain that we need to force the use of.
+      If you don't have this, then you'll see an error like
+      "(init.obj) : error LNK2005: DllMain already defined in MSVCRTD.lib(dll_dllmain_stub.obj)"
+      -->
+      <AdditionalOptions Condition="'$(Platform)'=='Win32'">/INCLUDE:_DllMain@12</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Platform)'!='Win32'">/INCLUDE:DllMain</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
 
@@ -121,9 +129,5 @@
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-
-  <!-- Import this set of targets that fixes a VS bug that manifests when using
-  the TerminalAppLib project -->
-  <Import Project="../TerminalApp/dll/FixVisualStudioBug.targets" />
 
 </Project>

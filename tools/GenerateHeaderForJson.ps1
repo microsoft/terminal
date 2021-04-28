@@ -22,7 +22,14 @@ Write-Output "// THIS IS AN AUTO-GENERATED FILE" | Out-File -FilePath $OutPath -
 Write-Output "// Generated from " | Out-File -FilePath $OutPath -Encoding ASCII -Append -NoNewline
 $fullPath = Resolve-Path -Path $JsonFile
 Write-Output $fullPath.Path | Out-File -FilePath $OutPath -Encoding ASCII -Append
-Write-Output "constexpr std::string_view $($VariableName){ R`"(" | Out-File -FilePath $OutPath -Encoding ASCII -Append -NoNewline
-Write-Output $jsonData | Out-File -FilePath $OutPath -Encoding ASCII -Append
-Write-Output ")`" };" | Out-File -FilePath $OutPath -Encoding ASCII -Append
+Write-Output "constexpr std::string_view $($VariableName){ " | Out-File -FilePath $OutPath -Encoding ASCII -Append
+
+# Write each line escaped on its own, as it's own literal. This file is _very
+# big_, so big that it cannot fit in a single string literal :O The compiler is,
+# however, smart enough to just concatenate all these literals into one big
+# string.
+$jsonData | foreach {
+    Write-Output "R`"($_`n)`"" | Out-File -FilePath $OutPath -Encoding ASCII -Append
+}
+Write-Output "};" | Out-File -FilePath $OutPath -Encoding ASCII -Append
 

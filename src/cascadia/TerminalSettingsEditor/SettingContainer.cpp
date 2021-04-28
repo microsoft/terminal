@@ -159,6 +159,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     {
                         tooltip = _GenerateOverrideMessage(profile);
                     }
+                    else if (const auto& appearanceConfig{ settingSrc.try_as<Model::AppearanceConfig>() })
+                    {
+                        tooltip = _GenerateOverrideMessage(appearanceConfig.SourceProfile());
+                    }
 
                     Controls::ToolTipService::SetToolTip(button, box_value(tooltip));
                     button.Visibility(tooltip.empty() ? Visibility::Collapsed : Visibility::Visible);
@@ -202,7 +206,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // TODO GH#3818: When we add profile inheritance as a setting,
             //               we'll need an extra conditional check to see if this
             //               is the base layer or some other profile
-            return RS_(L"SettingContainer_OverrideMessageBaseLayer");
+
+            // GH#9539: Base Layer has been removed from the Settings UI.
+            //          In the event that the Base Layer comes back,
+            //          return RS_(L"SettingContainer_OverrideMessageBaseLayer") instead
+            return {};
         }
     }
 }

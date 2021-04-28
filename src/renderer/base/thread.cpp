@@ -136,6 +136,7 @@ RenderThread::~RenderThread()
         else
         {
             _hThread = hThread;
+            LOG_IF_FAILED(SetThreadDescription(hThread, L"Rendering Output Thread"));
         }
     }
 

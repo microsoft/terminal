@@ -36,6 +36,11 @@ void Terminal::SetTextAttributes(const TextAttribute& attrs) noexcept
     _buffer->SetCurrentAttributes(attrs);
 }
 
+Viewport Terminal::GetBufferSize() noexcept
+{
+    return _buffer->GetSize();
+}
+
 bool Terminal::SetCursorPosition(short x, short y) noexcept
 try
 {
@@ -472,6 +477,11 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
+til::color Terminal::GetDefaultBackground() const noexcept
+{
+    return _defaultBg;
+}
+
 bool Terminal::EnableWin32InputMode(const bool win32InputMode) noexcept
 {
     _terminalInput->ChangeWin32InputMode(win32InputMode);
@@ -619,10 +629,43 @@ bool Terminal::EndHyperlink() noexcept
 // - progress: indicates the progress value
 // Return Value:
 // - true
-bool Terminal::SetTaskbarProgress(const size_t state, const size_t progress) noexcept
+bool Terminal::SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) noexcept
 {
-    _taskbarState = state;
-    _taskbarProgress = progress;
+    _taskbarState = static_cast<size_t>(state);
+
+    switch (state)
+    {
+    case DispatchTypes::TaskbarState::Clear:
+        // Always set progress to 0 in this case
+        _taskbarProgress = 0;
+        break;
+    case DispatchTypes::TaskbarState::Set:
+        // Always set progress to the value given in this case
+        _taskbarProgress = progress;
+        break;
+    case DispatchTypes::TaskbarState::Indeterminate:
+        // Leave the progress value unchanged in this case
+        break;
+    case DispatchTypes::TaskbarState::Error:
+    case DispatchTypes::TaskbarState::Paused:
+        // In these 2 cases, if the given progress value is 0, then
+        // leave the progress value unchanged, unless the current progress
+        // value is 0, in which case set it to a 'minimum' value (10 in our case);
+        // if the given progress value is greater than 0, then set the progress value
+        if (progress == 0)
+        {
+            if (_taskbarProgress == 0)
+            {
+                _taskbarProgress = TaskbarMinProgress;
+            }
+        }
+        else
+        {
+            _taskbarProgress = progress;
+        }
+        break;
+    }
+
     if (_pfnTaskbarProgressChanged)
     {
         _pfnTaskbarProgressChanged();

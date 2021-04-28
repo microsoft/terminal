@@ -38,6 +38,7 @@
     ".wrn",
     ".rec",
     ".err",
+    "XamlStyler.json",
     ".xlsx"
   ]
 }

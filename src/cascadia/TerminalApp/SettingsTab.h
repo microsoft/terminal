@@ -18,8 +18,6 @@ Author(s):
 #pragma once
 #include "TabBase.h"
 #include "SettingsTab.g.h"
-#include <winrt/TerminalApp.h>
-#include <winrt/Microsoft.Terminal.Settings.Editor.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
@@ -33,7 +31,7 @@ namespace winrt::TerminalApp::implementation
         void Focus(winrt::Windows::UI::Xaml::FocusState focusState) override;
 
     private:
-        void _MakeTabViewItem();
+        void _MakeTabViewItem() override;
         winrt::fire_and_forget _CreateIcon();
     };
 }

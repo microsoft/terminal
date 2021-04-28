@@ -54,13 +54,14 @@ namespace winrt::TerminalApp::implementation
         void ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         void NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
 
-        void UpdateSettings(const Microsoft::Terminal::Settings::Model::TerminalSettings& settings, const GUID& profile);
+        void UpdateSettings(const Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings, const GUID& profile);
         winrt::fire_and_forget UpdateTitle();
 
         void Shutdown() override;
         void ClosePane();
 
         void SetTabText(winrt::hstring title);
+        winrt::hstring GetTabText() const;
         void ResetTabText();
         void ActivateTabRenamer();
 
@@ -90,7 +91,7 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(ColorCleared, _colorCleared, winrt::delegate<>);
         DECLARE_EVENT(TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
         DECLARE_EVENT(DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
-        FORWARDED_TYPED_EVENT(TabRenamerDeactivated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, (&_headerControl), RenameEnded);
+        TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
 
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };
@@ -100,8 +101,6 @@ namespace winrt::TerminalApp::implementation
         winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
         std::optional<winrt::Windows::UI::Color> _themeTabColor{};
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
-        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeOtherTabsMenuItem{};
-        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
         winrt::TerminalApp::TabHeaderControl _headerControl{};
         winrt::TerminalApp::TerminalTabStatus _tabStatus{};
 
@@ -120,7 +119,7 @@ namespace winrt::TerminalApp::implementation
         std::optional<Windows::UI::Xaml::DispatcherTimer> _bellIndicatorTimer;
         void _BellIndicatorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
 
-        void _MakeTabViewItem();
+        void _MakeTabViewItem() override;
 
         winrt::fire_and_forget _UpdateHeaderControlMaxWidth();
 
@@ -143,6 +142,8 @@ namespace winrt::TerminalApp::implementation
         void _ClearTabBackgroundColor();
 
         void _RecalculateAndApplyReadOnly();
+
+        void _UpdateProgressState();
 
         void _DuplicateTab();
 

@@ -1,23 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "..\ICoreAppearance.idl";
+
 namespace Microsoft.Terminal.Core
 {
-    enum CursorStyle
+    interface ICoreSettings requires ICoreAppearance
     {
-        Vintage,
-        Bar,
-        Underscore,
-        DoubleUnderscore,
-        FilledBox,
-        EmptyBox
-    };
-
-    interface ICoreSettings
-    {
-        UInt32 DefaultForeground;
-        UInt32 DefaultBackground;
-        UInt32 GetColorTableEntry(Int32 index);
         // TODO:MSFT:20642297 - define a sentinel for Infinite Scrollback
         Int32 HistorySize;
         Int32 InitialRows;
@@ -26,17 +15,15 @@ namespace Microsoft.Terminal.Core
         Boolean SnapOnInput;
         Boolean AltGrAliasing;
 
-        UInt32 CursorColor;
-        CursorStyle CursorShape;
-        UInt32 CursorHeight;
         String StartingTitle;
         Boolean SuppressApplicationTitle;
         String WordDelimiters;
 
         Boolean ForceVTInput;
+        Boolean TrimBlockSelection;
 
-        Windows.Foundation.IReference<UInt32> TabColor;
-        Windows.Foundation.IReference<UInt32> StartingTabColor;
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> TabColor;
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> StartingTabColor;
     };
 
 }

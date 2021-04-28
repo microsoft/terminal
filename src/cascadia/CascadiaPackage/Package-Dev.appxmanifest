@@ -54,7 +54,6 @@
             <uap:ShowOn Tile="square310x310Logo"/>
           </uap:ShowNameOnTiles>
         </uap:DefaultTile>
-        <uap:SplashScreen Image="Images\SplashScreen.png"/>
       </uap:VisualElements>
 
       <Extensions>
@@ -74,9 +73,43 @@
                 <uap3:Name>com.microsoft.windows.terminal.settings</uap3:Name>
               </uap3:AppExtensionHost>
         </uap3:Extension>
-
+        <uap3:Extension Category="windows.appExtension">
+            <uap3:AppExtension Name="com.microsoft.windows.console.host"
+                Id="OpenConsole-Dev"
+                DisplayName="OpenConsole Dev"
+                Description="Console host built from microsoft/terminal open source repository"
+                PublicFolder="Public">
+                <uap3:Properties>
+                    <Clsid>{1F9F2BF5-5BC3-4F17-B0E6-912413F1F451}</Clsid>
+                </uap3:Properties>
+            </uap3:AppExtension>
+        </uap3:Extension>
+        <uap3:Extension Category="windows.appExtension">
+            <uap3:AppExtension Name="com.microsoft.windows.terminal.host"
+                Id="Terminal-Dev"
+                DisplayName="Windows Terminal Dev"
+                Description="Terminal host built from microsoft/terminal open source repository"
+                PublicFolder="Public">
+                <uap3:Properties>
+                    <Clsid>{051F34EE-C1FD-4B19-AF75-9BA54648434C}</Clsid>
+                </uap3:Properties>
+            </uap3:AppExtension>
+        </uap3:Extension>
+        <com:Extension Category="windows.comInterface">
+            <com:ComInterface>
+                <com:ProxyStub Id="DEC4804D-56D1-4F73-9FBE-6828E7C85C56" DisplayName="OpenConsoleHandoffProxy" Path="OpenConsoleProxy.dll"/>
+                <com:Interface Id="2B607BC1-43EB-40C3-95AE-2856ADDB7F23" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/>
+                <com:Interface Id="FA1E3AB4-9AEC-4A3C-96CA-E6078C30BD74" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/>
+            </com:ComInterface>
+        </com:Extension>
         <com:Extension Category="windows.comServer">
             <com:ComServer>
+                <com:ExeServer DisplayName="OpenConsole" Executable="OpenConsole.exe">
+                    <com:Class Id="1F9F2BF5-5BC3-4F17-B0E6-912413F1F451"/>
+                </com:ExeServer>
+                <com:ExeServer DisplayName="WindowsTerminal" Executable="WindowsTerminal.exe">
+                    <com:Class Id="051F34EE-C1FD-4B19-AF75-9BA54648434C"/>
+                </com:ExeServer>
                 <com:SurrogateServer DisplayName="WindowsTerminalShellExt">
                     <com:Class Id="52065414-e077-47ec-a3ac-1cc5455e1b54" Path="WindowsTerminalShellExt.dll" ThreadingModel="STA"/>
                 </com:SurrogateServer>

@@ -40,6 +40,11 @@ public:
     bool CarriageReturn() noexcept override;
     bool SetWindowTitle(std::wstring_view title) noexcept override;
 
+    bool HorizontalTabSet() noexcept override; // HTS
+    bool ForwardTab(const size_t numTabs) noexcept override; // CHT, HT
+    bool BackwardsTab(const size_t numTabs) noexcept override; // CBT
+    bool TabClear(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TabClearType clearType) noexcept override; // TBC
+
     bool SetColorTableEntry(const size_t tableIndex, const DWORD color) noexcept override;
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept override;
     bool SetCursorColor(const DWORD color) noexcept override;
@@ -79,9 +84,17 @@ public:
 private:
     ::Microsoft::Terminal::Core::ITerminalApi& _terminalApi;
 
+    std::vector<bool> _tabStopColumns;
+    bool _initDefaultTabStops = true;
+
     size_t _SetRgbColorsHelper(const ::Microsoft::Console::VirtualTerminal::VTParameters options,
                                TextAttribute& attr,
                                const bool isForeground) noexcept;
 
     bool _ModeParamsHelper(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ModeParams param, const bool enable) noexcept;
+
+    bool _ClearSingleTabStop() noexcept;
+    bool _ClearAllTabStops() noexcept;
+    void _ResetTabStops() noexcept;
+    void _InitTabStopsForWidth(const size_t width);
 };

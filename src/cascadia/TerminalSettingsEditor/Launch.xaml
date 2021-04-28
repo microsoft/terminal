@@ -1,30 +1,34 @@
-﻿<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
-the MIT License. See LICENSE in the project root for license information. -->
-<Page
-    x:Class="Microsoft.Terminal.Settings.Editor.Launch"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:Microsoft.Terminal.Settings.Editor"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-    xmlns:SettingsModel="using:Microsoft.Terminal.Settings.Model"
-    mc:Ignorable="d">
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.Launch"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:SettingsModel="using:Microsoft.Terminal.Settings.Model"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
 
     <Page.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="CommonResources.xaml"/>
+                <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
-                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
+            <DataTemplate x:Key="EnumRadioButtonTemplate"
+                          x:DataType="local:EnumEntry">
+                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}" />
             </DataTemplate>
-            <SettingsModel:IconPathConverter x:Key="IconSourceConverter"/>
-            <Style x:Key="LaunchSizeNumberBoxStyle" TargetType="muxc:NumberBox" BasedOn="{StaticResource NumberBoxSettingStyle}">
-                <Setter Property="SmallChange" Value="1"/>
-                <Setter Property="LargeChange" Value="10"/>
-                <Setter Property="Minimum" Value="1"/>
+            <SettingsModel:IconPathConverter x:Key="IconSourceConverter" />
+            <Style x:Key="LaunchSizeNumberBoxStyle"
+                   BasedOn="{StaticResource NumberBoxSettingStyle}"
+                   TargetType="muxc:NumberBox">
+                <Setter Property="SmallChange" Value="1" />
+                <Setter Property="LargeChange" Value="10" />
+                <Setter Property="Minimum" Value="1" />
             </Style>
         </ResourceDictionary>
     </Page.Resources>
@@ -32,7 +36,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     <ScrollViewer>
         <StackPanel>
             <StackPanel Style="{StaticResource SettingsStackStyle}">
-                <!--Default Profile-->
+                <!--  Default Profile  -->
                 <local:SettingContainer x:Uid="Globals_DefaultProfile"
                                         Margin="0">
                     <ComboBox x:Name="DefaultProfile"
@@ -41,25 +45,23 @@ the MIT License. See LICENSE in the project root for license information. -->
                               Style="{StaticResource ComboBoxSettingStyle}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate x:DataType="SettingsModel:Profile">
-                                <Grid HorizontalAlignment="Stretch" ColumnSpacing="8">
+                                <Grid HorizontalAlignment="Stretch"
+                                      ColumnSpacing="8">
 
                                     <Grid.ColumnDefinitions>
-                                        <!-- icon -->
-                                        <ColumnDefinition Width="16"/>
-                                        <!-- profile name -->
-                                        <ColumnDefinition Width="Auto"/>
+                                        <!--  icon  -->
+                                        <ColumnDefinition Width="16" />
+                                        <!--  profile name  -->
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
 
-                                    <IconSourceElement
-                                    Grid.Column="0"
-                                    Width="16"
-                                    Height="16"
-                                    IconSource="{x:Bind Icon,
-                                                        Mode=OneWay,
-                                                        Converter={StaticResource IconSourceConverter}}"/>
+                                    <IconSourceElement Grid.Column="0"
+                                                       Width="16"
+                                                       Height="16"
+                                                       IconSource="{x:Bind Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
 
                                     <TextBlock Grid.Column="1"
-                                           Text="{x:Bind Name}"/>
+                                               Text="{x:Bind Name}" />
 
                                 </Grid>
                             </DataTemplate>
@@ -67,42 +69,101 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </ComboBox>
                 </local:SettingContainer>
 
-                <!--Start on User Login-->
+                <!--  Default Terminal  -->
+                <local:SettingContainer x:Name="DefaultTerminalDropdown"
+                                        x:Uid="Globals_DefaultTerminal"
+                                        x:Load="false">
+                    <ComboBox x:Name="DefaultTerminal"
+                              ItemsSource="{x:Bind State.Settings.DefaultTerminals, Mode=OneWay}"
+                              SelectedItem="{x:Bind State.Settings.CurrentDefaultTerminal, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="SettingsModel:DefaultTerminal">
+                                <Grid HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Stretch"
+                                      ColumnSpacing="8">
+
+                                    <Grid.ColumnDefinitions>
+                                        <!--  icon  -->
+                                        <ColumnDefinition Width="24" />
+                                        <!--  profile name and author  -->
+                                        <ColumnDefinition Width="*" />
+                                        <!--  version  -->
+                                        <ColumnDefinition Width="48" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <!--  profile name  -->
+                                        <RowDefinition Height="*" />
+                                        <!--  author and version  -->
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+
+                                    <IconSourceElement Grid.Row="0"
+                                                       Grid.RowSpan="2"
+                                                       Grid.Column="0"
+                                                       Width="24"
+                                                       Height="24"
+                                                       VerticalAlignment="Center"
+                                                       IconSource="{x:Bind Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="1"
+                                               Grid.ColumnSpan="2"
+                                               Text="{x:Bind Name}" />
+
+                                    <TextBlock Grid.Row="1"
+                                               Grid.Column="1"
+                                               Foreground="{StaticResource SystemBaseMediumColor}"
+                                               Text="{x:Bind Author}" />
+
+                                    <TextBlock Grid.Row="1"
+                                               Grid.Column="2"
+                                               Foreground="{StaticResource SystemBaseMediumColor}"
+                                               Text="{x:Bind Version}" />
+
+                                </Grid>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </local:SettingContainer>
+
+                <!--  Start on User Login  -->
                 <local:SettingContainer x:Uid="Globals_StartOnUserLogin">
-                    <ToggleSwitch IsOn="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}"/>
+                    <ToggleSwitch IsOn="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}" />
                 </local:SettingContainer>
 
-                <!--Launch Mode-->
+                <!--  Launch Mode  -->
                 <local:SettingContainer x:Uid="Globals_LaunchMode">
-                    <muxc:RadioButtons SelectedItem="{x:Bind CurrentLaunchMode, Mode=TwoWay}"
+                    <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                        ItemsSource="{x:Bind LaunchModeList}"
-                                       ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                                       SelectedItem="{x:Bind CurrentLaunchMode, Mode=TwoWay}" />
                 </local:SettingContainer>
 
-                <!--Launch Mode-->
+                <!--  Launch Mode  -->
                 <local:SettingContainer x:Uid="Globals_WindowingBehavior">
-                    <muxc:RadioButtons SelectedItem="{x:Bind CurrentWindowingBehavior, Mode=TwoWay}"
+                    <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                        ItemsSource="{x:Bind WindowingBehaviorList}"
-                                       ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                                       SelectedItem="{x:Bind CurrentWindowingBehavior, Mode=TwoWay}" />
                 </local:SettingContainer>
             </StackPanel>
 
-            <!--Launch Size-->
+            <!--  Launch Size  -->
             <StackPanel Style="{StaticResource SettingsStackStyle}">
-                <!--Header-->
+                <!--  Header  -->
                 <TextBlock x:Uid="Globals_LaunchSize"
-                           Style="{StaticResource SubtitleTextBlockStyle}"/>
+                           Style="{StaticResource SubtitleTextBlockStyle}" />
 
-                <!--Columns-->
+                <!--  Columns  -->
                 <local:SettingContainer x:Uid="Globals_InitialCols"
                                         Margin="0">
-                    <muxc:NumberBox Value="{x:Bind State.Settings.GlobalSettings.InitialCols, Mode=TwoWay}"
-                                    Style="{StaticResource LaunchSizeNumberBoxStyle}"/>
+                    <muxc:NumberBox Style="{StaticResource LaunchSizeNumberBoxStyle}"
+                                    Value="{x:Bind State.Settings.GlobalSettings.InitialCols, Mode=TwoWay}" />
                 </local:SettingContainer>
-                <!--Rows-->
+                <!--  Rows  -->
                 <local:SettingContainer x:Uid="Globals_InitialRows">
-                    <muxc:NumberBox Value="{x:Bind State.Settings.GlobalSettings.InitialRows, Mode=TwoWay}"
-                                    Style="{StaticResource LaunchSizeNumberBoxStyle}"/>
+                    <muxc:NumberBox Style="{StaticResource LaunchSizeNumberBoxStyle}"
+                                    Value="{x:Bind State.Settings.GlobalSettings.InitialRows, Mode=TwoWay}" />
                 </local:SettingContainer>
             </StackPanel>
         </StackPanel>

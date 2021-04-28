@@ -26,6 +26,9 @@ namespace winrt::TerminalApp::implementation
     {
         InitializeComponent();
 
+        _itemTemplateSelector = Resources().Lookup(winrt::box_value(L"PaletteItemTemplateSelector")).try_as<PaletteItemTemplateSelector>();
+        _listItemTemplate = Resources().Lookup(winrt::box_value(L"ListItemTemplate")).try_as<DataTemplate>();
+
         _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::FilteredCommand>();
         _nestedActionStack = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
         _currentNestedCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
@@ -228,11 +231,18 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_selectedCommandChanged(const IInspectable& /*sender*/,
                                                  const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
+        const auto selectedCommand = _filteredActionsView().SelectedItem();
+        const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
         if (_currentMode == CommandPaletteMode::TabSwitchMode)
         {
-            const auto selectedCommand = _filteredActionsView().SelectedItem();
-            const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
             _switchToTab(filteredCommand);
+        }
+        else if (_currentMode == CommandPaletteMode::ActionMode && filteredCommand != nullptr)
+        {
+            if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            {
+                _PreviewActionHandlers(*this, actionPaletteItem.Command());
+            }
         }
     }
 
@@ -251,19 +261,18 @@ namespace winrt::TerminalApp::implementation
         // Only give anchored tab switcher the ability to cycle through tabs with the tab button.
         // For unanchored mode, accessibility becomes an issue when we try to hijack tab since it's
         // a really widely used keyboard navigation key.
-        if (_currentMode == CommandPaletteMode::TabSwitchMode && _keymap)
+        if (_currentMode == CommandPaletteMode::TabSwitchMode && _actionMap)
         {
             winrt::Microsoft::Terminal::Control::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
-            const auto action = _keymap.TryLookup(kc);
-            if (action)
+            if (const auto cmd{ _actionMap.GetActionByKeyChord(kc) })
             {
-                if (action.Action() == ShortcutAction::PrevTab)
+                if (cmd.ActionAndArgs().Action() == ShortcutAction::PrevTab)
                 {
                     SelectNextItem(false);
                     e.Handled(true);
                     return;
                 }
-                else if (action.Action() == ShortcutAction::NextTab)
+                else if (cmd.ActionAndArgs().Action() == ShortcutAction::NextTab)
                 {
                     SelectNextItem(true);
                     e.Handled(true);
@@ -854,9 +863,9 @@ namespace winrt::TerminalApp::implementation
         return _filteredActions;
     }
 
-    void CommandPalette::SetKeyMap(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap)
+    void CommandPalette::SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap)
     {
-        _keymap = keymap;
+        _actionMap = actionMap;
     }
 
     void CommandPalette::SetCommands(Collections::IVector<Command> const& actions)
@@ -1081,6 +1090,8 @@ namespace winrt::TerminalApp::implementation
     {
         Visibility(Visibility::Collapsed);
 
+        _PreviewActionHandlers(*this, nullptr);
+
         // Reset visibility in case anchor mode tab switcher just finished.
         _searchBox().Visibility(Visibility::Visible);
 
@@ -1106,5 +1117,82 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::EnableTabSearchMode()
     {
         _switchToMode(CommandPaletteMode::TabSearchMode);
+    }
+
+    // Method Description:
+    // - This event is triggered when filteredActionView is looking for item container (ListViewItem)
+    // to use to present the filtered actions.
+    // GH#9288: unfortunately the default lookup seems to choose items with wrong data templates,
+    // e.g., using DataTemplate rendering actions for tab palette items.
+    // We handle this event by manually selecting an item from the cache.
+    // If no item is found we allocate a new one.
+    // Arguments:
+    // - args: the ChoosingItemContainerEventArgs allowing to get container candidate suggested by the
+    // system and replace it with another candidate if required.
+    // Return Value:
+    // - <none>
+    void CommandPalette::_choosingItemContainer(
+        Windows::UI::Xaml::Controls::ListViewBase const& /*sender*/,
+        Windows::UI::Xaml::Controls::ChoosingItemContainerEventArgs const& args)
+    {
+        const auto dataTemplate = _itemTemplateSelector.SelectTemplate(args.Item());
+        const auto itemContainer = args.ItemContainer();
+        if (itemContainer && itemContainer.ContentTemplate() == dataTemplate)
+        {
+            // If the suggested candidate is OK simply remove it from the cache
+            // (so we won't allocate it until it is released) and return
+            _listViewItemsCache[dataTemplate].erase(itemContainer);
+        }
+        else
+        {
+            // We need another candidate, let's look it up inside the cache
+            auto& containersByTemplate = _listViewItemsCache[dataTemplate];
+            if (!containersByTemplate.empty())
+            {
+                // There cache contains available items for required DataTemplate
+                // Let's return one of them (and remove it from the cache)
+                auto firstItem = containersByTemplate.begin();
+                args.ItemContainer(*firstItem);
+                containersByTemplate.erase(firstItem);
+            }
+            else
+            {
+                ElementFactoryGetArgs factoryArgs{};
+                const auto listViewItem = _listItemTemplate.GetElement(factoryArgs).try_as<Controls::ListViewItem>();
+                listViewItem.ContentTemplate(dataTemplate);
+
+                if (dataTemplate == _itemTemplateSelector.NestedItemTemplate())
+                {
+                    const auto helpText = winrt::box_value(RS_(L"CommandPalette_MoreOptions/[using:Windows.UI.Xaml.Automation]AutomationProperties/HelpText"));
+                    listViewItem.SetValue(Automation::AutomationProperties::HelpTextProperty(), helpText);
+                }
+
+                args.ItemContainer(listViewItem);
+            }
+        }
+        args.IsContainerPrepared(true);
+    }
+
+    // Method Description:
+    // - This event is triggered when the data item associate with filteredActionView list item is changing.
+    //   We check if the item is being recycled. In this case we return it to the cache
+    // Arguments:
+    // - args: the ContainerContentChangingEventArgs describing the container change
+    // Return Value:
+    // - <none>
+    void CommandPalette::_containerContentChanging(
+        Windows::UI::Xaml::Controls::ListViewBase const& /*sender*/,
+        Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs const& args)
+    {
+        const auto itemContainer = args.ItemContainer();
+        if (args.InRecycleQueue() && itemContainer && itemContainer.ContentTemplate())
+        {
+            _listViewItemsCache[itemContainer.ContentTemplate()].insert(itemContainer);
+            itemContainer.DataContext(nullptr);
+        }
+        else
+        {
+            itemContainer.DataContext(args.Item());
+        }
     }
 }

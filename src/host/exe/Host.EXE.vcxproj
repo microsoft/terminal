@@ -7,10 +7,13 @@
     <ProjectName>Host.EXE</ProjectName>
     <TargetName>OpenConsole</TargetName>
     <ConfigurationType>Application</ConfigurationType>
+    <PgoTarget>true</PgoTarget>
   </PropertyGroup>
-  <Import Project="..\..\common.build.pre.props" />
+  <Import Project="$(SolutionDir)common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="CConsoleHandoff.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
@@ -18,7 +21,8 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
-    <ClCompile Include="..\exemain.cpp" />
+    <ClCompile Include="CConsoleHandoff.cpp" />
+    <ClCompile Include="exemain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\buffer\out\lib\bufferout.vcxproj">
@@ -80,12 +84,13 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;$(IntDir)..\OpenConsoleProxy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AllowIsolation>true</AllowIsolation>
+      <AdditionalDependencies>WinMM.Lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="..\..\common.build.post.props" />
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
 </Project>

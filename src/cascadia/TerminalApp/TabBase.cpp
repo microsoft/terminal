@@ -45,35 +45,27 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        // Close
-        Controls::MenuFlyoutItem closeTabMenuItem;
-        Controls::FontIcon closeSymbol;
-        closeSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
-        closeSymbol.Glyph(L"\xE711");
-
-        closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
+        // Build the menu
+        Controls::MenuFlyout contextMenuFlyout;
+        // GH#5750 - When the context menu is dismissed with ESC, toss the focus
+        // back to our control.
+        contextMenuFlyout.Closed([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_ClosedHandlers(nullptr, nullptr);
+                tab->_RequestFocusActiveControlHandlers();
             }
         });
-        closeTabMenuItem.Text(RS_(L"TabClose"));
-        closeTabMenuItem.Icon(closeSymbol);
-
-        // Build the menu
-        Controls::MenuFlyout newTabFlyout;
-        newTabFlyout.Items().Append(_CreateCloseSubMenu());
-        newTabFlyout.Items().Append(closeTabMenuItem);
-        TabViewItem().ContextFlyout(newTabFlyout);
+        _AppendCloseMenuItems(contextMenuFlyout);
+        TabViewItem().ContextFlyout(contextMenuFlyout);
     }
 
     // Method Description:
-    // - Creates a sub-menu containing menu items to close multiple tabs
+    // - Append the close menu items to the context menu flyout
     // Arguments:
-    // - <none>
+    // - flyout - the menu flyout to which the close items must be appended
     // Return Value:
-    // - the created MenuFlyoutSubItem
-    Controls::MenuFlyoutSubItem TabBase::_CreateCloseSubMenu()
+    // - <none>
+    void TabBase::_AppendCloseMenuItems(winrt::Windows::UI::Xaml::Controls::MenuFlyout flyout)
     {
         auto weakThis{ get_weak() };
 
@@ -95,12 +87,30 @@ namespace winrt::TerminalApp::implementation
         });
         _closeOtherTabsMenuItem.Text(RS_(L"TabCloseOther"));
 
-        Controls::MenuFlyoutSubItem closeSubMenu;
-        closeSubMenu.Text(RS_(L"TabCloseSubMenu"));
-        closeSubMenu.Items().Append(_closeTabsAfterMenuItem);
-        closeSubMenu.Items().Append(_closeOtherTabsMenuItem);
+        // Close
+        Controls::MenuFlyoutItem closeTabMenuItem;
+        Controls::FontIcon closeSymbol;
+        closeSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+        closeSymbol.Glyph(L"\xE711");
 
-        return closeSubMenu;
+        closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_CloseRequestedHandlers(nullptr, nullptr);
+            }
+        });
+        closeTabMenuItem.Text(RS_(L"TabClose"));
+        closeTabMenuItem.Icon(closeSymbol);
+
+        // GH#8238 append the close menu items to the flyout itself until crash in XAML is fixed
+        //Controls::MenuFlyoutSubItem closeSubMenu;
+        //closeSubMenu.Text(RS_(L"TabCloseSubMenu"));
+        //closeSubMenu.Items().Append(_closeTabsAfterMenuItem);
+        //closeSubMenu.Items().Append(_closeOtherTabsMenuItem);
+        //flyout.Items().Append(closeSubMenu);
+        flyout.Items().Append(_closeTabsAfterMenuItem);
+        flyout.Items().Append(_closeOtherTabsMenuItem);
+        flyout.Items().Append(closeTabMenuItem);
     }
 
     // Method Description:
@@ -146,9 +156,9 @@ namespace winrt::TerminalApp::implementation
         _dispatch = dispatch;
     }
 
-    void TabBase::SetKeyMap(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap)
+    void TabBase::SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap)
     {
-        _keymap = keymap;
+        _actionMap = actionMap;
         _UpdateSwitchToTabKeyChord();
     }
 
@@ -161,9 +171,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     winrt::fire_and_forget TabBase::_UpdateSwitchToTabKeyChord()
     {
-        SwitchToTabArgs args{ _TabViewIndex };
-        ActionAndArgs switchToTab{ ShortcutAction::SwitchToTab, args };
-        const auto keyChord = _keymap ? _keymap.GetKeyBindingForActionWithArgs(switchToTab) : nullptr;
+        const auto keyChord = _actionMap ? _actionMap.GetKeyBindingForAction(ShortcutAction::SwitchToTab, SwitchToTabArgs{ _TabViewIndex }) : nullptr;
         const auto keyChordText = keyChord ? KeyChordSerialization::ToString(keyChord) : L"";
 
         if (_keyChord == keyChordText)
@@ -206,6 +214,7 @@ namespace winrt::TerminalApp::implementation
         titleRun.Text(_CreateToolTipTitle());
 
         auto textBlock = WUX::Controls::TextBlock{};
+        textBlock.TextWrapping(WUX::TextWrapping::Wrap);
         textBlock.TextAlignment(WUX::TextAlignment::Center);
         textBlock.Inlines().Append(titleRun);
 
@@ -221,5 +230,25 @@ namespace winrt::TerminalApp::implementation
         WUX::Controls::ToolTip toolTip{};
         toolTip.Content(textBlock);
         WUX::Controls::ToolTipService::SetToolTip(TabViewItem(), toolTip);
+    }
+
+    // Method Description:
+    // - Initializes a TabViewItem for this Tab instance.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TabBase::_MakeTabViewItem()
+    {
+        TabViewItem(::winrt::MUX::Controls::TabViewItem{});
+
+        // GH#3609 If the tab was tapped, and no one else was around to handle
+        // it, then ask our parent to toss focus into the active control.
+        TabViewItem().Tapped([weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_RequestFocusActiveControlHandlers();
+            }
+        });
     }
 }

@@ -32,7 +32,7 @@ namespace winrt::TerminalApp::implementation
 
         void SetCommands(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& actions);
         void SetTabs(Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase> const& tabs, Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase> const& mruTabs);
-        void SetKeyMap(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap);
+        void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
@@ -58,6 +58,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(SwitchToTabRequested, winrt::TerminalApp::CommandPalette, winrt::TerminalApp::TabBase);
         TYPED_EVENT(CommandLineExecutionRequested, winrt::TerminalApp::CommandPalette, winrt::hstring);
         TYPED_EVENT(DispatchCommandRequested, winrt::TerminalApp::CommandPalette, Microsoft::Terminal::Settings::Model::Command);
+        TYPED_EVENT(PreviewAction, Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::Command);
 
     private:
         friend struct CommandPaletteT<CommandPalette>; // for Xaml to bind events
@@ -106,7 +107,7 @@ namespace winrt::TerminalApp::implementation
         std::wstring _getTrimmedInput();
         void _evaluatePrefix();
 
-        Microsoft::Terminal::Settings::Model::KeyMapping _keymap{ nullptr };
+        Microsoft::Terminal::Settings::Model::IActionMapView _actionMap{ nullptr };
 
         // Tab Switcher
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _tabActions{ nullptr };
@@ -132,6 +133,12 @@ namespace winrt::TerminalApp::implementation
         static constexpr int CommandLineHistoryLength = 10;
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandLineHistory{ nullptr };
         ::TerminalApp::AppCommandlineArgs _appArgs;
+
+        void _choosingItemContainer(Windows::UI::Xaml::Controls::ListViewBase const& sender, Windows::UI::Xaml::Controls::ChoosingItemContainerEventArgs const& args);
+        void _containerContentChanging(Windows::UI::Xaml::Controls::ListViewBase const& sender, Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs const& args);
+        winrt::TerminalApp::PaletteItemTemplateSelector _itemTemplateSelector{ nullptr };
+        std::unordered_map<Windows::UI::Xaml::DataTemplate, std::unordered_set<Windows::UI::Xaml::Controls::Primitives::SelectorItem>> _listViewItemsCache;
+        Windows::UI::Xaml::DataTemplate _listItemTemplate;
 
         friend class TerminalAppLocalTests::TabTests;
     };

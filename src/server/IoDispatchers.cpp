@@ -146,6 +146,35 @@ static bool _shouldAttemptHandoff(const Globals& globals,
                                   const CONSOLE_INFORMATION& gci,
                                   CONSOLE_API_CONNECTINFO& cac)
 {
+#ifndef __INSIDE_WINDOWS
+
+    UNREFERENCED_PARAMETER(globals);
+    UNREFERENCED_PARAMETER(gci);
+    UNREFERENCED_PARAMETER(cac);
+
+    // If we are outside of Windows, do not attempt a handoff
+    // to another target as handoff is an inbox escape mechanism
+    // to get to this copy!
+    return false;
+
+#else
+
+    // This console was started with a command line argument to
+    // specifically block handoff to another console. We presume
+    // this was for good reason (compatibility) and give up here.
+    if (globals.launchArgs.GetForceNoHandoff())
+    {
+        return false;
+    }
+
+    // Someone double clicked this console or explicitly tried
+    // to use it to launch a child process. Host it within this one
+    // and do not hand off.
+    if (globals.launchArgs.ShouldCreateServerHandle())
+    {
+        return false;
+    }
+
     // This console is already initialized. Do not
     // attempt handoff to another one.
     // Note you can have a non-attach secondary connect for a child process
@@ -209,6 +238,7 @@ static bool _shouldAttemptHandoff(const Globals& globals,
     }
 
     return true;
+#endif
 }
 
 // Routine Description:

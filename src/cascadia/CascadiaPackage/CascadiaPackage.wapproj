@@ -15,10 +15,6 @@
     <AppxOSMaxVersionTestedReplaceManifestVersion>false</AppxOSMaxVersionTestedReplaceManifestVersion>
     <OCExecutionAliasName Condition="'$(WindowsTerminalBranding)'==''">wtd</OCExecutionAliasName>
     <OCExecutionAliasName Condition="'$(OCExecutionAliasName)'==''">wt</OCExecutionAliasName>
-    <!-- VS 16.8 causes WAP projects to accidentally package System.Core.dll (from the CLR).
-         This has been fixed in VS 16.9 using the property below. It's safe for us to include
-         it here, even after 16.9 comes out. -->
-    <AddAdditionalExplicitAssemblyReferences>false</AddAdditionalExplicitAssemblyReferences>
   </PropertyGroup>
   <PropertyGroup>
     <ProjectGuid>CA5CAD1A-224A-4171-B13A-F16E576FDD12</ProjectGuid>
@@ -70,6 +66,7 @@
   <ItemGroup>
     <ProjectReference Include="..\WindowsTerminal\WindowsTerminal.vcxproj" />
     <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" />
+    <ProjectReference Include="..\..\host\proxy\Host.Proxy.vcxproj" />
     <ProjectReference Include="..\TerminalAzBridge\TerminalAzBridge.vcxproj" />
     <ProjectReference Include="..\ShellExtension\WindowsTerminalShellExt.vcxproj" />
     <ProjectReference Include="..\wt\wt.vcxproj" />

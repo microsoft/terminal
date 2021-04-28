@@ -5,22 +5,28 @@ import "IMouseWheelListener.idl";
 import "IControlSettings.idl";
 import "IDirectKeyListener.idl";
 import "EventArgs.idl";
+import "ICoreState.idl";
 
 namespace Microsoft.Terminal.Control
 {
 
-    [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl, IDirectKeyListener, IMouseWheelListener
+    [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl,
+                                                   IDirectKeyListener,
+                                                   IMouseWheelListener,
+                                                   ICoreState
     {
-        TermControl(Microsoft.Terminal.Control.IControlSettings settings, Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+        TermControl(IControlSettings settings,
+                    Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
-        static Windows.Foundation.Size GetProposedDimensions(Microsoft.Terminal.Control.IControlSettings settings, UInt32 dpi);
+        static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings, UInt32 dpi);
 
         void UpdateSettings();
 
         Microsoft.Terminal.Control.IControlSettings Settings { get; };
+        Microsoft.Terminal.Control.IControlAppearance UnfocusedAppearance;
 
-        event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
         event FontSizeChangedEventArgs FontSizeChanged;
+        event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;
         event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
@@ -29,8 +35,6 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> WarningBell;
         event Windows.Foundation.TypedEventHandler<Object, Object> HidePointerCursor;
         event Windows.Foundation.TypedEventHandler<Object, Object> RestorePointerCursor;
-
-        event ScrollPositionChangedEventArgs ScrollPositionChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
@@ -40,10 +44,6 @@ namespace Microsoft.Terminal.Control
         // We expose this and ConnectionState here so that it might eventually be data bound.
         event Windows.Foundation.TypedEventHandler<Object, IInspectable> ConnectionStateChanged;
 
-        Microsoft.Terminal.TerminalConnection.ConnectionState ConnectionState { get; };
-
-        String Title { get; };
-
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();
         void Close();
@@ -52,8 +52,6 @@ namespace Microsoft.Terminal.Control
         Single SnapDimensionToGrid(Boolean widthOrHeight, Single dimension);
 
         void ScrollViewport(Int32 viewTop);
-        Int32 GetScrollOffset();
-        Int32 GetViewHeight();
 
         void CreateSearchBoxControl();
 
@@ -64,14 +62,6 @@ namespace Microsoft.Terminal.Control
 
         void ToggleShaderEffects();
         void SendInput(String input);
-
-        void TaskbarProgressChanged();
-        UInt64 TaskbarState { get; };
-        UInt64 TaskbarProgress { get; };
-
-        String WorkingDirectory { get; };
-
-        Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
 
         Boolean ReadOnly { get; };
         void ToggleReadOnly();

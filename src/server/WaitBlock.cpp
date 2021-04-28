@@ -15,8 +15,8 @@
 
 // Routine Description:
 // - Initializes a ConsoleWaitBlock
-// - ConsoleWaitBlocks will self-manage their position in their two queues.
-// - They will push themselves into the tail and store the iterator for constant deletion time later.
+// - ConsoleWaitBlocks will mostly self-manage their position in their two queues.
+// - They will be pushed into the tail and the resulting iterator stored for constant deletion time later.
 // Arguments:
 // - pProcessQueue - The queue attached to the client process ID that requested this action
 // - pObjectQueue - The queue attached to the console object that will service the action when data arrives
@@ -30,10 +30,45 @@ ConsoleWaitBlock::ConsoleWaitBlock(_In_ ConsoleWaitQueue* const pProcessQueue,
     _pObjectQueue(THROW_HR_IF_NULL(E_INVALIDARG, pObjectQueue)),
     _pWaiter(THROW_HR_IF_NULL(E_INVALIDARG, pWaiter))
 {
-    _itProcessQueue = _pProcessQueue->_blocks.insert(_pProcessQueue->_blocks.end(), this);
-    _itObjectQueue = _pObjectQueue->_blocks.insert(_pObjectQueue->_blocks.end(), this);
-
     _WaitReplyMessage = *pWaitReplyMessage;
+
+    // MSFT-33127449, GH#9692
+    // Until there's a "Wait", there's only one API message inflight at a time. In our
+    // quest for performance, we put that single API message in charge of its own
+    // buffer management- instead of allocating buffers on the heap and deleting them
+    // later (storing pointers to them at the far corners of the earth), it would
+    // instead allocate them from small internal pools (if possible) and only heap
+    // allocate (transparently) if necessary. The pointers flung to the corners of the
+    // earth would be pointers (1) back into the API_MSG or (2) to a heap block owned
+    // by boost::small_vector.
+    //
+    // It took us months to realize that those bare pointers were being held by
+    // COOKED_READ and RAW_READ and not actually being updated when the API message was
+    // _copied_ as it was shuffled off to the background to become a "Wait" message.
+    //
+    // It turns out that it's trivially possible to crash the console by sending two
+    // API calls -- one that waits and one that completes immediately -- when the
+    // waiting message or the "wait completer" has a bunch of dangling pointers in it.
+    // Oops.
+    //
+    // Here, we fix up the message's internal pointers (in lieu of giving it a proper
+    // copy constructor; see GH#10076) and then tell the wait completion routine (which
+    // is going to be a COOKED_READ, RAW_READ, DirectRead or WriteData) about the new
+    // buffer location.
+    //
+    // This is a scoped fix that should be replaced (TODO GH#10076) with a final one
+    // after Ask mode.
+    _WaitReplyMessage.UpdateUserBufferPointers();
+
+    if (pWaitReplyMessage->State.InputBuffer)
+    {
+        _pWaiter->MigrateUserBuffersOnTransitionToBackgroundWait(pWaitReplyMessage->State.InputBuffer, _WaitReplyMessage.State.InputBuffer);
+    }
+
+    if (pWaitReplyMessage->State.OutputBuffer)
+    {
+        _pWaiter->MigrateUserBuffersOnTransitionToBackgroundWait(pWaitReplyMessage->State.OutputBuffer, _WaitReplyMessage.State.OutputBuffer);
+    }
 
     // We will write the original message back (with updated out parameters/payload) when the request is finally serviced.
     if (pWaitReplyMessage->Complete.Write.Data != nullptr)
@@ -87,6 +122,10 @@ ConsoleWaitBlock::~ConsoleWaitBlock()
                                           pObjectQueue,
                                           pWaitReplyMessage,
                                           pWaiter);
+
+        // Set the iterators on the wait block so that it can remove itself later.
+        pWaitBlock->_itProcessQueue = pProcessQueue->_blocks.insert(pProcessQueue->_blocks.end(), pWaitBlock);
+        pWaitBlock->_itObjectQueue = pObjectQueue->_blocks.insert(pObjectQueue->_blocks.end(), pWaitBlock);
     }
     catch (...)
     {

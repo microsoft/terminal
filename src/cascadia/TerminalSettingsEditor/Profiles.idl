@@ -8,7 +8,7 @@ import "MainPage.idl";
 
 #define OBSERVABLE_PROJECTED_PROFILE_SETTING(Type, Name) \
     OBSERVABLE_PROJECTED_SETTING(Type, Name);            \
-    Microsoft.Terminal.Settings.Model.Profile Name##OverrideSource { get; }
+    Object Name##OverrideSource { get; }
 
 namespace Microsoft.Terminal.Settings.Editor
 {
@@ -40,7 +40,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Icon);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.CloseOnExitMode, CloseOnExit);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, TabTitle);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, TabColor);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, TabColor);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SuppressApplicationTitle);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, UseAcrylic);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Double, AcrylicOpacity);
@@ -60,10 +60,10 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ForceFullRepaintRendering);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SoftwareRendering);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, ColorSchemeName);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Foreground);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, Background);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, SelectionBackground);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Windows.UI.Color>, CursorColor);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Foreground);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Background);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, SelectionBackground);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, CursorColor);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Int32, HistorySize);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SnapOnInput);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AltGrAliasing);

@@ -4,9 +4,9 @@
   "title": "Microsoft's Windows Terminal Settings Profile Schema",
   "definitions": {
     "KeyChordSegment": {
-      "pattern": "^(?<modifier>(ctrl|alt|shift)(?:\\+(ctrl|alt|shift)(?<!\\2))?(?:\\+(ctrl|alt|shift)(?<!\\2|\\3))?\\+)?(?<key>[^\\s+]|app|menu|backspace|tab|enter|esc|escape|space|pgup|pageup|pgdn|pagedown|end|home|left|up|right|down|insert|delete|(?<!shift.+)(?:numpad_?[0-9]|numpad_(?:period|decimal))|numpad_(?:multiply|plus|add|minus|subtract|divide)|f[1-9]|f1[0-9]|f2[0-4]|plus)$",
+      "pattern": "^(?<modifier>(?<mod1>ctrl|alt|shift|win)(?:\\+(?<mod2>ctrl|alt|shift|win)(?<!\\k<mod1>))?(?:\\+(?<mod3>ctrl|alt|shift|win)(?<!\\k<mod1>|\\k<mod2>))?(?:\\+(?<mod4>ctrl|alt|shift|win)(?<!\\k<mod1>|\\k<mod2>|\\k<mod3>))?\\+)?(?<key>[^\\s+]|app|menu|backspace|tab|enter|esc|escape|space|pgup|pageup|pgdn|pagedown|end|home|left|up|right|down|insert|delete|(?<!shift.+)(?:numpad_?[0-9]|numpad_(?:period|decimal))|numpad_(?:multiply|plus|add|minus|subtract|divide)|f[1-9]|f1[0-9]|f2[0-4]|plus)$",
       "type": "string",
-      "description": "The string should fit the format \"[ctrl+][alt+][shift+]<keyName>\", where each modifier is optional, separated by + symbols, and keyName is either one of the names listed in the table below, or any single key character. The string should be written in full lowercase.\napp, menu\tMENU key\nbackspace\tBACKSPACE key\ntab\tTAB key\nenter\tENTER key\nesc, escape\tESC key\nspace\tSPACEBAR\npgup, pageup\tPAGE UP key\npgdn, pagedown\tPAGE DOWN key\nend\tEND key\nhome\tHOME key\nleft\tLEFT ARROW key\nup\tUP ARROW key\nright\tRIGHT ARROW key\ndown\tDOWN ARROW key\ninsert\tINS key\ndelete\tDEL key\nnumpad_0-numpad_9, numpad0-numpad9\tNumeric keypad keys 0 to 9. Can't be combined with the shift modifier.\nnumpad_multiply\tNumeric keypad MULTIPLY key (*)\nnumpad_plus, numpad_add\tNumeric keypad ADD key (+)\nnumpad_minus, numpad_subtract\tNumeric keypad SUBTRACT key (-)\nnumpad_period, numpad_decimal\tNumeric keypad DECIMAL key (.). Can't be combined with the shift modifier.\nnumpad_divide\tNumeric keypad DIVIDE key (/)\nf1-f24\tF1 to F24 function keys\nplus\tADD key (+)"
+      "description": "The string should fit the format \"[ctrl+][alt+][shift+][win+]<keyName>\", where each modifier is optional, separated by + symbols, and keyName is either one of the names listed in the table below, or any single key character. The string should be written in full lowercase.\napp, menu\tMENU key\nbackspace\tBACKSPACE key\ntab\tTAB key\nenter\tENTER key\nesc, escape\tESC key\nspace\tSPACEBAR\npgup, pageup\tPAGE UP key\npgdn, pagedown\tPAGE DOWN key\nend\tEND key\nhome\tHOME key\nleft\tLEFT ARROW key\nup\tUP ARROW key\nright\tRIGHT ARROW key\ndown\tDOWN ARROW key\ninsert\tINS key\ndelete\tDEL key\nnumpad_0-numpad_9, numpad0-numpad9\tNumeric keypad keys 0 to 9. Can't be combined with the shift modifier.\nnumpad_multiply\tNumeric keypad MULTIPLY key (*)\nnumpad_plus, numpad_add\tNumeric keypad ADD key (+)\nnumpad_minus, numpad_subtract\tNumeric keypad SUBTRACT key (-)\nnumpad_period, numpad_decimal\tNumeric keypad DECIMAL key (.). Can't be combined with the shift modifier.\nnumpad_divide\tNumeric keypad DIVIDE key (/)\nf1-f24\tF1 to F24 function keys\nplus\tADD key (+)"
     },
     "Color": {
       "default": "#",
@@ -52,6 +52,117 @@
         }
       ]
     },
+    "AppearanceConfig": {
+      "properties": {
+        "colorScheme": {
+          "description": "The name of a color scheme to use when unfocused.",
+          "type": "string"
+        },
+        "foreground": {
+          "$ref": "#/definitions/Color",
+          "default": "#cccccc",
+          "description": "Sets the text color when unfocused. Overrides \"foreground\" from the color scheme. Uses hex color format: \"#rrggbb\".",
+          "type": ["string", "null"]
+        },
+        "background": {
+          "$ref": "#/definitions/Color",
+          "default": "#0c0c0c",
+          "description": "Sets the background color of the text when unfocused. Overrides \"background\" from the color scheme. Uses hex color format: \"#rrggbb\".",
+          "type": ["string", "null"]
+        },
+        "selectionBackground": {
+          "oneOf": [
+            {"$ref": "#/definitions/Color"},
+            { "type": "null" }
+          ],
+          "description": "Sets the background color of selected text when unfocused. Overrides selectionBackground set in the color scheme. Uses hex color format: \"#rrggbb\"."
+        },
+        "cursorColor": {
+          "oneOf": [
+            { "$ref": "#/definitions/Color" },
+            {"type": "null"}
+          ],
+          "description": "Sets the color of the cursor when unfocused. Overrides the cursor color from the color scheme. Uses hex color format: \"#rrggbb\"."
+        },
+        "cursorShape": {
+          "default": "bar",
+          "description": "Sets the shape of the cursor when unfocused. Possible values:\n -\"bar\" ( ┃, default )\n -\"doubleUnderscore\" ( ‗ )\n -\"emptyBox\" ( ▯ )\n -\"filledBox\" ( █ )\n -\"underscore\" ( ▁ )\n -\"vintage\" ( ▃ )",
+          "enum": [
+            "bar",
+            "doubleUnderscore",
+            "emptyBox",
+            "filledBox",
+            "underscore",
+            "vintage"
+          ],
+          "type": "string"
+        },
+        "cursorHeight": {
+          "description": "Sets the percentage height of the cursor (when unfocused) starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 1-100.",
+          "maximum": 100,
+          "minimum": 1,
+          "type": ["integer","null"],
+          "default": 25
+        },
+        "backgroundImage": {
+          "description": "Sets the file location of the image to draw over the window background when unfocused.",
+          "oneOf": [
+            {
+              "type": ["string", null]
+            },
+            {
+              "enum": [
+                "desktopWallpaper"
+              ]
+            }
+          ],
+          "type": [ "string", "null" ]
+        },
+        "backgroundImageOpacity": {
+          "default": 1.0,
+          "description": "Sets the transparency of the background image when unfocused. Accepts floating point values from 0-1.",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        "backgroundImageStretchMode": {
+          "default": "uniformToFill",
+          "description": "Sets how the background image is resized to fill the window when unfocused.",
+          "enum": [
+            "fill",
+            "none",
+            "uniform",
+            "uniformToFill"
+          ],
+          "type": "string"
+        },
+        "backgroundImageAlignment": {
+          "default": "center",
+          "enum": [
+            "bottom",
+            "bottomLeft",
+            "bottomRight",
+            "center",
+            "left",
+            "right",
+            "top",
+            "topLeft",
+            "topRight"
+          ],
+          "description": "Sets how the background image aligns to the boundaries of the window when unfocused. Possible values: \"center\", \"left\", \"top\", \"right\", \"bottom\", \"topLeft\", \"topRight\", \"bottomLeft\", \"bottomRight\"",
+          "type": "string"
+        },
+        "experimental.retroTerminalEffect": {
+          "description": "When set to true, enable retro terminal effects when unfocused. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "boolean"
+        },
+        "experimental.pixelShaderPath": {
+          "description": "Use to set a path to a pixel shader to use with the Terminal when unfocused. Overrides `experimental.retroTerminalEffect`. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "ProfileGuid": {
       "default": "{}",
       "pattern": "^\\{[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\\}$",
@@ -77,6 +188,8 @@
         "duplicateTab",
         "find",
         "findMatch",
+        "identifyWindow",
+        "identifyWindows",
         "moveFocus",
         "moveTab",
         "newTab",
@@ -85,12 +198,14 @@
         "openNewTabDropdown",
         "openSettings",
         "openTabColorPicker",
+        "openWindowRenamer",
         "paste",
         "prevTab",
         "renameTab",
         "openTabRenamer",
         "resetFontSize",
         "resizePane",
+        "renameWindow",
         "scrollDown",
         "scrollDownPage",
         "scrollUp",
@@ -227,6 +342,10 @@
           "type": "boolean",
           "default": "false",
           "description": "When set to true, tabTitle overrides the default title of the tab and any title change messages from the application will be suppressed. When set to false, tabTitle behaves as normal"
+        },
+        "colorScheme": {
+          "description": "The name of a color scheme to use, instead of the one specified by the profile",
+          "type": "string"
         }
       },
       "type": "object"
@@ -647,6 +766,38 @@
         }
       ]
     },
+    "RenameTabAction": {
+      "description": "Arguments corresponding to a renameTab Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "renameTab" },
+            "title": {
+              "type": "string",
+              "default": "",
+              "description": "A title to assign to the tab. If omitted or null, this action will restore the tab's title to the original value."
+            }
+          }
+        }
+      ]
+    },
+    "RenameWindowAction": {
+      "description": "Arguments corresponding to a renameWindow Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "renameWindow" },
+            "name": {
+              "type": "string",
+              "default": "",
+              "description": "A name to assign to the window."
+            }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -675,6 +826,8 @@
               { "$ref": "#/definitions/NewWindowAction" },
               { "$ref": "#/definitions/NextTabAction" },
               { "$ref": "#/definitions/PrevTabAction" },
+              { "$ref": "#/definitions/RenameTabAction" },
+              { "$ref": "#/definitions/RenameWindowAction" },
               { "type": "null" }
             ]
         },
@@ -746,6 +899,11 @@
           "default": true,
           "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied.",
           "$ref": "#/definitions/CopyFormat"
+        },
+        "trimBlockSelection": {
+          "default": false,
+          "description": "When set to true, trailing white-spaces will be removed from text in rectangular (block) selection while copied to your clipboard. When set to false, the white-spaces will be preserved.",
+          "type": "boolean"
         },
         "disableAnimations": {
           "default": false,
@@ -957,6 +1115,11 @@
           "default": "#0c0c0c",
           "description": "Sets the background color of the text. Overrides \"background\" from the color scheme. Uses hex color format: \"#rrggbb\".",
           "type": ["string", "null"]
+        },
+        "unfocusedAppearance": {
+          "$ref": "#/definitions/AppearanceConfig",
+          "description": "Sets the appearance of the terminal when it is unfocused.",
+          "type": ["object", "null"]
         },
         "backgroundImage": {
           "description": "Sets the file location of the image to draw over the window background.",
@@ -1188,6 +1351,11 @@
           "description": "When set to true, tabTitle overrides the default title of the tab and any title change messages from the application will be suppressed. When set to false, tabTitle behaves as normal.",
           "type": "boolean",
           "default": false
+        },
+        "tabColor": {
+          "$ref": "#/definitions/Color",
+          "description": "Sets the color of the profile's tab. Using the tab color picker will override this color.",
+          "type": ["string", "null"]
         },
         "tabTitle": {
           "description": "If set, will replace the name as the title to pass to the shell on startup. Some shells (like bash) may choose to ignore this initial value, while others (cmd, powershell) may use this value over the lifetime of the application.",

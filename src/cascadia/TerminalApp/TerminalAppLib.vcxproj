@@ -140,6 +140,7 @@
     <ClInclude Include="AppLogic.h">
       <DependentUpon>AppLogic.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="Toast.h"/>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -168,6 +169,14 @@
       <DependentUpon>TerminalTab.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="TerminalPage.cpp">
+      <DependentUpon>TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="TabManagement.cpp">
+      <DependentUpon>TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="ActionPreviewHandlers.cpp">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
@@ -215,12 +224,14 @@
       <DependentUpon>App.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="AppActionHandlers.cpp">
-      <DependentUpon>App.xaml</DependentUpon>
+      <DependentUpon>TerminalPage.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="AppLogic.cpp">
       <DependentUpon>AppLogic.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="Toast.cpp" />
+
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>

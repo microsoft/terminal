@@ -103,17 +103,18 @@ namespace SettingsModelLocalTests
 
         CascadiaSettings settings{ til::u8u16(settingsJson) };
 
-        auto keymap = settings.GlobalSettings().KeyMap();
+        auto actionMap = settings.GlobalSettings().ActionMap();
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
         const auto profile2Guid = settings.ActiveProfiles().GetAt(2).Guid();
         VERIFY_ARE_NOT_EQUAL(winrt::guid{}, profile2Guid);
 
-        VERIFY_ARE_EQUAL(12u, keymap.Size());
+        const auto& actionMapImpl{ winrt::get_self<implementation::ActionMap>(actionMap) };
+        VERIFY_ARE_EQUAL(12u, actionMapImpl->_KeyMap.size());
 
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('A') };
-            auto actionAndArgs = ::TestUtils::GetActionAndArgs(keymap, kc);
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -126,14 +127,15 @@ namespace SettingsModelLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
 
             const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto termSettings{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid0, guid);
             VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('B') };
-            auto actionAndArgs = ::TestUtils::GetActionAndArgs(keymap, kc);
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -147,14 +149,15 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}", realArgs.TerminalArgs().Profile());
 
             const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto termSettings{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid1, guid);
             VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
-            auto actionAndArgs = ::TestUtils::GetActionAndArgs(keymap, kc);
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -168,14 +171,15 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
 
             const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto termSettings{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid1, guid);
             VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('D') };
-            auto actionAndArgs = ::TestUtils::GetActionAndArgs(keymap, kc);
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -189,14 +193,15 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
 
             const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto termSettings{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(profile2Guid, guid);
             VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(3, termSettings.HistorySize());
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('E') };
-            auto actionAndArgs = ::TestUtils::GetActionAndArgs(keymap, kc);
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -210,14 +215,15 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(L"foo.exe", realArgs.TerminalArgs().Commandline());
 
             const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto termSettings{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid0, guid);
             VERIFY_ARE_EQUAL(L"foo.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('F') };
-            auto actionAndArgs = ::TestUtils::GetActionAndArgs(keymap, kc);
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -232,14 +238,15 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(L"foo.exe", realArgs.TerminalArgs().Commandline());
 
             const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto termSettings{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid1, guid);
             VERIFY_ARE_EQUAL(L"foo.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('G') };
-            auto actionAndArgs = ::TestUtils::GetActionAndArgs(keymap, kc);
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -251,14 +258,15 @@ namespace SettingsModelLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
 
             const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto termSettings{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid0, guid);
             VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('H') };
-            auto actionAndArgs = ::TestUtils::GetActionAndArgs(keymap, kc);
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -271,7 +279,8 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(L"c:\\foo", realArgs.TerminalArgs().StartingDirectory());
 
             const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto termSettings{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid0, guid);
             VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(L"c:\\foo", termSettings.StartingDirectory());
@@ -279,7 +288,7 @@ namespace SettingsModelLocalTests
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('I') };
-            auto actionAndArgs = ::TestUtils::GetActionAndArgs(keymap, kc);
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -293,7 +302,8 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
 
             const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto termSettings{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(profile2Guid, guid);
             VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(L"c:\\foo", termSettings.StartingDirectory());
@@ -301,7 +311,7 @@ namespace SettingsModelLocalTests
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('J') };
-            auto actionAndArgs = ::TestUtils::GetActionAndArgs(keymap, kc);
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -314,7 +324,8 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(L"bar", realArgs.TerminalArgs().TabTitle());
 
             const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto termSettings{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid0, guid);
             VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(L"bar", termSettings.StartingTitle());
@@ -322,7 +333,7 @@ namespace SettingsModelLocalTests
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('K') };
-            auto actionAndArgs = ::TestUtils::GetActionAndArgs(keymap, kc);
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -336,7 +347,8 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
 
             const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto termSettings{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(profile2Guid, guid);
             VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(L"bar", termSettings.StartingTitle());
@@ -344,7 +356,7 @@ namespace SettingsModelLocalTests
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('L') };
-            auto actionAndArgs = ::TestUtils::GetActionAndArgs(keymap, kc);
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -360,7 +372,8 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
 
             const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
-            const auto termSettings{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
+            const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid1, guid);
             VERIFY_ARE_EQUAL(L"foo.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(L"bar", termSettings.StartingTitle());
@@ -398,7 +411,7 @@ namespace SettingsModelLocalTests
         {
             auto terminalSettings{ TerminalSettings::CreateWithProfileByID(settings, guid1, nullptr) };
             VERIFY_ARE_NOT_EQUAL(nullptr, terminalSettings);
-            VERIFY_ARE_EQUAL(1, terminalSettings.HistorySize());
+            VERIFY_ARE_EQUAL(1, terminalSettings.DefaultSettings().HistorySize());
         }
         catch (...)
         {
@@ -409,7 +422,7 @@ namespace SettingsModelLocalTests
         {
             auto terminalSettings{ TerminalSettings::CreateWithProfileByID(settings, guid2, nullptr) };
             VERIFY_ARE_NOT_EQUAL(nullptr, terminalSettings);
-            VERIFY_ARE_EQUAL(2, terminalSettings.HistorySize());
+            VERIFY_ARE_EQUAL(2, terminalSettings.DefaultSettings().HistorySize());
         }
         catch (...)
         {
@@ -422,7 +435,7 @@ namespace SettingsModelLocalTests
         {
             const auto termSettings{ TerminalSettings::CreateWithNewTerminalArgs(settings, nullptr, nullptr) };
             VERIFY_ARE_NOT_EQUAL(nullptr, termSettings);
-            VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
+            VERIFY_ARE_EQUAL(1, termSettings.DefaultSettings().HistorySize());
         }
         catch (...)
         {
@@ -461,7 +474,7 @@ namespace SettingsModelLocalTests
         {
             const auto termSettings{ TerminalSettings::CreateWithNewTerminalArgs(settings, nullptr, nullptr) };
             VERIFY_ARE_NOT_EQUAL(nullptr, termSettings);
-            VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
+            VERIFY_ARE_EQUAL(1, termSettings.DefaultSettings().HistorySize());
         }
         catch (...)
         {
@@ -522,7 +535,8 @@ namespace SettingsModelLocalTests
 
         auto createTerminalSettings = [&](const auto& profile, const auto& schemes) {
             auto terminalSettings{ winrt::make_self<implementation::TerminalSettings>() };
-            terminalSettings->_ApplyProfileSettings(profile, schemes);
+            terminalSettings->_ApplyProfileSettings(profile);
+            terminalSettings->_ApplyAppearanceSettings(profile.DefaultAppearance(), schemes);
             return terminalSettings;
         };
 

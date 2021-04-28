@@ -1,359 +1,376 @@
-<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
-the MIT License. See LICENSE in the project root for license information. -->
-<UserControl
-    x:Class="TerminalApp.CommandPalette"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:TerminalApp"
-    xmlns:model="using:Microsoft.Terminal.Settings.Model"
-    xmlns:mux="using:Microsoft.UI.Xaml.Controls"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:Windows10version1903="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 8)"
-    xmlns:SettingsModel="using:Microsoft.Terminal.Settings.Model"
-    TabNavigation="Cycle"
-    IsTabStop="True"
-    AllowFocusOnInteraction="True"
-    PointerPressed="_rootPointerPressed"
-    PreviewKeyDown="_previewKeyDownHandler"
-    PreviewKeyUp="_keyUpHandler"
-    LostFocus="_lostFocusHandler"
-    mc:Ignorable="d"
-    AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}">
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<UserControl x:Class="TerminalApp.CommandPalette"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:SettingsModel="using:Microsoft.Terminal.Settings.Model"
+             xmlns:Windows10version1903="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 8)"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="using:TerminalApp"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:model="using:Microsoft.Terminal.Settings.Model"
+             xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+             AllowFocusOnInteraction="True"
+             AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}"
+             IsTabStop="True"
+             LostFocus="_lostFocusHandler"
+             PointerPressed="_rootPointerPressed"
+             PreviewKeyDown="_previewKeyDownHandler"
+             PreviewKeyUp="_keyUpHandler"
+             TabNavigation="Cycle"
+             mc:Ignorable="d">
 
     <UserControl.Resources>
         <ResourceDictionary>
 
-            <!-- ThemeShadow is only on 18362. This "Windows10version1903" bit
-            adds it conditionally -->
+            <!--
+                ThemeShadow is only on 18362. This "Windows10version1903" bit
+                adds it conditionally
+            -->
             <Windows10version1903:ThemeShadow x:Name="CommandPaletteShadow" />
 
-            <!-- This creates an instance of our CommandKeyChordVisibilityConverter we can reference below -->
-            <local:EmptyStringVisibilityConverter x:Key="CommandKeyChordVisibilityConverter"/>
-            <local:EmptyStringVisibilityConverter x:Key="ParsedCommandLineTextVisibilityConverter"/>
-            <local:EmptyStringVisibilityConverter x:Key="ParentCommandVisibilityConverter"/>
-            <model:IconPathConverter x:Key="IconSourceConverter"/>
+            <!--  This creates an instance of our CommandKeyChordVisibilityConverter we can reference below  -->
+            <local:EmptyStringVisibilityConverter x:Key="CommandKeyChordVisibilityConverter" />
+            <local:EmptyStringVisibilityConverter x:Key="ParsedCommandLineTextVisibilityConverter" />
+            <local:EmptyStringVisibilityConverter x:Key="ParentCommandVisibilityConverter" />
+            <model:IconPathConverter x:Key="IconSourceConverter" />
 
-            <DataTemplate x:Key="GeneralItemTemplate" x:DataType="local:FilteredCommand">
-
-                <!-- This HorizontalContentAlignment="Stretch" is important
-                        to make sure it takes the entire width of the line -->
+            <DataTemplate x:Key="ListItemTemplate"
+                          x:DataType="local:FilteredCommand">
                 <ListViewItem HorizontalContentAlignment="Stretch"
-                                  AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
-                                  AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}">
-
-                    <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" >
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="16"/>
-                            <!-- icon -->
-                            <ColumnDefinition Width="Auto"/>
-                            <!-- command label -->
-                            <ColumnDefinition Width="*"/>
-                            <!-- key chord -->
-                            <ColumnDefinition Width="16"/>
-                            <!-- gutter for scrollbar -->
-                        </Grid.ColumnDefinitions>
-
-                        <IconSourceElement
-                                    Grid.Column="0"
-                                    Width="16"
-                                    Height="16"
-                                    IconSource="{x:Bind Item.Icon,
-                                                        Mode=OneWay,
-                                                        Converter={StaticResource IconSourceConverter}}"/>
-
-                        <local:HighlightedTextControl
-                                    Grid.Column="1"
-                                    HorizontalAlignment="Left"
-                                    Text="{x:Bind HighlightedName, Mode=OneWay}"/>
-
-                        <!-- The block for the key chord is only visible
-                                when there's actual text set as the label. See
-                                CommandKeyChordVisibilityConverter for details.
-                             We're setting the accessibility view on the
-                                border and text block to Raw because otherwise,
-                                Narrator will read out the key chord. Problem is,
-                                it already did that because it was the list item's
-                                "AcceleratorKey". It's redundant. -->
-                        <Border
-                                    Grid.Column="2"
-                                    Visibility="{x:Bind Item.KeyChordText,
-                                                 Mode=OneWay,
-                                                 Converter={StaticResource CommandKeyChordVisibilityConverter}}"
-                                    Style="{ThemeResource KeyChordBorderStyle}"
-                                    Padding="2,0,2,0"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    AutomationProperties.AccessibilityView="Raw">
-
-                            <TextBlock
-                                        Style="{ThemeResource KeyChordTextBlockStyle}"
-                                        FontSize="12"
-                                        Text="{x:Bind Item.KeyChordText, Mode=OneWay}"
-                                        AutomationProperties.AccessibilityView="Raw" />
-                        </Border>
-
-                    </Grid>
-                </ListViewItem>
+                              AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}"
+                              AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}" />
             </DataTemplate>
 
-            <DataTemplate x:Key="NestedItemTemplate" x:DataType="local:FilteredCommand">
+            <DataTemplate x:Key="GeneralItemTemplate"
+                          x:DataType="local:FilteredCommand">
+                <Grid HorizontalAlignment="Stretch"
+                      ColumnSpacing="8">
 
-                <!-- This HorizontalContentAlignment="Stretch" is important
-                        to make sure it takes the entire width of the line -->
-                <ListViewItem x:Uid="CommandPalette_MoreOptions"
-                              HorizontalContentAlignment="Stretch"
-                              AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
-                              AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}">
+                    <!--
+                        Manually set the icon to 24x16. Why 24?
+                        If it's a BitmapIcon, then the icon will just get clamped to 16x16.
+                        However, if it's a FontIcon, then the icon might actually be double wide.
+                        Giving it a width of 24 will allow a 12pt font icon enough space, in a row height of 16 wide.
+                    -->
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="24" />
+                        <!--  icon  -->
+                        <ColumnDefinition Width="Auto" />
+                        <!--  command label  -->
+                        <ColumnDefinition Width="*" />
+                        <!--  key chord  -->
+                        <ColumnDefinition Width="16" />
+                        <!--  gutter for scrollbar  -->
+                    </Grid.ColumnDefinitions>
 
-                    <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" >
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="16"/>
-                            <!-- icon -->
-                            <ColumnDefinition Width="Auto"/>
-                            <!-- command label -->
-                            <ColumnDefinition Width="*"/>
-                            <!-- key chord -->
-                            <ColumnDefinition Width="16"/>
-                            <!-- gutter for scrollbar -->
-                        </Grid.ColumnDefinitions>
+                    <IconSourceElement Grid.Column="0"
+                                       Width="24"
+                                       Height="16"
+                                       IconSource="{x:Bind Item.Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
 
-                        <IconSourceElement
-                                    Grid.Column="0"
-                                    Width="16"
-                                    Height="16"
-                                    IconSource="{x:Bind Item.Icon,
-                                                        Mode=OneWay,
-                                                        Converter={StaticResource IconSourceConverter}}"/>
+                    <local:HighlightedTextControl Grid.Column="1"
+                                                  HorizontalAlignment="Left"
+                                                  Text="{x:Bind HighlightedName, Mode=OneWay}" />
 
-                        <local:HighlightedTextControl
-                                    Grid.Column="1"
-                                    HorizontalAlignment="Left"
-                                    Text="{x:Bind HighlightedName, Mode=OneWay}"/>
-
-                        <!-- The block for the key chord is only visible
-                                when there's actual text set as the label. See
-                                CommandKeyChordVisibilityConverter for details.
-                             We're setting the accessibility view on the
-                                border and text block to Raw because otherwise,
-                                Narrator will read out the key chord. Problem is,
-                                it already did that because it was the list item's
-                                "AcceleratorKey". It's redundant. -->
-                        <Border
-                                    Grid.Column="2"
-                                    Visibility="{x:Bind Item.KeyChordText,
-                                                 Mode=OneWay,
-                                                 Converter={StaticResource CommandKeyChordVisibilityConverter}}"
-                                    Style="{ThemeResource KeyChordBorderStyle}"
-                                    Padding="2,0,2,0"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    AutomationProperties.AccessibilityView="Raw">
-
-                            <TextBlock
-                                        Style="{ThemeResource KeyChordTextBlockStyle}"
-                                        FontSize="12"
-                                        Text="{x:Bind Item.KeyChordText, Mode=OneWay}"
-                                        AutomationProperties.AccessibilityView="Raw" />
-                        </Border>
-
-                        <!-- xE70E is ChevronUp. Rotated 90 degrees, it's _ChevronRight_ -->
-                        <FontIcon
-                                    FontFamily="Segoe MDL2 Assets"
-                                    Glyph="&#xE70E;"
-                                    HorizontalAlignment="Right"
-                                    Grid.Column="2">
-
-                            <FontIcon.RenderTransform>
-                                <RotateTransform CenterX="0.5" CenterY="0.5" Angle="90"/>
-                            </FontIcon.RenderTransform>
-                        </FontIcon>
-
-                    </Grid>
-                </ListViewItem>
-            </DataTemplate>
-
-            <DataTemplate x:Key="TabItemTemplate" x:DataType="local:FilteredCommand">
-
-                <!-- This HorizontalContentAlignment="Stretch" is important
-                        to make sure it takes the entire width of the line -->
-                <ListViewItem HorizontalContentAlignment="Stretch"
-                                  AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
-                                  AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}">
-
-                    <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" >
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="16"/>
-                            <!-- icon / progress -->
-                            <ColumnDefinition Width="Auto"/>
-                            <!-- command label -->
-                            <ColumnDefinition Width="*"/>
-                            <!-- gutter for indicators -->
-                            <ColumnDefinition Width="Auto"/>
-                            <!-- Indicators -->
-                            <ColumnDefinition Width="16"/>
-                            <!-- gutter for scrollbar -->
-                        </Grid.ColumnDefinitions>
-
-                        <mux:ProgressRing
-                            Grid.Column="0"
-                            IsActive="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsProgressRingActive, Mode=OneWay}"
-                            Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsProgressRingActive, Mode=OneWay}"
-                            IsIndeterminate="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsProgressRingIndeterminate, Mode=OneWay}"
-                            Value="{x:Bind Item.(local:TabPaletteItem.TabStatus).ProgressValue, Mode=OneWay}"
-                            MinHeight="0"
-                            MinWidth="0"
-                            Height="15"
-                            Width="15"/>
-
-                        <IconSourceElement
-                                    Grid.Column="0"
-                                    Width="16"
-                                    Height="16"
-                                    IconSource="{x:Bind Item.Icon,
-                                                        Mode=OneWay,
-                                                        Converter={StaticResource IconSourceConverter}}"/>
-
-                        <local:HighlightedTextControl
-                                    Grid.Column="1"
-                                    HorizontalAlignment="Left"
-                                    Text="{x:Bind HighlightedName, Mode=OneWay}"/>
-
-                        <StackPanel
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
+                    <!--
+                        The block for the key chord is only visible
+                        when there's actual text set as the label. See
+                        CommandKeyChordVisibilityConverter for details.
+                        We're setting the accessibility view on the
+                        border and text block to Raw because otherwise,
+                        Narrator will read out the key chord. Problem is,
+                        it already did that because it was the list item's
+                        "AcceleratorKey". It's redundant.
+                    -->
+                    <Border Grid.Column="2"
+                            Padding="2,0,2,0"
                             HorizontalAlignment="Right"
-                            Orientation="Horizontal">
+                            VerticalAlignment="Center"
+                            AutomationProperties.AccessibilityView="Raw"
+                            Style="{ThemeResource KeyChordBorderStyle}"
+                            Visibility="{x:Bind Item.KeyChordText, Mode=OneWay, Converter={StaticResource CommandKeyChordVisibilityConverter}}">
 
-                            <FontIcon
-                                FontFamily="Segoe MDL2 Assets"
-                                Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).BellIndicator, Mode=OneWay}"
-                                Glyph="&#xEA8F;"
-                                FontSize="12"
-                                Margin="0,0,8,0"/>
+                        <TextBlock AutomationProperties.AccessibilityView="Raw"
+                                   FontSize="12"
+                                   Style="{ThemeResource KeyChordTextBlockStyle}"
+                                   Text="{x:Bind Item.KeyChordText, Mode=OneWay}" />
+                    </Border>
+                </Grid>
+            </DataTemplate>
 
-                            <FontIcon
-                                FontFamily="Segoe MDL2 Assets"
-                                Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsPaneZoomed, Mode=OneWay}"
-                                Glyph="&#xE8A3;"
-                                FontSize="12"
-                                Margin="0,0,8,0"/>
+            <DataTemplate x:Key="NestedItemTemplate"
+                          x:DataType="local:FilteredCommand">
+                <Grid HorizontalAlignment="Stretch"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="24" />
+                        <!--  icon  -->
+                        <ColumnDefinition Width="Auto" />
+                        <!--  command label  -->
+                        <ColumnDefinition Width="*" />
+                        <!--  key chord  -->
+                        <ColumnDefinition Width="16" />
+                        <!--  gutter for scrollbar  -->
+                    </Grid.ColumnDefinitions>
 
-                            <FontIcon x:Name="HeaderLockIcon"
-                                FontFamily="Segoe MDL2 Assets"
-                                Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsReadOnlyActive, Mode=OneWay}"
-                                Glyph="&#xE72E;"
-                                FontSize="12"
-                                Margin="0,0,8,0"/>
+                    <IconSourceElement Grid.Column="0"
+                                       Width="24"
+                                       Height="16"
+                                       IconSource="{x:Bind Item.Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
 
-                        </StackPanel>
-                    </Grid>
-                </ListViewItem>
+                    <local:HighlightedTextControl Grid.Column="1"
+                                                  HorizontalAlignment="Left"
+                                                  Text="{x:Bind HighlightedName, Mode=OneWay}" />
+
+                    <!--
+                        The block for the key chord is only visible
+                        when there's actual text set as the label. See
+                        CommandKeyChordVisibilityConverter for details.
+                        We're setting the accessibility view on the
+                        border and text block to Raw because otherwise,
+                        Narrator will read out the key chord. Problem is,
+                        it already did that because it was the list item's
+                        "AcceleratorKey". It's redundant.
+                    -->
+                    <Border Grid.Column="2"
+                            Padding="2,0,2,0"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            AutomationProperties.AccessibilityView="Raw"
+                            Style="{ThemeResource KeyChordBorderStyle}"
+                            Visibility="{x:Bind Item.KeyChordText, Mode=OneWay, Converter={StaticResource CommandKeyChordVisibilityConverter}}">
+
+                        <TextBlock AutomationProperties.AccessibilityView="Raw"
+                                   FontSize="12"
+                                   Style="{ThemeResource KeyChordTextBlockStyle}"
+                                   Text="{x:Bind Item.KeyChordText, Mode=OneWay}" />
+                    </Border>
+
+                    <!--  xE70E is ChevronUp. Rotated 90 degrees, it's _ChevronRight_  -->
+                    <FontIcon Grid.Column="2"
+                              HorizontalAlignment="Right"
+                              FontFamily="Segoe MDL2 Assets"
+                              Glyph="&#xE70E;">
+
+                        <FontIcon.RenderTransform>
+                            <RotateTransform Angle="90" CenterX="0.5" CenterY="0.5" />
+                        </FontIcon.RenderTransform>
+                    </FontIcon>
+
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="TabItemTemplate"
+                          x:DataType="local:FilteredCommand">
+                <Grid HorizontalAlignment="Stretch"
+                      AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="24" />
+                        <!--  icon / progress  -->
+                        <ColumnDefinition Width="Auto" />
+                        <!--  command label  -->
+                        <ColumnDefinition Width="*" />
+                        <!--  gutter for indicators  -->
+                        <ColumnDefinition Width="Auto" />
+                        <!--  Indicators  -->
+                        <ColumnDefinition Width="16" />
+                        <!--  gutter for scrollbar  -->
+                    </Grid.ColumnDefinitions>
+
+                    <mux:ProgressRing Grid.Column="0"
+                                      Width="15"
+                                      Height="15"
+                                      MinWidth="0"
+                                      MinHeight="0"
+                                      IsActive="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsProgressRingActive, Mode=OneWay}"
+                                      IsIndeterminate="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsProgressRingIndeterminate, Mode=OneWay}"
+                                      Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsProgressRingActive, Mode=OneWay}"
+                                      Value="{x:Bind Item.(local:TabPaletteItem.TabStatus).ProgressValue, Mode=OneWay}" />
+
+                    <IconSourceElement Grid.Column="0"
+                                       Width="24"
+                                       Height="16"
+                                       IconSource="{x:Bind Item.Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
+
+                    <local:HighlightedTextControl Grid.Column="1"
+                                                  HorizontalAlignment="Left"
+                                                  Text="{x:Bind HighlightedName, Mode=OneWay}" />
+
+                    <StackPanel Grid.Column="2"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal">
+
+                        <FontIcon Margin="0,0,8,0"
+                                  FontFamily="Segoe MDL2 Assets"
+                                  FontSize="12"
+                                  Glyph="&#xEA8F;"
+                                  Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).BellIndicator, Mode=OneWay}" />
+
+                        <FontIcon Margin="0,0,8,0"
+                                  FontFamily="Segoe MDL2 Assets"
+                                  FontSize="12"
+                                  Glyph="&#xE8A3;"
+                                  Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsPaneZoomed, Mode=OneWay}" />
+
+                        <FontIcon x:Name="HeaderLockIcon"
+                                  Margin="0,0,8,0"
+                                  FontFamily="Segoe MDL2 Assets"
+                                  FontSize="12"
+                                  Glyph="&#xE72E;"
+                                  Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsReadOnlyActive, Mode=OneWay}" />
+
+                    </StackPanel>
+                </Grid>
             </DataTemplate>
 
             <local:PaletteItemTemplateSelector x:Key="PaletteItemTemplateSelector"
-                                               TabItemTemplate="{StaticResource TabItemTemplate}"
                                                GeneralItemTemplate="{StaticResource GeneralItemTemplate}"
-                                               NestedItemTemplate="{StaticResource NestedItemTemplate}"/>
+                                               NestedItemTemplate="{StaticResource NestedItemTemplate}"
+                                               TabItemTemplate="{StaticResource TabItemTemplate}" />
 
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Dark">
-                    <Style x:Key="CommandPaletteBackground" TargetType="Grid">
+                    <Style x:Key="CommandPaletteBackground"
+                           TargetType="Grid">
                         <Setter Property="Background" Value="#333333" />
                     </Style>
-                    <!-- TextBox colors !-->
-                    <SolidColorBrush x:Key="TextControlBackground" Color="#333333"/>
-                    <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush" Color="#B5B5B5"/>
-                    <SolidColorBrush x:Key="TextControlForeground" Color="#B5B5B5"/>
-                    <SolidColorBrush x:Key="TextControlBorderBrush" Color="#404040"/>
-                    <SolidColorBrush x:Key="TextControlButtonForeground" Color="#B5B5B5"/>
+                    <!--  TextBox colors !  -->
+                    <SolidColorBrush x:Key="TextControlBackground"
+                                     Color="#333333" />
+                    <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush"
+                                     Color="#B5B5B5" />
+                    <SolidColorBrush x:Key="TextControlForeground"
+                                     Color="#B5B5B5" />
+                    <SolidColorBrush x:Key="TextControlBorderBrush"
+                                     Color="#404040" />
+                    <SolidColorBrush x:Key="TextControlButtonForeground"
+                                     Color="#B5B5B5" />
 
-                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#404040"/>
-                    <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="#FFFFFF"/>
-                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#404040"/>
-                    <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver" Color="#FF4343"/>
+                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver"
+                                     Color="#404040" />
+                    <SolidColorBrush x:Key="TextControlForegroundPointerOver"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver"
+                                     Color="#404040" />
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver"
+                                     Color="#FF4343" />
 
-                    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#333333"/>
-                    <SolidColorBrush x:Key="TextControlForegroundFocused" Color="#FFFFFF"/>
-                    <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#404040"/>
-                    <SolidColorBrush x:Key="TextControlButtonForegroundPressed" Color="#FFFFFF"/>
-                    <SolidColorBrush x:Key="TextControlButtonBackgroundPressed" Color="#FF4343"/>
+                    <SolidColorBrush x:Key="TextControlBackgroundFocused"
+                                     Color="#333333" />
+                    <SolidColorBrush x:Key="TextControlForegroundFocused"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="TextControlBorderBrushFocused"
+                                     Color="#404040" />
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPressed"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="TextControlButtonBackgroundPressed"
+                                     Color="#FF4343" />
 
                     <!--  KeyChordText styles  -->
-                    <Style x:Key="KeyChordBorderStyle" TargetType="Border">
+                    <Style x:Key="KeyChordBorderStyle"
+                           TargetType="Border">
                         <Setter Property="BorderThickness" Value="1" />
                         <Setter Property="CornerRadius" Value="1" />
                         <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
                         <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
-                    <Style x:Key="KeyChordTextBlockStyle" TargetType="TextBlock">
+                    <Style x:Key="KeyChordTextBlockStyle"
+                           TargetType="TextBlock">
                         <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
 
                     <!--  ParsedCommandLineText styles  -->
-                    <Style x:Key="ParsedCommandLineBorderStyle" TargetType="Border">
+                    <Style x:Key="ParsedCommandLineBorderStyle"
+                           TargetType="Border">
                         <Setter Property="BorderThickness" Value="1" />
                         <Setter Property="CornerRadius" Value="1" />
                         <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
                         <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
-                    <Style x:Key="ParsedCommandLineTextBlockStyle" TargetType="TextBlock">
+                    <Style x:Key="ParsedCommandLineTextBlockStyle"
+                           TargetType="TextBlock">
                         <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Light">
-                    <Style x:Key="CommandPaletteBackground" TargetType="Grid">
+                    <Style x:Key="CommandPaletteBackground"
+                           TargetType="Grid">
                         <Setter Property="Background" Value="#CCCCCC" />
                     </Style>
-                    <!-- TextBox colors !-->
-                    <SolidColorBrush x:Key="TextControlBackground" Color="#CCCCCC"/>
-                    <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush" Color="#636363"/>
-                    <SolidColorBrush x:Key="TextControlBorderBrush" Color="#636363"/>
-                    <SolidColorBrush x:Key="TextControlButtonForeground" Color="#636363"/>
+                    <!--  TextBox colors !  -->
+                    <SolidColorBrush x:Key="TextControlBackground"
+                                     Color="#CCCCCC" />
+                    <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush"
+                                     Color="#636363" />
+                    <SolidColorBrush x:Key="TextControlBorderBrush"
+                                     Color="#636363" />
+                    <SolidColorBrush x:Key="TextControlButtonForeground"
+                                     Color="#636363" />
 
-                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#DADADA"/>
-                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#636363"/>
-                    <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver" Color="#FF4343"/>
+                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver"
+                                     Color="#DADADA" />
+                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver"
+                                     Color="#636363" />
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver"
+                                     Color="#FF4343" />
 
-                    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#CCCCCC"/>
-                    <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#636363"/>
-                    <SolidColorBrush x:Key="TextControlButtonForegroundPressed" Color="#FFFFFF"/>
-                    <SolidColorBrush x:Key="TextControlButtonBackgroundPressed" Color="#FF4343"/>
+                    <SolidColorBrush x:Key="TextControlBackgroundFocused"
+                                     Color="#CCCCCC" />
+                    <SolidColorBrush x:Key="TextControlBorderBrushFocused"
+                                     Color="#636363" />
+                    <SolidColorBrush x:Key="TextControlButtonForegroundPressed"
+                                     Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="TextControlButtonBackgroundPressed"
+                                     Color="#FF4343" />
 
                     <!--  KeyChordText styles  -->
-                    <Style x:Key="KeyChordBorderStyle" TargetType="Border">
+                    <Style x:Key="KeyChordBorderStyle"
+                           TargetType="Border">
                         <Setter Property="BorderThickness" Value="1" />
                         <Setter Property="CornerRadius" Value="1" />
                         <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
                         <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
-                    <Style x:Key="KeyChordTextBlockStyle" TargetType="TextBlock">
+                    <Style x:Key="KeyChordTextBlockStyle"
+                           TargetType="TextBlock">
                         <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
 
                     <!--  ParsedCommandLineText styles  -->
-                    <Style x:Key="ParsedCommandLineBorderStyle" TargetType="Border">
+                    <Style x:Key="ParsedCommandLineBorderStyle"
+                           TargetType="Border">
                         <Setter Property="BorderThickness" Value="1" />
                         <Setter Property="CornerRadius" Value="1" />
                         <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
                         <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
-                    <Style x:Key="ParsedCommandLineTextBlockStyle" TargetType="TextBlock">
+                    <Style x:Key="ParsedCommandLineTextBlockStyle"
+                           TargetType="TextBlock">
                         <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="HighContrast">
-                    <Style x:Key="CommandPaletteBackground" TargetType="Grid">
+                    <Style x:Key="CommandPaletteBackground"
+                           TargetType="Grid">
                         <Setter Property="Background" Value="{ThemeResource SystemColorWindowColor}" />
                     </Style>
 
-                    <!--  KeyChordText styles (use XAML defaults for High Contrast theme) -->
-                    <Style x:Key="KeyChordBorderStyle" TargetType="Border"/>
-                    <Style x:Key="KeyChordTextBlockStyle" TargetType="TextBlock"/>
+                    <!--  KeyChordText styles (use XAML defaults for High Contrast theme)  -->
+                    <Style x:Key="KeyChordBorderStyle"
+                           TargetType="Border" />
+                    <Style x:Key="KeyChordTextBlockStyle"
+                           TargetType="TextBlock" />
 
-                    <!--  ParsedCommandLineText styles (use XAML defaults for High Contrast theme) -->
-                    <Style x:Key="ParsedCommandLineBorderStyle" TargetType="Border"/>
-                    <Style x:Key="ParsedCommandLineTextBlockStyle" TargetType="TextBlock"/>
+                    <!--  ParsedCommandLineText styles (use XAML defaults for High Contrast theme)  -->
+                    <Style x:Key="ParsedCommandLineBorderStyle"
+                           TargetType="Border" />
+                    <Style x:Key="ParsedCommandLineTextBlockStyle"
+                           TargetType="TextBlock" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
@@ -367,140 +384,121 @@ the MIT License. See LICENSE in the project root for license information. -->
         </Grid.ColumnDefinitions>
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="8*"/>
-            <RowDefinition Height="2*"/>
+            <RowDefinition Height="8*" />
+            <RowDefinition Height="2*" />
         </Grid.RowDefinitions>
 
-        <!-- Setting the row/col span of this shadow backdrop is a bit of a hack. In
-        order to receive pointer events, an element needs to be _not_ transparent.
-        However, we want to be able to eat all the clicks outside the immediate
-        bounds of the command palette, and we don't want a semi-transparent overlay
-        over all of the UI. Fortunately, if we make this _shadowBackdrop the size of
-        the entire page, then it can be mostly transparent, and cause the root grid
-        to receive clicks _anywhere_ in its bounds. -->
+        <!--
+            Setting the row/col span of this shadow backdrop is a bit of a hack. In
+            order to receive pointer events, an element needs to be _not_ transparent.
+            However, we want to be able to eat all the clicks outside the immediate
+            bounds of the command palette, and we don't want a semi-transparent overlay
+            over all of the UI. Fortunately, if we make this _shadowBackdrop the size of
+            the entire page, then it can be mostly transparent, and cause the root grid
+            to receive clicks _anywhere_ in its bounds.
+        -->
 
-        <Grid
-            x:Name="_shadowBackdrop"
-            Background="Transparent"
-            Grid.Column="0"
-            Grid.Row="0"
-            Grid.ColumnSpan="3"
-            Grid.RowSpan="2"
-            HorizontalAlignment="Stretch"
-            VerticalAlignment="Stretch">
-        </Grid>
+        <Grid x:Name="_shadowBackdrop"
+              Grid.Row="0"
+              Grid.RowSpan="2"
+              Grid.Column="0"
+              Grid.ColumnSpan="3"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch"
+              Background="Transparent" />
 
-        <Grid
-            x:Name="_backdrop"
-            Style="{ThemeResource CommandPaletteBackground}"
-            CornerRadius="{ThemeResource ControlCornerRadius}"
-            PointerPressed="_backdropPointerPressed"
-            Margin="8"
-            Grid.Column="1"
-            Grid.Row="0"
-            Windows10version1903:Shadow="{StaticResource CommandPaletteShadow}"
-            HorizontalAlignment="Stretch"
-            VerticalAlignment="Top">
+        <Grid x:Name="_backdrop"
+              Grid.Row="0"
+              Grid.Column="1"
+              Margin="8"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Top"
+              Windows10version1903:Shadow="{StaticResource CommandPaletteShadow}"
+              CornerRadius="{ThemeResource ControlCornerRadius}"
+              PointerPressed="_backdropPointerPressed"
+              Style="{ThemeResource CommandPaletteBackground}">
 
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <TextBox
-                Grid.Row="0"
-                x:Name="_searchBox"
-                Margin="8"
-                Padding="18,8,8,8"
-                IsSpellCheckEnabled="False"
-                TextChanged="_filterTextChanged"
-                PlaceholderText="{x:Bind SearchBoxPlaceholderText, Mode=OneWay}"
-                Text="">
-            </TextBox>
+            <TextBox x:Name="_searchBox"
+                     Grid.Row="0"
+                     Margin="8"
+                     Padding="18,8,8,8"
+                     IsSpellCheckEnabled="False"
+                     PlaceholderText="{x:Bind SearchBoxPlaceholderText, Mode=OneWay}"
+                     Text=""
+                     TextChanged="_filterTextChanged" />
 
-            <TextBlock
-                Grid.Row="0"
-                x:Name="_prefixCharacter"
-                Margin="16,16,0,-8"
-                FontSize="14"
-                HorizontalAlignment="Left"
-                Visibility="{x:Bind PrefixCharacter,
-                             Mode=OneWay,
-                             Converter={StaticResource ParentCommandVisibilityConverter}}"
-                Text="{x:Bind PrefixCharacter, Mode=OneWay}"
-                >
-            </TextBlock>
+            <TextBlock x:Name="_prefixCharacter"
+                       Grid.Row="0"
+                       Margin="16,16,0,-8"
+                       HorizontalAlignment="Left"
+                       FontSize="14"
+                       Text="{x:Bind PrefixCharacter, Mode=OneWay}"
+                       Visibility="{x:Bind PrefixCharacter, Mode=OneWay, Converter={StaticResource ParentCommandVisibilityConverter}}" />
 
-            <StackPanel Orientation="Horizontal"
-                    Padding="16, 0, 16, 4"
-                    Grid.Row="1"
-                    Visibility="{x:Bind ParentCommandName,
-                                 Mode=OneWay,
-                                 Converter={StaticResource ParentCommandVisibilityConverter}}">
+            <StackPanel Grid.Row="1"
+                        Padding="16,0,16,4"
+                        Orientation="Horizontal"
+                        Visibility="{x:Bind ParentCommandName, Mode=OneWay, Converter={StaticResource ParentCommandVisibilityConverter}}">
 
-                <Button
-                    Background="Transparent"
-                    x:Name="_parentCommandBackButton"
-                    x:Uid="ParentCommandBackButton"
-                    Click="_moveBackButtonClicked"
-                    ClickMode="Press"
-                    VerticalAlignment="Center">
-                    <FontIcon
-                        FontSize="12"
-                        FontFamily="Segoe MDL2 Assets"
-                        Glyph="&#xE76b;">
-                    </FontIcon>
+                <Button x:Name="_parentCommandBackButton"
+                        x:Uid="ParentCommandBackButton"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        Click="_moveBackButtonClicked"
+                        ClickMode="Press">
+                    <FontIcon FontFamily="Segoe MDL2 Assets"
+                              FontSize="12"
+                              Glyph="&#xE76b;" />
                 </Button>
 
-                <TextBlock
-                    Padding="16, 0, 16, 4"
-                    x:Name="_parentCommandText"
-                    FontStyle="Italic"
-                    Grid.Row="1"
-                    Text="{x:Bind ParentCommandName, Mode=OneWay}"
-                    VerticalAlignment="Center">
-                </TextBlock>
+                <TextBlock x:Name="_parentCommandText"
+                           Grid.Row="1"
+                           Padding="16,0,16,4"
+                           VerticalAlignment="Center"
+                           FontStyle="Italic"
+                           Text="{x:Bind ParentCommandName, Mode=OneWay}" />
             </StackPanel>
 
-            <TextBlock
-                Padding="16"
-                x:Name="_noMatchesText"
-                FontStyle="Italic"
-                Visibility="Collapsed"
-                Grid.Row="1"
-                Text="{x:Bind NoMatchesText, Mode=OneWay}">
-            </TextBlock>
+            <TextBlock x:Name="_noMatchesText"
+                       Grid.Row="1"
+                       Padding="16"
+                       FontStyle="Italic"
+                       Text="{x:Bind NoMatchesText, Mode=OneWay}"
+                       Visibility="Collapsed" />
 
-            <Border
-                Grid.Row="1"
-                Visibility="{x:Bind ParsedCommandLineText, Mode=OneWay, Converter={StaticResource ParsedCommandLineTextVisibilityConverter}}"
-                Style="{ThemeResource ParsedCommandLineBorderStyle}"
-		        Padding="16"
-		        HorizontalAlignment="Stretch"
-                VerticalAlignment="Center">
+            <Border Grid.Row="1"
+                    Padding="16"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Center"
+                    Style="{ThemeResource ParsedCommandLineBorderStyle}"
+                    Visibility="{x:Bind ParsedCommandLineText, Mode=OneWay, Converter={StaticResource ParsedCommandLineTextVisibilityConverter}}">
 
-                <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
-                    <TextBlock
-                        FontStyle="Italic"
-                        TextWrapping="Wrap"
-                        Text="{x:Bind ParsedCommandLineText, Mode=OneWay}"/>
+                <ScrollViewer MaxHeight="200"
+                              VerticalScrollBarVisibility="Auto">
+                    <TextBlock FontStyle="Italic"
+                               Text="{x:Bind ParsedCommandLineText, Mode=OneWay}"
+                               TextWrapping="Wrap" />
                 </ScrollViewer>
             </Border>
 
-            <ListView
-                Grid.Row="2"
-                x:Name="_filteredActionsView"
-                HorizontalAlignment="Stretch"
-                VerticalAlignment="Stretch"
-                SelectionMode="Single"
-                CanReorderItems="False"
-                AllowDrop="False"
-                IsItemClickEnabled="True"
-                ItemClick="_listItemClicked"
-                ItemsSource="{x:Bind FilteredActions}"
-                ItemTemplateSelector="{StaticResource PaletteItemTemplateSelector}">
-            </ListView>
+            <ListView x:Name="_filteredActionsView"
+                      Grid.Row="2"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      AllowDrop="False"
+                      CanReorderItems="False"
+                      ChoosingItemContainer="_choosingItemContainer"
+                      ContainerContentChanging="_containerContentChanging"
+                      IsItemClickEnabled="True"
+                      ItemClick="_listItemClicked"
+                      ItemsSource="{x:Bind FilteredActions}"
+                      SelectionMode="Single" />
 
         </Grid>
 

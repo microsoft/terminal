@@ -533,7 +533,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                               &NumToWrite,
                                               &NumSpaces,
                                               _originalCursorPosition.X,
-                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
+                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
                                               &ScrollY);
                     if (NT_SUCCESS(status))
                     {
@@ -615,7 +615,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                                   &NumToWrite,
                                                   nullptr,
                                                   _originalCursorPosition.X,
-                                                  WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
+                                                  WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
                                                   nullptr);
                         if (!NT_SUCCESS(status))
                         {
@@ -716,7 +716,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
             // write the new command line to the screen
             NumToWrite = _bytesRead;
 
-            DWORD dwFlags = WC_DESTRUCTIVE_BACKSPACE | WC_ECHO;
+            DWORD dwFlags = WC_DESTRUCTIVE_BACKSPACE | WC_PRINTABLE_CONTROL_CHARS;
             if (wch == UNICODE_CARRIAGERETURN)
             {
                 dwFlags |= WC_KEEP_CURSOR_VISIBLE;
@@ -786,7 +786,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                               &NumToWrite,
                                               nullptr,
                                               _originalCursorPosition.X,
-                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
+                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
                                               nullptr);
                     if (!NT_SUCCESS(status))
                     {
@@ -848,7 +848,7 @@ size_t COOKED_READ_DATA::Write(const std::wstring_view wstr)
                                                       &bytesInserted,
                                                       &NumSpaces,
                                                       OriginalCursorPosition().X,
-                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
+                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
                                                       &ScrollY));
         OriginalCursorPosition().Y += ScrollY;
         VisibleCharCount() += NumSpaces;
@@ -1196,4 +1196,13 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
         }
     }
     return STATUS_SUCCESS;
+}
+
+void COOKED_READ_DATA::MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer)
+{
+    // See the comment in WaitBlock.cpp for more information.
+    if (_userBuffer == reinterpret_cast<const wchar_t*>(oldBuffer))
+    {
+        _userBuffer = reinterpret_cast<wchar_t*>(newBuffer);
+    }
 }

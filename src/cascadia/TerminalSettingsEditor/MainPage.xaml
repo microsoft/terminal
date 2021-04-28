@@ -1,140 +1,181 @@
-﻿<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
-the MIT License. See LICENSE in the project root for license information. -->
-<Page
-    x:Class="Microsoft.Terminal.Settings.Editor.MainPage"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-    mc:Ignorable="d">
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.MainPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
 
     <Page.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="CommonResources.xaml"/>
+                <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <AcrylicBrush x:Key="NavigationViewDefaultPaneBackground"
                           BackgroundSource="Backdrop"
+                          FallbackColor="{ThemeResource SystemChromeMediumLowColor}"
                           TintColor="{ThemeResource SystemChromeMediumColor}"
-                          TintOpacity="0.5"/>
+                          TintOpacity="0.5" />
             <AcrylicBrush x:Key="NavigationViewTopPaneBackground"
                           BackgroundSource="Backdrop"
+                          FallbackColor="{ThemeResource SystemChromeMediumLowColor}"
                           TintColor="{ThemeResource SystemChromeMediumColor}"
-                          TintOpacity="0.5"/>
+                          TintOpacity="0.5" />
             <AcrylicBrush x:Key="NavigationViewExpandedPaneBackground"
                           BackgroundSource="HostBackdrop"
+                          FallbackColor="{ThemeResource SystemChromeMediumLowColor}"
                           TintColor="{ThemeResource SystemChromeMediumColor}"
-                          TintOpacity="0.7"/>
+                          TintOpacity="0.7" />
         </ResourceDictionary>
     </Page.Resources>
 
     <muxc:NavigationView x:Name="SettingsNav"
-                         IsSettingsVisible="False"
-                         Header="{Binding ElementName=SettingsNav, Path=SelectedItem.Content, Mode=OneWay}"
-                         Loaded="SettingsNav_Loaded"
-                         ItemInvoked="SettingsNav_ItemInvoked"
                          IsBackButtonVisible="Collapsed"
+                         IsSettingsVisible="False"
+                         ItemInvoked="SettingsNav_ItemInvoked"
+                         Loaded="SettingsNav_Loaded"
                          TabFocusNavigation="Cycle">
+
+        <muxc:NavigationView.Header>
+            <StackPanel Orientation="Horizontal">
+                <!--
+                    This height is taken from NavigationViewTitleHeaderContentControlTextStyle's
+                    FontSize. Our icons may or may not be font icons, so we want to make sure to clamp them to this size.
+                -->
+                <IconSourceElement Height="28"
+                                   Margin="{ThemeResource NavigationViewHeaderMargin}"
+                                   IconSource="{Binding ElementName=SettingsNav, Path=SelectedItem.Icon.IconSource, Mode=OneWay}" />
+                <TextBlock Margin="{ThemeResource NavigationViewHeaderMargin}"
+                           Text="{Binding ElementName=SettingsNav, Path=SelectedItem.Content, Mode=OneWay}" />
+            </StackPanel>
+        </muxc:NavigationView.Header>
 
         <muxc:NavigationView.MenuItems>
 
             <muxc:NavigationViewItem x:Uid="Nav_Launch"
                                      Tag="Launch_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE7B5;"/>
+                    <IconSourceElement>
+                        <IconSourceElement.IconSource>
+                            <FontIconSource Glyph="&#xE7B5;" />
+                        </IconSourceElement.IconSource>
+                    </IconSourceElement>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItem x:Uid="Nav_Interaction"
                                      Tag="Interaction_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE7C9;"/>
+                    <IconSourceElement>
+                        <IconSourceElement.IconSource>
+                            <FontIconSource Glyph="&#xE7C9;" />
+                        </IconSourceElement.IconSource>
+                    </IconSourceElement>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItem x:Uid="Nav_Appearance"
                                      Tag="GlobalAppearance_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE771;"/>
+                    <IconSourceElement>
+                        <IconSourceElement.IconSource>
+                            <FontIconSource Glyph="&#xE771;" />
+                        </IconSourceElement.IconSource>
+                    </IconSourceElement>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItem x:Uid="Nav_ColorSchemes"
                                      Tag="ColorSchemes_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE790;"/>
+                    <IconSourceElement>
+                        <IconSourceElement.IconSource>
+                            <FontIconSource Glyph="&#xE790;" />
+                        </IconSourceElement.IconSource>
+                    </IconSourceElement>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItem x:Uid="Nav_Rendering"
-                                     Tag="Rendering_Nav" >
+                                     Tag="Rendering_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE7F8;"/>
+                    <IconSourceElement>
+                        <IconSourceElement.IconSource>
+                            <FontIconSource Glyph="&#xE7F8;" />
+                        </IconSourceElement.IconSource>
+                    </IconSourceElement>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItem x:Uid="Nav_Actions"
-                                     Tag="Actions_Nav" >
+                                     Tag="Actions_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE765;"/>
+                    <IconSourceElement>
+                        <IconSourceElement.IconSource>
+                            <FontIconSource Glyph="&#xE765;" />
+                        </IconSourceElement.IconSource>
+                    </IconSourceElement>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
-            <muxc:NavigationViewItemHeader x:Uid="Nav_Profiles"/>
-
-            <muxc:NavigationViewItem x:Uid="Nav_ProfileDefaults"
-                                     x:Name="BaseLayerMenuItem"
-                                     Tag="GlobalProfile_Nav">
-                <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE81E;"/>
-                </muxc:NavigationViewItem.Icon>
-            </muxc:NavigationViewItem>
+            <muxc:NavigationViewItemHeader x:Uid="Nav_Profiles" />
 
         </muxc:NavigationView.MenuItems>
 
         <muxc:NavigationView.PaneFooter>
-            <!--The OpenJson item needs both Tapped and KeyDown handler-->
-            <muxc:NavigationViewItem x:Uid="Nav_OpenJSON"
-                                     x:Name="OpenJsonNavItem"
-                                     Tapped="OpenJsonTapped"
-                                     KeyDown="OpenJsonKeyDown">
+            <!--  The OpenJson item needs both Tapped and KeyDown handler  -->
+            <muxc:NavigationViewItem x:Name="OpenJsonNavItem"
+                                     x:Uid="Nav_OpenJSON"
+                                     KeyDown="OpenJsonKeyDown"
+                                     Tapped="OpenJsonTapped">
                 <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE713;"/>
+                    <IconSourceElement>
+                        <IconSourceElement.IconSource>
+                            <FontIconSource Glyph="&#xE713;" />
+                        </IconSourceElement.IconSource>
+                    </IconSourceElement>
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
         </muxc:NavigationView.PaneFooter>
 
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="*"></RowDefinition>
-                <RowDefinition Height="Auto"></RowDefinition>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Frame x:Name="contentFrame"
-                   Grid.Row="0"></Frame>
-            <Grid Height="100" Grid.Row="1"
+                   Grid.Row="0" />
+            <Grid Grid.Row="1"
+                  Height="100"
                   BorderBrush="{ThemeResource SystemBaseLowColor}"
                   BorderThickness="0,1,0,0">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"></ColumnDefinition>
+                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Uid="Settings_UnsavedSettingsWarning"
-                           Visibility="Collapsed"
-                           Foreground="Goldenrod"
-                           VerticalAlignment="Center"
+                           Margin="30,0,0,0"
                            HorizontalAlignment="Left"
+                           VerticalAlignment="Center"
+                           Foreground="Goldenrod"
                            TextAlignment="Left"
-                           Margin="30,0,0,0"/>
-                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Right" Orientation="Horizontal" Margin="0,0,30,0">
-                    <Button x:Uid="Settings_ResetSettingsButton"
-                            x:Name="ResetButton"
-                            Click="ResetButton_Click"/>
-                    <Button x:Uid="Settings_SaveSettingsButton"
-                            x:Name="SaveButton"
-                            Style="{StaticResource AccentButtonStyle}"
+                           Visibility="Collapsed" />
+                <StackPanel Margin="0,0,30,0"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                    <Button x:Name="ResetButton"
+                            x:Uid="Settings_ResetSettingsButton"
+                            Click="ResetButton_Click" />
+                    <Button x:Name="SaveButton"
+                            x:Uid="Settings_SaveSettingsButton"
                             Margin="10,0,0,0"
-                            Click="SaveButton_Click"/>
+                            Click="SaveButton_Click"
+                            Style="{StaticResource AccentButtonStyle}" />
                 </StackPanel>
             </Grid>
         </Grid>

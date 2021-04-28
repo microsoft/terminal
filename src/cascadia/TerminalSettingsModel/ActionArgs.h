@@ -30,10 +30,14 @@
 #include "NewWindowArgs.g.h"
 #include "PrevTabArgs.g.h"
 #include "NextTabArgs.g.h"
+#include "RenameWindowArgs.g.h"
+#include "GlobalSummonArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
+#include "HashUtils.h"
 #include "TerminalWarnings.h"
+#include "../inc/WindowingBehavior.h"
 
 #include "TerminalSettingsSerializationHelpers.h"
 
@@ -42,6 +46,18 @@
 //   class that implements IActionArgs
 // * ActionEventArgs holds a single IActionArgs. For events that don't need
 //   additional args, this can be nullptr.
+
+template<>
+constexpr size_t Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(const winrt::Microsoft::Terminal::Settings::Model::IActionArgs& args)
+{
+    return gsl::narrow_cast<size_t>(args.Hash());
+}
+
+template<>
+constexpr size_t Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& args)
+{
+    return gsl::narrow_cast<size_t>(args.Hash());
+}
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -70,6 +86,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(Windows::Foundation::IReference<int32_t>, ProfileIndex, nullptr);
         WINRT_PROPERTY(winrt::hstring, Profile, L"");
         WINRT_PROPERTY(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, nullptr);
+        WINRT_PROPERTY(winrt::hstring, ColorScheme);
 
         static constexpr std::string_view CommandlineKey{ "commandline" };
         static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
@@ -78,6 +95,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static constexpr std::string_view ProfileIndexKey{ "index" };
         static constexpr std::string_view ProfileKey{ "profile" };
         static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
+        static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
 
     public:
         hstring GenerateName() const;
@@ -91,7 +109,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                    other.TabColor() == _TabColor &&
                    other.ProfileIndex() == _ProfileIndex &&
                    other.Profile() == _Profile &&
-                   other.SuppressApplicationTitle() == _SuppressApplicationTitle;
+                   other.SuppressApplicationTitle() == _SuppressApplicationTitle &&
+                   other.ColorScheme() == _ColorScheme;
         };
         static Model::NewTerminalArgs FromJson(const Json::Value& json)
         {
@@ -104,6 +123,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, ProfileKey, args->_Profile);
             JsonUtils::GetValueForKey(json, TabColorKey, args->_TabColor);
             JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, args->_SuppressApplicationTitle);
+            JsonUtils::GetValueForKey(json, ColorSchemeKey, args->_ColorScheme);
             return *args;
         }
         Model::NewTerminalArgs Copy() const
@@ -116,7 +136,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_ProfileIndex = _ProfileIndex;
             copy->_Profile = _Profile;
             copy->_SuppressApplicationTitle = _SuppressApplicationTitle;
+            copy->_ColorScheme = _ColorScheme;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Commandline, _StartingDirectory, _TabTitle, _TabColor, _ProfileIndex, _Profile, _SuppressApplicationTitle, _ColorScheme);
         }
     };
 
@@ -158,6 +183,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_CopyFormatting = _CopyFormatting;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_SingleLine, _CopyFormatting);
+        }
     };
 
     struct NewTabArgs : public NewTabArgsT<NewTabArgs>
@@ -191,6 +220,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<NewTabArgs>() };
             copy->_TerminalArgs = _TerminalArgs.Copy();
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_TerminalArgs);
         }
     };
 
@@ -227,6 +260,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<SwitchToTabArgs>() };
             copy->_TabIndex = _TabIndex;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_TabIndex);
         }
     };
 
@@ -268,6 +305,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<ResizePaneArgs>() };
             copy->_ResizeDirection = _ResizeDirection;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_ResizeDirection);
         }
     };
 
@@ -313,6 +354,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_FocusDirection = _FocusDirection;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_FocusDirection);
+        }
     };
 
     struct AdjustFontSizeArgs : public AdjustFontSizeArgsT<AdjustFontSizeArgs>
@@ -346,6 +391,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<AdjustFontSizeArgs>() };
             copy->_Delta = _Delta;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Delta);
         }
     };
 
@@ -384,11 +433,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_Input = _Input;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Input);
+        }
     };
 
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
         SplitPaneArgs() = default;
+        SplitPaneArgs(SplitType splitMode, SplitState style, double size, const Model::NewTerminalArgs& terminalArgs) :
+            _SplitMode{ splitMode },
+            _SplitStyle{ style },
+            _SplitSize{ size },
+            _TerminalArgs{ terminalArgs } {};
         SplitPaneArgs(SplitState style, double size, const Model::NewTerminalArgs& terminalArgs) :
             _SplitStyle{ style },
             _SplitSize{ size },
@@ -446,6 +504,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_SplitSize = _SplitSize;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_SplitStyle, _TerminalArgs, _SplitMode, _SplitSize);
+        }
     };
 
     struct OpenSettingsArgs : public OpenSettingsArgsT<OpenSettingsArgs>
@@ -482,11 +544,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_Target = _Target;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Target);
+        }
     };
 
     struct SetColorSchemeArgs : public SetColorSchemeArgsT<SetColorSchemeArgs>
     {
         SetColorSchemeArgs() = default;
+        SetColorSchemeArgs(winrt::hstring name) :
+            _SchemeName{ name } {};
         WINRT_PROPERTY(winrt::hstring, SchemeName, L"");
 
         static constexpr std::string_view NameKey{ "colorScheme" };
@@ -519,6 +587,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<SetColorSchemeArgs>() };
             copy->_SchemeName = _SchemeName;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_SchemeName);
         }
     };
 
@@ -554,6 +626,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_TabColor = _TabColor;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_TabColor);
+        }
     };
 
     struct RenameTabArgs : public RenameTabArgsT<RenameTabArgs>
@@ -587,6 +663,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<RenameTabArgs>() };
             copy->_Title = _Title;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Title);
         }
     };
 
@@ -628,6 +708,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_Commandline = _Commandline;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Commandline);
+        }
     };
 
     struct CloseOtherTabsArgs : public CloseOtherTabsArgsT<CloseOtherTabsArgs>
@@ -664,6 +748,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_Index = _Index;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Index);
+        }
     };
 
     struct CloseTabsAfterArgs : public CloseTabsAfterArgsT<CloseTabsAfterArgs>
@@ -699,6 +787,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<CloseTabsAfterArgs>() };
             copy->_Index = _Index;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Index);
         }
     };
 
@@ -743,6 +835,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_Direction = _Direction;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Direction);
+        }
     };
 
     struct ScrollUpArgs : public ScrollUpArgsT<ScrollUpArgs>
@@ -777,6 +873,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_RowsToScroll = _RowsToScroll;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_RowsToScroll);
+        }
     };
 
     struct ScrollDownArgs : public ScrollDownArgsT<ScrollDownArgs>
@@ -810,6 +910,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<ScrollDownArgs>() };
             copy->_RowsToScroll = _RowsToScroll;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_RowsToScroll);
         }
     };
 
@@ -846,6 +950,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<ToggleCommandPaletteArgs>() };
             copy->_LaunchMode = _LaunchMode;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_LaunchMode);
         }
     };
 
@@ -890,6 +998,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_Direction = _Direction;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Direction);
+        }
     };
 
     struct NewWindowArgs : public NewWindowArgsT<NewWindowArgs>
@@ -924,6 +1036,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_TerminalArgs = _TerminalArgs.Copy();
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_TerminalArgs);
+        }
     };
 
     struct PrevTabArgs : public PrevTabArgsT<PrevTabArgs>
@@ -956,6 +1072,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<PrevTabArgs>() };
             copy->_SwitcherMode = _SwitcherMode;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_SwitcherMode);
         }
     };
 
@@ -990,7 +1110,105 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_SwitcherMode = _SwitcherMode;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_SwitcherMode);
+        }
     };
+
+    struct RenameWindowArgs : public RenameWindowArgsT<RenameWindowArgs>
+    {
+        RenameWindowArgs() = default;
+        WINRT_PROPERTY(winrt::hstring, Name);
+        static constexpr std::string_view NameKey{ "name" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<RenameWindowArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Name == _Name;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<RenameWindowArgs>();
+            JsonUtils::GetValueForKey(json, NameKey, args->_Name);
+            return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<RenameWindowArgs>() };
+            copy->_Name = _Name;
+            return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Name);
+        }
+    };
+
+    struct GlobalSummonArgs : public GlobalSummonArgsT<GlobalSummonArgs>
+    {
+        GlobalSummonArgs() = default;
+        WINRT_PROPERTY(winrt::hstring, Name, L"");
+        WINRT_PROPERTY(Model::DesktopBehavior, Desktop, Model::DesktopBehavior::ToCurrent);
+        WINRT_PROPERTY(bool, ToggleVisibility, true);
+
+        static constexpr std::string_view NameKey{ "name" };
+        static constexpr std::string_view DesktopKey{ "desktop" };
+        static constexpr std::string_view ToggleVisibilityKey{ "toggleVisibility" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            if (auto otherAsUs = other.try_as<GlobalSummonArgs>())
+            {
+                return otherAsUs->_Name == _Name &&
+                       otherAsUs->_Desktop == _Desktop &&
+                       otherAsUs->_ToggleVisibility == _ToggleVisibility;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<GlobalSummonArgs>();
+            JsonUtils::GetValueForKey(json, NameKey, args->_Name);
+            JsonUtils::GetValueForKey(json, DesktopKey, args->_Desktop);
+            JsonUtils::GetValueForKey(json, ToggleVisibilityKey, args->_ToggleVisibility);
+            return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<GlobalSummonArgs>() };
+            copy->_Name = _Name;
+            copy->_Desktop = _Desktop;
+            copy->_ToggleVisibility = _ToggleVisibility;
+            return *copy;
+        }
+        // SPECIAL! This deserializer creates a GlobalSummonArgs with the
+        // default values for quakeMode
+        static FromJsonResult QuakeModeFromJson(const Json::Value& /*json*/)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<GlobalSummonArgs>();
+            args->_Name = QuakeWindowName;
+            return { *args, {} };
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Name, _Desktop, _ToggleVisibility);
+        }
+    };
+
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
@@ -1001,6 +1219,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(NewTabArgs);
     BASIC_FACTORY(MoveFocusArgs);
     BASIC_FACTORY(SplitPaneArgs);
+    BASIC_FACTORY(SetColorSchemeArgs);
     BASIC_FACTORY(ExecuteCommandlineArgs);
     BASIC_FACTORY(CloseOtherTabsArgs);
     BASIC_FACTORY(CloseTabsAfterArgs);

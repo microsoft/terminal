@@ -30,9 +30,6 @@
     <ClCompile Include="..\convarea.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\cursor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\dbcs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -162,9 +159,6 @@
     <ClCompile Include="..\PtySignalInputThread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\CodepointWidthDetector.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\conareainfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -181,6 +175,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\CopyToCharPopup.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CursorBlinker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ScreenBufferRenderTarget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -252,9 +252,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\conwinuserrefs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\cursor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\dbcs.h">
@@ -332,9 +329,6 @@
     <ClInclude Include="..\history.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\CodepointWidthDetector.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\conareainfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -353,5 +347,17 @@
     <ClInclude Include="..\CopyToCharPopup.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\CursorBlinker.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\IIoProvider.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ScreenBufferRenderTarget.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
 </Project>

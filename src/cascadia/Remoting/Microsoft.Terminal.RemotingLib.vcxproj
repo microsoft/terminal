@@ -25,6 +25,15 @@
     <ClInclude Include="ProposeCommandlineResult.h">
       <DependentUpon>Monarch.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="SummonWindowSelectionArgs.h">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SummonWindowBehavior.h">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="RenameRequestArgs.h">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="WindowActivatedArgs.h">
       <DependentUpon>Peasant.idl</DependentUpon>
     </ClInclude>
@@ -50,6 +59,15 @@
     </ClCompile>
     <ClCompile Include="ProposeCommandlineResult.cpp">
       <DependentUpon>Monarch.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SummonWindowSelectionArgs.cpp">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SummonWindowBehavior.cpp">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="RenameRequestArgs.cpp">
+      <DependentUpon>Peasant.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="WindowActivatedArgs.cpp">
       <DependentUpon>Peasant.idl</DependentUpon>

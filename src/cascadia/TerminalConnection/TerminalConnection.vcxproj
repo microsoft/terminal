@@ -7,6 +7,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <PgoTarget>true</PgoTarget>
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
@@ -15,6 +16,7 @@
     <ClInclude Include="AzureConnection.h">
       <DependentUpon>AzureConnection.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="CTerminalHandoff.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ConptyConnection.h">
       <DependentUpon>ConptyConnection.idl</DependentUpon>
@@ -24,6 +26,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CTerminalHandoff.cpp" />
     <ClCompile Include="init.cpp" />
     <ClCompile Include="AzureConnection.cpp">
       <DependentUpon>AzureConnection.idl</DependentUpon>
@@ -77,6 +80,9 @@
     <Error Condition="!Exists('..\..\..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets'))" />
   </Target>
   <ItemDefinitionGroup>
+    <ClCompile>
+        <AdditionalIncludeDirectories>$(IntDir)..\OpenConsoleProxy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
     <Link>
       <AdditionalDependencies>$(OpenConsoleCommonOutDir)\conptylib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>

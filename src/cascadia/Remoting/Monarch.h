@@ -49,6 +49,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         winrt::Microsoft::Terminal::Remoting::ProposeCommandlineResult ProposeCommandline(const winrt::Microsoft::Terminal::Remoting::CommandlineArgs& args);
         void HandleActivatePeasant(const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args);
+        void SummonWindow(const Remoting::SummonWindowSelectionArgs& args);
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
 
@@ -73,6 +74,15 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                      const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args);
         void _doHandleActivatePeasant(const winrt::com_ptr<winrt::Microsoft::Terminal::Remoting::implementation::WindowActivatedArgs>& args);
         void _clearOldMruEntries(const uint64_t peasantID);
+
+        void _forAllPeasantsIgnoringTheDead(std::function<void(const winrt::Microsoft::Terminal::Remoting::IPeasant&, const uint64_t)> callback,
+                                            std::function<void(const uint64_t)> errorCallback);
+
+        void _identifyWindows(const winrt::Windows::Foundation::IInspectable& sender,
+                              const winrt::Windows::Foundation::IInspectable& args);
+
+        void _renameRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                              const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args);
 
         friend class RemotingUnitTests::RemotingTests;
     };

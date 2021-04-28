@@ -117,6 +117,24 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AddProfile_AddNewButton.Tag" xml:space="preserve">
+    <value>Create New Button</value>
+  </data>
+  <data name="AddProfile_AddNewTextBlock.Text" xml:space="preserve">
+    <value>New empty profile</value>
+    <comment>Button label that creates a new profile with default settings.</comment>
+  </data>
+  <data name="AddProfile_Duplicate.Header" xml:space="preserve">
+    <value>Duplicate a profile</value>
+    <comment>This is the header for a control that lets the user duplicate one of their existing profiles.</comment>
+  </data>
+  <data name="AddProfile_DuplicateButton.Tag" xml:space="preserve">
+    <value>Duplicate Button</value>
+  </data>
+  <data name="AddProfile_DuplicateTextBlock.Text" xml:space="preserve">
+    <value>Duplicate</value>
+    <comment>Button label that duplicates the selected profile and navigates to the duplicate's page.</comment>
+  </data>
   <data name="ColorScheme_Background.Text" xml:space="preserve">
     <value>Background</value>
     <comment>This is the header for a control that lets the user select the background color for text displayed on the screen.</comment>
@@ -209,6 +227,10 @@
     <value>Automatically copy selection to clipboard</value>
     <comment>Header for a control to toggle whether selected text should be copied to the clipboard automatically, or not.</comment>
   </data>
+  <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
+    <value>Remove trailing white-space in rectangular selection</value>
+    <comment>Header for a control to toggle whether a text selected with block selection should be trimmed of white spaces when copied to the clipboard, or not.</comment>
+  </data>
   <data name="Globals_KeybindingsDisclaimer.Text" xml:space="preserve">
     <value>Below are the currently bound keys, which can be modified by editing the JSON settings file.</value>
     <comment>A disclaimer located at the top of the actions page that presents the list of keybindings.</comment>
@@ -220,6 +242,14 @@
   <data name="Globals_DefaultProfile.HelpText" xml:space="preserve">
     <value>Profile that opens when clicking the '+' icon or by typing the new tab key binding.</value>
     <comment>A description for what the default profile is and when it's used.</comment>
+  </data>
+  <data name="Globals_DefaultTerminal.Header" xml:space="preserve">
+    <value>Default terminal application</value>
+    <comment>Header for a drop down that permits the user to select which installed Terminal application will launch when command line tools like CMD are run from the Windows Explorer run box or start menu or anywhere else that they do not already have a graphical window assigned.</comment>
+  </data>
+  <data name="Globals_DefaultTerminal.HelpText" xml:space="preserve">
+    <value>The terminal application that launches when a command-line application is run without an existing session, like from the Start Menu or Run dialog.</value>
+    <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
   <data name="Globals_ForceFullRepaint.Header" xml:space="preserve">
     <value>Redraw entire screen when display updates</value>
@@ -778,8 +808,8 @@
     <comment>{Locked="⚠"} A disclaimer that appears when the unsaved changes to the settings are present.</comment>
   </data>
   <data name="Nav_AddNewProfile.Content" xml:space="preserve">
-    <value>Add new</value>
-    <comment>Header for the "add new" menu item. This creates a new profile and navigates to that page.</comment>
+    <value>Add a new profile</value>
+    <comment>Header for the "add new" menu item. This navigates to the page where users can add a new profile.</comment>
   </data>
   <data name="Nav_Profiles.Content" xml:space="preserve">
     <value>Profiles</value>

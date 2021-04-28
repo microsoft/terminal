@@ -42,12 +42,20 @@
       <Configuration>AuditMode</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Fuzzing|Win32">
+      <Configuration>Fuzzing</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|x64">
       <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Fuzzing|x64">
+      <Configuration>Fuzzing</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="AuditMode|ARM64">
@@ -60,6 +68,10 @@
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|ARM64">
       <Configuration>Release</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Fuzzing|ARM64">
+      <Configuration>Fuzzing</Configuration>
       <Platform>ARM64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
@@ -125,12 +137,12 @@
   </ItemDefinitionGroup>
 
   <!-- For Release ONLY -->
-  <PropertyGroup Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='AuditMode'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='AuditMode' Or '$(Configuration)'=='Fuzzing'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
 
-  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='AuditMode'">
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='AuditMode' Or '$(Configuration)'=='Fuzzing'">
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -143,6 +155,9 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
+
+  <Import Condition="'$(PgoTarget)' == 'true' And '$(Configuration)' == 'Release'" Project="$(SolutionDir)\src\common.pgo.compile.props" />
+  <Import Condition="'$(PgoTarget)' == 'true' And '$(PGOBuildMode)' == 'Optimize'" Project="$(SolutionDir)\tools\PGODatabase\PGO.version.props" />
 
   <!-- For Win32 (x86) ONLY ... we use all defaults for AMD64. No def for those. -->
   <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
@@ -166,6 +181,24 @@
     </ClCompile>
   </ItemDefinitionGroup>
 
+  <PropertyGroup Condition="'$(Configuration)'=='Fuzzing'">
+    <OCClangArchitectureName Condition="'$(Platform)'=='x64'">x86_64</OCClangArchitectureName>
+    <OCClangArchitectureName Condition="'$(Platform)'=='Win32'">i386</OCClangArchitectureName>
+    <OCClangArchitectureName Condition="'$(Platform)'=='x86'">i386</OCClangArchitectureName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Fuzzing'">
+    <ClCompile>
+      <!-- Enable all the ASAN and Coverage flags! -->
+      <AdditionalOptions>/fsanitize=address /fsanitize-coverage=inline-bool-flag /fsanitize-coverage=edge /fsanitize-coverage=trace-cmp /fsanitize-coverage=trace-div %(AdditionalOptions)</AdditionalOptions>
+      <!-- The fuzzer requires a static CRT -->
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>FUZZING_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>libsancov.lib;clang_rt.asan-$(OCClangArchitectureName).lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
   <!-- Sanity check: Make sure the user followed the README and initialized git submodules. -->
   <Target Name="EnsureSubmodulesExist" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -173,4 +206,6 @@
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\dep\wil\README.md') Or !Exists('$(SolutionDir)\dep\gsl\README.md')" Text="$([System.String]::Format('$(ErrorText)'))" />
   </Target>
+
+  <Import Project="$(MSBuildThisFileDirectory)..\build\rules\Branding.targets" />
 </Project>
