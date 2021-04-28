@@ -374,6 +374,16 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
             // ECHO on with LINE off is invalid.
             RETURN_HR_IF(E_INVALIDARG, WI_IsFlagSet(mode, ENABLE_ECHO_INPUT) && WI_IsFlagClear(mode, ENABLE_LINE_INPUT));
         }
+        if (WI_IsFlagSet(mode, ENABLE_MOUSE_INPUT))
+        {
+            gci.GetActiveInputBuffer()->PassThroughEnableButtonEventMouseMode(true);
+            gci.GetActiveInputBuffer()->PassThroughEnableSGRExtendedMouseMode(true);
+        }
+        else
+        {
+            gci.GetActiveInputBuffer()->PassThroughEnableButtonEventMouseMode(true);
+            gci.GetActiveInputBuffer()->PassThroughEnableSGRExtendedMouseMode(true);
+        }
 
         return S_OK;
     }
