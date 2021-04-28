@@ -170,6 +170,7 @@ blog
 Blt
 BLUESCROLL
 bmp
+BODGY
 BOLDFONT
 BOOLIFY
 bools
@@ -676,6 +677,7 @@ dwmapi
 dword
 dwrite
 dwriteglyphrundescriptionclustermap
+dwl
 dxgi
 dxgidwm
 dxinterop

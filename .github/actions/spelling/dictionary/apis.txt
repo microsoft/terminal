@@ -3,6 +3,7 @@ ACCESSDENIED
 alignof
 bitfield
 bitfields
+BUILDNUMBER
 CLASSNOTAVAILABLE
 cmdletbinding
 colspan
@@ -16,6 +17,7 @@ dcomp
 DERR
 dlldata
 DONTADDTORECENT
+DWORDLONG
 environstrings
 EXPCMDFLAGS
 EXPCMDSTATE
@@ -56,6 +58,7 @@ istream
 IStringable
 ITab
 ITaskbar
+IUri
 IVirtual
 LCID
 llabs
@@ -77,6 +80,8 @@ NOREDIRECTIONBITMAP
 ntprivapi
 oaidl
 ocidl
+osver
+OSVERSIONINFOEXW
 otms
 OUTLINETEXTMETRICW
 overridable

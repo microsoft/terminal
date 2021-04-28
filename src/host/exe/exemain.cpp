@@ -184,7 +184,7 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
 
 // Routine Description:
 // - Called back when COM says there is nothing left for our server to do and we can tear down.
-#pragma warning (suppress : 4505) // this is unused, and therefore discarded, when built inside windows
+#pragma warning(suppress : 4505) // this is unused, and therefore discarded, when built inside windows
 static void _releaseNotifier() noexcept
 {
     _comServerExitEvent.SetEvent();

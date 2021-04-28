@@ -70,16 +70,63 @@
                 </local:SettingContainer>
 
                 <!--  Default Terminal  -->
-                <!--  TODO GH#9463 - Complete hookup of Terminal UX to choose defapp.  -->
-                <!--
-                <local:SettingContainer x:Uid="Globals_DefaultTerminal">
+                <local:SettingContainer x:Name="DefaultTerminalDropdown"
+                                        x:Uid="Globals_DefaultTerminal"
+                                        x:Load="false">
                     <ComboBox x:Name="DefaultTerminal"
-                              x:Load="False"
-                              ItemsSource="{x:Bind DefaultTerminals, Mode=OneWay}"
-                              SelectedItem="{x:Bind CurrentDefaultTerminal, Mode=TwoWay}"
-                              Style="{StaticResource ComboBoxSettingStyle}" />
+                              ItemsSource="{x:Bind State.Settings.DefaultTerminals, Mode=OneWay}"
+                              SelectedItem="{x:Bind State.Settings.CurrentDefaultTerminal, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="SettingsModel:DefaultTerminal">
+                                <Grid HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Stretch"
+                                      ColumnSpacing="8">
+
+                                    <Grid.ColumnDefinitions>
+                                        <!--  icon  -->
+                                        <ColumnDefinition Width="24" />
+                                        <!--  profile name and author  -->
+                                        <ColumnDefinition Width="*" />
+                                        <!--  version  -->
+                                        <ColumnDefinition Width="48" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <!--  profile name  -->
+                                        <RowDefinition Height="*" />
+                                        <!--  author and version  -->
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+
+                                    <IconSourceElement Grid.Row="0"
+                                                       Grid.RowSpan="2"
+                                                       Grid.Column="0"
+                                                       Width="24"
+                                                       Height="24"
+                                                       VerticalAlignment="Center"
+                                                       IconSource="{x:Bind Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="1"
+                                               Grid.ColumnSpan="2"
+                                               Text="{x:Bind Name}" />
+
+                                    <TextBlock Grid.Row="1"
+                                               Grid.Column="1"
+                                               Foreground="{StaticResource SystemBaseMediumColor}"
+                                               Text="{x:Bind Author}" />
+
+                                    <TextBlock Grid.Row="1"
+                                               Grid.Column="2"
+                                               Foreground="{StaticResource SystemBaseMediumColor}"
+                                               Text="{x:Bind Version}" />
+
+                                </Grid>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
                 </local:SettingContainer>
-                -->
 
                 <!--  Start on User Login  -->
                 <local:SettingContainer x:Uid="Globals_StartOnUserLogin">
