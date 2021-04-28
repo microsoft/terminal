@@ -26,9 +26,13 @@ Revision History:
 #include "OutputCellIterator.hpp"
 #include "unicode.hpp"
 
-#define TIL_RLE_WORKS_LIKE_VECTOR 0
+// For use when til::rle supports .replace
+#define TIL_RLE_WORKS_LIKE_STRING 0
+// When 0, use basic_string<uint16_t> for column counts
+#define ROW_USE_RLE 0
+#define BACKING_BUFFER_IS_STRINGLIKE (!ROW_USE_RLE || TIL_RLE_WORKS_LIKE_STRING)
 
-#if !TIL_RLE_WORKS_LIKE_VECTOR
+#if ROW_USE_RLE
 #include "../../../rle.h"
 #endif
 
@@ -85,7 +89,7 @@ private:
     bool _doubleBytePadded;
 
     std::wstring _data;
-#if TIL_RLE_WORKS_LIKE_VECTOR
+#if !ROW_USE_RLE
     std::basic_string<uint16_t> _cwid;
 #else
     til::rle<uint8_t, uint16_t> _cwid;
@@ -161,7 +165,7 @@ public:
             // column counts with [col, 0, 0...] (with as many zeroes as we need to account
             // for any code units past the first.)
             _data.replace(begin, len, glyph);
-#if TIL_RLE_WORKS_LIKE_VECTOR // rle doesn't work like vec
+#if BACKING_BUFFER_IS_STRINGLIKE // rle doesn't work like string here
             _cwid.replace(begin, len, glyph.size(), 0);
             _cwid.at(begin) = (uint16_t)ncols;
 #else
@@ -194,7 +198,7 @@ public:
             //  is one column wide. We have
             //  to insert [1]s for each
             //  damaged column.
-#if TIL_RLE_WORKS_LIKE_VECTOR // rle doesn't work like vector
+#if BACKING_BUFFER_IS_STRINGLIKE // rle doesn't work like string here
             std::basic_string<uint16_t> cadvs(replacementCodeUnits, 1);
             cadvs.replace(col - minDamageColumn, 1, 1, (uint16_t)ncols); // our glyph takes up ncols
             cadvs.replace(col - minDamageColumn + 1, glyph.size() - 1, glyph.size() - 1, (uint16_t)0); // and its trailers take up 0
@@ -214,7 +218,7 @@ public:
         }
         if (_cwid.size() != _data.size())
         {
-#if TIL_RLE_WORKS_LIKE_VECTOR // rle doesn't work like vector
+#if BACKING_BUFFER_IS_STRINGLIKE // rle doesn't work like string
             _cwid.resize(_data.size(), 0);
 #else
             const auto old{ _cwid.size() };

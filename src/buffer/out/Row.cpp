@@ -37,7 +37,7 @@ bool ROW::Reset(const TextAttribute Attr)
     _lineRendition = LineRendition::SingleWidth;
     _wrapForced = false;
     _doubleBytePadded = false;
-#if TIL_RLE_WORKS_LIKE_VECTOR
+#if BACKING_BUFFER_IS_STRINGLIKE
     _cwid.replace(0, _rowWidth, _rowWidth, 1);
 #else
     _cwid.resize(_rowWidth);
@@ -65,7 +65,7 @@ bool ROW::Reset(const TextAttribute Attr)
 [[nodiscard]] HRESULT ROW::Resize(const unsigned short width)
 {
     _data.resize(width, L' ');
-#if TIL_RLE_WORKS_LIKE_VECTOR
+#if BACKING_BUFFER_IS_STRINGLIKE
     _cwid.resize(width, 1);
 #else
     _cwid.resize(width);
