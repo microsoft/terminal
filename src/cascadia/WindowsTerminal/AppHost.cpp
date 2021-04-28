@@ -780,13 +780,24 @@ void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*se
     {
         if (_LazyLoadDesktopManager())
         {
-            GUID currentlyActiveDesktop;
-            VirtualDesktopUtils::GetCurrentVirtualDesktopId(&currentlyActiveDesktop);
-            LOG_IF_FAILED(_desktopManager->MoveWindowToDesktop(_window->GetHandle(), currentlyActiveDesktop));
+            GUID currentlyActiveDesktop{ 0 };
+            if (VirtualDesktopUtils::GetCurrentVirtualDesktopId(&currentlyActiveDesktop))
+            {
+                LOG_IF_FAILED(_desktopManager->MoveWindowToDesktop(_window->GetHandle(), currentlyActiveDesktop));
+            }
+            // If GetCurrentVirtualDesktopId failed, then just leave the window
+            // where it is. Nothing else to be done :/
         }
     }
 }
 
+// Method Description:
+// - This gets the GUID of the desktop our window is currently on. It does NOT
+//   get the GUID of the desktop that's currently active.
+// Arguments:
+// - <none>
+// Return Value:
+// - the GUID of the desktop our window is currently on
 GUID AppHost::_CurrentDesktopGuid()
 {
     GUID currentDesktopGuid{ 0 };

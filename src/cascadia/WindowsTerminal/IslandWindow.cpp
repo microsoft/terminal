@@ -958,7 +958,7 @@ void IslandWindow::UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Co
 
     for (int i = 0; i < ::base::saturated_cast<int>(hotkeyList.size()); i++)
     {
-        LOG_IF_WIN32_BOOL_FALSE(UnregisterHotKey(_window.get(), static_cast<int>(i)));
+        LOG_IF_WIN32_BOOL_FALSE(UnregisterHotKey(_window.get(), i));
     }
 }
 

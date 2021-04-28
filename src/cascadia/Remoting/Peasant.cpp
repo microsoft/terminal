@@ -129,7 +129,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     void Peasant::Summon(const Remoting::SummonWindowBehavior& summonBehavior)
     {
-        auto localCopy = winrt::make_self<implementation::SummonWindowBehavior>(summonBehavior);
+        auto localCopy = winrt::make<implementation::SummonWindowBehavior>(summonBehavior);
 
         TraceLoggingWrite(g_hRemotingProvider,
                           "Peasant_Summon",
@@ -137,7 +137,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingUInt64(localCopy->MoveToCurrentDesktop(), "MoveToCurrentDesktop", "true if we should move to the current desktop"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 
-        _SummonRequestedHandlers(*this, *localCopy);
+        _SummonRequestedHandlers(*this, localCopy);
     }
 
     // Method Description:
