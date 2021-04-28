@@ -21,7 +21,20 @@
         "xloctime": "cpp",
         "multi_span": "cpp",
         "pointers": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "bitset": "cpp",
+        "deque": "cpp",
+        "initializer_list": "cpp",
+        "list": "cpp",
+        "queue": "cpp",
+        "random": "cpp",
+        "regex": "cpp",
+        "stack": "cpp",
+        "xhash": "cpp",
+        "xtree": "cpp",
+        "xutility": "cpp",
+        "span": "cpp",
+        "string_span": "cpp"
     },
     "files.exclude": {
         "**/bin/**": true,

@@ -18,8 +18,6 @@ Author(s):
 #pragma once
 #include "TabBase.h"
 #include "SettingsTab.g.h"
-#include <winrt/TerminalApp.h>
-#include <winrt/Microsoft.Terminal.Settings.Editor.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
