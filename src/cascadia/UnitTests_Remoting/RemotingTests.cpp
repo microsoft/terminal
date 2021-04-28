@@ -93,6 +93,8 @@ namespace RemotingUnitTests
         TEST_METHOD(GetMostRecentAnyDesktop);
         TEST_METHOD(MostRecentIsDead);
 
+        TEST_METHOD(MostRecentIsQuake);
+
         TEST_METHOD(GetPeasantsByName);
         TEST_METHOD(AddNamedPeasantsToNewMonarch);
         TEST_METHOD(LookupNamedPeasantWhenOthersDied);
@@ -1012,6 +1014,108 @@ namespace RemotingUnitTests
         VERIFY_ARE_EQUAL(1u, m0->_mruPeasants.size());
         VERIFY_ARE_EQUAL(1u, m0->_mruPeasants.size());
         VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[0].PeasantID());
+    }
+
+    void RemotingTests::MostRecentIsQuake()
+    {
+        Log::Comment(L"When a window is named _quake, it shouldn't participate "
+                     L"in window glomming via the MRU window.");
+
+        const winrt::guid guid1{ Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
+
+        const auto monarch0PID = 12345u;
+        const auto peasant1PID = 23456u;
+        const auto peasant2PID = 34567u;
+
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+
+        VERIFY_IS_NOT_NULL(m0);
+        VERIFY_IS_NOT_NULL(p1);
+        VERIFY_IS_NOT_NULL(p2);
+        p1->WindowName(L"one");
+        p2->WindowName(L"_quake");
+
+        VERIFY_ARE_EQUAL(0, p1->GetID());
+        VERIFY_ARE_EQUAL(0, p2->GetID());
+
+        m0->AddPeasant(*p1);
+        m0->AddPeasant(*p2);
+
+        VERIFY_ARE_EQUAL(1, p1->GetID());
+        VERIFY_ARE_EQUAL(2, p2->GetID());
+
+        VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
+
+        {
+            Log::Comment(L"Activate the first peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p1->GetID(),
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p1->ActivateWindow(activatedArgs);
+        }
+        {
+            Log::Comment(L"Activate the _quake peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p2->GetID(),
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p2->ActivateWindow(activatedArgs);
+        }
+
+        VERIFY_ARE_EQUAL(2u, m0->_mruPeasants.size());
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_mruPeasants[0].PeasantID());
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[1].PeasantID());
+
+        Log::Comment(L"When we look up the MRU window, we find peasant 1 (who's name is \"one\"), not 2 (who's name is \"_quake\")");
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_getMostRecentPeasantID(false));
+
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_lookupPeasantIdForName(L"one"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"_quake"));
+
+        {
+            Log::Comment(L"rename p2 to \"two\"");
+            Remoting::RenameRequestArgs eventArgs{ L"two" };
+            p2->RequestRename(eventArgs);
+            VERIFY_IS_TRUE(eventArgs.Succeeded());
+        }
+        VERIFY_ARE_EQUAL(L"two", p2->WindowName());
+
+        Log::Comment(L"Now, the MRU window will correctly be p2");
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_getMostRecentPeasantID(false));
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_lookupPeasantIdForName(L"one"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
+
+        {
+            Log::Comment(L"rename p1 to \"_quake\"");
+            Remoting::RenameRequestArgs eventArgs{ L"_quake" };
+            p1->RequestRename(eventArgs);
+            VERIFY_IS_TRUE(eventArgs.Succeeded());
+        }
+        VERIFY_ARE_EQUAL(L"_quake", p1->WindowName());
+
+        Log::Comment(L"Now, the MRU window will still be p2");
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_getMostRecentPeasantID(false));
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_lookupPeasantIdForName(L"_quake"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
+
+        {
+            Log::Comment(L"Activate the first peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p1->GetID(),
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p1->ActivateWindow(activatedArgs);
+        }
+
+        Log::Comment(L"Now, the MRU window will still be p2, because p1 is still named \"_quake\"");
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_getMostRecentPeasantID(false));
+        VERIFY_ARE_EQUAL(p1->GetID(), m0->_lookupPeasantIdForName(L"_quake"));
+        VERIFY_ARE_EQUAL(p2->GetID(), m0->_lookupPeasantIdForName(L"two"));
     }
 
     void RemotingTests::GetPeasantsByName()
