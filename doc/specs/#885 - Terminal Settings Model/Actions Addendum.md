@@ -159,6 +159,9 @@ After the former two steps are completed, the new representation of actions in t
     - In the event that name/key-chord is set to something that's already taken, we need to propagate those changes to
        the rest of `ActionMap`. As we do with the JSON, we respect the last name/key-chord set by the user. See [Modifying Actions](#modifying-actions)
        in potential issues.
+    - For the purposes of the key bindings page, we will introduce a `KeyBindingViewModel` to serve as an intermediator between the settings UI and the settings model. The view model will be responsible for things like...
+       - exposing relevant information to the UI controls
+       - converting UI control interactions into proper API calls to the settings model 
 4. Serialization
     - `Command::ToJson()` and `ActionMap::ToJson()` should perform most of the work for us. Simply iterate over the `_ActionMap` and call `Command::ToJson` on each action.
     - See [Unbinding actions](#unbinding-actions) in potential issues.
@@ -213,9 +216,15 @@ Introducing a parent mechanism to `ActionMap` allows it to understand where a `C
 
 `ActionMap` queries will need to check their parent when they cannot find a matching `InternalActionID` in their `_ActionMap`.
 
-Since `NameMap` is generated upon request, we will need to pass a `std::set<InternalActionID>` as we generate the `NameMap` across each layer. This will ensure that each `Command` is only added to the `NameMap` once. We will start from the current layer and move up the inheritance tree to ensure that the current layer takes priority.
+Since `NameMap` is generated upon request, we will need to use a `std::set<InternalActionID>` as we generate the `NameMap`. This will ensure that each `Command` is only added to the `NameMap` once. The name map will be generated as follows:
+1. Get an accumulated list of `Command`s from our parents
+2. Iterate over the list...
+   - Update `NameMap` with any new `Command`s (tracked by the `std::set<InternalActionID>`)
 
-Nested commands will be saved to their own map since they do not have an `InternalActionID`. To ensure layering is accomplished correctly, we will need to start from the top-most parent and update `NameMap`. As we go down the inheritance tree, any conflicts are resolved by prioritizing the current layer (the child). This ensures that the current layer takes priority. 
+Nested commands will be saved to their own map since they do not have an `InternalActionID`.
+- During `ActionMap`'s population, we must ensure to resolve any conflicts immediately. This means that any new `Command`s that generate a name conflicting with a nested command will take priority (and we'll remove the nested comand from its own map). Conversely, if a new nested command conflicts with an existing standard `Command`, we can ignore it because our generation of `NameMap` will handle it.
+- When populating `NameMap`, we must first add all of the standard `Command`s. To ensure layering is accomplished correctly, we will need to start from the top-most parent and update `NameMap`. As we go down the inheritance tree, any conflicts are resolved by prioritizing the current layer (the child). This ensures that the current layer takes priority.
+- After adding all of the standard `Command`s to the `NameMap`, we can then register all of the nested commands. Since nested commands have no identifier other than a name, we cannot use the `InternalActionID` heuristic. However, as mentioned earlier, we are updating our internal nested command map as we add new actions. So when we are generating the name map, we can assume that all of these nested commands now have priority. Thus, we simply add all of these nested commands to the name map. Any conflicts are resolved in favor of th nested command.
 
 ### Modifying Actions
 
@@ -251,11 +260,17 @@ It is important that these modifications are done through `ActionMap` instead of
 
 Regarding [Layering Actions](#layering-actions), if the `Command` does not exist in the current layer,
  but exists in a parent layer, we need to...
- 1. duplicate it
+ 0. check if it exists
+    - use the hash `InternalActionID` to see if it exists in the current layer
+    - if it doesn't (which is the case we're trying to solve here), call `_GetActionByID(InternalActionID)` to retrieve the `Command` wherever it may be. This helper function simply checks the current layer, if none is found, it recursively checks its parents until a match is found.
+ 1. duplicate it with `Command::Copy`
  2. store the duplicate in the current layer
+    - `ActionMap::AddAction(duplicate)`
  3. make the modification to the duplicate
 
 This ensures that the change persists post-serialization.
+
+TerminalApp has no reason to ever call these setters. To ensure that relationship, we will introduce an `IActionMapView` interface that will only expose `ActionMap` query functions. Conversely, `ActionMap` will be exposed to the TerminalSettingsEditor to allow for modifications. 
 
 ### Unbinding actions
 
