@@ -448,3 +448,12 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::WindowingMode)
         pair_type{ "useExisting", ValueType::UseExisting },
     };
 };
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::DesktopBehavior)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "any", ValueType::Any },
+        pair_type{ "toCurrent", ValueType::ToCurrent },
+        pair_type{ "onCurrent", ValueType::OnCurrent },
+    };
+};

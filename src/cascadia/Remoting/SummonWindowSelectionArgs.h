@@ -30,7 +30,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             _WindowName{ name } {};
 
         WINRT_PROPERTY(winrt::hstring, WindowName);
+
         WINRT_PROPERTY(bool, FoundMatch, false);
+        WINRT_PROPERTY(bool, OnCurrentDesktop, false);
+        WINRT_PROPERTY(SummonWindowBehavior, SummonBehavior);
     };
 }
 

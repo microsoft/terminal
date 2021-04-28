@@ -31,6 +31,8 @@ private:
     std::vector<winrt::Microsoft::Terminal::Control::KeyChord> _hotkeys{};
     winrt::Windows::Foundation::Collections::IMap<winrt::Microsoft::Terminal::Control::KeyChord, winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _hotkeyActions{ nullptr };
 
+    winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
+
     void _HandleCommandlineArgs();
 
     void _HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
@@ -59,7 +61,7 @@ private:
                         const winrt::Windows::Foundation::IInspectable& args);
     void _GlobalHotkeyPressed(const long hotkeyIndex);
     void _HandleSummon(const winrt::Windows::Foundation::IInspectable& sender,
-                       const winrt::Windows::Foundation::IInspectable& args);
+                       const winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior& args);
 
     winrt::fire_and_forget _IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable sender,
                                                      const winrt::Windows::Foundation::IInspectable args);
@@ -69,6 +71,8 @@ private:
                                                   const winrt::TerminalApp::RenameWindowRequestedArgs args);
 
     GUID _CurrentDesktopGuid();
+
+    bool _LazyLoadDesktopManager();
 
     winrt::fire_and_forget _setupGlobalHotkeys();
     winrt::fire_and_forget _createNewTerminalWindow(winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs args);

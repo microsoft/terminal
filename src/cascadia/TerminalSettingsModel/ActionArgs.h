@@ -1044,17 +1044,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         GlobalSummonArgs() = default;
         WINRT_PROPERTY(winrt::hstring, Name, L"");
+        WINRT_PROPERTY(Model::DesktopBehavior, Desktop, Model::DesktopBehavior::ToCurrent);
 
         static constexpr std::string_view NameKey{ "name" };
+        static constexpr std::string_view DesktopKey{ "desktop" };
 
     public:
         hstring GenerateName() const;
 
         bool Equals(const IActionArgs& other)
         {
-            if (auto otherAsUs = other.try_as<GlobalSummonArgs>(); otherAsUs)
+            if (auto otherAsUs = other.try_as<GlobalSummonArgs>())
             {
-                return otherAsUs->_Name == _Name;
+                return otherAsUs->_Name == _Name &&
+                       otherAsUs->_Desktop == _Desktop;
             }
             return false;
         };
@@ -1063,12 +1066,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<GlobalSummonArgs>();
             JsonUtils::GetValueForKey(json, NameKey, args->_Name);
+            JsonUtils::GetValueForKey(json, DesktopKey, args->_Desktop);
             return { *args, {} };
         }
         IActionArgs Copy() const
         {
             auto copy{ winrt::make_self<GlobalSummonArgs>() };
             copy->_Name = _Name;
+            copy->_Desktop = _Desktop;
             return *copy;
         }
         // SPECIAL! This deserializer creates a GlobalSummonArgs with the
