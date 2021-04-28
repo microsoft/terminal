@@ -252,4 +252,9 @@ namespace Microsoft.Terminal.Settings.Model
     {
         String Name { get; };
     };
+
+    [default_interface] runtimeclass GlobalSummonArgs : IActionArgs
+    {
+        String Name { get; };
+    };
 }

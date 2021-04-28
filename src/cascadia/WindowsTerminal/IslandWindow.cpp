@@ -15,6 +15,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace ::Microsoft::Console::Types;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
@@ -386,6 +387,11 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
 {
     switch (message)
     {
+    case WM_HOTKEY:
+    {
+        _HotkeyPressedHandlers(static_cast<long>(wparam));
+        return 0;
+    }
     case WM_GETMINMAXINFO:
     {
         _OnGetMinMaxInfo(wparam, lparam);
@@ -402,8 +408,9 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         {
             // send focus to the child window
             SetFocus(_interopWindowHandle);
-            return 0; // eat the message
+            return 0;
         }
+        break;
     }
     case WM_ACTIVATE:
     {
@@ -936,6 +943,63 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 }
 
 // Method Description:
+// - Call UnregisterHotKey once for each entry in hotkeyList, to unset all the bound global hotkeys.
+// Arguments:
+// - hotkeyList: a list of hotkeys to unbind
+// Return Value:
+// - <none>
+void IslandWindow::UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList)
+{
+    TraceLoggingWrite(g_hWindowsTerminalProvider,
+                      "UnsetHotkeys",
+                      TraceLoggingDescription("Emitted when clearing previously set hotkeys"),
+                      TraceLoggingInt64(hotkeyList.size(), "numHotkeys", "The number of hotkeys to unset"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
+    for (size_t i = 0; i < hotkeyList.size(); i++)
+    {
+        LOG_IF_WIN32_BOOL_FALSE(UnregisterHotKey(_window.get(), static_cast<int>(i)));
+    }
+}
+
+// Method Description:
+// - Call RegisterHotKey once for each entry in hotkeyList, to attempt to
+//   register that keybinding as a global hotkey.
+// - When these keys are pressed, we'll get a WM_HOTKEY message with the payload
+//   containing the index we registered here.
+// Arguments:
+// - hotkeyList: a list of hotkeys to bind
+// Return Value:
+// - <none>
+void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList)
+{
+    TraceLoggingWrite(g_hWindowsTerminalProvider,
+                      "SetGlobalHotkeys",
+                      TraceLoggingDescription("Emitted when setting hotkeys"),
+                      TraceLoggingInt64(hotkeyList.size(), "numHotkeys", "The number of hotkeys to set"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+    int index = 0;
+    for (const auto& hotkey : hotkeyList)
+    {
+        const auto modifiers = hotkey.Modifiers();
+        const auto hotkeyFlags = MOD_NOREPEAT |
+                                 (WI_IsFlagSet(modifiers, KeyModifiers::Windows) ? MOD_WIN : 0) |
+                                 (WI_IsFlagSet(modifiers, KeyModifiers::Alt) ? MOD_ALT : 0) |
+                                 (WI_IsFlagSet(modifiers, KeyModifiers::Ctrl) ? MOD_CONTROL : 0) |
+                                 (WI_IsFlagSet(modifiers, KeyModifiers::Shift) ? MOD_SHIFT : 0);
+
+        // TODO GH#8888: We should display a warning of some kind if this fails.
+        // This can fail if something else already bound this hotkey.
+        LOG_IF_WIN32_BOOL_FALSE(RegisterHotKey(_window.get(),
+                                               index,
+                                               hotkeyFlags,
+                                               hotkey.Vkey()));
+
+        index++;
+    }
+}
+
+// Method Description:
 // - Force activate this window. This method will bring us to the foreground and
 //   activate us. If the window is minimized, it will restore the window. If the
 //   window is on another desktop, the OS will switch to that desktop.
@@ -969,6 +1033,10 @@ winrt::fire_and_forget IslandWindow::SummonWindow()
     });
     LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
     LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_SHOW));
+
+    // Activate the window too. This will force us to the virtual desktop this
+    // window is on, if it's on another virtual desktop.
+    LOG_LAST_ERROR_IF_NULL(SetActiveWindow(_window.get()));
 }
 
 bool IslandWindow::IsQuakeWindow() const noexcept

@@ -6,6 +6,7 @@
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/utils.hpp"
 #include "../types/inc/User32Utils.hpp"
+#include "../WinRTUtils/inc/WtExeUtils.h"
 #include "resource.h"
 
 using namespace winrt::Windows::UI;
@@ -74,8 +75,15 @@ AppHost::AppHost() noexcept :
                                                 std::placeholders::_2));
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
+    _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
+
+    _windowManager.BecameMonarch({ this, &AppHost::_BecomeMonarch });
+    if (_windowManager.IsMonarch())
+    {
+        _BecomeMonarch(nullptr, nullptr);
+    }
 }
 
 AppHost::~AppHost()
@@ -197,6 +205,7 @@ void AppHost::_HandleCommandlineArgs()
         // commandline (in the future), it'll trigger this callback, that we'll
         // use to send the actions to the app.
         peasant.ExecuteCommandlineRequested({ this, &AppHost::_DispatchCommandline });
+        peasant.SummonRequested({ this, &AppHost::_HandleSummon });
 
         peasant.DisplayWindowIdRequested({ this, &AppHost::_DisplayWindowId });
 
@@ -254,6 +263,7 @@ void AppHost::Initialize()
     _logic.SetTaskbarProgress({ this, &AppHost::SetTaskbarProgress });
     _logic.IdentifyWindowsRequested({ this, &AppHost::_IdentifyWindowsRequested });
     _logic.RenameWindowRequested({ this, &AppHost::_RenameWindowRequested });
+    _logic.SettingsChanged({ this, &AppHost::_HandleSettingsChanged });
     _logic.IsQuakeWindowChanged({ this, &AppHost::_IsQuakeWindowChanged });
 
     _window->UpdateTitle(_logic.Title());
@@ -578,6 +588,8 @@ bool AppHost::HasWindow()
 void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*sender*/,
                                    Remoting::CommandlineArgs args)
 {
+    // Summon the window whenever we dispatch a commandline to it. This will
+    // make it obvious when a new tab/pane is created in a window.
     _window->SummonWindow();
     _logic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory());
 }
@@ -617,6 +629,121 @@ winrt::fire_and_forget AppHost::_WindowActivated()
                                             winrt::clock().now() };
         peasant.ActivateWindow(args);
     }
+}
+
+void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                             const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    _setupGlobalHotkeys();
+}
+
+winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
+{
+    // The hotkey MUST be registered on the main thread. It will fail otherwise!
+    co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher(),
+                                      winrt::Windows::UI::Core::CoreDispatcherPriority::Normal);
+
+    // Remove all the already registered hotkeys before setting up the new ones.
+    _window->UnsetHotkeys(_hotkeys);
+
+    _hotkeyActions = _logic.GlobalHotkeys();
+    _hotkeys.clear();
+    for (const auto& [k, v] : _hotkeyActions)
+    {
+        if (k != nullptr)
+        {
+            _hotkeys.push_back(k);
+        }
+    }
+
+    _window->SetGlobalHotkeys(_hotkeys);
+}
+
+// Method Description:
+// - Called whenever a registered hotkey is pressed. We'll look up the
+//   GlobalSummonArgs for the specified hotkey, then dispatch a call to the
+//   Monarch with the selection information.
+// - If the monarch finds a match for the window name (or no name was provided),
+//   it'll set FoundMatch=true.
+// - If FoundMatch is false, and a name was provided, then we should create a
+//   new window with the given name.
+// Arguments:
+// - hotkeyIndex: the index of the entry in _hotkeys that was pressed.
+// Return Value:
+// - <none>
+void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
+{
+    if (hotkeyIndex < 0 || static_cast<size_t>(hotkeyIndex) > _hotkeys.size())
+    {
+        return;
+    }
+    // Lookup the matching keychord
+    Control::KeyChord kc = _hotkeys.at(hotkeyIndex);
+    // Get the stored ActionAndArgs for that chord
+    if (const auto& actionAndArgs{ _hotkeyActions.Lookup(kc) })
+    {
+        if (const auto& summonArgs{ actionAndArgs.Args().try_as<Settings::Model::GlobalSummonArgs>() })
+        {
+            Remoting::SummonWindowSelectionArgs args{ summonArgs.Name() };
+
+            _windowManager.SummonWindow(args);
+            if (args.FoundMatch())
+            {
+                // Excellent, the window was found. We have nothing else to do here.
+            }
+            else
+            {
+                // We should make the window ourselves.
+                _createNewTerminalWindow(summonArgs);
+            }
+        }
+    }
+}
+
+// Method Description:
+// - Called when the monarch failed to summon a window for a given set of
+//   SummonWindowSelectionArgs. In this case, we should create the specified
+//   window ourselves.
+// - This is to support the scenario like `globalSummon(Name="_quake")` being
+//   used to summon the window if it already exists, or create it if it doesn't.
+// Arguments:
+// - args: Contains information on how we should name the window
+// Return Value:
+// - <none>
+winrt::fire_and_forget AppHost::_createNewTerminalWindow(Settings::Model::GlobalSummonArgs args)
+{
+    // Hop to the BG thread
+    co_await winrt::resume_background();
+
+    // This will get us the correct exe for dev/preview/release. If you
+    // don't stick this in a local, it'll get mangled by ShellExecute. I
+    // have no idea why.
+    const auto exePath{ GetWtExePath() };
+
+    // If we weren't given a name, then just use new to force the window to be
+    // unnamed.
+    winrt::hstring cmdline{
+        fmt::format(L"-w {}",
+                    args.Name().empty() ? L"new" :
+                                          args.Name())
+    };
+
+    SHELLEXECUTEINFOW seInfo{ 0 };
+    seInfo.cbSize = sizeof(seInfo);
+    seInfo.fMask = SEE_MASK_NOASYNC;
+    seInfo.lpVerb = L"open";
+    seInfo.lpFile = exePath.c_str();
+    seInfo.lpParameters = cmdline.c_str();
+    seInfo.nShow = SW_SHOWNORMAL;
+    LOG_IF_WIN32_BOOL_FALSE(ShellExecuteExW(&seInfo));
+
+    co_return;
+}
+
+void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                            const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    _window->SummonWindow();
 }
 
 GUID AppHost::_CurrentDesktopGuid()
@@ -696,6 +823,12 @@ winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Fou
             _logic.RenameFailed();
         }
     }
+}
+
+void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                     const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    _setupGlobalHotkeys();
 }
 
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,

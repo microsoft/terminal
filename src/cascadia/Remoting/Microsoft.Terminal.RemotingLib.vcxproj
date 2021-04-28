@@ -25,6 +25,9 @@
     <ClInclude Include="ProposeCommandlineResult.h">
       <DependentUpon>Monarch.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="SummonWindowSelectionArgs.h">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="RenameRequestArgs.h">
       <DependentUpon>Peasant.idl</DependentUpon>
     </ClInclude>
@@ -52,6 +55,9 @@
       <DependentUpon>Monarch.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="ProposeCommandlineResult.cpp">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SummonWindowSelectionArgs.cpp">
       <DependentUpon>Monarch.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="RenameRequestArgs.cpp">
