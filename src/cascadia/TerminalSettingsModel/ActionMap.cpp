@@ -59,9 +59,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // populate _NameMapCache
             std::unordered_map<hstring, Model::Command> nameMap{};
-            std::set<InternalActionID> visitedActionIDs{ ActionHash()(make<implementation::ActionAndArgs>()) };
             _PopulateNameMapWithNestedCommands(nameMap);
-            _PopulateNameMapWithStandardCommands(nameMap, visitedActionIDs);
+            _PopulateNameMapWithStandardCommands(nameMap);
 
             _NameMapCache = single_threaded_map<hstring, Model::Command>(std::move(nameMap));
         }
@@ -102,18 +101,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Method Description:
     // - Populates the provided nameMap with all of our actions and our parents actions
     //    while omitting the actions that were already added before
-    // - This needs to be a bottom up approach to ensure that we only add each action (identified by action ID) once.
     // Arguments:
     // - nameMap: the nameMap we're populating. This maps the name (hstring) of a command to the command itself.
     //             There should only ever by one of each command (identified by the actionID) in the nameMap.
-    // - visitedActionIDs: the actionIDs that we've already added to the nameMap. Commands with a matching actionID
-    //                      have already been added, and should be ignored.
-    void ActionMap::_PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap, std::set<InternalActionID>& visitedActionIDs) const
+    void ActionMap::_PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap) const
     {
-        // Update NameMap and visitedActionIDs with our current layer
-        for (const auto& [actionID, cmd] : _ActionMap)
+        const ActionHash actionHasher{};
+        std::set<InternalActionID> visitedActionIDs{ actionHasher(make<implementation::ActionAndArgs>()) };
+        for (const auto& cmd : _GetCumulativeActions())
         {
             // Only populate NameMap with actions that haven't been visited already.
+            const auto actionID{ actionHasher(cmd.ActionAndArgs()) };
             if (visitedActionIDs.find(actionID) == visitedActionIDs.end())
             {
                 const auto& name{ cmd.Name() };
@@ -127,12 +125,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 visitedActionIDs.insert(actionID);
             }
         }
+    }
 
-        // Update NameMap and visitedActionIDs with our parents
+    // Method Description:
+    // - Provides an accumulated list of actions that are exposed. The accumulated list includes actions added in this layer, followed by actions added by our parents.
+    std::vector<Model::Command> ActionMap::_GetCumulativeActions() const noexcept
+    {
+        // First, add actions from our current layer
+        std::vector<Model::Command> cumulativeActions;
+        cumulativeActions.reserve(_ActionMap.size());
+        std::transform(_ActionMap.begin(), _ActionMap.end(), std::back_inserter(cumulativeActions), [](std::pair<InternalActionID, Model::Command> actionPair) {
+            return actionPair.second;
+        });
+
+        // Now, add the accumulated actions from our parents
         for (const auto& parent : _parents)
         {
-            parent->_PopulateNameMapWithStandardCommands(nameMap, visitedActionIDs);
+            const auto parentActions{ parent->_GetCumulativeActions() };
+            cumulativeActions.reserve(cumulativeActions.size() + parentActions.size());
+            cumulativeActions.insert(cumulativeActions.end(), parentActions.begin(), parentActions.end());
         }
+
+        return cumulativeActions;
     }
 
     com_ptr<ActionMap> ActionMap::Copy() const

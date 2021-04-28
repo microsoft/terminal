@@ -42,11 +42,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto command{ winrt::make_self<Command>() };
         command->_name = _name;
-
-        // TODO GH#6900: We probably want ActionAndArgs::Copy here
-        //              This is fine for now because SUI can't actually
-        //              modify the copy yet.
-        command->_ActionAndArgs = _ActionAndArgs;
+        command->_ActionAndArgs = *get_self<implementation::ActionAndArgs>(_ActionAndArgs)->Copy();
         for (const auto& keys : _keyMappings)
         {
             command->_keyMappings.emplace_back(keys.Modifiers(), keys.Vkey());
