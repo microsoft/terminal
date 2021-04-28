@@ -499,7 +499,7 @@ Json::Value Profile::ToJson() const
     // GH #9962:
     //   If the settings.json was missing, when we load the dynamic profiles, they are completely empty.
     //   This caused us to serialize empty profiles "{}" on accident.
-    bool writeBasicSettings{ !Source().empty() };
+    const bool writeBasicSettings{ !Source().empty() };
 
     // Profile-specific Settings
     JsonUtils::SetValueForKey(json, NameKey, writeBasicSettings ? Name() : _Name);
