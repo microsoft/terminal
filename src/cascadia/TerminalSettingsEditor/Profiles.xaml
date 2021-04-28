@@ -33,7 +33,6 @@
                 <TextBlock FontFamily="{x:Bind Name}"
                            Text="{x:Bind LocalizedName}" />
             </DataTemplate>
-            <model:IconPathConverter x:Key="IconSourceConverter" />
             <local:ColorToBrushConverter x:Key="ColorToBrushConverter" />
             <local:PercentageConverter x:Key="PercentageConverter" />
             <local:FontWeightConverter x:Key="FontWeightConverter" />
