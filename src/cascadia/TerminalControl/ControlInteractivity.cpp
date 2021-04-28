@@ -398,7 +398,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            _mouseScrollHandler(delta, terminalPosition, state.isLeftButtonDown);
+            _mouseScrollHandler(delta, pixelPosition, state.isLeftButtonDown);
         }
         return false;
     }
@@ -430,10 +430,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Scroll the visible viewport in response to a mouse wheel event.
     // Arguments:
     // - mouseDelta: the mouse wheel delta that triggered this event.
-    // - point: the location of the mouse during this event
+    // - pixelPosition: the location of the mouse during this event
     // - isLeftButtonPressed: true iff the left mouse button was pressed during this event.
     void ControlInteractivity::_mouseScrollHandler(const double mouseDelta,
-                                                   const til::point terminalPosition,
+                                                   const til::point pixelPosition,
                                                    const bool isLeftButtonPressed)
     {
         const auto currentOffset = _core->ScrollOffset();
@@ -458,7 +458,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // If user is mouse selecting and scrolls, they then point at new
             // character. Make sure selection reflects that immediately.
-            SetEndSelectionPoint(terminalPosition);
+            SetEndSelectionPoint(pixelPosition);
         }
     }
 
