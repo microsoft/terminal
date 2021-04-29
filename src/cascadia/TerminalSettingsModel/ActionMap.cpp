@@ -17,7 +17,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
-    // - Retrieves the Command in the ActionList, if it's valid
+    // - Retrieves the Command in the current layer, if it's valid
     // - We internally store invalid commands as full commands.
     //    This helper function returns nullptr when we get an invalid
     //    command. This allows us to simply check for null when we
@@ -28,15 +28,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - If the command is valid, the command itself.
     // - If the command is explicitly unbound, nullptr.
     // - If the command cannot be found in this layer, nullopt.
-    std::optional<Model::Command> ActionMap::_GetActionByID(InternalActionID actionID) const
+    std::optional<Model::Command> ActionMap::_GetActionByID(const InternalActionID actionID) const
     {
-        const auto& cmdPair{ _ActionMap.find(actionID) };
-        if (cmdPair == _ActionMap.end())
+        // Check the consolidated actions
+        auto cmdPair{ _ConsolidatedActions.find(actionID) };
+        if (cmdPair != _ConsolidatedActions.end())
         {
-            // we don't have an answer
-            return std::nullopt;
+            // ActionMap should never point to nullptr
+            FAIL_FAST_IF_NULL(cmdPair->second);
+
+            // consolidated actions cannot contain nested or invalid commands,
+            // so we can just return it directly.
+            return cmdPair->second;
         }
-        else
+
+        // Check current layer
+        cmdPair = _ActionMap.find(actionID);
+        if (cmdPair != _ActionMap.end())
         {
             const auto& cmd{ cmdPair->second };
 
@@ -47,6 +55,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                        nullptr : // explicitly unbound
                        cmd;
         }
+
+        // We don't have an answer
+        return std::nullopt;
     }
 
     // Method Description:
@@ -76,6 +87,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         // Update NameMap with our parents.
         // Starting with this means we're doing a top-down approach.
+        FAIL_FAST_IF(_parents.size() > 1);
         for (const auto& parent : _parents)
         {
             parent->_PopulateNameMapWithNestedCommands(nameMap);
@@ -133,12 +145,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         // First, add actions from our current layer
         std::vector<Model::Command> cumulativeActions;
-        cumulativeActions.reserve(_ActionMap.size());
+        cumulativeActions.reserve(_ConsolidatedActions.size() + _ActionMap.size());
+
+        // Consolidated actions have priority. Actions here are constructed from consolidating an inherited action with changes we've found when populating this layer.
+        std::transform(_ConsolidatedActions.begin(), _ConsolidatedActions.end(), std::back_inserter(cumulativeActions), [](std::pair<InternalActionID, Model::Command> actionPair) {
+            return actionPair.second;
+        });
         std::transform(_ActionMap.begin(), _ActionMap.end(), std::back_inserter(cumulativeActions), [](std::pair<InternalActionID, Model::Command> actionPair) {
             return actionPair.second;
         });
 
         // Now, add the accumulated actions from our parents
+        FAIL_FAST_IF(_parents.size() > 1);
         for (const auto& parent : _parents)
         {
             const auto parentActions{ parent->_GetCumulativeActions() };
@@ -171,6 +189,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // repeat this for each of our parents
+        FAIL_FAST_IF(_parents.size() > 1);
         for (const auto& parent : _parents)
         {
             actionMap->_parents.push_back(std::move(parent->Copy()));
@@ -205,8 +224,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // General Case:
-        //  Add the new command to the NameMap and KeyMap (whichever is applicable).
-        //  These maps direct you to an entry in the ActionMap.
+        //  Add the new command to the KeyMap.
+        //  This map directs you to an entry in the ActionMap.
 
         // Removing Actions from the Command Palette:
         //  cmd.Name and cmd.Action have a one-to-one relationship.
@@ -216,44 +235,126 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         //  cmd.Keys and cmd.Action have a many-to-one relationship.
         //  If cmd.Keys is empty, we don't care.
         //  If action is "unbound"/"invalid", you're explicitly unbinding the provided cmd.keys.
+        //  NOTE: If we're unbinding a command from a different layer, we must use ConsolidatedActions
+        //         to keep track of what key mappings are still valid.
 
+        // _TryUpdateActionMap may update oldCmd and consolidatedCmd
         Model::Command oldCmd{ nullptr };
-        const auto actionID{ ActionHash()(cmd.ActionAndArgs()) };
-        auto actionPair{ _ActionMap.find(actionID) };
+        Model::Command consolidatedCmd{ nullptr };
+        _TryUpdateActionMap(cmd, oldCmd, consolidatedCmd);
+
+        _TryUpdateName(cmd, oldCmd, consolidatedCmd);
+        _TryUpdateKeyChord(cmd, oldCmd, consolidatedCmd);
+    }
+
+    // Method Description:
+    // - Try to add the new command to _ActionMap.
+    // - If the command was added previously in this layer, populate oldCmd.
+    // - If the command was added previously in another layer, populate consolidatedCmd.
+    // Arguments:
+    // - cmd: the action we're trying to register
+    // - oldCmd: the action found in _ActionMap, if one already exists
+    // - consolidatedAction: the action found in a parent layer, if one already exists
+    void ActionMap::_TryUpdateActionMap(const Model::Command& cmd, Model::Command& oldCmd, Model::Command& consolidatedCmd)
+    {
+        const auto actionID{ ActionHash{}(cmd.ActionAndArgs()) };
+
+        const auto& actionPair{ _ActionMap.find(actionID) };
         if (actionPair != _ActionMap.end())
         {
-            // We're adding an action that already exists.
-            // Record it and update it with any new information.
+            // We're adding an action that already exists in our layer.
+            // Record it so that we update it with any new information.
             oldCmd = actionPair->second;
-
-            // Update Name
-            const auto cmdImpl{ get_self<Command>(cmd) };
-            if (cmdImpl->HasName())
-            {
-                // This command has a name, check if it's new.
-                const auto newName{ cmd.Name() };
-                if (newName != oldCmd.Name())
-                {
-                    // The new name differs from the old name,
-                    // update our name.
-                    auto oldCmdImpl{ get_self<Command>(oldCmd) };
-                    oldCmdImpl->Name(newName);
-                }
-
-                // Handle a collision with NestedCommands
-                _NestedCommands.TryRemove(newName);
-            }
         }
         else
         {
             // add this action in for the first time
             _ActionMap.insert({ actionID, cmd });
-
-            // Handle a collision with NestedCommands
-            _NestedCommands.TryRemove(cmd.Name());
         }
 
-        // Update KeyMap
+        // Now check if this action was introduced in another layer.
+        const auto& consolidatedActionPair{ _ConsolidatedActions.find(actionID) };
+        if (consolidatedActionPair != _ConsolidatedActions.end())
+        {
+            // We're adding an action that already existed on a different layer.
+            // Record it so that we update it with any new information.
+            consolidatedCmd = consolidatedActionPair->second;
+        }
+        else
+        {
+            // Check if we need to add this to our list of consolidated commands.
+            FAIL_FAST_IF(_parents.size() > 1);
+            for (const auto& parent : _parents)
+            {
+                // NOTE: This only checks the layer above us, but that's ok.
+                //       If we had to find one from a layer above that, parent->_ConsolidatedActions
+                //       would have found it, so we inherit it for free!
+                const auto& inheritedCmd{ parent->_GetActionByID(actionID) };
+                if (inheritedCmd.has_value() && inheritedCmd.value())
+                {
+                    const auto& inheritedCmdImpl{ get_self<Command>(inheritedCmd.value()) };
+                    consolidatedCmd = *inheritedCmdImpl->Copy();
+                    _ConsolidatedActions.insert({ actionID, consolidatedCmd });
+                }
+            }
+        }
+    }
+
+    // Method Description:
+    // - Update our internal state with the name of the newly registered action
+    // Arguments:
+    // - cmd: the action we're trying to register
+    // - oldCmd: the action that already exists in our internal state. May be null.
+    // - consolidatedCmd: the consolidated action that already exists in our internal state. May be null.
+    void ActionMap::_TryUpdateName(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd)
+    {
+        const auto cmdImpl{ get_self<Command>(cmd) };
+        if (!cmdImpl->HasName())
+        {
+            // the user is not trying to update the name.
+            return;
+        }
+
+        // If we have a Command in our _ActionMap that we're trying to update,
+        // update it.
+        const auto newName{ cmd.Name() };
+        if (oldCmd)
+        {
+            // This command has a name, check if it's new.
+            if (newName != oldCmd.Name())
+            {
+                // The new name differs from the old name,
+                // update our name.
+                auto oldCmdImpl{ get_self<Command>(oldCmd) };
+                oldCmdImpl->Name(newName);
+            }
+        }
+
+        // The same goes for consolidated actions.
+        if (consolidatedCmd)
+        {
+            // This command has a name, check if it's new.
+            if (newName != consolidatedCmd.Name())
+            {
+                // The new name differs from the old name,
+                // update our name.
+                auto consolidatedCmdImpl{ get_self<Command>(consolidatedCmd) };
+                consolidatedCmdImpl->Name(newName);
+            }
+        }
+
+        // Handle a collision with NestedCommands
+        _NestedCommands.TryRemove(newName);
+    }
+
+    // Method Description:
+    // - Update our internal state with the key chord of the newly registered action
+    // Arguments:
+    // - cmd: the action we're trying to register
+    // - oldCmd: the action that already exists in our internal state. May be null.
+    // - consolidatedCmd: the consolidated action that already exists in our internal state. May be null.
+    void ActionMap::_TryUpdateKeyChord(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd)
+    {
         if (const auto keys{ cmd.Keys() })
         {
             const auto oldKeyPair{ _KeyMap.find(keys) };
@@ -261,23 +362,34 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 // Collision: The key chord was already in use.
                 // Remove the old one.
-                actionPair = _ActionMap.find(oldKeyPair->second);
+                const auto& actionPair{ _ActionMap.find(oldKeyPair->second) };
                 const auto& conflictingCmd{ actionPair->second };
                 const auto& conflictingCmdImpl{ get_self<implementation::Command>(conflictingCmd) };
                 conflictingCmdImpl->EraseKey(keys);
             }
             else if (const auto& conflictingCmd{ GetActionByKeyChord(keys) })
             {
-                // Collision: The key chord was already in use by an action in another layer
-                // Create a copy of the conflicting action,
-                // and erase the conflicting key chord from the copy.
-                const auto& conflictingCmdImpl{ get_self<implementation::Command>(conflictingCmd) };
-                const auto& conflictingCmdCopy{ conflictingCmdImpl->Copy() };
-                conflictingCmdCopy->EraseKey(keys);
-                _ActionMap.insert({ ActionHash()(conflictingCmdCopy->ActionAndArgs()), *conflictingCmdCopy });
+                // Collision: The key chord was already in use, but by an action in another layer
+                const auto conflictingActionID{ ActionHash{}(conflictingCmd.ActionAndArgs()) };
+                const auto& consolidatedCmdPair{ _ConsolidatedActions.find(conflictingActionID) };
+                if (consolidatedCmdPair != _ConsolidatedActions.end())
+                {
+                    const auto& consolidatedCmdImpl{ get_self<implementation::Command>(consolidatedCmdPair->second) };
+                    consolidatedCmdImpl->EraseKey(keys);
+                }
+                else
+                {
+                    // Create a copy of the conflicting action,
+                    // and erase the conflicting key chord from the copy.
+                    const auto& conflictingCmdImpl{ get_self<implementation::Command>(conflictingCmd) };
+                    const auto& conflictingCmdCopy{ conflictingCmdImpl->Copy() };
+                    conflictingCmdCopy->EraseKey(keys);
+                    _ConsolidatedActions.insert({ conflictingActionID, *conflictingCmdCopy });
+                }
             }
 
             // Assign the new action.
+            const auto actionID{ ActionHash{}(cmd.ActionAndArgs()) };
             _KeyMap.insert_or_assign(keys, actionID);
 
             if (oldCmd)
@@ -285,6 +397,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // Update inner Command with new key chord
                 auto oldCmdImpl{ get_self<Command>(oldCmd) };
                 oldCmdImpl->RegisterKey(keys);
+            }
+
+            if (consolidatedCmd)
+            {
+                // Update inner Command with new key chord
+                auto consolidatedCmdImpl{ get_self<Command>(consolidatedCmd) };
+                consolidatedCmdImpl->RegisterKey(keys);
             }
         }
     }
@@ -331,6 +450,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // the command was not bound in this layer,
         // ask my parents
+        FAIL_FAST_IF(_parents.size() > 1);
         for (const auto& parent : _parents)
         {
             const auto& inheritedCmd{ parent->_GetActionByKeyChordInternal(keys) };
@@ -373,13 +493,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Check our internal state.
         const ActionAndArgs& actionAndArgs{ myAction, myArgs };
-        const auto hash{ ActionHash()(actionAndArgs) };
+        const auto hash{ ActionHash{}(actionAndArgs) };
         if (const auto& cmd{ _GetActionByID(hash) })
         {
             return cmd.value().Keys();
         }
 
         // Check our parents
+        FAIL_FAST_IF(_parents.size() > 1);
         for (const auto& parent : _parents)
         {
             if (const auto& keys{ parent->GetKeyBindingForAction(myAction, myArgs) })

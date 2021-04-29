@@ -89,17 +89,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static Windows::System::VirtualKeyModifiers ConvertVKModifiers(Control::KeyModifiers modifiers);
 
     private:
-        std::optional<Model::Command> _GetActionByID(InternalActionID actionID) const;
+        std::optional<Model::Command> _GetActionByID(const InternalActionID actionID) const;
         std::optional<Model::Command> _GetActionByKeyChordInternal(Control::KeyChord const& keys) const;
 
         void _PopulateNameMapWithNestedCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
         void _PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
         std::vector<Model::Command> _GetCumulativeActions() const noexcept;
 
+        void _TryUpdateActionMap(const Model::Command& cmd, Model::Command& oldCmd, Model::Command& consolidatedCmd);
+        void _TryUpdateName(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
+        void _TryUpdateKeyChord(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
+
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NestedCommands{ nullptr };
         std::unordered_map<Control::KeyChord, InternalActionID, KeyChordHash, KeyChordEquality> _KeyMap;
         std::unordered_map<InternalActionID, Model::Command> _ActionMap;
+
+        // These are actions that were consolidated across multiple layers.
+        // They don't need to be serialized.
+        std::unordered_map<InternalActionID, Model::Command> _ConsolidatedActions;
 
         friend class SettingsModelLocalTests::KeyBindingsTests;
         friend class SettingsModelLocalTests::DeserializationTests;
