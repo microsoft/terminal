@@ -20,6 +20,7 @@ namespace Microsoft.Terminal.Core
         String WordDelimiters;
 
         Boolean ForceVTInput;
+        Boolean TrimBlockSelection;
 
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> TabColor;
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> StartingTabColor;

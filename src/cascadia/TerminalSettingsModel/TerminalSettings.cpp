@@ -306,6 +306,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _ForceFullRepaintRendering = globalSettings.ForceFullRepaintRendering();
         _SoftwareRendering = globalSettings.SoftwareRendering();
         _ForceVTInput = globalSettings.ForceVTInput();
+        _TrimBlockSelection = globalSettings.TrimBlockSelection();
     }
 
     // Method Description:

@@ -167,6 +167,44 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return cumulativeActions;
     }
 
+    Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> ActionMap::GlobalHotkeys()
+    {
+        if (!_GlobalHotkeysCache)
+        {
+            const ActionHash actionHasher{};
+            std::set<InternalActionID> visitedActionIDs{};
+            std::unordered_map<Control::KeyChord, Model::Command, KeyChordHash, KeyChordEquality> globalHotkeys;
+            for (const auto& cmd : _GetCumulativeActions())
+            {
+                // Only populate GlobalHotkeys with actions that...
+                // (1) ShortcutAction is GlobalSummon or QuakeMode
+                const auto& actionAndArgs{ cmd.ActionAndArgs() };
+                if (actionAndArgs.Action() == ShortcutAction::GlobalSummon || actionAndArgs.Action() == ShortcutAction::QuakeMode)
+                {
+                    // (2) haven't been visited already
+                    const auto actionID{ actionHasher(actionAndArgs) };
+                    if (visitedActionIDs.find(actionID) == visitedActionIDs.end())
+                    {
+                        const auto& cmdImpl{ get_self<Command>(cmd) };
+                        for (const auto& keys : cmdImpl->KeyMappings())
+                        {
+                            // (3) haven't had that key chord added yet
+                            if (globalHotkeys.find(keys) == globalHotkeys.end())
+                            {
+                                globalHotkeys.insert({keys, cmd});
+                            }
+                        }
+
+                        // Record that we already handled adding this action to the NameMap.
+                        visitedActionIDs.insert(actionID);
+                    }
+                }
+            }
+            _GlobalHotkeysCache = single_threaded_map<Control::KeyChord, Model::Command>(std::move(globalHotkeys));
+        }
+        return _GlobalHotkeysCache.GetView();
+    }
+
     com_ptr<ActionMap> ActionMap::Copy() const
     {
         auto actionMap{ make_self<ActionMap>() };

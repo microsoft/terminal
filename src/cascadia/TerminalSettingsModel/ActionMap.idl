@@ -14,6 +14,7 @@ namespace Microsoft.Terminal.Settings.Model
         Microsoft.Terminal.Control.KeyChord GetKeyBindingForAction(ShortcutAction action, IActionArgs actionArgs);
 
         Windows.Foundation.Collections.IMapView<String, Command> NameMap { get; };
+        Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Command> GlobalHotkeys();
     };
 
     [default_interface] runtimeclass ActionMap : IActionMapView

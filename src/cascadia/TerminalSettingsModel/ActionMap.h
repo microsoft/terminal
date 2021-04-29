@@ -75,6 +75,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // views
         Windows::Foundation::Collections::IMapView<hstring, Model::Command> NameMap();
+        Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> GlobalHotkeys();
         com_ptr<ActionMap> Copy() const;
 
         // queries
@@ -101,6 +102,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _TryUpdateKeyChord(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
 
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
+        Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _GlobalHotkeysCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NestedCommands{ nullptr };
         std::unordered_map<Control::KeyChord, InternalActionID, KeyChordHash, KeyChordEquality> _KeyMap;
         std::unordered_map<InternalActionID, Model::Command> _ActionMap;

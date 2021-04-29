@@ -38,14 +38,19 @@ public:
     void FlashTaskbar();
     void SetTaskbarProgress(const size_t state, const size_t progress);
 
-    winrt::fire_and_forget SummonWindow();
+    void UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList);
+    void SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList);
 
-#pragma endregion
+    winrt::fire_and_forget SummonWindow(const bool toggleVisibility);
+
+    bool IsQuakeWindow() const noexcept;
+    void IsQuakeWindow(bool isQuakeWindow) noexcept;
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
     DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
     WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
     WINRT_CALLBACK(WindowActivated, winrt::delegate<void()>);
+    WINRT_CALLBACK(HotkeyPressed, winrt::delegate<void(long)>);
 
 protected:
     void ForceResize()
@@ -66,6 +71,7 @@ protected:
 
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
     [[nodiscard]] LRESULT _OnSizing(const WPARAM wParam, const LPARAM lParam);
+    [[nodiscard]] LRESULT _OnMoving(const WPARAM wParam, const LPARAM lParam);
 
     bool _borderless{ false };
     bool _alwaysOnTop{ false };
@@ -86,6 +92,12 @@ protected:
 
     void _OnGetMinMaxInfo(const WPARAM wParam, const LPARAM lParam);
     long _calculateTotalSize(const bool isWidth, const long clientSize, const long nonClientSize);
+
+    void _globalActivateWindow();
+    void _globalDismissWindow();
+
+    bool _isQuakeWindow{ false };
+    void _enterQuakeMode();
 
 private:
     // This minimum width allows for width the tabs fit

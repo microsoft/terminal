@@ -31,11 +31,13 @@
 #include "PrevTabArgs.g.h"
 #include "NextTabArgs.g.h"
 #include "RenameWindowArgs.g.h"
+#include "GlobalSummonArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
 #include "HashUtils.h"
 #include "TerminalWarnings.h"
+#include "../inc/WindowingBehavior.h"
 
 #include "TerminalSettingsSerializationHelpers.h"
 
@@ -1150,6 +1152,63 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Name);
         }
     };
+
+    struct GlobalSummonArgs : public GlobalSummonArgsT<GlobalSummonArgs>
+    {
+        GlobalSummonArgs() = default;
+        WINRT_PROPERTY(winrt::hstring, Name, L"");
+        WINRT_PROPERTY(Model::DesktopBehavior, Desktop, Model::DesktopBehavior::ToCurrent);
+        WINRT_PROPERTY(bool, ToggleVisibility, true);
+
+        static constexpr std::string_view NameKey{ "name" };
+        static constexpr std::string_view DesktopKey{ "desktop" };
+        static constexpr std::string_view ToggleVisibilityKey{ "toggleVisibility" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            if (auto otherAsUs = other.try_as<GlobalSummonArgs>())
+            {
+                return otherAsUs->_Name == _Name &&
+                       otherAsUs->_Desktop == _Desktop &&
+                       otherAsUs->_ToggleVisibility == _ToggleVisibility;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<GlobalSummonArgs>();
+            JsonUtils::GetValueForKey(json, NameKey, args->_Name);
+            JsonUtils::GetValueForKey(json, DesktopKey, args->_Desktop);
+            JsonUtils::GetValueForKey(json, ToggleVisibilityKey, args->_ToggleVisibility);
+            return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<GlobalSummonArgs>() };
+            copy->_Name = _Name;
+            copy->_Desktop = _Desktop;
+            copy->_ToggleVisibility = _ToggleVisibility;
+            return *copy;
+        }
+        // SPECIAL! This deserializer creates a GlobalSummonArgs with the
+        // default values for quakeMode
+        static FromJsonResult QuakeModeFromJson(const Json::Value& /*json*/)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<GlobalSummonArgs>();
+            args->_Name = QuakeWindowName;
+            return { *args, {} };
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Name, _Desktop, _ToggleVisibility);
+        }
+    };
+
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
