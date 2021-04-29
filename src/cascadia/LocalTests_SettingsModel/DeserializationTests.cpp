@@ -88,6 +88,8 @@ namespace SettingsModelLocalTests
 
         TEST_METHOD(TestValidDefaults);
 
+        TEST_METHOD(TestInheritedCommand);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -2760,5 +2762,159 @@ namespace SettingsModelLocalTests
         const auto settings{ CascadiaSettings::LoadDefaults() };
         VERIFY_ARE_EQUAL(settings.ActiveProfiles().Size(), settings.AllProfiles().Size());
         VERIFY_ARE_EQUAL(settings.AllProfiles().Size(), 2u);
+    }
+
+    void DeserializationTests::TestInheritedCommand()
+    {
+        // Test unbinding a command's key chord or name that originated in another layer.
+
+        const std::string settings1Json{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "actions": [
+                {
+                    "name": "foo",
+                    "command": "closePane",
+                    "keys": "ctrl+shift+w"
+                }
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        const std::string settings2Json{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "actions": [
+                {
+                    "command": null,
+                    "keys": "ctrl+shift+w"
+                },
+            ],
+        })" };
+
+        const std::string settings3Json{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "actions": [
+                {
+                    "name": "bar",
+                    "command": "closePane"
+                },
+            ],
+        })" };
+
+        VerifyParseSucceeded(settings1Json);
+        VerifyParseSucceeded(settings2Json);
+        VerifyParseSucceeded(settings3Json);
+
+        auto settings = winrt::make_self<implementation::CascadiaSettings>();
+        settings->_ParseJsonString(settings1Json, false);
+        settings->LayerJson(settings->_userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
+        VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
+
+        settings->_ValidateSettings();
+        auto nameMap{ settings->ActionMap().NameMap() };
+        _logCommandNames(nameMap);
+
+        VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
+
+        const KeyChord expectedKeyChord{ true, false, true, static_cast<int>('W') };
+        {
+            // Verify NameMap returns correct value
+            const auto& cmd{ nameMap.TryLookup(L"foo") };
+            VERIFY_IS_NOT_NULL(cmd);
+            VERIFY_IS_NOT_NULL(cmd.Keys());
+            VERIFY_IS_TRUE(cmd.Keys().Modifiers() == expectedKeyChord.Modifiers() && cmd.Keys().Vkey() == expectedKeyChord.Vkey());
+        }
+        {
+            // Verify ActionMap::GetActionByKeyChord API
+            const auto& cmd{ settings->ActionMap().GetActionByKeyChord(expectedKeyChord) };
+            VERIFY_IS_NOT_NULL(cmd);
+            VERIFY_IS_NOT_NULL(cmd.Keys());
+            VERIFY_IS_TRUE(cmd.Keys().Modifiers() == expectedKeyChord.Modifiers() && cmd.Keys().Vkey() == expectedKeyChord.Vkey());
+        }
+        {
+            // Verify ActionMap::GetKeyBindingForAction API
+            const auto& actualKeyChord{ settings->ActionMap().GetKeyBindingForAction(ShortcutAction::ClosePane) };
+            VERIFY_IS_NOT_NULL(actualKeyChord);
+            VERIFY_IS_TRUE(actualKeyChord.Modifiers() == expectedKeyChord.Modifiers() && actualKeyChord.Vkey() == expectedKeyChord.Vkey());
+        }
+
+        Log::Comment(L"Layer second bit of json, to unbind the key chord of the original command.");
+
+        settings->_ParseJsonString(settings2Json, false);
+        settings->LayerJson(settings->_userSettings);
+        settings->_ValidateSettings();
+
+        nameMap = settings->ActionMap().NameMap();
+        _logCommandNames(nameMap);
+        VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
+        {
+            // Verify NameMap returns correct value
+            const auto& cmd{ nameMap.TryLookup(L"foo") };
+            VERIFY_IS_NOT_NULL(cmd);
+            VERIFY_IS_NULL(cmd.Keys());
+        }
+        {
+            // Verify ActionMap::GetActionByKeyChord API
+            const auto& cmd{ settings->ActionMap().GetActionByKeyChord(expectedKeyChord) };
+            VERIFY_IS_NULL(cmd);
+        }
+        {
+            // Verify ActionMap::GetKeyBindingForAction API
+            const auto& actualKeyChord{ settings->ActionMap().GetKeyBindingForAction(ShortcutAction::ClosePane) };
+            VERIFY_IS_NULL(actualKeyChord);
+        }
+
+        Log::Comment(L"Layer third bit of json, to unbind name of the original command.");
+
+        settings->_ParseJsonString(settings3Json, false);
+        settings->LayerJson(settings->_userSettings);
+        settings->_ValidateSettings();
+
+        nameMap = settings->ActionMap().NameMap();
+        _logCommandNames(nameMap);
+        VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
+        {
+            // Verify NameMap returns correct value
+            const auto& cmd{ nameMap.TryLookup(L"bar") };
+            VERIFY_IS_NOT_NULL(cmd);
+            VERIFY_IS_NULL(cmd.Keys());
+            VERIFY_ARE_EQUAL(L"bar", cmd.Name());
+        }
+        {
+            // Verify ActionMap::GetActionByKeyChord API
+            const auto& cmd{ settings->ActionMap().GetActionByKeyChord(expectedKeyChord) };
+            VERIFY_IS_NULL(cmd);
+        }
+        {
+            // Verify ActionMap::GetKeyBindingForAction API
+            const auto& actualKeyChord{ settings->ActionMap().GetKeyBindingForAction(ShortcutAction::ClosePane) };
+            VERIFY_IS_NULL(actualKeyChord);
+        }
     }
 }
