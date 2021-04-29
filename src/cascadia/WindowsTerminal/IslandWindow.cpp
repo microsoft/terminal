@@ -15,6 +15,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace ::Microsoft::Console::Types;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
@@ -170,7 +171,7 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     {
         // If we haven't been given the callback that would adjust the dimension,
         // then we can't do anything, so just bail out.
-        return FALSE;
+        return false;
     }
 
     LPRECT winRect = reinterpret_cast<LPRECT>(lParam);
@@ -182,8 +183,9 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     // optional parameter so give two UINTs.
     UINT dpix = USER_DEFAULT_SCREEN_DPI;
     UINT dpiy = USER_DEFAULT_SCREEN_DPI;
-    // If this fails, we'll use the default of 96.
-    GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
+    // If this fails, we'll use the default of 96. I think it can only fail for
+    // bad parameters, which we won't have, so no big deal.
+    LOG_IF_FAILED(GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy));
 
     const auto widthScale = base::ClampedNumeric<float>(dpix) / USER_DEFAULT_SCREEN_DPI;
     const long minWidthScaled = minimumWidth * widthScale;
@@ -194,6 +196,16 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     clientWidth = std::max(minWidthScaled, clientWidth);
 
     auto clientHeight = winRect->bottom - winRect->top - nonClientSize.cy;
+
+    // If we're the quake window, prevent resizing on all sides except the
+    // bottom. This also applies to resizing with the Alt+Space menu
+    if (IsQuakeWindow() && wParam != WMSZ_BOTTOM)
+    {
+        // Stuff our current window size into the lParam, and return true. This
+        // will tell User32 to use our current dimensions to resize to.
+        ::GetWindowRect(_window.get(), winRect);
+        return true;
+    }
 
     if (wParam != WMSZ_TOP && wParam != WMSZ_BOTTOM)
     {
@@ -244,7 +256,31 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
         break;
     }
 
-    return TRUE;
+    return true;
+}
+
+// Method Description:
+// - Handle the WM_MOVING message
+// - If we're the quake window, then we don't want to be able to be moved.
+//   Immediately return our current window position, which will prevent us from
+//   being moved at all.
+// Arguments:
+// - lParam: a LPRECT with the proposed window position, that should be filled
+//   with the resultant position.
+// Return Value:
+// - true iff we handled this message.
+LRESULT IslandWindow::_OnMoving(const WPARAM /*wParam*/, const LPARAM lParam)
+{
+    LPRECT winRect = reinterpret_cast<LPRECT>(lParam);
+    // If we're the quake window, prevent moving the window
+    if (IsQuakeWindow())
+    {
+        // Stuff our current window into the lParam, and return true. This
+        // will tell User32 to use our current position to move to.
+        ::GetWindowRect(_window.get(), winRect);
+        return true;
+    }
+    return false;
 }
 
 void IslandWindow::Initialize()
@@ -351,6 +387,11 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
 {
     switch (message)
     {
+    case WM_HOTKEY:
+    {
+        _HotkeyPressedHandlers(static_cast<long>(wparam));
+        return 0;
+    }
     case WM_GETMINMAXINFO:
     {
         _OnGetMinMaxInfo(wparam, lparam);
@@ -367,8 +408,9 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         {
             // send focus to the child window
             SetFocus(_interopWindowHandle);
-            return 0; // eat the message
+            return 0;
         }
+        break;
     }
     case WM_ACTIVATE:
     {
@@ -404,6 +446,10 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     case WM_SIZING:
     {
         return _OnSizing(wparam, lparam);
+    }
+    case WM_MOVING:
+    {
+        return _OnMoving(wparam, lparam);
     }
     case WM_CLOSE:
     {
@@ -749,6 +795,7 @@ void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)
     // Resize the window, with SWP_FRAMECHANGED, to trigger user32 to
     // recalculate the non/client areas
     const til::rectangle windowPos{ GetWindowRect() };
+
     SetWindowPos(GetHandle(),
                  HWND_TOP,
                  windowPos.left<int>(),
@@ -756,6 +803,91 @@ void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)
                  windowPos.width<int>(),
                  windowPos.height<int>(),
                  SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
+}
+
+// Method Description:
+// - Called when entering fullscreen, with the window's current monitor rect and work area.
+// - The current window position, dpi, work area, and maximized state are stored, and the
+//   window is positioned to the monitor rect.
+void IslandWindow::_SetFullscreenPosition(const RECT rcMonitor, const RECT rcWork)
+{
+    HWND const hWnd = GetHandle();
+
+    ::GetWindowRect(hWnd, &_rcWindowBeforeFullscreen);
+    _dpiBeforeFullscreen = GetDpiForWindow(hWnd);
+    _fWasMaximizedBeforeFullscreen = IsZoomed(hWnd);
+    _rcWorkBeforeFullscreen = rcWork;
+
+    SetWindowPos(hWnd,
+                 HWND_TOP,
+                 rcMonitor.left,
+                 rcMonitor.top,
+                 rcMonitor.right - rcMonitor.left,
+                 rcMonitor.bottom - rcMonitor.top,
+                 SWP_FRAMECHANGED);
+}
+
+// Method Description:
+// - Called when exiting fullscreen, with the window's current monitor work area.
+// - The window is restored to its previous position, migrating that previous position to the
+//   window's current monitor (if the current work area or window DPI have changed).
+// - A fullscreen window's monitor can be changed by win+shift+left/right hotkeys or monitor
+//   topology changes (for example unplugging a monitor or disconnecting a remote session).
+void IslandWindow::_RestoreFullscreenPosition(const RECT rcWork)
+{
+    HWND const hWnd = GetHandle();
+
+    // If the window was previously maximized, re-maximize the window.
+    if (_fWasMaximizedBeforeFullscreen)
+    {
+        ShowWindow(hWnd, SW_SHOWMAXIMIZED);
+        SetWindowPos(hWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+
+        return;
+    }
+
+    // Start with the stored window position.
+    RECT rcRestore = _rcWindowBeforeFullscreen;
+
+    // If the window DPI has changed, re-size the stored position by the change in DPI. This
+    // ensures the window restores to the same logical size (even if to a monitor with a different
+    // DPI/ scale factor).
+    UINT dpiWindow = GetDpiForWindow(hWnd);
+    rcRestore.right = rcRestore.left + MulDiv(rcRestore.right - rcRestore.left, dpiWindow, _dpiBeforeFullscreen);
+    rcRestore.bottom = rcRestore.top + MulDiv(rcRestore.bottom - rcRestore.top, dpiWindow, _dpiBeforeFullscreen);
+
+    // Offset the stored position by the difference in work area.
+    OffsetRect(&rcRestore,
+               rcWork.left - _rcWorkBeforeFullscreen.left,
+               rcWork.top - _rcWorkBeforeFullscreen.top);
+
+    // Enforce that our position is entirely within the bounds of our work area.
+    // Prefer the top-left be on-screen rather than bottom-right (right before left, bottom before top).
+    if (rcRestore.right > rcWork.right)
+    {
+        OffsetRect(&rcRestore, rcWork.right - rcRestore.right, 0);
+    }
+    if (rcRestore.left < rcWork.left)
+    {
+        OffsetRect(&rcRestore, rcWork.left - rcRestore.left, 0);
+    }
+    if (rcRestore.bottom > rcWork.bottom)
+    {
+        OffsetRect(&rcRestore, 0, rcWork.bottom - rcRestore.bottom);
+    }
+    if (rcRestore.top < rcWork.top)
+    {
+        OffsetRect(&rcRestore, 0, rcWork.top - rcRestore.top);
+    }
+
+    // Show the window at the computed position.
+    SetWindowPos(hWnd,
+                 HWND_TOP,
+                 rcRestore.left,
+                 rcRestore.top,
+                 rcRestore.right - rcRestore.left,
+                 rcRestore.bottom - rcRestore.top,
+                 SWP_SHOWWINDOW | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 }
 
 // Method Description:
@@ -773,7 +905,7 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
     // It is possible to enter _SetIsFullscreen even if we're already in full
     // screen. Use the old is in fullscreen flag to gate checks that rely on the
     // current state.
-    const auto oldIsInFullscreen = _fullscreen;
+    const bool fChangingFullscreen = (fullscreenEnabled != _fullscreen);
     _fullscreen = fullscreenEnabled;
 
     HWND const hWnd = GetHandle();
@@ -789,59 +921,109 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
     WI_UpdateFlag(exWindowStyle, WS_EX_WINDOWEDGE, !_fullscreen);
     _SetWindowLongWHelper(hWnd, GWL_EXSTYLE, exWindowStyle);
 
-    // When entering/exiting fullscreen mode, we also need to backup/restore the
-    // current window size, and resize the window to match the new state.
-    _BackupWindowSizes(oldIsInFullscreen);
-    _ApplyWindowSize();
-}
-
-// Method Description:
-// - Used in entering/exiting fullscreen mode. Saves the current window size,
-//   and the full size of the monitor, for use in _ApplyWindowSize.
-// - Taken from conhost's Window::_BackupWindowSizes
-// Arguments:
-// - fCurrentIsInFullscreen: true if we're currently in fullscreen mode.
-// Return Value:
-// - <none>
-void IslandWindow::_BackupWindowSizes(const bool fCurrentIsInFullscreen)
-{
-    if (_fullscreen)
+    // Only change the window position if changing fullscreen state.
+    if (fChangingFullscreen)
     {
-        // Note: the current window size depends on the current state of the
-        // window. So don't back it up if we're already in full screen.
-        if (!fCurrentIsInFullscreen)
-        {
-            _nonFullscreenWindowSize = GetWindowRect();
-        }
+        // Get the monitor info for the window's current monitor.
+        MONITORINFO mi = {};
+        mi.cbSize = sizeof(mi);
+        GetMonitorInfo(MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST), &mi);
 
-        // get and back up the current monitor's size
-        HMONITOR const hCurrentMonitor = MonitorFromWindow(GetHandle(), MONITOR_DEFAULTTONEAREST);
-        MONITORINFO currMonitorInfo;
-        currMonitorInfo.cbSize = sizeof(currMonitorInfo);
-        if (GetMonitorInfo(hCurrentMonitor, &currMonitorInfo))
+        if (_fullscreen)
         {
-            _fullscreenWindowSize = currMonitorInfo.rcMonitor;
+            // Store the window's current position and size the window to the monitor.
+            _SetFullscreenPosition(mi.rcMonitor, mi.rcWork);
+        }
+        else
+        {
+            // Restore the stored window position.
+            _RestoreFullscreenPosition(mi.rcWork);
         }
     }
 }
 
 // Method Description:
-// - Applies the appropriate window size for transitioning to/from fullscreen mode.
-// - Taken from conhost's Window::_ApplyWindowSize
+// - Call UnregisterHotKey once for each entry in hotkeyList, to unset all the bound global hotkeys.
 // Arguments:
-// - <none>
+// - hotkeyList: a list of hotkeys to unbind
 // Return Value:
 // - <none>
-void IslandWindow::_ApplyWindowSize()
+void IslandWindow::UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList)
 {
-    const auto newSize = _fullscreen ? _fullscreenWindowSize : _nonFullscreenWindowSize;
-    LOG_IF_WIN32_BOOL_FALSE(SetWindowPos(GetHandle(),
-                                         HWND_TOP,
-                                         newSize.left,
-                                         newSize.top,
-                                         newSize.right - newSize.left,
-                                         newSize.bottom - newSize.top,
-                                         SWP_FRAMECHANGED | SWP_NOACTIVATE));
+    TraceLoggingWrite(g_hWindowsTerminalProvider,
+                      "UnsetHotkeys",
+                      TraceLoggingDescription("Emitted when clearing previously set hotkeys"),
+                      TraceLoggingInt64(hotkeyList.size(), "numHotkeys", "The number of hotkeys to unset"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
+    for (int i = 0; i < ::base::saturated_cast<int>(hotkeyList.size()); i++)
+    {
+        LOG_IF_WIN32_BOOL_FALSE(UnregisterHotKey(_window.get(), i));
+    }
+}
+
+// Method Description:
+// - Call RegisterHotKey once for each entry in hotkeyList, to attempt to
+//   register that keybinding as a global hotkey.
+// - When these keys are pressed, we'll get a WM_HOTKEY message with the payload
+//   containing the index we registered here.
+// Arguments:
+// - hotkeyList: a list of hotkeys to bind
+// Return Value:
+// - <none>
+void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList)
+{
+    TraceLoggingWrite(g_hWindowsTerminalProvider,
+                      "SetGlobalHotkeys",
+                      TraceLoggingDescription("Emitted when setting hotkeys"),
+                      TraceLoggingInt64(hotkeyList.size(), "numHotkeys", "The number of hotkeys to set"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+    int index = 0;
+    for (const auto& hotkey : hotkeyList)
+    {
+        const auto modifiers = hotkey.Modifiers();
+        const auto hotkeyFlags = MOD_NOREPEAT |
+                                 (WI_IsFlagSet(modifiers, KeyModifiers::Windows) ? MOD_WIN : 0) |
+                                 (WI_IsFlagSet(modifiers, KeyModifiers::Alt) ? MOD_ALT : 0) |
+                                 (WI_IsFlagSet(modifiers, KeyModifiers::Ctrl) ? MOD_CONTROL : 0) |
+                                 (WI_IsFlagSet(modifiers, KeyModifiers::Shift) ? MOD_SHIFT : 0);
+
+        // TODO GH#8888: We should display a warning of some kind if this fails.
+        // This can fail if something else already bound this hotkey.
+        LOG_IF_WIN32_BOOL_FALSE(RegisterHotKey(_window.get(),
+                                               index,
+                                               hotkeyFlags,
+                                               hotkey.Vkey()));
+
+        index++;
+    }
+}
+
+// Method Description:
+// - Summon the window, or possibly dismiss it. If toggleVisibility is true,
+//   then we'll dismiss (minimize) the window if it's currently active.
+//   Otherwise, we'll always just try to activate the window.
+// Arguments:
+// - toggleVisibility: controls how we should behave when already in the foreground.
+// Return Value:
+// - <none>
+winrt::fire_and_forget IslandWindow::SummonWindow(const bool toggleVisibility)
+{
+    // On the foreground thread:
+    co_await winrt::resume_foreground(_rootGrid.Dispatcher());
+
+    // * If the user doesn't want to toggleVisibility, then just always try to
+    //   activate.
+    // * If the user does want to toggleVisibility, then dismiss the window if
+    //   we're the current foreground window.
+    if (toggleVisibility && GetForegroundWindow() == _window.get())
+    {
+        _globalDismissWindow();
+    }
+    else
+    {
+        _globalActivateWindow();
+    }
 }
 
 // Method Description:
@@ -852,11 +1034,8 @@ void IslandWindow::_ApplyWindowSize()
 // - <none>
 // Return Value:
 // - <none>
-winrt::fire_and_forget IslandWindow::SummonWindow()
+void IslandWindow::_globalActivateWindow()
 {
-    // On the foreground thread:
-    co_await winrt::resume_foreground(_rootGrid.Dispatcher());
-
     // From: https://stackoverflow.com/a/59659421
     // > The trick is to make windows ‘think’ that our process and the target
     // > window (hwnd) are related by attaching the threads (using
@@ -878,6 +1057,87 @@ winrt::fire_and_forget IslandWindow::SummonWindow()
     });
     LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
     LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_SHOW));
+
+    // Activate the window too. This will force us to the virtual desktop this
+    // window is on, if it's on another virtual desktop.
+    LOG_LAST_ERROR_IF_NULL(SetActiveWindow(_window.get()));
+}
+
+// Method Description:
+// - Minimize the window. This is called when the window is summoned, but is
+//   already active
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void IslandWindow::_globalDismissWindow()
+{
+    LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_MINIMIZE));
+}
+
+bool IslandWindow::IsQuakeWindow() const noexcept
+{
+    return _isQuakeWindow;
+}
+
+void IslandWindow::IsQuakeWindow(bool isQuakeWindow) noexcept
+{
+    if (_isQuakeWindow != isQuakeWindow)
+    {
+        _isQuakeWindow = isQuakeWindow;
+        // Don't enter quake mode if we don't have an HWND yet
+        if (IsQuakeWindow() && _window)
+        {
+            _enterQuakeMode();
+        }
+    }
+}
+
+void IslandWindow::_enterQuakeMode()
+{
+    if (!_window)
+    {
+        return;
+    }
+
+    RECT windowRect = GetWindowRect();
+    HMONITOR hmon = MonitorFromRect(&windowRect, MONITOR_DEFAULTTONEAREST);
+    MONITORINFO nearestMonitorInfo;
+
+    UINT dpix = USER_DEFAULT_SCREEN_DPI;
+    UINT dpiy = USER_DEFAULT_SCREEN_DPI;
+    // If this fails, we'll use the default of 96. I think it can only fail for
+    // bad parameters, which we won't have, so no big deal.
+    LOG_IF_FAILED(GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy));
+
+    nearestMonitorInfo.cbSize = sizeof(MONITORINFO);
+    // Get monitor dimensions:
+    GetMonitorInfo(hmon, &nearestMonitorInfo);
+    const til::size desktopDimensions{ (nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
+                                       (nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
+
+    // If we just use rcWork by itself, we'll fail to account for the invisible
+    // space reserved for the resize handles. So retrieve that size here.
+    const til::size ncSize{ GetTotalNonClientExclusiveSize(dpix) };
+    const til::size availableSpace = desktopDimensions + ncSize;
+
+    const til::point origin{
+        ::base::ClampSub<long>(nearestMonitorInfo.rcWork.left, (ncSize.width() / 2)),
+        (nearestMonitorInfo.rcWork.top)
+    };
+    const til::size dimensions{
+        availableSpace.width(),
+        availableSpace.height() / 2
+    };
+
+    const til::rectangle newRect{ origin, dimensions };
+    SetWindowPos(GetHandle(),
+                 HWND_TOP,
+                 newRect.left<int>(),
+                 newRect.top<int>(),
+                 newRect.width<int>(),
+                 newRect.height<int>(),
+                 SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

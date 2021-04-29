@@ -16,6 +16,7 @@
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
 #include "RenameWindowRequestedArgs.g.cpp"
+#include "../inc/WindowingBehavior.h"
 
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
@@ -235,6 +236,7 @@ namespace winrt::TerminalApp::implementation
         CommandPalette().DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
         CommandPalette().CommandLineExecutionRequested({ this, &TerminalPage::_OnCommandLineExecutionRequested });
         CommandPalette().SwitchToTabRequested({ this, &TerminalPage::_OnSwitchToTabRequested });
+        CommandPalette().PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
 
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
@@ -993,9 +995,6 @@ namespace winrt::TerminalApp::implementation
 
         term.OpenHyperlink({ this, &TerminalPage::_OpenHyperlinkHandler });
 
-        // Add an event handler for when the terminal wants to set a progress indicator on the taskbar
-        term.SetTaskbarProgress({ this, &TerminalPage::_SetTaskbarProgressHandler });
-
         term.HidePointerCursor({ get_weak(), &TerminalPage::_HidePointerCursorHandler });
         term.RestorePointerCursor({ get_weak(), &TerminalPage::_RestorePointerCursorHandler });
 
@@ -1049,6 +1048,11 @@ namespace winrt::TerminalApp::implementation
                 page->_ClearNonClientAreaColors();
             }
         });
+
+        // Add an event handler for when the terminal or tab wants to set a
+        // progress indicator on the taskbar
+        hostingTab.TaskbarProgressChanged({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
+        term.SetTaskbarProgress({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
 
         // TODO GH#3327: Once we support colorizing the NewTab button based on
         // the color of the tab, we'll want to make sure to call
@@ -1151,7 +1155,7 @@ namespace winrt::TerminalApp::implementation
             {
                 // The magic value of WHEEL_PAGESCROLL indicates that we need to scroll the entire page
                 realRowsToScroll = _systemRowsToScroll == WHEEL_PAGESCROLL ?
-                                       terminalTab->GetActiveTerminalControl().GetViewHeight() :
+                                       terminalTab->GetActiveTerminalControl().ViewHeight() :
                                        _systemRowsToScroll;
             }
             else
@@ -1292,7 +1296,7 @@ namespace winrt::TerminalApp::implementation
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
             const auto control = _GetActiveControl();
-            const auto termHeight = control.GetViewHeight();
+            const auto termHeight = control.ViewHeight();
             auto scrollDelta = _ComputeScrollDelta(scrollDirection, termHeight);
             terminalTab->Scroll(scrollDelta);
         }
@@ -1358,6 +1362,11 @@ namespace winrt::TerminalApp::implementation
         if (WI_IsFlagSet(modifiers, KeyModifiers::Alt))
         {
             buffer += L"Alt+";
+        }
+
+        if (WI_IsFlagSet(modifiers, KeyModifiers::Windows))
+        {
+            buffer += L"Win+";
         }
 
         return buffer;
@@ -1639,29 +1648,37 @@ namespace winrt::TerminalApp::implementation
         return false;
     }
 
-    void TerminalPage::_ControlNoticeRaisedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::NoticeEventArgs eventArgs)
+    // Important! Don't take this eventArgs by reference, we need to extend the
+    // lifetime of it to the other side of the co_await!
+    winrt::fire_and_forget TerminalPage::_ControlNoticeRaisedHandler(const IInspectable /*sender*/,
+                                                                     const Microsoft::Terminal::Control::NoticeEventArgs eventArgs)
     {
-        winrt::hstring message = eventArgs.Message();
-
-        winrt::hstring title;
-
-        switch (eventArgs.Level())
+        auto weakThis = get_weak();
+        co_await winrt::resume_foreground(Dispatcher());
+        if (auto page = weakThis.get())
         {
-        case NoticeLevel::Debug:
-            title = RS_(L"NoticeDebug"); //\xebe8
-            break;
-        case NoticeLevel::Info:
-            title = RS_(L"NoticeInfo"); // \xe946
-            break;
-        case NoticeLevel::Warning:
-            title = RS_(L"NoticeWarning"); //\xe7ba
-            break;
-        case NoticeLevel::Error:
-            title = RS_(L"NoticeError"); //\xe783
-            break;
-        }
+            winrt::hstring message = eventArgs.Message();
 
-        _ShowControlNoticeDialog(title, message);
+            winrt::hstring title;
+
+            switch (eventArgs.Level())
+            {
+            case NoticeLevel::Debug:
+                title = RS_(L"NoticeDebug"); //\xebe8
+                break;
+            case NoticeLevel::Info:
+                title = RS_(L"NoticeInfo"); // \xe946
+                break;
+            case NoticeLevel::Warning:
+                title = RS_(L"NoticeWarning"); //\xe7ba
+                break;
+            case NoticeLevel::Error:
+                title = RS_(L"NoticeError"); //\xe783
+                break;
+            }
+
+            page->_ShowControlNoticeDialog(title, message);
+        }
     }
 
     void TerminalPage::_ShowControlNoticeDialog(const winrt::hstring& title, const winrt::hstring& message)
@@ -1699,8 +1716,9 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender (not used)
     // - eventArgs: the arguments specifying how to set the progress indicator
-    void TerminalPage::_SetTaskbarProgressHandler(const IInspectable /*sender*/, const IInspectable /*eventArgs*/)
+    winrt::fire_and_forget TerminalPage::_SetTaskbarProgressHandler(const IInspectable /*sender*/, const IInspectable /*eventArgs*/)
     {
+        co_await resume_foreground(Dispatcher());
         _SetTaskbarProgressHandlers(*this, nullptr);
     }
 
@@ -2056,9 +2074,20 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::ToggleFocusMode()
     {
-        _isInFocusMode = !_isInFocusMode;
-        _UpdateTabView();
-        _FocusModeChangedHandlers(*this, nullptr);
+        _SetFocusMode(!_isInFocusMode);
+    }
+
+    void TerminalPage::_SetFocusMode(const bool inFocusMode)
+    {
+        // If we're the quake window, we must always be in focus mode.
+        // Prevent leaving focus mode here.
+        const bool newInFocusMode = inFocusMode || IsQuakeWindow();
+        if (newInFocusMode != FocusMode())
+        {
+            _isInFocusMode = newInFocusMode;
+            _UpdateTabView();
+            _FocusModeChangedHandlers(*this, nullptr);
+        }
     }
 
     // Method Description:
@@ -2601,12 +2630,43 @@ namespace winrt::TerminalApp::implementation
     {
         return _WindowName;
     }
-    void TerminalPage::WindowName(const winrt::hstring& value)
+
+    winrt::fire_and_forget TerminalPage::WindowName(const winrt::hstring& value)
     {
-        if (_WindowName != value)
+        const bool oldIsQuakeMode = IsQuakeWindow();
+        const bool changed = _WindowName != value;
+        if (changed)
         {
             _WindowName = value;
-            _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+        }
+        auto weakThis{ get_weak() };
+        // On the foreground thread, raise property changed notifications, and
+        // display the success toast.
+        co_await resume_foreground(Dispatcher());
+        if (auto page{ weakThis.get() })
+        {
+            if (changed)
+            {
+                page->_PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowName" });
+                page->_PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+
+                // DON'T display the confirmation if this is the name we were
+                // given on startup!
+                if (page->_startupState == StartupState::Initialized)
+                {
+                    page->IdentifyWindow();
+
+                    // If we're entering quake mode, or leaving it
+                    if (IsQuakeWindow() != oldIsQuakeMode)
+                    {
+                        // If we're entering Quake Mode from ~Focus Mode, then this will enter Focus Mode
+                        // If we're entering Quake Mode from Focus Mode, then this will do nothing
+                        // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
+                        _SetFocusMode(true);
+                        _IsQuakeWindowChangedHandlers(*this, nullptr);
+                    }
+                }
+            }
         }
     }
 
@@ -2708,8 +2768,12 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_RequestWindowRename(const winrt::hstring& newName)
     {
         auto request = winrt::make<implementation::RenameWindowRequestedArgs>(newName);
-        // The WindowRenamer is _not_ a Toast - we want it to stay open until the user dismisses it.
-        WindowRenamer().IsOpen(false);
+        // The WindowRenamer is _not_ a Toast - we want it to stay open until
+        // the user dismisses it.
+        if (WindowRenamer())
+        {
+            WindowRenamer().IsOpen(false);
+        }
         _RenameWindowRequestedHandlers(*this, request);
         // We can't just use request.Successful here, because the handler might
         // (will) be handling this asynchronously, so when control returns to
@@ -2741,5 +2805,10 @@ namespace winrt::TerminalApp::implementation
             WindowRenamerTextBox().Text(WindowName());
             WindowRenamer().IsOpen(false);
         }
+    }
+
+    bool TerminalPage::IsQuakeWindow() const noexcept
+    {
+        return WindowName() == QuakeWindowName;
     }
 }

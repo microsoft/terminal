@@ -27,8 +27,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<DxFontRenderData*> const fontRe
     _runs{},
     _breakpoints{},
     _runIndex{ 0 },
-    _width{ gsl::narrow_cast<size_t>(fontRenderData->GlyphCell().width()) },
-    _isEntireTextSimple{ false }
+    _width{ gsl::narrow_cast<size_t>(fontRenderData->GlyphCell().width()) }
 {
     _localeName.resize(gsl::narrow_cast<size_t>(fontRenderData->DefaultTextFormat()->GetLocaleNameLength()) + 1); // +1 for null
     THROW_IF_FAILED(fontRenderData->DefaultTextFormat()->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
@@ -46,7 +45,6 @@ try
     _runs.clear();
     _breakpoints.clear();
     _runIndex = 0;
-    _isEntireTextSimple = false;
     _textClusterColumns.clear();
     _text.clear();
     _glyphScaleCorrections.clear();
@@ -103,7 +101,6 @@ CATCH_RETURN()
     _formatInUse = _fontRenderData->DefaultTextFormat().Get();
     _fontInUse = _fontRenderData->DefaultFontFace().Get();
 
-    RETURN_IF_FAILED(_AnalyzeTextComplexity());
     RETURN_IF_FAILED(_AnalyzeRuns());
     RETURN_IF_FAILED(_ShapeGlyphRuns());
 
@@ -138,7 +135,6 @@ CATCH_RETURN()
     _formatInUse = drawingContext->useItalicFont ? _fontRenderData->ItalicTextFormat().Get() : _fontRenderData->DefaultTextFormat().Get();
     _fontInUse = drawingContext->useItalicFont ? _fontRenderData->ItalicFontFace().Get() : _fontRenderData->DefaultFontFace().Get();
 
-    RETURN_IF_FAILED(_AnalyzeTextComplexity());
     RETURN_IF_FAILED(_AnalyzeRuns());
     RETURN_IF_FAILED(_ShapeGlyphRuns());
     RETURN_IF_FAILED(_CorrectGlyphRuns());
@@ -154,8 +150,9 @@ CATCH_RETURN()
 
 // Routine Description:
 // - Uses the internal text information and the analyzers/font information from construction
-//   to determine the complexity of the text. If the text is determined to be entirely simple,
-//   we'll have more chances to optimize the layout process.
+//   to determine the complexity of the text. During the process we break the text into initial
+//   runs based on their complexity. This allows us to further optimize the layout process
+//   of simple runs.
 // Arguments:
 // - <none> - Uses internal state
 // Return Value:
@@ -170,21 +167,30 @@ CATCH_RETURN()
         UINT32 uiLengthRead = 0;
 
         // Start from the beginning.
-        const UINT32 glyphStart = 0;
+        UINT32 pos = 0;
 
         _glyphIndices.resize(textLength);
 
-        const HRESULT hr = _fontRenderData->Analyzer()->GetTextComplexity(
-            _text.c_str(),
-            textLength,
-            _fontInUse,
-            &isTextSimple,
-            &uiLengthRead,
-            &_glyphIndices.at(glyphStart));
+        while (pos < textLength)
+        {
+            const HRESULT hr = _fontRenderData->Analyzer()->GetTextComplexity(
+                &_text.at(pos),
+                textLength,
+                _fontInUse,
+                &isTextSimple,
+                &uiLengthRead,
+                &_glyphIndices.at(pos));
 
-        RETURN_IF_FAILED(hr);
-
-        _isEntireTextSimple = isTextSimple && uiLengthRead == textLength;
+            RETURN_IF_FAILED(hr);
+            _SetCurrentRun(pos);
+            _SplitCurrentRun(pos);
+            pos += std::max(uiLengthRead, 1u);
+            while (uiLengthRead > 0)
+            {
+                auto& run = _FetchNextRun(uiLengthRead);
+                run.isTextSimple = isTextSimple;
+            }
+        }
     }
     CATCH_RETURN();
     return S_OK;
@@ -218,15 +224,26 @@ CATCH_RETURN()
         // Allocate enough room to have one breakpoint per code unit.
         _breakpoints.resize(_text.size());
 
-        if (!_isEntireTextSimple)
+        RETURN_IF_FAILED(_AnalyzeTextComplexity());
+
+        std::vector<std::pair<UINT32, UINT32>> complexRanges;
+        for (auto& run : _runs)
+        {
+            if (!run.isTextSimple)
+            {
+                complexRanges.push_back(std::make_pair(run.textStart, run.textLength));
+            }
+        }
+
+        for (auto& range : complexRanges)
         {
             // Call each of the analyzers in sequence, recording their results.
-            RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeLineBreakpoints(this, 0, textLength, this));
-            RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeBidi(this, 0, textLength, this));
-            RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeScript(this, 0, textLength, this));
-            RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeNumberSubstitution(this, 0, textLength, this));
+            RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeLineBreakpoints(this, range.first, range.second, this));
+            RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeBidi(this, range.first, range.second, this));
+            RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeScript(this, range.first, range.second, this));
+            RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeNumberSubstitution(this, range.first, range.second, this));
             // Perform our custom font fallback analyzer that mimics the pattern of the real analyzers.
-            RETURN_IF_FAILED(_AnalyzeFontFallback(this, 0, textLength));
+            RETURN_IF_FAILED(_AnalyzeFontFallback(this, range.first, range.second));
         }
 
         // Ensure that a font face is attached to every run
@@ -266,6 +283,7 @@ CATCH_RETURN()
         _glyphOffsets.resize(estimatedGlyphCount);
         _glyphAdvances.resize(estimatedGlyphCount);
         _glyphClusters.resize(textLength);
+        _glyphDesignUnitAdvances.resize(textLength);
 
         UINT32 glyphStart = 0;
 
@@ -339,7 +357,7 @@ CATCH_RETURN()
             _glyphIndices.resize(totalGlyphsArrayCount);
         }
 
-        if (_isEntireTextSimple)
+        if (run.isTextSimple)
         {
             // When the entire text is simple, we can skip GetGlyphs and directly retrieve glyph indices and
             // advances(in font design unit). With the help of font metrics, we can calculate the actual glyph
@@ -347,10 +365,6 @@ CATCH_RETURN()
             // needed for text analysis.
             DWRITE_FONT_METRICS1 metrics;
             run.fontFace->GetMetrics(&metrics);
-
-            // With simple text, there's only one run. The actual glyph count is the same as textLength.
-            _glyphDesignUnitAdvances.resize(textLength);
-            _glyphAdvances.resize(textLength);
 
             USHORT designUnitsPerEm = metrics.designUnitsPerEm;
 
@@ -360,14 +374,14 @@ CATCH_RETURN()
                 &_glyphDesignUnitAdvances.at(glyphStart),
                 run.isSideways));
 
-            for (size_t i = glyphStart; i < _glyphAdvances.size(); i++)
+            for (UINT32 i = glyphStart; i < glyphStart + textLength; i++)
             {
                 _glyphAdvances.at(i) = (float)_glyphDesignUnitAdvances.at(i) / designUnitsPerEm * _formatInUse->GetFontSize() * run.fontScale;
             }
 
             // Set all the clusters as sequential. In a simple run, we're going 1 to 1.
             // Fill the clusters sequentially from 0 to N-1.
-            std::iota(_glyphClusters.begin(), _glyphClusters.end(), gsl::narrow_cast<unsigned short>(0));
+            std::iota(_glyphClusters.begin() + glyphStart, _glyphClusters.begin() + glyphStart + textLength, gsl::narrow_cast<unsigned short>(0));
 
             run.glyphCount = textLength;
             glyphStart += textLength;
@@ -472,12 +486,6 @@ CATCH_RETURN()
 {
     try
     {
-        // For simple text, there is no need to correct runs.
-        if (_isEntireTextSimple)
-        {
-            return S_OK;
-        }
-
         // Correct each run separately. This is needed whenever script, locale,
         // or reading direction changes.
         for (UINT32 runIndex = 0; runIndex < _runs.size(); ++runIndex)
@@ -615,6 +623,11 @@ try
     if (run.textLength == 0)
     {
         return S_FALSE; // Nothing to do..
+    }
+
+    if (run.isTextSimple)
+    {
+        return S_OK; // No need to correct run.
     }
 
     // We're going to walk through and check for advances that don't match the space that we expect to give out.

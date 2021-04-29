@@ -52,7 +52,8 @@ Terminal::Terminal() :
     _blockSelection{ false },
     _selection{ std::nullopt },
     _taskbarState{ 0 },
-    _taskbarProgress{ 0 }
+    _taskbarProgress{ 0 },
+    _trimBlockSelection{ false }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -119,6 +120,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _wordDelimiters = settings.WordDelimiters();
     _suppressApplicationTitle = settings.SuppressApplicationTitle();
     _startingTitle = settings.StartingTitle();
+    _trimBlockSelection = settings.TrimBlockSelection();
 
     _terminalInput->ForceDisableWin32InputMode(settings.ForceVTInput());
 
@@ -245,8 +247,14 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     std::unique_ptr<TextBuffer> newTextBuffer;
     try
     {
+        // GH#3848 - Stash away the current attributes the old text buffer is
+        // using. We'll initialize the new buffer with the default attributes,
+        // but after the resize, we'll want to make sure that the new buffer's
+        // current attributes (the ones used for printing new text) match the
+        // old buffer's.
+        const auto oldBufferAttributes = _buffer->GetCurrentAttributes();
         newTextBuffer = std::make_unique<TextBuffer>(bufferSize,
-                                                     _buffer->GetCurrentAttributes(),
+                                                     TextAttribute{},
                                                      0, // temporarily set size to 0 so it won't render.
                                                      _buffer->GetRenderTarget());
 
@@ -274,6 +282,9 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 
         newViewportTop = oldRows.mutableViewportTop;
         newVisibleTop = oldRows.visibleViewportTop;
+
+        // Restore the active text attributes
+        newTextBuffer->SetCurrentAttributes(oldBufferAttributes);
     }
     CATCH_RETURN();
 
@@ -1110,7 +1121,7 @@ void Terminal::SetWarningBellCallback(std::function<void()> pfn) noexcept
     _pfnWarningBell.swap(pfn);
 }
 
-void Terminal::SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept
+void Terminal::SetTitleChangedCallback(std::function<void(std::wstring_view)> pfn) noexcept
 {
     _pfnTitleChanged.swap(pfn);
 }
@@ -1120,7 +1131,7 @@ void Terminal::SetTabColorChangedCallback(std::function<void(const std::optional
     _pfnTabColorChanged.swap(pfn);
 }
 
-void Terminal::SetCopyToClipboardCallback(std::function<void(const std::wstring_view&)> pfn) noexcept
+void Terminal::SetCopyToClipboardCallback(std::function<void(std::wstring_view)> pfn) noexcept
 {
     _pfnCopyToClipboard.swap(pfn);
 }
