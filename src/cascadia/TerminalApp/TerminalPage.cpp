@@ -16,6 +16,7 @@
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
 #include "RenameWindowRequestedArgs.g.cpp"
+#include "../inc/WindowingBehavior.h"
 
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
@@ -41,8 +42,6 @@ namespace winrt
     namespace WUX = Windows::UI::Xaml;
     using IInspectable = Windows::Foundation::IInspectable;
 }
-
-static constexpr std::wstring_view QuakeWindowName{ L"_quake" };
 
 namespace winrt::TerminalApp::implementation
 {

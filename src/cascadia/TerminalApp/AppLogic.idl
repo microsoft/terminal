@@ -71,6 +71,8 @@ namespace TerminalApp
 
         FindTargetWindowResult FindTargetWindow(String[] args);
 
+        Windows.Foundation.Collections.IMap<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.ActionAndArgs> GlobalHotkeys();
+
         // See IDialogPresenter and TerminalPage's DialogPresenter for more
         // information.
         Windows.Foundation.IAsyncOperation<Windows.UI.Xaml.Controls.ContentDialogResult> ShowDialog(Windows.UI.Xaml.Controls.ContentDialog dialog);
@@ -86,6 +88,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
         event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
         event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SettingsChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
     }
 }

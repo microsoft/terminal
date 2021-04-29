@@ -38,7 +38,10 @@ public:
     void FlashTaskbar();
     void SetTaskbarProgress(const size_t state, const size_t progress);
 
-    winrt::fire_and_forget SummonWindow();
+    void UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList);
+    void SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList);
+
+    winrt::fire_and_forget SummonWindow(const bool toggleVisibility);
 
     bool IsQuakeWindow() const noexcept;
     void IsQuakeWindow(bool isQuakeWindow) noexcept;
@@ -47,6 +50,7 @@ public:
     DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
     WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
     WINRT_CALLBACK(WindowActivated, winrt::delegate<void()>);
+    WINRT_CALLBACK(HotkeyPressed, winrt::delegate<void(long)>);
 
 protected:
     void ForceResize()
@@ -88,6 +92,9 @@ protected:
 
     void _OnGetMinMaxInfo(const WPARAM wParam, const LPARAM lParam);
     long _calculateTotalSize(const bool isWidth, const long clientSize, const long nonClientSize);
+
+    void _globalActivateWindow();
+    void _globalDismissWindow();
 
     bool _isQuakeWindow{ false };
     void _enterQuakeMode();
