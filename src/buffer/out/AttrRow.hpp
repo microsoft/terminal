@@ -41,8 +41,6 @@ public:
     ATTR_ROW& operator=(ATTR_ROW&&) noexcept = default;
 
     TextAttribute GetAttrByColumn(const size_t column) const;
-    TextAttribute GetAttrByColumn(const size_t column,
-                                  size_t* const pApplies) const;
 
     std::vector<uint16_t> GetHyperlinks();
 
@@ -51,7 +49,7 @@ public:
 
     void Resize(const size_t newWidth);
 
-    void MergeAttrRun(const TextAttribute newAttr, const size_t start, const size_t length);
+    void MergeAttrRun(const TextAttribute& newAttr, const size_t start, const size_t length);
 
     const_iterator begin() const noexcept;
     const_iterator end() const noexcept;

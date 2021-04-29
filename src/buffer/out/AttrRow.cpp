@@ -47,24 +47,6 @@ TextAttribute ATTR_ROW::GetAttrByColumn(const size_t column) const
 }
 
 // Routine Description:
-// - returns a copy of the TextAttribute at the specified column
-// Arguments:
-// - column - the column to get the attribute for
-// - pApplies - if given, fills how long this attribute will apply for
-// Return Value:
-// - the text attribute at column
-// Note:
-// - will throw on error
-TextAttribute ATTR_ROW::GetAttrByColumn(const size_t column,
-                                        size_t* const pApplies) const
-{
-    UINT applies = 0;
-    const auto attr = _data.at(gsl::narrow<UINT>(column), applies);
-    *pApplies = applies;
-    return attr;
-}
-
-// Routine Description:
 // - Finds the hyperlink IDs present in this row and returns them
 // Return value:
 // - The hyperlink IDs present in this row
@@ -119,7 +101,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
 //           How many times this attribute is repeated starting at "start"
 // Return Value:
 // - <none>
-void ATTR_ROW::MergeAttrRun(const TextAttribute newAttr, const size_t start, const size_t length)
+void ATTR_ROW::MergeAttrRun(const TextAttribute& newAttr, const size_t start, const size_t length)
 {
     _data.assign(newAttr, gsl::narrow<UINT>(start), gsl::narrow<UINT>(length));
 }

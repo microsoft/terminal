@@ -287,9 +287,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         using size_type = S;
         using difference_type = S;
 
-        using iterator = details::rle_iterator<T, S, typename Container::iterator>;
         using const_iterator = details::rle_iterator<const T, S, typename Container::const_iterator>;
-        using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
         constexpr basic_rle() noexcept = default;
@@ -340,12 +338,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         const_reference at(size_type position) const
         {
             size_type applies;
-            return at(position, applies);
-        }
-
-        // Get the value at the position and for how much longer it applies.
-        const_reference at(size_type position, size_type& applies) const
-        {
             THROW_HR_IF(E_INVALIDARG, position >= _size);
             return _at(position, applies)->first;
         }
@@ -369,13 +361,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         // Replaces every value seen in the run with a new one
         // Does not change the length or position of the values.
-        void replace(const value_type oldValue, value_type newValue)
+        void replace(const value_type& oldValue, const value_type& newValue) noexcept(std::is_nothrow_copy_assignable<value_type>::value)
         {
             for (auto& run : _list)
             {
                 if (run.first == oldValue)
                 {
-                    run.first = std::move(newValue);
+                    run.first = newValue;
                 }
             }
         }
@@ -441,8 +433,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         void assign(const value_type& value, const size_type start, const size_type length)
         {
             // TODO: validate position in bounds?
-            std::pair<T, S> item{ value, length };
-            _merge(&item, &item + 1, start);
+            std::array<std::pair<T, S>, 1> items{{ value, length }};
+            _merge(items.begin(), items.end(), start);
         }
 
         constexpr bool operator==(const basic_rle& other) const noexcept
@@ -455,19 +447,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return !(*this == other);
         }
 
-        [[nodiscard]] iterator begin() noexcept
-        {
-            return iterator(_list.begin());
-        }
-
         [[nodiscard]] const_iterator begin() const noexcept
         {
             return const_iterator(_list.begin());
-        }
-
-        [[nodiscard]] iterator end() noexcept
-        {
-            return iterator(_list.end());
         }
 
         [[nodiscard]] const_iterator end() const noexcept
@@ -475,19 +457,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return const_iterator(_list.end());
         }
 
-        [[nodiscard]] reverse_iterator rbegin() noexcept
-        {
-            return reverse_iterator(end());
-        }
-
         [[nodiscard]] const_reverse_iterator rbegin() const noexcept
         {
             return const_reverse_iterator(end());
-        }
-
-        [[nodiscard]] reverse_iterator rend() noexcept
-        {
-            return reverse_iterator(begin());
         }
 
         [[nodiscard]] const_reverse_iterator rend() const noexcept
@@ -516,19 +488,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
 #ifdef UNIT_TESTING
-        std::wstring to_string() const
+        [[nodiscard]] typename std::enable_if<std::is_arithmetic<value_type>::value, std::wstring>::type to_string() const
         {
             std::wstringstream wss;
-            wss << std::endl
-                << L"Run of size " << size() << " contains:" << std::endl;
-
-            for (auto& item : _list)
+            wss << _size << " items:";
+            for (auto& item : *this)
             {
-                wss << wil::str_printf<std::wstring>(L"[%td for %td]", item.first, item.second) << L" ";
+                wss << L" " << item;
             }
-
-            wss << std::endl;
-
             return wss.str();
         }
 #endif
