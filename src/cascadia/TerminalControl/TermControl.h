@@ -101,7 +101,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ReadOnly() const noexcept;
         void ToggleReadOnly();
 
-        static ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point);
+        static Control::MouseButtonState GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point);
         static unsigned int GetPointerUpdateKind(const winrt::Windows::UI::Input::PointerPoint point);
 
         // -------------------------------- WinRT Events ---------------------------------
@@ -113,7 +113,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         FORWARDED_TYPED_EVENT(TabColorChanged,        IInspectable, IInspectable, _core, TabColorChanged);
         FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable, _core, TaskbarProgressChanged);
         FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable, _core, ConnectionStateChanged);
-        FORWARDED_TYPED_EVENT(PasteFromClipboard,     IInspectable, Control::PasteFromClipboardEventArgs, _interactivity, PasteFromClipboard);
+
+        PROJECTED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs, _interactivity, PasteFromClipboard);
 
         TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(RaiseNotice,               IInspectable, Control::NoticeEventArgs);
@@ -130,8 +131,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
 
-        winrt::com_ptr<ControlCore> _core;
-        winrt::com_ptr<ControlInteractivity> _interactivity;
+        winrt::com_ptr<ControlCore> _core{ nullptr };
+        Control::ControlInteractivity _interactivity{ nullptr };
 
         bool _initializedTerminal;
 

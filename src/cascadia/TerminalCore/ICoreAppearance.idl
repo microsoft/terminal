@@ -24,11 +24,25 @@ namespace Microsoft.Terminal.Core
         UInt8 A;
     };
 
+    // TODO!
+    // It is supported by til::point for conversions in and out of WinRT land.
+    struct Point
+    {
+        Int32 X;
+        Int32 Y;
+    };
+    // It is supported by Microsoft::Terminal::Core::ControlKeyStates for conversions in and out of WinRT land.
+    struct ControlKeyStates
+    {
+        Int32 Value;
+    };
+
     declare
     {
         // Forward declare this parameterized specialization so that it lives
         // in TerminalCore instead of being flung to the winds of all IDL dependents.
         interface Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>;
+        interface Windows.Foundation.IReference<Microsoft.Terminal.Core.Point>;
     }
 
     interface ICoreAppearance

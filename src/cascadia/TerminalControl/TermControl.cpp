@@ -62,8 +62,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         InitializeComponent();
 
-        _interactivity = winrt::make_self<ControlInteractivity>(settings, connection);
-        _core = _interactivity->GetCore();
+        _interactivity = winrt::make<implementation::ControlInteractivity>(settings, connection);
+        _core = _interactivity.GetCore();
 
         // Use a manual revoker on the output event, so we can immediately stop
         // worrying about it on destruction.
@@ -87,8 +87,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->TransparencyChanged({ this, &TermControl::_coreTransparencyChanged });
         _core->RaiseNotice({ this, &TermControl::_coreRaisedNotice });
         _core->HoveredHyperlinkChanged({ this, &TermControl::_hoveredHyperlinkChanged });
-        _interactivity->OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
-        _interactivity->ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
+        _interactivity.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
+        _interactivity.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
@@ -420,7 +420,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             ScrollBar().Visibility(Visibility::Visible);
         }
 
-        _interactivity->UpdateSettings();
+        _interactivity.UpdateSettings();
     }
 
     // Method Description:
@@ -664,7 +664,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return false;
         }
-        _interactivity->Initialize();
+        _interactivity.Initialize();
 
         _AttachDxgiSwapChainToXaml(_core->GetSwapChain());
 
@@ -1054,16 +1054,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             const auto contactRect = point.Properties().ContactRect();
             auto anchor = til::point{ til::math::rounding, contactRect.X, contactRect.Y };
-            _interactivity->TouchPressed(anchor);
+            _interactivity.TouchPressed(anchor);
         }
         else
         {
             const auto cursorPosition = point.Position();
-            _interactivity->PointerPressed(TermControl::GetPressedMouseButtons(point),
-                                           TermControl::GetPointerUpdateKind(point),
-                                           point.Timestamp(),
-                                           ControlKeyStates{ args.KeyModifiers() },
-                                           _toTerminalOrigin(cursorPosition));
+            _interactivity.PointerPressed(TermControl::GetPressedMouseButtons(point),
+                                          TermControl::GetPointerUpdateKind(point),
+                                          point.Timestamp(),
+                                          ControlKeyStates{ args.KeyModifiers() },
+                                          _toTerminalOrigin(cursorPosition));
         }
 
         args.Handled(true);
@@ -1098,11 +1098,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (type == Windows::Devices::Input::PointerDeviceType::Mouse ||
             type == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            _interactivity->PointerMoved(TermControl::GetPressedMouseButtons(point),
-                                         TermControl::GetPointerUpdateKind(point),
-                                         ControlKeyStates(args.KeyModifiers()),
-                                         _focused,
-                                         pixelPosition);
+            _interactivity.PointerMoved(TermControl::GetPressedMouseButtons(point),
+                                        TermControl::GetPointerUpdateKind(point),
+                                        ControlKeyStates(args.KeyModifiers()),
+                                        _focused,
+                                        pixelPosition);
 
             if (_focused && point.Properties().IsLeftButtonPressed())
             {
@@ -1135,7 +1135,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto contactRect = point.Properties().ContactRect();
             til::point newTouchPoint{ til::math::rounding, contactRect.X, contactRect.Y };
 
-            _interactivity->TouchMoved(newTouchPoint, _focused);
+            _interactivity.TouchMoved(newTouchPoint, _focused);
         }
 
         args.Handled(true);
@@ -1166,14 +1166,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (type == Windows::Devices::Input::PointerDeviceType::Mouse ||
             type == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            _interactivity->PointerReleased(TermControl::GetPressedMouseButtons(point),
-                                            TermControl::GetPointerUpdateKind(point),
-                                            ControlKeyStates(args.KeyModifiers()),
-                                            pixelPosition);
+            _interactivity.PointerReleased(TermControl::GetPressedMouseButtons(point),
+                                           TermControl::GetPointerUpdateKind(point),
+                                           ControlKeyStates(args.KeyModifiers()),
+                                           pixelPosition);
         }
         else if (type == Windows::Devices::Input::PointerDeviceType::Touch)
         {
-            _interactivity->TouchReleased();
+            _interactivity.TouchReleased();
         }
 
         _TryStopAutoScroll(ptr.PointerId());
@@ -1201,10 +1201,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto point = args.GetCurrentPoint(*this);
 
-        auto result = _interactivity->MouseWheel(ControlKeyStates{ args.KeyModifiers() },
-                                                 point.Properties().MouseWheelDelta(),
-                                                 _toTerminalOrigin(point.Position()),
-                                                 TermControl::GetPressedMouseButtons(point));
+        auto result = _interactivity.MouseWheel(ControlKeyStates{ args.KeyModifiers() },
+                                                point.Properties().MouseWheelDelta(),
+                                                _toTerminalOrigin(point.Position()),
+                                                TermControl::GetPressedMouseButtons(point));
         if (result)
         {
             args.Handled(true);
@@ -1228,10 +1228,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                    const bool rightButtonDown)
     {
         const auto modifiers = _GetPressedModifierKeys();
-        TerminalInput::MouseButtonState state{ leftButtonDown,
-                                               midButtonDown,
-                                               rightButtonDown };
-        return _interactivity->MouseWheel(modifiers, delta, _toTerminalOrigin(location), state);
+        Control::MouseButtonState state{ leftButtonDown,
+                                         midButtonDown,
+                                         rightButtonDown };
+        return _interactivity.MouseWheel(modifiers, delta, _toTerminalOrigin(location), state);
     }
 
     // Method Description:
@@ -1302,8 +1302,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        const auto newValue = static_cast<int>(args.NewValue());
-        _core->UserScrollViewport(newValue);
+        const auto newValue = args.NewValue();
+        _interactivity.UpdateScrollbar(newValue);
 
         // User input takes priority over terminal events so cancel
         // any pending scroll bar update if the user scrolls.
@@ -1479,7 +1479,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _blinkTimer.value().Start();
         }
 
-        _interactivity->GainFocus();
+        _interactivity.GainFocus();
 
         // Only update the appearance here if an unfocused config exists -
         // if an unfocused config does not exist then we never would have switched
@@ -1621,7 +1621,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - cursorPosition: in pixels, relative to the origin of the control
     void TermControl::_SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition)
     {
-        _interactivity->SetEndSelectionPoint(_toTerminalOrigin(cursorPosition));
+        _interactivity.SetEndSelectionPoint(_toTerminalOrigin(cursorPosition));
     }
 
     // Method Description:
@@ -1701,14 +1701,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return false;
         }
 
-        return _interactivity->CopySelectionToClipboard(singleLine, formats);
+        return _interactivity.CopySelectionToClipboard(singleLine, formats);
     }
 
     // Method Description:
     // - Initiate a paste operation.
     void TermControl::PasteTextFromClipboard()
     {
-        _interactivity->RequestPasteTextFromClipboard();
+        _interactivity.RequestPasteTextFromClipboard();
     }
 
     void TermControl::Close()
@@ -2448,11 +2448,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _RaiseNoticeHandlers(*this, eventArgs);
     }
 
-    TerminalInput::MouseButtonState TermControl::GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point)
+    Control::MouseButtonState TermControl::GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point)
     {
-        return TerminalInput::MouseButtonState{ point.Properties().IsLeftButtonPressed(),
-                                                point.Properties().IsMiddleButtonPressed(),
-                                                point.Properties().IsRightButtonPressed() };
+        return Control::MouseButtonState{ point.Properties().IsLeftButtonPressed(),
+                                          point.Properties().IsMiddleButtonPressed(),
+                                          point.Properties().IsRightButtonPressed() };
     }
 
     unsigned int TermControl::GetPointerUpdateKind(const winrt::Windows::UI::Input::PointerPoint point)
