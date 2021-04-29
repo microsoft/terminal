@@ -997,7 +997,7 @@ namespace winrt::TerminalApp::implementation
     CATCH_LOG();
 
     // Method Description:
-    // - Reloads the settings from the profile.json.
+    // - Reloads the settings from the settings.json file.
     void AppLogic::_ReloadSettings()
     {
         // Attempt to load our settings.
@@ -1027,6 +1027,8 @@ namespace winrt::TerminalApp::implementation
         _ApplyStartupTaskStateChange();
 
         Jumplist::UpdateJumplist(_settings);
+
+        _SettingsChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -1407,6 +1409,11 @@ namespace winrt::TerminalApp::implementation
     bool AppLogic::AlwaysOnTop() const
     {
         return _root ? _root->AlwaysOnTop() : false;
+    }
+
+    Windows::Foundation::Collections::IMap<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::ActionAndArgs> AppLogic::GlobalHotkeys()
+    {
+        return _settings.GlobalSettings().KeyMap().GlobalHotkeys();
     }
 
     void AppLogic::IdentifyWindow()

@@ -69,6 +69,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::vector<Model::SettingsLoadWarnings> LayerJson(const Json::Value& json);
         Json::Value ToJson();
 
+        Windows::Foundation::Collections::IMap<Control::KeyChord, Model::ActionAndArgs> GlobalHotkeys();
+
     private:
         std::unordered_map<Control::KeyChord, Model::ActionAndArgs, KeyChordHash, KeyChordEquality> _keyShortcuts;
         std::vector<std::pair<Control::KeyChord, Model::ActionAndArgs>> _keyShortcutsByInsertionOrder;

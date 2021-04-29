@@ -375,7 +375,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 continue;
             }
 
-            if (limitToCurrentDesktop && _desktopManager)
+            if (peasant.WindowName() == QuakeWindowName)
+            {
+                // The _quake window should never be treated as the MRU window.
+                // Skip it if we see it. Users can still target it with `wt -w
+                // _quake`, which will hit `_lookupPeasantIdForName` instead.
+            }
+            else if (limitToCurrentDesktop && _desktopManager)
             {
                 // Check if this peasant is actually on this desktop. We can't
                 // simply get the GUID of the current desktop. We have to ask if
@@ -677,6 +683,56 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // they're the only one who cares about the result.
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_renameRequested_Failed",
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+        }
+    }
+
+    // Method Description:
+    // - Attempt to summon a window. `args` contains information about which
+    //   window we should try to summon:
+    //   * if a WindowName is provided, we'll try to find a window with exactly
+    //     that name, and fail if there isn't one.
+    // - Calls Peasant::Summon on the matching peasant (which might be an RPC call)
+    // - This should only ever be called by the WindowManager in the monarch
+    //   process itself. The monarch is the one registering for global hotkeys,
+    //   so it's the one calling this method.
+    // Arguments:
+    // - args: contains information about the window that should be summoned.
+    // Return Value:
+    // - <none>
+    // - Sets args.FoundMatch when a window matching args is found successfully.
+    void Monarch::SummonWindow(const Remoting::SummonWindowSelectionArgs& args)
+    {
+        const auto searchedForName{ args.WindowName() };
+        try
+        {
+            args.FoundMatch(false);
+            uint64_t windowId = 0;
+            // If no name was provided, then just summon the MRU window.
+            if (searchedForName.empty())
+            {
+                // Use the value of the `desktop` arg to determine if we should
+                // limit to the current desktop (desktop:onCurrent) or not
+                // (desktop:any or desktop:toCurrent)
+                windowId = _getMostRecentPeasantID(args.OnCurrentDesktop());
+            }
+            else
+            {
+                // Try to find a peasant that currently has this name
+                windowId = _lookupPeasantIdForName(searchedForName);
+            }
+            if (auto targetPeasant{ _getPeasant(windowId) })
+            {
+                targetPeasant.Summon(args.SummonBehavior());
+                args.FoundMatch(true);
+            }
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_SummonWindow_Failed",
+                              TraceLoggingWideString(searchedForName.c_str(), "searchedForName", "The name of the window we tried to summon"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
         }
     }
