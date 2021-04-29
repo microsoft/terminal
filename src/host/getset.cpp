@@ -357,15 +357,11 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
             WI_ClearFlag(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS);
         }
 
-        if (WI_IsFlagSet(mode, ENABLE_MOUSE_INPUT) && !WI_IsFlagSet(context.InputMode, ENABLE_MOUSE_INPUT))
+        const auto oldMouseMode{ WI_IsFlagSet(context.InputMode, ENABLE_MOUSE_INPUT) };
+        const auto newMouseMode{ WI_IsFlagSet(mode, ENABLE_MOUSE_INPUT) };
+        if (oldMouseMode != newMouseMode)
         {
-            gci.GetActiveInputBuffer()->PassThroughEnableButtonEventMouseMode(true);
-            gci.GetActiveInputBuffer()->PassThroughEnableSGRExtendedMouseMode(true);
-        }
-        else if (!WI_IsFlagSet(mode, ENABLE_MOUSE_INPUT) && WI_IsFlagSet(context.InputMode, ENABLE_MOUSE_INPUT))
-        {
-            gci.GetActiveInputBuffer()->PassThroughEnableButtonEventMouseMode(false);
-            gci.GetActiveInputBuffer()->PassThroughEnableSGRExtendedMouseMode(false);
+            gci.GetActiveInputBuffer()->PassThroughWin32MouseRequest(newMouseMode);
         }
 
         context.InputMode = mode;

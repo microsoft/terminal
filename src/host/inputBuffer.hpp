@@ -78,8 +78,7 @@ public:
     bool IsInVirtualTerminalInputMode() const;
     Microsoft::Console::VirtualTerminal::TerminalInput& GetTerminalInput();
     void SetTerminalConnection(_In_ Microsoft::Console::ITerminalOutputConnection* const pTtyConnection);
-    void PassThroughEnableButtonEventMouseMode(bool enable);
-    void PassThroughEnableSGRExtendedMouseMode(bool enable);
+    void PassThroughWin32MouseRequest(bool enable);
 
 private:
     std::deque<std::unique_ptr<IInputEvent>> _storage;
