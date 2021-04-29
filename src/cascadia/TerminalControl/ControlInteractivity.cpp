@@ -35,8 +35,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _selectionNeedsToBeCopied{ false }
     {
         _core = winrt::make_self<ControlCore>(settings, connection);
-
-        // _core->ScrollPositionChanged({ this, &ControlInteractivity::_coreScrollPositionChanged });
     }
 
     void ControlInteractivity::UpdateSettings()
