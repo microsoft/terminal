@@ -266,6 +266,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 const auto& conflictingCmdImpl{ get_self<implementation::Command>(conflictingCmd) };
                 conflictingCmdImpl->EraseKey(keys);
             }
+            else if (const auto& conflictingCmd{ GetActionByKeyChord(keys) })
+            {
+                // Collision: The key chord was already in use by an action in another layer
+                // Create a copy of the conflicting action,
+                // and erase the conflicting key chord from the copy.
+                const auto& conflictingCmdImpl{ get_self<implementation::Command>(conflictingCmd) };
+                const auto& conflictingCmdCopy{ conflictingCmdImpl->Copy() };
+                conflictingCmdCopy->EraseKey(keys);
+                _ActionMap.insert({ ActionHash()(conflictingCmdCopy->ActionAndArgs()), *conflictingCmdCopy });
+            }
 
             // Assign the new action.
             _KeyMap.insert_or_assign(keys, actionID);
