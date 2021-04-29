@@ -176,7 +176,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             mach._dcsStringHandler = [](const auto) { return true; };
             break;
         }
-        case 18:
+        case 17:
         {
             Log::Comment(L"Escape from SosPmApcString");
             shouldEscapeOut = false;
