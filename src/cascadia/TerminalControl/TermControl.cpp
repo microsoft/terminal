@@ -532,7 +532,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (auto control{ weakThis.get() })
         {
-            _UpdateBackgroundFromUIThread(newBgColor);
+            _UpdateBackgroundFromUIThread(bg);
         }
     }
 

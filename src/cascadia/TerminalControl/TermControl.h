@@ -173,10 +173,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _UpdateBackgroundFromUIThread(til::color bg);
         void _UpdateForegroundFromUIThread(til::color fg);
-        void _UpdateSettingsFromUIThreadUnderLock(IControlSettings newSettings);
-        void _UpdateAppearanceFromUIThreadUnderLock(IControlAppearance newAppearance);
-        bool _isReadOnly{ false };
-
+        void _UpdateSettingsFromUIThread(IControlSettings newSettings);
+        void _UpdateAppearanceFromUIThread(IControlAppearance newAppearance);
         void _ApplyUISettings(const IControlSettings&);
 
         void _InitializeBackgroundBrush();
