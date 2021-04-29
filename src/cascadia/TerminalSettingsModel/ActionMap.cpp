@@ -191,7 +191,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                             // (3) haven't had that key chord added yet
                             if (globalHotkeys.find(keys) == globalHotkeys.end())
                             {
-                                globalHotkeys.insert({keys, cmd});
+                                globalHotkeys.insert({ keys, cmd });
                             }
                         }
 
