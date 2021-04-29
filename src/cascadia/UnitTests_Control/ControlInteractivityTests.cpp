@@ -423,28 +423,23 @@ namespace ControlUnitTests
         // For the sake of this test, scroll one line at a time
         interactivity->_rowsToScroll = 1;
 
-        // int expectedTop = 0;
-        // int expectedViewHeight = 20;
-        // int expectedBufferHeight = 20;
-
         // auto scrollChangedHandler = [&](auto&&, const Control::ScrollPositionChangedArgs& args) mutable {
-        //     VERIFY_ARE_EQUAL(expectedTop, args.ViewTop());
-        //     VERIFY_ARE_EQUAL(expectedViewHeight, args.ViewHeight());
-        //     VERIFY_ARE_EQUAL(expectedBufferHeight, args.BufferSize());
+        //     // This mock emulates how the TermControl updates the
+        //     // interactivity's internal scrollbar when the core changes its
+        //     // viewport.
+        //     //
+        //     // In reality, the TermControl throttles scrollbar updates, and only
+        //     // calls back to UpdateScrollbar once every 60 seconds.
+        //     const auto newValue = args.ViewTop();
+        //     if (newValue != core->ScrollOffset())
+        //     {
+        //         interactivity->UpdateScrollbar(newValue);
+        //     }
         // };
         // core->ScrollPositionChanged(scrollChangedHandler);
-        // interactivity->ScrollPositionChanged(scrollChangedHandler);
 
         for (int i = 0; i < 40; ++i)
         {
-            // Log::Comment(NoThrowString().Format(L"Writing line #%d", i));
-            // The \r\n in the 19th loop will cause the view to start moving
-            // if (i >= 19)
-            // {
-            //     expectedTop++;
-            //     expectedBufferHeight++;
-            // }
-
             conn->WriteInput(L"Foo\r\n");
         }
         // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
@@ -455,8 +450,6 @@ namespace ControlUnitTests
 
         Log::Comment(L"Scroll up a line");
         const auto modifiers = ControlKeyStates();
-        // expectedBufferHeight = 41;
-        // expectedTop = 20;
 
         // Deltas that I saw while scrolling with the surface laptop trackpad
         // were on the range [-22, 7], though I'm sure they could be greater in
@@ -549,7 +542,7 @@ namespace ControlUnitTests
         VERIFY_IS_TRUE(interactivity->_singleClickTouchdownPos.has_value());
         VERIFY_ARE_EQUAL(cursorPosition0, interactivity->_singleClickTouchdownPos.value());
 
-        Log::Comment(L"Drag the mouse a lot. This simulates draging the mouse real fast.");
+        Log::Comment(L"Drag the mouse a lot. This simulates dragging the mouse real fast.");
         const til::point cursorPosition1{ 6 + fontSize.width<int>() * 2, 0 };
         interactivity->PointerMoved(leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind

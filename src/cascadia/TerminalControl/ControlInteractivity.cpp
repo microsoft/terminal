@@ -36,7 +36,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _core = winrt::make_self<ControlCore>(settings, connection);
 
-        _core->ScrollPositionChanged({ this, &ControlInteractivity::_coreScrollPositionChanged });
+        // _core->ScrollPositionChanged({ this, &ControlInteractivity::_coreScrollPositionChanged });
     }
 
     void ControlInteractivity::UpdateSettings()
@@ -267,7 +267,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto fontSizeInDips{ _core->FontSizeInDips() };
                 if (distance >= (std::min(fontSizeInDips.width(), fontSizeInDips.height()) / 4.f))
                 {
-                    // GH#9955.c: Make sure to use the temrinal location of the
+                    // GH#9955.c: Make sure to use the terminal location of the
                     // _touchdown_ point here. We want to start the selection
                     // from where the user initially clicked, not where they are
                     // now.
@@ -443,13 +443,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // event. Especially for precision trackpads, we might be getting scroll
         // deltas smaller than a single row, but we still want lots of those to
         // accumulate.
-        const double currentOffset = _internalScrollbarPosition;
+        //
+        // At the start, let's compare what we _think_ the scrollbar is, with
+        // what it should be. It's possible the core scrolled out from
+        // underneath us. We wouldn't know - we don't want the overhead of
+        // another ScrollPositionChanged handler. If the scrollbar should be
+        // somewhere other than where it is currently, then start from that row.
+        const int currentInternalRow = ::base::saturated_cast<int>(::std::round(_internalScrollbarPosition));
+        const int currentCoreRow = _core->ScrollOffset();
+        const double currentOffset = currentInternalRow == currentCoreRow ?
+                                         _internalScrollbarPosition :
+                                         currentCoreRow;
 
         // negative = down, positive = up
         // However, for us, the signs are flipped.
         // With one of the precision mice, one click is always a multiple of 120 (WHEEL_DELTA),
         // but the "smooth scrolling" mode results in non-int values
-        const double rowDelta = mouseDelta / (-1.0 * 120.0);
+        const double rowDelta = mouseDelta / (-1.0 * WHEEL_DELTA);
 
         // WHEEL_PAGESCROLL is a Win32 constant that represents the "scroll one page
         // at a time" setting. If we ignore it, we will scroll a truly absurd number
@@ -506,21 +516,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                                                   _core->ViewHeight(),
                                                                                   _core->BufferHeight()));
         }
-    }
-
-    // Method Description:
-    // - Event handler for the core's ScrollPositionChanged event. This is
-    //   called when the core changes its viewport position, due to more text
-    //   being output. We'll use this event to update our own internal scrollbar
-    //   tracker to the position the viewport is at now.
-    // Arguments:
-    // - args: args containing infor about the position of the viewport in the buffer.
-    // Return Value:
-    // - <none>
-    void ControlInteractivity::_coreScrollPositionChanged(const IInspectable& /*sender*/,
-                                                          const Control::ScrollPositionChangedArgs& args)
-    {
-        _internalScrollbarPosition = args.ViewTop();
     }
 
     void ControlInteractivity::_hyperlinkHandler(const std::wstring_view uri)
