@@ -35,5 +35,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         Microsoft.Terminal.Control.KeyChord GetKeyBindingForAction(ShortcutAction action);
         Microsoft.Terminal.Control.KeyChord GetKeyBindingForActionWithArgs(ActionAndArgs actionAndArgs);
+
+        Windows.Foundation.Collections.IMap<Microsoft.Terminal.Control.KeyChord, ActionAndArgs> GlobalHotkeys();
     }
 }

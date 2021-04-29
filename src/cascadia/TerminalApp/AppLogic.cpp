@@ -285,12 +285,21 @@ namespace winrt::TerminalApp::implementation
             // launched _fullscreen_, toggle fullscreen mode. This will make sure
             // that the window size is _first_ set up as something sensible, so
             // leaving fullscreen returns to a reasonable size.
+            //
+            // We know at the start, that the root TerminalPage definitely isn't
+            // in focus nor fullscreen mode. So "Toggle" here will always work
+            // to "enable".
             const auto launchMode = this->GetLaunchMode();
-            if (launchMode == LaunchMode::FullscreenMode)
+            if (IsQuakeWindow())
+            {
+                _root->ToggleFocusMode();
+            }
+            else if (launchMode == LaunchMode::FullscreenMode)
             {
                 _root->ToggleFullscreen();
             }
-            else if (launchMode == LaunchMode::FocusMode || launchMode == LaunchMode::MaximizedFocusMode)
+            else if (launchMode == LaunchMode::FocusMode ||
+                     launchMode == LaunchMode::MaximizedFocusMode)
             {
                 _root->ToggleFocusMode();
             }
@@ -988,7 +997,7 @@ namespace winrt::TerminalApp::implementation
     CATCH_LOG();
 
     // Method Description:
-    // - Reloads the settings from the profile.json.
+    // - Reloads the settings from the settings.json file.
     void AppLogic::_ReloadSettings()
     {
         // Attempt to load our settings.
@@ -1018,6 +1027,8 @@ namespace winrt::TerminalApp::implementation
         _ApplyStartupTaskStateChange();
 
         Jumplist::UpdateJumplist(_settings);
+
+        _SettingsChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -1400,6 +1411,11 @@ namespace winrt::TerminalApp::implementation
         return _root ? _root->AlwaysOnTop() : false;
     }
 
+    Windows::Foundation::Collections::IMap<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::ActionAndArgs> AppLogic::GlobalHotkeys()
+    {
+        return _settings.GlobalSettings().KeyMap().GlobalHotkeys();
+    }
+
     void AppLogic::IdentifyWindow()
     {
         if (_root)
@@ -1437,6 +1453,11 @@ namespace winrt::TerminalApp::implementation
         {
             _root->RenameFailed();
         }
+    }
+
+    bool AppLogic::IsQuakeWindow() const noexcept
+    {
+        return _root->IsQuakeWindow();
     }
 
 }

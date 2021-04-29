@@ -477,6 +477,11 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
+til::color Terminal::GetDefaultBackground() const noexcept
+{
+    return _defaultBg;
+}
+
 bool Terminal::EnableWin32InputMode(const bool win32InputMode) noexcept
 {
     _terminalInput->ChangeWin32InputMode(win32InputMode);

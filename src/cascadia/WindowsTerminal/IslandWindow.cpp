@@ -15,6 +15,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace ::Microsoft::Console::Types;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
@@ -170,7 +171,7 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     {
         // If we haven't been given the callback that would adjust the dimension,
         // then we can't do anything, so just bail out.
-        return FALSE;
+        return false;
     }
 
     LPRECT winRect = reinterpret_cast<LPRECT>(lParam);
@@ -182,8 +183,9 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     // optional parameter so give two UINTs.
     UINT dpix = USER_DEFAULT_SCREEN_DPI;
     UINT dpiy = USER_DEFAULT_SCREEN_DPI;
-    // If this fails, we'll use the default of 96.
-    GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
+    // If this fails, we'll use the default of 96. I think it can only fail for
+    // bad parameters, which we won't have, so no big deal.
+    LOG_IF_FAILED(GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy));
 
     const auto widthScale = base::ClampedNumeric<float>(dpix) / USER_DEFAULT_SCREEN_DPI;
     const long minWidthScaled = minimumWidth * widthScale;
@@ -194,6 +196,16 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     clientWidth = std::max(minWidthScaled, clientWidth);
 
     auto clientHeight = winRect->bottom - winRect->top - nonClientSize.cy;
+
+    // If we're the quake window, prevent resizing on all sides except the
+    // bottom. This also applies to resizing with the Alt+Space menu
+    if (IsQuakeWindow() && wParam != WMSZ_BOTTOM)
+    {
+        // Stuff our current window size into the lParam, and return true. This
+        // will tell User32 to use our current dimensions to resize to.
+        ::GetWindowRect(_window.get(), winRect);
+        return true;
+    }
 
     if (wParam != WMSZ_TOP && wParam != WMSZ_BOTTOM)
     {
@@ -244,7 +256,31 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
         break;
     }
 
-    return TRUE;
+    return true;
+}
+
+// Method Description:
+// - Handle the WM_MOVING message
+// - If we're the quake window, then we don't want to be able to be moved.
+//   Immediately return our current window position, which will prevent us from
+//   being moved at all.
+// Arguments:
+// - lParam: a LPRECT with the proposed window position, that should be filled
+//   with the resultant position.
+// Return Value:
+// - true iff we handled this message.
+LRESULT IslandWindow::_OnMoving(const WPARAM /*wParam*/, const LPARAM lParam)
+{
+    LPRECT winRect = reinterpret_cast<LPRECT>(lParam);
+    // If we're the quake window, prevent moving the window
+    if (IsQuakeWindow())
+    {
+        // Stuff our current window into the lParam, and return true. This
+        // will tell User32 to use our current position to move to.
+        ::GetWindowRect(_window.get(), winRect);
+        return true;
+    }
+    return false;
 }
 
 void IslandWindow::Initialize()
@@ -351,6 +387,11 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
 {
     switch (message)
     {
+    case WM_HOTKEY:
+    {
+        _HotkeyPressedHandlers(static_cast<long>(wparam));
+        return 0;
+    }
     case WM_GETMINMAXINFO:
     {
         _OnGetMinMaxInfo(wparam, lparam);
@@ -367,8 +408,9 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         {
             // send focus to the child window
             SetFocus(_interopWindowHandle);
-            return 0; // eat the message
+            return 0;
         }
+        break;
     }
     case WM_ACTIVATE:
     {
@@ -404,6 +446,10 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     case WM_SIZING:
     {
         return _OnSizing(wparam, lparam);
+    }
+    case WM_MOVING:
+    {
+        return _OnMoving(wparam, lparam);
     }
     case WM_CLOSE:
     {
@@ -749,6 +795,7 @@ void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)
     // Resize the window, with SWP_FRAMECHANGED, to trigger user32 to
     // recalculate the non/client areas
     const til::rectangle windowPos{ GetWindowRect() };
+
     SetWindowPos(GetHandle(),
                  HWND_TOP,
                  windowPos.left<int>(),
@@ -896,6 +943,90 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 }
 
 // Method Description:
+// - Call UnregisterHotKey once for each entry in hotkeyList, to unset all the bound global hotkeys.
+// Arguments:
+// - hotkeyList: a list of hotkeys to unbind
+// Return Value:
+// - <none>
+void IslandWindow::UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList)
+{
+    TraceLoggingWrite(g_hWindowsTerminalProvider,
+                      "UnsetHotkeys",
+                      TraceLoggingDescription("Emitted when clearing previously set hotkeys"),
+                      TraceLoggingInt64(hotkeyList.size(), "numHotkeys", "The number of hotkeys to unset"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
+    for (int i = 0; i < ::base::saturated_cast<int>(hotkeyList.size()); i++)
+    {
+        LOG_IF_WIN32_BOOL_FALSE(UnregisterHotKey(_window.get(), i));
+    }
+}
+
+// Method Description:
+// - Call RegisterHotKey once for each entry in hotkeyList, to attempt to
+//   register that keybinding as a global hotkey.
+// - When these keys are pressed, we'll get a WM_HOTKEY message with the payload
+//   containing the index we registered here.
+// Arguments:
+// - hotkeyList: a list of hotkeys to bind
+// Return Value:
+// - <none>
+void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList)
+{
+    TraceLoggingWrite(g_hWindowsTerminalProvider,
+                      "SetGlobalHotkeys",
+                      TraceLoggingDescription("Emitted when setting hotkeys"),
+                      TraceLoggingInt64(hotkeyList.size(), "numHotkeys", "The number of hotkeys to set"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+    int index = 0;
+    for (const auto& hotkey : hotkeyList)
+    {
+        const auto modifiers = hotkey.Modifiers();
+        const auto hotkeyFlags = MOD_NOREPEAT |
+                                 (WI_IsFlagSet(modifiers, KeyModifiers::Windows) ? MOD_WIN : 0) |
+                                 (WI_IsFlagSet(modifiers, KeyModifiers::Alt) ? MOD_ALT : 0) |
+                                 (WI_IsFlagSet(modifiers, KeyModifiers::Ctrl) ? MOD_CONTROL : 0) |
+                                 (WI_IsFlagSet(modifiers, KeyModifiers::Shift) ? MOD_SHIFT : 0);
+
+        // TODO GH#8888: We should display a warning of some kind if this fails.
+        // This can fail if something else already bound this hotkey.
+        LOG_IF_WIN32_BOOL_FALSE(RegisterHotKey(_window.get(),
+                                               index,
+                                               hotkeyFlags,
+                                               hotkey.Vkey()));
+
+        index++;
+    }
+}
+
+// Method Description:
+// - Summon the window, or possibly dismiss it. If toggleVisibility is true,
+//   then we'll dismiss (minimize) the window if it's currently active.
+//   Otherwise, we'll always just try to activate the window.
+// Arguments:
+// - toggleVisibility: controls how we should behave when already in the foreground.
+// Return Value:
+// - <none>
+winrt::fire_and_forget IslandWindow::SummonWindow(const bool toggleVisibility)
+{
+    // On the foreground thread:
+    co_await winrt::resume_foreground(_rootGrid.Dispatcher());
+
+    // * If the user doesn't want to toggleVisibility, then just always try to
+    //   activate.
+    // * If the user does want to toggleVisibility, then dismiss the window if
+    //   we're the current foreground window.
+    if (toggleVisibility && GetForegroundWindow() == _window.get())
+    {
+        _globalDismissWindow();
+    }
+    else
+    {
+        _globalActivateWindow();
+    }
+}
+
+// Method Description:
 // - Force activate this window. This method will bring us to the foreground and
 //   activate us. If the window is minimized, it will restore the window. If the
 //   window is on another desktop, the OS will switch to that desktop.
@@ -903,11 +1034,8 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 // - <none>
 // Return Value:
 // - <none>
-winrt::fire_and_forget IslandWindow::SummonWindow()
+void IslandWindow::_globalActivateWindow()
 {
-    // On the foreground thread:
-    co_await winrt::resume_foreground(_rootGrid.Dispatcher());
-
     // From: https://stackoverflow.com/a/59659421
     // > The trick is to make windows ‘think’ that our process and the target
     // > window (hwnd) are related by attaching the threads (using
@@ -929,6 +1057,87 @@ winrt::fire_and_forget IslandWindow::SummonWindow()
     });
     LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
     LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_SHOW));
+
+    // Activate the window too. This will force us to the virtual desktop this
+    // window is on, if it's on another virtual desktop.
+    LOG_LAST_ERROR_IF_NULL(SetActiveWindow(_window.get()));
+}
+
+// Method Description:
+// - Minimize the window. This is called when the window is summoned, but is
+//   already active
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void IslandWindow::_globalDismissWindow()
+{
+    LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_MINIMIZE));
+}
+
+bool IslandWindow::IsQuakeWindow() const noexcept
+{
+    return _isQuakeWindow;
+}
+
+void IslandWindow::IsQuakeWindow(bool isQuakeWindow) noexcept
+{
+    if (_isQuakeWindow != isQuakeWindow)
+    {
+        _isQuakeWindow = isQuakeWindow;
+        // Don't enter quake mode if we don't have an HWND yet
+        if (IsQuakeWindow() && _window)
+        {
+            _enterQuakeMode();
+        }
+    }
+}
+
+void IslandWindow::_enterQuakeMode()
+{
+    if (!_window)
+    {
+        return;
+    }
+
+    RECT windowRect = GetWindowRect();
+    HMONITOR hmon = MonitorFromRect(&windowRect, MONITOR_DEFAULTTONEAREST);
+    MONITORINFO nearestMonitorInfo;
+
+    UINT dpix = USER_DEFAULT_SCREEN_DPI;
+    UINT dpiy = USER_DEFAULT_SCREEN_DPI;
+    // If this fails, we'll use the default of 96. I think it can only fail for
+    // bad parameters, which we won't have, so no big deal.
+    LOG_IF_FAILED(GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy));
+
+    nearestMonitorInfo.cbSize = sizeof(MONITORINFO);
+    // Get monitor dimensions:
+    GetMonitorInfo(hmon, &nearestMonitorInfo);
+    const til::size desktopDimensions{ (nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
+                                       (nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
+
+    // If we just use rcWork by itself, we'll fail to account for the invisible
+    // space reserved for the resize handles. So retrieve that size here.
+    const til::size ncSize{ GetTotalNonClientExclusiveSize(dpix) };
+    const til::size availableSpace = desktopDimensions + ncSize;
+
+    const til::point origin{
+        ::base::ClampSub<long>(nearestMonitorInfo.rcWork.left, (ncSize.width() / 2)),
+        (nearestMonitorInfo.rcWork.top)
+    };
+    const til::size dimensions{
+        availableSpace.width(),
+        availableSpace.height() / 2
+    };
+
+    const til::rectangle newRect{ origin, dimensions };
+    SetWindowPos(GetHandle(),
+                 HWND_TOP,
+                 newRect.left<int>(),
+                 newRect.top<int>(),
+                 newRect.width<int>(),
+                 newRect.height<int>(),
+                 SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
