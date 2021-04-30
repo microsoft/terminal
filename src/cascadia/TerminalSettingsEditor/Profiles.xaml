@@ -239,6 +239,8 @@
                         <StackPanel Style="{StaticResource PivotStackStyle}">
                             <!--  Control Preview  -->
                             <Border x:Name="ControlPreview"
+                                    BorderThickness="1"
+                                    BorderBrush="#333333"
                                     Height="160"
                                     Width="350" />
 
