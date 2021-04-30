@@ -897,8 +897,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
     winrt::hstring ControlCore::FontFaceName() const noexcept
     {
-        return GetFont().GetFaceName();
+        return winrt::hstring{ GetFont().GetFaceName() };
     }
+
     uint16_t ControlCore::FontWeight() const noexcept
     {
         return static_cast<uint16_t>(GetFont().GetWeight());

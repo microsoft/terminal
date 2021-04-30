@@ -18,7 +18,6 @@ namespace Microsoft.Terminal.Control
         Boolean IsRightButtonDown;
     };
 
-
     [default_interface] runtimeclass ControlCore : ICoreState
     {
         ControlCore(IControlSettings settings,
@@ -59,9 +58,9 @@ namespace Microsoft.Terminal.Control
         void ToggleShaderEffects();
         void SetBackgroundOpacity(Double opacity);
         Microsoft.Terminal.Core.Color BackgroundColor();
-        void Initialize(Double actualWidth,
-                        Double actualHeight,
-                        Double compositionScale);
+        Boolean Initialize(Double actualWidth,
+                           Double actualHeight,
+                           Double compositionScale);
         void Close();
         void BlinkCursor();
         void ResetFontSize();

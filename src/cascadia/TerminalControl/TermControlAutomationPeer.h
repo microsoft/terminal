@@ -25,8 +25,8 @@ Author(s):
 #pragma once
 
 #include "TermControl.h"
+#include "ControlInteractivity.h"
 #include "TermControlAutomationPeer.g.h"
-#include <winrt/Microsoft.Terminal.Control.h>
 #include "../types/TermControlUiaProvider.hpp"
 #include "../types/IUiaEventDispatcher.h"
 #include "../types/IControlAccessibilityInfo.h"
@@ -35,11 +35,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct TermControlAutomationPeer :
         public TermControlAutomationPeerT<TermControlAutomationPeer>,
-        ::Microsoft::Console::Types::IUiaEventDispatcher,
-        ::Microsoft::Console::Types::IControlAccessibilityInfo
+        ::Microsoft::Console::Types::IUiaEventDispatcher /*,
+        ::Microsoft::Console::Types::IControlAccessibilityInfo*/
     {
     public:
-        TermControlAutomationPeer(Microsoft::Terminal::Control::implementation::TermControl* owner);
+        TermControlAutomationPeer(Microsoft::Terminal::Control::implementation::TermControl* owner,
+                                  Control::InteractivityAutomationPeer implementation);
 
 #pragma region FrameworkElementAutomationPeer
         hstring GetClassNameCore() const;
@@ -67,21 +68,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::UI::Xaml::Automation::Provider::ITextRangeProvider DocumentRange();
 #pragma endregion
 
-#pragma region IControlAccessibilityInfo Pattern
-        // Inherited via IControlAccessibilityInfo
-        virtual COORD GetFontSize() const override;
-        virtual RECT GetBounds() const override;
-        virtual RECT GetPadding() const override;
-        virtual double GetScaleFactor() const override;
-        virtual void ChangeViewport(SMALL_RECT NewWindow) override;
-        virtual HRESULT GetHostUiaProvider(IRawElementProviderSimple** provider) override;
-#pragma endregion
+        // #pragma region IControlAccessibilityInfo Pattern
+        //         // Inherited via IControlAccessibilityInfo
+        //         virtual COORD GetFontSize() const override;
+        //         virtual RECT GetBounds() const override;
+        //         virtual RECT GetPadding() const override;
+        //         virtual double GetScaleFactor() const override;
+        //         virtual void ChangeViewport(SMALL_RECT NewWindow) override;
+        //         virtual HRESULT GetHostUiaProvider(IRawElementProviderSimple** provider) override;
+        // #pragma endregion
 
-        RECT GetBoundingRectWrapped();
+        // RECT GetBoundingRectWrapped();
 
     private:
-        ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
+        // ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
+        // winrt::Microsoft::Terminal::Control::implementation::ControlInteractivity* _interactivity;
+
         winrt::Microsoft::Terminal::Control::implementation::TermControl* _termControl;
+        Control::InteractivityAutomationPeer _implementation;
+
         winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> WrapArrayOfTextRangeProviders(SAFEARRAY* textRanges);
     };
 }

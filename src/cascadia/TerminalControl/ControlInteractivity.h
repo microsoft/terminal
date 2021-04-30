@@ -38,9 +38,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                              TerminalConnection::ITerminalConnection connection);
 
         void GainFocus();
-        void UpdateSettings();
+        void LostFocus();
+        void UpdateSettings(const til::rectangle padding);
         void Initialize();
         Control::ControlCore GetCore();
+
+        // hstring GetProfileName() const;
+        Control::InteractivityAutomationPeer OnCreateAutomationPeer();
+        ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
+        til::rectangle GetPadding() const;
 
 #pragma region Input Methods
         void PointerPressed(Control::MouseButtonState buttonState,
@@ -86,6 +92,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::com_ptr<ControlCore> _core{ nullptr };
         unsigned int _rowsToScroll;
         double _internalScrollbarPosition{ 0.0 };
+
+        til::rectangle _lastPadding;
+        std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
 
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.

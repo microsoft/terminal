@@ -8,13 +8,15 @@
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
 #include <Utils.h>
-#include <WinUser.h>
 #include <LibraryResources.h>
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../../types/inc/Utils.hpp"
 #include "../../buffer/out/search.h"
 
+#include "InteractivityAutomationPeer.h"
+
 #include "ControlInteractivity.g.cpp"
+#include "TermControl.h"
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
@@ -46,9 +48,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // _core->ScrollPositionChanged({ this, &ControlInteractivity::_coreScrollPositionChanged });
     }
 
-    void ControlInteractivity::UpdateSettings()
+    void ControlInteractivity::UpdateSettings(const til::rectangle padding)
     {
         _updateSystemParameterSettings();
+
+        _lastPadding = padding;
     }
 
     void ControlInteractivity::Initialize()
@@ -96,7 +100,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlInteractivity::GainFocus()
     {
+        // GH#5421: Enable the UiaEngine before checking for the SearchBox
+        // That way, new selections are notified to automation clients.
+        if (_uiaEngine.get())
+        {
+            THROW_IF_FAILED(_uiaEngine->Enable());
+        }
+
         _updateSystemParameterSettings();
+    }
+
+    void ControlInteractivity::LostFocus()
+    {
+        if (_uiaEngine.get())
+        {
+            THROW_IF_FAILED(_uiaEngine->Disable());
+        }
     }
 
     // Method Description
@@ -566,4 +585,46 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Convert the location in pixels to characters within the current viewport.
         return til::point{ pixelPosition / fontSize };
     }
+
+    // Method Description:
+    // - Creates an automation peer for the Terminal Control, enabling accessibility on our control.
+    // Arguments:
+    // - None
+    // Return Value:
+    // - The automation peer for our control
+    Control::InteractivityAutomationPeer ControlInteractivity::OnCreateAutomationPeer()
+    try
+    {
+        // if (_initializedTerminal && !_closing) // only set up the automation peer if we're ready to go live
+        // {
+        // create a custom automation peer with this code pattern:
+        // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
+        auto autoPeer = winrt::make_self<implementation::InteractivityAutomationPeer>(this);
+
+        _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
+        _core->AttachUiaEngine(_uiaEngine.get());
+        return *autoPeer;
+        // }
+        // return nullptr;
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+        return nullptr;
+    }
+
+    ::Microsoft::Console::Types::IUiaData* ControlInteractivity::GetUiaData() const
+    {
+        return _core->GetUiaData();
+    }
+
+    // hstring ControlInteractivity::GetProfileName() const
+    // {
+    //     return _settings.ProfileName();
+    // }
+    til::rectangle ControlInteractivity::GetPadding() const
+    {
+        return _lastPadding;
+    }
+
 }

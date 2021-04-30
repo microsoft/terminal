@@ -5,6 +5,8 @@ import "ICoreState.idl";
 import "IControlSettings.idl";
 import "ControlCore.idl";
 import "EventArgs.idl";
+import "InteractivityAutomationPeer.idl";
+
 
 namespace Microsoft.Terminal.Control
 {
@@ -15,14 +17,16 @@ namespace Microsoft.Terminal.Control
                              Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
         ControlCore GetCore();
-        void UpdateSettings();
+        void UpdateSettings(Microsoft.Terminal.Core.Padding padding);
         void Initialize();
         void GainFocus();
+        void LostFocus();
+
+        InteractivityAutomationPeer OnCreateAutomationPeer();
 
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void RequestPasteTextFromClipboard();
         void SetEndSelectionPoint(Microsoft.Terminal.Core.Point point);
-
 
         void PointerPressed(MouseButtonState buttonState,
                             UInt32 pointerUpdateKind,
@@ -51,7 +55,6 @@ namespace Microsoft.Terminal.Control
                            MouseButtonState state);
 
         void UpdateScrollbar(Double newValue);
-
 
         event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
         event Windows.Foundation.TypedEventHandler<Object, ScrollPositionChangedArgs> ScrollPositionChanged;

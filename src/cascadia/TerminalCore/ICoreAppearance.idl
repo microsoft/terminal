@@ -36,6 +36,12 @@ namespace Microsoft.Terminal.Core
     {
         Int32 Value;
     };
+    struct Padding {
+        Double Left;
+        Double Top;
+        Double Right;
+        Double Bottom;
+    };
 
     declare
     {

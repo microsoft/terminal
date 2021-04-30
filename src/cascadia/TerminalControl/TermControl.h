@@ -84,7 +84,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ~TermControl();
 
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
-        ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
+        // ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
         const Windows::UI::Xaml::Thickness GetPadding();
 
         IControlSettings Settings() const;
@@ -103,6 +103,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         static Control::MouseButtonState GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point);
         static unsigned int GetPointerUpdateKind(const winrt::Windows::UI::Input::PointerPoint point);
+        static Windows::UI::Xaml::Thickness ParseThicknessFromPadding(const hstring padding);
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
@@ -137,8 +138,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _initializedTerminal;
 
         winrt::com_ptr<SearchBoxControl> _searchBox;
-
-        std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
 
         IControlSettings _settings;
         bool _focused;
@@ -220,8 +219,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _TryStartAutoScroll(Windows::UI::Input::PointerPoint const& pointerPoint, const double scrollVelocity);
         void _TryStopAutoScroll(const uint32_t pointerId);
         void _UpdateAutoScroll(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
-
-        static Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
 
         void _KeyHandler(Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e, const bool keyDown);
         ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() const;

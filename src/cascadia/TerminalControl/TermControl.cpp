@@ -8,7 +8,6 @@
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
 #include <Utils.h>
-#include <WinUser.h>
 #include <LibraryResources.h>
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../../types/inc/Utils.hpp"
@@ -399,7 +398,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _changeBackgroundColor(bg);
 
         // Apply padding as swapChainPanel's margin
-        auto newMargin = _ParseThicknessFromPadding(newSettings.Padding());
+        auto newMargin = ParseThicknessFromPadding(newSettings.Padding());
         SwapChainPanel().Margin(newMargin);
 
         TSFInputControl().Margin(newMargin);
@@ -420,7 +419,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             ScrollBar().Visibility(Visibility::Visible);
         }
 
-        _interactivity.UpdateSettings();
+        _interactivity.UpdateSettings(winrt::Microsoft::Terminal::Core::Padding{ newMargin.Left,
+                                                                                 newMargin.Top,
+                                                                                 newMargin.Right,
+                                                                                 newMargin.Bottom });
     }
 
     // Method Description:
@@ -525,37 +527,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Return Value:
     // - The automation peer for our control
     Windows::UI::Xaml::Automation::Peers::AutomationPeer TermControl::OnCreateAutomationPeer()
-    try
     {
         if (_initializedTerminal && !_closing) // only set up the automation peer if we're ready to go live
         {
-            // create a custom automation peer with this code pattern:
-            // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
-            auto autoPeer = winrt::make_self<implementation::TermControlAutomationPeer>(this);
-
-            _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
-            _core.AttachUiaEngine(_uiaEngine.get());
+            const auto& interactivityAutoPeer = _interactivity.OnCreateAutomationPeer();
+            auto autoPeer = winrt::make_self<implementation::TermControlAutomationPeer>(this, interactivityAutoPeer);
             return *autoPeer;
         }
         return nullptr;
-    }
-    catch (...)
-    {
-        LOG_CAUGHT_EXCEPTION();
-        return nullptr;
-    }
-
-    ::Microsoft::Console::Types::IUiaData* TermControl::GetUiaData() const
-    {
-        return _core.GetUiaData();
     }
 
     // This is needed for TermControlAutomationPeer. We probably could find a
     // clever way around asking the core for this.
     til::point TermControl::GetFontSize() const
     {
-        const auto size = _core.FontSize();
-        return til::point{ til::math::rounding, size.Width, size.Height };
+        return til::point{ til::math::rounding, _core.FontSize() };
     }
 
     const Windows::UI::Xaml::Thickness TermControl::GetPadding()
@@ -1450,10 +1436,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // GH#5421: Enable the UiaEngine before checking for the SearchBox
         // That way, new selections are notified to automation clients.
-        if (_uiaEngine.get())
-        {
-            THROW_IF_FAILED(_uiaEngine->Enable());
-        }
+        _interactivity.GainFocus();
 
         // If the searchbox is focused, we don't want TSFInputControl to think
         // it has focus so it doesn't intercept IME input. We also don't want the
@@ -1480,8 +1463,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _blinkTimer.value().Start();
         }
 
-        _interactivity.GainFocus();
-
         // Only update the appearance here if an unfocused config exists -
         // if an unfocused config does not exist then we never would have switched
         // appearances anyway so there's no need to switch back upon gaining focus
@@ -1507,10 +1488,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _focused = false;
 
-        if (_uiaEngine.get())
-        {
-            THROW_IF_FAILED(_uiaEngine->Disable());
-        }
+        _interactivity.LostFocus();
 
         if (TSFInputControl() != nullptr)
         {
@@ -1847,7 +1825,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         double height = rows * fontSize.Y;
-        auto thickness = _ParseThicknessFromPadding(padding);
+        auto thickness = ParseThicknessFromPadding(padding);
         // GH#2061 - make sure to account for the size the padding _will be_ scaled to
         width += scale * (thickness.Left + thickness.Right);
         height += scale * (thickness.Top + thickness.Bottom);
@@ -1954,7 +1932,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //      Four Double values provide independent padding for 4 sides of the bounding rectangle
     // Return Value:
     // - Windows::UI::Xaml::Thickness object
-    Windows::UI::Xaml::Thickness TermControl::_ParseThicknessFromPadding(const hstring padding)
+    Windows::UI::Xaml::Thickness TermControl::ParseThicknessFromPadding(const hstring padding)
     {
         const wchar_t singleCharDelim = L',';
         std::wstringstream tokenStream(padding.c_str());

@@ -875,6 +875,22 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
+#ifdef WINRT_Microsoft_Terminal_Core_H
+        operator winrt::Microsoft::Terminal::Core::Padding() const noexcept
+        {
+            winrt::Microsoft::Terminal::Core::Padding ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(left()).AssignIfValid(&ret.Left));
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(top()).AssignIfValid(&ret.Top));
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(right()).AssignIfValid(&ret.Right));
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(bottom()).AssignIfValid(&ret.Bottom));
+            return ret;
+        }
+        constexpr rectangle(const winrt::Microsoft::Terminal::Core::Padding& padding) :
+            rectangle(til::math::rounding, padding)
+        {
+        }
+#endif
+
         std::wstring to_string() const
         {
             return wil::str_printf<std::wstring>(L"(L:%td, T:%td, R:%td, B:%td) [W:%td, H:%td]", left(), top(), right(), bottom(), width(), height());
