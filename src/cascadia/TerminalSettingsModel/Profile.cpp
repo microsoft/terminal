@@ -496,11 +496,16 @@ Json::Value Profile::ToJson() const
     // Initialize the json with the appearance settings
     Json::Value json{ winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance)->ToJson() };
 
+    // GH #9962:
+    //   If the settings.json was missing, when we load the dynamic profiles, they are completely empty.
+    //   This caused us to serialize empty profiles "{}" on accident.
+    const bool writeBasicSettings{ !Source().empty() };
+
     // Profile-specific Settings
-    JsonUtils::SetValueForKey(json, NameKey, _Name);
-    JsonUtils::SetValueForKey(json, GuidKey, _Guid);
-    JsonUtils::SetValueForKey(json, HiddenKey, _Hidden);
-    JsonUtils::SetValueForKey(json, SourceKey, _Source);
+    JsonUtils::SetValueForKey(json, NameKey, writeBasicSettings ? Name() : _Name);
+    JsonUtils::SetValueForKey(json, GuidKey, writeBasicSettings ? Guid() : _Guid);
+    JsonUtils::SetValueForKey(json, HiddenKey, writeBasicSettings ? Hidden() : _Hidden);
+    JsonUtils::SetValueForKey(json, SourceKey, writeBasicSettings ? Source() : _Source);
 
     // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
     JsonUtils::SetValueForKey(json, HistorySizeKey, _HistorySize);

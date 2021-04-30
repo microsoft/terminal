@@ -52,6 +52,7 @@
     <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalApp\TerminalAppLib.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalSettingsModel\Microsoft.Terminal.Settings.ModelLib.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)\src\types\lib\types.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\propslib\propslib.vcxproj" />
   </ItemGroup>
 
   <!-- ========================= Globals ======================== -->
@@ -121,9 +122,5 @@
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-
-  <!-- Import this set of targets that fixes a VS bug that manifests when using
-  the TerminalAppLib project -->
-  <Import Project="../TerminalApp/dll/FixVisualStudioBug.targets" />
 
 </Project>

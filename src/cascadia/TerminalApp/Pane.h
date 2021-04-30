@@ -19,8 +19,7 @@
 // - Mike Griese (zadjii-msft) 16-May-2019
 
 #pragma once
-#include <winrt/Microsoft.Terminal.Control.h>
-#include <winrt/TerminalApp.h>
+
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 enum class Borders : int

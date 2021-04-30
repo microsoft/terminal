@@ -62,4 +62,9 @@ namespace Microsoft.Terminal.Control
     {
         UInt64 Result { get; };
     }
+
+    runtimeclass TransparencyChangedEventArgs
+    {
+        Double Opacity { get; };
+    }
 }

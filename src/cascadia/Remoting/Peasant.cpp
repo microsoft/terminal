@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "Peasant.h"
 #include "CommandlineArgs.h"
+#include "SummonWindowBehavior.h"
 #include "Peasant.g.cpp"
 #include "../../types/inc/utils.hpp"
 
@@ -115,6 +116,28 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     Remoting::WindowActivatedArgs Peasant::GetLastActivatedArgs()
     {
         return _lastActivatedArgs;
+    }
+
+    // Method Description:
+    // - Summon this peasant to become the active window. Currently, it just
+    //   causes the peasant to become the active window wherever the window
+    //   already was.
+    // - Will raise a SummonRequested event to ask the hosting window to handle for us.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Peasant::Summon(const Remoting::SummonWindowBehavior& summonBehavior)
+    {
+        auto localCopy = winrt::make<implementation::SummonWindowBehavior>(summonBehavior);
+
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Peasant_Summon",
+                          TraceLoggingUInt64(GetID(), "peasantID", "Our ID"),
+                          TraceLoggingUInt64(localCopy.MoveToCurrentDesktop(), "MoveToCurrentDesktop", "true if we should move to the current desktop"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
+        _SummonRequestedHandlers(*this, localCopy);
     }
 
     // Method Description:

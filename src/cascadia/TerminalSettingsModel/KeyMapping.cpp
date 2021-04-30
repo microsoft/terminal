@@ -141,4 +141,32 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         return keyModifiers;
     }
+
+    // Method Description:
+    // - Build a map of all the globalSummon actions.
+    // - quakeMode actions are included in this, but expanded to the equivalent
+    //   set of GlobalSummonArgs
+    // - This is only ever called in two scenarios:
+    //    - on becoming the monarch (which only happens once per window)
+    //    - when the settings reload (and the cache would inevitably be dirty)
+    //   So it's perfectly reasonable to not cache these results.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a map of KeyChord -> ActionAndArgs containing all globally bindable actions.
+    Windows::Foundation::Collections::IMap<Control::KeyChord, Model::ActionAndArgs> KeyMapping::GlobalHotkeys()
+    {
+        std::unordered_map<Control::KeyChord, Model::ActionAndArgs, KeyChordHash, KeyChordEquality> justGlobals;
+
+        for (const auto& [k, v] : _keyShortcuts)
+        {
+            if (v.Action() == ShortcutAction::GlobalSummon || v.Action() == ShortcutAction::QuakeMode)
+            {
+                justGlobals[k] = v;
+            }
+        }
+
+        return winrt::single_threaded_map<Control::KeyChord, Model::ActionAndArgs>(std::move(justGlobals));
+    }
+
 }

@@ -7,6 +7,7 @@
 #include "../../inc/DefaultSettings.h"
 #include "JsonUtils.h"
 #include "TerminalSettingsSerializationHelpers.h"
+#include "KeyChordSerialization.h"
 
 #include "GlobalAppSettings.g.cpp"
 

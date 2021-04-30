@@ -225,7 +225,6 @@ public:
     void SetTerminalConnection(_In_ Microsoft::Console::ITerminalOutputConnection* const pTtyConnection);
 
     void UpdateBottom();
-    void ResetBottom();
     void MoveToBottom();
 
     Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;

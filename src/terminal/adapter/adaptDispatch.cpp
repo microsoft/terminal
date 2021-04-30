@@ -2030,9 +2030,6 @@ bool AdaptDispatch::_EraseScrollback()
 
             if (success)
             {
-                // Reset the virtual viewport bottom to the top of the buffer.
-                _pConApi->ResetBottom();
-
                 // Move the viewport (CAN'T be done in one call with SetConsolescreenBufferInfoEx, because legacy)
                 SMALL_RECT newViewport;
                 newViewport.Left = screen.Left;

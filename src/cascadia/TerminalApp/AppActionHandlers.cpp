@@ -771,4 +771,23 @@ namespace winrt::TerminalApp::implementation
 
         args.Handled(true);
     }
+
+    void TerminalPage::_HandleGlobalSummon(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        // Manually return false. These shouldn't ever get here, except for when
+        // we fail to register for the global hotkey. In that case, returning
+        // false here will let the underlying terminal still process the key, as
+        // if it wasn't bound at all.
+        args.Handled(false);
+    }
+    void TerminalPage::_HandleQuakeMode(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        // Manually return false. These shouldn't ever get here, except for when
+        // we fail to register for the global hotkey. In that case, returning
+        // false here will let the underlying terminal still process the key, as
+        // if it wasn't bound at all.
+        args.Handled(false);
+    }
 }

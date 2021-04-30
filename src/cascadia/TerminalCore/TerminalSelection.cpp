@@ -249,8 +249,10 @@ void Terminal::ClearSelection()
 // - singleLine: collapse all of the text to one line
 // Return Value:
 // - wstring text from buffer. If extended to multiple lines, each line is separated by \r\n
-const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool singleLine) const
+const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool singleLine)
 {
+    auto lock = LockForReading();
+
     const auto selectionRects = _GetSelectionRects();
 
     const auto GetAttributeColors = std::bind(&Terminal::GetAttributeColors, this, std::placeholders::_1);
