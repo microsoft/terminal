@@ -1,0 +1,30 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "EnumEntry.idl";
+import "MainPage.idl";
+
+#include "ViewModelHelpers.idl.h"
+
+#define OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Type, Name) \
+    OBSERVABLE_PROJECTED_SETTING(Type, Name);               \
+    Object Name##OverrideSource { get; }
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass AppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Boolean CanDeleteAppearance { get; };
+    }
+
+    runtimeclass AppearancePageNavigationState
+    {
+        AppearanceViewModel Appearance;
+    };
+
+    [default_interface] runtimeclass Appearances : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Appearances();
+        AppearancePageNavigationState State { get; };
+    }
+}
