@@ -44,6 +44,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void InteractivityAutomationPeer::SignalSelectionChanged()
     {
         UiaTracing::Signal::SelectionChanged();
+        // TODO! We seemingly got Dispatcher() for free when we said we extended
+        // Windows.UI.Automation.Peers.AutomationPeer. This is suspect to me.
+        // This probably won't work when OOP.
+
         Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
             // The event that is raised when the text selection is modified.
             RaiseAutomationEvent(AutomationEvents::TextPatternOnTextSelectionChanged);
@@ -59,6 +63,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void InteractivityAutomationPeer::SignalTextChanged()
     {
         UiaTracing::Signal::TextChanged();
+        // TODO! We seemingly got Dispatcher() for free when we said we extended
+        // Windows.UI.Automation.Peers.AutomationPeer. This is suspect to me.
+        // This probably won't work when OOP.
+
         Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
             // The event that is raised when textual content is modified.
             RaiseAutomationEvent(AutomationEvents::TextPatternOnTextChanged);
@@ -74,6 +82,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void InteractivityAutomationPeer::SignalCursorChanged()
     {
         UiaTracing::Signal::CursorChanged();
+        // TODO! We seemingly got Dispatcher() for free when we said we extended
+        // Windows.UI.Automation.Peers.AutomationPeer. This is suspect to me.
+        // This probably won't work when OOP.
+
         Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
             // The event that is raised when the text was changed in an edit control.
             // Do NOT fire a TextEditTextChanged. Generally, an app on the other side
