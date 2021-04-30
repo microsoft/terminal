@@ -9,16 +9,6 @@ import "EventArgs.idl";
 namespace Microsoft.Terminal.Control
 {
 
-    // This is a mirror of
-    // ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState,
-    // but projectable.
-    struct MouseButtonState
-    {
-        Boolean IsLeftButtonDown;
-        Boolean IsMiddleButtonDown;
-        Boolean IsRightButtonDown;
-    };
-
     [default_interface] runtimeclass ControlInteractivity
     {
         ControlInteractivity(IControlSettings settings,

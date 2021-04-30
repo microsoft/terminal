@@ -887,6 +887,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _actualFont;
     }
 
+    winrt::Windows::Foundation::Size ControlCore::FontSize() const noexcept
+    {
+        const auto fontSize = GetFont().GetSize();
+        return {
+            ::base::saturated_cast<float>(fontSize.X),
+            ::base::saturated_cast<float>(fontSize.Y)
+        };
+    }
+    winrt::hstring ControlCore::FontFaceName() const noexcept
+    {
+        return GetFont().GetFaceName();
+    }
+    uint16_t ControlCore::FontWeight() const noexcept
+    {
+        return static_cast<uint16_t>(GetFont().GetWeight());
+    }
+
     til::size ControlCore::FontSizeInDips() const
     {
         const til::size fontSize{ GetFont().GetSize() };
@@ -1116,7 +1133,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::SetBackgroundOpacity(const float opacity)
+    void ControlCore::SetBackgroundOpacity(const double opacity)
     {
         if (_renderEngine)
         {

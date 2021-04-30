@@ -77,7 +77,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                       const Windows::Foundation::IReference<CopyFormat>& formats);
         void RequestPasteTextFromClipboard();
         void SetEndSelectionPoint(const til::point pixelPosition);
-        // void SetEndSelectionPoint(const Core::Point pixelPosition);
 
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);

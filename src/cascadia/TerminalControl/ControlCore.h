@@ -56,8 +56,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         FontInfo GetFont() const;
         til::size FontSizeInDips() const;
 
+        winrt::Windows::Foundation::Size FontSize() const noexcept;
+        winrt::hstring FontFaceName() const noexcept;
+        uint16_t FontWeight() const noexcept;
+
         til::color BackgroundColor() const;
-        void SetBackgroundOpacity(const float opacity);
+        void SetBackgroundOpacity(const double opacity);
 
         void SendInput(const winrt::hstring& wstr);
         void PasteText(const winrt::hstring& hstr);
