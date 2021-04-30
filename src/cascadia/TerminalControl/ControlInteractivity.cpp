@@ -307,7 +307,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             SetEndSelectionPoint(pixelPosition);
         }
 
-        _core->UpdateHoveredCell(terminalPosition);
+        _core->UpdateHoveredCell(Windows::Foundation::IReference<Core::Point>{ terminalPosition });
     }
 
     void ControlInteractivity::TouchMoved(const til::point newTouchPoint,

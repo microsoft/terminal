@@ -420,8 +420,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Updates last hovered cell, renders / removes rendering of hyper-link if required
     // Arguments:
     // - terminalPosition: The terminal position of the pointer
-    void ControlCore::UpdateHoveredCell(const std::optional<til::point>& terminalPosition)
+    void ControlCore::UpdateHoveredCell(Windows::Foundation::IReference<Core::Point> pos)
     {
+        auto terminalPosition = pos ?
+                                    std::optional<til::point>{ pos.Value() } :
+                                    std::optional<til::point>{};
+
         if (terminalPosition == _lastHoveredCell)
         {
             return;
@@ -481,9 +485,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return {};
     }
 
-    std::optional<til::point> ControlCore::GetHoveredCell() const
+    Windows::Foundation::IReference<Core::Point> ControlCore::GetHoveredCell() const
     {
-        return _lastHoveredCell;
+        return _lastHoveredCell.has_value() ? Windows::Foundation::IReference<Core::Point>(til::point{ _lastHoveredCell.value() }) : nullptr;
     }
 
     // Method Description:

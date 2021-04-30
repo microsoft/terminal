@@ -2358,9 +2358,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Arguments:
     // - sender: not used
     // - args: event data
-    void TermControl::_PointerExitedHandler(Windows::Foundation::IInspectable const& /*sender*/, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
+    void TermControl::_PointerExitedHandler(Windows::Foundation::IInspectable const& /*sender*/,
+                                            Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
     {
-        _core.UpdateHoveredCell(std::nullopt);
+        _core.UpdateHoveredCell(nullptr);
     }
 
     winrt::fire_and_forget TermControl::_hoveredHyperlinkChanged(IInspectable sender,
@@ -2371,7 +2372,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (auto self{ weakThis.get() })
         {
             auto lastHoveredCell = _core.GetHoveredCell();
-            if (lastHoveredCell.has_value())
+            if (lastHoveredCell)
             {
                 const auto uriText = _core.GetHoveredUriText();
                 if (!uriText.empty())
@@ -2388,7 +2389,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                     // Compute the location of the top left corner of the cell in DIPS
                     const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
-                    const til::point startPos{ *lastHoveredCell };
+                    const til::point startPos{ lastHoveredCell.Value() };
                     const til::size fontSize{ til::math::rounding, _core.FontSize() };
                     const til::point posInPixels{ startPos * fontSize };
                     const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };

@@ -72,10 +72,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ResumeRendering();
 
         void UpdatePatternLocations();
-        void UpdateHoveredCell(const std::optional<til::point>& terminalPosition);
+        void UpdateHoveredCell(Windows::Foundation::IReference<Core::Point> terminalPosition);
         winrt::hstring GetHyperlink(const til::point position) const;
         winrt::hstring GetHoveredUriText() const;
-        std::optional<til::point> GetHoveredCell() const;
+        Windows::Foundation::IReference<Core::Point> GetHoveredCell() const;
 
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
 

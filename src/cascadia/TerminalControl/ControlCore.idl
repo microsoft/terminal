@@ -32,8 +32,8 @@ namespace Microsoft.Terminal.Control
 
         // IDXGISwapChain1* GetSwapChain() const;
         // std::vector<std::wstring> SelectedText(bool trimTrailingWhitespace) const;
-        // void UpdateHoveredCell(const std::optional<til::point>& terminalPosition);
-        // std::optional<til::point> GetHoveredCell() const;
+        void UpdateHoveredCell(Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> terminalPosition);
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> GetHoveredCell();
 
         Boolean TrySendKeyEvent(Int16 vkey,
                              Int16 scanCode,
