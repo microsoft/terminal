@@ -158,7 +158,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { ShortcutAction::NewWindow, NewWindowArgs::ToJson },
         { ShortcutAction::PrevTab, PrevTabArgs::ToJson },
         { ShortcutAction::NextTab, NextTabArgs::ToJson },
-        { ShortcutAction::RenameWindow, RenameWindowArgs::ToJson }
+        { ShortcutAction::RenameWindow, RenameWindowArgs::ToJson },
+        { ShortcutAction::GlobalSummon, GlobalSummonArgs::ToJson }
     };
 
     // Function Description:

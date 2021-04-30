@@ -591,10 +591,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // "Summon the Terminal window"
         // "Summon the Terminal window, name:\"{_Name}\""
-        if (!_Name.empty())
+        if (!Name().empty())
         {
             ss << L", name: ";
-            ss << std::wstring_view(_Name);
+            ss << std::wstring_view(Name());
         }
         return winrt::hstring{ ss.str() };
     }

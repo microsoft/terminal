@@ -1375,6 +1375,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, ToggleVisibilityKey, args->_ToggleVisibility);
             return { *args, {} };
         }
+        static Json::Value ToJson(const IActionArgs& val)
+        {
+            Json::Value json{ Json::ValueType::objectValue };
+            const auto args{ get_self<GlobalSummonArgs>(val) };
+            JsonUtils::SetValueForKey(json, NameKey, args->_Name);
+            JsonUtils::SetValueForKey(json, DesktopKey, args->_Desktop);
+            JsonUtils::SetValueForKey(json, ToggleVisibilityKey, args->_ToggleVisibility);
+            return json;
+        }
         IActionArgs Copy() const
         {
             auto copy{ winrt::make_self<GlobalSummonArgs>() };
