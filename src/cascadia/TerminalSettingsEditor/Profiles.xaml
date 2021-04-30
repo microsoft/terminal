@@ -239,10 +239,10 @@
                         <StackPanel Style="{StaticResource PivotStackStyle}">
                             <!--  Control Preview  -->
                             <Border x:Name="ControlPreview"
-                                    BorderThickness="1"
-                                    BorderBrush="#333333"
+                                    Width="350"
                                     Height="160"
-                                    Width="350" />
+                                    BorderBrush="#333333"
+                                    BorderThickness="1" />
 
                             <!--  Grouping: Text  -->
                             <TextBlock x:Uid="Profile_TextHeader"
