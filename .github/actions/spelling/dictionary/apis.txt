@@ -47,6 +47,7 @@ ICustom
 IDialog
 IDirect
 IExplorer
+IFACEMETHOD
 IFile
 IInheritable
 IMap
@@ -77,6 +78,7 @@ NOASYNC
 NOCHANGEDIR
 NOPROGRESS
 NOREDIRECTIONBITMAP
+NOREPEAT
 ntprivapi
 oaidl
 ocidl
