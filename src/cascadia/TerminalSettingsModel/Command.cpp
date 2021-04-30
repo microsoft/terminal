@@ -136,28 +136,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return;
         }
 
-        // Check if we registered this key chord before
-        for (auto pos = _keyMappings.begin(); pos < _keyMappings.end(); ++pos)
-        {
-            if (keys.Modifiers() == pos->Modifiers() && keys.Vkey() == pos->Vkey())
-            {
-                // KeyChord was already registered.
-                if (*pos == _keyMappings.back())
-                {
-                    // It's already the latest key registered.
-                    return;
-                }
-                else
-                {
-                    // Move the new KeyChord to the back of the line.
-                    _keyMappings.erase(pos);
-                    _keyMappings.push_back(*pos);
-                    return;
-                }
-            }
-        }
-
-        // Add the KeyChord to the back of the line.
+        // Remove the KeyChord and add it to the back of the line.
+        // This makes it so that the main key chord associated with this
+        // command is updated.
+        EraseKey(keys);
         _keyMappings.push_back(keys);
     }
 

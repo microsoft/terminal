@@ -119,7 +119,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     void ActionMap::_PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap) const
     {
         const ActionHash actionHasher{};
-        std::set<InternalActionID> visitedActionIDs{ actionHasher(make<implementation::ActionAndArgs>()) };
+        std::unordered_set<InternalActionID> visitedActionIDs{ actionHasher(make<implementation::ActionAndArgs>()) };
         for (const auto& cmd : _GetCumulativeActions())
         {
             // Only populate NameMap with actions that haven't been visited already.
@@ -134,7 +134,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 }
 
                 // Record that we already handled adding this action to the NameMap.
-                visitedActionIDs.insert(actionID);
+                visitedActionIDs.emplace(actionID);
             }
         }
     }
@@ -172,7 +172,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         if (!_GlobalHotkeysCache)
         {
             const ActionHash actionHasher{};
-            std::set<InternalActionID> visitedActionIDs{};
+            std::unordered_set<InternalActionID> visitedActionIDs{};
             std::unordered_map<Control::KeyChord, Model::Command, KeyChordHash, KeyChordEquality> globalHotkeys;
             for (const auto& cmd : _GetCumulativeActions())
             {
@@ -191,12 +191,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                             // (3) haven't had that key chord added yet
                             if (globalHotkeys.find(keys) == globalHotkeys.end())
                             {
-                                globalHotkeys.insert({ keys, cmd });
+                                globalHotkeys.emplace(keys, cmd);
                             }
                         }
 
                         // Record that we already handled adding this action to the NameMap.
-                        visitedActionIDs.insert(actionID);
+                        visitedActionIDs.emplace(actionID);
                     }
                 }
             }
@@ -210,14 +210,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto actionMap{ make_self<ActionMap>() };
 
         // copy _KeyMap (KeyChord --> ID)
-        std::for_each(_KeyMap.begin(), _KeyMap.end(), [actionMap](const auto& pair) {
-            actionMap->_KeyMap.insert(pair);
-        });
+        for (const auto& [keys, actionID] : _KeyMap)
+        {
+            actionMap->_KeyMap.emplace(KeyChord{ keys.Modifiers(), keys.Vkey() }, actionID);
+        }
 
         // copy _ActionMap (ID --> Command)
         for (const auto& [actionID, cmd] : _ActionMap)
         {
-            actionMap->_ActionMap.insert({ actionID, *(get_self<Command>(cmd)->Copy()) });
+            actionMap->_ActionMap.emplace(actionID, *(get_self<Command>(cmd)->Copy()));
+        }
+
+        // copy _ConsolidatedActions (ID --> Command)
+        for (const auto& [actionID, cmd] : _ConsolidatedActions)
+        {
+            actionMap->_ConsolidatedActions.emplace(actionID, *(get_self<Command>(cmd)->Copy()));
         }
 
         // copy _NestedCommands (Name --> Command)
@@ -230,7 +237,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         FAIL_FAST_IF(_parents.size() > 1);
         for (const auto& parent : _parents)
         {
-            actionMap->_parents.push_back(std::move(parent->Copy()));
+            actionMap->_parents.emplace_back(parent->Copy());
         }
 
         return actionMap;
@@ -307,7 +314,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         else
         {
             // add this action in for the first time
-            _ActionMap.insert({ actionID, cmd });
+            _ActionMap.emplace(actionID, cmd);
         }
 
         // Now check if this action was introduced in another layer.
@@ -332,7 +339,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 {
                     const auto& inheritedCmdImpl{ get_self<Command>(inheritedCmd.value()) };
                     consolidatedCmd = *inheritedCmdImpl->Copy();
-                    _ConsolidatedActions.insert({ actionID, consolidatedCmd });
+                    _ConsolidatedActions.emplace(actionID, consolidatedCmd);
                 }
             }
         }
@@ -422,7 +429,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     const auto& conflictingCmdImpl{ get_self<implementation::Command>(conflictingCmd) };
                     const auto& conflictingCmdCopy{ conflictingCmdImpl->Copy() };
                     conflictingCmdCopy->EraseKey(keys);
-                    _ConsolidatedActions.insert({ conflictingActionID, *conflictingCmdCopy });
+                    _ConsolidatedActions.emplace(conflictingActionID, *conflictingCmdCopy);
                 }
             }
 

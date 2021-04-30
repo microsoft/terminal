@@ -319,7 +319,7 @@ KeyChord ConversionTrait<KeyChord>::FromJson(const Json::Value& json)
             // "keys": "ctrl+c"
             keyChordText = json.asString();
         }
-        else if (json.isArray() && json.size() == 1)
+        else if (json.isArray() && json.size() == 1 && json[0].isString())
         {
             // "keys": [ "ctrl+c" ]
             keyChordText = json[0].asString();
@@ -338,7 +338,7 @@ KeyChord ConversionTrait<KeyChord>::FromJson(const Json::Value& json)
 
 bool ConversionTrait<KeyChord>::CanConvert(const Json::Value& json)
 {
-    return json.isString() || (json.isArray() && json.size() == 1);
+    return json.isString() || (json.isArray() && json.size() == 1 && json[0].isString());
 }
 
 Json::Value ConversionTrait<KeyChord>::ToJson(const KeyChord& val)
