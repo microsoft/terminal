@@ -565,7 +565,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (auto control{ weakThis.get() })
         {
-            const auto chainHandle = control->_core.GetSwapChainHandle();
+            const HANDLE chainHandle = reinterpret_cast<HANDLE>(control->_core.GetSwapChainHandle());
             _AttachDxgiSwapChainToXaml(chainHandle);
         }
     }
@@ -653,11 +653,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         _interactivity.Initialize();
 
-<<<<<<< HEAD
-        _AttachDxgiSwapChainToXaml(_core.GetSwapChain());
-=======
-        _AttachDxgiSwapChainToXaml(_core->GetSwapChainHandle());
->>>>>>> dev/migrie/f/oop/use-dcomp-handle
+        _AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(_core.GetSwapChainHandle()));
 
         // Tell the DX Engine to notify us when the swap chain changes. We do
         // this after we initially set the swapchain so as to avoid unnecessary

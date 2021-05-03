@@ -1213,7 +1213,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    HANDLE ControlCore::GetSwapChainHandle() const
+    uint64_t ControlCore::GetSwapChainHandle() const
     {
         // This is called by:
         // * TermControl::RenderEngineSwapChainChanged, who is only registered
@@ -1221,7 +1221,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // * TermControl::_InitializeTerminal, after the call to Initialize, for
         //   _AttachDxgiSwapChainToXaml.
         // In both cases, we'll have a _renderEngine by then.
-        return _renderEngine->GetSwapChainHandle();
+        return reinterpret_cast<uint64_t>(_renderEngine->GetSwapChainHandle());
     }
 
     void ControlCore::_rendererWarning(const HRESULT hr)

@@ -30,7 +30,7 @@ namespace Microsoft.Terminal.Control
         String FontFaceName { get; };
         UInt16 FontWeight { get; };
 
-        // IDXGISwapChain1* GetSwapChain() const;
+        UInt64 GetSwapChainHandle();
         // std::vector<std::wstring> SelectedText(bool trimTrailingWhitespace) const;
         void UpdateHoveredCell(Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> terminalPosition);
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> GetHoveredCell();
