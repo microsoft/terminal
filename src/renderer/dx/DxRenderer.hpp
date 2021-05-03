@@ -128,8 +128,6 @@ namespace Microsoft::Console::Render
         void SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept;
         void SetDefaultTextBackgroundOpacity(const float opacity) noexcept;
 
-        wil::unique_handle _swapChainHandle;
-
         void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept;
 
     protected:
@@ -183,6 +181,8 @@ namespace Microsoft::Console::Render
         DXGI_PRESENT_PARAMETERS _presentParams;
 
         static std::atomic<size_t> _tracelogCount;
+
+        wil::unique_handle _swapChainHandle;
 
         // Device-Independent Resources
         ::Microsoft::WRL::ComPtr<ID2D1Factory1> _d2dFactory;
