@@ -565,8 +565,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (auto control{ weakThis.get() })
         {
-            const auto chain = control->_core.GetSwapChain();
-            _AttachDxgiSwapChainToXaml(chain);
+            const auto chainHandle = control->_core.GetSwapChainHandle();
+            _AttachDxgiSwapChainToXaml(chainHandle);
         }
     }
 
@@ -612,10 +612,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void TermControl::_AttachDxgiSwapChainToXaml(IDXGISwapChain1* swapChain)
+    void TermControl::_AttachDxgiSwapChainToXaml(HANDLE swapChainHandle)
     {
-        auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
-        nativePanel->SetSwapChain(swapChain);
+        auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative2>();
+        nativePanel->SetSwapChainHandle(swapChainHandle);
     }
 
     bool TermControl::_InitializeTerminal()
@@ -653,7 +653,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         _interactivity.Initialize();
 
+<<<<<<< HEAD
         _AttachDxgiSwapChainToXaml(_core.GetSwapChain());
+=======
+        _AttachDxgiSwapChainToXaml(_core->GetSwapChainHandle());
+>>>>>>> dev/migrie/f/oop/use-dcomp-handle
 
         // Tell the DX Engine to notify us when the swap chain changes. We do
         // this after we initially set the swapchain so as to avoid unnecessary
