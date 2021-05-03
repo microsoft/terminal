@@ -1091,10 +1091,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _settings.CopyOnSelect();
     }
 
-    std::vector<std::wstring> ControlCore::SelectedText(bool trimTrailingWhitespace) const
+    Windows::Foundation::Collections::IVector<winrt::hstring> ControlCore::SelectedText(bool trimTrailingWhitespace) const
     {
         // RetrieveSelectedTextFromBuffer will lock while it's reading
-        return _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace).text;
+        std::vector<std::wstring> internalResult{ _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace).text };
+
+        auto result = winrt::single_threaded_vector<winrt::hstring>();
+        for (const auto& row : internalResult)
+        {
+            result.Append(winrt::hstring{ row });
+        }
+        return result;
     }
 
     ::Microsoft::Console::Types::IUiaData* ControlCore::GetUiaData() const

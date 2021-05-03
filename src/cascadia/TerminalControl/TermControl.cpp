@@ -190,10 +190,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // Empirically, multi-line selection works as well on sample scenarios,
                     // but since code paths differ, extra work is required to ensure correctness.
                     auto bufferText = _core.SelectedText(true);
-                    if (bufferText.size() == 1)
+                    if (bufferText.Size() == 1)
                     {
-                        const auto selectedLine{ til::at(bufferText, 0) };
-                        _searchBox->PopulateTextbox(selectedLine.data());
+                        const auto selectedLine{ bufferText.GetAt(0) };
+                        _searchBox->PopulateTextbox(selectedLine);
                     }
                 }
 
@@ -541,7 +541,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // clever way around asking the core for this.
     til::point TermControl::GetFontSize() const
     {
-        return til::point{ til::math::rounding, _core.FontSize() };
+        return til::point{ til::math::rounding, _core.FontSize().Width, _core.FontSize().Height };
     }
 
     const Windows::UI::Xaml::Thickness TermControl::GetPadding()
@@ -1715,7 +1715,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ScrollBar().Value(viewTop);
     }
 
-    int TermControl::ScrollOffset()
+    int TermControl::ScrollOffset() const
     {
         return _core.ScrollOffset();
     }
@@ -1727,6 +1727,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     int TermControl::ViewHeight() const
     {
         return _core.ViewHeight();
+    }
+
+    int TermControl::BufferHeight() const
+    {
+        return _core.BufferHeight();
     }
 
     // Function Description:

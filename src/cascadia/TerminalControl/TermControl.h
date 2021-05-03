@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         TerminalConnection::ConnectionState ConnectionState() const;
 
-        int ScrollOffset();
+        int ScrollOffset() const;
         int ViewHeight() const;
         int BufferHeight() const;
 
