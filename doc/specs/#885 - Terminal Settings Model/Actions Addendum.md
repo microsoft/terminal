@@ -222,7 +222,7 @@ Since `NameMap` is generated upon request, we will need to use a `std::set<Inter
    - Update `NameMap` with any new `Command`s (tracked by the `std::set<InternalActionID>`)
 
 Nested commands will be saved to their own map since they do not have an `InternalActionID`.
-- During `ActionMap`'s population, we must ensure to resolve any conflicts immediately. This means that any new `Command`s that generate a name conflicting with a nested command will take priority (and we'll remove the nested comand from its own map). Conversely, if a new nested command conflicts with an existing standard `Command`, we can ignore it because our generation of `NameMap` will handle it.
+- During `ActionMap`'s population, we must ensure to resolve any conflicts immediately. This means that any new `Command`s that generate a name conflicting with a nested command will take priority (and we'll remove the nested command from its own map). Conversely, if a new nested command conflicts with an existing standard `Command`, we can ignore it because our generation of `NameMap` will handle it.
 - When populating `NameMap`, we must first add all of the standard `Command`s. To ensure layering is accomplished correctly, we will need to start from the top-most parent and update `NameMap`. As we go down the inheritance tree, any conflicts are resolved by prioritizing the current layer (the child). This ensures that the current layer takes priority.
 - After adding all of the standard `Command`s to the `NameMap`, we can then register all of the nested commands. Since nested commands have no identifier other than a name, we cannot use the `InternalActionID` heuristic. However, as mentioned earlier, we are updating our internal nested command map as we add new actions. So when we are generating the name map, we can assume that all of these nested commands now have priority. Thus, we simply add all of these nested commands to the name map. Any conflicts are resolved in favor of th nested command.
 
@@ -292,6 +292,25 @@ This allows us to output something like this in the JSON:
 { "command": "unbound", "keys": "ctrl+c" }
 ```
 
+### Consolidated Actions
+
+`AddAction` must be a bit smarter when it comes to the following scenario:
+- Given a command that unbinds a key chord: `{ "command": "unbound", "keys": "ctrl+c" }`
+- And... that key chord was set in a parent layer `{ "command": "copy", "keys": "ctrl+c" }`
+- But... the action has another key chord from a parent layer `{ "command": "copy", "keys": "ctrl+shift+c" }`
+
+`_ActionMap` does not contain any information about a parent layer; it only contains actions introduced in the current layer. Thus, in the scenario above, unbinding `ctrl+c` is what is relevant to `_ActionMap`. However, this may cause some complications for `GetKeyChordForAction`. We cannot simply check our internal `_ActionMap`, because the primary key chord in the entry may be incorrect. Again, this is because `_ActionMap` is only aware of what was bound in the current layer.
+
+To get around this issue, we've introduced `_ConsolidatedActions`. In a way, `_ConsolidatedActions` is similar to `_ActionMap`, except that it consolidates the `Command` data into one entry constructed across the current layer and the parent layers. Specifically, in the scenario above, `_ActionMap` will say that `copy` has no key chords. In fact, `_ActionMap` has no reason to have `copy` at all, because it was not introduced in this layer. Conversely, `_ConsolidatedActions` holds `copy` with a `ctrl+shift+c` binding, which is then returned to `GetKeyChordForAction`.
+
+To maintain `_ConsolidatedActions`, any new action added to the Action Map must also update `_ConsolidatedActions`. It is especially important to handle and propagate collisions to `_ConsolidatedActions`.
+
+When querying Action Map for an ID, we should always check in the following order:
+- `_ConsolidatedActions`
+- `_ActionMap`
+- repeat this process for each parent
+
+This is to ensure that we are returning the correct and wholistic view of a `Command` on a query. Rather than aquiring a `Command` constructed in this layer, we receive one that contains all of the data aquired across the entire Action Map and its parents. 
 
 ## Future considerations
 
