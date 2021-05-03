@@ -50,7 +50,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
-    // - Takes the KeyModifier flags from Terminal and maps them to the WinRT types which are used by XAML
+    // - Takes the KeyModifier flags from Terminal and maps them to the Windows WinRT types
     // Return Value:
     // - a Windows::System::VirtualKeyModifiers object with the flags of which modifiers used.
     Windows::System::VirtualKeyModifiers ActionMap::ConvertVKModifiers(KeyModifiers modifiers)

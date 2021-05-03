@@ -30,7 +30,11 @@ namespace Microsoft::Terminal::Settings::Model::HashUtils
     template<typename T, typename... Args>
     constexpr size_t HashProperty(const T& val, Args&&... more)
     {
-        return HashProperty(val) ^ HashProperty(std::forward<Args>(more)...);
+        // Inspired by boost::hash_combine, which causes this effect...
+        //   seed ^= hash_value(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        // Source: https://www.boost.org/doc/libs/1_35_0/doc/html/boost/hash_combine_id241013.html
+        const auto seed{ HashProperty(val) };
+        return seed ^ (0x9e3779b9 + (seed << 6) + (seed >> 2) + HashProperty(std::forward<Args>(more)...));
     }
 
     template<>

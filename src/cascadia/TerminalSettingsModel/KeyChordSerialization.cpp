@@ -105,12 +105,13 @@ static const std::unordered_map<std::wstring_view, int32_t> vkeyNamePairs {
 // - hstr: the string to parse into a keychord.
 // Return Value:
 // - a newly constructed KeyChord
-static KeyChord _FromString(const std::wstring_view& wstr)
+static KeyChord _fromString(const std::wstring_view& wstr)
 {
     // Split the string on '+'
     std::wstring temp;
     std::vector<std::wstring> parts;
-    std::wstringstream wss(wstr.data());
+    std::wstringstream wss;
+    wss << wstr;
 
     while (std::getline(wss, temp, L'+'))
     {
@@ -219,7 +220,7 @@ static KeyChord _FromString(const std::wstring_view& wstr)
 //   names listed in the vkeyNamePairs vector above, or is one of 0-9a-z.
 // Return Value:
 // - a string which is an equivalent serialization of this object.
-static std::wstring _ToString(const KeyChord& chord)
+static std::wstring _toString(const KeyChord& chord)
 {
     if (!chord)
     {
@@ -301,12 +302,12 @@ static std::wstring _ToString(const KeyChord& chord)
 
 KeyChord KeyChordSerialization::FromString(const winrt::hstring& hstr)
 {
-    return _FromString(hstr);
+    return _fromString(hstr);
 }
 
 winrt::hstring KeyChordSerialization::ToString(const KeyChord& chord)
 {
-    return hstring{ _ToString(chord) };
+    return hstring{ _toString(chord) };
 }
 
 KeyChord ConversionTrait<KeyChord>::FromJson(const Json::Value& json)
@@ -328,7 +329,7 @@ KeyChord ConversionTrait<KeyChord>::FromJson(const Json::Value& json)
         {
             throw winrt::hresult_invalid_argument{};
         }
-        return _FromString(til::u8u16(keyChordText));
+        return _fromString(til::u8u16(keyChordText));
     }
     catch (...)
     {
@@ -343,7 +344,7 @@ bool ConversionTrait<KeyChord>::CanConvert(const Json::Value& json)
 
 Json::Value ConversionTrait<KeyChord>::ToJson(const KeyChord& val)
 {
-    return til::u16u8(_ToString(val));
+    return til::u16u8(_toString(val));
 }
 
 std::string ConversionTrait<KeyChord>::TypeDescription() const

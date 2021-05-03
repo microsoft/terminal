@@ -151,15 +151,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - <none>
     void Command::EraseKey(const Control::KeyChord& keys)
     {
-        for (auto pos = _keyMappings.begin(); pos < _keyMappings.end(); ++pos)
-        {
-            if (keys.Modifiers() == pos->Modifiers() && keys.Vkey() == pos->Vkey())
-            {
-                // Found the KeyChord, remove it.
-                _keyMappings.erase(pos);
-                return;
-            }
-        }
+        _keyMappings.erase(std::remove_if(_keyMappings.begin(), _keyMappings.end(), [&keys](const Control::KeyChord& iterKey) {
+                               return keys.Modifiers() == iterKey.Modifiers() && keys.Vkey() == iterKey.Vkey();
+                           }),
+                           _keyMappings.end());
     }
 
     // Function Description:
