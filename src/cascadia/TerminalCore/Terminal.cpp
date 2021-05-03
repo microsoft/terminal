@@ -83,10 +83,6 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
     const TextAttribute attr{};
     const UINT cursorSize = 12;
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
-    // Add regex pattern recognizers to the buffer
-    // For now, we only add the URI regex pattern
-    std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
-    _hyperlinkPatternId = _buffer->AddPatternRecognizer(linkPattern);
 }
 
 // Method Description:
@@ -104,6 +100,14 @@ void Terminal::CreateFromSettings(ICoreSettings settings,
     Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderTarget);
 
     UpdateSettings(settings);
+
+    if (settings.DetectHyperlinks())
+    {
+        // Add regex pattern recognizers to the buffer
+        // For now, we only add the URI regex pattern
+        std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
+        _hyperlinkPatternId = _buffer->AddPatternRecognizer(linkPattern);
+    }
 }
 
 // Method Description:

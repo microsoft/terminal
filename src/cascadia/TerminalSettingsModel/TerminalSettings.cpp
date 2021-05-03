@@ -307,6 +307,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _SoftwareRendering = globalSettings.SoftwareRendering();
         _ForceVTInput = globalSettings.ForceVTInput();
         _TrimBlockSelection = globalSettings.TrimBlockSelection();
+        _DetectHyperlinks = globalSettings.DetectHyperlinks();
     }
 
     // Method Description:

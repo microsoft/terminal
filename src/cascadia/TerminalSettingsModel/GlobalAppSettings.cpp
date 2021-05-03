@@ -47,6 +47,7 @@ static constexpr std::string_view StartupActionsKey{ "startupActions" };
 static constexpr std::string_view FocusFollowMouseKey{ "focusFollowMouse" };
 static constexpr std::string_view WindowingBehaviorKey{ "windowingBehavior" };
 static constexpr std::string_view TrimBlockSelectionKey{ "trimBlockSelection" };
+static constexpr std::string_view DetectHyperlinksKey{ "detectHyperlinks" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
@@ -127,6 +128,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_FocusFollowMouse = _FocusFollowMouse;
     globals->_WindowingBehavior = _WindowingBehavior;
     globals->_TrimBlockSelection = _TrimBlockSelection;
+    globals->_DetectHyperlinks = _DetectHyperlinks;
 
     globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
     globals->_validDefaultProfile = _validDefaultProfile;
@@ -325,6 +327,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, TrimBlockSelectionKey, _TrimBlockSelection);
 
+    JsonUtils::GetValueForKey(json, DetectHyperlinksKey, _DetectHyperlinks);
+
     // This is a helper lambda to get the keybindings and commands out of both
     // and array of objects. We'll use this twice, once on the legacy
     // `keybindings` key, and again on the newer `bindings` key.
@@ -432,6 +436,7 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, FocusFollowMouseKey,            _FocusFollowMouse);
     JsonUtils::SetValueForKey(json, WindowingBehaviorKey,           _WindowingBehavior);
     JsonUtils::SetValueForKey(json, TrimBlockSelectionKey,          _TrimBlockSelection);
+    JsonUtils::SetValueForKey(json, DetectHyperlinksKey,            _DetectHyperlinks);
     // clang-format on
 
     // TODO GH#8100: keymap needs to be serialized here

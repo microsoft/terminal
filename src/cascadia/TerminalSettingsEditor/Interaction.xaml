@@ -66,6 +66,11 @@
             <local:SettingContainer x:Uid="Globals_FocusFollowMouse">
                 <ToggleSwitch IsOn="{x:Bind State.Globals.FocusFollowMouse, Mode=TwoWay}" />
             </local:SettingContainer>
+
+            <!--  Detect Hyperlinks  -->
+            <local:SettingContainer x:Uid="Globals_DetectHyperlinks">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.DetectHyperlinks, Mode=TwoWay}" />
+            </local:SettingContainer>
         </StackPanel>
     </ScrollViewer>
 </Page>
