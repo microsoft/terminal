@@ -334,6 +334,8 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
+        const auto oldQuickEditMode{ WI_IsFlagSet(gci.Flags, ENABLE_QUICK_EDIT_MODE) };
+
         if (WI_IsAnyFlagSet(mode, PRIVATE_MODES))
         {
             WI_SetFlag(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS);
@@ -359,9 +361,27 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 
         const auto oldMouseMode{ WI_IsFlagSet(context.InputMode, ENABLE_MOUSE_INPUT) };
         const auto newMouseMode{ WI_IsFlagSet(mode, ENABLE_MOUSE_INPUT) };
-        if (oldMouseMode != newMouseMode)
+        const auto newQuickEditMode{ WI_IsFlagSet(gci.Flags, ENABLE_QUICK_EDIT_MODE) };
+
+        // Whether we ask the terminal for mouse input is decided by 2 flags, ENABLE_MOUSE_INPUT
+        // and ENABLE_QUICK_EDIT_MODE
+        // If ENABLE_MOUSE_INPUT is set and ENABLE_QUICK_EDIT_MODE is not set, then we need
+        // to ask the terminal to send us mouse events - in all other cases, terminal should
+        // stop sending us mouse events
+        if ((oldMouseMode != newMouseMode) ||
+            (oldQuickEditMode != newQuickEditMode))
         {
-            gci.GetActiveInputBuffer()->PassThroughWin32MouseRequest(newMouseMode);
+            // At least one of ENABLE_MOUSE_INPUT or ENABLE_QUICK_EDIT_MODE changed, but we
+            // only want to send the VT if the end result (whether we want mouse input or not)
+            // changed, so check for that
+            if ((newMouseMode && !newQuickEditMode))
+            {
+                gci.GetActiveInputBuffer()->PassThroughWin32MouseRequest(true);
+            }
+            else if (oldMouseMode && !oldQuickEditMode)
+            {
+                gci.GetActiveInputBuffer()->PassThroughWin32MouseRequest(false);
+            }
         }
 
         context.InputMode = mode;
