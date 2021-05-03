@@ -400,9 +400,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Apply padding as swapChainPanel's margin
         auto newMargin = _ParseThicknessFromPadding(newSettings.Padding());
-        SwapChainPanel().Margin(newMargin);
 
-        TSFInputControl().Margin(newMargin);
+        const auto currentHalfWidth = TSFInputControl().ActualWidth() / 2;
+        const auto currentHalfHeight = TSFInputControl().ActualHeight() / 2;
+        if (newMargin.Left < currentHalfWidth && newMargin.Right < currentHalfWidth &&
+            newMargin.Top < currentHalfHeight && newMargin.Bottom < currentHalfHeight)
+        {
+            SwapChainPanel().Margin(newMargin);
+            TSFInputControl().Margin(newMargin);
+        }
 
         // Apply settings for scrollbar
         if (newSettings.ScrollState() == ScrollbarState::Hidden)
