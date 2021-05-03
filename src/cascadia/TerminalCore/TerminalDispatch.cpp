@@ -510,7 +510,7 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
         {
             // A state parameter is defined, parse it out
             const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), state);
-            if (!stateSuccess)
+            if (!stateSuccess && !til::at(parts, 1).empty())
             {
                 return false;
             }
@@ -518,7 +518,7 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
             {
                 // A progress parameter is also defined, parse it out
                 const auto progressSuccess = Utils::StringToUint(til::at(parts, 2), progress);
-                if (!progressSuccess)
+                if (!progressSuccess && !til::at(parts, 2).empty())
                 {
                     return false;
                 }
