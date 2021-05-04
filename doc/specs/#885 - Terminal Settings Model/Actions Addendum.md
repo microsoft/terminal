@@ -310,7 +310,7 @@ When querying Action Map for an ID, we should always check in the following orde
 - `_ActionMap`
 - repeat this process for each parent
 
-This is to ensure that we are returning the correct and wholistic view of a `Command` on a query. Rather than aquiring a `Command` constructed in this layer, we receive one that contains all of the data aquired across the entire Action Map and its parents. 
+This is to ensure that we are returning the correct and wholistic view of a `Command` on a query. Rather than acquiring a `Command` constructed in this layer, we receive one that contains all of the data acquired across the entire Action Map and its parents. 
 
 ## Future considerations
 
