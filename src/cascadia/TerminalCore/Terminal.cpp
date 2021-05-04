@@ -100,14 +100,6 @@ void Terminal::CreateFromSettings(ICoreSettings settings,
     Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderTarget);
 
     UpdateSettings(settings);
-
-    if (settings.DetectHyperlinks())
-    {
-        // Add regex pattern recognizers to the buffer
-        // For now, we only add the URI regex pattern
-        std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
-        _hyperlinkPatternId = _buffer->AddPatternRecognizer(linkPattern);
-    }
 }
 
 // Method Description:
@@ -152,6 +144,24 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     // size is smaller than where the mutable viewport currently is, we'll want
     // to make sure to rotate the buffer contents upwards, so the mutable viewport
     // remains at the bottom of the buffer.
+    if (_buffer)
+    {
+        if (settings.DetectHyperlinks())
+        {
+            // Add regex pattern recognizers to the buffer
+            // For now, we only add the URI regex pattern
+            std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
+            _hyperlinkPatternId = _buffer->AddPatternRecognizer(linkPattern);
+            //UpdatePatterns();
+            // we'll need an updatePatternsUnderLock or something if we want to update patterns here
+            // the current update patterns takes the lock and it causes a deadlock
+        }
+        else
+        {
+            _buffer->ClearPatternRecognizers();
+            ClearPatternTree();
+        }
+    }
 }
 
 // Method Description:
