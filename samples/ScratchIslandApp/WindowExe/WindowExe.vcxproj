@@ -97,8 +97,8 @@
       <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
       <Implementation>$(OpenConsoleCommonOutDir)TerminalConnection\TerminalConnection.dll</Implementation>
       <IsWinMDFile>true</IsWinMDFile>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <Private>true</Private>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </Reference>
     <Reference Include="Microsoft.Terminal.Control">
       <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Control\Microsoft.Terminal.Control.winmd</HintPath>
@@ -179,7 +179,32 @@
       </PackagingOutputs>
     </ItemGroup>
     <!-- **END VC LIBS HACK** -->
+
+
+    <!-- **BEGIN TERMINALCONNECTION HACK** -->
+    <!-- This is the same as the above VC libs hack, but for TerminalConnection.
+    TerminalConnection depends on cpprest*.dll, and if we don't include it in
+    the packaging output, we'll crash as soon as we try to load
+    TerminalConnection.dll.
+
+    The Sample sln needs to do this manually - the real exe hasa
+    ProjectReference to TerminalConnection.vcxproj and can figure this out on
+    its own. -->
+    <ItemGroup>
+      <_TerminalConnectionDlls Include="$(OpenConsoleCommonOutDir)\TerminalConnection\*.dll" />
+
+      <PackagingOutputs Include="@(_TerminalConnectionDlls)">
+        <ProjectName>$(ProjectName)</ProjectName>
+        <OutputGroup>BuiltProjectOutputGroup</OutputGroup>
+        <TargetPath>%(Filename)%(Extension)</TargetPath>
+      </PackagingOutputs>
+    </ItemGroup>
+    <!-- **END TERMINALCONNECTION HACK** -->
   </Target>
+
+
+
+
 
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
   <Import Project="..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets" Condition="Exists('..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets')" />

@@ -63,8 +63,9 @@ TRACELOGGING_DECLARE_PROVIDER(g_hSampleAppProvider);
 #include <shellapi.h>
 #include <shobjidl_core.h>
 
-//#include <winrt/Microsoft.Terminal.Core.h>
+#include <winrt/Microsoft.Terminal.Core.h>
 #include <winrt/Microsoft.Terminal.Control.h>
+#include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"

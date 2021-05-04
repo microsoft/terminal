@@ -9,6 +9,7 @@
       xmlns:local="using:SampleApp"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+      xmlns:terminal="using:Microsoft.Terminal.Control"
       mc:Ignorable="d">
 
     <Grid x:Name="Root"
@@ -27,7 +28,9 @@
               Grid.Row="1"
               HorizontalAlignment="Stretch"
               VerticalAlignment="Stretch">
-            <Button>&quot;Content&quot;</Button>
+            <!-- <Button>&quot;Content&quot;</Button> -->
+
+
         </Grid>
 
     </Grid>

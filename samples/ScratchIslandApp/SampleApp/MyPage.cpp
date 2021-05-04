@@ -5,8 +5,10 @@
 #include "MyPage.h"
 #include <LibraryResources.h>
 #include "MyPage.g.cpp"
+#include "..\..\..\src\cascadia\UnitTests_Control\MockControlSettings.h"
 
 using namespace std::chrono_literals;
+using namespace winrt::Microsoft::Terminal;
 
 namespace winrt
 {
@@ -24,6 +26,12 @@ namespace winrt::SampleApp::implementation
 
     void MyPage::Create()
     {
+        TerminalConnection::EchoConnection conn{};
+        auto settings = winrt::make_self<ControlUnitTests::MockControlSettings>();
+
+        Control::TermControl control{ *settings, conn };
+
+        TabContent().Children().Append(control);
     }
 
     // Method Description:

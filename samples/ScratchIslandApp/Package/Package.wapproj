@@ -50,6 +50,24 @@
     <ProjectReference Include="..\WindowExe\WindowExe.vcxproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Microsoft.Terminal.TerminalConnection">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
+      <Implementation>$(OpenConsoleCommonOutDir)TerminalConnection\TerminalConnection.dll</Implementation>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>true</Private>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.Control">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Control\Microsoft.Terminal.Control.winmd</HintPath>
+      <Implementation>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Control\Microsoft.Terminal.Control.dll</Implementation>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>true</Private>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+    </Reference>
+  </ItemGroup>
+
+
   <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
     <ItemGroup>
       <!-- Stomp all "SourceProject" values for all incoming dependencies to flatten the package. -->
@@ -131,6 +149,9 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets'))" />
   </Target>
+
+
+
 
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>
