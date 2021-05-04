@@ -412,8 +412,6 @@ void TerminalCoreUnitTests::TerminalApiTest::SetTaskbarProgress()
     // taskbar progress should be set to a 'minimum', non-zero value
     VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(2));
     VERIFY_IS_GREATER_THAN(term.GetTaskbarProgress(), gsl::narrow<size_t>(0));
-
-
 }
 
 void TerminalCoreUnitTests::TerminalApiTest::SetWorkingDirectory()
