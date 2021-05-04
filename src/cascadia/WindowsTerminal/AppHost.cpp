@@ -781,13 +781,28 @@ void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*se
     {
         if (_LazyLoadDesktopManager())
         {
-            GUID currentlyActiveDesktop{ 0 };
-            if (VirtualDesktopUtils::GetCurrentVirtualDesktopId(&currentlyActiveDesktop))
+            // First thing - make sure that we're not on the current desktop. If
+            // we are, then don't call MoveWindowToDesktop. This is to mitigate
+            // MSFT:33035972
+            BOOL onCurrentDesktop{ false };
+            if (SUCCEEDED(_desktopManager->IsWindowOnCurrentVirtualDesktop(_window->GetHandle(), &onCurrentDesktop)) && onCurrentDesktop)
             {
-                LOG_IF_FAILED(_desktopManager->MoveWindowToDesktop(_window->GetHandle(), currentlyActiveDesktop));
+                // If we succeeded, and the window was on the current desktop, then do nothing.
             }
-            // If GetCurrentVirtualDesktopId failed, then just leave the window
-            // where it is. Nothing else to be done :/
+            else
+            {
+                // Here, we either failed to check if the window is on the
+                // current desktop, or it wasn't on that desktop. In both those
+                // cases, just move the window.
+
+                GUID currentlyActiveDesktop{ 0 };
+                if (VirtualDesktopUtils::GetCurrentVirtualDesktopId(&currentlyActiveDesktop))
+                {
+                    LOG_IF_FAILED(_desktopManager->MoveWindowToDesktop(_window->GetHandle(), currentlyActiveDesktop));
+                }
+                // If GetCurrentVirtualDesktopId failed, then just leave the window
+                // where it is. Nothing else to be done :/
+            }
         }
     }
 }
@@ -802,7 +817,6 @@ void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*se
 GUID AppHost::_CurrentDesktopGuid()
 {
     GUID currentDesktopGuid{ 0 };
-    const auto manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
     if (_LazyLoadDesktopManager())
     {
         LOG_IF_FAILED(_desktopManager->GetWindowDesktopId(_window->GetHandle(), &currentDesktopGuid));
