@@ -535,7 +535,7 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
             // progress is greater than the maximum allowed value, clamp it to the max
             progress = TaskbarMaxProgress;
         }
-        return _terminalApi.SetTaskbarProgress(state, progress);
+        return _terminalApi.SetTaskbarProgress(static_cast<DispatchTypes::TaskbarState>(state), progress);
     }
     // 9 is SetWorkingDirectory, which informs the terminal about the current working directory.
     else if (subParam == 9)
