@@ -1302,8 +1302,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        const auto newValue = static_cast<int>(args.NewValue());
-        _core->UserScrollViewport(newValue);
+        const auto newValue = args.NewValue();
+        _interactivity->UpdateScrollbar(newValue);
 
         // User input takes priority over terminal events so cancel
         // any pending scroll bar update if the user scrolls.
