@@ -319,7 +319,7 @@ void Renderer::TriggerRedrawAll()
 // - <none>
 // Return Value:
 // - <none>
-void Renderer::TriggerTeardown()
+void Renderer::TriggerTeardown() noexcept
 {
     // We need to shut down the paint thread on teardown.
     _pThread->WaitForPaintCompletionAndDisable(INFINITE);
