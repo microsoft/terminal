@@ -210,10 +210,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto actionMap{ make_self<ActionMap>() };
 
         // copy _KeyMap (KeyChord --> ID)
-        for (const auto& [keys, actionID] : _KeyMap)
-        {
-            actionMap->_KeyMap.emplace(KeyChord{ keys.Modifiers(), keys.Vkey() }, actionID);
-        }
+        actionMap->_KeyMap = _KeyMap;
 
         // copy _ActionMap (ID --> Command)
         for (const auto& [actionID, cmd] : _ActionMap)

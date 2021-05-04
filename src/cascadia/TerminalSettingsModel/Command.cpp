@@ -43,10 +43,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto command{ winrt::make_self<Command>() };
         command->_name = _name;
         command->_ActionAndArgs = *get_self<implementation::ActionAndArgs>(_ActionAndArgs)->Copy();
-        for (const auto& keys : _keyMappings)
-        {
-            command->_keyMappings.emplace_back(keys.Modifiers(), keys.Vkey());
-        }
+        command->_keyMappings = _keyMappings;
         command->_iconPath = _iconPath;
         command->_IterateOn = _IterateOn;
 
