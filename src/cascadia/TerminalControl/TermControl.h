@@ -25,6 +25,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct TermControl : TermControlT<TermControl>
     {
+        TermControl(winrt::guid contentGuid, IControlSettings settings, TerminalConnection::ITerminalConnection connection);
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
         winrt::fire_and_forget UpdateSettings();

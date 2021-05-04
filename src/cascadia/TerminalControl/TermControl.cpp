@@ -47,6 +47,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     TermControl::TermControl(IControlSettings settings,
                              TerminalConnection::ITerminalConnection connection) :
+        TermControl(winrt::guid{}, settings, connection) {}
+
+    TermControl::TermControl(winrt::guid contentGuid,
+                             IControlSettings settings,
+                             TerminalConnection::ITerminalConnection connection) :
         _initializedTerminal{ false },
         _settings{ settings },
         _closing{ false },
@@ -61,7 +66,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         InitializeComponent();
 
-        _interactivity = winrt::make<implementation::ControlInteractivity>(settings, connection);
+        if (contentGuid != winrt::guid{})
+        {
+            Control::ContentProcess content = create_instance<Control::ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
+            if (content != nullptr)
+            {
+                _interactivity = content.GetInteractivity();
+            }
+        }
+
+        if (_interactivity == nullptr)
+        {
+            _interactivity = winrt::make<implementation::ControlInteractivity>(settings, connection);
+        }
         _core = _interactivity.GetCore();
 
         // Use a manual revoker on the output event, so we can immediately stop

@@ -28,6 +28,9 @@
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="ContentProcess.h">
+      <DependentUpon>ContentProcess.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="ControlCore.h">
       <DependentUpon>ControlCore.idl</DependentUpon>
     </ClInclude>
@@ -63,6 +66,9 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="ContentProcess.cpp">
+      <DependentUpon>ContentProcess.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="ControlCore.cpp">
       <DependentUpon>ControlCore.idl</DependentUpon>
     </ClCompile>
@@ -96,6 +102,7 @@
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
+    <Midl Include="ContentProcess.idl" />
     <Midl Include="ControlCore.idl" />
     <Midl Include="ControlInteractivity.idl" />
     <Midl Include="ICoreState.idl" />

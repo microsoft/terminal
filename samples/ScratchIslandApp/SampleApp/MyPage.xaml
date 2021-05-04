@@ -48,8 +48,6 @@
                   VerticalAlignment="Stretch"
                   Background="#0000ff" />
 
-
-
         </Grid>
 
     </Grid>
