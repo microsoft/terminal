@@ -1,0 +1,280 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29001.49
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Terminal", "Terminal", "{59840756-302F-44DF-AA47-441A9D673202}"
+EndProject
+Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "CascadiaPackage", "src\cascadia\CascadiaPackage\CascadiaPackage.wapproj", "{CA5CAD1A-224A-4171-B13A-F16E576FDD12}"
+    ProjectSection(ProjectDependencies) = postProject
+        {F2ED628A-DB22-446F-A081-4CC845B51A2B} = {F2ED628A-DB22-446F-A081-4CC845B51A2B}
+    EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Dependencies", "_Dependencies", "{81C352DB-1818-45B7-A284-18E259F1CC87}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "wil", "wil", "{4C8E6BB0-4713-4ADB-BD04-81628ECEAF20}"
+    ProjectSection(SolutionItems) = preProject
+        dep\wil\include\wil\common.h = dep\wil\include\wil\common.h
+        dep\wil\include\wil\filesystem.h = dep\wil\include\wil\filesystem.h
+        dep\wil\include\wil\functional.h = dep\wil\include\wil\functional.h
+        dep\wil\include\wil\registry.h = dep\wil\include\wil\registry.h
+        dep\wil\include\wil\resource.h = dep\wil\include\wil\resource.h
+        dep\wil\include\wil\result.h = dep\wil\include\wil\result.h
+        dep\wil\include\wil\resultmacros.h = dep\wil\include\wil\resultmacros.h
+        dep\wil\include\wil\stl.h = dep\wil\include\wil\stl.h
+        dep\wil\include\wil\win32helpers.h = dep\wil\include\wil\win32helpers.h
+        dep\wil\include\wil\wistd_functional.h = dep\wil\include\wil\wistd_functional.h
+        dep\wil\include\wil\wistd_memory.h = dep\wil\include\wil\wistd_memory.h
+        dep\wil\include\wil\wistd_type_traits.h = dep\wil\include\wil\wistd_type_traits.h
+    EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WindowsTerminal", "src\cascadia\WindowsTerminal\WindowsTerminal.vcxproj", "{CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}"
+    ProjectSection(ProjectDependencies) = postProject
+        {CA5CAD1A-F542-4635-A069-7CAEFB930070} = {CA5CAD1A-F542-4635-A069-7CAEFB930070}
+        {CA5CAD1A-0B5E-45C3-96A8-BB496BFE4E32} = {CA5CAD1A-0B5E-45C3-96A8-BB496BFE4E32}
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12} = {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}
+        {CA5CAD1A-ABCD-429C-B551-8562EC954746} = {CA5CAD1A-ABCD-429C-B551-8562EC954746}
+        {27B5AAEB-A548-44CF-9777-F8BAA32AF7AE} = {27B5AAEB-A548-44CF-9777-F8BAA32AF7AE}
+        {9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B} = {9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}
+    EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalApp", "src\cascadia\TerminalApp\dll\TerminalApp.vcxproj", "{CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}"
+    ProjectSection(ProjectDependencies) = postProject
+        {CA5CAD1A-9A12-429C-B551-8562EC954746} = {CA5CAD1A-9A12-429C-B551-8562EC954746}
+        {CA5CAD1A-082C-4476-9F33-94B339494076} = {CA5CAD1A-082C-4476-9F33-94B339494076}
+        {CA5CAD1A-F542-4635-A069-7CAEFB930070} = {CA5CAD1A-F542-4635-A069-7CAEFB930070}
+        {CA5CAD1A-0B5E-45C3-96A8-BB496BFE4E32} = {CA5CAD1A-0B5E-45C3-96A8-BB496BFE4E32}
+        {CA5CAD1A-C46D-4588-B1C0-40F31AE9100B} = {CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}
+    EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "gsl", "gsl", "{16376381-CE22-42BE-B667-C6B35007008D}"
+    ProjectSection(SolutionItems) = preProject
+        dep\gsl\include\gsl\gsl = dep\gsl\include\gsl\gsl
+        dep\gsl\include\gsl\gsl_algorithm = dep\gsl\include\gsl\gsl_algorithm
+        dep\gsl\include\gsl\gsl_assert = dep\gsl\include\gsl\gsl_assert
+        dep\gsl\include\gsl\gsl_byte = dep\gsl\include\gsl\gsl_byte
+        dep\gsl\include\gsl\gsl_util = dep\gsl\include\gsl\gsl_util
+        dep\gsl\include\gsl\multi_span = dep\gsl\include\gsl\multi_span
+        dep\gsl\include\gsl\pointers = dep\gsl\include\gsl\pointers
+        dep\gsl\include\gsl\span = dep\gsl\include\gsl\span
+        dep\gsl\include\gsl\string_span = dep\gsl\include\gsl\string_span
+    EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalAppLib", "src\cascadia\TerminalApp\TerminalAppLib.vcxproj", "{CA5CAD1A-9A12-429C-B551-8562EC954746}"
+    ProjectSection(ProjectDependencies) = postProject
+        {CA5CAD1A-082C-4476-9F33-94B339494076} = {CA5CAD1A-082C-4476-9F33-94B339494076}
+        {CA5CAD1A-F542-4635-A069-7CAEFB930070} = {CA5CAD1A-F542-4635-A069-7CAEFB930070}
+        {CA5CAD1A-0B5E-45C3-96A8-BB496BFE4E32} = {CA5CAD1A-0B5E-45C3-96A8-BB496BFE4E32}
+    EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common Props", "Common Props", "{53DD5520-E64C-4C06-B472-7CE62CA539C9}"
+    ProjectSection(SolutionItems) = preProject
+        src\common.build.post.props = src\common.build.post.props
+        src\common.build.pre.props = src\common.build.pre.props
+        src\common.build.tests.props = src\common.build.tests.props
+        common.openconsole.props = common.openconsole.props
+        src\cppwinrt.build.post.props = src\cppwinrt.build.post.props
+        src\cppwinrt.build.pre.props = src\cppwinrt.build.pre.props
+        src\wap-common.build.post.props = src\wap-common.build.post.props
+        src\wap-common.build.pre.props = src\wap-common.build.pre.props
+    EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{D3EF7B96-CD5E-47C9-B9A9-136259563033}"
+    ProjectSection(SolutionItems) = preProject
+        build\scripts\Create-AppxBundle.ps1 = build\scripts\Create-AppxBundle.ps1
+        build\scripts\Index-Pdbs.ps1 = build\scripts\Index-Pdbs.ps1
+        build\scripts\Invoke-FormattingCheck.ps1 = build\scripts\Invoke-FormattingCheck.ps1
+        build\scripts\Run-Tests.ps1 = build\scripts\Run-Tests.ps1
+        build\scripts\Test-WindowsTerminalPackage.ps1 = build\scripts\Test-WindowsTerminalPackage.ps1
+    EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fmt", "src\dep\fmt\fmt.vcxproj", "{6BAE5851-50D5-4934-8D5E-30361A8A40F3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Window", "Window", "{2D17E75D-2DDC-42C4-AD70-704D95A937AE}"
+EndProject
+Global
+    GlobalSection(SolutionConfigurationPlatforms) = preSolution
+        AuditMode|Any CPU = AuditMode|Any CPU
+        AuditMode|ARM = AuditMode|ARM
+        AuditMode|ARM64 = AuditMode|ARM64
+        AuditMode|DotNet_x64Test = AuditMode|DotNet_x64Test
+        AuditMode|DotNet_x86Test = AuditMode|DotNet_x86Test
+        AuditMode|x64 = AuditMode|x64
+        AuditMode|x86 = AuditMode|x86
+        Debug|Any CPU = Debug|Any CPU
+        Debug|ARM = Debug|ARM
+        Debug|ARM64 = Debug|ARM64
+        Debug|DotNet_x64Test = Debug|DotNet_x64Test
+        Debug|DotNet_x86Test = Debug|DotNet_x86Test
+        Debug|x64 = Debug|x64
+        Debug|x86 = Debug|x86
+        Fuzzing|Any CPU = Fuzzing|Any CPU
+        Fuzzing|ARM = Fuzzing|ARM
+        Fuzzing|ARM64 = Fuzzing|ARM64
+        Fuzzing|DotNet_x64Test = Fuzzing|DotNet_x64Test
+        Fuzzing|DotNet_x86Test = Fuzzing|DotNet_x86Test
+        Fuzzing|x64 = Fuzzing|x64
+        Fuzzing|x86 = Fuzzing|x86
+        Release|Any CPU = Release|Any CPU
+        Release|ARM = Release|ARM
+        Release|ARM64 = Release|ARM64
+        Release|DotNet_x64Test = Release|DotNet_x64Test
+        Release|DotNet_x86Test = Release|DotNet_x86Test
+        Release|x64 = Release|x64
+        Release|x86 = Release|x86
+    EndGlobalSection
+    GlobalSection(ProjectConfigurationPlatforms) = postSolution
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.AuditMode|Any CPU.ActiveCfg = Debug|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.AuditMode|ARM.ActiveCfg = Debug|x64
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.AuditMode|ARM.Build.0 = Debug|x64
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.AuditMode|ARM.Deploy.0 = Debug|x64
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.AuditMode|ARM64.ActiveCfg = Release|ARM64
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.AuditMode|DotNet_x64Test.ActiveCfg = Debug|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.AuditMode|DotNet_x86Test.ActiveCfg = Debug|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.AuditMode|x64.ActiveCfg = Release|x64
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.AuditMode|x86.ActiveCfg = Release|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Debug|Any CPU.ActiveCfg = Debug|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Debug|ARM.ActiveCfg = Debug|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Debug|ARM64.ActiveCfg = Debug|ARM64
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Debug|ARM64.Build.0 = Debug|ARM64
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Debug|ARM64.Deploy.0 = Debug|ARM64
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Debug|DotNet_x64Test.ActiveCfg = Debug|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Debug|DotNet_x86Test.ActiveCfg = Debug|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Debug|x64.ActiveCfg = Debug|x64
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Debug|x64.Build.0 = Debug|x64
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Debug|x64.Deploy.0 = Debug|x64
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Debug|x86.ActiveCfg = Debug|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Debug|x86.Build.0 = Debug|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Debug|x86.Deploy.0 = Debug|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Fuzzing|Any CPU.ActiveCfg = Debug|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Fuzzing|ARM.ActiveCfg = Debug|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Fuzzing|ARM64.ActiveCfg = Debug|ARM64
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Fuzzing|DotNet_x64Test.ActiveCfg = Debug|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Fuzzing|DotNet_x86Test.ActiveCfg = Debug|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Fuzzing|x64.ActiveCfg = Debug|x64
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Fuzzing|x86.ActiveCfg = Debug|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Release|Any CPU.ActiveCfg = Release|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Release|ARM.ActiveCfg = Release|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Release|ARM64.ActiveCfg = Release|ARM64
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Release|ARM64.Build.0 = Release|ARM64
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Release|ARM64.Deploy.0 = Release|ARM64
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Release|DotNet_x64Test.ActiveCfg = Release|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Release|DotNet_x86Test.ActiveCfg = Release|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Release|x64.ActiveCfg = Release|x64
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Release|x64.Build.0 = Release|x64
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Release|x64.Deploy.0 = Release|x64
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Release|x86.ActiveCfg = Release|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Release|x86.Build.0 = Release|x86
+        {CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Release|x86.Deploy.0 = Release|x86
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.AuditMode|Any CPU.ActiveCfg = Debug|x64
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.AuditMode|ARM.ActiveCfg = AuditMode|Win32
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.AuditMode|ARM64.ActiveCfg = Release|ARM64
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.AuditMode|DotNet_x64Test.ActiveCfg = Debug|x64
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.AuditMode|DotNet_x86Test.ActiveCfg = Debug|x64
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.AuditMode|x64.ActiveCfg = Release|x64
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.AuditMode|x86.ActiveCfg = Release|Win32
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Debug|Any CPU.ActiveCfg = Debug|Win32
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Debug|ARM.ActiveCfg = Debug|Win32
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Debug|ARM64.ActiveCfg = Debug|ARM64
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Debug|ARM64.Build.0 = Debug|ARM64
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Debug|DotNet_x64Test.ActiveCfg = Debug|Win32
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Debug|DotNet_x86Test.ActiveCfg = Debug|Win32
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Debug|x64.ActiveCfg = Debug|x64
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Debug|x64.Build.0 = Debug|x64
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Debug|x86.ActiveCfg = Debug|Win32
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Debug|x86.Build.0 = Debug|Win32
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Fuzzing|Any CPU.ActiveCfg = Fuzzing|Win32
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Fuzzing|ARM.ActiveCfg = Fuzzing|Win32
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Fuzzing|ARM64.ActiveCfg = Fuzzing|ARM64
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Fuzzing|DotNet_x64Test.ActiveCfg = Fuzzing|Win32
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Fuzzing|DotNet_x86Test.ActiveCfg = Fuzzing|Win32
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Fuzzing|x64.ActiveCfg = Fuzzing|x64
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Fuzzing|x86.ActiveCfg = Fuzzing|Win32
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Release|Any CPU.ActiveCfg = Release|Win32
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Release|ARM.ActiveCfg = Release|Win32
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Release|ARM64.ActiveCfg = Release|ARM64
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Release|ARM64.Build.0 = Release|ARM64
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Release|DotNet_x64Test.ActiveCfg = Release|Win32
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Release|DotNet_x86Test.ActiveCfg = Release|Win32
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Release|x64.ActiveCfg = Release|x64
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Release|x64.Build.0 = Release|x64
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Release|x86.ActiveCfg = Release|Win32
+        {CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}.Release|x86.Build.0 = Release|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.AuditMode|Any CPU.ActiveCfg = Debug|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.AuditMode|ARM.ActiveCfg = AuditMode|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.AuditMode|ARM64.ActiveCfg = Release|ARM64
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.AuditMode|DotNet_x64Test.ActiveCfg = Debug|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.AuditMode|DotNet_x86Test.ActiveCfg = Debug|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.AuditMode|x64.ActiveCfg = Release|x64
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.AuditMode|x86.ActiveCfg = Release|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Debug|Any CPU.ActiveCfg = Debug|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Debug|ARM.ActiveCfg = Debug|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Debug|ARM64.ActiveCfg = Debug|ARM64
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Debug|ARM64.Build.0 = Debug|ARM64
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Debug|DotNet_x64Test.ActiveCfg = Debug|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Debug|DotNet_x86Test.ActiveCfg = Debug|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Debug|x64.ActiveCfg = Debug|x64
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Debug|x64.Build.0 = Debug|x64
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Debug|x86.ActiveCfg = Debug|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Debug|x86.Build.0 = Debug|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Fuzzing|Any CPU.ActiveCfg = Fuzzing|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Fuzzing|ARM.ActiveCfg = Fuzzing|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Fuzzing|ARM64.ActiveCfg = Fuzzing|ARM64
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Fuzzing|DotNet_x64Test.ActiveCfg = Fuzzing|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Fuzzing|DotNet_x86Test.ActiveCfg = Fuzzing|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Fuzzing|x64.ActiveCfg = Fuzzing|x64
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Fuzzing|x86.ActiveCfg = Fuzzing|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Release|Any CPU.ActiveCfg = Release|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Release|ARM.ActiveCfg = Release|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Release|ARM64.ActiveCfg = Release|ARM64
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Release|ARM64.Build.0 = Release|ARM64
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Release|DotNet_x64Test.ActiveCfg = Release|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Release|DotNet_x86Test.ActiveCfg = Release|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Release|x64.ActiveCfg = Release|x64
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Release|x64.Build.0 = Release|x64
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Release|x86.ActiveCfg = Release|Win32
+        {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}.Release|x86.Build.0 = Release|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.AuditMode|Any CPU.ActiveCfg = Debug|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.AuditMode|ARM.ActiveCfg = AuditMode|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.AuditMode|ARM64.ActiveCfg = Release|ARM64
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.AuditMode|DotNet_x64Test.ActiveCfg = Debug|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.AuditMode|DotNet_x86Test.ActiveCfg = Debug|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.AuditMode|x64.ActiveCfg = Release|x64
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.AuditMode|x86.ActiveCfg = Release|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Debug|Any CPU.ActiveCfg = Debug|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Debug|ARM.ActiveCfg = Debug|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Debug|ARM64.ActiveCfg = Debug|ARM64
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Debug|ARM64.Build.0 = Debug|ARM64
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Debug|DotNet_x64Test.ActiveCfg = Debug|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Debug|DotNet_x86Test.ActiveCfg = Debug|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Debug|x64.ActiveCfg = Debug|x64
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Debug|x64.Build.0 = Debug|x64
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Debug|x86.ActiveCfg = Debug|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Debug|x86.Build.0 = Debug|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Fuzzing|Any CPU.ActiveCfg = Fuzzing|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Fuzzing|ARM.ActiveCfg = Fuzzing|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Fuzzing|ARM64.ActiveCfg = Fuzzing|ARM64
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Fuzzing|DotNet_x64Test.ActiveCfg = Fuzzing|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Fuzzing|DotNet_x86Test.ActiveCfg = Fuzzing|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Fuzzing|x64.ActiveCfg = Fuzzing|x64
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Fuzzing|x86.ActiveCfg = Fuzzing|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Release|Any CPU.ActiveCfg = Release|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Release|ARM.ActiveCfg = Release|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Release|ARM64.ActiveCfg = Release|ARM64
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Release|ARM64.Build.0 = Release|ARM64
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Release|DotNet_x64Test.ActiveCfg = Release|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Release|DotNet_x86Test.ActiveCfg = Release|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Release|x64.ActiveCfg = Release|x64
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Release|x64.Build.0 = Release|x64
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Release|x86.ActiveCfg = Release|Win32
+        {CA5CAD1A-9A12-429C-B551-8562EC954746}.Release|x86.Build.0 = Release|Win32
+    EndGlobalSection
+    GlobalSection(SolutionProperties) = preSolution
+        HideSolutionNode = FALSE
+    EndGlobalSection
+    GlobalSection(NestedProjects) = preSolution
+    EndGlobalSection
+    GlobalSection(ExtensibilityGlobals) = postSolution
+        SolutionGuid = {3140B1B7-C8EE-43D1-A772-D82A7061A271}
+    EndGlobalSection
+EndGlobal
