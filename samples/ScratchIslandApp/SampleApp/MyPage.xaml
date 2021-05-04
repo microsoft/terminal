@@ -28,7 +28,26 @@
               Grid.Row="1"
               HorizontalAlignment="Stretch"
               VerticalAlignment="Stretch">
-            <!-- <Button>&quot;Content&quot;</Button> -->
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Grid x:Name="InProcContent"
+                  Grid.Column="0"
+                  Padding="16"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
+                  Background="#ff0000" />
+
+            <Grid x:Name="OutOfProcContent"
+                  Grid.Column="1"
+                  Padding="16"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
+                  Background="#0000ff" />
+
 
 
         </Grid>

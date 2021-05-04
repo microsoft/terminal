@@ -31,7 +31,7 @@ namespace winrt::SampleApp::implementation
 
         Control::TermControl control{ *settings, conn };
 
-        TabContent().Children().Append(control);
+        InProcContent().Children().Append(control);
     }
 
     // Method Description:
