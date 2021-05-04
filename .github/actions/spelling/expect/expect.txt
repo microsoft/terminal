@@ -27,7 +27,6 @@ ADDREF
 addressof
 ADDSTRING
 ADDTOOL
-aef
 AEnd
 AFew
 AFill
@@ -98,7 +97,6 @@ ASingle
 asm
 asmv
 asmx
-aspnet
 aspx
 astextplain
 AStomps
@@ -123,7 +121,6 @@ AVerify
 AVI
 awch
 azuredevopspodcast
-azurewebsites
 azzle
 backend
 backgrounded
@@ -174,7 +171,6 @@ BODGY
 BOLDFONT
 BOOLIFY
 bools
-boostorg
 Bopomofo
 Borland
 BOTTOMLEFT
@@ -187,7 +183,6 @@ branchconfig
 BRK
 Browsable
 bsearch
-BSODs
 bstr
 BTNFACE
 buf
@@ -202,7 +197,7 @@ BValue
 byref
 bytearray
 bytebuffer
-Cac
+cac
 callee
 cang
 capslock
@@ -302,7 +297,7 @@ codepage
 codepath
 codepoint
 codeproject
-COINIT
+coinit
 COLLECTIONURI
 colorizing
 colororacle
@@ -487,7 +482,6 @@ CYSIZEFRAME
 CYSMICON
 CYVIRTUALSCREEN
 CYVSCROLL
-dahall
 dai
 DATABLOCK
 DATAVIEW
@@ -575,7 +569,6 @@ defaultsettings
 DEFAULTTONEAREST
 DEFAULTTONULL
 DEFAULTTOPRIMARY
-DEFCON
 defectdefs
 DEFERERASE
 deff
@@ -603,7 +596,6 @@ desktopwindowxamlsource
 dest
 DESTINATIONNAME
 devblogs
-developercommunity
 devicecode
 devicefamily
 devops
@@ -671,13 +663,13 @@ DUNIT
 dup'ed
 dvi
 dw
+dwl
 DWLP
 dwm
 dwmapi
 dword
 dwrite
 dwriteglyphrundescriptionclustermap
-dwl
 dxgi
 dxgidwm
 dxinterop
@@ -770,10 +762,8 @@ fclose
 fcntl
 fdc
 FDD
-fde
 fdopen
 fdw
-fea
 fesb
 FFDE
 FFrom
@@ -808,7 +798,6 @@ flyout
 fmodern
 fmtarg
 fmtid
-fmtlib
 FOLDERID
 FONTCHANGE
 fontdlg
@@ -1013,10 +1002,9 @@ horiz
 HORZ
 hostable
 hostlib
-hotkeys
 HPA
 HPAINTBUFFER
-HPCON
+hpcon
 hpj
 hpp
 HPR
@@ -1172,7 +1160,6 @@ IRenderer
 IScheme
 ISelection
 IShell
-isocpp
 issuecomment
 IState
 IStoryboard
@@ -1290,7 +1277,7 @@ listptr
 listptrsize
 lk
 lld
-llvm
+LLVM
 llx
 LMENU
 LMNOP
@@ -1435,7 +1422,6 @@ mingw
 minimizeall
 minkernel
 MINMAXINFO
-mintty
 minwin
 minwindef
 Mip
@@ -1482,7 +1468,7 @@ MSIL
 msix
 msrc
 msvcrt
-msvcrtd
+MSVCRTD
 MSVS
 msys
 msysgit
@@ -1508,7 +1494,7 @@ namestream
 nano
 natvis
 nbsp
-Nc
+nc
 NCCALCSIZE
 NCCREATE
 NCLBUTTONDOWN
@@ -1631,7 +1617,6 @@ numlock
 numpad
 NUMSCROLL
 nupkg
-NVDA
 NVIDIA
 NVR
 Nx
@@ -1662,11 +1647,11 @@ ONECOREWINDOWS
 onehalf
 ONLCR
 Oo
-openconsoleproxy
 openbash
 opencode
 opencon
 openconsole
+openconsoleproxy
 OPENIF
 OPENLINK
 openps
@@ -1784,7 +1769,6 @@ pid
 pidl
 PIDLIST
 pii
-pinam
 pinvoke
 pipename
 pipestr
@@ -1928,7 +1912,6 @@ pythonw
 qi
 QJ
 qo
-QOL
 QRSTU
 qsort
 queryable
@@ -1999,7 +1982,7 @@ REGSTR
 reingest
 Relayout
 RELBINPATH
-remoting
+Remoting
 renamer
 renderengine
 rendersize
@@ -2077,8 +2060,8 @@ runut
 runxamlformat
 rvalue
 RVERTICAL
-rxvt
 RWIN
+rxvt
 safearray
 SAFECAST
 safemath
@@ -2522,14 +2505,14 @@ unicode
 UNICODESTRING
 UNICODETEXT
 UNICRT
-UNINIT
+uninit
 uninitialize
 uninstall
 Uniscribe
 unittest
 unittesting
 universaltest
-Unk
+unk
 unknwn
 unmark
 UNORM
@@ -2537,7 +2520,6 @@ unparseable
 unpause
 Unregister
 Unregistering
-unte
 untests
 untextured
 untimes
@@ -2594,7 +2576,6 @@ Vcount
 vcpkg
 vcprintf
 vcproj
-vcrt
 vcvarsall
 vcxitems
 vcxproj
@@ -2830,7 +2811,6 @@ wx
 wxh
 xa
 xact
-xamarin
 xaml
 Xamlmeta
 xargs
@@ -2872,8 +2852,9 @@ XSubstantial
 xtended
 xterm
 XTest
-XTPUSHSGR
 XTPOPSGR
+XTPUSHSGR
+xtr
 xunit
 xutr
 xvalue
