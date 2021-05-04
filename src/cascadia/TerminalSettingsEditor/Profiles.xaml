@@ -238,9 +238,7 @@
                 <ScrollViewer>
                     <StackPanel>
                         <StackPanel Style="{StaticResource PivotStackStyle}">
-                            <!--  Grouping: Text  -->
-                            <TextBlock x:Uid="Profile_TextHeader"
-                                       Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <local:Appearances />
 
                             <!--  Color Scheme  -->
                             <local:SettingContainer x:Uid="Profile_ColorScheme"

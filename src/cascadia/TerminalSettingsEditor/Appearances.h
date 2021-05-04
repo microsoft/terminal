@@ -18,6 +18,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         AppearanceViewModel(const Model::AppearanceConfig& appearance);
         bool CanDeleteAppearance() const;
 
+        OBSERVABLE_PROJECTED_SETTING(_appearance, ColorSchemeName);
+
     private:
         Model::AppearanceConfig _appearance;
     };
