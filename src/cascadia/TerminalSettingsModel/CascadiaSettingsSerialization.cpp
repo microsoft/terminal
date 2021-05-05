@@ -1033,6 +1033,7 @@ void CascadiaSettings::_ApplyDefaultsFromUserSettings()
 
     _userDefaultProfileSettings = winrt::make_self<Profile>();
     _userDefaultProfileSettings->LayerJson(defaultSettings);
+    _userDefaultProfileSettings->Origin(OriginTag::ProfilesDefaults);
 
     const auto numOfProfiles{ _allProfiles.Size() };
     for (uint32_t profileIndex = 0; profileIndex < numOfProfiles; ++profileIndex)
