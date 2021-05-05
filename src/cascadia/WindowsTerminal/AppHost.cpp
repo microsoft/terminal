@@ -680,10 +680,10 @@ void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
     }
     // Lookup the matching keychord
     Control::KeyChord kc = _hotkeys.at(hotkeyIndex);
-    // Get the stored ActionAndArgs for that chord
-    if (const auto& actionAndArgs{ _hotkeyActions.Lookup(kc) })
+    // Get the stored Command for that chord
+    if (const auto& cmd{ _hotkeyActions.Lookup(kc) })
     {
-        if (const auto& summonArgs{ actionAndArgs.Args().try_as<Settings::Model::GlobalSummonArgs>() })
+        if (const auto& summonArgs{ cmd.ActionAndArgs().Args().try_as<Settings::Model::GlobalSummonArgs>() })
         {
             Remoting::SummonWindowSelectionArgs args{ summonArgs.Name() };
 

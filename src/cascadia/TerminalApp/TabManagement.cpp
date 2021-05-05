@@ -130,7 +130,7 @@ namespace winrt::TerminalApp::implementation
         _mruTabs.Append(*newTabImpl);
 
         newTabImpl->SetDispatch(*_actionDispatch);
-        newTabImpl->SetKeyMap(_settings.KeyMap());
+        newTabImpl->SetActionMap(_settings.ActionMap());
 
         // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
         _UpdateTabIndices();

@@ -29,7 +29,7 @@ private:
     winrt::Microsoft::Terminal::Remoting::WindowManager _windowManager{ nullptr };
 
     std::vector<winrt::Microsoft::Terminal::Control::KeyChord> _hotkeys{};
-    winrt::Windows::Foundation::Collections::IMap<winrt::Microsoft::Terminal::Control::KeyChord, winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _hotkeyActions{ nullptr };
+    winrt::Windows::Foundation::Collections::IMapView<winrt::Microsoft::Terminal::Control::KeyChord, winrt::Microsoft::Terminal::Settings::Model::Command> _hotkeyActions{ nullptr };
 
     winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
 
