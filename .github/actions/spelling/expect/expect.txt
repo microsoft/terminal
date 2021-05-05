@@ -18,6 +18,7 @@ ACIOSS
 ACover
 actctx
 ACTCTXW
+actionmap
 activatable
 ACTIVEBORDER
 ACTIVECAPTION
