@@ -171,6 +171,9 @@ CATCH_RETURN()
 
         _glyphIndices.resize(textLength);
 
+        std::vector<UINT16> runGlyphIndices;
+        runGlyphIndices.resize(textLength);
+
         while (pos < textLength)
         {
             const HRESULT hr = _fontRenderData->Analyzer()->GetTextComplexity(
@@ -179,14 +182,23 @@ CATCH_RETURN()
                 _fontInUse,
                 &isTextSimple,
                 &uiLengthRead,
-                &_glyphIndices.at(pos));
+                &runGlyphIndices.at(pos));
 
             RETURN_IF_FAILED(hr);
             _SetCurrentRun(pos);
             _SplitCurrentRun(pos);
+
+            if (isTextSimple)
+            {
+                // Only copy the indices when the run is simple.
+                // Otherwise the glyph indices from GetTextComplexity are not meaningful.
+                std::copy(runGlyphIndices.cbegin() + pos, runGlyphIndices.cbegin() + pos + uiLengthRead, _glyphIndices.begin() + pos);
+            }
+
             pos += std::max(uiLengthRead, 1u);
             while (uiLengthRead > 0)
             {
+                // FetchNextRun decreases uiLengthRead internally.
                 auto& run = _FetchNextRun(uiLengthRead);
                 run.isTextSimple = isTextSimple;
             }
@@ -433,6 +445,15 @@ CATCH_RETURN()
                 break;
             }
         } while (tries < 2); // We'll give it two chances.
+
+        // Rearrange _glyphIndices
+        auto indicesDiff = textLength - actualGlyphCount;
+        while (indicesDiff > 0)
+        {
+            // Left shift the indices.
+            _glyphIndices.erase(_glyphIndices.begin() + glyphStart + actualGlyphCount);
+            indicesDiff--;
+        }
 
         RETURN_IF_FAILED(hr);
 
