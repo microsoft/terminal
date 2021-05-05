@@ -399,12 +399,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _changeBackgroundColor(bg);
 
         // Apply padding as swapChainPanel's margin
+        // Only set the margin if the left/right is smaller than half our width
+        // and the top/bottom is smaller than half our height (unless our current
+        // width and height are 0, in which case we are probably starting up)
         auto newMargin = _ParseThicknessFromPadding(newSettings.Padding());
 
-        const auto currentHalfWidth = TSFInputControl().ActualWidth() / 2;
-        const auto currentHalfHeight = TSFInputControl().ActualHeight() / 2;
-        if (newMargin.Left < currentHalfWidth && newMargin.Right < currentHalfWidth &&
-            newMargin.Top < currentHalfHeight && newMargin.Bottom < currentHalfHeight)
+        const auto currentHalfWidth = ActualWidth() / 2;
+        const auto currentHalfHeight = ActualHeight() / 2;
+        if ((newMargin.Left < currentHalfWidth && newMargin.Right < currentHalfWidth &&
+            newMargin.Top < currentHalfHeight && newMargin.Bottom < currentHalfHeight) ||
+            (currentHalfHeight == 0 && currentHalfWidth == 0))
         {
             SwapChainPanel().Margin(newMargin);
             TSFInputControl().Margin(newMargin);

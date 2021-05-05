@@ -241,8 +241,8 @@
                             <Border x:Name="ControlPreview"
                                     Width="350"
                                     Height="160"
-                                    BorderBrush="#333333"
-                                    BorderThickness="1" />
+                                    BorderThickness="1"
+                                    BorderBrush="{ThemeResource ToggleButtonDisabledBorderThemeBrush}"/>
 
                             <!--  Grouping: Text  -->
                             <TextBlock x:Uid="Profile_TextHeader"
