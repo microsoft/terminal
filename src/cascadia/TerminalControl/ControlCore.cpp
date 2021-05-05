@@ -513,6 +513,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _desiredFont = { _actualFont };
 
         // Update the terminal core with its new Core settings
+        Core::ICoreSettings coreSettings = _settings.try_as<Core::ICoreSettings>();
+        Core::ICoreAppearance coreAppearance = _settings.try_as<Core::ICoreAppearance>();
+        if (!coreSettings)
+        {
+            OutputDebugString(L"Failed to get core settings");
+        }
+        if (!coreAppearance)
+        {
+            OutputDebugString(L"Failed to get coreAppearance");
+        }
         _terminal->UpdateSettings(_settings);
 
         if (!_initializedTerminal)

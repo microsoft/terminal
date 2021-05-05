@@ -68,10 +68,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (contentGuid != winrt::guid{})
         {
-            Control::ContentProcess content = create_instance<Control::ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
-            if (content != nullptr)
+            _contentProc = create_instance<Control::ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
+            if (_contentProc != nullptr)
             {
-                _interactivity = content.GetInteractivity();
+                _interactivity = _contentProc.GetInteractivity();
             }
         }
 
@@ -582,7 +582,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (auto control{ weakThis.get() })
         {
-            const HANDLE chainHandle = reinterpret_cast<HANDLE>(control->_core.GetSwapChainHandle());
+            // TODO! very good chance we leak this handle
+            const HANDLE chainHandle = reinterpret_cast<HANDLE>(control->_contentProc ?
+                                                                    control->_contentProc.RequestSwapChainHandle(GetCurrentProcessId()) :
+                                                                    control->_core.GetSwapChainHandle());
             _AttachDxgiSwapChainToXaml(chainHandle);
         }
     }
@@ -670,7 +673,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         _interactivity.Initialize();
 
-        _AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(_core.GetSwapChainHandle()));
+        // TODO! very good chance we leak this handle
+        const HANDLE chainHandle = reinterpret_cast<HANDLE>(_contentProc ?
+                                                                _contentProc.RequestSwapChainHandle(GetCurrentProcessId()) :
+                                                                _core.GetSwapChainHandle());
+        _AttachDxgiSwapChainToXaml(chainHandle);
 
         // Tell the DX Engine to notify us when the swap chain changes. We do
         // this after we initially set the swapchain so as to avoid unnecessary

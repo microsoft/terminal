@@ -135,6 +135,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         Control::ControlCore _core{ nullptr };
         Control::ControlInteractivity _interactivity{ nullptr };
+        Control::ContentProcess _contentProc{ nullptr };
 
         bool _initializedTerminal;
 

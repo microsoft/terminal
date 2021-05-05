@@ -16,6 +16,7 @@ namespace winrt::SampleApp::implementation
         void Create();
 
         hstring Title();
+        winrt::fire_and_forget CreateOutOfProcTerminal();
 
     private:
         friend struct MyPageT<MyPage>; // for Xaml to bind events

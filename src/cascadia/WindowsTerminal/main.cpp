@@ -136,7 +136,7 @@ struct HostClassFactory : implements<HostClassFactory, IClassFactory>
 
         if (!g_weak)
         {
-            winrt::Microsoft::Terminal::Control::ContentProcess strong{};// = winrt::make<winrt::Microsoft::Terminal::Control::ContentProcess>();
+            winrt::Microsoft::Terminal::Control::ContentProcess strong{}; // = winrt::make<winrt::Microsoft::Terminal::Control::ContentProcess>();
             winrt::weak_ref<winrt::Microsoft::Terminal::Control::ContentProcess> weak{ strong };
             g_weak = weak;
             return strong.as(iid, result);
@@ -159,6 +159,8 @@ private:
 
 static void doContentProcessThing(const winrt::guid& contentProcessGuid)
 {
+    // !! LOAD BEARING !! - important to be a MTA
+    winrt::init_apartment();
 
     DWORD registrationHostClass{};
     check_hresult(CoRegisterClassObject(contentProcessGuid,
@@ -197,17 +199,6 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // Make sure to call this so we get WM_POINTER messages.
     EnableMouseInPointer(true);
 
-    // !!! LOAD BEARING !!!
-    // We must initialize the main thread as a single-threaded apartment before
-    // constructing any Xaml objects. Failing to do so will cause some issues
-    // in accessibility somewhere down the line when a UIAutomation object will
-    // be queried on the wrong thread at the wrong time.
-    // We used to initialize as STA only _after_ initializing the application
-    // host, which loaded the settings. The settings needed to be loaded in MTA
-    // because we were using the Windows.Storage APIs. Since we're no longer
-    // doing that, we can safely init as STA before any WinRT dispatches.
-    winrt::init_apartment(winrt::apartment_type::single_threaded);
-
     winrt::guid contentProcessGuid{};
     if (checkIfContentProcess(contentProcessGuid))
     {
@@ -218,6 +209,17 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
         // that.
         ExitProcess(0);
     }
+
+    // !!! LOAD BEARING !!!
+    // We must initialize the main thread as a single-threaded apartment before
+    // constructing any Xaml objects. Failing to do so will cause some issues
+    // in accessibility somewhere down the line when a UIAutomation object will
+    // be queried on the wrong thread at the wrong time.
+    // We used to initialize as STA only _after_ initializing the application
+    // host, which loaded the settings. The settings needed to be loaded in MTA
+    // because we were using the Windows.Storage APIs. Since we're no longer
+    // doing that, we can safely init as STA before any WinRT dispatches.
+    winrt::init_apartment(winrt::apartment_type::single_threaded);
 
     // Create the AppHost object, which will create both the window and the
     // Terminal App. This MUST BE constructed before the Xaml manager as TermApp

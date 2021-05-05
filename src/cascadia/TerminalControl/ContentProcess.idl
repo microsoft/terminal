@@ -13,5 +13,7 @@ namespace Microsoft.Terminal.Control
                         Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
         ControlInteractivity GetInteractivity();
+
+        UInt64 RequestSwapChainHandle(UInt64 pid);
     };
 }

@@ -1,0 +1,14 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace SampleApp
+{
+    [default_interface] runtimeclass MySettings : Microsoft.Terminal.Core.ICoreSettings,
+                                                  Microsoft.Terminal.Control.IControlSettings,
+                                                  Microsoft.Terminal.Core.ICoreAppearance,
+                                                  Microsoft.Terminal.Control.IControlAppearance
+
+    {
+        MySettings();
+    }
+}
