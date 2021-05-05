@@ -381,7 +381,7 @@ CATCH_RETURN()
 
             // Set all the clusters as sequential. In a simple run, we're going 1 to 1.
             // Fill the clusters sequentially from 0 to N-1.
-            std::iota(_glyphClusters.begin() + glyphStart, _glyphClusters.begin() + glyphStart + textLength, gsl::narrow_cast<unsigned short>(0));
+            std::iota(_glyphClusters.begin() + textStart, _glyphClusters.begin() + textStart + textLength, gsl::narrow_cast<unsigned short>(0));
 
             run.glyphCount = textLength;
             glyphStart += textLength;
