@@ -29,10 +29,10 @@ static constexpr unsigned int MAX_CLICK_COUNT = 3;
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    TerminalInput::MouseButtonState toInternalMouseState(const Core::MouseButtonState& state)
+    TerminalInput::MouseButtonState toInternalMouseState(const Control::MouseButtonState& state)
     {
         return TerminalInput::MouseButtonState{
-            state.IsLeftButtonDown != 0, state.IsMiddleButtonDown != 0, state.IsRightButtonDown != 0
+            state.IsLeftButtonDown, state.IsMiddleButtonDown, state.IsRightButtonDown
         };
     }
 
@@ -184,7 +184,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->PasteText(winrt::hstring{ wstr });
     }
 
-    void ControlInteractivity::PointerPressed(Core::MouseButtonState buttonState,
+    void ControlInteractivity::PointerPressed(Control::MouseButtonState buttonState,
                                               const unsigned int pointerUpdateKind,
                                               const uint64_t timestamp,
                                               const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
@@ -266,7 +266,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _touchAnchor = contactPoint;
     }
 
-    void ControlInteractivity::PointerMoved(Core::MouseButtonState buttonState,
+    void ControlInteractivity::PointerMoved(Control::MouseButtonState buttonState,
                                             const unsigned int pointerUpdateKind,
                                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                             const bool focused,
@@ -347,7 +347,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlInteractivity::PointerReleased(Core::MouseButtonState buttonState,
+    void ControlInteractivity::PointerReleased(Control::MouseButtonState buttonState,
                                                const unsigned int pointerUpdateKind,
                                                const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                                const til::point pixelPosition)
@@ -394,7 +394,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     bool ControlInteractivity::MouseWheel(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                           const int32_t delta,
                                           const til::point pixelPosition,
-                                          const Core::MouseButtonState buttonState)
+                                          const Control::MouseButtonState buttonState)
     {
         const til::point terminalPosition = _getTerminalPosition(pixelPosition);
 
