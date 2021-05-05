@@ -334,7 +334,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        const auto oldQuickEditMode{ WI_IsFlagSet(gci.Flags, ENABLE_QUICK_EDIT_MODE) };
+        const auto oldQuickEditMode{ WI_IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE) };
 
         if (WI_IsAnyFlagSet(mode, PRIVATE_MODES))
         {
@@ -359,7 +359,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
             WI_ClearFlag(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS);
         }
 
-        const auto newQuickEditMode{ WI_IsFlagSet(gci.Flags, ENABLE_QUICK_EDIT_MODE) };
+        const auto newQuickEditMode{ WI_IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE) };
 
         // Mouse input should be received when mouse mode is on and quick edit mode is off
         const auto oldMouseMode{ !oldQuickEditMode && WI_IsFlagSet(context.InputMode, ENABLE_MOUSE_INPUT) };
