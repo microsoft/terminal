@@ -48,6 +48,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         command->_IterateOn = _IterateOn;
 
         command->_originalJson = _originalJson;
+        command->_nestedCommand = _nestedCommand;
         if (HasNestedCommands())
         {
             command->_subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
