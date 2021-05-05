@@ -47,16 +47,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - If the command cannot be found in this layer, nullopt.
     std::optional<Model::Command> ActionMap::_GetActionByID(const InternalActionID actionID) const
     {
-        // Check the masked actions
-        const auto maskedPair{ _MaskedActions.find(actionID) };
-        if (maskedPair != _MaskedActions.end())
+        // Check the masking actions
+        const auto maskingPair{ _MaskingActions.find(actionID) };
+        if (maskingPair != _MaskingActions.end())
         {
             // ActionMap should never point to nullptr
-            FAIL_FAST_IF_NULL(maskedPair->second);
+            FAIL_FAST_IF_NULL(maskingPair->second);
 
-            // masked actions cannot contain nested or invalid commands,
+            // masking actions cannot contain nested or invalid commands,
             // so we can just return it directly.
-            return maskedPair->second;
+            return maskingPair->second;
         }
 
         // Check current layer
@@ -167,10 +167,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         // First, add actions from our current layer
         std::vector<Model::Command> cumulativeActions;
-        cumulativeActions.reserve(_MaskedActions.size() + _ActionMap.size());
+        cumulativeActions.reserve(_MaskingActions.size() + _ActionMap.size());
 
-        // masked actions have priority. Actions here are constructed from consolidating an inherited action with changes we've found when populating this layer.
-        std::transform(_MaskedActions.begin(), _MaskedActions.end(), std::back_inserter(cumulativeActions), [](std::pair<InternalActionID, Model::Command> actionPair) {
+        // masking actions have priority. Actions here are constructed from consolidating an inherited action with changes we've found when populating this layer.
+        std::transform(_MaskingActions.begin(), _MaskingActions.end(), std::back_inserter(cumulativeActions), [](std::pair<InternalActionID, Model::Command> actionPair) {
             return actionPair.second;
         });
         std::transform(_ActionMap.begin(), _ActionMap.end(), std::back_inserter(cumulativeActions), [](std::pair<InternalActionID, Model::Command> actionPair) {
@@ -239,10 +239,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             actionMap->_ActionMap.emplace(actionID, *(get_self<Command>(cmd)->Copy()));
         }
 
-        // copy _MaskedActions (ID --> Command)
-        for (const auto& [actionID, cmd] : _MaskedActions)
+        // copy _MaskingActions (ID --> Command)
+        for (const auto& [actionID, cmd] : _MaskingActions)
         {
-            actionMap->_MaskedActions.emplace(actionID, *(get_self<Command>(cmd)->Copy()));
+            actionMap->_MaskingActions.emplace(actionID, *(get_self<Command>(cmd)->Copy()));
         }
 
         // copy _NestedCommands (Name --> Command)
@@ -302,27 +302,27 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         //  cmd.Keys and cmd.Action have a many-to-one relationship.
         //  If cmd.Keys is empty, we don't care.
         //  If action is "unbound"/"invalid", you're explicitly unbinding the provided cmd.keys.
-        //  NOTE: If we're unbinding a command from a different layer, we must use maskedActions
+        //  NOTE: If we're unbinding a command from a different layer, we must use maskingActions
         //         to keep track of what key mappings are still valid.
 
-        // _TryUpdateActionMap may update oldCmd and maskedCmd
+        // _TryUpdateActionMap may update oldCmd and maskingCmd
         Model::Command oldCmd{ nullptr };
-        Model::Command maskedCmd{ nullptr };
-        _TryUpdateActionMap(cmd, oldCmd, maskedCmd);
+        Model::Command maskingCmd{ nullptr };
+        _TryUpdateActionMap(cmd, oldCmd, maskingCmd);
 
-        _TryUpdateName(cmd, oldCmd, maskedCmd);
-        _TryUpdateKeyChord(cmd, oldCmd, maskedCmd);
+        _TryUpdateName(cmd, oldCmd, maskingCmd);
+        _TryUpdateKeyChord(cmd, oldCmd, maskingCmd);
     }
 
     // Method Description:
     // - Try to add the new command to _ActionMap.
     // - If the command was added previously in this layer, populate oldCmd.
-    // - If the command was added previously in another layer, populate maskedCmd.
+    // - If the command was added previously in another layer, populate maskingCmd.
     // Arguments:
     // - cmd: the action we're trying to register
     // - oldCmd: the action found in _ActionMap, if one already exists
-    // - maskedAction: the action found in a parent layer, if one already exists
-    void ActionMap::_TryUpdateActionMap(const Model::Command& cmd, Model::Command& oldCmd, Model::Command& maskedCmd)
+    // - maskingAction: the action found in a parent layer, if one already exists
+    void ActionMap::_TryUpdateActionMap(const Model::Command& cmd, Model::Command& oldCmd, Model::Command& maskingCmd)
     {
         // Example:
         //   { "command": "copy", "keys": "ctrl+c" }       --> add the action in for the first time
@@ -336,35 +336,35 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         else
         {
-            // We're adding an action that already exists in our layer.
+            // This is an action that we already have a mutable "masking" record for.
             // Record it so that we update it with any new information.
             oldCmd = actionPair->second;
         }
 
-        // Masked Actions
+        // Masking Actions
         //
         // Example:
         //   parent:  { "command": "copy", "keys": "ctrl+c" }       --> add the action to parent._ActionMap
-        //   current: { "command": "copy", "keys": "ctrl+shift+c" } --> look through parents for the "ctrl+c" binding, add it to _MaskedActions
-        //            { "command": "copy", "keys": "ctrl+ins" }     --> this should already be in _MaskedActions
+        //   current: { "command": "copy", "keys": "ctrl+shift+c" } --> look through parents for the "ctrl+c" binding, add it to _MaskingActions
+        //            { "command": "copy", "keys": "ctrl+ins" }     --> this should already be in _MaskingActions
 
         // Now check if this action was introduced in another layer.
-        const auto& maskedActionPair{ _MaskedActions.find(actionID) };
-        if (maskedActionPair == _MaskedActions.end())
+        const auto& maskingActionPair{ _MaskingActions.find(actionID) };
+        if (maskingActionPair == _MaskingActions.end())
         {
-            // Check if we need to add this to our list of masked commands.
+            // Check if we need to add this to our list of masking commands.
             FAIL_FAST_IF(_parents.size() > 1);
             for (const auto& parent : _parents)
             {
                 // NOTE: This only checks the layer above us, but that's ok.
-                //       If we had to find one from a layer above that, parent->_MaskedActions
+                //       If we had to find one from a layer above that, parent->_MaskingActions
                 //       would have found it, so we inherit it for free!
                 const auto& inheritedCmd{ parent->_GetActionByID(actionID) };
                 if (inheritedCmd.has_value() && inheritedCmd.value())
                 {
                     const auto& inheritedCmdImpl{ get_self<Command>(inheritedCmd.value()) };
-                    maskedCmd = *inheritedCmdImpl->Copy();
-                    _MaskedActions.emplace(actionID, maskedCmd);
+                    maskingCmd = *inheritedCmdImpl->Copy();
+                    _MaskingActions.emplace(actionID, maskingCmd);
                 }
             }
         }
@@ -372,7 +372,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // We're adding an action that already existed on a different layer.
             // Record it so that we update it with any new information.
-            maskedCmd = maskedActionPair->second;
+            maskingCmd = maskingActionPair->second;
         }
     }
 
@@ -381,11 +381,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Arguments:
     // - cmd: the action we're trying to register
     // - oldCmd: the action that already exists in our internal state. May be null.
-    // - maskedCmd: the masked action that already exists in our internal state. May be null.
-    void ActionMap::_TryUpdateName(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& maskedCmd)
+    // - maskingCmd: the masking action that already exists in our internal state. May be null.
+    void ActionMap::_TryUpdateName(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& maskingCmd)
     {
         // Example:
-        //   { "name": "foo", "command": "copy" } --> we are setting a name, update oldCmd and maskedCmd
+        //   { "name": "foo", "command": "copy" } --> we are setting a name, update oldCmd and maskingCmd
         //   {                "command": "copy" } --> no change to name, exit early
         const auto cmdImpl{ get_self<Command>(cmd) };
         if (!cmdImpl->HasName())
@@ -410,16 +410,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
-        // Update maskedCmd:
-        if (maskedCmd)
+        // Update maskingCmd:
+        //   We have a Command that is masking one from a parent layer.
+        //   We need to ensure that this has the correct name. That way,
+        //    we can return an accumulated view of a Command at this layer.
+        //   This differs from oldCmd which is mainly used for serialization
+        //    by recording the delta of the Command in this layer.
+        if (maskingCmd)
         {
             // This command has a name, check if it's new.
-            if (newName != maskedCmd.Name())
+            if (newName != maskingCmd.Name())
             {
                 // The new name differs from the old name,
                 // update our name.
-                auto maskedCmdImpl{ get_self<Command>(maskedCmd) };
-                maskedCmdImpl->Name(newName);
+                auto maskingCmdImpl{ get_self<Command>(maskingCmd) };
+                maskingCmdImpl->Name(newName);
             }
         }
 
@@ -432,11 +437,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Arguments:
     // - cmd: the action we're trying to register
     // - oldCmd: the action that already exists in our internal state. May be null.
-    // - maskedCmd: the masked action that already exists in our internal state. May be null.
-    void ActionMap::_TryUpdateKeyChord(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& maskedCmd)
+    // - maskingCmd: the masking action that already exists in our internal state. May be null.
+    void ActionMap::_TryUpdateKeyChord(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& maskingCmd)
     {
         // Example:
-        //   {                "command": "copy", "keys": "ctrl+c" } --> we are registering a new key chord, update oldCmd and maskedCmd
+        //   {                "command": "copy", "keys": "ctrl+c" } --> we are registering a new key chord, update oldCmd and maskingCmd
         //   { "name": "foo", "command": "copy" }                   --> no change to keys, exit early
         const auto keys{ cmd.Keys() };
         if (!keys)
@@ -468,25 +473,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // Example:
             //   parent:  { "command": "copy",    "keys": "ctrl+c" } --> register "ctrl+c" (different branch)
             //   current: { "command": "paste",   "keys": "ctrl+c" } --> Collision with ancestor! (this branch, sub-branch 1)
-            //            { "command": "unbound", "keys": "ctrl+c" } --> Collision with masked action! (this branch, sub-branch 2)
+            //            { "command": "unbound", "keys": "ctrl+c" } --> Collision with masking action! (this branch, sub-branch 2)
             const auto conflictingActionID{ Hash(conflictingCmd.ActionAndArgs()) };
-            const auto maskedCmdPair{ _MaskedActions.find(conflictingActionID) };
-            if (maskedCmdPair == _MaskedActions.end())
+            const auto maskingCmdPair{ _MaskingActions.find(conflictingActionID) };
+            if (maskingCmdPair == _MaskingActions.end())
             {
                 // This is the first time we're colliding with an action from a different layer,
-                //   so let's add this action to _MaskedActions and update it appropriately.
+                //   so let's add this action to _MaskingActions and update it appropriately.
                 // Create a copy of the conflicting action,
                 //   and erase the conflicting key chord from the copy.
                 const auto conflictingCmdImpl{ get_self<implementation::Command>(conflictingCmd) };
                 const auto conflictingCmdCopy{ conflictingCmdImpl->Copy() };
                 conflictingCmdCopy->EraseKey(keys);
-                _MaskedActions.emplace(conflictingActionID, *conflictingCmdCopy);
+                _MaskingActions.emplace(conflictingActionID, *conflictingCmdCopy);
             }
             else
             {
-                // We've collided with this action before. Let's resolve a collision with a masked action.
-                const auto maskedCmdImpl{ get_self<implementation::Command>(maskedCmdPair->second) };
-                maskedCmdImpl->EraseKey(keys);
+                // We've collided with this action before. Let's resolve a collision with a masking action.
+                const auto maskingCmdImpl{ get_self<implementation::Command>(maskingCmdPair->second) };
+                maskingCmdImpl->EraseKey(keys);
             }
         }
 
@@ -507,15 +512,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // Additive operation:
-        //   Register the new key chord with maskedCmd (an existing _MaskedAction entry)
+        //   Register the new key chord with maskingCmd (an existing _maskingAction entry)
         // Example:
         //   parent:  { "command": "copy", "keys": "ctrl+c" }       --> register "ctrl+c" to parent._ActionMap (different branch in a different layer)
-        //   current: { "command": "copy", "keys": "ctrl+shift+c" } --> also register "ctrl+shift+c" to the same Command (maskedCmd)
-        if (maskedCmd)
+        //   current: { "command": "copy", "keys": "ctrl+shift+c" } --> also register "ctrl+shift+c" to the same Command (maskingCmd)
+        if (maskingCmd)
         {
             // Update inner Command with new key chord
-            auto maskedCmdImpl{ get_self<Command>(maskedCmd) };
-            maskedCmdImpl->RegisterKey(keys);
+            auto maskingCmdImpl{ get_self<Command>(maskingCmd) };
+            maskingCmdImpl->RegisterKey(keys);
         }
     }
 

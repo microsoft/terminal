@@ -28,11 +28,6 @@ namespace SettingsModelLocalTests
     class TerminalSettingsTests;
 }
 
-//inline bool operator==(const winrt::Microsoft::Terminal::Control::KeyChord& lhs, const winrt::Microsoft::Terminal::Control::KeyChord& rhs)
-//{
-//    return lhs.Modifiers() == rhs.Modifiers() && lhs.Vkey() == rhs.Vkey();
-//}
-
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     using InternalActionID = size_t;
@@ -91,18 +86,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::unordered_map<Control::KeyChord, InternalActionID, KeyChordHash, KeyChordEquality> _KeyMap;
         std::unordered_map<InternalActionID, Model::Command> _ActionMap;
 
-        // Masked Actions:
+        // Masking Actions:
         // These are actions that were introduced in an ancestor,
-        //   but were unbound in the current layer.
+        //   but were edited (or unbound) in the current layer.
         // _ActionMap shows a Command with keys that were added in this layer,
-        //   whereas _MaskedActions provides a view that encompasses all of
+        //   whereas _MaskingActions provides a view that encompasses all of
         //   the valid associated key chords.
         // Maintaining this map allows us to return a valid Command
         //   in GetKeyBindingForAction.
         // Additionally, these commands to not need to be serialized,
         //   whereas those in _ActionMap do. These actions provide more data
         //   than is necessary to be serialized.
-        std::unordered_map<InternalActionID, Model::Command> _MaskedActions;
+        std::unordered_map<InternalActionID, Model::Command> _MaskingActions;
 
         friend class SettingsModelLocalTests::KeyBindingsTests;
         friend class SettingsModelLocalTests::DeserializationTests;
