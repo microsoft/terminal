@@ -291,7 +291,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
             break;
         }
         // There is a theoretical unsigned integer wraparound, which is OK
-        newName = fmt::format(L"{} ({}{})", source.Name(), RS_(L"CopySuffix"), candidateIndex);
+        newName = fmt::format(L"{} ({} {})", source.Name(), RS_(L"CopySuffix"), candidateIndex + 2);
     }
     duplicated->Name(winrt::hstring(newName));
 
