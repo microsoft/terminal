@@ -341,6 +341,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    Editor::AppearanceViewModel ProfileViewModel::DefaultAppearance()
+    {
+        return winrt::make<implementation::AppearanceViewModel>(_profile.DefaultAppearance().try_as<AppearanceConfig>());
+    }
+
     bool ProfileViewModel::UseDesktopBGImage()
     {
         return BackgroundImagePath() == L"desktopWallpaper";
@@ -432,7 +437,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
-        INITIALIZE_BINDABLE_ENUM_SETTING(CursorShape, CursorStyle, winrt::Microsoft::Terminal::Core::CursorStyle, L"Profile_CursorShape", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(BackgroundImageStretchMode, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch, L"Profile_BackgroundImageStretchMode", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(AntiAliasingMode, TextAntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode, L"Profile_AntialiasingMode", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(CloseOnExitMode, CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
@@ -554,12 +558,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // and propagate those changes to the UI
         _ViewModelChangedRevoker = _State.Profile().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
             const auto settingName{ args.PropertyName() };
-            if (settingName == L"CursorShape")
-            {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
-            }
-            else if (settingName == L"BackgroundImageStretchMode")
+            if (settingName == L"BackgroundImageStretchMode")
             {
                 _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentBackgroundImageStretchMode" });
             }
@@ -600,6 +599,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // Navigate to the pivot in the provided navigation state
         ProfilesPivot().SelectedIndex(static_cast<int>(_State.LastActivePivot()));
+
+        DefaultAppearanceXaml().NavigatedTo();
     }
 
     void Profiles::OnNavigatedFrom(const NavigationEventArgs& /*e*/)
@@ -771,11 +772,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 biButton.IsChecked(biButtonAlignment == val);
             }
         }
-    }
-
-    bool Profiles::IsVintageCursor() const
-    {
-        return _State.Profile().CursorShape() == Core::CursorStyle::Vintage;
     }
 
     void Profiles::Pivot_SelectionChanged(Windows::Foundation::IInspectable const& /*sender*/,

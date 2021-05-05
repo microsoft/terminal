@@ -10,6 +10,7 @@
 #include "ProfileViewModel.g.h"
 #include "Utils.h"
 #include "ViewModelHelpers.h"
+#include "Appearances.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -59,6 +60,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // general profile knowledge
         bool CanDeleteProfile() const;
+        Editor::AppearanceViewModel DefaultAppearance();
         WINRT_PROPERTY(bool, IsBaseLayer, false);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
@@ -85,7 +87,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), BackgroundImageStretchMode);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_SETTING(_profile, AntialiasingMode);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), RetroTerminalEffect);
         OBSERVABLE_PROJECTED_SETTING(_profile, ForceFullRepaintRendering);
         OBSERVABLE_PROJECTED_SETTING(_profile, SoftwareRendering);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), ColorSchemeName);
@@ -96,8 +97,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, HistorySize);
         OBSERVABLE_PROJECTED_SETTING(_profile, SnapOnInput);
         OBSERVABLE_PROJECTED_SETTING(_profile, AltGrAliasing);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), CursorShape);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), CursorHeight);
         OBSERVABLE_PROJECTED_SETTING(_profile, BellStyle);
 
     private:
@@ -186,9 +185,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void Pivot_SelectionChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void FontFace_SelectionChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& e);
 
-        // CursorShape visibility logic
-        bool IsVintageCursor() const;
-
         // manually bind FontWeight
         Windows::Foundation::IInspectable CurrentFontWeight() const;
         void CurrentFontWeight(const Windows::Foundation::IInspectable& enumEntry);
@@ -199,7 +195,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_PROPERTY(Editor::ProfilePageNavigationState, State, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);
-        GETSET_BINDABLE_ENUM_SETTING(CursorShape, Microsoft::Terminal::Core::CursorStyle, State().Profile, CursorShape);
         GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, State().Profile, BackgroundImageStretchMode);
         GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, State().Profile, AntialiasingMode);
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, State().Profile, CloseOnExit);

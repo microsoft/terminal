@@ -5,10 +5,10 @@
 
 #include "Font.g.h"
 #include "Appearances.g.h"
-#include "AppearancePageNavigationState.g.h"
 #include "AppearanceViewModel.g.h"
 #include "Utils.h"
 #include "ViewModelHelpers.h"
+#include "SettingContainer.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -17,34 +17,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         AppearanceViewModel(const Model::AppearanceConfig& appearance);
         bool CanDeleteAppearance() const;
-
-        OBSERVABLE_PROJECTED_SETTING(_appearance, ColorSchemeName);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, RetroTerminalEffect);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, CursorShape);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, CursorHeight);
 
     private:
         Model::AppearanceConfig _appearance;
-    };
-
-    struct AppearancePageNavigationState : AppearancePageNavigationStateT<AppearancePageNavigationState>
-    {
-    public:
-        AppearancePageNavigationState(const Editor::AppearanceViewModel& viewModel,
-                                      const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes,
-                                      const Editor::AppearancePageNavigationState& lastState,
-                                      const IHostedInWindow& windowRoot) :
-            _Appearance{ viewModel },
-            _Schemes{ schemes },
-            _WindowRoot{ windowRoot }
-        {
-            if (lastState)
-            {
-            }
-        }
-
-        WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
-        WINRT_PROPERTY(Editor::AppearanceViewModel, Appearance, nullptr);
-
-    private:
-        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
     };
 
     struct Appearances : AppearancesT<Appearances>
@@ -52,12 +30,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         Appearances();
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        void NavigatedTo();
 
-        WINRT_PROPERTY(Editor::AppearancePageNavigationState, State, nullptr);
+        // CursorShape visibility logic
+        bool IsVintageCursor() const;
+
+        GETSET_BINDABLE_ENUM_SETTING(CursorShape, Microsoft::Terminal::Core::CursorStyle, Appearance, CursorShape);
+
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        DEPENDENCY_PROPERTY(Editor::AppearanceViewModel, Appearance);
 
     private:
-
+        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
     };
 };
 

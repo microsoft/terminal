@@ -82,7 +82,6 @@ static winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> OpenImagePick
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-
     AppearanceViewModel::AppearanceViewModel(const Model::AppearanceConfig& appearance) :
         _appearance{ appearance }
     {
@@ -93,8 +92,39 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return false;
     }
 
+    DependencyProperty Appearances::_AppearanceProperty{ nullptr };
+
     Appearances::Appearances()
     {
         InitializeComponent();
+
+        INITIALIZE_BINDABLE_ENUM_SETTING(CursorShape, CursorStyle, winrt::Microsoft::Terminal::Core::CursorStyle, L"Profile_CursorShape", L"Content");
+
+        if (!_AppearanceProperty)
+        {
+            _AppearanceProperty =
+                DependencyProperty::Register(
+                    L"Appearance",
+                    xaml_typename<Editor::AppearanceViewModel>(),
+                    xaml_typename<Editor::Appearances>(),
+                    PropertyMetadata{ nullptr });
+        }
+    }
+
+    void Appearances::NavigatedTo()
+    {
+        //_ViewModelChangedRevoker = Appearance().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
+        //    const auto settingName{ args.PropertyName() };
+        //    if (settingName == L"CursorShape")
+        //    {
+        //        _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
+        //        _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
+        //    }
+        //});
+    }
+
+    bool Appearances::IsVintageCursor() const
+    {
+        return Appearance().CursorShape() == Core::CursorStyle::Vintage;
     }
 }

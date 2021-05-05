@@ -238,7 +238,9 @@
                 <ScrollViewer>
                     <StackPanel>
                         <StackPanel Style="{StaticResource PivotStackStyle}">
-                            <local:Appearances />
+                            <!--  Grouping: Text  -->
+                            <TextBlock x:Uid="Profile_TextHeader"
+                                       Style="{StaticResource SubtitleTextBlockStyle}"/>
 
                             <!--  Color Scheme  -->
                             <local:SettingContainer x:Uid="Profile_ColorScheme"
@@ -335,53 +337,6 @@
                                                    Text="{Binding ElementName=FontWeightSlider, Path=Value, Mode=OneWay}" />
                                     </Grid>
                                 </StackPanel>
-                            </local:SettingContainer>
-
-                            <!--  Retro Terminal Effect  -->
-                            <local:SettingContainer x:Uid="Profile_RetroTerminalEffect"
-                                                    ClearSettingValue="{x:Bind State.Profile.ClearRetroTerminalEffect}"
-                                                    HasSettingValue="{x:Bind State.Profile.HasRetroTerminalEffect, Mode=OneWay}"
-                                                    SettingOverrideSource="{x:Bind State.Profile.RetroTerminalEffectOverrideSource, Mode=OneWay}">
-                                <ToggleSwitch IsOn="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}" />
-                            </local:SettingContainer>
-                        </StackPanel>
-
-                        <!--  Grouping: Cursor  -->
-                        <StackPanel Style="{StaticResource PivotStackStyle}">
-                            <TextBlock x:Uid="Profile_CursorHeader"
-                                       Style="{StaticResource SubtitleTextBlockStyle}" />
-
-                            <!--  Cursor Shape  -->
-                            <local:SettingContainer x:Uid="Profile_CursorShape"
-                                                    Margin="0"
-                                                    ClearSettingValue="{x:Bind State.Profile.ClearCursorShape}"
-                                                    HasSettingValue="{x:Bind State.Profile.HasCursorShape, Mode=OneWay}"
-                                                    SettingOverrideSource="{x:Bind State.Profile.CursorShapeOverrideSource, Mode=OneWay}">
-                                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                                   ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
-                                                   SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}" />
-                            </local:SettingContainer>
-
-                            <!--  Cursor Height  -->
-                            <local:SettingContainer x:Uid="Profile_CursorHeight"
-                                                    ClearSettingValue="{x:Bind State.Profile.ClearCursorHeight}"
-                                                    HasSettingValue="{x:Bind State.Profile.HasCursorHeight, Mode=OneWay}"
-                                                    SettingOverrideSource="{x:Bind State.Profile.CursorHeightOverrideSource, Mode=OneWay}"
-                                                    Visibility="{x:Bind IsVintageCursor, Mode=OneWay}">
-                                <Grid Style="{StaticResource CustomSliderControlGridStyle}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <Slider x:Name="CursorHeightSlider"
-                                            Grid.Column="0"
-                                            Maximum="100"
-                                            Minimum="1"
-                                            Value="{x:Bind State.Profile.CursorHeight, Mode=TwoWay}" />
-                                    <TextBlock Grid.Column="1"
-                                               Style="{StaticResource SliderValueLabelStyle}"
-                                               Text="{Binding ElementName=CursorHeightSlider, Path=Value, Mode=OneWay}" />
-                                </Grid>
                             </local:SettingContainer>
                         </StackPanel>
 
@@ -697,6 +652,9 @@
                                                    SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}" />
                             </local:SettingContainer>
                         </StackPanel>
+
+                        <local:Appearances Appearance="{x:Bind State.Profile.DefaultAppearance, Mode=OneWay}"
+                                           x:Name="DefaultAppearanceXaml"/>
                     </StackPanel>
                 </ScrollViewer>
             </PivotItem>

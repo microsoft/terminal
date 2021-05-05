@@ -46,9 +46,55 @@
     </UserControl.Resources>
 
     <StackPanel Style="{StaticResource PivotStackStyle}">
-        <!--  Grouping: Text  -->
-        <TextBlock x:Uid="Profile_TextHeader"
-                   Style="{StaticResource SubtitleTextBlockStyle}"/>
+
+        <StackPanel Style="{StaticResource PivotStackStyle}">
+            <!--  Retro Terminal Effect  -->
+            <local:SettingContainer x:Uid="Profile_RetroTerminalEffect"
+                                ClearSettingValue="{x:Bind Appearance.ClearRetroTerminalEffect}"
+                                HasSettingValue="{x:Bind Appearance.HasRetroTerminalEffect, Mode=OneWay}"
+                                SettingOverrideSource="{x:Bind Appearance.RetroTerminalEffectOverrideSource, Mode=OneWay}">
+                <ToggleSwitch IsOn="{x:Bind Appearance.RetroTerminalEffect, Mode=TwoWay}" />
+            </local:SettingContainer>
+        </StackPanel>
+
+        <!--  Grouping: Cursor  -->
+        <StackPanel Style="{StaticResource PivotStackStyle}">
+            <TextBlock x:Uid="Profile_CursorHeader"
+                       Style="{StaticResource SubtitleTextBlockStyle}" />
+
+            <!--  Cursor Shape  -->
+            <local:SettingContainer x:Uid="Profile_CursorShape"
+                                    Margin="0"
+                                    ClearSettingValue="{x:Bind Appearance.ClearCursorShape}"
+                                    HasSettingValue="{x:Bind Appearance.HasCursorShape, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.CursorShapeOverrideSource, Mode=OneWay}">
+                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                   ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
+                                   SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}" />
+            </local:SettingContainer>
+
+            <!--  Cursor Height  -->
+            <local:SettingContainer x:Uid="Profile_CursorHeight"
+                                    ClearSettingValue="{x:Bind Appearance.ClearCursorHeight}"
+                                    HasSettingValue="{x:Bind Appearance.HasCursorHeight, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.CursorHeightOverrideSource, Mode=OneWay}"
+                                    Visibility="{x:Bind IsVintageCursor, Mode=OneWay}">
+                <Grid Style="{StaticResource CustomSliderControlGridStyle}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Slider x:Name="CursorHeightSlider"
+                            Grid.Column="0"
+                            Maximum="100"
+                            Minimum="1"
+                            Value="{x:Bind Appearance.CursorHeight, Mode=TwoWay}" />
+                    <TextBlock Grid.Column="1"
+                               Style="{StaticResource SliderValueLabelStyle}"
+                               Text="{Binding ElementName=CursorHeightSlider, Path=Value, Mode=OneWay}" />
+                </Grid>
+            </local:SettingContainer>
+        </StackPanel>
     </StackPanel>
 
 </UserControl>

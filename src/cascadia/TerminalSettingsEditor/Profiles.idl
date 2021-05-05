@@ -3,6 +3,7 @@
 
 import "EnumEntry.idl";
 import "MainPage.idl";
+import "Appearances.idl";
 
 #include "ViewModelHelpers.idl.h"
 
@@ -31,6 +32,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean ShowAllFonts;
         Boolean UseCustomStartingDirectory { get; };
         Boolean BackgroundImageSettingsVisible { get; };
+        AppearanceViewModel DefaultAppearance { get; };
 
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Name);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, Guid);
@@ -56,7 +58,6 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.ConvergedAlignment, BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.TextAntialiasingMode, AntialiasingMode);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RetroTerminalEffect);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ForceFullRepaintRendering);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SoftwareRendering);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, ColorSchemeName);
@@ -67,8 +68,6 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Int32, HistorySize);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SnapOnInput);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AltGrAliasing);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(UInt32, CursorHeight);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.BellStyle, BellStyle);
     }
 
@@ -99,10 +98,6 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Profiles();
         ProfilePageNavigationState State { get; };
-
-        IInspectable CurrentCursorShape;
-        Boolean IsVintageCursor { get; };
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CursorShapeList { get; };
 
         IInspectable CurrentBackgroundImageStretchMode;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BackgroundImageStretchModeList { get; };
