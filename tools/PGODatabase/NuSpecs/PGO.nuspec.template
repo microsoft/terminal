@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>$id</id>
+    <version>$version</version>
+    <title>PGO Database</title>
+    <authors>Microsoft</authors>
+    <owners>Microsoft</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>PGO Database</description>
+    <releaseNotes>Initial release</releaseNotes>
+    <copyright>Copyright 2021</copyright>
+  </metadata>
+  <files>
+    <file target="build\PGO.targets" src="build\PGO.targets"/>
+    <file target="tools\x86\WindowsTerminal.pgd" src="tools\x86\WindowsTerminal.pgd"/>
+    <file target="tools\x64\WindowsTerminal.pgd" src="tools\x64\WindowsTerminal.pgd"/>
+    <file target="tools\x86\OpenConsole.pgd" src="tools\x86\OpenConsole.pgd"/>
+    <file target="tools\x64\OpenConsole.pgd" src="tools\x64\OpenConsole.pgd"/>
+  </files>
+</package>

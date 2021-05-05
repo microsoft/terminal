@@ -99,7 +99,7 @@ jobs:
 
   - template: helix-createprojfile-steps.yml
     parameters:
-      condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
+      condition: and(succeeded(),eq('${{ parameters.testSuite }}','DevTestSuite'))
       testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\TerminalApp.LocalTests.dll'
       outputProjFileName: 'RunTestsInHelix-TerminalAppLocalTests.proj'
       testSuite: '${{ parameters.testSuite }}'
@@ -107,7 +107,7 @@ jobs:
 
   - template: helix-createprojfile-steps.yml
     parameters:
-      condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
+      condition: and(succeeded(),eq('${{ parameters.testSuite }}','DevTestSuite'))
       testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\SettingsModel.LocalTests.dll'
       outputProjFileName: 'RunTestsInHelix-SettingsModelLocalTests.proj'
       testSuite: '${{ parameters.testSuite }}'
@@ -116,9 +116,17 @@ jobs:
 
   - template: helix-createprojfile-steps.yml
     parameters:
-      condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
+      condition: and(succeeded(),eq('${{ parameters.testSuite }}','DevTestSuite'))
       testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\Conhost.UIA.Tests.dll'
       outputProjFileName: 'RunTestsInHelix-HostTestsUIA.proj'
+      testSuite: '${{ parameters.testSuite }}'
+      taefQuery: ${{ parameters.taefQuery }}
+
+  - template: helix-createprojfile-steps.yml
+    parameters:
+      condition: and(succeeded(),eq('${{ parameters.testSuite }}','PgoInstrumentationSuite'))
+      testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\TerminalApp.PGO.Tests.dll'
+      outputProjFileName: 'RunTestsInHelix-TerminalAppPGOTests.proj'
       testSuite: '${{ parameters.testSuite }}'
       taefQuery: ${{ parameters.taefQuery }}
 
