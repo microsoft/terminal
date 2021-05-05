@@ -13,9 +13,12 @@ namespace Microsoft.Terminal.Control
     // but projectable.
     struct MouseButtonState
     {
-        Boolean IsLeftButtonDown;
-        Boolean IsMiddleButtonDown;
-        Boolean IsRightButtonDown;
+        // !! LOAD BEARING !! If you make these Booleans (like they should be),
+        // then the app will crash trying to toss one of these across the
+        // process boundary. I haven't the damndest idea why.
+        Int32 IsLeftButtonDown;
+        Int32 IsMiddleButtonDown;
+        Int32 IsRightButtonDown;
     };
 
     [default_interface] runtimeclass ControlCore : ICoreState

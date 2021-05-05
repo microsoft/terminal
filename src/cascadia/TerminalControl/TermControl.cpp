@@ -635,7 +635,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_AttachDxgiSwapChainToXaml(HANDLE swapChainHandle)
     {
         auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative2>();
-        nativePanel->SetSwapChainHandle(swapChainHandle);
+        LOG_IF_FAILED(nativePanel->SetSwapChainHandle(swapChainHandle));
     }
 
     bool TermControl::_InitializeTerminal()
@@ -664,15 +664,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // the first paint will be ignored!
         _core.RendererWarning({ get_weak(), &TermControl::_RendererWarning });
 
+        const bool inProc = _contentProc == nullptr;
+       
         const auto coreInitialized = _core.Initialize(panelWidth,
                                                       panelHeight,
                                                       panelScaleX);
-        if (!coreInitialized)
+        if (!coreInitialized && inProc)
         {
             return false;
         }
         _interactivity.Initialize();
-
+        
         // TODO! very good chance we leak this handle
         const HANDLE chainHandle = reinterpret_cast<HANDLE>(_contentProc ?
                                                                 _contentProc.RequestSwapChainHandle(GetCurrentProcessId()) :

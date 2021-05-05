@@ -34,7 +34,7 @@ namespace winrt::SampleApp::implementation
         Control::TermControl control{ *settings, conn };
 
         InProcContent().Children().Append(control);
-        CreateOutOfProcTerminal();
+        // CreateOutOfProcTerminal();
     }
 
     static wil::unique_process_information _createHostClassProcess(const winrt::guid& g)
@@ -78,6 +78,70 @@ namespace winrt::SampleApp::implementation
         return std::move(piOne);
     }
 
+    winrt::fire_and_forget MyPage::CreateClicked(const IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& eventArgs)
+    {
+        auto guidString = GuidInput().Text();
+
+        
+        // Capture calling context.
+        winrt::apartment_context ui_thread;
+        co_await winrt::resume_background();
+
+        auto canConvert = guidString.size() == 38 && guidString.front() == '{' && guidString.back() == '}';
+        bool attached = false;
+        winrt::guid contentGuid{ ::Microsoft::Console::Utils::CreateGuid() };
+
+        if (canConvert)
+        {
+            GUID result{};
+            if (SUCCEEDED(IIDFromString(guidString.c_str(), &result)))
+            {
+                contentGuid = result;
+                attached = true;
+            }
+        }
+
+        if (!attached)
+        {
+            // 2. Spawn a Server.exe, with the guid on the commandline
+            auto piContent{ std::move(_createHostClassProcess(contentGuid)) };
+        }
+
+        Control::ContentProcess content = create_instance<Control::ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
+
+        TerminalConnection::ITerminalConnection conn{ nullptr };
+        Control::IControlSettings settings{ nullptr };
+
+        settings = *winrt::make_self<implementation::MySettings>();
+
+        if (!attached)
+        {
+            conn = TerminalConnection::EchoConnection{};
+            // settings = *winrt::make_self<implementation::MySettings>();
+            content.Initialize(settings, conn);
+        }
+
+        // Switch back to the UI thread.
+        co_await ui_thread;
+
+        Control::TermControl control{ contentGuid, settings, conn };
+
+        OutOfProcContent().Children().Append(control);
+
+        if (!attached)
+        {
+            auto guidStr{ ::Microsoft::Console::Utils::GuidToString(contentGuid) };
+            GuidInput().Text(guidStr);
+        }
+    }
+
+    /*winrt::fire_and_forget MyPage::_attachToContent(winrt::guid contentGuid)
+    {
+        Control::ContentProcess content = create_instance<Control::ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
+
+    }*/
+
+
     winrt::fire_and_forget MyPage::CreateOutOfProcTerminal()
     {
         // 1. Generate a GUID.
@@ -95,20 +159,6 @@ namespace winrt::SampleApp::implementation
         TerminalConnection::EchoConnection conn{};
         auto settings = winrt::make_self<implementation::MySettings>();
         Control::IControlSettings s = *settings;
-        Core::ICoreAppearance testCoreAppearance = *settings;
-        Control::IControlAppearance testControlAppearance = *settings;
-        Core::ICoreSettings testCoreSettings = *settings;
-        testCoreAppearance;
-        testControlAppearance;
-        testCoreSettings;
-        auto foo = s.try_as<Core::ICoreAppearance>();
-
-        auto c1 = testCoreAppearance.DefaultBackground();
-        auto c2 = s.DefaultBackground();
-        auto c3 = foo.DefaultBackground();
-        c1;
-        c2;
-        c3;
 
         if (s)
         {
