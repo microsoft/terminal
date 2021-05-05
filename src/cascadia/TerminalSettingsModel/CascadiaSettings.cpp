@@ -250,6 +250,137 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::CreateNew
 }
 
 // Method Description:
+// - Duplicate a new profile based off another profile's settings
+// - This differs from Profile::Copy because it also copies over settings
+//   that were not defined in the json (for example, settings that were
+//   defined in one of the parents)
+// - This will not duplicate settings that were defined in profiles.defaults
+//   however, because we do not want the json blob generated from the new profile
+//   to contain those settings
+// Arguments:
+// - source: the Profile object we are duplicating (must not be null)
+// Return Value:
+// - a reference to the new profile
+winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::DuplicateProfile(Model::Profile source)
+{
+    THROW_HR_IF_NULL(E_INVALIDARG, source);
+
+    winrt::com_ptr<Profile> duplicated;
+    if (_userDefaultProfileSettings)
+    {
+        duplicated = _userDefaultProfileSettings->CreateChild();
+    }
+    else
+    {
+        duplicated = winrt::make_self<Profile>();
+    }
+    _allProfiles.Append(*duplicated);
+
+    if (!source.Hidden())
+    {
+        _activeProfiles.Append(*duplicated);
+    }
+
+    winrt::hstring newName{ fmt::format(L"{} ({})", source.Name(), RS_(L"CopySuffix")) };
+
+    // Check if this name already exists and if so, append a number
+    for (uint32_t candidateIndex = 0; candidateIndex < _allProfiles.Size() + 1; ++candidateIndex)
+    {
+        if (std::none_of(begin(_allProfiles), end(_allProfiles), [&](auto&& profile) { return profile.Name() == newName; }))
+        {
+            break;
+        }
+        // There is a theoretical unsigned integer wraparound, which is OK
+        newName = fmt::format(L"{} ({} {})", source.Name(), RS_(L"CopySuffix"), candidateIndex + 2);
+    }
+    duplicated->Name(winrt::hstring(newName));
+
+#define DUPLICATE_SETTING_MACRO(settingName)                                                                                                   \
+    if (source.Has##settingName() ||                                                                                                           \
+        (source.##settingName##OverrideSource() != nullptr && source.##settingName##OverrideSource().Origin() != OriginTag::ProfilesDefaults)) \
+    {                                                                                                                                          \
+        duplicated->##settingName(source.##settingName());                                                                                     \
+    }
+
+#define DUPLICATE_APPEARANCE_SETTING_MACRO(settingName)                                                                                                                                                \
+    if (source.DefaultAppearance().Has##settingName() ||                                                                                                                                               \
+        (source.DefaultAppearance().##settingName##OverrideSource() != nullptr && source.DefaultAppearance().##settingName##OverrideSource().SourceProfile().Origin() != OriginTag::ProfilesDefaults)) \
+    {                                                                                                                                                                                                  \
+        duplicated->DefaultAppearance().##settingName(source.DefaultAppearance().##settingName());                                                                                                     \
+    }
+
+    DUPLICATE_SETTING_MACRO(Hidden);
+    DUPLICATE_SETTING_MACRO(Icon);
+    DUPLICATE_SETTING_MACRO(CloseOnExit);
+    DUPLICATE_SETTING_MACRO(TabTitle);
+    DUPLICATE_SETTING_MACRO(TabColor);
+    DUPLICATE_SETTING_MACRO(SuppressApplicationTitle);
+    DUPLICATE_SETTING_MACRO(UseAcrylic);
+    DUPLICATE_SETTING_MACRO(AcrylicOpacity);
+    DUPLICATE_SETTING_MACRO(ScrollState);
+    DUPLICATE_SETTING_MACRO(FontFace);
+    DUPLICATE_SETTING_MACRO(FontSize);
+    DUPLICATE_SETTING_MACRO(FontWeight);
+    DUPLICATE_SETTING_MACRO(Padding);
+    DUPLICATE_SETTING_MACRO(Commandline);
+    DUPLICATE_SETTING_MACRO(StartingDirectory);
+    DUPLICATE_SETTING_MACRO(AntialiasingMode);
+    DUPLICATE_SETTING_MACRO(ForceFullRepaintRendering);
+    DUPLICATE_SETTING_MACRO(SoftwareRendering);
+    DUPLICATE_SETTING_MACRO(HistorySize);
+    DUPLICATE_SETTING_MACRO(SnapOnInput);
+    DUPLICATE_SETTING_MACRO(AltGrAliasing);
+    DUPLICATE_SETTING_MACRO(BellStyle);
+
+    DUPLICATE_APPEARANCE_SETTING_MACRO(ColorSchemeName);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(Foreground);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(Background);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(SelectionBackground);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(CursorColor);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(PixelShaderPath);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(BackgroundImagePath);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(BackgroundImageOpacity);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(BackgroundImageStretchMode);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(BackgroundImageAlignment);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(RetroTerminalEffect);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(CursorShape);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(CursorHeight);
+
+    // UnfocusedAppearance is treated as a single setting,
+    // but requires a little more legwork to duplicate properly
+    if (source.HasUnfocusedAppearance() ||
+        (source.UnfocusedAppearanceOverrideSource() != nullptr && source.UnfocusedAppearanceOverrideSource().Origin() != OriginTag::ProfilesDefaults))
+    {
+        // First, get a com_ptr to the source's unfocused appearance
+        // We need this to be able to call CopyAppearance (it is alright to simply call CopyAppearance here
+        // instead of needing a separate function like DuplicateAppearance since UnfocusedAppearance is treated
+        // as a single setting)
+        winrt::com_ptr<AppearanceConfig> sourceUnfocusedAppearanceImpl;
+        sourceUnfocusedAppearanceImpl.copy_from(winrt::get_self<AppearanceConfig>(source.UnfocusedAppearance()));
+
+        // Get a weak ref to the duplicate profile so we can provide a source profile to the new UnfocusedAppearance
+        // we are about to create
+        const auto weakRefToDuplicated = weak_ref<Model::Profile>(*duplicated);
+        auto duplicatedUnfocusedAppearanceImpl = AppearanceConfig::CopyAppearance(sourceUnfocusedAppearanceImpl, weakRefToDuplicated);
+
+        // Make sure to add the default appearance of the duplicated profile as a parent to the duplicate's UnfocusedAppearance
+        winrt::com_ptr<AppearanceConfig> duplicatedDefaultAppearanceImpl;
+        duplicatedDefaultAppearanceImpl.copy_from(winrt::get_self<AppearanceConfig>(duplicated->DefaultAppearance()));
+        duplicatedUnfocusedAppearanceImpl->InsertParent(duplicatedDefaultAppearanceImpl);
+
+        // Finally, set the duplicate's UnfocusedAppearance
+        duplicated->UnfocusedAppearance(*duplicatedUnfocusedAppearanceImpl);
+    }
+
+    if (source.HasConnectionType())
+    {
+        duplicated->ConnectionType(source.ConnectionType());
+    }
+
+    return *duplicated;
+}
+
+// Method Description:
 // - Gets our list of warnings we found during loading. These are things that we
 //   knew were bad when we called `_ValidateSettings` last.
 // Return Value:
