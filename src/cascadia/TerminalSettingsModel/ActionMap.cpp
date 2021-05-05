@@ -336,7 +336,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         else
         {
-            // This is an action that we already have a mutable "masking" record for.
+            // We're adding an action that already exists in our layer.
             // Record it so that we update it with any new information.
             oldCmd = actionPair->second;
         }
@@ -370,7 +370,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         else
         {
-            // We're adding an action that already existed on a different layer.
+            // This is an action that we already have a mutable "masking" record for.
             // Record it so that we update it with any new information.
             maskingCmd = maskingActionPair->second;
         }
