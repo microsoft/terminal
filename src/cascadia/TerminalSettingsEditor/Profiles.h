@@ -103,6 +103,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::Profile _profile;
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
+        Editor::AppearanceViewModel _defaultAppearanceViewModel;
         bool _ShowAllFonts;
 
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;

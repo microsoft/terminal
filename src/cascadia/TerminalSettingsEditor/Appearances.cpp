@@ -109,18 +109,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     xaml_typename<Editor::Appearances>(),
                     PropertyMetadata{ nullptr });
         }
-    }
 
-    void Appearances::NavigatedTo()
-    {
-        //_ViewModelChangedRevoker = Appearance().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
-        //    const auto settingName{ args.PropertyName() };
-        //    if (settingName == L"CursorShape")
-        //    {
-        //        _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
-        //        _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
-        //    }
-        //});
+        if (Appearance())
+        {
+            _ViewModelChangedRevoker = Appearance().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
+                const auto settingName{ args.PropertyName() };
+                if (settingName == L"CursorShape")
+                {
+                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
+                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
+                }
+            });
+        }
     }
 
     bool Appearances::IsVintageCursor() const

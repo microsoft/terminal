@@ -87,7 +87,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     ProfileViewModel::ProfileViewModel(const Model::Profile& profile) :
         _profile{ profile },
-        _ShowAllFonts{ false }
+        _ShowAllFonts{ false },
+        _defaultAppearanceViewModel { winrt::make<implementation::AppearanceViewModel>(profile.DefaultAppearance().try_as<AppearanceConfig>()) }
     {
         // Add a property changed handler to our own property changed event.
         // This propagates changes from the settings model to anybody listening to our
@@ -343,7 +344,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Editor::AppearanceViewModel ProfileViewModel::DefaultAppearance()
     {
-        return winrt::make<implementation::AppearanceViewModel>(_profile.DefaultAppearance().try_as<AppearanceConfig>());
+        return _defaultAppearanceViewModel;
     }
 
     bool ProfileViewModel::UseDesktopBGImage()
@@ -599,8 +600,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // Navigate to the pivot in the provided navigation state
         ProfilesPivot().SelectedIndex(static_cast<int>(_State.LastActivePivot()));
-
-        DefaultAppearanceXaml().NavigatedTo();
     }
 
     void Profiles::OnNavigatedFrom(const NavigationEventArgs& /*e*/)

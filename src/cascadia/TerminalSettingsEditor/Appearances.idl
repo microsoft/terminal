@@ -24,7 +24,6 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Appearances();
         AppearanceViewModel Appearance;
-        void NavigatedTo();
         static Windows.UI.Xaml.DependencyProperty AppearanceProperty { get; };
 
         IInspectable CurrentCursorShape;

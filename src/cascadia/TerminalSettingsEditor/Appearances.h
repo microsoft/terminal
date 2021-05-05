@@ -30,8 +30,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         Appearances();
 
-        void NavigatedTo();
-
         // CursorShape visibility logic
         bool IsVintageCursor() const;
 
