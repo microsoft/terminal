@@ -83,7 +83,7 @@ public:
 #endif
 
 #ifdef WINRT_Microsoft_Terminal_Core_H
-    constexpr ControlKeyStates(const winrt::Microsoft::Terminal::Core::ControlKeyStates& projKeyStates) :
+    constexpr ControlKeyStates(winrt::Microsoft::Terminal::Core::ControlKeyStates projKeyStates) :
         ControlKeyStates(projKeyStates.Value)
     {
     }

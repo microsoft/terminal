@@ -43,6 +43,16 @@ namespace Microsoft.Terminal.Core
         Double Bottom;
     };
 
+    // This is a mirror of
+    // ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState,
+    // but projectable.
+    struct MouseButtonState
+    {
+        Int32 IsLeftButtonDown;
+        Int32 IsMiddleButtonDown;
+        Int32 IsRightButtonDown;
+    };
+
     declare
     {
         // Forward declare this parameterized specialization so that it lives

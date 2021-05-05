@@ -28,14 +28,14 @@ namespace Microsoft.Terminal.Control
         void RequestPasteTextFromClipboard();
         void SetEndSelectionPoint(Microsoft.Terminal.Core.Point point);
 
-        void PointerPressed(MouseButtonState buttonState,
+        void PointerPressed(Microsoft.Terminal.Core.MouseButtonState buttonState,
                             UInt32 pointerUpdateKind,
                             UInt64 timestamp,
                             Microsoft.Terminal.Core.ControlKeyStates modifiers,
                             Microsoft.Terminal.Core.Point pixelPosition);
         void TouchPressed(Microsoft.Terminal.Core.Point contactPoint);
 
-        void PointerMoved(MouseButtonState buttonState,
+        void PointerMoved(Microsoft.Terminal.Core.MouseButtonState buttonState,
                           UInt32 pointerUpdateKind,
                           Microsoft.Terminal.Core.ControlKeyStates modifiers,
                           Boolean focused,
@@ -43,7 +43,7 @@ namespace Microsoft.Terminal.Control
         void TouchMoved(Microsoft.Terminal.Core.Point newTouchPoint,
                         Boolean focused);
 
-        void PointerReleased(MouseButtonState buttonState,
+        void PointerReleased(Microsoft.Terminal.Core.MouseButtonState buttonState,
                              UInt32 pointerUpdateKind,
                              Microsoft.Terminal.Core.ControlKeyStates modifiers,
                              Microsoft.Terminal.Core.Point pixelPosition);
@@ -52,7 +52,7 @@ namespace Microsoft.Terminal.Control
         Boolean MouseWheel(Microsoft.Terminal.Core.ControlKeyStates modifiers,
                            Int32 delta,
                            Microsoft.Terminal.Core.Point pixelPosition,
-                           MouseButtonState state);
+                           Microsoft.Terminal.Core.MouseButtonState state);
 
         void UpdateScrollbar(Double newValue);
 

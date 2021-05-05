@@ -49,14 +49,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::rectangle GetPadding() const;
 
 #pragma region Input Methods
-        void PointerPressed(Control::MouseButtonState buttonState,
+        void PointerPressed(Core::MouseButtonState buttonState,
                             const unsigned int pointerUpdateKind,
                             const uint64_t timestamp,
                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                             const til::point pixelPosition);
         void TouchPressed(const til::point contactPoint);
 
-        void PointerMoved(Control::MouseButtonState buttonState,
+        void PointerMoved(Core::MouseButtonState buttonState,
                           const unsigned int pointerUpdateKind,
                           const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                           const bool focused,
@@ -64,7 +64,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void TouchMoved(const til::point newTouchPoint,
                         const bool focused);
 
-        void PointerReleased(Control::MouseButtonState buttonState,
+        void PointerReleased(Core::MouseButtonState buttonState,
                              const unsigned int pointerUpdateKind,
                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                              const til::point pixelPosition);
@@ -73,7 +73,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool MouseWheel(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                         const int32_t delta,
                         const til::point pixelPosition,
-                        const Control::MouseButtonState state);
+                        const Core::MouseButtonState state);
 
         void UpdateScrollbar(const double newValue);
 

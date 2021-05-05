@@ -1239,9 +1239,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                    const bool rightButtonDown)
     {
         const auto modifiers = _GetPressedModifierKeys();
-        Control::MouseButtonState state{ leftButtonDown,
-                                         midButtonDown,
-                                         rightButtonDown };
+        Core::MouseButtonState state{ leftButtonDown,
+                                      midButtonDown,
+                                      rightButtonDown };
         return _interactivity.MouseWheel(modifiers, delta, _toTerminalOrigin(location), state);
     }
 
@@ -2455,11 +2455,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _RaiseNoticeHandlers(*this, eventArgs);
     }
 
-    Control::MouseButtonState TermControl::GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point)
+    Core::MouseButtonState TermControl::GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point)
     {
-        return Control::MouseButtonState{ point.Properties().IsLeftButtonPressed(),
-                                          point.Properties().IsMiddleButtonPressed(),
-                                          point.Properties().IsRightButtonPressed() };
+        return Core::MouseButtonState{ point.Properties().IsLeftButtonPressed(),
+                                       point.Properties().IsMiddleButtonPressed(),
+                                       point.Properties().IsRightButtonPressed() };
     }
 
     unsigned int TermControl::GetPointerUpdateKind(const winrt::Windows::UI::Input::PointerPoint point)
