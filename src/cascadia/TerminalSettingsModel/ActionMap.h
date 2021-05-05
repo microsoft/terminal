@@ -28,9 +28,14 @@ namespace SettingsModelLocalTests
     class TerminalSettingsTests;
 }
 
+//inline bool operator==(const winrt::Microsoft::Terminal::Control::KeyChord& lhs, const winrt::Microsoft::Terminal::Control::KeyChord& rhs)
+//{
+//    return lhs.Modifiers() == rhs.Modifiers() && lhs.Vkey() == rhs.Vkey();
+//}
+
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    typedef size_t InternalActionID;
+    using InternalActionID = size_t;
 
     struct KeyChordHash
     {
@@ -45,27 +50,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool operator()(const Control::KeyChord& lhs, const Control::KeyChord& rhs) const
         {
             return lhs.Modifiers() == rhs.Modifiers() && lhs.Vkey() == rhs.Vkey();
-        }
-    };
-
-    struct ActionHash
-    {
-        InternalActionID operator()(const Model::ActionAndArgs& actionAndArgs) const
-        {
-            std::hash<Model::ShortcutAction> actionHash;
-            std::size_t hashedAction{ actionHash(actionAndArgs.Action()) };
-
-            std::size_t hashedArgs;
-            if (const auto& args{ actionAndArgs.Args() })
-            {
-                hashedArgs = gsl::narrow_cast<size_t>(args.Hash());
-            }
-            else
-            {
-                std::hash<IActionArgs> argsHash;
-                hashedArgs = argsHash(nullptr);
-            }
-            return hashedAction ^ hashedArgs;
         }
     };
 
@@ -107,9 +91,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::unordered_map<Control::KeyChord, InternalActionID, KeyChordHash, KeyChordEquality> _KeyMap;
         std::unordered_map<InternalActionID, Model::Command> _ActionMap;
 
-        // These are actions that were consolidated across multiple layers.
-        // They don't need to be serialized.
-        std::unordered_map<InternalActionID, Model::Command> _ConsolidatedActions;
+        // Masked Actions:
+        // These are actions that were introduced in an ancestor,
+        //   but were unbound in the current layer.
+        // _ActionMap shows a Command with keys that were added in this layer,
+        //   whereas _MaskedActions provides a view that encompasses all of
+        //   the valid associated key chords.
+        // Maintaining this map allows us to return a valid Command
+        //   in GetKeyBindingForAction.
+        // Additionally, these commands to not need to be serialized,
+        //   whereas those in _ActionMap do. These actions provide more data
+        //   than is necessary to be serialized.
+        std::unordered_map<InternalActionID, Model::Command> _MaskedActions;
 
         friend class SettingsModelLocalTests::KeyBindingsTests;
         friend class SettingsModelLocalTests::DeserializationTests;
