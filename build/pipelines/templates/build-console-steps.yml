@@ -68,6 +68,9 @@ steps:
 
 - task: PowerShell@2
   displayName: 'Check MSIX for common regressions'
+  # PGO runtime needs its own CRT and it's in the package for convenience.
+  # That will make this script mad so skip since we're not shipping the PGO Instrumentation one anyway.
+  condition: ne(variables['PGOBuildMode'], 'Instrument')
   inputs:
     targetType: inline
     script: |
