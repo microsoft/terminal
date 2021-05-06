@@ -271,6 +271,8 @@ namespace Microsoft::Console::Render
         } _pixelShaderSettings;
 
         [[nodiscard]] HRESULT _CreateDeviceResources(const bool createSwapChain) noexcept;
+        [[nodiscard]] HRESULT _CreateSurfaceHandle() noexcept;
+
         bool _HasTerminalEffects() const noexcept;
         std::string _LoadPixelShaderFile() const;
         HRESULT _SetupTerminalEffects();
