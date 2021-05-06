@@ -1121,6 +1121,7 @@ void IslandWindow::_enterQuakeMode()
     const til::size ncSize{ GetTotalNonClientExclusiveSize(dpix) };
     const til::size availableSpace = desktopDimensions + ncSize;
 
+
     const til::point origin{
         ::base::ClampSub<long>(nearestMonitorInfo.rcWork.left, (ncSize.width() / 2)),
         (nearestMonitorInfo.rcWork.top)
