@@ -81,13 +81,13 @@ namespace Microsoft::Console::Render
     {
         size_t operator()(const DxFontInfo& fontInfo) const noexcept
         {
-            size_t h1 = std::hash<std::wstring_view>{}(fontInfo.GetFamilyName());
-            size_t h2 = std::hash<DWRITE_FONT_WEIGHT>{}(fontInfo.GetWeight());
-            size_t h3 = std::hash<DWRITE_FONT_STYLE>{}(fontInfo.GetStyle());
-            size_t h4 = std::hash<DWRITE_FONT_STRETCH>{}(fontInfo.GetStretch());
-            size_t h5 = std::hash<bool>{}(fontInfo.GetFallback());
+            const size_t h1 = std::hash<std::wstring_view>{}(fontInfo.GetFamilyName());
+            const size_t h2 = std::hash<DWRITE_FONT_WEIGHT>{}(fontInfo.GetWeight());
+            const size_t h3 = std::hash<DWRITE_FONT_STYLE>{}(fontInfo.GetStyle());
+            const size_t h4 = std::hash<DWRITE_FONT_STRETCH>{}(fontInfo.GetStretch());
+            const size_t h5 = std::hash<bool>{}(fontInfo.GetFallback());
 
-            auto combine = [](size_t seed, size_t v) {
+            const auto combine = [](size_t seed, size_t v) {
                 seed ^= v + 0x9e3779b9 + (seed << 6) + (seed >> 2);
                 return seed;
             };

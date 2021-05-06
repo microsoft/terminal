@@ -123,7 +123,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     fontInfo.SetStyle(style);
     fontInfo.SetStretch(stretch);
 
-    auto textFormatIt = _textFormatMap.find(fontInfo);
+    const auto textFormatIt = _textFormatMap.find(fontInfo);
     if (textFormatIt == _textFormatMap.end())
     {
         // Create the font with the fractional pixel height size.
@@ -155,7 +155,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     fontInfo.SetStyle(style);
     fontInfo.SetStretch(stretch);
 
-    auto fontFaceIt = _fontFaceMap.find(fontInfo);
+    const auto fontFaceIt = _fontFaceMap.find(fontInfo);
     if (fontFaceIt == _fontFaceMap.end())
     {
         std::wstring fontLocaleName = UserLocaleName();

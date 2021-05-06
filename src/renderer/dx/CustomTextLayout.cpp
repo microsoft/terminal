@@ -129,13 +129,14 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::Draw(_In_opt_ void* clientDrawingContext,
                                                                _In_ IDWriteTextRenderer* renderer,
                                                                FLOAT originX,
-                                                               FLOAT originY)
+                                                               FLOAT originY) noexcept
+try
 {
     const auto drawingContext = static_cast<const DrawingContext*>(clientDrawingContext);
 
-    DWRITE_FONT_WEIGHT weight = _fontRenderData->DefaultFontWeight();
+    const DWRITE_FONT_WEIGHT weight = _fontRenderData->DefaultFontWeight();
     DWRITE_FONT_STYLE style = _fontRenderData->DefaultFontStyle();
-    DWRITE_FONT_STRETCH stretch = _fontRenderData->DefaultFontStretch();
+    const DWRITE_FONT_STRETCH stretch = _fontRenderData->DefaultFontStretch();
 
     if (drawingContext->useItalicFont)
     {
@@ -157,6 +158,7 @@ CATCH_RETURN()
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Uses the internal text information and the analyzers/font information from construction
