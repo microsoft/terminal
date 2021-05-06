@@ -362,6 +362,8 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         const auto newQuickEditMode{ WI_IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE) };
 
         // Mouse input should be received when mouse mode is on and quick edit mode is off
+        // (for more information regarding the quirks of mouse mode and why/how it relates
+        //  to quick edit mode, see GH#9970)
         const auto oldMouseMode{ !oldQuickEditMode && WI_IsFlagSet(context.InputMode, ENABLE_MOUSE_INPUT) };
         const auto newMouseMode{ !newQuickEditMode && WI_IsFlagSet(mode, ENABLE_MOUSE_INPUT) };
 
