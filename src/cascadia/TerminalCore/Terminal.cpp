@@ -152,9 +152,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
             // For now, we only add the URI regex pattern
             std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
             _hyperlinkPatternId = _buffer->AddPatternRecognizer(linkPattern);
-            //UpdatePatterns();
-            // we'll need an updatePatternsUnderLock or something if we want to update patterns here
-            // the current update patterns takes the lock and it causes a deadlock
+            UpdatePatternsUnderLock();
         }
         else
         {
@@ -1216,9 +1214,9 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
 // - Update our internal knowledge about where regex patterns are on the screen
 // - This is called by TerminalControl (through a throttled function) when the visible
 //   region changes (for example by text entering the buffer or scrolling)
-void Terminal::UpdatePatterns() noexcept
+// - INVARIANT: This function can only be called if the caller has the writing lock on the terminal
+void Terminal::UpdatePatternsUnderLock() noexcept
 {
-    auto lock = LockForWriting();
     auto oldTree = _patternIntervalTree;
     _patternIntervalTree = _buffer->GetPatterns(_VisibleStartIndex(), _VisibleEndIndex());
     _InvalidatePatternTree(oldTree);

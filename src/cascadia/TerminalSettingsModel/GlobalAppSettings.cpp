@@ -47,13 +47,13 @@ static constexpr std::string_view StartupActionsKey{ "startupActions" };
 static constexpr std::string_view FocusFollowMouseKey{ "focusFollowMouse" };
 static constexpr std::string_view WindowingBehaviorKey{ "windowingBehavior" };
 static constexpr std::string_view TrimBlockSelectionKey{ "trimBlockSelection" };
-static constexpr std::string_view DetectHyperlinksKey{ "detectHyperlinks" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
 static constexpr std::string_view ForceFullRepaintRenderingKey{ "experimental.rendering.forceFullRepaint" };
 static constexpr std::string_view SoftwareRenderingKey{ "experimental.rendering.software" };
 static constexpr std::string_view ForceVTInputKey{ "experimental.input.forceVT" };
+static constexpr std::string_view DetectHyperlinksKey{ "experimental.detectHyperlinks" };
 
 #ifdef _DEBUG
 static constexpr bool debugFeaturesDefault{ true };
