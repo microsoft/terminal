@@ -2472,9 +2472,22 @@ void TextBuffer::CopyHyperlinkMaps(const TextBuffer& other)
 // - An ID that the caller should associate with the given pattern
 const size_t TextBuffer::AddPatternRecognizer(const std::wstring_view regexString)
 {
+    // If the pattern already exists in our map, return the id associated with it
+    for (auto idPatternPair : _idsAndPatterns)
+    {
+        if (idPatternPair.second == regexString)
+        {
+            return idPatternPair.first;
+        }
+    }
     ++_currentPatternId;
     _idsAndPatterns.emplace(std::make_pair(_currentPatternId, regexString));
     return _currentPatternId;
+}
+
+void TextBuffer::ClearPatternRecognizers() noexcept
+{
+    _idsAndPatterns.clear();
 }
 
 // Method Description:

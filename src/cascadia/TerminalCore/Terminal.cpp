@@ -100,14 +100,6 @@ void Terminal::CreateFromSettings(ICoreSettings settings,
     Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderTarget);
 
     UpdateSettings(settings);
-
-    if (settings.DetectHyperlinks())
-    {
-        // Add regex pattern recognizers to the buffer
-        // For now, we only add the URI regex pattern
-        std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
-        _hyperlinkPatternId = _buffer->AddPatternRecognizer(linkPattern);
-    }
 }
 
 // Method Description:
@@ -152,6 +144,21 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     // size is smaller than where the mutable viewport currently is, we'll want
     // to make sure to rotate the buffer contents upwards, so the mutable viewport
     // remains at the bottom of the buffer.
+    if (_buffer)
+    {
+        if (settings.DetectHyperlinks())
+        {
+            // Add regex pattern recognizers to the buffer
+            // For now, we only add the URI regex pattern
+            _hyperlinkPatternId = _buffer->AddPatternRecognizer(linkPattern);
+            UpdatePatternsUnderLock();
+        }
+        else
+        {
+            _buffer->ClearPatternRecognizers();
+            ClearPatternTree();
+        }
+    }
 }
 
 // Method Description:
@@ -1206,9 +1213,9 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
 // - Update our internal knowledge about where regex patterns are on the screen
 // - This is called by TerminalControl (through a throttled function) when the visible
 //   region changes (for example by text entering the buffer or scrolling)
-void Terminal::UpdatePatterns() noexcept
+// - INVARIANT: this function can only be called if the caller has the writing lock on the terminal
+void Terminal::UpdatePatternsUnderLock() noexcept
 {
-    auto lock = LockForWriting();
     auto oldTree = _patternIntervalTree;
     _patternIntervalTree = _buffer->GetPatterns(_VisibleStartIndex(), _VisibleEndIndex());
     _InvalidatePatternTree(oldTree);
