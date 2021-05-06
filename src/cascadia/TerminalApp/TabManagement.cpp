@@ -215,7 +215,15 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        // TODO! Combine withthe below.
         newTabImpl->TabRenamerDeactivated([weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+            if (const auto page{ weakThis.get() })
+            {
+                page->_FocusCurrentTab(false);
+            }
+        });
+
+        newTabImpl->RequestFocusActiveControl([weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
             if (const auto page{ weakThis.get() })
             {
                 page->_FocusCurrentTab(false);

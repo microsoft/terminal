@@ -884,6 +884,12 @@ namespace winrt::TerminalApp::implementation
         newTabFlyout.Items().Append(renameTabMenuItem);
         newTabFlyout.Items().Append(duplicateTabMenuItem);
         newTabFlyout.Items().Append(menuSeparator);
+        newTabFlyout.Closed([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_RequestFocusActiveControlHandlers(*tab, nullptr);
+            }
+        });
         _AppendCloseMenuItems(newTabFlyout);
         TabViewItem().ContextFlyout(newTabFlyout);
     }
