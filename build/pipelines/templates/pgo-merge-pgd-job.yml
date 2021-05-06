@@ -53,13 +53,13 @@ jobs:
     displayName: 'Merge Microsoft.Terminal.Remoting pgc files into pgd'
     workingDirectory: $(pgoArtifactsPath)
 
-   - script: |
+  - script: |
       cd $(buildPlatform)
       "%VCToolsInstallDir%\bin\hostx64\x64\pgomgr.exe" /merge Microsoft.Terminal.Settings.Editor*.pgc Microsoft.Terminal.Settings.Editor.pgd
     displayName: 'Merge Microsoft.Terminal.Settings.Editor pgc files into pgd'
     workingDirectory: $(pgoArtifactsPath)
 
-   - script: |
+  - script: |
       cd $(buildPlatform)
       "%VCToolsInstallDir%\bin\hostx64\x64\pgomgr.exe" /merge Microsoft.Terminal.Settings.Model*.pgc Microsoft.Terminal.Settings.Model.pgd
     displayName: 'Merge Microsoft.Terminal.Settings.Model pgc files into pgd'
