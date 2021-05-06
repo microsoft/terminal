@@ -46,9 +46,17 @@ namespace winrt::TerminalApp::implementation
         auto weakThis{ get_weak() };
 
         // Build the menu
-        Controls::MenuFlyout newTabFlyout;
-        _AppendCloseMenuItems(newTabFlyout);
-        TabViewItem().ContextFlyout(newTabFlyout);
+        Controls::MenuFlyout contextMenuFlyout;
+        // GH#5750 - When the context menu is dismissed with ESC, toss the focus
+        // back to our control.
+        contextMenuFlyout.Closed([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_RequestFocusActiveControlHandlers(*tab, nullptr);
+            }
+        });
+        _AppendCloseMenuItems(contextMenuFlyout);
+        TabViewItem().ContextFlyout(contextMenuFlyout);
     }
 
     // Method Description:

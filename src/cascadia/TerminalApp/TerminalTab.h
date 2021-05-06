@@ -91,7 +91,6 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(ColorCleared, _colorCleared, winrt::delegate<>);
         DECLARE_EVENT(TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
         DECLARE_EVENT(DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
-        FORWARDED_TYPED_EVENT(TabRenamerDeactivated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, (&_headerControl), RenameEnded);
         TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
         TYPED_EVENT(RequestFocusActiveControl, IInspectable, IInspectable);
 
