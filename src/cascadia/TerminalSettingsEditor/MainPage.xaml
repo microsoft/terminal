@@ -43,7 +43,10 @@
 
         <muxc:NavigationView.Header>
             <StackPanel Orientation="Horizontal">
-                <!--  This height is taken from NavigationViewTitleHeaderContentControlTextStyle's FontSize. Our icons may or may not be font icons, so we want to make sure to clamp them to this size.  -->
+                <!--
+                    This height is taken from NavigationViewTitleHeaderContentControlTextStyle's
+                    FontSize. Our icons may or may not be font icons, so we want to make sure to clamp them to this size.
+                -->
                 <IconSourceElement Height="28"
                                    Margin="{ThemeResource NavigationViewHeaderMargin}"
                                    IconSource="{Binding ElementName=SettingsNav, Path=SelectedItem.Icon.IconSource, Mode=OneWay}" />
