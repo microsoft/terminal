@@ -231,13 +231,11 @@ void InputBuffer::PassThroughWin32MouseRequest(bool enable)
     {
         if (enable)
         {
-            LOG_IF_FAILED(_pTtyConnection->WriteTerminalW(L"\x1b[?1003h"));
-            LOG_IF_FAILED(_pTtyConnection->WriteTerminalW(L"\x1b[?1006h"));
+            LOG_IF_FAILED(_pTtyConnection->WriteTerminalW(L"\x1b[?1003;1006h"));
         }
         else
         {
-            LOG_IF_FAILED(_pTtyConnection->WriteTerminalW(L"\x1b[?1003l"));
-            LOG_IF_FAILED(_pTtyConnection->WriteTerminalW(L"\x1b[?1006l"));
+            LOG_IF_FAILED(_pTtyConnection->WriteTerminalW(L"\x1b[?1003;1006l"));
         }
     }
 }
