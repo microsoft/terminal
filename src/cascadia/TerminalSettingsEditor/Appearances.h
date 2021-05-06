@@ -17,12 +17,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         AppearanceViewModel(const Model::AppearanceConfig& appearance);
         bool CanDeleteAppearance() const;
+
+        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes() { return _Schemes; }
+        void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) { _Schemes = val; }
+
         OBSERVABLE_PROJECTED_SETTING(_appearance, RetroTerminalEffect);
         OBSERVABLE_PROJECTED_SETTING(_appearance, CursorShape);
         OBSERVABLE_PROJECTED_SETTING(_appearance, CursorHeight);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, ColorSchemeName);
 
     private:
         Model::AppearanceConfig _appearance;
+        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
     };
 
     struct Appearances : AppearancesT<Appearances>
@@ -33,7 +39,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // CursorShape visibility logic
         bool IsVintageCursor() const;
 
+        Model::ColorScheme CurrentColorScheme();
+        void CurrentColorScheme(const Model::ColorScheme& val);
+
         GETSET_BINDABLE_ENUM_SETTING(CursorShape, Microsoft::Terminal::Core::CursorStyle, Appearance, CursorShape);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         DEPENDENCY_PROPERTY(Editor::AppearanceViewModel, Appearance);

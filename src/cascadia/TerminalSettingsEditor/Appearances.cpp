@@ -94,7 +94,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
 
-    Appearances::Appearances()
+    Appearances::Appearances() :
+        _ColorSchemeList{ single_threaded_observable_vector<ColorScheme>() }
     {
         InitializeComponent();
 
@@ -112,6 +113,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         if (Appearance())
         {
+            const auto& colorSchemeMap{ Appearance().Schemes() };
+            for (const auto& pair : colorSchemeMap)
+            {
+                _ColorSchemeList.Append(pair.Value());
+            }
+
             _ViewModelChangedRevoker = Appearance().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
                 const auto settingName{ args.PropertyName() };
                 if (settingName == L"CursorShape")
@@ -119,8 +126,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
                 }
+                else if (settingName == L"ColorSchemeName")
+                {
+                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
+                }
             });
         }
+    }
+
+    ColorScheme Appearances::CurrentColorScheme()
+    {
+        const auto schemeName{ Appearance().ColorSchemeName() };
+        if (const auto scheme{ Appearance().Schemes().TryLookup(schemeName) })
+        {
+            return scheme;
+        }
+        else
+        {
+            // This Profile points to a color scheme that was renamed or deleted.
+            // Fallback to Campbell.
+            return Appearance().Schemes().TryLookup(L"Campbell");
+        }
+    }
+
+    void Appearances::CurrentColorScheme(const ColorScheme& val)
+    {
+        Appearance().ColorSchemeName(val.Name());
     }
 
     bool Appearances::IsVintageCursor() const

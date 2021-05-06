@@ -15,6 +15,8 @@ namespace Microsoft.Terminal.Settings.Editor
     runtimeclass AppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         Boolean CanDeleteAppearance { get; };
+        Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes;
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, ColorSchemeName);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Boolean, RetroTerminalEffect);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(UInt32, CursorHeight);
@@ -29,5 +31,8 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable CurrentCursorShape;
         Boolean IsVintageCursor { get; };
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CursorShapeList { get; };
+
+        Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };
     }
 }

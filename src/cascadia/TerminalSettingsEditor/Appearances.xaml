@@ -55,6 +55,23 @@
                                 SettingOverrideSource="{x:Bind Appearance.RetroTerminalEffectOverrideSource, Mode=OneWay}">
                 <ToggleSwitch IsOn="{x:Bind Appearance.RetroTerminalEffect, Mode=TwoWay}" />
             </local:SettingContainer>
+
+            <!--  Color Scheme  -->
+            <local:SettingContainer x:Uid="Profile_ColorScheme"
+                                    Margin="0"
+                                    ClearSettingValue="{x:Bind Appearance.ClearColorSchemeName}"
+                                    HasSettingValue="{x:Bind Appearance.HasColorSchemeName, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.ColorSchemeNameOverrideSource, Mode=OneWay}">
+                <ComboBox ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
+                          SelectedItem="{x:Bind CurrentColorScheme, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="model:ColorScheme">
+                            <TextBlock Text="{x:Bind Name, Mode=OneWay}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </local:SettingContainer>
         </StackPanel>
 
         <!--  Grouping: Cursor  -->

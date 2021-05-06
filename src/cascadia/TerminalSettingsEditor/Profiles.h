@@ -147,6 +147,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _LastActivePivot = lastState.LastActivePivot();
                 }
             }
+            viewModel.DefaultAppearance().Schemes(schemes);
         }
 
         void DeleteProfile();
