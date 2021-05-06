@@ -243,7 +243,7 @@ namespace winrt::TerminalApp::implementation
         TabViewItem(::winrt::MUX::Controls::TabViewItem{});
 
         // GH#3609 If the tab was tapped, and no one else was around to handle
-        // it, then ask our parent to yeet focus into the active control.
+        // it, then ask our parent to toss focus into the active control.
         TabViewItem().Tapped([weakThis{ get_weak() }](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
