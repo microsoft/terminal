@@ -42,6 +42,15 @@ DxFontInfo::DxFontInfo(std::wstring_view familyName,
 {
 }
 
+bool DxFontInfo::operator==(const DxFontInfo& other) const noexcept
+{
+    return (_familyName == other._familyName &&
+            _weight == other._weight &&
+            _style == other._style &&
+            _stretch == other._stretch &&
+            _didFallback == other._didFallback);
+}
+
 std::wstring_view DxFontInfo::GetFamilyName() const noexcept
 {
     return _familyName;

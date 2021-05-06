@@ -132,8 +132,18 @@ CATCH_RETURN()
                                                                FLOAT originY)
 {
     const auto drawingContext = static_cast<const DrawingContext*>(clientDrawingContext);
-    _formatInUse = drawingContext->useItalicFont ? _fontRenderData->ItalicTextFormat().Get() : _fontRenderData->DefaultTextFormat().Get();
-    _fontInUse = drawingContext->useItalicFont ? _fontRenderData->ItalicFontFace().Get() : _fontRenderData->DefaultFontFace().Get();
+
+    DWRITE_FONT_WEIGHT weight = _fontRenderData->DefaultFontWeight();
+    DWRITE_FONT_STYLE style = _fontRenderData->DefaultFontStyle();
+    DWRITE_FONT_STRETCH stretch = _fontRenderData->DefaultFontStretch();
+
+    if (drawingContext->useItalicFont)
+    {
+        style = DWRITE_FONT_STYLE_ITALIC;
+    }
+
+    _formatInUse = _fontRenderData->TextFormatWithAttribute(weight, style, stretch).Get();
+    _fontInUse = _fontRenderData->FontFaceWithAttribute(weight, style, stretch).Get();
 
     RETURN_IF_FAILED(_AnalyzeRuns());
     RETURN_IF_FAILED(_ShapeGlyphRuns());

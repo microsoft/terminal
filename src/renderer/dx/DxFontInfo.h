@@ -25,6 +25,8 @@ namespace Microsoft::Console::Render
                    DWRITE_FONT_STYLE style,
                    DWRITE_FONT_STRETCH stretch);
 
+        bool operator==(const DxFontInfo& other) const noexcept;
+
         std::wstring_view GetFamilyName() const noexcept;
         void SetFamilyName(const std::wstring_view familyName);
 
@@ -73,5 +75,24 @@ namespace Microsoft::Console::Render
 
         // Indicates whether we couldn't match the user request and had to choose from a hardcoded default list.
         bool _didFallback;
+    };
+
+    struct DxFontInfoHash
+    {
+        size_t operator()(const DxFontInfo& fontInfo) const noexcept
+        {
+            size_t h1 = std::hash<std::wstring_view>{}(fontInfo.GetFamilyName());
+            size_t h2 = std::hash<DWRITE_FONT_WEIGHT>{}(fontInfo.GetWeight());
+            size_t h3 = std::hash<DWRITE_FONT_STYLE>{}(fontInfo.GetStyle());
+            size_t h4 = std::hash<DWRITE_FONT_STRETCH>{}(fontInfo.GetStretch());
+            size_t h5 = std::hash<bool>{}(fontInfo.GetFallback());
+
+            auto combine = [](size_t seed, size_t v) {
+                seed ^= v + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+                return seed;
+            };
+
+            return combine(combine(combine(combine(h1, h2), h3), h4), h5);
+        }
     };
 }

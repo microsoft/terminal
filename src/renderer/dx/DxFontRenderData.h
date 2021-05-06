@@ -42,6 +42,15 @@ namespace Microsoft::Console::Render
         [[nodiscard]] til::size GlyphCell() noexcept;
         [[nodiscard]] LineMetrics GetLineMetrics() noexcept;
 
+        // The weight of default font
+        [[nodiscard]] DWRITE_FONT_WEIGHT DefaultFontWeight() noexcept;
+
+        // The style of default font
+        [[nodiscard]] DWRITE_FONT_STYLE DefaultFontStyle() noexcept;
+
+        // The stretch of default font
+        [[nodiscard]] DWRITE_FONT_STRETCH DefaultFontStretch() noexcept;
+
         // The DirectWrite format object representing the size and other text properties to be applied (by default)
         [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextFormat> DefaultTextFormat();
 
@@ -51,11 +60,15 @@ namespace Microsoft::Console::Render
         // Box drawing scaling effects that are cached for the base font across layouts
         [[nodiscard]] Microsoft::WRL::ComPtr<IBoxDrawingEffect> DefaultBoxDrawingEffect();
 
-        // The italic variant of the format object representing the size and other text properties for italic text
-        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextFormat> ItalicTextFormat();
+        // The attributed variants of the format object representing the size and other text properties
+        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextFormat> TextFormatWithAttribute(DWRITE_FONT_WEIGHT weight,
+                                                                                        DWRITE_FONT_STYLE style,
+                                                                                        DWRITE_FONT_STRETCH stretch);
 
-        // The italic variant of the font face to use while calculating layout for italic text
-        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> ItalicFontFace();
+        // The attributed variants of the font face to use while calculating layout
+        [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> FontFaceWithAttribute(DWRITE_FONT_WEIGHT weight,
+                                                                                     DWRITE_FONT_STYLE style,
+                                                                                     DWRITE_FONT_STRETCH stretch);
 
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& desired, FontInfo& fiFontInfo, const int dpi) noexcept;
 
@@ -68,10 +81,9 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
 
         ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
-        ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _dwriteTextFormat;
-        ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _dwriteTextFormatItalic;
-        ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _dwriteFontFace;
-        ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _dwriteFontFaceItalic;
+
+        std::unordered_map<DxFontInfo, ::Microsoft::WRL::ComPtr<IDWriteTextFormat>, DxFontInfoHash> _textFormatMap;
+        std::unordered_map<DxFontInfo, ::Microsoft::WRL::ComPtr<IDWriteFontFace1>, DxFontInfoHash> _fontFaceMap;
 
         ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
 
