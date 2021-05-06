@@ -7,10 +7,9 @@
     <ProjectName>Host.EXE</ProjectName>
     <TargetName>OpenConsole</TargetName>
     <ConfigurationType>Application</ConfigurationType>
+    <PgoTarget>true</PgoTarget>
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
-  <Import Condition="'$(Configuration)' == 'Release'" Project="$(SolutionDir)\src\common.pgo.compile.props" />
-  <Import Condition="'$(PGOBuildMode)' == 'Optimize'" Project="$(SolutionDir)\tools\PGODatabase\PGO.version.props" />
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="CConsoleHandoff.h" />
@@ -91,7 +90,6 @@
       <AdditionalDependencies>WinMM.Lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <Import Condition="'$(PGOBuildMode)' == 'Optimize'" Project="..\..\packages\$(PGODatabaseId).$(PGODatabaseVersion)\build\PGO.targets" />
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="..\..\common.build.post.props" />
 </Project>

@@ -19,6 +19,7 @@ namespace WindowsTerminal.UIA.Tests
         public TestContext TestContext { get; set; }
 
         [TestMethod]
+        [TestProperty("IsPGO", "true")]
         public void StartTerminal()
         {
             using (TerminalApp app = new TerminalApp(TestContext))

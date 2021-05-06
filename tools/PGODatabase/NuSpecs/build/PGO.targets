@@ -2,7 +2,7 @@
 <!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT License. See LICENSE in the project root for license information. -->
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-     <ProfileGuidedDatabaseFileName>$(MSBuildThisFileDirectory)..\tools\$(PlatformShortName)\WindowsTerminal.pgd</ProfileGuidedDatabaseFileName>
+     <ProfileGuidedDatabaseFileName>$(MSBuildThisFileDirectory)..\tools\$(PlatformShortName)\$(ProjectName).pgd</ProfileGuidedDatabaseFileName>
   </PropertyGroup>
   <!-- Enable PGO optimization only for if the pgds file exists. -->
   <ItemDefinitionGroup Condition="'$(Configuration)' == 'Release' and '$(PGOBuildMode)' == 'Optimize' and Exists('$(ProfileGuidedDatabaseFileName)')">

@@ -52,3 +52,9 @@ Copy-Item "build\helix\HelixTestHelpers.cs" "$payloadDir"
 Copy-Item "build\helix\runtests.cmd" $payloadDir
 Copy-Item "build\helix\InstallTestAppDependencies.ps1" "$payloadDir"
 Copy-Item "build\Helix\EnsureMachineState.ps1" "$payloadDir"
+
+# Copy the APPX package from the 'drop' artifact dir
+Copy-Item "$repoDirectory\Artifacts\$ArtifactName\appx\CascadiaPackage_0.0.1.0_$Platform.msix" $payloadDir
+
+# Extract the APPX package
+Expand-Archive -LiteralPath $payloadDir\CascadiaPackage_0.0.1.0_$Platform.msix -DestinationPath $payloadDir\appx

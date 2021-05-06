@@ -7,6 +7,7 @@
 namespace WindowsTerminal.UIA.Tests.Common
 {
     using System;
+    using WEX.TestExecution.Markup;
 
     public static class Globals
     {
@@ -22,6 +23,27 @@ namespace WindowsTerminal.UIA.Tests.Common
         public static void WaitForLongTimeout()
         {
             System.Threading.Thread.Sleep(Globals.LongTimeout);
+        }
+
+
+        static string[] modules =
+        {
+            "WindowsTerminal.exe",
+            "OpenConsole.exe",
+            "Microsoft.Terminal.Control.dll",
+            "Microsoft.Terminal.Remoting.dll",
+            "Microsoft.Terminal.Settings.Editor.dll",
+            "Microsoft.Terminal.Settings.Model.dll",
+            "TerminalApp.dll",
+            "TerminalConnection.dll"
+        };
+
+        public static void SweepAllModules(TestContext context)
+        {
+            foreach (var mod in modules)
+            {
+                PgoManager.PgoSweepIfInstrumented(context, mod);
+            }
         }
     }
 }

@@ -20,6 +20,7 @@
     <SubSystem>Console</SubSystem>
     <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <PgoTarget>true</PgoTarget>
     <!-- C++/WinRT sets the depth to 1 if there is a XAML file in the project
       Unfortunately for us, we need it to be 3. When the namespace merging
       depth is 1, Microsoft.Terminal.Control becomes "Microsoft",

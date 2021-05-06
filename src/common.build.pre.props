@@ -14,6 +14,8 @@
     <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <IntermediateOutputPath>$(IntDir)</IntermediateOutputPath>
 
+    <PGOBuildMode>Instrument</PGOBuildMode>
+
     <!-- Both pairs of OutDir/OutputPath and IntDir/IntermediateOutputPath must be set;
          different parts of the project infrastructure use them (without rhyme or reason.) -->
   </PropertyGroup>
@@ -155,6 +157,9 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
+
+  <Import Condition="'$(PgoTarget)' == 'true' And '$(Configuration)' == 'Release'" Project="$(SolutionDir)\src\common.pgo.compile.props" />
+  <Import Condition="'$(PgoTarget)' == 'true' And '$(PGOBuildMode)' == 'Optimize'" Project="$(SolutionDir)\tools\PGODatabase\PGO.version.props" />
 
   <!-- For Win32 (x86) ONLY ... we use all defaults for AMD64. No def for those. -->
   <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">

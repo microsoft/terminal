@@ -46,7 +46,7 @@ namespace WindowsTerminal.UIA.Tests.Elements
         {
             this.context = context;
 
-            string path = Path.GetFullPath(Path.Combine(context.TestDeploymentDir, @"..\..\..\src\cascadia\CascadiaPackage\bin\x64\debug\Appx\WindowsTerminal.exe"));
+            string path = Path.GetFullPath(Path.Combine(context.TestDeploymentDir, @"appx\WindowsTerminal.exe"));
             if (context.Properties.Contains("WTPath"))
             {
                 path = (string)context.Properties["WTPath"];
@@ -143,6 +143,8 @@ namespace WindowsTerminal.UIA.Tests.Elements
 
         private void ExitProcess()
         {
+            Globals.SweepAllModules(this.context);
+
             // Release attachment to the child process console.
             WinCon.FreeConsole();
 

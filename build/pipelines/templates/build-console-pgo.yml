@@ -27,6 +27,7 @@ jobs:
     dependsOn: Build${{ parameters.platform }}${{ parameters.configuration }}
     condition: succeeded()
     testSuite: 'PgoInstrumentationSuite'
+    taefQuery: '@IsPgo=true'
     rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
     
 - template: helix-processtestresults-job.yml
