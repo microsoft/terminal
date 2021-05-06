@@ -479,6 +479,29 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
     }
 }
 
+// Method Description:
+// - Use DCompositionCreateSurfaceHandle to create a swapchain handle. This API
+//   is only present in Windows 8.1+, so we need to delay-load it to make sure
+//   we can still load on Windows 7.
+// - We can't actually hit this on Windows 7, because only the WPF control uses
+//   us on Windows 7, and they're using the ForHwnd path, which doesn't hit this
+//   at all.
+// Arguments:
+// - <none>
+// Return Value:
+// - An HRESULT for failing to load dcomp.dll, or failing to find the API, or an
+//   actual failure from the API itself.
+[[nodiscard]] HRESULT DxEngine::_CreateSurfaceHandle() noexcept
+{
+    wil::unique_hmodule hDComp{ LoadLibraryEx(L"Dcomp.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) };
+    RETURN_LAST_ERROR_IF(hDComp.get() == nullptr);
+
+    auto fn = GetProcAddressByFunctionDeclaration(hDComp.get(), DCompositionCreateSurfaceHandle);
+    RETURN_LAST_ERROR_IF(fn == nullptr);
+
+    return fn(GENERIC_ALL, nullptr, &_swapChainHandle);
+}
+
 // Routine Description;
 // - Creates device-specific resources required for drawing
 //   which generally means those that are represented on the GPU and can
@@ -621,7 +644,7 @@ try
         {
             if (!_swapChainHandle)
             {
-                RETURN_IF_FAILED(DCompositionCreateSurfaceHandle(GENERIC_ALL, nullptr, &_swapChainHandle));
+                RETURN_IF_FAILED(_CreateSurfaceHandle());
             }
 
             RETURN_IF_FAILED(_dxgiFactory2.As(&_dxgiFactoryMedia));
