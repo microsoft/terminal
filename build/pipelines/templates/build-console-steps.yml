@@ -119,7 +119,7 @@ steps:
   displayName: 'Copy PGO databases needed for PGO instrumentation run'
   inputs:
     Contents: |
-     $(Build.SourcesDirectory)/bin/$(BuildPlatform)/$(BuildConfiguration)/*.pgd
+     **/*.pgd
     TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/PGO'
     OverWrite: true
     flattenFolders: true
