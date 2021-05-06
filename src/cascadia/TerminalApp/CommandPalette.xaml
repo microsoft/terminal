@@ -106,7 +106,7 @@
                 <Grid HorizontalAlignment="Stretch"
                       ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="24" />
                         <!--  icon  -->
                         <ColumnDefinition Width="Auto" />
                         <!--  command label  -->
@@ -117,7 +117,7 @@
                     </Grid.ColumnDefinitions>
 
                     <IconSourceElement Grid.Column="0"
-                                       Width="16"
+                                       Width="24"
                                        Height="16"
                                        IconSource="{x:Bind Item.Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
 
@@ -169,7 +169,7 @@
                       AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
                       ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="24" />
                         <!--  icon / progress  -->
                         <ColumnDefinition Width="Auto" />
                         <!--  command label  -->
@@ -192,7 +192,7 @@
                                       Value="{x:Bind Item.(local:TabPaletteItem.TabStatus).ProgressValue, Mode=OneWay}" />
 
                     <IconSourceElement Grid.Column="0"
-                                       Width="16"
+                                       Width="24"
                                        Height="16"
                                        IconSource="{x:Bind Item.Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
 
