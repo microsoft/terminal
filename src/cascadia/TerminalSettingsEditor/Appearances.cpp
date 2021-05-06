@@ -85,11 +85,70 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     AppearanceViewModel::AppearanceViewModel(const Model::AppearanceConfig& appearance) :
         _appearance{ appearance }
     {
+        // Add a property changed handler to our own property changed event.
+        // This propagates changes from the settings model to anybody listening to our
+        //  unique view model members.
+        PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
+            const auto viewModelProperty{ args.PropertyName() };
+            if (viewModelProperty == L"BackgroundImagePath")
+            {
+                // notify listener that all background image related values might have changed
+                //
+                // We need to do this so if someone manually types "desktopWallpaper"
+                // into the path TextBox, we properly update the checkbox and stored
+                // _lastBgImagePath. Without this, then we'll permanently hide the text
+                // box, prevent it from ever being changed again.
+                _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsVisible");
+            }
+        });
+
+        // Cache the original BG image path. If the user clicks "Use desktop
+        // wallpaper", then un-checks it, this is the string we'll restore to
+        // them.
+        if (BackgroundImagePath() != L"desktopWallpaper")
+        {
+            _lastBgImagePath = BackgroundImagePath();
+        }
     }
 
     bool AppearanceViewModel::CanDeleteAppearance() const
     {
         return false;
+    }
+
+    bool AppearanceViewModel::UseDesktopBGImage()
+    {
+        return BackgroundImagePath() == L"desktopWallpaper";
+    }
+
+    void AppearanceViewModel::UseDesktopBGImage(const bool useDesktop)
+    {
+        if (useDesktop)
+        {
+            // Stash the current value of BackgroundImagePath. If the user
+            // checks and un-checks the "Use desktop wallpaper" button, we want
+            // the path that we display in the text box to remain unchanged.
+            //
+            // Only stash this value if it's not the special "desktopWallpaper"
+            // value.
+            if (BackgroundImagePath() != L"desktopWallpaper")
+            {
+                _lastBgImagePath = BackgroundImagePath();
+            }
+            BackgroundImagePath(L"desktopWallpaper");
+        }
+        else
+        {
+            // Restore the path we had previously cached. This might be the
+            // empty string.
+            BackgroundImagePath(_lastBgImagePath);
+        }
+    }
+
+    bool AppearanceViewModel::BackgroundImageSettingsVisible()
+    {
+        //return IsBaseLayer() || BackgroundImagePath() != L"";
+        return BackgroundImagePath() != L"";
     }
 
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
@@ -100,6 +159,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
 
         INITIALIZE_BINDABLE_ENUM_SETTING(CursorShape, CursorStyle, winrt::Microsoft::Terminal::Core::CursorStyle, L"Profile_CursorShape", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(BackgroundImageStretchMode, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch, L"Profile_BackgroundImageStretchMode", L"Content");
 
         if (!_AppearanceProperty)
         {
@@ -111,12 +171,39 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     PropertyMetadata{ nullptr });
         }
 
+        // manually keep track of all the Background Image Alignment buttons
+        _BIAlignmentButtons.at(0) = BIAlign_TopLeft();
+        _BIAlignmentButtons.at(1) = BIAlign_Top();
+        _BIAlignmentButtons.at(2) = BIAlign_TopRight();
+        _BIAlignmentButtons.at(3) = BIAlign_Left();
+        _BIAlignmentButtons.at(4) = BIAlign_Center();
+        _BIAlignmentButtons.at(5) = BIAlign_Right();
+        _BIAlignmentButtons.at(6) = BIAlign_BottomLeft();
+        _BIAlignmentButtons.at(7) = BIAlign_Bottom();
+        _BIAlignmentButtons.at(8) = BIAlign_BottomRight();
+
+        // apply automation properties to more complex setting controls
+        for (const auto& biButton : _BIAlignmentButtons)
+        {
+            const auto tooltip{ ToolTipService::GetToolTip(biButton) };
+            Automation::AutomationProperties::SetName(biButton, unbox_value<hstring>(tooltip));
+        }
+
+        const auto backgroundImgCheckboxTooltip{ ToolTipService::GetToolTip(UseDesktopImageCheckBox()) };
+        Automation::AutomationProperties::SetFullDescription(UseDesktopImageCheckBox(), unbox_value<hstring>(backgroundImgCheckboxTooltip));
+
         if (Appearance())
         {
             const auto& colorSchemeMap{ Appearance().Schemes() };
             for (const auto& pair : colorSchemeMap)
             {
                 _ColorSchemeList.Append(pair.Value());
+            }
+
+            const auto& biAlignmentVal{ static_cast<int32_t>(Appearance().BackgroundImageAlignment()) };
+            for (const auto& biButton : _BIAlignmentButtons)
+            {
+                biButton.IsChecked(biButton.Tag().as<int32_t>() == biAlignmentVal);
             }
 
             _ViewModelChangedRevoker = Appearance().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
@@ -130,7 +217,55 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
                 }
+                else if (settingName == L"BackgroundImageStretchMode")
+                {
+                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentBackgroundImageStretchMode" });
+                }
+                else if (settingName == L"BackgroundImageAlignment")
+                {
+                    _UpdateBIAlignmentControl(static_cast<int32_t>(Appearance().BackgroundImageAlignment()));
+                }
             });
+        }
+    }
+
+    //fire_and_forget Appearances::BackgroundImage_Click(IInspectable const&, RoutedEventArgs const&)
+    //{
+    //    auto lifetime = get_strong();
+
+    //    const auto parentHwnd{ reinterpret_cast<HWND>(WindowRoot().GetHostingWindow()) };
+    //    auto file = co_await OpenImagePicker(parentHwnd);
+    //    if (!file.empty())
+    //    {
+    //        _State.Profile().BackgroundImagePath(file);
+    //    }
+    //}
+
+    void Appearances::BIAlignment_Click(IInspectable const& sender, RoutedEventArgs const& /*e*/)
+    {
+        if (const auto& button{ sender.try_as<Primitives::ToggleButton>() })
+        {
+            if (const auto& tag{ button.Tag().try_as<int32_t>() })
+            {
+                // Update the Profile's value and the control
+                Appearance().BackgroundImageAlignment(static_cast<ConvergedAlignment>(*tag));
+                _UpdateBIAlignmentControl(*tag);
+            }
+        }
+    }
+
+    // Method Description:
+    // - Resets all of the buttons to unchecked, and checks the one with the provided tag
+    // Arguments:
+    // - val - the background image alignment (ConvergedAlignment) that we want to represent in the control
+    void Appearances::_UpdateBIAlignmentControl(const int32_t val)
+    {
+        for (const auto& biButton : _BIAlignmentButtons)
+        {
+            if (const auto& biButtonAlignment{ biButton.Tag().try_as<int32_t>() })
+            {
+                biButton.IsChecked(biButtonAlignment == val);
+            }
         }
     }
 

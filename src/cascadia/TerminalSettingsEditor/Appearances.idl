@@ -14,12 +14,18 @@ namespace Microsoft.Terminal.Settings.Editor
 {
     runtimeclass AppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
+        Boolean UseDesktopBGImage;
         Boolean CanDeleteAppearance { get; };
+        Boolean BackgroundImageSettingsVisible { get; };
         Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes;
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, ColorSchemeName);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Boolean, RetroTerminalEffect);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(UInt32, CursorHeight);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, BackgroundImagePath);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Double, BackgroundImageOpacity);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Settings.Model.ConvergedAlignment, BackgroundImageAlignment);
     }
 
     [default_interface] runtimeclass Appearances : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -34,5 +40,8 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };
+
+        IInspectable CurrentBackgroundImageStretchMode;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BackgroundImageStretchModeList { get; };
     }
 }
