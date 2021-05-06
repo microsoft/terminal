@@ -29,6 +29,6 @@ stages:
     displayName: Publish PGO databases
     dependsOn: ['Build_x64', 'Build_x86']
     jobs:
-      - template: pgo-build-and-publish-nuget-job.yml
+      - template: ./templates/pgo-build-and-publish-nuget-job.yml
         parameters:
           pgoArtifact: 'PGO'
