@@ -55,10 +55,10 @@ namespace winrt::TerminalApp::implementation
 
         // GH#9162 - when the header is done renaming, ask for focus to be
         // tossed back to the control, rather into ourselves.
-        _headerControl.RenameEnded([weakThis](auto&&, auto&&) {
+        _headerControl.RenameEnded([weakThis = get_weak()](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_RequestFocusActiveControlHandlers(*tab, nullptr);
+                tab->_RequestFocusActiveControlHandlers();
             }
         });
 
@@ -92,7 +92,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::_MakeTabViewItem()
     {
-        TabViewItem(::winrt::MUX::Controls::TabViewItem{});
+        TabBase::_MakeTabViewItem();
 
         TabViewItem().DoubleTapped([weakThis = get_weak()](auto&& /*s*/, auto&& /*e*/) {
             if (auto tab{ weakThis.get() })
@@ -899,7 +899,7 @@ namespace winrt::TerminalApp::implementation
         contextMenuFlyout.Closed([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_RequestFocusActiveControlHandlers(*tab, nullptr);
+                tab->_RequestFocusActiveControlHandlers();
             }
         });
         _AppendCloseMenuItems(contextMenuFlyout);

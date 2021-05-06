@@ -52,7 +52,7 @@ namespace winrt::TerminalApp::implementation
         contextMenuFlyout.Closed([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_RequestFocusActiveControlHandlers(*tab, nullptr);
+                tab->_RequestFocusActiveControlHandlers();
             }
         });
         _AppendCloseMenuItems(contextMenuFlyout);
@@ -230,5 +230,22 @@ namespace winrt::TerminalApp::implementation
         WUX::Controls::ToolTip toolTip{};
         toolTip.Content(textBlock);
         WUX::Controls::ToolTipService::SetToolTip(TabViewItem(), toolTip);
+    }
+
+    // Method Description:
+    // - Initializes a TabViewItem for this Tab instance.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TabBase::_MakeTabViewItem()
+    {
+        TabViewItem(::winrt::MUX::Controls::TabViewItem{});
+        TabViewItem().Tapped([weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_RequestFocusActiveControlHandlers();
+            }
+        });
     }
 }
