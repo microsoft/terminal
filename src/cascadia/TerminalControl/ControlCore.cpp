@@ -413,8 +413,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   region to change, such as when new text enters the buffer or the viewport is scrolled
     void ControlCore::UpdatePatternLocations()
     {
-        auto lock = _terminal->LockForWriting();
-        _terminal->UpdatePatternsUnderLock();
+        _terminal->UpdatePatterns();
     }
 
     // Method description:
