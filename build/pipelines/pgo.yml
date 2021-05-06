@@ -25,3 +25,10 @@ stages:
       - template: ./templates/build-console-pgo.yml
         parameters:
           platform: x86
+  - stage: Publish_PGO_Databases
+    displayName: Publish PGO databases
+    dependsOn: ['Build_x64', 'Build_x86']
+    jobs:
+      - template: pgo-build-and-publish-nuget-job.yml
+        parameters:
+          pgoArtifact: 'PGO'

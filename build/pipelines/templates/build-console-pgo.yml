@@ -45,9 +45,3 @@ jobs:
     dependsOn:
     - ProcessTestResults
     pgoArtifact: 'PGO'
-
-- template: pgo-build-and-publish-nuget-job.yml
-  parameters:
-    dependsOn:
-    - MergePGD
-    pgoArtifact: 'PGO'
