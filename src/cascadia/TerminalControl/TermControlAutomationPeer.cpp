@@ -33,7 +33,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     TermControlAutomationPeer::TermControlAutomationPeer(TermControl* owner,
                                                          Control::InteractivityAutomationPeer impl) :
         TermControlAutomationPeerT<TermControlAutomationPeer>(*owner), // pass owner to FrameworkElementAutomationPeer
-        _termControl{ _termControl },
+        _termControl{ owner },
         _implementation{ impl } {
             // THROW_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, _interactivity->GetUiaData(), this));
         };
