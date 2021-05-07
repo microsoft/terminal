@@ -36,14 +36,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _termControl{ owner },
         _implementation{ impl }
     {
-        auto controlOrigin{ owner->ActualOffset() };
-        auto controlSize{ owner->ActualSize() };
-        impl.SetControlBounds(Windows::Foundation::Rect{ controlOrigin.x, controlOrigin.y, controlSize.x, controlSize.y });
+        UpdateControlBounds();
     };
 
-    void TermControlAutomationPeer::SetControlBounds(const Windows::Foundation::Rect bounds)
+    void TermControlAutomationPeer::UpdateControlBounds()
     {
-        _implementation.SetControlBounds(bounds);
+        // FrameworkElementAutomationPeer has this great GetBoundingRectangle
+        // method that's seemingly impossible to recreate just from the
+        // UserControl itself. Weird. But we can use it handily here!
+        _implementation.SetControlBounds(GetBoundingRectangle());
     }
     void TermControlAutomationPeer::SetControlPadding(const Core::Padding padding)
     {

@@ -1537,8 +1537,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (auto ap{ _automationPeer.get() })
         {
-            auto controlOrigin{ ActualOffset() };
-            ap.SetControlBounds(Windows::Foundation::Rect{ controlOrigin.x, controlOrigin.y, newSize.Width, newSize.Height });
+            ap.UpdateControlBounds();
         }
     }
 

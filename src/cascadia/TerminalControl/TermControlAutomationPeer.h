@@ -45,7 +45,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TermControlAutomationPeer(Microsoft::Terminal::Control::implementation::TermControl* owner,
                                   Control::InteractivityAutomationPeer implementation);
 
-        void SetControlBounds(const Windows::Foundation::Rect bounds);
+        void UpdateControlBounds();
         void SetControlPadding(const Core::Padding padding);
 
 #pragma region FrameworkElementAutomationPeer

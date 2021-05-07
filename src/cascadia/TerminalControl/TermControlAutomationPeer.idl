@@ -10,7 +10,7 @@ namespace Microsoft.Terminal.Control
         Windows.UI.Xaml.Automation.Provider.ITextProvider
     {
 
-        void SetControlBounds(Windows.Foundation.Rect bounds);
+        void UpdateControlBounds();
         void SetControlPadding(Microsoft.Terminal.Core.Padding padding);
     }
 }
