@@ -88,6 +88,8 @@ namespace SettingsModelLocalTests
 
         TEST_METHOD(TestValidDefaults);
 
+        TEST_METHOD(TestInheritedCommand);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -1311,9 +1313,9 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
         VERIFY_ARE_EQUAL(2u, settings->_globals->ColorSchemes().Size());
 
-        VERIFY_ARE_EQUAL(L"schemeOne", settings->_allProfiles.GetAt(0).ColorSchemeName());
-        VERIFY_ARE_EQUAL(L"InvalidSchemeName", settings->_allProfiles.GetAt(1).ColorSchemeName());
-        VERIFY_ARE_EQUAL(L"Campbell", settings->_allProfiles.GetAt(2).ColorSchemeName());
+        VERIFY_ARE_EQUAL(L"schemeOne", settings->_allProfiles.GetAt(0).DefaultAppearance().ColorSchemeName());
+        VERIFY_ARE_EQUAL(L"InvalidSchemeName", settings->_allProfiles.GetAt(1).DefaultAppearance().ColorSchemeName());
+        VERIFY_ARE_EQUAL(L"Campbell", settings->_allProfiles.GetAt(2).DefaultAppearance().ColorSchemeName());
 
         settings->_ValidateAllSchemesExist();
 
@@ -1323,9 +1325,9 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
         VERIFY_ARE_EQUAL(2u, settings->_globals->ColorSchemes().Size());
 
-        VERIFY_ARE_EQUAL(L"schemeOne", settings->_allProfiles.GetAt(0).ColorSchemeName());
-        VERIFY_ARE_EQUAL(L"Campbell", settings->_allProfiles.GetAt(1).ColorSchemeName());
-        VERIFY_ARE_EQUAL(L"Campbell", settings->_allProfiles.GetAt(2).ColorSchemeName());
+        VERIFY_ARE_EQUAL(L"schemeOne", settings->_allProfiles.GetAt(0).DefaultAppearance().ColorSchemeName());
+        VERIFY_ARE_EQUAL(L"Campbell", settings->_allProfiles.GetAt(1).DefaultAppearance().ColorSchemeName());
+        VERIFY_ARE_EQUAL(L"Campbell", settings->_allProfiles.GetAt(2).DefaultAppearance().ColorSchemeName());
     }
 
     void DeserializationTests::ValidateColorSchemeInCommands()
@@ -1543,7 +1545,7 @@ namespace SettingsModelLocalTests
         settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);
         VERIFY_ARE_NOT_EQUAL(0u, settings->_allProfiles.Size());
-        VERIFY_ARE_EQUAL(expectedPath, settings->_allProfiles.GetAt(0).ExpandedBackgroundImagePath());
+        VERIFY_ARE_EQUAL(expectedPath, settings->_allProfiles.GetAt(0).DefaultAppearance().ExpandedBackgroundImagePath());
     }
     void DeserializationTests::TestProfileBackgroundImageWithDesktopWallpaper()
     {
@@ -1564,8 +1566,8 @@ namespace SettingsModelLocalTests
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
         settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);
-        VERIFY_ARE_EQUAL(expectedBackgroundImagePath, settings->_allProfiles.GetAt(0).BackgroundImagePath());
-        VERIFY_ARE_NOT_EQUAL(expectedBackgroundImagePath, settings->_allProfiles.GetAt(0).ExpandedBackgroundImagePath());
+        VERIFY_ARE_EQUAL(expectedBackgroundImagePath, settings->_allProfiles.GetAt(0).DefaultAppearance().BackgroundImagePath());
+        VERIFY_ARE_NOT_EQUAL(expectedBackgroundImagePath, settings->_allProfiles.GetAt(0).DefaultAppearance().ExpandedBackgroundImagePath());
     }
     void DeserializationTests::TestCloseOnExitParsing()
     {
@@ -1918,7 +1920,12 @@ namespace SettingsModelLocalTests
         const auto settingsObject = VerifyParseSucceeded(badSettings);
         auto settings = implementation::CascadiaSettings::FromJson(settingsObject);
 
-        VERIFY_ARE_EQUAL(0u, settings->_globals->_keymap->_keyShortcuts.size());
+        // KeyMap: ctrl+a/b are mapped to "invalid"
+        // ActionMap: "splitPane" and "invalid" are the only deserialized actions
+        // NameMap: "splitPane" has no key binding, but it is still added to the name map
+        VERIFY_ARE_EQUAL(2u, settings->_globals->_actionMap->_KeyMap.size());
+        VERIFY_ARE_EQUAL(2u, settings->_globals->_actionMap->_ActionMap.size());
+        VERIFY_ARE_EQUAL(1u, settings->_globals->_actionMap->NameMap().Size());
 
         VERIFY_ARE_EQUAL(4u, settings->_globals->_keybindingsWarnings.size());
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::TooManyKeysForChord, settings->_globals->_keybindingsWarnings.at(0));
@@ -1962,7 +1969,10 @@ namespace SettingsModelLocalTests
 
         auto settings = implementation::CascadiaSettings::FromJson(settingsObject);
 
-        VERIFY_ARE_EQUAL(0u, settings->_globals->_keymap->_keyShortcuts.size());
+        VERIFY_ARE_EQUAL(3u, settings->_globals->_actionMap->_KeyMap.size());
+        VERIFY_IS_NULL(settings->_globals->_actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('a') }));
+        VERIFY_IS_NULL(settings->_globals->_actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('b') }));
+        VERIFY_IS_NULL(settings->_globals->_actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('c') }));
 
         for (const auto& warning : settings->_globals->_keybindingsWarnings)
         {
@@ -2103,18 +2113,18 @@ namespace SettingsModelLocalTests
         const auto profile2Guid = settings->_allProfiles.GetAt(2).Guid();
         VERIFY_ARE_NOT_EQUAL(winrt::guid{}, profile2Guid);
 
-        auto keymap = winrt::get_self<implementation::KeyMapping>(settings->_globals->KeyMap());
-        VERIFY_ARE_EQUAL(5u, keymap->_keyShortcuts.size());
+        auto actionMap = winrt::get_self<implementation::ActionMap>(settings->_globals->ActionMap());
+        VERIFY_ARE_EQUAL(5u, actionMap->_KeyMap.size());
 
         // A/D, B, C, E will be in the list of commands, for 4 total.
         // * A and D share the same name, so they'll only generate a single action.
         // * F's name is set manually to `null`
-        auto commands = settings->_globals->Commands();
-        VERIFY_ARE_EQUAL(4u, commands.Size());
+        const auto& nameMap{ actionMap->NameMap() };
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
 
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('A') };
-            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*keymap, kc);
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -2131,7 +2141,7 @@ namespace SettingsModelLocalTests
 
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
-            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*keymap, kc);
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -2145,7 +2155,7 @@ namespace SettingsModelLocalTests
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('D') };
-            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*keymap, kc);
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -2159,7 +2169,7 @@ namespace SettingsModelLocalTests
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('E') };
-            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*keymap, kc);
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -2173,7 +2183,7 @@ namespace SettingsModelLocalTests
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('F') };
-            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*keymap, kc);
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -2187,11 +2197,21 @@ namespace SettingsModelLocalTests
         }
 
         Log::Comment(L"Now verify the commands");
-        _logCommandNames(commands);
+        _logCommandNames(nameMap);
         {
-            auto command = commands.Lookup(L"Split pane, split: vertical");
+            // This was renamed to "ctrl+c" in C. So this does not exist.
+            auto command = nameMap.TryLookup(L"Split pane, split: vertical");
+            VERIFY_IS_NULL(command);
+        }
+        {
+            // This was renamed to "ctrl+c" in C. So this does not exist.
+            auto command = nameMap.TryLookup(L"ctrl+b");
+            VERIFY_IS_NULL(command);
+        }
+        {
+            auto command = nameMap.TryLookup(L"ctrl+c");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -2205,52 +2225,9 @@ namespace SettingsModelLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
         }
         {
-            auto command = commands.Lookup(L"ctrl+b");
-            VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
-            VERIFY_IS_NOT_NULL(actionAndArgs);
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
-        }
-        {
-            auto command = commands.Lookup(L"ctrl+c");
-            VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
-            VERIFY_IS_NOT_NULL(actionAndArgs);
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
-        }
-        {
-            auto command = commands.Lookup(L"Split pane, split: horizontal");
-            VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
-            VERIFY_IS_NOT_NULL(actionAndArgs);
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Horizontal, realArgs.SplitStyle());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            // This was renamed to null (aka removed from the name map) in F. So this does not exist.
+            auto command = nameMap.TryLookup(L"Split pane, split: horizontal");
+            VERIFY_IS_NULL(command);
         }
     }
 
@@ -2308,16 +2285,16 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
         VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
 
-        auto commands = settings->_globals->Commands();
         settings->_ValidateSettings();
-        _logCommandNames(commands);
+        const auto& nameMap{ settings->ActionMap().NameMap() };
+        _logCommandNames(nameMap);
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
 
         // Because the "parent" command didn't have a name, it couldn't be
         // placed into the list of commands. It and it's children are just
         // ignored.
-        VERIFY_ARE_EQUAL(0u, commands.Size());
+        VERIFY_ARE_EQUAL(0u, nameMap.Size());
     }
 
     void DeserializationTests::TestNestedCommandWithBadSubCommands()
@@ -2358,13 +2335,13 @@ namespace SettingsModelLocalTests
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
         settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);
-        auto commands = settings->_globals->Commands();
         settings->_ValidateSettings();
 
         VERIFY_ARE_EQUAL(2u, settings->_warnings.Size());
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::AtLeastOneKeybindingWarning, settings->_warnings.GetAt(0));
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::FailedToParseSubCommands, settings->_warnings.GetAt(1));
-        VERIFY_ARE_EQUAL(0u, commands.Size());
+        const auto& nameMap{ settings->ActionMap().NameMap() };
+        VERIFY_ARE_EQUAL(0u, nameMap.Size());
     }
 
     void DeserializationTests::TestUnbindNestedCommand()
@@ -2432,22 +2409,23 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
         VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
 
-        auto commands = settings->_globals->Commands();
         settings->_ValidateSettings();
-        _logCommandNames(commands);
+        auto nameMap{ settings->ActionMap().NameMap() };
+        _logCommandNames(nameMap);
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
-        VERIFY_ARE_EQUAL(1u, commands.Size());
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
 
         Log::Comment(L"Layer second bit of json, to unbind the original command.");
 
         settings->_ParseJsonString(settings1Json, false);
         settings->LayerJson(settings->_userSettings);
         settings->_ValidateSettings();
-        commands = settings->_globals->Commands();
-        _logCommandNames(commands);
+
+        nameMap = settings->ActionMap().NameMap();
+        _logCommandNames(nameMap);
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
-        VERIFY_ARE_EQUAL(0u, commands.Size());
+        VERIFY_ARE_EQUAL(0u, nameMap.Size());
     }
 
     void DeserializationTests::TestRebindNestedCommand()
@@ -2516,16 +2494,17 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
         VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
 
-        auto commands = settings->_globals->Commands();
+        const auto& actionMap{ settings->ActionMap() };
         settings->_ValidateSettings();
-        _logCommandNames(commands);
+        auto nameMap{ actionMap.NameMap() };
+        _logCommandNames(nameMap);
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
-        VERIFY_ARE_EQUAL(1u, commands.Size());
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
 
         {
             winrt::hstring commandName{ L"parent" };
-            auto commandProj = commands.Lookup(commandName);
+            auto commandProj = nameMap.TryLookup(commandName);
             VERIFY_IS_NOT_NULL(commandProj);
 
             winrt::com_ptr<implementation::Command> commandImpl;
@@ -2539,17 +2518,18 @@ namespace SettingsModelLocalTests
         settings->_ParseJsonString(settings1Json, false);
         settings->LayerJson(settings->_userSettings);
         settings->_ValidateSettings();
-        commands = settings->_globals->Commands();
-        _logCommandNames(commands);
+
+        nameMap = settings->ActionMap().NameMap();
+        _logCommandNames(nameMap);
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
-        VERIFY_ARE_EQUAL(1u, commands.Size());
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
 
         {
             winrt::hstring commandName{ L"parent" };
-            auto commandProj = commands.Lookup(commandName);
+            auto commandProj = nameMap.TryLookup(commandName);
 
             VERIFY_IS_NOT_NULL(commandProj);
-            auto actionAndArgs = commandProj.Action();
+            auto actionAndArgs = commandProj.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
@@ -2642,8 +2622,10 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(settings->_globals->_colorSchemes.HasKey(schemeName), copyImpl->_globals->_colorSchemes.HasKey(schemeName));
 
         // test actions
-        VERIFY_ARE_EQUAL(settings->_globals->_keymap->_keyShortcuts.size(), copyImpl->_globals->_keymap->_keyShortcuts.size());
-        VERIFY_ARE_EQUAL(settings->_globals->_commands.Size(), copyImpl->_globals->_commands.Size());
+        VERIFY_ARE_EQUAL(settings->_globals->_actionMap->_KeyMap.size(), copyImpl->_globals->_actionMap->_KeyMap.size());
+        const auto& nameMapOriginal{ settings->_globals->_actionMap->NameMap() };
+        const auto& nameMapCopy{ copyImpl->_globals->_actionMap->NameMap() };
+        VERIFY_ARE_EQUAL(nameMapOriginal.Size(), nameMapCopy.Size());
 
         // Test that changing the copy should not change the original
         VERIFY_ARE_EQUAL(settings->_globals->WordDelimiters(), copyImpl->_globals->WordDelimiters());
@@ -2780,5 +2762,159 @@ namespace SettingsModelLocalTests
         const auto settings{ CascadiaSettings::LoadDefaults() };
         VERIFY_ARE_EQUAL(settings.ActiveProfiles().Size(), settings.AllProfiles().Size());
         VERIFY_ARE_EQUAL(settings.AllProfiles().Size(), 2u);
+    }
+
+    void DeserializationTests::TestInheritedCommand()
+    {
+        // Test unbinding a command's key chord or name that originated in another layer.
+
+        const std::string settings1Json{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "actions": [
+                {
+                    "name": "foo",
+                    "command": "closePane",
+                    "keys": "ctrl+shift+w"
+                }
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        const std::string settings2Json{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "actions": [
+                {
+                    "command": null,
+                    "keys": "ctrl+shift+w"
+                },
+            ],
+        })" };
+
+        const std::string settings3Json{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "actions": [
+                {
+                    "name": "bar",
+                    "command": "closePane"
+                },
+            ],
+        })" };
+
+        VerifyParseSucceeded(settings1Json);
+        VerifyParseSucceeded(settings2Json);
+        VerifyParseSucceeded(settings3Json);
+
+        auto settings = winrt::make_self<implementation::CascadiaSettings>();
+        settings->_ParseJsonString(settings1Json, false);
+        settings->LayerJson(settings->_userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
+        VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
+
+        settings->_ValidateSettings();
+        auto nameMap{ settings->ActionMap().NameMap() };
+        _logCommandNames(nameMap);
+
+        VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
+
+        const KeyChord expectedKeyChord{ true, false, true, static_cast<int>('W') };
+        {
+            // Verify NameMap returns correct value
+            const auto& cmd{ nameMap.TryLookup(L"foo") };
+            VERIFY_IS_NOT_NULL(cmd);
+            VERIFY_IS_NOT_NULL(cmd.Keys());
+            VERIFY_IS_TRUE(cmd.Keys().Modifiers() == expectedKeyChord.Modifiers() && cmd.Keys().Vkey() == expectedKeyChord.Vkey());
+        }
+        {
+            // Verify ActionMap::GetActionByKeyChord API
+            const auto& cmd{ settings->ActionMap().GetActionByKeyChord(expectedKeyChord) };
+            VERIFY_IS_NOT_NULL(cmd);
+            VERIFY_IS_NOT_NULL(cmd.Keys());
+            VERIFY_IS_TRUE(cmd.Keys().Modifiers() == expectedKeyChord.Modifiers() && cmd.Keys().Vkey() == expectedKeyChord.Vkey());
+        }
+        {
+            // Verify ActionMap::GetKeyBindingForAction API
+            const auto& actualKeyChord{ settings->ActionMap().GetKeyBindingForAction(ShortcutAction::ClosePane) };
+            VERIFY_IS_NOT_NULL(actualKeyChord);
+            VERIFY_IS_TRUE(actualKeyChord.Modifiers() == expectedKeyChord.Modifiers() && actualKeyChord.Vkey() == expectedKeyChord.Vkey());
+        }
+
+        Log::Comment(L"Layer second bit of json, to unbind the key chord of the original command.");
+
+        settings->_ParseJsonString(settings2Json, false);
+        settings->LayerJson(settings->_userSettings);
+        settings->_ValidateSettings();
+
+        nameMap = settings->ActionMap().NameMap();
+        _logCommandNames(nameMap);
+        VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
+        {
+            // Verify NameMap returns correct value
+            const auto& cmd{ nameMap.TryLookup(L"foo") };
+            VERIFY_IS_NOT_NULL(cmd);
+            VERIFY_IS_NULL(cmd.Keys());
+        }
+        {
+            // Verify ActionMap::GetActionByKeyChord API
+            const auto& cmd{ settings->ActionMap().GetActionByKeyChord(expectedKeyChord) };
+            VERIFY_IS_NULL(cmd);
+        }
+        {
+            // Verify ActionMap::GetKeyBindingForAction API
+            const auto& actualKeyChord{ settings->ActionMap().GetKeyBindingForAction(ShortcutAction::ClosePane) };
+            VERIFY_IS_NULL(actualKeyChord);
+        }
+
+        Log::Comment(L"Layer third bit of json, to unbind name of the original command.");
+
+        settings->_ParseJsonString(settings3Json, false);
+        settings->LayerJson(settings->_userSettings);
+        settings->_ValidateSettings();
+
+        nameMap = settings->ActionMap().NameMap();
+        _logCommandNames(nameMap);
+        VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
+        {
+            // Verify NameMap returns correct value
+            const auto& cmd{ nameMap.TryLookup(L"bar") };
+            VERIFY_IS_NOT_NULL(cmd);
+            VERIFY_IS_NULL(cmd.Keys());
+            VERIFY_ARE_EQUAL(L"bar", cmd.Name());
+        }
+        {
+            // Verify ActionMap::GetActionByKeyChord API
+            const auto& cmd{ settings->ActionMap().GetActionByKeyChord(expectedKeyChord) };
+            VERIFY_IS_NULL(cmd);
+        }
+        {
+            // Verify ActionMap::GetKeyBindingForAction API
+            const auto& actualKeyChord{ settings->ActionMap().GetKeyBindingForAction(ShortcutAction::ClosePane) };
+            VERIFY_IS_NULL(actualKeyChord);
+        }
     }
 }

@@ -285,12 +285,21 @@ namespace winrt::TerminalApp::implementation
             // launched _fullscreen_, toggle fullscreen mode. This will make sure
             // that the window size is _first_ set up as something sensible, so
             // leaving fullscreen returns to a reasonable size.
+            //
+            // We know at the start, that the root TerminalPage definitely isn't
+            // in focus nor fullscreen mode. So "Toggle" here will always work
+            // to "enable".
             const auto launchMode = this->GetLaunchMode();
-            if (launchMode == LaunchMode::FullscreenMode)
+            if (IsQuakeWindow())
+            {
+                _root->ToggleFocusMode();
+            }
+            else if (launchMode == LaunchMode::FullscreenMode)
             {
                 _root->ToggleFullscreen();
             }
-            else if (launchMode == LaunchMode::FocusMode || launchMode == LaunchMode::MaximizedFocusMode)
+            else if (launchMode == LaunchMode::FocusMode ||
+                     launchMode == LaunchMode::MaximizedFocusMode)
             {
                 _root->ToggleFocusMode();
             }
@@ -579,7 +588,7 @@ namespace winrt::TerminalApp::implementation
         // Use the default profile to determine how big of a window we need.
         const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
 
-        auto proposedSize = TermControl::GetProposedDimensions(settings, dpi);
+        auto proposedSize = TermControl::GetProposedDimensions(settings.DefaultSettings(), dpi);
 
         const float scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
 
@@ -919,12 +928,32 @@ namespace winrt::TerminalApp::implementation
         _ApplyTheme(_settings.GlobalSettings().Theme());
     }
 
+    // Function Description:
+    // Returns the current app package or nullptr.
+    // TRANSITIONAL
+    // Exists to work around a compiler bug. This function encapsulates the
+    // exception handling that we used to keep around calls to Package::Current,
+    // so that when it's called inside a coroutine and fails it doesn't explode
+    // terribly.
+    static winrt::Windows::ApplicationModel::Package GetCurrentPackageNoThrow() noexcept
+    {
+        try
+        {
+            return winrt::Windows::ApplicationModel::Package::Current();
+        }
+        catch (...)
+        {
+            // discard any exception -- literally pretend we're not in a package
+        }
+        return nullptr;
+    }
+
     fire_and_forget AppLogic::_ApplyStartupTaskStateChange()
     try
     {
         // First, make sure we're running in a packaged context. This method
         // won't work, and will crash mysteriously if we're running unpackaged.
-        const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
+        const auto package{ GetCurrentPackageNoThrow() };
         if (package == nullptr)
         {
             return;
@@ -968,7 +997,7 @@ namespace winrt::TerminalApp::implementation
     CATCH_LOG();
 
     // Method Description:
-    // - Reloads the settings from the profile.json.
+    // - Reloads the settings from the settings.json file.
     void AppLogic::_ReloadSettings()
     {
         // Attempt to load our settings.
@@ -998,6 +1027,8 @@ namespace winrt::TerminalApp::implementation
         _ApplyStartupTaskStateChange();
 
         Jumplist::UpdateJumplist(_settings);
+
+        _SettingsChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -1166,6 +1197,17 @@ namespace winrt::TerminalApp::implementation
             _hasCommandLineArguments = args.size() > 1;
             _appArgs.ValidateStartupCommands();
             _root->SetStartupActions(_appArgs.GetStartupActions());
+
+            // Check if we were started as a COM server for inbound connections of console sessions
+            // coming out of the operating system default application feature. If so,
+            // tell TerminalPage to start the listener as we have to make sure it has the chance
+            // to register a handler to hear about the requests first and is all ready to receive
+            // them before the COM server registers itself. Otherwise, the request might come
+            // in and be routed to an event with no handlers or a non-ready Page.
+            if (_appArgs.IsHandoffListener())
+            {
+                _root->SetInboundListener();
+            }
         }
 
         return result;
@@ -1367,6 +1409,55 @@ namespace winrt::TerminalApp::implementation
     bool AppLogic::AlwaysOnTop() const
     {
         return _root ? _root->AlwaysOnTop() : false;
+    }
+
+    Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> AppLogic::GlobalHotkeys()
+    {
+        return _settings.GlobalSettings().ActionMap().GlobalHotkeys();
+    }
+
+    void AppLogic::IdentifyWindow()
+    {
+        if (_root)
+        {
+            _root->IdentifyWindow();
+        }
+    }
+
+    winrt::hstring AppLogic::WindowName()
+    {
+        return _root ? _root->WindowName() : L"";
+    }
+    void AppLogic::WindowName(const winrt::hstring& name)
+    {
+        if (_root)
+        {
+            _root->WindowName(name);
+        }
+    }
+    uint64_t AppLogic::WindowId()
+    {
+        return _root ? _root->WindowId() : 0;
+    }
+    void AppLogic::WindowId(const uint64_t& id)
+    {
+        if (_root)
+        {
+            _root->WindowId(id);
+        }
+    }
+
+    void AppLogic::RenameFailed()
+    {
+        if (_root)
+        {
+            _root->RenameFailed();
+        }
+    }
+
+    bool AppLogic::IsQuakeWindow() const noexcept
+    {
+        return _root->IsQuakeWindow();
     }
 
 }

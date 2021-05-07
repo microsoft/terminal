@@ -7,7 +7,36 @@ Module Name:
 
 Abstract:
 - A profile acts as a single set of terminal settings. Many tabs or panes could
-     exist side-by-side with different profiles simultaneously.
+  exist side-by-side with different profiles simultaneously.
+- Profiles could also specify their appearance when unfocused, this is what
+  the inheritance tree looks like for unfocused settings:
+
+                +-------------------+
+                |                   |
+                |Profile.defaults   |
+                |                   |
+                |DefaultAppearance  |
+                |                   |
+                +-------------------+
+                   ^             ^
+                   |             |
++------------------++           ++------------------+
+|                   |           |                   |
+|MyProfile          |           |Profile.defaults   |
+|                   |           |                   |
+|DefaultAppearance  |           |UnfocusedAppearance|
+|                   |           |                   |
++-------------------+           +-------------------+
+                   ^
+                   |
++------------------++
+|                   |
+|MyProfile          |
+|                   |
+|UnfocusedAppearance|
+|                   |
++-------------------+
+
 
 Author(s):
 - Mike Griese - March 2019
@@ -21,6 +50,7 @@ Author(s):
 #include "../inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
 #include <DefaultSettings.h>
+#include "AppearanceConfig.h"
 
 // fwdecl unittest classes
 namespace SettingsModelLocalTests
@@ -55,6 +85,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static com_ptr<Profile> CloneInheritanceGraph(com_ptr<Profile> oldProfile, com_ptr<Profile> newProfile, std::unordered_map<void*, com_ptr<Profile>>& visited);
         static com_ptr<Profile> CopySettings(com_ptr<Profile> source);
+        static void InsertParentHelper(com_ptr<Profile> child, com_ptr<Profile> parent, std::optional<size_t> index = std::nullopt);
 
         Json::Value GenerateStub() const;
         static com_ptr<Profile> FromJson(const Json::Value& json);
@@ -64,8 +95,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const;
 
         hstring EvaluatedStartingDirectory() const;
-        hstring ExpandedBackgroundImagePath() const;
         static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
+
+        Model::IAppearanceConfig DefaultAppearance();
+
+        void _FinalizeInheritance() override;
 
         WINRT_PROPERTY(OriginTag, Origin, OriginTag::Custom);
 
@@ -80,7 +114,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         INHERITABLE_SETTING(Model::Profile, CloseOnExitMode, CloseOnExit, CloseOnExitMode::Graceful);
         INHERITABLE_SETTING(Model::Profile, hstring, TabTitle);
-        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, TabColor, nullptr);
+        INHERITABLE_NULLABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::Color, TabColor, nullptr);
         INHERITABLE_SETTING(Model::Profile, bool, SuppressApplicationTitle, false);
 
         INHERITABLE_SETTING(Model::Profile, bool, UseAcrylic, false);
@@ -95,34 +129,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, hstring, Commandline, L"cmd.exe");
         INHERITABLE_SETTING(Model::Profile, hstring, StartingDirectory);
 
-        INHERITABLE_SETTING(Model::Profile, hstring, BackgroundImagePath);
-        INHERITABLE_SETTING(Model::Profile, double, BackgroundImageOpacity, 1.0);
-        INHERITABLE_SETTING(Model::Profile, Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::UniformToFill);
-        INHERITABLE_SETTING(Model::Profile, ConvergedAlignment, BackgroundImageAlignment, ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center);
-
         INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
-        INHERITABLE_SETTING(Model::Profile, bool, RetroTerminalEffect, false);
-        INHERITABLE_SETTING(Model::Profile, hstring, PixelShaderPath, L"");
         INHERITABLE_SETTING(Model::Profile, bool, ForceFullRepaintRendering, false);
         INHERITABLE_SETTING(Model::Profile, bool, SoftwareRendering, false);
-
-        INHERITABLE_SETTING(Model::Profile, hstring, ColorSchemeName, L"Campbell");
-
-        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, Foreground, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, Background, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, SelectionBackground, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, CursorColor, nullptr);
 
         INHERITABLE_SETTING(Model::Profile, int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
         INHERITABLE_SETTING(Model::Profile, bool, SnapOnInput, true);
         INHERITABLE_SETTING(Model::Profile, bool, AltGrAliasing, true);
 
-        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::CursorStyle, CursorShape, Microsoft::Terminal::Core::CursorStyle::Bar);
-        INHERITABLE_SETTING(Model::Profile, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
-
         INHERITABLE_SETTING(Model::Profile, Model::BellStyle, BellStyle, BellStyle::Audible);
 
+        INHERITABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
+
     private:
+        Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
         static guid _GenerateGuidForProfile(const hstring& name, const hstring& source) noexcept;

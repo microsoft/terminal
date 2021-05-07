@@ -28,6 +28,11 @@ private:
     bool _shouldCreateWindow{ false };
     winrt::Microsoft::Terminal::Remoting::WindowManager _windowManager{ nullptr };
 
+    std::vector<winrt::Microsoft::Terminal::Control::KeyChord> _hotkeys{};
+    winrt::Windows::Foundation::Collections::IMapView<winrt::Microsoft::Terminal::Control::KeyChord, winrt::Microsoft::Terminal::Settings::Model::Command> _hotkeyActions{ nullptr };
+
+    winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
+
     void _HandleCommandlineArgs();
 
     void _HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
@@ -51,5 +56,29 @@ private:
 
     void _FindTargetWindow(const winrt::Windows::Foundation::IInspectable& sender,
                            const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
+
+    void _BecomeMonarch(const winrt::Windows::Foundation::IInspectable& sender,
+                        const winrt::Windows::Foundation::IInspectable& args);
+    void _GlobalHotkeyPressed(const long hotkeyIndex);
+    void _HandleSummon(const winrt::Windows::Foundation::IInspectable& sender,
+                       const winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior& args);
+
+    winrt::fire_and_forget _IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable sender,
+                                                     const winrt::Windows::Foundation::IInspectable args);
+    void _DisplayWindowId(const winrt::Windows::Foundation::IInspectable& sender,
+                          const winrt::Windows::Foundation::IInspectable& args);
+    winrt::fire_and_forget _RenameWindowRequested(const winrt::Windows::Foundation::IInspectable sender,
+                                                  const winrt::TerminalApp::RenameWindowRequestedArgs args);
+
     GUID _CurrentDesktopGuid();
+
+    bool _LazyLoadDesktopManager();
+
+    winrt::fire_and_forget _setupGlobalHotkeys();
+    winrt::fire_and_forget _createNewTerminalWindow(winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs args);
+    void _HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& sender,
+                                const winrt::Windows::Foundation::IInspectable& args);
+
+    void _IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable& sender,
+                               const winrt::Windows::Foundation::IInspectable& args);
 };

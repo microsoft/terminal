@@ -48,6 +48,7 @@
     <ClInclude Include="BaseWindow.h" />
     <ClInclude Include="IslandWindow.h" />
     <ClInclude Include="NonClientIslandWindow.h" />
+    <ClInclude Include="VirtualDesktopUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -57,6 +58,7 @@
     <ClCompile Include="AppHost.cpp" />
     <ClCompile Include="IslandWindow.cpp" />
     <ClCompile Include="NonClientIslandWindow.cpp" />
+    <ClCompile Include="VirtualDesktopUtils.cpp" />
     <ClCompile Include="icon.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -169,7 +171,6 @@
     <!-- **END VC LIBS HACK** -->
   </Target>
 
-  <Import Project="$(OpenConsoleDir)\build\rules\Branding.targets" />
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
   <Import Project="..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets" Condition="Exists('..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets')" />
 </Project>

@@ -16,6 +16,9 @@
 
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
+    <ClInclude Include="DefaultTerminal.h" >
+        <DependentUpon>DefaultTerminal.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="IconPathConverter.h">
       <DependentUpon>IconPathConverter.idl</DependentUpon>
     </ClInclude>
@@ -25,6 +28,9 @@
     </ClInclude>
     <ClInclude Include="ActionAndArgs.h">
       <DependentUpon>ActionArgs.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ActionMap.h">
+      <DependentUpon>ActionMap.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="AzureCloudShellGenerator.h" />
     <ClInclude Include="CascadiaSettings.h">
@@ -43,15 +49,16 @@
     <ClInclude Include="IInheritable.h" />
     <ClInclude Include="IDynamicProfileGenerator.h" />
     <ClInclude Include="JsonUtils.h" />
+    <ClInclude Include="HashUtils.h" />
     <ClInclude Include="KeyChordSerialization.h">
       <DependentUpon>KeyChordSerialization.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="KeyMapping.h">
-      <DependentUpon>KeyMapping.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="PowershellCoreProfileGenerator.h" />
     <ClInclude Include="Profile.h">
       <DependentUpon>Profile.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="AppearanceConfig.h">
+      <DependentUpon>AppearanceConfig.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="EnumMappings.h">
       <DependentUpon>EnumMappings.idl</DependentUpon>
@@ -68,6 +75,9 @@
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
+    <ClCompile Include="DefaultTerminal.cpp">
+        <DependentUpon>DefaultTerminal.idl</DependentUpon>
+      </ClCompile>
     <ClCompile Include="IconPathConverter.cpp">
       <DependentUpon>IconPathConverter.idl</DependentUpon>
     </ClCompile>
@@ -80,6 +90,12 @@
     </ClCompile>
     <ClCompile Include="ActionArgs.cpp">
       <DependentUpon>ActionArgs.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ActionMap.cpp">
+      <DependentUpon>ActionMap.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ActionMapSerialization.cpp">
+      <DependentUpon>ActionMap.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="AzureCloudShellGenerator.cpp" />
     <ClCompile Include="CascadiaSettings.cpp">
@@ -101,15 +117,12 @@
     <ClCompile Include="KeyChordSerialization.cpp">
       <DependentUpon>KeyChordSerialization.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="KeyMapping.cpp">
-      <DependentUpon>KeyMapping.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="KeyMappingSerialization.cpp">
-      <DependentUpon>KeyMapping.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="PowershellCoreProfileGenerator.cpp" />
     <ClCompile Include="Profile.cpp">
       <DependentUpon>Profile.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="AppearanceConfig.cpp">
+      <DependentUpon>AppearanceConfig.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="TerminalSettings.cpp">
       <DependentUpon>TerminalSettings.idl</DependentUpon>
@@ -128,17 +141,20 @@
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
     <Midl Include="ActionArgs.idl" />
+    <Midl Include="ActionMap.idl" />
     <Midl Include="CascadiaSettings.idl" />
     <Midl Include="ColorScheme.idl" />
     <Midl Include="Command.idl" />
+    <Midl Include="DefaultTerminal.idl" />
     <Midl Include="GlobalAppSettings.idl" />
     <Midl Include="IconPathConverter.idl" />
-    <Midl Include="KeyMapping.idl" />
     <Midl Include="Profile.idl" />
     <Midl Include="EnumMappings.idl" />
     <Midl Include="TerminalSettings.idl" />
     <Midl Include="TerminalWarnings.idl" />
     <Midl Include="KeyChordSerialization.idl" />
+    <Midl Include="AppearanceConfig.idl" />
+    <Midl Include="IAppearanceConfig.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
@@ -225,6 +241,6 @@
   <Target Name="_TerminalAppGenerateUserSettingsH" Inputs="userDefaults.json" Outputs="Generated Files\userDefaults.h" BeforeTargets="BeforeClCompile">
     <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile userDefaults.json -OutPath '&quot;Generated Files\userDefaults.h&quot;' -VariableName UserSettingsJson" />
   </Target>
-
+  
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

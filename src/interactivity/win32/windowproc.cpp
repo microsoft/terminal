@@ -226,18 +226,15 @@ using namespace Microsoft::Console::Types;
         _UpdateSystemMetrics();
         s_ReinitializeFontsForDPIChange();
 
-        if (IsInFullscreen())
-        {
-            // If we're a full screen window, completely ignore what the DPICHANGED says as it will be bigger than the monitor and
-            // instead just ensure that the window is still taking up the full screen.
-            SetIsFullscreen(true);
-        }
-        else
-        {
-            // this is the RECT that the system suggests.
-            RECT* const prcNewScale = (RECT*)lParam;
-            SetWindowPos(hWnd, HWND_TOP, prcNewScale->left, prcNewScale->top, RECT_WIDTH(prcNewScale), RECT_HEIGHT(prcNewScale), SWP_NOZORDER | SWP_NOACTIVATE);
-        }
+        // This is the RECT that the system suggests.
+        RECT* const prcNewScale = (RECT*)lParam;
+        SetWindowPos(hWnd,
+                     HWND_TOP,
+                     prcNewScale->left,
+                     prcNewScale->top,
+                     RECT_WIDTH(prcNewScale),
+                     RECT_HEIGHT(prcNewScale),
+                     SWP_NOZORDER | SWP_NOACTIVATE);
 
         _fInDPIChange = false;
 

@@ -28,6 +28,8 @@
 #include "NewWindowArgs.g.cpp"
 #include "PrevTabArgs.g.cpp"
 #include "NextTabArgs.g.cpp"
+#include "RenameWindowArgs.g.cpp"
+#include "GlobalSummonArgs.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -67,6 +69,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             const til::color tabColor{ _TabColor.Value() };
             ss << fmt::format(L"tabColor: {}, ", tabColor.ToHexString(true));
+        }
+        if (!_ColorScheme.empty())
+        {
+            ss << fmt::format(L"colorScheme: {}, ", _ColorScheme);
         }
 
         if (_SuppressApplicationTitle)
@@ -133,6 +139,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 ss << fmt::format(L"--useApplicationTitle ");
             }
+        }
+
+        if (!_ColorScheme.empty())
+        {
+            ss << fmt::format(L"--colorScheme \"{}\" ", _ColorScheme);
         }
 
         if (!_Commandline.empty())
@@ -557,5 +568,34 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         const auto mode = _SwitcherMode.Value() == TabSwitcherMode::MostRecentlyUsed ? L"most recently used" : L"in order";
         return winrt::hstring(fmt::format(L"{}, {}", RS_(L"NextTabCommandKey"), mode));
+    }
+
+    winrt::hstring RenameWindowArgs::GenerateName() const
+    {
+        // "Rename window to \"{_Name}\""
+        // "Clear window name"
+        if (!_Name.empty())
+        {
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"RenameWindowCommandKey")),
+                            _Name.c_str())
+            };
+        }
+        return RS_(L"ResetWindowNameCommandKey");
+    }
+
+    winrt::hstring GlobalSummonArgs::GenerateName() const
+    {
+        std::wstringstream ss;
+        ss << std::wstring_view(RS_(L"GlobalSummonCommandKey"));
+
+        // "Summon the Terminal window"
+        // "Summon the Terminal window, name:\"{_Name}\""
+        if (!_Name.empty())
+        {
+            ss << L", name: ";
+            ss << std::wstring_view(_Name);
+        }
+        return winrt::hstring{ ss.str() };
     }
 }

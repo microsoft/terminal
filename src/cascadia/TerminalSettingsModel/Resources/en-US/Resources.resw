@@ -154,6 +154,10 @@
     <value>Close tabs after index {0}</value>
     <comment>{0} will be replaced with a number</comment>
   </data>
+  <data name="CopySuffix" xml:space="preserve">
+    <value>Copy</value>
+    <comment>The suffix we add to the name of a duplicated profile.</comment>
+  </data>
   <data name="MoveTabCommandKey" xml:space="preserve">
     <value>Move tab {0}</value>
     <comment>{0} will be replaced with a "forward" / "backward"</comment>
@@ -243,6 +247,12 @@
   </data>
   <data name="NewWindowCommandKey" xml:space="preserve">
     <value>New window</value>
+  </data>
+  <data name="IdentifyWindowCommandKey" xml:space="preserve">
+    <value>Identify window</value>
+  </data>
+  <data name="IdentifyWindowsCommandKey" xml:space="preserve">
+    <value>Identify windows</value>
   </data>
   <data name="NextTabCommandKey" xml:space="preserve">
     <value>Next tab</value>
@@ -374,5 +384,29 @@
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
     <value>Open Settings...</value>
+  </data>
+  <data name="RenameWindowCommandKey" xml:space="preserve">
+    <value>Rename window to "{0}"</value>
+    <comment>{0} will be replaced with a user-defined string</comment>
+  </data>
+  <data name="ResetWindowNameCommandKey" xml:space="preserve">
+    <value>Reset window name</value>
+  </data>
+  <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
+    <value>Rename window...</value>
+  </data>
+  <data name="GlobalSummonCommandKey" xml:space="preserve">
+    <value>Summon the Terminal window</value>
+  </data>
+  <data name="QuakeModeCommandKey" xml:space="preserve">
+    <value>Summon Quake window</value>
+  </data>
+  <data name="InboxWindowsConsoleAuthor" xml:space="preserve">
+    <value>Microsoft Corporation</value>
+    <comment>Paired with `InboxWindowsConsoleName`, this is the application author... which is us: Microsoft.</comment>
+  </data>
+  <data name="InboxWindowsConsoleName" xml:space="preserve">
+    <value>Windows Console Host</value>
+    <comment>Name describing the usage of the classic windows console as the terminal UI. (`conhost.exe`)</comment>
   </data>
 </root>

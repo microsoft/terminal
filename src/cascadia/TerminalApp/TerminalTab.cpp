@@ -167,7 +167,11 @@ namespace winrt::TerminalApp::implementation
             if (lastFocusedControl)
             {
                 lastFocusedControl.Focus(_focusState);
-                lastFocusedControl.TaskbarProgressChanged();
+
+                // Update our own progress state, and fire an event signaling
+                // that our taskbar progress changed.
+                _UpdateProgressState();
+                _TaskbarProgressChangedHandlers(lastFocusedControl, nullptr);
             }
             // When we gain focus, remove the bell indicator if it is active
             if (_tabStatus.BellIndicator())
@@ -207,11 +211,11 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Attempts to update the settings of this tab's tree of panes.
     // Arguments:
-    // - settings: The new TerminalSettings to apply to any matching controls
+    // - settings: The new TerminalSettingsCreateResult to apply to any matching controls
     // - profile: The GUID of the profile these settings should apply to.
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
+    void TerminalTab::UpdateSettings(const TerminalSettingsCreateResult& settings, const GUID& profile)
     {
         _rootPane->UpdateSettings(settings, profile);
 
@@ -378,7 +382,7 @@ namespace winrt::TerminalApp::implementation
 
         co_await winrt::resume_foreground(control.Dispatcher());
 
-        const auto currentOffset = control.GetScrollOffset();
+        const auto currentOffset = control.ScrollOffset();
         control.ScrollViewport(::base::ClampAdd(currentOffset, delta));
     }
 
@@ -510,6 +514,11 @@ namespace winrt::TerminalApp::implementation
         UpdateTitle();
     }
 
+    winrt::hstring TerminalTab::GetTabText() const
+    {
+        return _runtimeTabText;
+    }
+
     void TerminalTab::ResetTabText()
     {
         _runtimeTabText = L"";
@@ -541,6 +550,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::_AttachEventHandlersToControl(const TermControl& control)
     {
         auto weakThis{ get_weak() };
+        auto dispatcher = TabViewItem().Dispatcher();
 
         control.TitleChanged([weakThis](auto&&, auto&&) {
             // Check if Tab's lifetime has expired
@@ -576,37 +586,12 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        control.SetTaskbarProgress([weakThis](auto&&, auto&&) {
+        control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
+            co_await winrt::resume_foreground(dispatcher);
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
             {
-                // The progress of the control changed, but not necessarily the progress of the tab.
-                // Set the tab's progress ring to the active pane's progress
-                if (tab->GetActiveTerminalControl().TaskbarState() > 0)
-                {
-                    if (tab->GetActiveTerminalControl().TaskbarState() == 3)
-                    {
-                        // 3 is the indeterminate state, set the progress ring as such
-                        tab->_tabStatus.IsProgressRingIndeterminate(true);
-                    }
-                    else
-                    {
-                        // any non-indeterminate state has a value, set the progress ring as such
-                        tab->_tabStatus.IsProgressRingIndeterminate(false);
-
-                        const auto progressValue = gsl::narrow<uint32_t>(tab->GetActiveTerminalControl().TaskbarProgress());
-                        tab->_tabStatus.ProgressValue(progressValue);
-                    }
-                    // Hide the tab icon (the progress ring is placed over it)
-                    tab->HideIcon(true);
-                    tab->_tabStatus.IsProgressRingActive(true);
-                }
-                else
-                {
-                    // Show the tab icon
-                    tab->HideIcon(false);
-                    tab->_tabStatus.IsProgressRingActive(false);
-                }
+                tab->_UpdateProgressState();
             }
         });
 
@@ -632,6 +617,54 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - This should be called on the UI thread. If you don't, then it might
+    //   silently do nothing.
+    // - Update our TabStatus to reflect the progress state of the currently
+    //   active pane.
+    // - This is called every time _any_ control's progress state changes,
+    //   regardless of if that control is the active one or not. This is simpler
+    //   then re-attaching this handler to the active control each time it
+    //   changes.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalTab::_UpdateProgressState()
+    {
+        if (const auto& activeControl{ GetActiveTerminalControl() })
+        {
+            const auto taskbarState = activeControl.TaskbarState();
+            // The progress of the control changed, but not necessarily the progress of the tab.
+            // Set the tab's progress ring to the active pane's progress
+            if (taskbarState > 0)
+            {
+                if (taskbarState == 3)
+                {
+                    // 3 is the indeterminate state, set the progress ring as such
+                    _tabStatus.IsProgressRingIndeterminate(true);
+                }
+                else
+                {
+                    // any non-indeterminate state has a value, set the progress ring as such
+                    _tabStatus.IsProgressRingIndeterminate(false);
+
+                    const auto progressValue = gsl::narrow<uint32_t>(activeControl.TaskbarProgress());
+                    _tabStatus.ProgressValue(progressValue);
+                }
+                // Hide the tab icon (the progress ring is placed over it)
+                HideIcon(true);
+                _tabStatus.IsProgressRingActive(true);
+            }
+            else
+            {
+                // Show the tab icon
+                HideIcon(false);
+                _tabStatus.IsProgressRingActive(false);
+            }
+        }
+    }
+
+    // Method Description:
     // - Mark the given pane as the active pane in this tab. All other panes
     //   will be marked as inactive. We'll also update our own UI state to
     //   reflect this newly active pane.
@@ -648,6 +681,7 @@ namespace winrt::TerminalApp::implementation
 
         // Update our own title text to match the newly-active pane.
         UpdateTitle();
+        _UpdateProgressState();
 
         // We need to move the pane to the top of our mru list
         // If its already somewhere in the list, remove it first
@@ -779,21 +813,6 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        // Close
-        Controls::MenuFlyoutItem closeTabMenuItem;
-        Controls::FontIcon closeSymbol;
-        closeSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
-        closeSymbol.Glyph(L"\xE711");
-
-        closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
-            if (auto tab{ weakThis.get() })
-            {
-                tab->_ClosedHandlers(nullptr, nullptr);
-            }
-        });
-        closeTabMenuItem.Text(RS_(L"TabClose"));
-        closeTabMenuItem.Icon(closeSymbol);
-
         // "Color..."
         Controls::MenuFlyoutItem chooseColorMenuItem;
         Controls::FontIcon colorPickSymbol;
@@ -865,8 +884,7 @@ namespace winrt::TerminalApp::implementation
         newTabFlyout.Items().Append(renameTabMenuItem);
         newTabFlyout.Items().Append(duplicateTabMenuItem);
         newTabFlyout.Items().Append(menuSeparator);
-        newTabFlyout.Items().Append(_CreateCloseSubMenu());
-        newTabFlyout.Items().Append(closeTabMenuItem);
+        _AppendCloseMenuItems(newTabFlyout);
         TabViewItem().ContextFlyout(newTabFlyout);
     }
 

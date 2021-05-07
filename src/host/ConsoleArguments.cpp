@@ -14,6 +14,7 @@ const std::wstring_view ConsoleArguments::SIGNAL_HANDLE_ARG = L"--signal";
 const std::wstring_view ConsoleArguments::HANDLE_PREFIX = L"0x";
 const std::wstring_view ConsoleArguments::CLIENT_COMMANDLINE_ARG = L"--";
 const std::wstring_view ConsoleArguments::FORCE_V1_ARG = L"-ForceV1";
+const std::wstring_view ConsoleArguments::FORCE_NO_HANDOFF_ARG = L"-ForceNoHandoff";
 const std::wstring_view ConsoleArguments::FILEPATH_LEADER_PREFIX = L"\\??\\";
 const std::wstring_view ConsoleArguments::WIDTH_ARG = L"--width";
 const std::wstring_view ConsoleArguments::HEIGHT_ARG = L"--height";
@@ -22,6 +23,7 @@ const std::wstring_view ConsoleArguments::RESIZE_QUIRK = L"--resizeQuirk";
 const std::wstring_view ConsoleArguments::WIN32_INPUT_MODE = L"--win32input";
 const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
+const std::wstring_view ConsoleArguments::COM_SERVER_ARG = L"-Embedding";
 
 std::wstring EscapeArgument(std::wstring_view ac)
 {
@@ -109,10 +111,12 @@ ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
     _clientCommandline = L"";
     _vtMode = L"";
     _headless = false;
+    _runAsComServer = false;
     _createServerHandle = true;
     _serverHandle = 0;
     _signalHandle = 0;
     _forceV1 = false;
+    _forceNoHandoff = false;
     _width = 0;
     _height = 0;
     _inheritCursor = false;
@@ -141,6 +145,8 @@ ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments& other)
         _height = other._height;
         _inheritCursor = other._inheritCursor;
         _receivedEarlySizeChange = other._receivedEarlySizeChange;
+        _runAsComServer = other._runAsComServer;
+        _forceNoHandoff = other._forceNoHandoff;
     }
 
     return *this;
@@ -446,6 +452,19 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
             s_ConsumeArg(args, i);
             hr = S_OK;
         }
+        else if (arg == FORCE_NO_HANDOFF_ARG)
+        {
+            // Prevent default application handoff to a different console/terminal
+            _forceNoHandoff = true;
+            s_ConsumeArg(args, i);
+            hr = S_OK;
+        }
+        else if (arg == COM_SERVER_ARG)
+        {
+            _runAsComServer = true;
+            s_ConsumeArg(args, i);
+            hr = S_OK;
+        }
         else if (arg.substr(0, FILEPATH_LEADER_PREFIX.length()) == FILEPATH_LEADER_PREFIX)
         {
             // beginning of command line -- includes file path
@@ -576,6 +595,11 @@ bool ConsoleArguments::ShouldCreateServerHandle() const
     return _createServerHandle;
 }
 
+bool ConsoleArguments::ShouldRunAsComServer() const
+{
+    return _runAsComServer;
+}
+
 HANDLE ConsoleArguments::GetServerHandle() const
 {
     return ULongToHandle(_serverHandle);
@@ -596,6 +620,11 @@ HANDLE ConsoleArguments::GetVtOutHandle() const
     return _vtOutHandle;
 }
 
+std::wstring ConsoleArguments::GetOriginalCommandLine() const
+{
+    return _commandline;
+}
+
 std::wstring ConsoleArguments::GetClientCommandline() const
 {
     return _clientCommandline;
@@ -609,6 +638,11 @@ std::wstring ConsoleArguments::GetVtMode() const
 bool ConsoleArguments::GetForceV1() const
 {
     return _forceV1;
+}
+
+bool ConsoleArguments::GetForceNoHandoff() const
+{
+    return _forceNoHandoff;
 }
 
 short ConsoleArguments::GetWidth() const

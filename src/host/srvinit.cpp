@@ -26,6 +26,10 @@
 #include "../inc/conint.h"
 #include "../propslib/DelegationConfig.hpp"
 
+#ifndef __INSIDE_WINDOWS
+#include "ITerminalHandoff.h"
+#endif // __INSIDE_WINDOWS
+
 #pragma hdrstop
 
 using namespace Microsoft::Console::Interactivity;
@@ -39,7 +43,11 @@ try
 {
     Globals& Globals = ServiceLocator::LocateGlobals();
 
-    Globals.pDeviceComm = new ConDrvDeviceComm(Server);
+    if (!Globals.pDeviceComm)
+    {
+        // in rare circumstances (such as in the fuzzing harness), there will already be a device comm
+        Globals.pDeviceComm = new ConDrvDeviceComm(Server);
+    }
 
     Globals.launchArgs = *args;
 
@@ -59,6 +67,10 @@ try
         if (SUCCEEDED(DelegationConfig::s_GetDefaultConsoleId(delegationClsid)))
         {
             Globals.handoffConsoleClsid = delegationClsid;
+        }
+        if (SUCCEEDED(DelegationConfig::s_GetDefaultTerminalId(delegationClsid)))
+        {
+            Globals.handoffTerminalClsid = delegationClsid;
         }
     }
 
@@ -265,21 +277,55 @@ void ConsoleCheckDebug()
 #endif
 }
 
-[[nodiscard]] HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, const ConsoleArguments* const args)
+// Routine Description:
+// - Sets up the main driver message packet (I/O) processing
+//   thread that will handle all client requests from all
+//   attached command-line applications for the duration
+//   of this console server session.
+// - The optional arguments are only used when receiving a handoff
+//   from another console server (typically in-box to the Windows OS image)
+//   that has already started processing the console session.
+//   They will be blank and generated internally by this method if this is the first
+//   console server starting in response to a client startup or ConPTY setup
+//   request.
+// Arguments:
+// - Server - Handle to the console driver that represents
+//     our server side of the connection.
+// - args - Command-line arguments from starting this console host
+//    that may affect the way we host the session.
+// - driverInputEvent - (Optional) Event registered with the console driver
+//    that we will use to wake up input read requests that
+//    are blocked because they came in when we had no input ready.
+// - connectMessage - (Optional) A message received from a connecting client
+//    by another console server that is being passed off to us as a part of
+//    the handoff strategy.
+HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
+                              const ConsoleArguments* const args,
+                              HANDLE driverInputEvent,
+                              PCONSOLE_API_MSG connectMessage)
 {
     auto& g = ServiceLocator::LocateGlobals();
     RETURN_IF_FAILED(ConsoleServerInitialization(Server, args));
     RETURN_IF_FAILED(g.hConsoleInputInitEvent.create(wil::EventOptions::None));
 
-    // Set up and tell the driver about the input available event.
-    RETURN_IF_FAILED(g.hInputEvent.create(wil::EventOptions::ManualReset));
+    if (driverInputEvent != INVALID_HANDLE_VALUE)
+    {
+        // Store the driver input event. It's already been told that it exists by whomever started us.
+        g.hInputEvent.reset(driverInputEvent);
+    }
+    else
+    {
+        // Set up and tell the driver about the input available event.
+        RETURN_IF_FAILED(g.hInputEvent.create(wil::EventOptions::ManualReset));
 
-    CD_IO_SERVER_INFORMATION ServerInformation;
-    ServerInformation.InputAvailableEvent = ServiceLocator::LocateGlobals().hInputEvent.get();
-    RETURN_IF_FAILED(g.pDeviceComm->SetServerInformation(&ServerInformation));
+        CD_IO_SERVER_INFORMATION ServerInformation;
+        ServerInformation.InputAvailableEvent = ServiceLocator::LocateGlobals().hInputEvent.get();
+        RETURN_IF_FAILED(g.pDeviceComm->SetServerInformation(&ServerInformation));
+    }
 
-    HANDLE const hThread = CreateThread(nullptr, 0, ConsoleIoThread, nullptr, 0, nullptr);
+    HANDLE const hThread = CreateThread(nullptr, 0, ConsoleIoThread, connectMessage, 0, nullptr);
     RETURN_HR_IF(E_HANDLE, hThread == nullptr);
+    LOG_IF_FAILED(SetThreadDescription(hThread, L"Console Driver Message IO Thread"));
     LOG_IF_WIN32_BOOL_FALSE(CloseHandle(hThread)); // The thread will run on its own and close itself. Free the associated handle.
 
     // See MSFT:19918626
@@ -293,6 +339,121 @@ void ConsoleCheckDebug()
     RETURN_IF_FAILED(gci.GetVtIo()->CreateAndStartSignalThread());
 
     return S_OK;
+}
+
+// Routine Description:
+// - Accepts a console server session from another console server
+//   most commonly from the operating system in-box console to
+//   a more-up-to-date and out-of-band delivered one.
+// Arguments:
+// - Server - Handle to the console driver that represents our server
+//    side of hosting the console session
+// - driverInputEvent - Handle to an event already registered with the
+//    driver that clients will implicitly wait on when we don't have
+//    any input to return in the queue when a request is made and is
+//    signaled to unblock them when input finally arrives.
+// - connectMessage - A console driver/server message as received
+//    by the previous console server for us to finish processing in
+//    order to complete the client's initial connection and store
+//    all necessary callback information for all subsequent API calls.
+// Return Value:
+// - COM errors, registry errors, pipe errors, handle manipulation errors,
+//   errors from the creating the thread for the
+//   standard IO thread loop for the server to process messages
+//   from the driver... or an S_OK success.
+[[nodiscard]] HRESULT ConsoleEstablishHandoff([[maybe_unused]] _In_ HANDLE Server,
+                                              [[maybe_unused]] HANDLE driverInputEvent,
+                                              [[maybe_unused]] PCONSOLE_API_MSG connectMessage)
+try
+{
+#ifdef __INSIDE_WINDOWS
+    return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+#else // !__INSIDE_WINDOWS
+    auto& g = ServiceLocator::LocateGlobals();
+    g.handoffTarget = true;
+
+    IID delegationClsid;
+    if (SUCCEEDED(DelegationConfig::s_GetDefaultConsoleId(delegationClsid)))
+    {
+        g.handoffConsoleClsid = delegationClsid;
+    }
+    if (SUCCEEDED(DelegationConfig::s_GetDefaultTerminalId(delegationClsid)))
+    {
+        g.handoffTerminalClsid = delegationClsid;
+    }
+
+    if (!g.handoffTerminalClsid)
+    {
+        return E_NOT_SET;
+    }
+
+    wil::unique_handle signalPipeTheirSide;
+    wil::unique_handle signalPipeOurSide;
+
+    wil::unique_handle inPipeTheirSide;
+    wil::unique_handle inPipeOurSide;
+
+    wil::unique_handle outPipeTheirSide;
+    wil::unique_handle outPipeOurSide;
+
+    SECURITY_ATTRIBUTES sa;
+    sa.nLength = sizeof(sa);
+    // Mark inheritable for signal handle when creating. It'll have the same value on the other side.
+    sa.bInheritHandle = TRUE;
+    sa.lpSecurityDescriptor = nullptr;
+
+    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeOurSide.addressof(), signalPipeTheirSide.addressof(), nullptr, 0));
+    RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeTheirSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
+
+    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(inPipeOurSide.addressof(), inPipeTheirSide.addressof(), nullptr, 0));
+    RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(inPipeTheirSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
+
+    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(outPipeTheirSide.addressof(), outPipeOurSide.addressof(), nullptr, 0));
+    RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(outPipeTheirSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
+
+    wil::unique_handle clientProcess{ OpenProcess(PROCESS_QUERY_INFORMATION | SYNCHRONIZE, TRUE, static_cast<DWORD>(connectMessage->Descriptor.Process)) };
+    RETURN_LAST_ERROR_IF_NULL(clientProcess.get());
+
+    ::Microsoft::WRL::ComPtr<ITerminalHandoff> handoff;
+
+    RETURN_IF_FAILED(CoCreateInstance(g.handoffTerminalClsid.value(), nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&handoff)));
+
+    RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeTheirSide.get(),
+                                                  outPipeTheirSide.get(),
+                                                  signalPipeTheirSide.get(),
+                                                  clientProcess.get()));
+
+    inPipeTheirSide.release();
+    outPipeTheirSide.release();
+    signalPipeTheirSide.release();
+
+    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --signal {:#x}"), (int64_t)signalPipeOurSide.release());
+
+    ConsoleArguments consoleArgs(commandLine, inPipeOurSide.release(), outPipeOurSide.release());
+    RETURN_IF_FAILED(consoleArgs.ParseCommandline());
+
+    return ConsoleCreateIoThread(Server, &consoleArgs, driverInputEvent, connectMessage);
+#endif // __INSIDE_WINDOWS
+}
+CATCH_RETURN()
+
+// Routine Description:
+// - Creates the I/O thread for handling and processing messages from the console driver
+//   as the server side of a console session.
+// - This entrypoint is for all start scenarios that are not receiving a hand-off
+//   from another console server. For example, getting started by kernelbase.dll from
+//   the operating system as a client application realizes it needs a console server,
+//   getting started to be a ConPTY host inside the OS, or being double clicked either
+//   inside the OS as `conhost.exe` or outside as `OpenConsole.exe`.
+// Arguments:
+// - Server - The server side handle to the console driver to let us pick up messages to process for the clients.
+// - args - A structure of arguments that may have been passed in on the command-line, typically only used to control the ConPTY configuration.
+// Return Value:
+// - S_OK if the thread starts up correctly or any number of thread, registry, windowing, or just about any other
+//   failure that could possibly occur during console server initialization.
+[[nodiscard]] HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, const ConsoleArguments* const args)
+{
+    return ConsoleCreateIoThread(Server, args, INVALID_HANDLE_VALUE, nullptr);
 }
 
 #define SYSTEM_ROOT (L"%SystemRoot%")
@@ -662,10 +823,10 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 // - This routine is the main one in the console server IO thread.
 // - It reads IO requests submitted by clients through the driver, services and completes them in a loop.
 // Arguments:
-// - <none>
+// - lpParameter - PCONSOLE_API_MSG being handed off to us from the previous I/O.
 // Return Value:
 // - This routine never returns. The process exits when no more references or clients exist.
-DWORD WINAPI ConsoleIoThread(LPVOID /*lpParameter*/)
+DWORD WINAPI ConsoleIoThread(LPVOID lpParameter)
 {
     auto& globals = ServiceLocator::LocateGlobals();
 
@@ -673,6 +834,15 @@ DWORD WINAPI ConsoleIoThread(LPVOID /*lpParameter*/)
     ReceiveMsg._pApiRoutines = &globals.api;
     ReceiveMsg._pDeviceComm = globals.pDeviceComm;
     PCONSOLE_API_MSG ReplyMsg = nullptr;
+
+    // If we were given a message on startup, process that in our context and then continue with the IO loop normally.
+    if (lpParameter)
+    {
+        ReceiveMsg = *(PCONSOLE_API_MSG)lpParameter;
+        ReceiveMsg._pApiRoutines = &globals.api;
+        ReceiveMsg._pDeviceComm = globals.pDeviceComm;
+        IoSorter::ServiceIoOperation(&ReceiveMsg, &ReplyMsg);
+    }
 
     bool fShouldExit = false;
     while (!fShouldExit)

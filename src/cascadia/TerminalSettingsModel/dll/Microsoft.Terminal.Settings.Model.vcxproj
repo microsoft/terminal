@@ -22,6 +22,7 @@
     <!-- Only put headers for winrt types in here. Don't put other header files
     in here - put them in the lib's vcxproj instead! -->
     <ClInclude Include="../ActionArgs.h" />
+    <ClInclude Include="../ActionMap.h" />
     <ClInclude Include="../CascadiaSettings.h" />
     <ClInclude Include="../ColorScheme.h" />
     <ClInclude Include="../Command.h" />
@@ -40,7 +41,6 @@
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="$(ProjectName).def" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
@@ -52,6 +52,9 @@
     -->
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
       <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\propslib\propslib.vcxproj">
+      <Project>{345FD5A4-B32B-4F29-BD1C-B033BD2C35CC}</Project>
     </ProjectReference>
     <!-- The midl compiler however, _will_ aggregate our winmd dependencies
     somehow. So make sure to only include top-level dependencies here (don't

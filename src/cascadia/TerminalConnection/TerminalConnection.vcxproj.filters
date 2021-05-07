@@ -18,12 +18,14 @@
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="AzureConnection.cpp" />
     <ClCompile Include="init.cpp" />
+    <ClCompile Include="CTerminalHandoff.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="EchoConnection.h" />
     <ClInclude Include="AzureConnection.h" />
     <ClInclude Include="AzureClientID.h" />
+    <ClInclude Include="CTerminalHandoff.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ITerminalConnection.idl" />
@@ -38,8 +40,6 @@
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
   <ItemGroup>
-    <PRIResource Include="Resources/en-US/Resources.resw">
-      <Filter>Resources\en-US</Filter>
-    </PRIResource>
+    <PRIResource Include="Resources\en-US\Resources.resw" />
   </ItemGroup>
 </Project>

@@ -1,30 +1,31 @@
-﻿<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
-the MIT License. See LICENSE in the project root for license information. -->
-<UserControl
-    x:Class="Microsoft.Terminal.Control.TermControl"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="using:Microsoft.Terminal.Control"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    HorizontalAlignment="Stretch"
-    VerticalAlignment="Stretch"
-    d:DesignHeight="768"
-    d:DesignWidth="1024"
-    TabNavigation="Cycle"
-    IsTabStop="True"
-    AllowFocusOnInteraction="True"
-    AllowDrop="True"
-    Drop="_DragDropHandler"
-    DragOver="_DragOverHandler"
-    Tapped="_TappedHandler"
-    PointerWheelChanged="_MouseWheelHandler"
-    PreviewKeyDown="_KeyDownHandler"
-    KeyUp="_KeyUpHandler"
-    CharacterReceived="_CharacterHandler"
-    GotFocus="_GotFocusHandler"
-    LostFocus="_LostFocusHandler">
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<UserControl x:Class="Microsoft.Terminal.Control.TermControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="using:Microsoft.Terminal.Control"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch"
+             d:DesignHeight="768"
+             d:DesignWidth="1024"
+             AllowDrop="True"
+             AllowFocusOnInteraction="True"
+             CharacterReceived="_CharacterHandler"
+             DragOver="_DragOverHandler"
+             Drop="_DragDropHandler"
+             GotFocus="_GotFocusHandler"
+             IsTabStop="True"
+             KeyUp="_KeyUpHandler"
+             LostFocus="_LostFocusHandler"
+             PointerWheelChanged="_MouseWheelHandler"
+             PreviewKeyDown="_KeyDownHandler"
+             TabNavigation="Cycle"
+             Tapped="_TappedHandler"
+             mc:Ignorable="d">
     <!--
         TODO GH#4031: We've investigated whether we should be using KeyDown or PreviewKeyDown
         but not necessarily come to a consensus. It's possible that moving input to the SwapChainPanel
@@ -41,16 +42,16 @@ the MIT License. See LICENSE in the project root for license information. -->
             </Grid.ColumnDefinitions>
 
             <Grid Grid.Column="0"
-                  Visibility="Visible"
                   Background="Transparent"
-                  PointerPressed="_PointerPressedHandler"
+                  PointerExited="_PointerExitedHandler"
                   PointerMoved="_PointerMovedHandler"
+                  PointerPressed="_PointerPressedHandler"
                   PointerReleased="_PointerReleasedHandler"
-                  PointerExited="_PointerExitedHandler">
+                  Visibility="Visible">
 
                 <SwapChainPanel x:Name="SwapChainPanel"
-                                SizeChanged="_SwapChainSizeChanged"
-                                CompositionScaleChanged="_SwapChainScaleChanged">
+                                CompositionScaleChanged="_SwapChainScaleChanged"
+                                SizeChanged="_SwapChainSizeChanged">
 
                     <Canvas x:Name="OverlayCanvas"
                             Visibility="Visible">
@@ -59,11 +60,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <ToolTipService.ToolTip>
                                 <ToolTip x:Name="LinkTip"
                                          Placement="Mouse">
-                                    <TextBlock IsTextSelectionEnabled="True">
-                                        <Run x:Name="HoveredUri"/> <LineBreak />
+                                    <TextBlock IsTextSelectionEnabled="True"
+                                               TextWrapping="Wrap">
+                                        <Run x:Name="HoveredUri" /> <LineBreak />
                                         <Run x:Uid="HowToOpenRun"
-                                             FontStyle="Italic">
-                                        </Run>
+                                             FontStyle="Italic" />
                                     </TextBlock>
                                 </ToolTip>
                             </ToolTipService.ToolTip>
@@ -71,31 +72,33 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </Canvas>
                 </SwapChainPanel>
 
-                <!-- Putting this in a grid w/ the SwapChainPanel
-                ensures that it's always aligned w/ the scrollbar -->
+                <!--
+                    Putting this in a grid w/ the SwapChainPanel
+                    ensures that it's always aligned w/ the scrollbar
+                -->
                 <local:SearchBoxControl x:Name="SearchBox"
-                                        x:Load="False"
-                                        Visibility="Collapsed"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Top"
+                                        x:Load="False"
+                                        Closed="_CloseSearchBoxControl"
                                         Search="_Search"
-                                        Closed="_CloseSearchBoxControl" />
+                                        Visibility="Collapsed" />
             </Grid>
 
-            <ScrollBar Grid.Column="1"
-                       x:Name="ScrollBar"
-                       Orientation="Vertical"
-                       IndicatorMode="MouseIndicator"
+            <ScrollBar x:Name="ScrollBar"
+                       Grid.Column="1"
                        HorizontalAlignment="Right"
                        VerticalAlignment="Stretch"
-                       Maximum="1"
-                       ViewportSize="10"
+                       IndicatorMode="MouseIndicator"
                        IsTabStop="False"
-                       SmallChange="1"
                        LargeChange="4"
-                       ValueChanged="_ScrollbarChangeHandler"
+                       Maximum="1"
+                       Orientation="Vertical"
                        PointerPressed="_CapturePointer"
-                       PointerReleased="_ReleasePointerCapture" />
+                       PointerReleased="_ReleasePointerCapture"
+                       SmallChange="1"
+                       ValueChanged="_ScrollbarChangeHandler"
+                       ViewportSize="10" />
         </Grid>
 
         <local:TSFInputControl x:Name="TSFInputControl"
@@ -104,18 +107,22 @@ the MIT License. See LICENSE in the project root for license information. -->
                                CurrentFontInfo="_FontInfoHandler" />
 
         <Grid x:Name="RendererFailedNotice"
-              x:Load="False"
               HorizontalAlignment="Center"
-              VerticalAlignment="Center">
-            <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
-                    BorderBrush="{ThemeResource SystemAccentColor}"
-                    Margin="8,8,8,8"
+              VerticalAlignment="Center"
+              x:Load="False">
+            <Border Margin="8,8,8,8"
                     Padding="8,8,8,8"
+                    Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{ThemeResource SystemAccentColor}"
                     BorderThickness="2,2,2,2"
                     CornerRadius="{ThemeResource OverlayCornerRadius}">
                 <StackPanel>
-                    <TextBlock HorizontalAlignment="Center" x:Uid="TermControl_RendererFailedTextBlock" TextWrapping="WrapWholeWords"/>
-                    <Button Click="_RenderRetryButton_Click" x:Uid="TermControl_RendererRetryButton" HorizontalAlignment="Right" />
+                    <TextBlock x:Uid="TermControl_RendererFailedTextBlock"
+                               HorizontalAlignment="Center"
+                               TextWrapping="WrapWholeWords" />
+                    <Button x:Uid="TermControl_RendererRetryButton"
+                            HorizontalAlignment="Right"
+                            Click="_RenderRetryButton_Click" />
                 </StackPanel>
             </Border>
         </Grid>

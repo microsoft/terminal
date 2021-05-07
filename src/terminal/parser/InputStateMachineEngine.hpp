@@ -24,20 +24,20 @@ Author(s):
 namespace Microsoft::Console::VirtualTerminal
 {
     // The values used by VkKeyScan to encode modifiers in the high order byte
-    const short KEYSCAN_SHIFT = 1;
-    const short KEYSCAN_CTRL = 2;
-    const short KEYSCAN_ALT = 4;
+    constexpr short KEYSCAN_SHIFT = 1;
+    constexpr short KEYSCAN_CTRL = 2;
+    constexpr short KEYSCAN_ALT = 4;
 
     // The values with which VT encodes modifier values.
-    const short VT_SHIFT = 1;
-    const short VT_ALT = 2;
-    const short VT_CTRL = 4;
+    constexpr short VT_SHIFT = 1;
+    constexpr short VT_ALT = 2;
+    constexpr short VT_CTRL = 4;
 
     // The assumed values for SGR Mouse Scroll Wheel deltas
     constexpr DWORD SCROLL_DELTA_BACKWARD = 0xFF800000;
     constexpr DWORD SCROLL_DELTA_FORWARD = 0x00800000;
 
-    const size_t WRAPPED_SEQUENCE_MAX_LENGTH = 8;
+    constexpr size_t WRAPPED_SEQUENCE_MAX_LENGTH = 8;
 
     // For reference, the equivalent INPUT_RECORD values are:
     // RIGHT_ALT_PRESSED   0x0001
@@ -145,6 +145,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool ActionVt52EscDispatch(const VTID id, const VTParameters parameters) noexcept override;
 
         bool ActionCsiDispatch(const VTID id, const VTParameters parameters) override;
+
+        StringHandler ActionDcsDispatch(const VTID id, const VTParameters parameters) noexcept override;
 
         bool ActionClear() noexcept override;
 

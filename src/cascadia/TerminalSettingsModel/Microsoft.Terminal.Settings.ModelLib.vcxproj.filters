@@ -33,6 +33,7 @@
     </ClCompile>
     <ClCompile Include="init.cpp" />
     <ClCompile Include="IconPathConverter.cpp" />
+    <ClCompile Include="DefaultTerminal.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -64,19 +65,24 @@
     </ClInclude>
     <ClInclude Include="IInheritable.h" />
     <ClInclude Include="IconPathConverter.h" />
+    <ClInclude Include="DefaultTerminal.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ActionArgs.idl" />
+    <Midl Include="ActionMap.idl" />
     <Midl Include="ColorScheme.idl" />
     <Midl Include="Command.idl" />
     <Midl Include="GlobalAppSettings.idl" />
-    <Midl Include="KeyMapping.idl" />
     <Midl Include="Profile.idl" />
     <Midl Include="TerminalWarnings.idl" />
     <Midl Include="CascadiaSettings.idl" />
     <Midl Include="KeyChordSerialization.idl" />
     <Midl Include="EnumMappings.idl" />
     <Midl Include="IconPathConverter.idl" />
+    <Midl Include="TerminalSettings.idl" />
+    <Midl Include="AppearanceConfig.idl" />
+    <Midl Include="IAppearanceConfig.idl" />
+    <Midl Include="DefaultTerminal.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

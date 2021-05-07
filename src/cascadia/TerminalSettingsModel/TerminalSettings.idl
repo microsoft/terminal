@@ -5,6 +5,13 @@ import "CascadiaSettings.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
+    runtimeclass TerminalSettingsCreateResult
+    {
+        TerminalSettingsCreateResult(TerminalSettings defaultSettings);
+        TerminalSettings DefaultSettings { get; };
+        TerminalSettings UnfocusedSettings { get; };
+    }
+
     // Class Description:
     // TerminalSettings encapsulates all settings that control the
     //      TermControl's behavior. In these settings there is both the entirety
@@ -19,12 +26,12 @@ namespace Microsoft.Terminal.Settings.Model
     {
         TerminalSettings();
 
-        static TerminalSettings CreateWithProfileByID(CascadiaSettings appSettings, Guid profileGuid, Microsoft.Terminal.Control.IKeyBindings keybindings);
-        static TerminalSettings CreateWithNewTerminalArgs(CascadiaSettings appSettings, NewTerminalArgs newTerminalArgs, Microsoft.Terminal.Control.IKeyBindings keybindings);
-        static TerminalSettings CreateWithParent(TerminalSettings parent);
+        static TerminalSettingsCreateResult CreateWithProfileByID(CascadiaSettings appSettings, Guid profileGuid, Microsoft.Terminal.Control.IKeyBindings keybindings);
+        static TerminalSettingsCreateResult CreateWithNewTerminalArgs(CascadiaSettings appSettings, NewTerminalArgs newTerminalArgs, Microsoft.Terminal.Control.IKeyBindings keybindings);
+        static TerminalSettingsCreateResult CreateWithParent(TerminalSettingsCreateResult parent);
 
         void SetParent(TerminalSettings parent);
+        TerminalSettings GetParent();
         void ApplyColorScheme(ColorScheme scheme);
     };
-
 }

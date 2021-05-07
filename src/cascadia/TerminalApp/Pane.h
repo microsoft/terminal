@@ -19,8 +19,7 @@
 // - Mike Griese (zadjii-msft) 16-May-2019
 
 #pragma once
-#include <winrt/Microsoft.Terminal.Control.h>
-#include <winrt/TerminalApp.h>
+
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 enum class Borders : int
@@ -51,7 +50,7 @@ public:
     void ClearActive();
     void SetActive();
 
-    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettings& settings,
+    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                         const GUID& profile);
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
     void Relayout();
@@ -119,8 +118,6 @@ private:
     std::shared_mutex _createCloseLock{};
 
     Borders _borders{ Borders::None };
-
-    std::atomic<bool> _isClosing{ false };
 
     bool _zoomed{ false };
 

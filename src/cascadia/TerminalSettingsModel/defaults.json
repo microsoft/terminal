@@ -11,6 +11,7 @@
     // Selection
     "copyOnSelect": false,
     "copyFormatting": true,
+    "trimBlockSelection": false,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
 
     // Tab UI
@@ -295,6 +296,8 @@
         { "command": "renameTab" },
         { "command": "openTabRenamer" },
         { "command": "commandPalette", "keys":"ctrl+shift+p" },
+        { "command": "identifyWindow" },
+        { "command": "openWindowRenamer" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
@@ -360,6 +363,8 @@
         // Visual Adjustments
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+=" },
         { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+-" },
+        { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+numpad_plus" },
+        { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+numpad_minus" },
         { "command": "resetFontSize", "keys": "ctrl+0" },
 
         // Other commands

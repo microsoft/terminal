@@ -27,7 +27,7 @@ namespace til
     }
 
     // Method Description:
-    // - This is a function for finding all occurences of a given string
+    // - This is a function for finding all occurrences of a given string
     //   `needle` in a larger string `haystack`, and replacing them with the
     //   string `replacement`.
     // - This find/replace is done in-place, leaving `haystack` modified as a result.
@@ -50,7 +50,7 @@ namespace til
     }
 
     // Method Description:
-    // - This is a function for finding all occurences of a given string
+    // - This is a function for finding all occurrences of a given string
     //   `needle` in a larger string `haystack`, and replacing them with the
     //   string `replacement`.
     // - This find/replace is done on a copy of `haystack`, leaving `haystack`

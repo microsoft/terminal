@@ -25,7 +25,7 @@ namespace TerminalApp
 
         void SetTabs(Windows.Foundation.Collections.IObservableVector<TabBase> tabs, Windows.Foundation.Collections.IObservableVector<TabBase> mruTabs);
 
-        void SetKeyMap(Microsoft.Terminal.Settings.Model.KeyMapping keymap);
+        void SetActionMap(Microsoft.Terminal.Settings.Model.IActionMapView actionMap);
 
         void SelectNextItem(Boolean moveDown);
 
@@ -36,5 +36,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<CommandPalette, TabBase> SwitchToTabRequested;
         event Windows.Foundation.TypedEventHandler<CommandPalette, Microsoft.Terminal.Settings.Model.Command> DispatchCommandRequested;
         event Windows.Foundation.TypedEventHandler<CommandPalette, String> CommandLineExecutionRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Command> PreviewAction;
     }
 }

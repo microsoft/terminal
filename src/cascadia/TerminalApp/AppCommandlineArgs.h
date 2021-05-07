@@ -35,6 +35,7 @@ public:
 
     void ValidateStartupCommands();
     std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& GetStartupActions();
+    bool IsHandoffListener() const noexcept;
     const std::string& GetExitMessage();
     bool ShouldExitEarly() const noexcept;
 
@@ -62,12 +63,14 @@ private:
         CLI::Option* titleOption;
         CLI::Option* tabColorOption;
         CLI::Option* suppressApplicationTitleOption;
+        CLI::Option* colorSchemeOption;
     };
 
     struct NewPaneSubcommand : public NewTerminalSubcommand
     {
         CLI::Option* _horizontalOption;
         CLI::Option* _verticalOption;
+        CLI::Option* _duplicateOption;
     };
 
     // --- Subcommands ---
@@ -86,6 +89,7 @@ private:
     std::string _startingDirectory;
     std::string _startingTitle;
     std::string _startingTabColor;
+    std::string _startingColorScheme;
     bool _suppressApplicationTitle{ false };
 
     winrt::Microsoft::Terminal::Settings::Model::FocusDirection _moveFocusDirection{ winrt::Microsoft::Terminal::Settings::Model::FocusDirection::None };
@@ -95,6 +99,7 @@ private:
 
     bool _splitVertical{ false };
     bool _splitHorizontal{ false };
+    bool _splitDuplicate{ false };
     float _splitPaneSize{ 0.5f };
 
     int _focusTabIndex{ -1 };
@@ -104,6 +109,7 @@ private:
 
     const Commandline* _currentCommandline{ nullptr };
     std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> _launchMode{ std::nullopt };
+    bool _isHandoffListener{ false };
     std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _startupActions;
     std::string _exitMessage;
     bool _shouldExitEarly{ false };
