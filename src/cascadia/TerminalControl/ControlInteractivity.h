@@ -39,14 +39,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void GainFocus();
         void LostFocus();
-        void UpdateSettings(/*const til::rectangle padding*/);
+        void UpdateSettings();
         void Initialize();
         Control::ControlCore GetCore();
 
-        // hstring GetProfileName() const;
         Control::InteractivityAutomationPeer OnCreateAutomationPeer();
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
-        // til::rectangle GetPadding() const;
 
 #pragma region Input Methods
         void PointerPressed(Control::MouseButtonState buttonState,
