@@ -91,6 +91,14 @@ jobs:
       filename: 'dir'
       arguments: '/s $(Build.SourcesDirectory)\HelixPayload'
 
+  - task: PowerShell@2
+    displayName: 'Make artifact directories'
+    inputs:
+      targetType: inline
+      script: |
+        New-Item -ItemType Directory -Force -Path "$(Build.ArtifactStagingDirectory)\$(BuildConfiguration)\"
+        New-Item -ItemType Directory -Force -Path "$(Build.ArtifactStagingDirectory)\$(BuildConfiguration)\$(BuildPlatform)\"
+
   - template: helix-createprojfile-steps.yml
     parameters:
       condition: and(succeeded(),eq('${{ parameters.testSuite }}','DevTestSuite'))
