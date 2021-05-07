@@ -77,6 +77,62 @@ steps:
       $Package = Get-ChildItem -Recurse -Filter "CascadiaPackage_*.msix"
       .\build\scripts\Test-WindowsTerminalPackage.ps1 -Verbose -Path $Package.FullName
 
+- task: powershell@2
+  displayName: 'Source Index PDBs'
+  condition: ne(variables['PGOBuildMode'], 'Instrument')
+  inputs:
+    targetType: filePath
+    filePath: build\scripts\Index-Pdbs.ps1
+    arguments: -SearchDir '$(Build.SourcesDirectory)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
+    errorActionPreference: silentlyContinue
+
+- task: PowerShell@2
+  displayName: 'Rationalize build platform'
+  inputs:
+    targetType: inline
+    script: |
+      $Arch = "$(BuildPlatform)"
+      If ($Arch -Eq "x86") { $Arch = "Win32" }
+      Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
+
+- task: PowerShell@2
+  displayName: 'Run Unit Tests'
+  inputs:
+    targetType: filePath
+    filePath: build\scripts\Run-Tests.ps1
+    arguments: -MatchPattern '*unit.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}'
+  condition: and(and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument')), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
+
+- task: PowerShell@2
+  displayName: 'Run Feature Tests (x64 only)'
+  inputs:
+    targetType: filePath
+    filePath: build\scripts\Run-Tests.ps1
+    arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}'
+  condition: and(and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument')), eq(variables['BuildPlatform'], 'x64'))
+
+- task: PowerShell@2
+  displayName: 'Convert Test Logs from WTL to xUnit format'
+  inputs:
+    targetType: filePath
+    filePath: build\Helix\ConvertWttLogToXUnit.ps1
+    arguments: -WttInputPath '${{ parameters.testLogPath }}' -WttSingleRerunInputPath 'unused.wtl' -WttMultipleRerunInputPath 'unused2.wtl' -XUnitOutputPath 'onBuildMachineResults.xml' -TestNamePrefix '$(BuildConfiguration).$(BuildPlatform)'
+  condition: and(ne(variables['PGOBuildMode'], 'Instrument'),or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
+
+- task: PublishTestResults@2
+  displayName: 'Upload converted test logs'
+  condition: ne(variables['PGOBuildMode'], 'Instrument')
+  inputs:
+    testResultsFormat: 'xUnit' # Options: JUnit, NUnit, VSTest, xUnit, cTest
+    testResultsFiles: '**/onBuildMachineResults.xml'
+    #searchFolder: '$(System.DefaultWorkingDirectory)' # Optional
+    #mergeTestResults: false # Optional
+    #failTaskOnFailedTests: false # Optional
+    testRunTitle: 'On Build Machine Tests' # Optional
+    buildPlatform: $(BuildPlatform) # Optional
+    buildConfiguration: $(BuildConfiguration) # Optional
+    #publishRunAttachments: true # Optional
+
 - task: CopyFiles@2
   displayName: 'Copy result logs to Artifacts'
   inputs:
@@ -105,9 +161,9 @@ steps:
   displayName: 'Copy outputs needed for test runs to Artifacts'
   inputs:
     Contents: |
-     $(Build.SourcesDirectory)/bin/$(BuildPlatform)/$(BuildConfiguration)/*.exe
-     $(Build.SourcesDirectory)/bin/$(BuildPlatform)/$(BuildConfiguration)/*.dll
-     $(Build.SourcesDirectory)/bin/$(BuildPlatform)/$(BuildConfiguration)/*.xml
+     $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.exe
+     $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.dll
+     $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.xml
      **/Microsoft.VCLibs.*.appx
      **/TestHostApp/*
     TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
