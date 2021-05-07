@@ -44,15 +44,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _selectionNeedsToBeCopied{ false }
     {
         _core = winrt::make_self<ControlCore>(settings, connection);
-
-        // _core->ScrollPositionChanged({ this, &ControlInteractivity::_coreScrollPositionChanged });
     }
 
-    void ControlInteractivity::UpdateSettings(const til::rectangle padding)
+    // Method Description:
+    // - Updates our internal settings. These settings should be
+    //   interactivity-specific. Right now, we primarily update _rowsToScroll
+    //   with the current value of SPI_GETWHEELSCROLLLINES.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void ControlInteractivity::UpdateSettings()
     {
         _updateSystemParameterSettings();
 
-        _lastPadding = padding;
     }
 
     void ControlInteractivity::Initialize()
@@ -587,7 +592,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Creates an automation peer for the Terminal Control, enabling accessibility on our control.
+    // - Creates an automation peer for the Terminal Control, enabling
+    //   accessibility on our control.
+    // - Our implementation implements the ITextProvider pattern, and the
+    //   IControlAccessibilityInfo, to connect to the UiaEngine, which must be
+    //   attached to the core's renderer.
+    // - The TermControlAutomationPeer will connect this to the UI tree.
     // Arguments:
     // - None
     // Return Value:
@@ -595,17 +605,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Control::InteractivityAutomationPeer ControlInteractivity::OnCreateAutomationPeer()
     try
     {
-        // if (_initializedTerminal && !_closing) // only set up the automation peer if we're ready to go live
-        // {
-        // create a custom automation peer with this code pattern:
-        // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
         auto autoPeer = winrt::make_self<implementation::InteractivityAutomationPeer>(this);
 
         _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
         _core->AttachUiaEngine(_uiaEngine.get());
         return *autoPeer;
-        // }
-        // return nullptr;
     }
     catch (...)
     {
@@ -622,9 +626,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // {
     //     return _settings.ProfileName();
     // }
-    til::rectangle ControlInteractivity::GetPadding() const
-    {
-        return _lastPadding;
-    }
+    // til::rectangle ControlInteractivity::GetPadding() const
+    // {
+    //     return _lastPadding;
+    // }
 
 }

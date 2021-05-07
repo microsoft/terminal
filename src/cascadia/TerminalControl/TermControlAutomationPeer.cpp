@@ -34,9 +34,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                          Control::InteractivityAutomationPeer impl) :
         TermControlAutomationPeerT<TermControlAutomationPeer>(*owner), // pass owner to FrameworkElementAutomationPeer
         _termControl{ owner },
-        _implementation{ impl } {
-            // THROW_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, _interactivity->GetUiaData(), this));
-        };
+        _implementation{ impl }
+    {
+        auto controlOrigin{ owner->ActualOffset() };
+        auto controlSize{ owner->ActualSize() };
+        impl.SetControlBounds(Windows::Foundation::Rect{ controlOrigin.x, controlOrigin.y, controlSize.x, controlSize.y });
+    };
+
+    void TermControlAutomationPeer::SetControlBounds(const Windows::Foundation::Rect bounds)
+    {
+        _implementation.SetControlBounds(bounds);
+    }
+    void TermControlAutomationPeer::SetControlPadding(const Core::Padding padding)
+    {
+        _implementation.SetControlPadding(padding);
+    }
 
     // Method Description:
     // - Signals the ui automation client that the terminal's selection has changed and should be updated
@@ -145,109 +157,33 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::GetSelection()
     {
         return _implementation.GetSelection();
-        //     SAFEARRAY* pReturnVal;
-        //     THROW_IF_FAILED(_uiaProvider->GetSelection(&pReturnVal));
-        //     return WrapArrayOfTextRangeProviders(pReturnVal);
     }
 
     com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::GetVisibleRanges()
     {
         return _implementation.GetVisibleRanges();
-        //     SAFEARRAY* pReturnVal;
-        //     THROW_IF_FAILED(_uiaProvider->GetVisibleRanges(&pReturnVal));
-        //     return WrapArrayOfTextRangeProviders(pReturnVal);
     }
 
     XamlAutomation::ITextRangeProvider TermControlAutomationPeer::RangeFromChild(XamlAutomation::IRawElementProviderSimple childElement)
     {
         return _implementation.RangeFromChild(childElement);
-        // UIA::ITextRangeProvider* returnVal;
-        // // ScreenInfoUiaProvider doesn't actually use parameter, so just pass in nullptr
-        // THROW_IF_FAILED(_uiaProvider->RangeFromChild( IRawElementProviderSimple  nullptr,
-        //                                              &returnVal));
-
-        // auto parentProvider = this->ProviderFromPeer(*this);
-        // auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);
-        // return xutr.as<XamlAutomation::ITextRangeProvider>();
     }
 
     XamlAutomation::ITextRangeProvider TermControlAutomationPeer::RangeFromPoint(Windows::Foundation::Point screenLocation)
     {
         return _implementation.RangeFromPoint(screenLocation);
-        //     UIA::ITextRangeProvider* returnVal;
-        //     THROW_IF_FAILED(_uiaProvider->RangeFromPoint({ screenLocation.X, screenLocation.Y }, &returnVal));
-
-        //     auto parentProvider = this->ProviderFromPeer(*this);
-        //     auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);
-        //     return xutr.as<XamlAutomation::ITextRangeProvider>();
     }
 
     XamlAutomation::ITextRangeProvider TermControlAutomationPeer::DocumentRange()
     {
         return _implementation.DocumentRange();
-        //     UIA::ITextRangeProvider* returnVal;
-        //     THROW_IF_FAILED(_uiaProvider->get_DocumentRange(&returnVal));
-
-        //     auto parentProvider = this->ProviderFromPeer(*this);
-        //     auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);
-        //     return xutr.as<XamlAutomation::ITextRangeProvider>();
     }
 
     XamlAutomation::SupportedTextSelection TermControlAutomationPeer::SupportedTextSelection()
     {
         return _implementation.SupportedTextSelection();
-        //     UIA::SupportedTextSelection returnVal;
-        //     THROW_IF_FAILED(_uiaProvider->get_SupportedTextSelection(&returnVal));
-        //     return static_cast<XamlAutomation::SupportedTextSelection>(returnVal);
     }
 
-#pragma endregion
-
-#pragma region IControlAccessibilityInfo
-    // COORD TermControlAutomationPeer::GetFontSize() const
-    // {
-    //     return til::size{ til::math::rounding, _interactivity->GetCore()->FontSize() };
-    // }
-
-    // RECT TermControlAutomationPeer::GetBounds() const
-    // {
-    //     auto rect = GetBoundingRectangle();
-    //     return {
-    //         gsl::narrow_cast<LONG>(rect.X),
-    //         gsl::narrow_cast<LONG>(rect.Y),
-    //         gsl::narrow_cast<LONG>(rect.X + rect.Width),
-    //         gsl::narrow_cast<LONG>(rect.Y + rect.Height)
-    //     };
-    // }
-
-    // HRESULT TermControlAutomationPeer::GetHostUiaProvider(IRawElementProviderSimple** provider)
-    // {
-    //     RETURN_HR_IF(E_INVALIDARG, provider == nullptr);
-    //     *provider = nullptr;
-
-    //     return S_OK;
-    // }
-
-    // RECT TermControlAutomationPeer::GetPadding() const
-    // {
-    //     return RECT{ _interactivity->GetPadding() };
-    //     // return {
-    //     //     gsl::narrow_cast<LONG>(padding.Left),
-    //     //     gsl::narrow_cast<LONG>(padding.Top),
-    //     //     gsl::narrow_cast<LONG>(padding.Right),
-    //     //     gsl::narrow_cast<LONG>(padding.Bottom)
-    //     // };
-    // }
-
-    // double TermControlAutomationPeer::GetScaleFactor() const
-    // {
-    //     return DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
-    // }
-
-    // void TermControlAutomationPeer::ChangeViewport(const SMALL_RECT NewWindow)
-    // {
-    //     _interactivity->UpdateScrollbar(NewWindow.Top);
-    // }
 #pragma endregion
 
     // Method Description:

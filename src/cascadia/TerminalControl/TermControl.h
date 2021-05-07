@@ -171,6 +171,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
+        winrt::weak_ref<Control::TermControlAutomationPeer> _automationPeer{ nullptr };
+
         void _UpdateSettingsFromUIThread(IControlSettings newSettings);
         void _UpdateAppearanceFromUIThread(IControlAppearance newAppearance);
         void _ApplyUISettings(const IControlSettings&);

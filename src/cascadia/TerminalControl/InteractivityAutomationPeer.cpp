@@ -35,6 +35,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         THROW_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, _interactivity->GetUiaData(), this));
     };
 
+    void InteractivityAutomationPeer::SetControlBounds(const Windows::Foundation::Rect bounds)
+    {
+        _controlBounds = til::rectangle{ til::math::rounding, bounds };
+    }
+    void InteractivityAutomationPeer::SetControlPadding(const Core::Padding padding)
+    {
+        _controlPadding = padding;
+    }
+
     // Method Description:
     // - Signals the ui automation client that the terminal's selection has changed and should be updated
     // Arguments:
@@ -96,59 +105,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             RaiseAutomationEvent(AutomationEvents::TextPatternOnTextSelectionChanged);
         });
     }
-
-    // hstring InteractivityAutomationPeer::GetClassNameCore() const
-    // {
-    //     return L"TermControl";
-    // }
-
-    // AutomationControlType InteractivityAutomationPeer::GetAutomationControlTypeCore() const
-    // {
-    //     return AutomationControlType::Text;
-    // }
-
-    // hstring InteractivityAutomationPeer::GetLocalizedControlTypeCore() const
-    // {
-    //     return RS_(L"TerminalControl_ControlType");
-    // }
-
-    // Windows::Foundation::IInspectable InteractivityAutomationPeer::GetPatternCore(PatternInterface patternInterface) const
-    // {
-    //     switch (patternInterface)
-    //     {
-    //     case PatternInterface::Text:
-    //         return *this;
-    //         break;
-    //     default:
-    //         return nullptr;
-    //     }
-    // }
-
-    // AutomationOrientation InteractivityAutomationPeer::GetOrientationCore() const
-    // {
-    //     return AutomationOrientation::Vertical;
-    // }
-
-    // hstring InteractivityAutomationPeer::GetNameCore() const
-    // {
-    //     // fallback to title if profile name is empty
-    //     auto profileName = _interactivity->GetProfileName();
-    //     if (profileName.empty())
-    //     {
-    //         return _interactivity->GetCore().Title();
-    //     }
-    //     return profileName;
-    // }
-
-    // hstring InteractivityAutomationPeer::GetHelpTextCore() const
-    // {
-    //     return _interactivity->GetCore().Title();
-    // }
-
-    // AutomationLiveSetting InteractivityAutomationPeer::GetLiveSettingCore() const
-    // {
-    //     return AutomationLiveSetting::Polite;
-    // }
 
 #pragma region ITextProvider
     com_array<XamlAutomation::ITextRangeProvider> InteractivityAutomationPeer::GetSelection()
@@ -214,11 +170,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     RECT InteractivityAutomationPeer::GetBounds() const
     {
-        const auto padding = _interactivity->GetPadding();
-        // TODO! Get this from the core
-        const til::size dimensions{ 100, 100 };
-        const til::rectangle realBounds{ padding.origin(), dimensions };
-        return realBounds;
+        // const auto padding = _interactivity->GetPadding();
+        // // TODO! Get this from the core
+        // const til::size dimensions{ 100, 100 };
+        // const til::rectangle realBounds{ padding.origin(), dimensions };
+        // return realBounds;
         // auto rect = GetBoundingRectangle();
         // return {
         //     gsl::narrow_cast<LONG>(rect.X),
@@ -226,6 +182,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //     gsl::narrow_cast<LONG>(rect.X + rect.Width),
         //     gsl::narrow_cast<LONG>(rect.Y + rect.Height)
         // };
+        return _controlBounds;
     }
 
     HRESULT InteractivityAutomationPeer::GetHostUiaProvider(IRawElementProviderSimple** provider)
@@ -238,7 +195,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     RECT InteractivityAutomationPeer::GetPadding() const
     {
-        return _interactivity->GetPadding();
+        return _controlPadding;
+        // return _interactivity->GetPadding();
         // return {
         //     gsl::narrow_cast<LONG>(padding.Left),
         //     gsl::narrow_cast<LONG>(padding.Top),
