@@ -32,7 +32,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     TerminalInput::MouseButtonState toInternalMouseState(const Control::MouseButtonState& state)
     {
         return TerminalInput::MouseButtonState{
-            state.IsLeftButtonDown, state.IsMiddleButtonDown, state.IsRightButtonDown
+            state.IsLeftButtonDown != 0, state.IsMiddleButtonDown != 0, state.IsRightButtonDown != 0
         };
     }
 

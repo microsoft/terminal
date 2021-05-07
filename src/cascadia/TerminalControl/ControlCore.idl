@@ -13,9 +13,9 @@ namespace Microsoft.Terminal.Control
     // but projectable.
     struct MouseButtonState
     {
-        Boolean IsLeftButtonDown;
-        Boolean IsMiddleButtonDown;
-        Boolean IsRightButtonDown;
+        Int32 IsLeftButtonDown;
+        Int32 IsMiddleButtonDown;
+        Int32 IsRightButtonDown;
     };
 
     [default_interface] runtimeclass ControlCore : ICoreState
