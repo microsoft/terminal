@@ -165,8 +165,13 @@ steps:
      $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.dll
      $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.xml
      **/Microsoft.VCLibs.*.appx
-     **/TestHostApp/*
+     **/TestHostApp/*.exe
+     **/TestHostApp/*.dll
+     **/TestHostApp/*.xml
      !**/*.pdb
+     !**/*.ipdb
+     !**/*.obj
+     !**/*.pch
     TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
     OverWrite: true
     flattenFolders: true
