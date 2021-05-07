@@ -84,7 +84,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ~TermControl();
 
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
-        // ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
         const Windows::UI::Xaml::Thickness GetPadding();
 
         IControlSettings Settings() const;

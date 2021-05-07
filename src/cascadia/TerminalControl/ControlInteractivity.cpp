@@ -57,7 +57,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlInteractivity::UpdateSettings()
     {
         _updateSystemParameterSettings();
-
     }
 
     void ControlInteractivity::Initialize()
@@ -621,14 +620,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         return _core->GetUiaData();
     }
-
-    // hstring ControlInteractivity::GetProfileName() const
-    // {
-    //     return _settings.ProfileName();
-    // }
-    // til::rectangle ControlInteractivity::GetPadding() const
-    // {
-    //     return _lastPadding;
-    // }
 
 }

@@ -29,7 +29,7 @@ namespace XamlAutomation
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    InteractivityAutomationPeer::InteractivityAutomationPeer(winrt::Microsoft::Terminal::Control::implementation::ControlInteractivity* owner) :
+    InteractivityAutomationPeer::InteractivityAutomationPeer(Control::implementation::ControlInteractivity* owner) :
         _interactivity{ owner }
     {
         THROW_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, _interactivity->GetUiaData(), this));
