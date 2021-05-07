@@ -13,21 +13,21 @@
   </metadata>
   <files>
     <file target="build\PGO.targets" src="build\PGO.targets"/>
-    <file target="tools\x86\WindowsTerminal.pgd" src="tools\x86\WindowsTerminal.pgd"/>
+    <!-- <file target="tools\x86\WindowsTerminal.pgd" src="tools\x86\WindowsTerminal.pgd"/> -->
     <file target="tools\x64\WindowsTerminal.pgd" src="tools\x64\WindowsTerminal.pgd"/>
-    <file target="tools\x86\OpenConsole.pgd" src="tools\x86\OpenConsole.pgd"/>
+    <!-- <file target="tools\x86\OpenConsole.pgd" src="tools\x86\OpenConsole.pgd"/> -->
     <file target="tools\x64\OpenConsole.pgd" src="tools\x64\OpenConsole.pgd"/>
-    <file target="tools\x86\Microsoft.Terminal.Control.pgd" src="tools\x86\Microsoft.Terminal.Control.pgd"/>
+    <!-- <file target="tools\x86\Microsoft.Terminal.Control.pgd" src="tools\x86\Microsoft.Terminal.Control.pgd"/> -->
     <file target="tools\x64\Microsoft.Terminal.Control.pgd" src="tools\x64\Microsoft.Terminal.Control.pgd"/>
-    <file target="tools\x86\Microsoft.Terminal.Remoting.pgd" src="tools\x86\Microsoft.Terminal.Remoting.pgd"/>
+    <!-- <file target="tools\x86\Microsoft.Terminal.Remoting.pgd" src="tools\x86\Microsoft.Terminal.Remoting.pgd"/> -->
     <file target="tools\x64\Microsoft.Terminal.Remoting.pgd" src="tools\x64\Microsoft.Terminal.Remoting.pgd"/>
-    <file target="tools\x86\Microsoft.Terminal.Settings.Editor.pgd" src="tools\x86\Microsoft.Terminal.Settings.Editor.pgd"/>
+    <!-- <file target="tools\x86\Microsoft.Terminal.Settings.Editor.pgd" src="tools\x86\Microsoft.Terminal.Settings.Editor.pgd"/> -->
     <file target="tools\x64\Microsoft.Terminal.Settings.Editor.pgd" src="tools\x64\Microsoft.Terminal.Settings.Editor.pgd"/>
-    <file target="tools\x86\Microsoft.Terminal.Settings.Model.pgd" src="tools\x86\Microsoft.Terminal.Settings.Model.pgd"/>
+    <!-- <file target="tools\x86\Microsoft.Terminal.Settings.Model.pgd" src="tools\x86\Microsoft.Terminal.Settings.Model.pgd"/> -->
     <file target="tools\x64\Microsoft.Terminal.Settings.Model.pgd" src="tools\x64\Microsoft.Terminal.Settings.Model.pgd"/>
-    <file target="tools\x86\TerminalApp.pgd" src="tools\x86\TerminalApp.pgd"/>
+    <!-- <file target="tools\x86\TerminalApp.pgd" src="tools\x86\TerminalApp.pgd"/> -->
     <file target="tools\x64\TerminalApp.pgd" src="tools\x64\TerminalApp.pgd"/>
-    <file target="tools\x86\TerminalConnection.pgd" src="tools\x86\TerminalConnection.pgd"/>
+    <!-- <file target="tools\x86\TerminalConnection.pgd" src="tools\x86\TerminalConnection.pgd"/> -->
     <file target="tools\x64\TerminalConnection.pgd" src="tools\x64\TerminalConnection.pgd"/>
   </files>
 </package>
