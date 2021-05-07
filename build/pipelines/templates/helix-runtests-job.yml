@@ -24,7 +24,6 @@ jobs:
   timeoutInMinutes: 120
   strategy:
     maxParallel: ${{ parameters.maxParallel }}
-    matrix: ${{ parameters.matrix }}
   variables:
     artifactsDir: $(Build.SourcesDirectory)\Artifacts
     taefPath: $(Build.SourcesDirectory)\build\Helix\packages\Microsoft.Taef.10.58.210305002\build\Binaries\$(buildPlatform)
