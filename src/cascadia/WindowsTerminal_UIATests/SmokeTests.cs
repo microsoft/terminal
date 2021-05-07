@@ -8,6 +8,7 @@
 
 namespace WindowsTerminal.UIA.Tests
 {
+    using OpenQA.Selenium;
     using WEX.TestExecution.Markup;
 
     using WindowsTerminal.UIA.Tests.Common;
@@ -27,6 +28,21 @@ namespace WindowsTerminal.UIA.Tests
                 var root = app.GetRoot();
                 root.SendKeys("Hello smoke test!");
                 Globals.WaitForLongTimeout();
+            }
+        }
+
+        [TestMethod]
+        [TestProperty("IsPGO", "true")]
+        public void RunBigText()
+        {
+            using (TerminalApp app = new TerminalApp(TestContext))
+            {
+                var root = app.GetRoot();
+                // Relative to the test deployment root, this is where the content file is stored.
+                // Override necessary to run locally
+                root.SendKeys(@"cat content\big.txt");
+                root.SendKeys(Keys.Enter);
+                System.Threading.Thread.Sleep(25000);
             }
         }
     }

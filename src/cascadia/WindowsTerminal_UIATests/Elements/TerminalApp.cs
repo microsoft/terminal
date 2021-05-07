@@ -46,6 +46,8 @@ namespace WindowsTerminal.UIA.Tests.Elements
         {
             this.context = context;
 
+            // If running locally, set WTPath to where we can find a loose deployment of Windows Terminal
+            // On the build machines, the scripts lay it out at the appx\ subfolder of the test deployment directory
             string path = Path.GetFullPath(Path.Combine(context.TestDeploymentDir, @"appx\WindowsTerminal.exe"));
             if (context.Properties.Contains("WTPath"))
             {
