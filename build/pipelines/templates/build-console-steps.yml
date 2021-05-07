@@ -166,6 +166,7 @@ steps:
      $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.xml
      **/Microsoft.VCLibs.*.appx
      **/TestHostApp/*
+     !**/*.pdb
     TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
     OverWrite: true
     flattenFolders: true
