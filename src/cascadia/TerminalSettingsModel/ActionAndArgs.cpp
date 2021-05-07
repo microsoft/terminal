@@ -68,6 +68,7 @@ static constexpr std::string_view UnboundKey{ "unbound" };
 
 #define KEY_TO_ACTION_PAIR(action) { action##Key, ShortcutAction::##action },
 #define ACTION_TO_KEY_PAIR(action) { ShortcutAction::##action, action##Key },
+#define ACTION_TO_SERIALIZERS_PAIR(action) { ShortcutAction::##action##, {##action##Args::FromJson, ##action##Args::ToJson } },
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -96,70 +97,24 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     using ParseResult = std::tuple<IActionArgs, std::vector<SettingsLoadWarnings>>;
     using ParseActionFunction = std::function<ParseResult(const Json::Value&)>;
+    using SerializeActionFunction = std::function<Json::Value(IActionArgs)>;
 
-    // This is a map of ShortcutAction->function<IActionArgs(Json::Value)>. It holds
-    // a set of deserializer functions that can be used to deserialize a IActionArgs
+    // This is a map of ShortcutAction->{function<IActionArgs(Json::Value)>, function<Json::Value(IActionArgs)>. It holds
+    // a set of (de)serializer functions that can be used to (de)serialize an IActionArgs
     // from json. Each type of IActionArgs that can accept arbitrary args should be
     // placed into this map, with the corresponding deserializer function as the
     // value.
-    static const std::map<ShortcutAction, ParseActionFunction, std::less<>> argParsers{
-        { ShortcutAction::AdjustFontSize, AdjustFontSizeArgs::FromJson },
-        { ShortcutAction::CloseOtherTabs, CloseOtherTabsArgs::FromJson },
-        { ShortcutAction::CloseTabsAfter, CloseTabsAfterArgs::FromJson },
-        { ShortcutAction::CopyText, CopyTextArgs::FromJson },
-        { ShortcutAction::ExecuteCommandline, ExecuteCommandlineArgs::FromJson },
-        { ShortcutAction::MoveFocus, MoveFocusArgs::FromJson },
-        { ShortcutAction::NewTab, NewTabArgs::FromJson },
-        { ShortcutAction::OpenSettings, OpenSettingsArgs::FromJson },
-        { ShortcutAction::RenameTab, RenameTabArgs::FromJson },
-        { ShortcutAction::ResizePane, ResizePaneArgs::FromJson },
-        { ShortcutAction::SendInput, SendInputArgs::FromJson },
-        { ShortcutAction::SetColorScheme, SetColorSchemeArgs::FromJson },
-        { ShortcutAction::SetTabColor, SetTabColorArgs::FromJson },
-        { ShortcutAction::SplitPane, SplitPaneArgs::FromJson },
-        { ShortcutAction::SwitchToTab, SwitchToTabArgs::FromJson },
-        { ShortcutAction::ScrollUp, ScrollUpArgs::FromJson },
-        { ShortcutAction::ScrollDown, ScrollDownArgs::FromJson },
-        { ShortcutAction::MoveTab, MoveTabArgs::FromJson },
-        { ShortcutAction::ToggleCommandPalette, ToggleCommandPaletteArgs::FromJson },
-        { ShortcutAction::FindMatch, FindMatchArgs::FromJson },
-        { ShortcutAction::NewWindow, NewWindowArgs::FromJson },
-        { ShortcutAction::PrevTab, PrevTabArgs::FromJson },
-        { ShortcutAction::NextTab, NextTabArgs::FromJson },
-        { ShortcutAction::RenameWindow, RenameWindowArgs::FromJson },
-        { ShortcutAction::GlobalSummon, GlobalSummonArgs::FromJson },
-        { ShortcutAction::QuakeMode, GlobalSummonArgs::QuakeModeFromJson },
+    static const std::unordered_map<ShortcutAction, std::pair<ParseActionFunction, SerializeActionFunction>> argSerializerMap{
 
-        { ShortcutAction::Invalid, nullptr },
-    };
+        // These are special cases.
+        // - QuakeMode: deserializes into a GlobalSummon, so we don't need a serializer
+        // - Invalid: has no args
+        { ShortcutAction::QuakeMode, { GlobalSummonArgs::QuakeModeFromJson, nullptr } },
+        { ShortcutAction::Invalid, { nullptr, nullptr } },
 
-    using ActionArgSerializerFunction = std::function<Json::Value(IActionArgs)>;
-    static const std::map<ShortcutAction, ActionArgSerializerFunction, std::less<>> argSerializers{
-        { ShortcutAction::AdjustFontSize, AdjustFontSizeArgs::ToJson },
-        { ShortcutAction::CloseOtherTabs, CloseOtherTabsArgs::ToJson },
-        { ShortcutAction::CloseTabsAfter, CloseTabsAfterArgs::ToJson },
-        { ShortcutAction::CopyText, CopyTextArgs::ToJson },
-        { ShortcutAction::ExecuteCommandline, ExecuteCommandlineArgs::ToJson },
-        { ShortcutAction::MoveFocus, MoveFocusArgs::ToJson },
-        { ShortcutAction::NewTab, NewTabArgs::ToJson },
-        { ShortcutAction::OpenSettings, OpenSettingsArgs::ToJson },
-        { ShortcutAction::RenameTab, RenameTabArgs::ToJson },
-        { ShortcutAction::ResizePane, ResizePaneArgs::ToJson },
-        { ShortcutAction::SendInput, SendInputArgs::ToJson },
-        { ShortcutAction::SetColorScheme, SetColorSchemeArgs::ToJson },
-        { ShortcutAction::SetTabColor, SetTabColorArgs::ToJson },
-        { ShortcutAction::SplitPane, SplitPaneArgs::ToJson },
-        { ShortcutAction::SwitchToTab, SwitchToTabArgs::ToJson },
-        { ShortcutAction::ScrollUp, ScrollUpArgs::ToJson },
-        { ShortcutAction::ScrollDown, ScrollDownArgs::ToJson },
-        { ShortcutAction::MoveTab, MoveTabArgs::ToJson },
-        { ShortcutAction::ToggleCommandPalette, ToggleCommandPaletteArgs::ToJson },
-        { ShortcutAction::FindMatch, FindMatchArgs::ToJson },
-        { ShortcutAction::NewWindow, NewWindowArgs::ToJson },
-        { ShortcutAction::PrevTab, PrevTabArgs::ToJson },
-        { ShortcutAction::NextTab, NextTabArgs::ToJson },
-        { ShortcutAction::RenameWindow, RenameWindowArgs::ToJson },
-        { ShortcutAction::GlobalSummon, GlobalSummonArgs::ToJson }
+#define ON_ALL_ACTIONS_WITH_ARGS(action) ACTION_TO_SERIALIZERS_PAIR(action)
+        ALL_SHORTCUT_ACTIONS_WITH_ARGS
+#undef ON_ALL_ACTIONS_WITH_ARGS
     };
 
     // Function Description:
@@ -238,10 +193,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // the binding.
         IActionArgs args{ nullptr };
         std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> parseWarnings;
-        const auto deserializersIter = argParsers.find(action);
-        if (deserializersIter != argParsers.end())
+        const auto deserializersIter = argSerializerMap.find(action);
+        if (deserializersIter != argSerializerMap.end())
         {
-            auto pfn = deserializersIter->second;
+            auto pfn = deserializersIter->second.first;
             if (pfn)
             {
                 std::tie(args, parseWarnings) = pfn(argsVal);
@@ -280,10 +235,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 Json::Value result{ Json::ValueType::objectValue };
 
                 // Set the action args, if any
-                const auto actionArgSerializerIter{ argSerializers.find(val.Action()) };
-                if (actionArgSerializerIter != argSerializers.end())
+                const auto actionArgSerializerIter{ argSerializerMap.find(val.Action()) };
+                if (actionArgSerializerIter != argSerializerMap.end())
                 {
-                    auto pfn{ actionArgSerializerIter->second };
+                    auto pfn{ actionArgSerializerIter->second.second };
                     if (pfn)
                     {
                         result = pfn(val.Args());

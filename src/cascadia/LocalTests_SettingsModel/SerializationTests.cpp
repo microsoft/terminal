@@ -182,7 +182,9 @@ namespace SettingsModelLocalTests
         // - null should be acceptable even though we're working with colors
         const std::string weirdProfileString{ R"(
             {
+                "guid" : "{8b039d4d-77ca-5a83-88e1-dfc8e895a127}",
                 "name": "Weird Profile",
+                "hidden": false,
                 "tabColor": null,
                 "foreground": null,
                 "source": "local"
@@ -276,7 +278,7 @@ namespace SettingsModelLocalTests
                                                 }
                                             ])" };
 
-        const std::string actionsString9{ R"([
+        const std::string actionsString9A{ R"([
                                                 {
                                                     "name": "New tab",
                                                     "commands": [
@@ -289,6 +291,45 @@ namespace SettingsModelLocalTests
                                                     ]
                                                 }
                                             ])" };
+        const std::string actionsString9B{ R"([
+                                                {
+                                                    "commands": 
+                                                    [
+                                                        {
+                                                            "command": 
+                                                            {
+                                                                "action": "sendInput",
+                                                                "input": "${profile.name}"
+                                                            },
+                                                            "iterateOn": "profiles"
+                                                        }
+                                                    ],
+                                                    "name": "Send Input ..."
+                                                }
+                                        ])" };
+        const std::string actionsString9C{ R""([
+                                                {
+                                                    "commands": 
+                                                    [
+                                                        {
+                                                            "commands": 
+                                                            [
+                                                                {
+                                                                    "command": 
+                                                                    {
+                                                                        "action": "sendInput",
+                                                                        "input": "${profile.name} ${scheme.name}"
+                                                                    },
+                                                                    "iterateOn": "schemes"
+                                                                }
+                                                            ],
+                                                            "iterateOn": "profiles",
+                                                            "name": "nest level (${profile.name})"
+                                                        }
+                                                    ],
+                                                    "name": "Send Input (Evil) ..."
+                                                }
+                                            ])"" };
 
         const std::string actionsString10{ R"([
                                                 { "command": "unbound", "keys": "ctrl+c" }
@@ -321,7 +362,9 @@ namespace SettingsModelLocalTests
         RoundtripTest<implementation::ActionMap>(actionsString8);
 
         Log::Comment(L"iterable command");
-        RoundtripTest<implementation::ActionMap>(actionsString9);
+        RoundtripTest<implementation::ActionMap>(actionsString9A);
+        RoundtripTest<implementation::ActionMap>(actionsString9B);
+        RoundtripTest<implementation::ActionMap>(actionsString9C);
 
         Log::Comment(L"unbound command");
         RoundtripTest<implementation::ActionMap>(actionsString10);
