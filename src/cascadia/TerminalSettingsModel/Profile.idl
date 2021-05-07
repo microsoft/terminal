@@ -31,9 +31,8 @@ namespace Microsoft.Terminal.Settings.Model
     enum BellStyle
     {
         Audible = 0x1,
-        Visual = 0x2,
-        Window = 0x4,
-        Taskbar = 0x8,
+        Window = 0x2,
+        Taskbar = 0x4,
         All = 0xffffffff
     };
 

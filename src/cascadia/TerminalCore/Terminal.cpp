@@ -891,11 +891,6 @@ int Terminal::ViewEndIndex() const noexcept
     return _mutableViewport.BottomInclusive();
 }
 
-bool Terminal::ScreenMode() const noexcept
-{
-    return _screenReversed;
-}
-
 // _VisibleStartIndex is the first visible line of the buffer
 int Terminal::_VisibleStartIndex() const noexcept
 {

@@ -82,8 +82,6 @@ public:
     int ViewStartIndex() const noexcept;
     int ViewEndIndex() const noexcept;
 
-    bool ScreenMode() const noexcept;
-
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
     bool PrintString(std::wstring_view stringView) noexcept override;
