@@ -24,6 +24,7 @@ Copy-Item "$nugetPackagesDir\Microsoft.Taef.10.58.210305002\build\Binaries\$Plat
 New-Item -ItemType Directory -Force -Path "$payloadDir\.NETCoreApp2.1\"
 Copy-Item "$nugetPackagesDir\runtime.win-$Platform.microsoft.netcore.app.2.1.0\runtimes\win-$Platform\lib\netcoreapp2.1\*" "$payloadDir\.NETCoreApp2.1\"
 Copy-Item "$nugetPackagesDir\runtime.win-$Platform.microsoft.netcore.app.2.1.0\runtimes\win-$Platform\native\*" "$payloadDir\.NETCoreApp2.1\"
+New-Item -ItemType Directory -Force -Path "$payloadDir\content\"
 Copy-Item "$nugetPackagesDir\Microsoft.Internal.Windows.Terminal.TestContent.1.0.0\content\*" "$payloadDir\content\"
 
 function Copy-If-Exists
