@@ -14,6 +14,7 @@
 #include "../../types/inc/Utils.hpp"
 
 #include "TermControl.g.cpp"
+#include "VisualBellLight.g.cpp"
 #include "TermControlAutomationPeer.h"
 
 using namespace ::Microsoft::Console::Types;
@@ -58,7 +59,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _lastAutoScrollUpdateTime{ std::nullopt },
         _cursorTimer{},
         _blinkTimer{},
-        _invertTimer{},
+        _bellLightTimer{},
         _searchBox{ nullptr }
     {
         InitializeComponent();
@@ -2359,40 +2360,31 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core->TaskbarProgress();
     }
 
-    winrt::fire_and_forget TermControl::InvertScreenColors()
+    void TermControl::BellLightOn()
     {
-        if (!_invertTimer)
+        if (!_bellLightTimer)
         {
-            auto weakThis{ get_weak() };
-            co_await winrt::resume_foreground(Dispatcher());
+            // Start the timer, when the timer ticks we switch off the light
+            DispatcherTimer invertTimer;
+            invertTimer.Interval(std::chrono::milliseconds(2000));
+            invertTimer.Tick({ get_weak(), &TermControl::_BellLightOff });
+            invertTimer.Start();
+            _bellLightTimer.emplace(std::move(invertTimer));
 
-            if (auto control{ weakThis.get() })
-            {
-                //auto lock = control->_terminal->LockForWriting();
-                //DispatcherTimer invertTimer;
-                //invertTimer.Interval(std::chrono::milliseconds(2000));
-                //invertTimer.Tick({ get_weak(), &TermControl::_InvertTimerTick });
-                //invertTimer.Start();
-                //control->_invertTimer.emplace(std::move(invertTimer));
-
-                //// stash away the value of the terminal's current screen mode,
-                //// we want to return to this once the timer fires
-                //control->_termScreenReversed = control->_terminal->ScreenMode();
-                //control->_terminal->SetScreenMode(!control->_termScreenReversed);
-            }
+            // Switch on the light
+            VisualBellLight::SetIsTarget(RootGrid(), true);
         }
     }
 
-    void TermControl::_InvertTimerTick(Windows::Foundation::IInspectable const& /* sender */,
-                                       Windows::Foundation::IInspectable const& /* e */)
+    void TermControl::_BellLightOff(Windows::Foundation::IInspectable const& /* sender */,
+                                    Windows::Foundation::IInspectable const& /* e */)
     {
-        if (_invertTimer && !_closing)
+        if (_bellLightTimer && !_closing)
         {
-            //auto lock = _terminal->LockForWriting();
-            //// revert the terminal's screen mode to the stashed value
-            //_terminal->SetScreenMode(_termScreenReversed);
-            //_invertTimer.value().Stop();
-            //_invertTimer = std::nullopt;
+            // Stop the timer and switch off the light
+            _bellLightTimer.value().Stop();
+            _bellLightTimer = std::nullopt;
+            VisualBellLight::SetIsTarget(RootGrid(), false);
         }
     }
 
@@ -2529,5 +2521,69 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_coreWarningBell(const IInspectable& /*sender*/, const IInspectable& /*args*/)
     {
         _playWarningBell->Run();
+    }
+
+    Windows::UI::Xaml::DependencyProperty VisualBellLight::m_isTargetProperty =
+        Windows::UI::Xaml::DependencyProperty::RegisterAttached(
+            L"IsTarget",
+            winrt::xaml_typename<bool>(),
+            winrt::xaml_typename<winrt::Microsoft::Terminal::Control::VisualBellLight>(),
+            Windows::UI::Xaml::PropertyMetadata{ winrt::box_value(false), Windows::UI::Xaml::PropertyChangedCallback{ &VisualBellLight::OnIsTargetChanged } });
+
+    void VisualBellLight::OnConnected(Windows::UI::Xaml::UIElement const& /* newElement */)
+    {
+        if (!CompositionLight())
+        {
+            // OnConnected is called when the first target UIElement is shown on the screen. This enables delaying composition object creation until it's actually necessary.
+            auto spotLight2{ Windows::UI::Xaml::Window::Current().Compositor().CreateAmbientLight() };
+            spotLight2.Color(Windows::UI::Colors::WhiteSmoke());
+            spotLight2.Intensity(static_cast<float>(1.5));
+            CompositionLight(spotLight2);
+        }
+    }
+
+    void VisualBellLight::OnDisconnected(Windows::UI::Xaml::UIElement const& /* oldElement */)
+    {
+        // OnDisconnected is called when there are no more target UIElements on the screen.
+        // Dispose of composition resources when no longer in use.
+        if (CompositionLight())
+        {
+            CompositionLight(nullptr);
+        }
+    }
+
+    winrt::hstring VisualBellLight::GetId()
+    {
+        return VisualBellLight::GetIdStatic();
+    }
+
+    void VisualBellLight::OnIsTargetChanged(Windows::UI::Xaml::DependencyObject const& d, Windows::UI::Xaml::DependencyPropertyChangedEventArgs const& e)
+    {
+        auto uie{ d.try_as<Windows::UI::Xaml::UIElement>() };
+        auto brush{ d.try_as<Windows::UI::Xaml::Media::Brush>() };
+
+        auto isAdding = winrt::unbox_value<bool>(e.NewValue());
+        if (isAdding)
+        {
+            if (uie)
+            {
+                Windows::UI::Xaml::Media::XamlLight::AddTargetElement(VisualBellLight::GetIdStatic(), uie);
+            }
+            else if (brush)
+            {
+                Windows::UI::Xaml::Media::XamlLight::AddTargetBrush(VisualBellLight::GetIdStatic(), brush);
+            }
+        }
+        else
+        {
+            if (uie)
+            {
+                Windows::UI::Xaml::Media::XamlLight::RemoveTargetElement(VisualBellLight::GetIdStatic(), uie);
+            }
+            else if (brush)
+            {
+                Windows::UI::Xaml::Media::XamlLight::RemoveTargetBrush(VisualBellLight::GetIdStatic(), brush);
+            }
+        }
     }
 }

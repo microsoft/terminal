@@ -381,7 +381,7 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
             if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual) ||
                 WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Window))
             {
-                _control.InvertScreenColors();
+                _control.BellLightOn();
             }
 
             const auto flashTaskbar = WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual) ||

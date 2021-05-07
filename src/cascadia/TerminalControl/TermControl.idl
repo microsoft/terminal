@@ -63,9 +63,17 @@ namespace Microsoft.Terminal.Control
         void ToggleShaderEffects();
         void SendInput(String input);
 
-        void InvertScreenColors();
+        void BellLightOn();
 
         Boolean ReadOnly { get; };
         void ToggleReadOnly();
+    }
+
+    [default_interface] runtimeclass VisualBellLight : Windows.UI.Xaml.Media.XamlLight
+    {
+        VisualBellLight();
+        static Windows.UI.Xaml.DependencyProperty IsTargetProperty { get; };
+        static Boolean GetIsTarget(Windows.UI.Xaml.DependencyObject target);
+        static void SetIsTarget(Windows.UI.Xaml.DependencyObject target, Boolean value);
     }
 }
