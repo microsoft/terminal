@@ -19,24 +19,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
-        _filteredActions = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Model::Command>();
+        _filteredActions = winrt::single_threaded_observable_vector<Command>();
     }
 
     void Actions::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::ActionsPageNavigationState>();
 
-        for (const auto& [k, command] : _State.Settings().GlobalSettings().Commands())
+        std::vector<Command> keyBindingList;
+        for (const auto& [_, command] : _State.Settings().GlobalSettings().ActionMap().NameMap())
         {
             // Filter out nested commands, and commands that aren't bound to a
             // key. This page is currently just for displaying the actions that
             // _are_ bound to keys.
-            if (command.HasNestedCommands() || command.KeyChordText().empty())
+            if (command.HasNestedCommands() || !command.Keys())
             {
                 continue;
             }
-            _filteredActions.Append(command);
+            keyBindingList.push_back(command);
         }
+        std::sort(begin(keyBindingList), end(keyBindingList), CommandComparator{});
+        _filteredActions = single_threaded_observable_vector<Command>(std::move(keyBindingList));
     }
 
     Collections::IObservableVector<Command> Actions::FilteredActions()
