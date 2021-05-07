@@ -39,6 +39,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         UpdateControlBounds();
     };
 
+    // Method Description:
+    // - Inform the interactivity layer about the bounds of the control.
+    //   IControlAccessibilityInfo needs to know this information, but it cannot
+    //   ask us directly.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TermControlAutomationPeer::UpdateControlBounds()
     {
         // FrameworkElementAutomationPeer has this great GetBoundingRectangle

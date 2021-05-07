@@ -13,6 +13,9 @@ namespace Microsoft.Terminal.Control
     // but projectable.
     struct MouseButtonState
     {
+        // !! LOAD BEARING !! If you make these Booleans (like they should be),
+        // then the app will crash trying to toss one of these across the
+        // process boundary. I haven't the damndest idea why.
         Int32 IsLeftButtonDown;
         Int32 IsMiddleButtonDown;
         Int32 IsRightButtonDown;
@@ -23,18 +26,18 @@ namespace Microsoft.Terminal.Control
         ControlCore(IControlSettings settings,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
-        // void AttachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine);
-        // ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
+        Boolean Initialize(Double actualWidth,
+                           Double actualHeight,
+                           Double compositionScale);
+
+        void UpdateSettings(IControlSettings settings);
+        void UpdateAppearance(IControlAppearance appearance);
+
+        UInt64 GetSwapChainHandle();
 
         Windows.Foundation.Size FontSize { get; };
         String FontFaceName { get; };
         UInt16 FontWeight { get; };
-
-        UInt64 GetSwapChainHandle();
-        // std::vector<std::wstring> SelectedText(bool trimTrailingWhitespace) const;
-        IVector<String> SelectedText(Boolean trimTrailingWhitespace);
-        void UpdateHoveredCell(Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> terminalPosition);
-        Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> GetHoveredCell();
 
         Boolean TrySendKeyEvent(Int16 vkey,
                              Int16 scanCode,
@@ -43,35 +46,38 @@ namespace Microsoft.Terminal.Control
         Boolean SendCharEvent(Char ch,
                            Int16 scanCode,
                            Microsoft.Terminal.Core.ControlKeyStates modifiers);
-
-        Microsoft.Terminal.Core.Point CursorPosition();
-        void ResumeRendering();
-        void ToggleReadOnlyMode();
-        void BlinkAttributeTick();
-        String GetHoveredUriText();
         void SendInput(String text);
         void PasteText(String text);
-        void UpdatePatternLocations();
-        Boolean HasSelection();
-        void Search(String text, Boolean goForward, Boolean caseSensitive);
-        void UpdateSettings(IControlSettings settings);
-        void UpdateAppearance(IControlAppearance appearance);
-        void ToggleShaderEffects();
-        void SetBackgroundOpacity(Double opacity);
-        Microsoft.Terminal.Core.Color BackgroundColor();
-        Boolean Initialize(Double actualWidth,
-                           Double actualHeight,
-                           Double compositionScale);
-        void Close();
-        void BlinkCursor();
+
+        void UpdateHoveredCell(Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> terminalPosition);
+
         void ResetFontSize();
         void AdjustFontSize(Int32 fontSize);
         void SizeChanged(Double width, Double height);
         void ScaleChanged(Double scale);
+
+        void ToggleShaderEffects();
+        void ToggleReadOnlyMode();
+
+        Microsoft.Terminal.Core.Point CursorPosition();
+        void ResumeRendering();
+        void BlinkAttributeTick();
+        void UpdatePatternLocations();
+        void Search(String text, Boolean goForward, Boolean caseSensitive);
+        void SetBackgroundOpacity(Double opacity);
+        Microsoft.Terminal.Core.Color BackgroundColor();
+
+        Boolean HasSelection();
+        IVector<String> SelectedText(Boolean trimTrailingWhitespace);
+
+        String GetHoveredUriText();
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> GetHoveredCell();
+
+        void Close();
+        void BlinkCursor();
         Boolean IsInReadOnlyMode();
         Boolean CursorOn;
         void EnablePainting();
-
 
         event FontSizeChangedEventArgs FontSizeChanged;
 
