@@ -38,6 +38,9 @@
     <ClInclude Include="Actions.h">
       <DependentUpon>Actions.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="AddProfile.h">
+      <DependentUpon>AddProfile.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="ColorToBrushConverter.h">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
@@ -105,6 +108,9 @@
     <Page Include="Actions.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="AddProfile.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="CommonResources.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -137,6 +143,9 @@
   <ItemGroup>
     <ClCompile Include="Actions.cpp">
       <DependentUpon>Actions.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="AddProfile.cpp">
+      <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="ColorToBrushConverter.cpp">
       <DependentUpon>Converters.idl</DependentUpon>
@@ -204,6 +213,10 @@
   <ItemGroup>
     <Midl Include="Actions.idl">
       <DependentUpon>Actions.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="AddProfile.idl">
+      <DependentUpon>AddProfile.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="Converters.idl" />

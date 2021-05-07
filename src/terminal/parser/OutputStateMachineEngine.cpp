@@ -637,6 +637,24 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
 }
 
 // Routine Description:
+// - Triggers the DcsDispatch action to indicate that the listener should handle
+//      a control sequence. Returns the handler function that is to be used to
+//      process the subsequent data string characters in the sequence.
+// Arguments:
+// - id - Identifier of the control sequence to dispatch.
+// - parameters - set of numeric parameters collected while parsing the sequence.
+// Return Value:
+// - the data string handler function or nullptr if the sequence is not supported
+IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(const VTID /*id*/, const VTParameters /*parameters*/) noexcept
+{
+    StringHandler handler = nullptr;
+
+    _ClearLastChar();
+
+    return handler;
+}
+
+// Routine Description:
 // - Triggers the Clear action to indicate that the state machine should erase
 //      all internal state.
 // Arguments:

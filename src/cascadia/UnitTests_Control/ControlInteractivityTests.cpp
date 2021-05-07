@@ -423,21 +423,6 @@ namespace ControlUnitTests
         // For the sake of this test, scroll one line at a time
         interactivity->_rowsToScroll = 1;
 
-        // auto scrollChangedHandler = [&](auto&&, const Control::ScrollPositionChangedArgs& args) mutable {
-        //     // This mock emulates how the TermControl updates the
-        //     // interactivity's internal scrollbar when the core changes its
-        //     // viewport.
-        //     //
-        //     // In reality, the TermControl throttles scrollbar updates, and only
-        //     // calls back to UpdateScrollbar once every 60 seconds.
-        //     const auto newValue = args.ViewTop();
-        //     if (newValue != core->ScrollOffset())
-        //     {
-        //         interactivity->UpdateScrollbar(newValue);
-        //     }
-        // };
-        // core->ScrollPositionChanged(scrollChangedHandler);
-
         for (int i = 0; i < 40; ++i)
         {
             conn->WriteInput(L"Foo\r\n");

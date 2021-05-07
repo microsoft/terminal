@@ -22,6 +22,7 @@
     <!-- Only put headers for winrt types in here. Don't put other header files
     in here - put them in the lib's vcxproj instead! -->
     <ClInclude Include="../ActionArgs.h" />
+    <ClInclude Include="../ActionMap.h" />
     <ClInclude Include="../CascadiaSettings.h" />
     <ClInclude Include="../ColorScheme.h" />
     <ClInclude Include="../Command.h" />
