@@ -51,18 +51,20 @@ $webClient = New-Object System.Net.WebClient
 
 foreach ($testRun in $testRuns.value)
 {
+    Write-Host "testRunUri = $testRun.url"
     $testResults = Invoke-RestMethod -Uri "$($testRun.url)/results?api-version=5.0" -Method Get -Headers $azureDevOpsRestApiHeaders
     $isTestRunNameShown = $false
 
     foreach ($testResult in $testResults.value)
     {
-        if ("comment" -in $testResult)
-        {
+    
             $info = ConvertFrom-Json $testResult.comment
             $helixJobId = $info.HelixJobId
             $helixWorkItemName = $info.HelixWorkItemName
 
             $workItem = "$helixJobId-$helixWorkItemName"
+
+            Write-Host "Helix Work Item = $workItem"
 
             if (-not $workItems.Contains($workItem))
             {
@@ -89,9 +91,9 @@ foreach ($testRun in $testRuns.value)
 
                     foreach($pgcFile in $pgcFiles)
                     {
-                        $flavorPath = $pgcFile.Name.Split('.')[0]
-                        $archPath = $pgcFile.Name.Split('.')[1]
-                        $fileName = $pgcFile.Name.Remove(0, $flavorPath.length + $archPath.length + 2)
+                        $flavorPath = $testResult.automatedTestName.Split('.')[0]
+                        $archPath = $testResult.automatedTestName.Split('.')[1]
+                        $fileName = $pgcFile.Name
                         $fullPath = "$OutputFolder\PGO\$flavorPath\$archPath"
                         $destination = "$fullPath\$fileName"
 
@@ -107,6 +109,6 @@ foreach ($testRun in $testRuns.value)
                     }
                 }
             }
-        }
+    
     }
 }

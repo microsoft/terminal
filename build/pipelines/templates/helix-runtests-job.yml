@@ -12,17 +12,8 @@ parameters:
   taefQuery: ''
   # if 'useBuildOutputFromBuildId' is set, we will default to using a build from this pipeline:
   useBuildOutputFromPipeline: $(System.DefinitionId)
-  matrix:
-    # Release_x86:
-    #   buildPlatform: 'x86'
-    #   buildConfiguration: 'release'
-    #   openHelixTargetQueues: 'windows.10.amd64.client19h1.open.xaml'
-    #   closedHelixTargetQueues: 'windows.10.amd64.client19h1.xaml'
-    Release_x64:
-      buildPlatform: 'x64'
-      buildConfiguration: 'release'
-      openHelixTargetQueues: 'windows.10.amd64.client19h1.open.xaml'
-      closedHelixTargetQueues: 'windows.10.amd64.client19h1.xaml'
+  openHelixTargetQueues: 'windows.10.amd64.client19h1.open.xaml'
+  closedHelixTargetQueues: 'windows.10.amd64.client19h1.xaml'
 
 jobs:
 - job: ${{ parameters.name }}
