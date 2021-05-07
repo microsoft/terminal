@@ -2559,15 +2559,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void VisualBellLight::OnIsTargetChanged(Windows::UI::Xaml::DependencyObject const& d, Windows::UI::Xaml::DependencyPropertyChangedEventArgs const& e)
     {
-        auto uie{ d.try_as<Windows::UI::Xaml::UIElement>() };
+        auto uielem{ d.try_as<Windows::UI::Xaml::UIElement>() };
         auto brush{ d.try_as<Windows::UI::Xaml::Media::Brush>() };
 
         auto isAdding = winrt::unbox_value<bool>(e.NewValue());
         if (isAdding)
         {
-            if (uie)
+            if (uielem)
             {
-                Windows::UI::Xaml::Media::XamlLight::AddTargetElement(VisualBellLight::GetIdStatic(), uie);
+                Windows::UI::Xaml::Media::XamlLight::AddTargetElement(VisualBellLight::GetIdStatic(), uielem);
             }
             else if (brush)
             {
@@ -2576,9 +2576,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            if (uie)
+            if (uielem)
             {
-                Windows::UI::Xaml::Media::XamlLight::RemoveTargetElement(VisualBellLight::GetIdStatic(), uie);
+                Windows::UI::Xaml::Media::XamlLight::RemoveTargetElement(VisualBellLight::GetIdStatic(), uielem);
             }
             else if (brush)
             {
