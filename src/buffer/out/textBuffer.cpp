@@ -2473,11 +2473,11 @@ void TextBuffer::CopyHyperlinkMaps(const TextBuffer& other)
 const size_t TextBuffer::AddPatternRecognizer(const std::wstring_view regexString)
 {
     // If the pattern already exists in our map, return the id associated with it
-    for (auto idPatternPair : _idsAndPatterns)
+    for (const auto [id, pattern] : _idsAndPatterns)
     {
-        if (idPatternPair.second == regexString)
+        if (pattern == regexString)
         {
-            return idPatternPair.first;
+            return id;
         }
     }
     ++_currentPatternId;
