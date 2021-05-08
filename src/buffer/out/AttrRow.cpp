@@ -25,12 +25,12 @@ ATTR_ROW::ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr) :
 // - <none>, throws exceptions on failures.
 void ATTR_ROW::Resize(const size_t newWidth)
 {
-    _data.resize(gsl::narrow<UINT>(newWidth));
+    _data.resize_trailing_extent(gsl::narrow<UINT>(newWidth));
 }
 
 void ATTR_ROW::Reset(const TextAttribute attr)
 {
-    _data.assign(attr);
+    _data.replace(0, decltype(_data)::npos, attr);
 }
 
 // Routine Description:
@@ -72,7 +72,7 @@ std::vector<uint16_t> ATTR_ROW::GetHyperlinks()
 // - <none>
 bool ATTR_ROW::SetAttrToEnd(const UINT iStart, const TextAttribute attr)
 {
-    _data.assign(attr, iStart);
+    _data.replace(iStart, decltype(_data)::npos, attr);
     return true;
 }
 
@@ -86,7 +86,7 @@ bool ATTR_ROW::SetAttrToEnd(const UINT iStart, const TextAttribute attr)
 // - <none>
 void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAttribute& replaceWith) noexcept
 {
-    _data.replace(toBeReplacedAttr, replaceWith);
+    _data.replace_values(toBeReplacedAttr, replaceWith);
 }
 
 // Routine Description:
@@ -103,7 +103,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
 // - <none>
 void ATTR_ROW::MergeAttrRun(const TextAttribute& newAttr, const size_t start, const size_t length)
 {
-    _data.assign(newAttr, gsl::narrow<UINT>(start), gsl::narrow<UINT>(length));
+    _data.replace(gsl::narrow<UINT>(start), gsl::narrow<UINT>(start + length), newAttr);
 }
 
 ATTR_ROW::const_iterator ATTR_ROW::begin() const noexcept

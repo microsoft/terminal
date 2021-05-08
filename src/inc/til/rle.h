@@ -14,27 +14,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         template<typename T, typename S, typename ParentIt>
         class rle_iterator
         {
-            // If you use this as a sample for your own iterator, this looks
-            // a bit daunting. But it's almost entirely boilerplate.
-            // All you actually have to fill in is:
-            // A. size_type might not be necessary for you. It can be inferred
-            //    from our parent so I defined it.
-            // 1. value_type, pointer, reference, and difference type. These
-            //    specify the overall types. They're generally what you want to see
-            //    when someone does *iterator or iterator-> or it1 - it2.
-            //    If you have half an idea of what those return types should be,
-            //    define them at the top or better yet, infer them from the underlying
-            //    data source.
-            // 2. Fill in operator*() and operator->() pointing directly at the data value.
-            // 3. Fill in inc() and dec(). That gives you ++it, it++, --it, and it--.
-            // 4. Fill in operator+=(). That gives you +=, +, -=, and -.
-            // ALTERNATIVE 3/4. You might be able to just define += and then feed the rest into it
-            //    depending on your circumstance.
-            // 5. Fill in operator-() for a difference between two instances.
-            // 6. Fill in operator[] to go to the offset like an array index.
-            // 7. Fill in operator== for equality. Gets == and != in one shot.
-            // 8. Fill in operator< for comparison. Also covers > and <= and >=.
-
         public:
             using iterator_category = std::random_access_iterator_tag;
             using value_type = T;
@@ -51,7 +30,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             [[nodiscard]] reference operator*() const noexcept
             {
-                return _it->first;
+                return _it->value;
             }
 
             [[nodiscard]] pointer operator->() const noexcept
@@ -85,21 +64,54 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 return tmp;
             }
 
-            rle_iterator& operator+=(const difference_type offset)
+            rle_iterator& operator+=(difference_type move)
             {
                 // TODO: Optional iterator debug
-                if (offset < 0) // negative direction
+                if (move >= 0) // positive direction
                 {
-                    // Hold a running count of how much more we need to move.
-                    // Flip the sign to make it just the magnitude since this
+                    // While we still need to move...
+                    while (move > 0)
+                    {
+                        // Check how much space we have left on this run.
+                        // A run that is 6 long (_it->length) and
+                        // we have addressed the 4th position (_usage, starts at 1).
+                        // Then there are 2 left.
+                        const auto space = static_cast<difference_type>(_it->length - _usage);
+
+                        // If we have enough space to move...
+                        if (space >= move)
+                        {
+                            // Move the storage forward the requested distance.
+                            _usage += gsl::narrow_cast<decltype(_usage)>(move);
+                            move = 0;
+                        }
+                        // If we do NOT have enough space.
+                        else
+                        {
+                            // Reduce the requested distance by the remaining space
+                            // to count "burning out" this run.
+                            // + 1 more for jumping to the next item.
+                            move -= space + 1;
+
+                            // Advance the underlying iterator.
+                            ++_it;
+
+                            // Signify we're on the first position.
+                            _usage = 1;
+                        }
+                    }
+                }
+                else // negative direction
+                {
+                    // Flip the sign to make first just the magnitude since this
                     // branch is already the direction.
-                    auto move = static_cast<difference_type>(-offset);
+                    move = -move;
 
                     // While we still need to move...
                     while (move > 0)
                     {
                         // Check how much space we have used on this run.
-                        // A run that is 6 long (_it->second) and
+                        // A run that is 6 long (_it->length) and
                         // we have addressed the 4th position (_usage, starts at 1).
                         // We can move to the 1st position, or 3 to the left.
                         const auto space = static_cast<difference_type>(_usage - 1);
@@ -109,9 +121,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                         {
                             // Move the storage forward the requested distance.
                             _usage -= gsl::narrow_cast<decltype(_usage)>(move);
-
-                            // Remove the moved distance.
-                            move -= move;
+                            move = 0;
                         }
                         // If we do NOT have enough space.
                         else
@@ -124,46 +134,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                             --_it;
 
                             // Signify we're on the last position.
-                            _usage = _it->second;
-                        }
-                    }
-                }
-                else // positive direction
-                {
-                    // Hold a running count of how much more we need to move.
-                    auto move = static_cast<difference_type>(offset);
-
-                    // While we still need to move...
-                    while (move > 0)
-                    {
-                        // Check how much space we have left on this run.
-                        // A run that is 6 long (_it->second) and
-                        // we have addressed the 4th position (_usage, starts at 1).
-                        // Then there are 2 left.
-                        const auto space = static_cast<difference_type>(_it->second - _usage);
-
-                        // If we have enough space to move...
-                        if (space >= move)
-                        {
-                            // Move the storage forward the requested distance.
-                            _usage += gsl::narrow_cast<decltype(_usage)>(move);
-
-                            // Remove the moved distance.
-                            move -= move;
-                        }
-                        // If we do NOT have enough space.
-                        else
-                        {
-                            // Reduce the requested distance by the remaining space
-                            // to count "burning out" this run.
-                            // + 1 more for jumping to the next list item.
-                            move -= space + 1;
-
-                            // Advance the underlying iterator.
-                            ++_it;
-
-                            // Signify we're on the first position.
-                            _usage = 1;
+                            _usage = _it->length;
                         }
                     }
                 }
@@ -172,6 +143,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             rle_iterator& operator-=(const difference_type offset)
             {
+                return *this += -offset;
                 return *this += -offset;
             }
 
@@ -201,13 +173,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 while (_it > tmp._it)
                 {
                     // Add all remaining space in tmp to the accumulation.
-                    // + 1 more for jumping to the next list item.
-                    accumulation += tmp._it->second - tmp._usage + 1;
+                    // + 1 more for jumping to the next item.
+                    accumulation += tmp._it->length - tmp._usage + 1;
 
                     // Move tmp's iterator rightward.
                     ++tmp._it;
 
-                    // Set it to the first position in the run.
+                    // Set first to the first position in the run.
                     tmp._usage = 1;
                 }
 
@@ -220,8 +192,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     // Move tmp's iterator leftward.
                     --tmp._it;
 
-                    // Set it to the last position in the run.
-                    tmp._usage = tmp._it->second;
+                    // Set first to the last position in the run.
+                    tmp._usage = tmp._it->length;
                 }
 
                 // Now both iterators should be at the same position.
@@ -272,9 +244,56 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             ParentIt _it;
             size_type _usage;
         };
+    } // namespace details
+
+    template<typename T, typename S>
+    struct rle_pair
+    {
+        using value_type = T;
+        using size_type = S;
+
+        rle_pair() = default;
+
+        rle_pair(const rle_pair&) = default;
+        rle_pair& operator=(const rle_pair&) = default;
+
+        rle_pair(rle_pair&&) = default;
+        rle_pair& operator=(rle_pair&&) = default;
+
+        constexpr rle_pair(const T& value, const S& length) noexcept(std::is_nothrow_copy_constructible_v<T>&& std::is_nothrow_copy_constructible_v<S>) :
+            value(value), length(length)
+        {
+        }
+
+        constexpr rle_pair(T&& value, S&& length) noexcept(std::is_nothrow_constructible_v<T>&& std::is_nothrow_constructible_v<S>) :
+            value(std::move<T>(value)), length(std::move<S>(length))
+        {
+        }
+
+        constexpr void swap(rle_pair& other) noexcept(std::is_nothrow_swappable_v<T>&& std::is_nothrow_swappable_v<S>)
+        {
+            if (this != std::addressof(other))
+            {
+                std::swap(value, other.value);
+                std::swap(length, other.length);
+            }
+        }
+
+        value_type value{};
+        size_type length{};
     };
 
-    template<typename T, typename S = std::size_t, typename Container = std::vector<std::pair<T, S>>>
+    template <typename T, typename S>
+    [[nodiscard]] constexpr bool operator==(const rle_pair<T, S>& lhs, const rle_pair<T, S>& rhs) {
+        return lhs.value == rhs.value && lhs.length == rhs.length;
+    }
+
+    template <typename T, typename S>
+    [[nodiscard]] constexpr bool operator!=(const rle_pair<T, S>& lhs, const rle_pair<T, S>& rhs) {
+        return !(lhs == rhs);
+    }
+
+    template<typename T, typename S = std::size_t, typename Container = std::vector<rle_pair<T, S>>>
     class basic_rle
     {
     public:
@@ -287,159 +306,344 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         using size_type = S;
         using difference_type = S;
 
-        using const_iterator = details::rle_iterator<const T, S, typename Container::const_iterator>;
+        using rle_iterator = typename Container::iterator;
+        using rle_const_iterator = typename Container::const_iterator;
+        using rle_type = rle_pair<value_type, size_type>;
+
+        using const_iterator = details::rle_iterator<const T, S, rle_const_iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
+        static constexpr size_type npos = size_type(-1);
+
+        // We don't check anywhere whether a size_type value is negative.
+        // Having signed integers would break that.
+        static_assert(std::is_unsigned<size_type>::value, "the run length S must be unsigned");
+        static_assert(std::is_same<rle_type, typename Container::value_type>::value, "the value type of the Container must be rle_pair<T, S>");
+
         constexpr basic_rle() noexcept = default;
+        ~basic_rle() = default;
 
-        basic_rle(const basic_rle& other) :
-            _list(other._list), _size(other._size)
-        {
-        }
-
-        basic_rle& operator=(const basic_rle& other)
-        {
-            _list = other._list;
-            _size = other._size;
-            return *this;
-        }
+        basic_rle(const basic_rle& other) = default;
+        basic_rle& operator=(const basic_rle& other) = default;
 
         basic_rle(basic_rle&& other) noexcept :
-            _list(std::move(other._list)), _size(std::exchange(other._size, 0))
+            _runs(std::move(other._runs)), _total_length(std::exchange(other._total_length, 0))
         {
         }
 
         basic_rle& operator=(basic_rle&& other) noexcept
         {
-            _list = std::move(other._list);
-            _size = std::exchange(other._size, 0);
+            _runs = std::move(other._runs);
+            _total_length = std::exchange(other._total_length, 0);
             return *this;
         }
 
-        basic_rle(const size_type size, const value_type& value) :
-            _size(size)
+        basic_rle(const size_type length, const value_type& value) :
+            _total_length(length)
         {
-            assign(value);
+            _runs.push_back({value, length});
         }
 
         void swap(basic_rle& other)
         {
-            std::swap(_list, other._list);
-            std::swap(_size, other._size);
+            _runs.swap(other._runs);
+            std::swap(_total_length, other._total_length);
         }
 
         // Returns the total length of all runs as encoded.
         size_type size() const noexcept
         {
-            return _size;
+            return _total_length;
+        }
+
+        // This method gives access to the raw run length encoded array
+        // and allows users of this class to iterate over those.
+        const Container& runs() const noexcept
+        {
+            return _runs;
         }
 
         // Get the value at the position
         const_reference at(size_type position) const
         {
-            size_type applies;
-            THROW_HR_IF(E_INVALIDARG, position >= _size);
-            return _at(position, applies)->first;
+           size_type applies;
+            return at(position, applies);
         }
 
-        [[nodiscard]] basic_rle substr(const size_type offset = 0, const size_type count = std::numeric_limits<size_type>::max()) const
+        // Get the value at the position
+        const_reference at(size_type position, size_type& applies) const
         {
-            // TODO: validate params
-            const size_type startIndex = offset;
-            const size_type endIndex = std::min(_size - offset, count) + offset - 1;
+            auto begin = _runs.begin();
+            auto end = _runs.end();
 
-            size_type startApplies, endApplies;
-            const auto firstRun{ _at(startIndex, startApplies) };
-            const auto lastRun{ _at(endIndex, endApplies) };
+            rle_scanner scanner(begin, end);
+            auto [it, pos] = scanner.scan(position);
 
-            Container substring{ firstRun, lastRun + 1 };
-            substring.front().second = startApplies;
-            substring.back().second = substring.back().second - endApplies + 1;
+            if (it == end)
+            {
+                throw std::out_of_range("position out of range");
+            }
 
-            return { std::move(substring), endIndex - startIndex + 1 };
+            applies = it->length - pos;
+            return it->value;
+        }
+
+        [[nodiscard]] basic_rle slice(size_type start_index, size_type end_index) const
+        {
+            if (end_index > _total_length)
+            {
+                end_index = _total_length;
+            }
+
+            if (start_index >= end_index)
+            {
+                return {};
+            }
+
+            // Thanks to the prior conditions we can safely assume that:
+            // * 0 <= start_index < _total_length
+            // * 0 < end_index <= _total_length
+            // * start_index < end_index
+            //
+            // --> It's safe to subtract 1 from end_index
+
+            rle_scanner scanner(_runs.begin(), _runs.end());
+            auto [begin_run, start_run_pos] = scanner.scan(start_index);
+            auto [end_run, end_run_pos] = scanner.scan(end_index - 1);
+
+            Container slice{ begin_run, end_run + 1 };
+            slice.back().length = end_run_pos + 1;
+            slice.front().length -= start_run_pos;
+
+            return { std::move(slice), end_index - start_index };
+        }
+
+        // Set the range [start_index, end_index) to the given value.
+        void replace(size_type start_index, size_type end_index, const value_type& value)
+        {
+            // start_index and end_index must be inside the inclusive range [0, _total_length].
+            Expects(start_index <= end_index);
+
+            rle_type new_run{ value, end_index - start_index };
+            replace(start_index, end_index, { &new_run, 1 });
+        }
+
+        // Replace the range [start_index, end_index) with the given run.
+        // NOTE: This can change the size/length of the vector.
+        void replace(size_type start_index, size_type end_index, rle_type new_run)
+        {
+            replace(start_index, end_index, { &new_run, 1 });
+        }
+
+        // Replace the range [start_index, end_index) with the given list of runs.
+        // NOTE: This can change the size/length of the vector.
+        void replace(size_type start_index, size_type end_index, gsl::span<rle_type> new_runs)
+        {
+            if (new_runs.empty())
+            {
+                return;
+            }
+
+            if (end_index > _total_length)
+            {
+                end_index = _total_length;
+            }
+
+            // start_index and end_index must be inside the inclusive range [0, _total_length].
+            Expects(start_index <= end_index);
+
+            rle_scanner scanner{ _runs.begin(), _runs.end() };
+            auto [begin, begin_pos] = scanner.scan(start_index);
+            auto [end, end_pos] = scanner.scan(end_index);
+
+            // Two complications can occur during insertion of new_runs:
+            // 1. The it/end run has the same value as the preceding/succeeding run.
+            //    --> The new runs must be joined with the existing runs.
+            // 2. The it/end run might it/end inside an existing run.
+            //    --> The existing run needs to be split up.
+
+            // 1. The it/end run has the same value as the preceding/succeeding run.
+            //    --> The new runs must be joined with the existing runs.
+            size_type begin_additional_length = 0;
+            size_type end_additional_length = 0;
+            if (start_index != 0)
+            {
+                auto previous = begin_pos ? begin : begin - 1;
+                if (previous->value == new_runs.front().value)
+                {
+                    begin_additional_length = begin_pos ? begin_pos : previous->length;
+                    begin_pos = 0;
+                    begin = previous;
+                }
+            }
+            if (end_index != _total_length)
+            {
+                // Like all iterators in C++ "end" already points 1 item past "end_index".
+                // --> No need for something analogue to "previous".
+                if (end->value == new_runs.back().value)
+                {
+                    end_additional_length = end->length - end_pos;
+                    end_pos = 0;
+                    ++end;
+                }
+            }
+
+            // If we have a replacement like the following:
+            //   1 1 1 1 1
+            // +     2 2
+            // It'll result in the following _three_ runs:
+            // = 1 1|2 2|1
+            //           ^
+            // mid_insertion_trailer contains the run (marked as "^")
+            // which needs to be appended after the replacement runs.
+            std::optional<rle_type> mid_insertion_trailer;
+            if (begin == end && begin_pos != 0)
+            {
+                mid_insertion_trailer.emplace(begin->value, begin->length - end_pos);
+                // We've "consumed" end_pos
+                end_pos = 0;
+            }
+
+            // 2. The it/end run might it/end inside an existing run.
+            //    --> The existing run needs to be split up.
+            //
+            // For example:
+            //
+            //   1 1 1|2 2
+            // +     3 3
+            // = 1 1|3 3|2
+            //   ^ ^     ^
+            // --> We must shorten the
+            //     * it slice to a length of 2
+            //     * end slice to a length of 1
+            //
+            // NOTE: iterators in C++ are in the range [it, end).
+            if (begin_pos)
+            {
+                begin->length = begin_pos;
+                // it is part of the to-be-replaced range, was "abused" to adjust the preceding run's length.
+                // --> We must increment it.
+                ++begin;
+            }
+            if (end_pos)
+            {
+                // end points past the to-be-replaced range and doesn't need to be decremented.
+                end->length -= end_pos;
+            }
+
+            // NOTE: Due to the prior case "2." it can be greater than end!
+            const size_t available_space = begin < end ? end - begin : 0;
+            const size_t required_space = new_runs.size() + (mid_insertion_trailer ? 1 : 0);
+
+            const auto begin_index = begin - _runs.begin();
+
+            const auto new_runs_begin = new_runs.begin();
+            const auto new_runs_end = new_runs.end();
+            auto new_runs_it = new_runs_begin;
+
+            // First copy over as much data as can fit into the existing [start_index, end_index) range.
+            // Afterwards two situations can occur:
+            //
+            // * All data was copied and we have  we have more space left
+            const auto direct_copy_end = new_runs_it + std::min(available_space, new_runs.size());
+            begin = std::copy(new_runs_it, direct_copy_end, begin);
+            new_runs_it = direct_copy_end;
+
+            if (available_space >= required_space)
+            {
+                // The entirety of required_space was used up and new_runs was fully copied over.
+                // We now need to .erase() the unneeded space in the underlying vector.
+
+                if (mid_insertion_trailer)
+                {
+                    *begin = *std::move(mid_insertion_trailer);
+                    ++begin;
+                }
+
+                end = _runs.erase(begin, end) - 1;
+            }
+            else
+            {
+                // The entirety of available_space was used up and we have remaining new_runs elements to copy over.
+                // We now need to make space for the new elements.
+
+                if (mid_insertion_trailer)
+                {
+                    const auto insert_pos = begin - _runs.begin();
+                    _runs.insert(begin, required_space - available_space, {});
+                    begin = std::copy(new_runs_it, new_runs_end, _runs.begin() + insert_pos);
+                    *begin = *std::move(mid_insertion_trailer);
+                }
+                else
+                {
+                    _runs.insert(begin, new_runs_it, new_runs_end);
+                }
+            }
+
+            // Due to condition "1." it's possible for two existing, neighboring runs to be joined.
+            // --> We must extend the length of those existing runs.
+            // NOTE: Both it and end below may point to the same run!
+            if (begin_additional_length)
+            {
+                begin = _runs.begin() + begin_index;
+                begin->length += begin_additional_length;
+            }
+            if (end_additional_length)
+            {
+                end->length += end_additional_length;
+            }
+
+            const auto pre_length = start_index;
+            const auto post_length = _total_length - end_index;
+            const auto new_length = std::accumulate(new_runs_begin, new_runs_end, size_type(0), [](const size_type& acc, const rle_type& run) { return acc + run.length; });
+            _total_length = pre_length + post_length + new_length;
         }
 
         // Replaces every value seen in the run with a new one
         // Does not change the length or position of the values.
-        void replace(const value_type& oldValue, const value_type& newValue) noexcept(std::is_nothrow_copy_assignable<value_type>::value)
+        void replace_values(const value_type& old_value, const value_type& new_value) noexcept(std::is_nothrow_copy_assignable<value_type>::value)
         {
-            for (auto& run : _list)
+            for (auto& run : _runs)
             {
-                if (run.first == oldValue)
+                if (run.value == old_value)
                 {
-                    run.first = newValue;
+                    run.value = new_value;
                 }
             }
         }
 
-        // Adjust the size of the run.
-        // If new size is bigger, the last value is extended to new width.
-        // If new size is smaller, the runs are cut to fit.
-        void resize(const size_type newSize)
+        // Adjust the size of the vector.
+        // If the size is being increased, the last run is extended to fill up the new vector size.
+        // If the size is being decreased, the trailing runs are cut off to fit.
+        void resize_trailing_extent(const size_type new_size)
         {
-            if (newSize <= 0)
+            if (new_size == 0)
             {
-                _list.clear();
+                _runs.clear();
             }
-            // Easy case. If the new row is longer, increase the length of the last run by how much new space there is.
-            else if (newSize > _size)
+            else if (new_size < _total_length)
             {
-                // Get the attribute that covers the final column of old width.
-                auto& run = _list.back();
+                rle_scanner scanner(_runs.begin(), _runs.end());
+                auto [run, pos] = scanner.scan(new_size - 1);
 
-                // Extend its length by the additional columns we're adding.
-                run.second = run.second + newSize - _size;
+                run->length = pos + 1;
 
-                // Store that the new total width we represent is the new width.
-                _size = newSize;
+                _runs.erase(++run, _runs.cend());
             }
-            // harder case: new row is shorter.
-            else
+            else if (new_size > _total_length)
             {
-                // Get the attribute that covers the final column of the new width
-                size_type applies = 0;
-                auto run = _at(newSize - 1, applies);
+                Expects(!_runs.empty());
+                auto& run = _runs.back();
 
-                // applies was given to us as "how many columns left from this point forward are covered by the returned run"
-                // So if the original run was B5 covering a 5 size OldWidth and we have a newSize of 3
-                // then when we called FindAttrIndex, it returned the B5 as the pIndexedRun and a 2 for how many more segments it covers
-                // after and including the 3rd column.
-                // B5-2 = B3, which is what we desire to cover the new 3 size buffer.
-                //
-                // The const_cast doesn't invoke undefined behavior as this method,
-                // the this pointer and thus _list in turn aren't actually const here.
-                // It saves us from having to specialize _at() for non-const though.
-                const_cast<size_type&>(run->second) = run->second - applies + 1;
-
-                // Store that the new total width we represent is the new width.
-                _size = newSize;
-
-                // Erase segments after the one we just updated.
-                _list.erase(run + 1, _list.cend());
-
-                // NOTE: Under some circumstances here, we have leftover run segments in memory or blank run segments
-                // in memory. We're not going to waste time redimensioning the array in the heap. We're just noting that the useful
-                // portions of it have changed.
+                run.length += new_size - _total_length;
             }
-        }
 
-        // Sets this value at the given start position until the end of this vector.
-        void assign(const value_type& value, const size_type start = 0)
-        {
-            assign(value, start, gsl::narrow_cast<size_type>(_size - start));
-        }
-
-        // Sets this value at the given start position for the given run length.
-        void assign(const value_type& value, const size_type start, const size_type length)
-        {
-            // TODO: validate position in bounds?
-            std::array<std::pair<T, S>, 1> items{{ value, length }};
-            _merge(items.begin(), items.end(), start);
+            _total_length = new_size;
         }
 
         constexpr bool operator==(const basic_rle& other) const noexcept
         {
-            return _size == other._size && _list == other._list;
+            return _total_length == other._total_length && _runs == other._runs;
         }
 
         constexpr bool operator!=(const basic_rle& other) const noexcept
@@ -449,12 +653,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         [[nodiscard]] const_iterator begin() const noexcept
         {
-            return const_iterator(_list.begin());
+            return const_iterator(_runs.begin());
         }
 
         [[nodiscard]] const_iterator end() const noexcept
         {
-            return const_iterator(_list.end());
+            return const_iterator(_runs.end());
         }
 
         [[nodiscard]] const_reverse_iterator rbegin() const noexcept
@@ -488,406 +692,63 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
 #ifdef UNIT_TESTING
-        [[nodiscard]] typename std::enable_if<std::is_arithmetic<value_type>::value, std::wstring>::type to_string() const
+        std::wstring to_string() const
         {
             std::wstringstream wss;
-            wss << _size << " items:";
-            for (auto& item : *this)
+            wss << std::endl
+                << L"Run of size " << size() << " contains:" << std::endl;
+
+            for (auto& item : _runs)
             {
-                wss << L" " << item;
+                wss << wil::str_printf<std::wstring>(L"[%td for %td]", item.value, item.length) << L" ";
             }
+
+            wss << std::endl;
             return wss.str();
         }
 #endif
 
     private:
-        basic_rle(Container&& list, size_type size) :
-            _list(std::forward<Container>(list)),
-            _size(size)
+        basic_rle(Container&& runs, size_type size) :
+            _runs(std::forward<Container>(runs)),
+            _total_length(size)
         {
         }
 
-        auto _at(size_type position, size_type& applies) const
+        template<typename It>
+        struct rle_scanner
         {
-            FAIL_FAST_IF(!(position < _size)); // The requested index cannot be longer than the total length described by this set of Attrs.
+            explicit rle_scanner(It begin, It end) noexcept :
+                it(std::move(begin)), end(std::move(end)) {}
 
-            size_type totalLength = 0;
-
-            FAIL_FAST_IF(!(_list.size() > 0)); // There should be a non-zero and positive number of items in the array.
-
-            // Scan through the internal array from position 0 adding up the lengths that each attribute applies to
-            auto runPos = _list.begin();
-            do
+            std::pair<It, size_type> scan(size_type index) noexcept
             {
-                totalLength += runPos->second;
+                run_pos = 0;
 
-                if (totalLength > position)
+                for (; it != end; ++it)
                 {
-                    // If we've just passed up the requested position with the length we added, break early
-                    break;
-                }
-
-                runPos++;
-            } while (runPos < _list.end());
-
-            // we should have broken before falling out the while case.
-            // if we didn't break, then this ATTR_ROW wasn't filled with enough attributes for the entire row of characters
-            FAIL_FAST_IF(runPos >= _list.end());
-
-            // The remaining iterator position is the position of the attribute that is applicable at the position requested (position)
-            // Calculate its remaining applicability if requested
-
-            // The length on which the found attribute applies is the total length seen so far minus the position we were searching for.
-            FAIL_FAST_IF(!(totalLength > position)); // The length of all attributes we counted up so far should be longer than the position requested or we'll underflow.
-
-            applies = totalLength - position;
-            FAIL_FAST_IF(!(applies > 0)); // An attribute applies for >0 characters
-
-            return runPos;
-        }
-
-        template<typename InputIterator>
-        void _merge(InputIterator first, InputIterator last, const size_type startIndex)
-        {
-            // NOTE: This method assumes that the run length encoded slice in (first, last) is compact.
-            //       For instance if (first, last) contains [A2, A1, B3] instead of [A3, B3] it'll break this class.
-            //
-            // Definitions:
-            // Existing Run = The run length encoded color array we're already storing in memory before this was called.
-            // Insert Run = The run length encoded color array that someone is asking us to inject into our stored memory run.
-            // New Run = The run length encoded color array that we have to allocate and rebuild to store internally
-            //           which will replace Existing Run at the end of this function.
-            // Example:
-            // _size = 10.
-            // Existing Run: R3 -> G5 -> B2
-            // Insert Run: Y1 -> N1 at startIndex = 5 and endIndex = 6
-            //            (rgInsertAttrs is a 2 length array with Y1->N1 in it and cInsertAttrs = 2)
-            // Final Run: R3 -> G2 -> Y1 -> N1 -> G1 -> B2
-
-            const auto newItemsTotalCoverage = std::accumulate(first, last, (size_type)0, [](size_type value, auto& item) -> size_type {
-                return value + gsl::narrow_cast<size_type>(item.second);
-            });
-
-            const auto newItemsSize = std::distance(first, last);
-
-            // If the insertion size is 1, do some pre-processing to
-            // see if we can get this done quickly.
-            if (newItemsSize == 1)
-            {
-                // Get the new color attribute we're trying to apply
-                const value_type NewAttr = first->first;
-
-                // If the existing run was only 1 element...
-                // ...and the new color is the same as the old, we don't have to do anything and can exit quick.
-                if (_list.size() == 1 && _list.at(0).first == NewAttr)
-                {
-                    return;
-                }
-                // .. otherwise if we internally have a list of 2 or more and we're about to insert a single color
-                // it's possible that we just walk left-to-right through the row and find a quick exit.
-                if (startIndex >= 0 && newItemsTotalCoverage == 1)
-                {
-                    // First we try to find the run where the insertion happens, using lowerBound and upperBound to track
-                    // where we are currently at.
-                    const auto begin = _list.begin();
-                    size_type lowerBound = 0;
-                    size_type upperBound = 0;
-                    for (size_type i = 0; i < _list.size(); i++)
+                    const auto new_total = total + it->length;
+                    if (new_total > index)
                     {
-                        const auto curr = begin + i;
-                        upperBound += curr->second;
-
-                        if (startIndex >= lowerBound && startIndex < upperBound)
-                        {
-                            // The run that we try to insert into has the same color as the new one.
-                            // e.g.
-                            // AAAAABBBBBBBCCC
-                            //       ^
-                            // AAAAABBBBBBBCCC
-                            //
-                            // 'B' is the new color and '^' represents where startIndex is. We don't have to
-                            // do anything.
-                            if (curr->first == NewAttr)
-                            {
-                                return;
-                            }
-
-                            // If the current run has length of exactly one, we can simply change the attribute
-                            // of the current run.
-                            // e.g.
-                            // AAAAABCCCCCCCCC
-                            //      ^
-                            // AAAAADCCCCCCCCC
-                            //
-                            // Here 'D' is the new color.
-                            if (curr->second == 1)
-                            {
-                                curr->first = NewAttr;
-                                return;
-                            }
-
-                            // If the insertion happens at current run's lower boundary...
-                            if (startIndex == lowerBound && i > 0)
-                            {
-                                const auto prev = std::prev(curr, 1);
-                                // ... and the previous run has the same color as the new one, we can
-                                // just adjust the counts in the existing two elements in our internal list.
-                                // e.g.
-                                // AAAAABBBBBBBCCC
-                                //      ^
-                                // AAAAAABBBBBBCCC
-                                //
-                                // Here 'A' is the new color.
-                                if (NewAttr == prev->first)
-                                {
-                                    prev->second++;
-                                    curr->second--;
-
-                                    // If we just reduced the right half to zero, just erase it out of the list.
-                                    if (curr->second == 0)
-                                    {
-                                        _list.erase(curr);
-                                    }
-
-                                    return;
-                                }
-                            }
-
-                            // If the insertion happens at current run's upper boundary...
-                            if (startIndex == upperBound - 1 && i + 1 < _list.size())
-                            {
-                                // ...then let's try our luck with the next run if possible. This is basically the opposite
-                                // of what we did with the previous run.
-                                // e.g.
-                                // AAAAAABBBBBBCCC
-                                //      ^
-                                // AAAAABBBBBBBCCC
-                                //
-                                // Here 'B' is the new color.
-                                const auto next = std::next(curr, 1);
-                                if (NewAttr == next->first)
-                                {
-                                    curr->second--;
-                                    next->second++;
-
-                                    if (curr->second == 0)
-                                    {
-                                        _list.erase(curr);
-                                    }
-
-                                    return;
-                                }
-                            }
-                        }
-
-                        // Advance one run in the _list.
-                        lowerBound = upperBound;
-
-                        // The lowerBound is larger than startIndex, which means we fail to find an early exit at the run
-                        // where the insertion happens. We can just break out.
-                        if (lowerBound > startIndex)
-                        {
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // If we're about to cover the entire existing run with a new one, we can also make an optimization.
-            if (startIndex == 0 && newItemsTotalCoverage == _size)
-            {
-                // Just dump what we're given over what we have and call it a day.
-                _list.assign(first, last);
-
-                return;
-            }
-
-            // In the worst case scenario, we will need a new run that is the length of
-            // The existing run in memory + The new run in memory + 1.
-            // This worst case occurs when we inject a new item in the middle of an existing run like so
-            // Existing R3->B5->G2, Insertion Y2 starting at 5 (in the middle of the B5)
-            // becomes R3->B2->Y2->B1->G2.
-            // The original run was 3 long. The insertion run was 1 long. We need 1 more for the
-            // fact that an existing piece of the run was split in half (to hold the latter half).
-            const size_type cNewRun = gsl::narrow_cast<size_type>(_list.size() + newItemsSize + 1);
-            Container newRun;
-            newRun.reserve(cNewRun);
-
-            // We will start analyzing from the beginning of our existing run.
-            // Use some pointers to keep track of where we are in walking through our runs.
-
-            // Get the existing run that we'll be updating/manipulating.
-            const auto existingRun = _list.begin();
-            auto pExistingRunPos = existingRun;
-            const auto pExistingRunEnd = _list.end();
-            auto pInsertRunPos = first;
-            size_type cInsertRunRemaining = gsl::narrow_cast<size_type>(newItemsSize);
-            size_type iExistingRunCoverage = 0;
-
-            // Copy the existing run into the new buffer up to the "start index" where the new run will be injected.
-            // If the new run starts at 0, we have nothing to copy from the beginning.
-            if (startIndex != 0)
-            {
-                // While we're less than the desired insertion position...
-                while (iExistingRunCoverage < startIndex)
-                {
-                    // Add up how much length we can cover by copying an item from the existing run.
-                    iExistingRunCoverage += pExistingRunPos->second;
-
-                    // Copy it to the new run buffer and advance both pointers.
-                    newRun.push_back(*pExistingRunPos++);
-                }
-
-                // When we get to this point, we've copied full segments from the original existing run
-                // into our new run buffer. We will have 1 or more full segments of color attributes and
-                // we MIGHT have to cut the last copied segment's length back depending on where the inserted
-                // attributes will fall in the final/new run.
-                // Some examples:
-                // - Starting with the original string R3 -> G5 -> B2
-                // - 1. If the insertion is Y5 at start index 3
-                //      We are trying to get a result/final/new run of R3 -> Y5 -> B2.
-                //      We just copied R3 to the new destination buffer and we cang skip down and start inserting the new attrs.
-                // - 2. If the insertion is Y3 at start index 5
-                //      We are trying to get a result/final/new run of R3 -> G2 -> Y3 -> B2.
-                //      We just copied R3 -> G5 to the new destination buffer with the code above.
-                //      But the insertion is going to cut out some of the length of the G5.
-                //      We need to fix this up below so it says G2 instead to leave room for the Y3 to fit in
-                //      the new/final run.
-
-                // Fetch out the length so we can fix it up based on the below conditions.
-                size_type length = newRun.back().second;
-
-                // If we've covered more cells already than the start of the attributes to be inserted...
-                if (iExistingRunCoverage > startIndex)
-                {
-                    // ..then subtract some of the length of the final cell we copied.
-                    // We want to take remove the difference in distance between the cells we've covered in the new
-                    // run and the insertion point.
-                    // (This turns G5 into G2 from Example 2 just above)
-                    length -= (iExistingRunCoverage - startIndex);
-                }
-
-                // Now we're still on that "last cell copied" into the new run.
-                // If the color of that existing copied cell matches the color of the first segment
-                // of the run we're about to insert, we can just increment the length to extend the coverage.
-                if (newRun.back().first == pInsertRunPos->first)
-                {
-                    length += pInsertRunPos->second;
-
-                    // Since the color matched, we have already "used up" part of the insert run
-                    // and can skip it in our big "memcopy" step below that will copy the bulk of the insert run.
-                    cInsertRunRemaining--;
-                    pInsertRunPos++;
-                }
-
-                // We're done manipulating the length. Store it back.
-                newRun.back().second = length;
-            }
-
-            // Bulk copy the majority (or all, depending on circumstance) of the insert run into the final run buffer.
-            std::copy_n(pInsertRunPos, cInsertRunRemaining, std::back_inserter(newRun));
-
-            // We're technically done with the insert run now and have 0 remaining, but won't bother updating its pointers
-            // and counts any further because we won't use them.
-
-            const size_type endIndex = startIndex + newItemsTotalCoverage - 1;
-
-            // Now we need to move our pointer for the original existing run forward and update our counts
-            // on how many cells we could have copied from the source before finishing off the new run.
-            while (iExistingRunCoverage <= endIndex)
-            {
-                FAIL_FAST_IF(!(pExistingRunPos != pExistingRunEnd));
-                iExistingRunCoverage += pExistingRunPos->second;
-                pExistingRunPos++;
-            }
-
-            // If we still have original existing run cells remaining, copy them into the final new run.
-            if (pExistingRunPos != pExistingRunEnd || iExistingRunCoverage != (endIndex + 1))
-            {
-                // We advanced the existing run pointer and its count to on or past the end of what the insertion run filled in.
-                // If this ended up being past the end of what the insertion run covers, we have to account for the cells after
-                // the insertion run but before the next piece of the original existing run.
-                // The example in this case is if we had...
-                // Existing Run = R3 -> G5 -> B2 -> X5
-                // Insert Run = Y2 @ startIndex = 7 and endIndex = 8
-                // ... then at this point in time, our states would look like...
-                // New Run so far = R3 -> G4 -> Y2
-                // Existing Run Pointer is at X5
-                // Existing run coverage count at 3 + 5 + 2 = 10.
-                // However, in order to get the final desired New Run
-                //   (which is R3 -> G4 -> Y2 -> B1 -> X5)
-                //   we would need to grab a piece of that B2 we already skipped past.
-                // iExistingRunCoverage = 10. endIndex = 8. endIndex+1 = 9. 10 > 9. So we skipped something.
-                if (iExistingRunCoverage > (endIndex + 1))
-                {
-                    // Back up the existing run pointer so we can grab the piece we skipped.
-                    pExistingRunPos--;
-
-                    // If the color matches what's already in our run, just increment the count value.
-                    // This case is slightly off from the example above. This case is for if the B2 above was actually Y2.
-                    // That Y2 from the existing run is the same color as the Y2 we just filled a few columns left in the final run
-                    // so we can just adjust the final run's column count instead of adding another segment here.
-                    if (newRun.back().first == pExistingRunPos->first)
-                    {
-                        size_type length = newRun.back().second;
-                        length += (iExistingRunCoverage - (endIndex + 1));
-                        newRun.back().second = length;
-                    }
-                    else
-                    {
-                        // If the color didn't match, then we just need to copy the piece we skipped and adjust
-                        // its length for the discrepancy in columns not yet covered by the final/new run.
-
-                        // Move forward to a blank spot in the new run
-                        newRun.emplace_back();
-
-                        // Copy the existing run's color information to the new run
-                        newRun.back().first = pExistingRunPos->first;
-
-                        // Adjust the length of that copied color to cover only the reduced number of columns needed
-                        // now that some have been replaced by the insert run.
-                        newRun.back().second = iExistingRunCoverage - (endIndex + 1);
+                        run_pos = index - total;
+                        break;
                     }
 
-                    // Now that we're done recovering a piece of the existing run we skipped, move the pointer forward again.
-                    pExistingRunPos++;
+                    total = new_total;
                 }
 
-                // OK. In this case, we didn't skip anything. The end of the insert run fell right at a boundary
-                // in columns that was in the original existing run.
-                // However, the next piece of the original existing run might happen to have the same color attribute
-                // as the final piece of what we just copied.
-                // As an example...
-                // Existing Run = R3 -> G5 -> B2.
-                // Insert Run = B5 @ startIndex = 3 and endIndex = 7
-                // New Run so far = R3 -> B5
-                // New Run desired when done = R3 -> B7
-                // Existing run pointer is on B2.
-                // We want to merge the 2 from the B2 into the B5 so we get B7.
-                else if (newRun.back().first == pExistingRunPos->first)
-                {
-                    // Add the value from the existing run into the current new run position.
-                    size_type length = newRun.back().second;
-                    length += pExistingRunPos->second;
-                    newRun.back().second = length;
-
-                    // Advance the existing run position since we consumed its value and merged it in.
-                    pExistingRunPos++;
-                }
-
-                // Now bulk copy any segments left in the original existing run
-                if (pExistingRunPos < pExistingRunEnd)
-                {
-                    std::copy_n(pExistingRunPos, (pExistingRunEnd - pExistingRunPos), std::back_inserter(newRun));
-                }
+                return { it, run_pos };
             }
 
-            // OK, phew. We're done. Now we just need to free the existing run and store the new run in its place.
-            _list.swap(newRun);
-        }
+        private:
+            It it;
+            const It end;
+            size_type run_pos = 0;
+            size_type total = 0;
+        };
 
-        Container _list;
-        S _size{ 0 };
+        Container _runs;
+        S _total_length{ 0 };
 
 #ifdef UNIT_TESTING
         friend class ::RunLengthEncodingTests;
@@ -895,10 +756,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     };
 
     template<typename T, typename S = std::size_t>
-    using rle = basic_rle<T, S, std::vector<std::pair<T, S>>>;
+    using rle = basic_rle<T, S, std::vector<rle_pair<T, S>>>;
 
+#ifdef BOOST_CONTAINER_CONTAINER_SMALL_VECTOR_HPP
     template<typename T, typename S = std::size_t, std::size_t N = 1>
-    using small_rle = basic_rle<T, S, boost::container::small_vector<std::pair<T, S>, N>>;
+    using small_rle = basic_rle<T, S, boost::container::small_vector<rle_pair<T, S>, N>>;
+#endif
 };
 
 #ifdef __WEX_COMMON_H__
