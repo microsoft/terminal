@@ -266,7 +266,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         constexpr rle_pair(T&& value, S&& length) noexcept(std::is_nothrow_constructible_v<T>&& std::is_nothrow_constructible_v<S>) :
-            value(std::move<T>(value)), length(std::move<S>(length))
+            value(std::forward<T>(value)), length(std::forward<S>(length))
         {
         }
 
@@ -283,13 +283,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         size_type length{};
     };
 
-    template <typename T, typename S>
-    [[nodiscard]] constexpr bool operator==(const rle_pair<T, S>& lhs, const rle_pair<T, S>& rhs) {
+    template<typename T, typename S>
+    [[nodiscard]] constexpr bool operator==(const rle_pair<T, S>& lhs, const rle_pair<T, S>& rhs)
+    {
         return lhs.value == rhs.value && lhs.length == rhs.length;
     }
 
-    template <typename T, typename S>
-    [[nodiscard]] constexpr bool operator!=(const rle_pair<T, S>& lhs, const rle_pair<T, S>& rhs) {
+    template<typename T, typename S>
+    [[nodiscard]] constexpr bool operator!=(const rle_pair<T, S>& lhs, const rle_pair<T, S>& rhs)
+    {
         return !(lhs == rhs);
     }
 
@@ -306,14 +308,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         using size_type = S;
         using difference_type = S;
 
-        using rle_iterator = typename Container::iterator;
-        using rle_const_iterator = typename Container::const_iterator;
         using rle_type = rle_pair<value_type, size_type>;
 
-        using const_iterator = details::rle_iterator<const T, S, rle_const_iterator>;
+        using const_iterator = details::rle_iterator<const T, S, typename Container::const_iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-
-        static constexpr size_type npos = size_type(-1);
 
         // We don't check anywhere whether a size_type value is negative.
         // Having signed integers would break that.
@@ -341,7 +339,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         basic_rle(const size_type length, const value_type& value) :
             _total_length(length)
         {
-            _runs.push_back({value, length});
+            if (length)
+            {
+                _runs.emplace_back(value, length);
+            }
         }
 
         void swap(basic_rle& other)
@@ -366,7 +367,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // Get the value at the position
         const_reference at(size_type position) const
         {
-           size_type applies;
+            size_type applies;
             return at(position, applies);
         }
 
@@ -437,7 +438,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         // Replace the range [start_index, end_index) with the given list of runs.
         // NOTE: This can change the size/length of the vector.
-        void replace(size_type start_index, size_type end_index, gsl::span<rle_type> new_runs)
+        void replace(size_type start_index, size_type end_index, const gsl::span<rle_type> new_runs)
         {
             if (new_runs.empty())
             {
@@ -593,10 +594,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 end->length += end_additional_length;
             }
 
-            const auto pre_length = start_index;
-            const auto post_length = _total_length - end_index;
-            const auto new_length = std::accumulate(new_runs_begin, new_runs_end, size_type(0), [](const size_type& acc, const rle_type& run) { return acc + run.length; });
-            _total_length = pre_length + post_length + new_length;
+            _total_length -= end_index - start_index;
+
+            for (auto it = new_runs_begin; it != new_runs_end; ++it)
+            {
+                _total_length += it->length;
+            }
         }
 
         // Replaces every value seen in the run with a new one
@@ -692,7 +695,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
 #ifdef UNIT_TESTING
-        std::wstring to_string() const
+        [[nodiscard]] std::wstring to_string() const
         {
             std::wstringstream wss;
             wss << std::endl
@@ -700,7 +703,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             for (auto& item : _runs)
             {
-                wss << wil::str_printf<std::wstring>(L"[%td for %td]", item.value, item.length) << L" ";
+                wss << wil::str_printf<std::wstring>(L"[%td for %td]", item.first, item.second) << L" ";
             }
 
             wss << std::endl;

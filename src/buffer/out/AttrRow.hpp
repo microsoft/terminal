@@ -49,7 +49,7 @@ public:
 
     void Resize(const size_t newWidth);
 
-    void MergeAttrRun(const TextAttribute& newAttr, const size_t start, const size_t length);
+    void Replace(const size_t beginIndex, const size_t endIndex, const TextAttribute& newAttr);
 
     const_iterator begin() const noexcept;
     const_iterator end() const noexcept;

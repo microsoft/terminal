@@ -15,6 +15,15 @@ ATTR_ROW::ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr) :
     _data(cchRowWidth, attr) {}
 
 // Routine Description:
+// - Sets all properties of the ATTR_ROW to default values
+// Arguments:
+// - attr - The default text attributes to use on text in this row.
+void ATTR_ROW::Reset(const TextAttribute attr)
+{
+    _data.replace(0, _data.size(), attr);
+}
+
+// Routine Description:
 // - Takes an existing row of attributes, and changes the length so that it fills the NewWidth.
 //     If the new size is bigger, then the last attr is extended to fill the NewWidth.
 //     If the new size is smaller, the runs are cut off to fit.
@@ -26,11 +35,6 @@ ATTR_ROW::ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr) :
 void ATTR_ROW::Resize(const size_t newWidth)
 {
     _data.resize_trailing_extent(gsl::narrow<UINT>(newWidth));
-}
-
-void ATTR_ROW::Reset(const TextAttribute attr)
-{
-    _data.replace(0, decltype(_data)::npos, attr);
 }
 
 // Routine Description:
@@ -53,11 +57,11 @@ TextAttribute ATTR_ROW::GetAttrByColumn(const size_t column) const
 std::vector<uint16_t> ATTR_ROW::GetHyperlinks()
 {
     std::vector<uint16_t> ids;
-    for (const auto& run : *this)
+    for (const auto& run : _data.runs())
     {
-        if (run.IsHyperlink())
+        if (run.value.IsHyperlink())
         {
-            ids.emplace_back(run.GetHyperlinkId());
+            ids.emplace_back(run.value.GetHyperlinkId());
         }
     }
     return ids;
@@ -72,7 +76,7 @@ std::vector<uint16_t> ATTR_ROW::GetHyperlinks()
 // - <none>
 bool ATTR_ROW::SetAttrToEnd(const UINT iStart, const TextAttribute attr)
 {
-    _data.replace(iStart, decltype(_data)::npos, attr);
+    _data.replace(iStart, _data.size(), attr);
     return true;
 }
 
@@ -90,20 +94,18 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
 }
 
 // Routine Description:
-// - Takes an attribute run, and merges it into this row from start (inclusive) to start+length (exclusive).
+// - Takes an attribute, and merges it into this row from beginIndex (inclusive) to endIndex (exclusive).
 // - For example, if the current row was was [{4, BLUE}], the merge arguments were
-//   { newAttr = RED, start = 1, length = 2 }, then the row would modified to be
+//   { beginIndex = 1, endIndex = 3, newAttr = RED }, then the row would modified to be
 //   [{ 1, BLUE}, {2, RED}, {1, BLUE}].
 // Arguments:
+// - beginIndex, endIndex: The [beginIndex, endIndex) range that's to be replaced with newAttr.
 // - newAttr: The attribute to merge into this row.
-// - start: The index in the row to place the array of runs
-// - length: The run length of this attribute, or:
-//           How many times this attribute is repeated starting at "start"
 // Return Value:
 // - <none>
-void ATTR_ROW::MergeAttrRun(const TextAttribute& newAttr, const size_t start, const size_t length)
+void ATTR_ROW::Replace(const size_t beginIndex, const size_t endIndex, const TextAttribute& newAttr)
 {
-    _data.replace(gsl::narrow<UINT>(start), gsl::narrow<UINT>(start + length), newAttr);
+    _data.replace(gsl::narrow<UINT>(beginIndex), gsl::narrow<UINT>(endIndex), newAttr);
 }
 
 ATTR_ROW::const_iterator ATTR_ROW::begin() const noexcept

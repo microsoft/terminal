@@ -136,7 +136,6 @@ class RunLengthEncodingTests
             const auto actual = rle.substr(5, 4);
             VERIFY_ARE_EQUAL(expected, actual);
         }
-
     }
 
     TEST_METHOD(Replace)
