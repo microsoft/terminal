@@ -9,11 +9,6 @@ Param(
 
 $helixLinkFile = "$OutputFolder\LinksToHelixTestFiles.html"
 
-$accessTokenParam = ""
-if($HelixAccessToken)
-{
-    $accessTokenParam = "?access_token=$HelixAccessToken"
-}
 
 function Generate-File-Links
 {
@@ -57,7 +52,6 @@ foreach ($testRun in $testRuns.value)
 
     foreach ($testResult in $testResults.value)
     {
-    
             $info = ConvertFrom-Json $testResult.comment
             $helixJobId = $info.HelixJobId
             $helixWorkItemName = $info.HelixWorkItemName
@@ -104,7 +98,10 @@ foreach ($testRun in $testRuns.value)
                             New-Item $fullPath -ItemType Directory
                         }
 
-                        $link = "$($pgcFile.Link)$accessTokenParam"
+                        $link = $pgcFile.Link
+
+                        Write-Host "Downloading $link to $destination"
+
                         $webClient.DownloadFile($link, $destination)
                     }
                 }
