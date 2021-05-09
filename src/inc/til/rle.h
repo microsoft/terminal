@@ -570,9 +570,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                 if (mid_insertion_trailer)
                 {
-                    const auto insert_pos = begin - _runs.begin();
                     _runs.insert(begin, required_space - available_space, {});
-                    begin = std::copy(new_runs_it, new_runs_end, _runs.begin() + insert_pos);
+                    begin = std::copy(new_runs_it, new_runs_end, _runs.begin() + begin_index);
                     *begin = *std::move(mid_insertion_trailer);
                 }
                 else
@@ -591,6 +590,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
             if (end_additional_length)
             {
+                end = _runs.begin() + begin_index + required_space - 1;
                 end->length += end_additional_length;
             }
 
