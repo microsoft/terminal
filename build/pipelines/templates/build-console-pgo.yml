@@ -35,6 +35,7 @@ jobs:
 - template: helix-processtestresults-job.yml
   parameters:
     name: 'ProcessTestResults'
+    pgoArtifact: 'PGO'
     dependsOn:
     - RunTestsInHelix
     condition: succeededOrFailed()
