@@ -177,18 +177,25 @@ steps:
     flattenFolders: true
   condition: succeeded()
 
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish All Build Artifacts'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'  
+
 - task: CopyFiles@2
   displayName: 'Copy PGO databases needed for PGO instrumentation run'
   inputs:
     Contents: |
      **/*.pgd
-    TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/PGO'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/PGO/$(BuildPlatform)'
     OverWrite: true
     flattenFolders: true
   condition: and(succeeded(), eq(variables['PGOBuildMode'], 'Instrument'))
 
 - task: PublishBuildArtifacts@1
-  displayName: 'Publish All Build Artifacts'
+  displayName: 'Publish All PGO Artifacts'
   inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'drop'
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/PGO'
+    ArtifactName: 'PGO'
+  condition: and(succeeded(), eq(variables['PGOBuildMode'], 'Instrument'))
