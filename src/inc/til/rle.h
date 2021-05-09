@@ -308,10 +308,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         using size_type = S;
         using difference_type = S;
 
-        using rle_type = rle_pair<value_type, size_type>;
-
         using const_iterator = details::rle_iterator<const T, S, typename Container::const_iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+        using rle_type = rle_pair<value_type, size_type>;
+        using container = Container;
 
         // We don't check anywhere whether a size_type value is negative.
         // Having signed integers would break that.
@@ -332,8 +333,33 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         basic_rle& operator=(basic_rle&& other) noexcept
         {
             _runs = std::move(other._runs);
-            _total_length = std::exchange(other._total_length, 0);
+            _total_length = other._total_length;
+
+            // C++ fun fact:
+            // "std::move" actually doesn't _really_ move stuff from A to B,
+            // but rather leaves the source in an unspecified but valid state.
+            // Probably for the sake of performance or something.
+            // Quite ironic given that the commitee refuses to change the STL ABI,
+            // forcing us to reinvent std::pair as til::rle_pair among others.
+            // --> Let's assume that container behavior falls into only two categories:
+            //     * Moves the underlying memory, setting .size() to 0
+            //     * Leaves the source intact (basically copying it)
+            //     We can detect these cases using _runs.empty() and set _total_length accordingly.
+            if (other._runs.empty())
+            {
+                other._total_length = 0;
+            }
+
             return *this;
+        }
+
+        basic_rle(std::initializer_list<rle_type> list) :
+            _runs(list), _total_length(0)
+        {
+            for (const auto& run : _runs)
+            {
+                _total_length += run.length;
+            }
         }
 
         basic_rle(const size_type length, const value_type& value) :
@@ -351,6 +377,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             std::swap(_total_length, other._total_length);
         }
 
+        bool empty() const noexcept
+        {
+            return _total_length == 0;
+        }
+
         // Returns the total length of all runs as encoded.
         size_type size() const noexcept
         {
@@ -359,7 +390,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         // This method gives access to the raw run length encoded array
         // and allows users of this class to iterate over those.
-        const Container& runs() const noexcept
+        const container& runs() const noexcept
         {
             return _runs;
         }
@@ -367,25 +398,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // Get the value at the position
         const_reference at(size_type position) const
         {
-            size_type applies;
-            return at(position, applies);
-        }
-
-        // Get the value at the position
-        const_reference at(size_type position, size_type& applies) const
-        {
-            auto begin = _runs.begin();
-            auto end = _runs.end();
+            const auto begin = _runs.begin();
+            const auto end = _runs.end();
 
             rle_scanner scanner(begin, end);
-            auto [it, pos] = scanner.scan(position);
+            auto it = scanner.scan(position).first;
 
             if (it == end)
             {
                 throw std::out_of_range("position out of range");
             }
 
-            applies = it->length - pos;
             return it->value;
         }
 
@@ -412,7 +435,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             auto [begin_run, start_run_pos] = scanner.scan(start_index);
             auto [end_run, end_run_pos] = scanner.scan(end_index - 1);
 
-            Container slice{ begin_run, end_run + 1 };
+            container slice{ begin_run, end_run + 1 };
             slice.back().length = end_run_pos + 1;
             slice.front().length -= start_run_pos;
 
@@ -561,7 +584,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     ++begin;
                 }
 
-                end = _runs.erase(begin, end) - 1;
+                _runs.erase(begin, end);
             }
             else
             {
@@ -697,23 +720,33 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #ifdef UNIT_TESTING
         [[nodiscard]] std::wstring to_string() const
         {
-            std::wstringstream wss;
-            wss << std::endl
-                << L"Run of size " << size() << " contains:" << std::endl;
+            std::wstringstream ss;
+            bool beginning = true;
 
-            for (auto& item : _runs)
+            for (const auto& run : _runs)
             {
-                wss << wil::str_printf<std::wstring>(L"[%td for %td]", item.first, item.second) << L" ";
+                for (size_t i = 0; i < run.length; ++i)
+                {
+                    if (beginning)
+                    {
+                        beginning = false;
+                    }
+                    else
+                    {
+                        ss << (i == 0 ? '|' : ' ');
+                    }
+
+                    ss << run.value;
+                }
             }
 
-            wss << std::endl;
-            return wss.str();
+            return ss.str();
         }
 #endif
 
     private:
-        basic_rle(Container&& runs, size_type size) :
-            _runs(std::forward<Container>(runs)),
+        basic_rle(container&& runs, size_type size) :
+            _runs(std::forward<container>(runs)),
             _total_length(size)
         {
         }
@@ -750,7 +783,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             size_type total = 0;
         };
 
-        Container _runs;
+        container _runs;
         S _total_length{ 0 };
 
 #ifdef UNIT_TESTING
@@ -770,39 +803,96 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #ifdef __WEX_COMMON_H__
 namespace WEX::TestExecution
 {
-    template<typename T>
-    class VerifyOutputTraits<::til::rle<T>>
+    template<typename T, typename S, typename Container>
+    class VerifyOutputTraits<::til::basic_rle<T, S, Container>>
     {
+        using rle_vector = ::til::basic_rle<T, S, Container>;
+
     public:
-        static WEX::Common::NoThrowString ToString(const ::til::rle<T>& object)
+        static WEX::Common::NoThrowString ToString(const rle_vector& object)
         {
             return WEX::Common::NoThrowString(object.to_string().c_str());
         }
     };
 
-    template<typename T>
-    class VerifyCompareTraits<::til::rle<T>, ::til::rle<T>>
+    template<typename T, typename S, typename Container>
+    class VerifyCompareTraits<::til::basic_rle<T, S, Container>, ::til::basic_rle<T, S, Container>>
     {
+        using rle_vector = ::til::basic_rle<T, S, Container>;
+
     public:
-        static bool AreEqual(const ::til::rle<T>& expected, const ::til::rle<T>& actual) noexcept
+        static bool AreEqual(const rle_vector& expected, const rle_vector& actual) noexcept
         {
             return expected == actual;
         }
 
-        static bool AreSame(const ::til::rle<T>& expected, const ::til::rle<T>& actual) noexcept
+        static bool AreSame(const rle_vector& expected, const rle_vector& actual) noexcept
         {
             return &expected == &actual;
         }
 
-        static bool IsLessThan(const ::til::rle<T>& expectedLess, const ::til::rle<T>& expectedGreater) = delete;
-
-        static bool IsGreaterThan(const ::til::rle<T>& expectedGreater, const ::til::rle<T>& expectedLess) = delete;
-
-        static bool IsNull(const ::til::rle<T>& object) noexcept
-        {
-            return object == til::rle<T>{};
-        }
+        static bool IsLessThan(const rle_vector& expectedLess, const rle_vector& expectedGreater) = delete;
+        static bool IsGreaterThan(const rle_vector& expectedGreater, const rle_vector& expectedLess) = delete;
+        static bool IsNull(const rle_vector& object) = delete;
     };
 
+    template<typename T, typename S, typename Container>
+    class VerifyCompareTraits<::std::string_view, ::til::basic_rle<T, S, Container>>
+    {
+        using rle_vector = ::til::basic_rle<T, S, Container>;
+
+    public:
+        static bool AreEqual(const ::std::string_view& expected, const rle_vector& actual) noexcept
+        {
+            auto it = expected.data();
+            const auto end = it + expected.size();
+            size_t expected_size = 0;
+
+            for (const auto& run : actual.runs())
+            {
+                const auto actual_value = run.value;
+                const auto length = run.length;
+
+                for (size_t i = 0; i < length; ++it)
+                {
+                    if (it == end)
+                    {
+                        return false;
+                    }
+
+                    if (*it == '|' || *it == ' ')
+                    {
+                        continue;
+                    }
+
+                    rle_vector::value_type expected_value;
+                    auto [p, ec] = std::from_chars(it, it + 1, expected_value, 16);
+                    if (ec != std::errc{})
+                    {
+                        return false;
+                    }
+
+                    if (expected_value != actual_value)
+                    {
+                        return false;
+                    }
+
+                    ++i;
+                    ++expected_size;
+                }
+            }
+
+            return it == end && expected_size == actual.size();
+        }
+
+        static bool AreSame(const ::std::string_view& expected, const rle_vector& actual) noexcept
+        {
+            return false;
+        }
+
+        static bool IsLessThan(const ::std::string_view& expectedLess, const rle_vector& expectedGreater) = delete;
+        static bool IsGreaterThan(const ::std::string_view& expectedGreater, const rle_vector& expectedLess) = delete;
+        static bool IsNull(const ::std::string_view& object) = delete;
+    };
 };
 #endif

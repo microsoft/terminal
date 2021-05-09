@@ -5,32 +5,199 @@
 
 #include "til/rle.h"
 
+using namespace std::literals;
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
+namespace WEX::TestExecution
+{
+    template<>
+    class VerifyOutputTraits<std::string_view>
+    {
+    public:
+        static WEX::Common::NoThrowString ToString(const std::string_view& view)
+        {
+            WEX::Common::NoThrowString s;
+            s.AppendFormat(L"%.*hs", gsl::narrow_cast<unsigned int>(view.size()), view.data());
+            return s;
+        }
+    };
+}
+
 class RunLengthEncodingTests
 {
-    TEST_CLASS(RunLengthEncodingTests);
+    using rle_vector = til::small_rle<unsigned int, unsigned int, 5>;
+    using value_type = rle_vector::value_type;
+    using size_type = rle_vector::size_type;
+    using rle_type = rle_vector::rle_type;
 
-    TEST_METHOD(ConstructDefaultLength)
+    using basic_container = std::basic_string<value_type>;
+    using rle_container = rle_vector::container;
+
+    static rle_container rle_encode(const basic_container& from)
     {
-        til::rle<unsigned int> rle(86, 9);
-        auto foo = rle.begin();
+        if (from.empty())
+        {
+            return {};
+        }
+
+        rle_container to;
+        value_type value = from.front();
+        size_type length = 0;
+
+        for (auto v : from)
+        {
+            if (v != value)
+            {
+                to.emplace_back(value, length);
+                value = v;
+                length = 0;
+            }
+
+            length++;
+        }
+
+        if (length)
+        {
+            to.emplace_back(value, length);
+        }
+
+        return to;
     }
 
-    TEST_METHOD(ConstructVerySmall)
+    static basic_container rle_decode(const rle_container& from)
     {
-        const til::rle<unsigned short, unsigned char> rle(12, 37);
+        basic_container to;
+        to.reserve(from.size());
+
+        for (const auto& run : from)
+        {
+            for (size_t i = 0; i < run.length; ++i)
+            {
+                to.push_back(run.value);
+            }
+        }
+
+        return to;
     }
 
-    TEST_METHOD(Size)
+    TEST_CLASS(RunLengthEncodingTests)
+
+    TEST_METHOD(ConstructDefault)
     {
-        const til::rle<unsigned short> rle(19, 12);
-        VERIFY_ARE_EQUAL(19, rle.size());
+        rle_vector rle{};
+        VERIFY_ARE_EQUAL(0u, rle.size());
+        VERIFY_IS_TRUE(rle.empty());
+
+        // We're testing replace() elsewhere, but this is special:
+        // This ensures that even if we're default constructed we can add data.
+        rle.replace(0, 0, { 1, 5 });
+        VERIFY_ARE_EQUAL(5u, rle.size());
+        VERIFY_IS_FALSE(rle.empty());
     }
 
-    TEST_METHOD(AtPos)
+    TEST_METHOD(ConstructWithInitializerList)
+    {
+        rle_vector rle{ { { 1, 3 }, { 2, 2 }, { 1, 3 } } };
+        VERIFY_ARE_EQUAL("1 1 1|2 2|1 1 1"sv, rle);
+    }
+
+    TEST_METHOD(ConstructWithLengthAndValue)
+    {
+        rle_vector rle(5, 1);
+        VERIFY_ARE_EQUAL("1 1 1 1 1"sv, rle);
+    }
+
+    TEST_METHOD(CopyAndMove)
+    {
+        constexpr auto expected_full = "1 1 1|2 2|1 1 1"sv;
+        constexpr auto expected_empty = ""sv;
+
+        rle_vector rle1{ { { 1, 3 }, { 2, 2 }, { 1, 3 } } };
+        rle_vector rle2;
+        VERIFY_ARE_EQUAL(expected_full, rle1);
+        VERIFY_ARE_EQUAL(expected_empty, rle2);
+
+        // swap
+        rle1.swap(rle2);
+        VERIFY_ARE_EQUAL(expected_empty, rle1);
+        VERIFY_ARE_EQUAL(expected_full, rle2);
+
+        // copy
+        rle1 = rle2;
+        VERIFY_ARE_EQUAL(expected_full, rle1);
+        VERIFY_ARE_EQUAL(expected_full, rle2);
+
+        // prepare rle1 for the upcoming move
+
+        // move
+        rle1 = { { { 1, 1 } } };
+        rle1 = std::move(rle2);
+        VERIFY_ARE_EQUAL(expected_full, rle1);
+    }
+
+    TEST_METHOD(At)
+    {
+        rle_vector rle{
+            {
+                { 1, 1 },
+                { 3, 2 },
+                { 2, 1 },
+                { 1, 3 },
+                { 5, 2 },
+            }
+        };
+
+        VERIFY_ARE_EQUAL(1u, rle.at(0));
+        VERIFY_ARE_EQUAL(3u, rle.at(1));
+        VERIFY_ARE_EQUAL(3u, rle.at(2));
+        VERIFY_ARE_EQUAL(2u, rle.at(3));
+        VERIFY_ARE_EQUAL(1u, rle.at(4));
+        VERIFY_ARE_EQUAL(1u, rle.at(5));
+        VERIFY_ARE_EQUAL(1u, rle.at(6));
+        VERIFY_ARE_EQUAL(5u, rle.at(7));
+        VERIFY_ARE_EQUAL(5u, rle.at(8));
+        VERIFY_THROWS(rle.at(9), std::out_of_range);
+    }
+
+    TEST_METHOD(Slice)
+    {
+        rle_vector rle{
+            {
+                { 1, 1 },
+                { 3, 2 },
+                { 2, 1 },
+                { 1, 3 },
+                { 5, 2 },
+            }
+        };
+
+        VERIFY_ARE_EQUAL("1|3 3|2|1 1 1|5 5"sv, rle);
+        // empty
+        VERIFY_ARE_EQUAL(""sv, rle.slice(0, 0)); // begin
+        VERIFY_ARE_EQUAL(""sv, rle.slice(1, 1)); // between two runs
+        VERIFY_ARE_EQUAL(""sv, rle.slice(2, 2)); // within a run
+        VERIFY_ARE_EQUAL(""sv, rle.slice(rle.size(), rle.size())); // end
+        VERIFY_ARE_EQUAL(""sv, rle.slice(5, 0)); // end_index > begin_index
+        VERIFY_ARE_EQUAL(""sv, rle.slice(1000, 900)); // end_index > begin_index
+        // full copy
+        VERIFY_ARE_EQUAL("1|3 3|2|1 1 1|5 5"sv, rle.slice(0, rle.size()));
+        // between two runs -> between two runs
+        VERIFY_ARE_EQUAL("1|3 3|2|1 1 1"sv, rle.slice(0, 7));
+        VERIFY_ARE_EQUAL("2|1 1 1"sv, rle.slice(3, 7));
+        // between two runs -> within a run
+        VERIFY_ARE_EQUAL("3 3|2|1"sv, rle.slice(1, 5));
+        VERIFY_ARE_EQUAL("3 3|2|1 1"sv, rle.slice(1, 6));
+        // within a run -> between two runs
+        VERIFY_ARE_EQUAL("3|2|1 1 1|5 5"sv, rle.slice(2, rle.size()));
+        VERIFY_ARE_EQUAL("3|2|1 1 1"sv, rle.slice(2, 7));
+        // within a run -> within a run
+        VERIFY_ARE_EQUAL("3|2|1"sv, rle.slice(2, 5));
+        VERIFY_ARE_EQUAL("3|2|1 1"sv, rle.slice(2, 6));
+    }
+
+    /*TEST_METHOD(AtPos)
     {
         til::rle<int> rle(10, 10);
         rle.insert(3, 0, 4);
@@ -718,5 +885,5 @@ class RunLengthEncodingTests
         // ^
         VERIFY_ARE_EQUAL(2, *it, L"Jump back by 3 and we should be at the beginning of the 2s run.");
         VERIFY_ARE_EQUAL(rle.begin(), it, L"And it should equal 'begin'");
-    }
+    }*/
 };
