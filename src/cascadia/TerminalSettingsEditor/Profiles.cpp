@@ -88,7 +88,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     ProfileViewModel::ProfileViewModel(const Model::Profile& profile) :
         _profile{ profile },
         _ShowAllFonts{ false },
-        _defaultAppearanceViewModel { winrt::make<implementation::AppearanceViewModel>(profile.DefaultAppearance().try_as<AppearanceConfig>()) }
+        _defaultAppearanceViewModel{ winrt::make<implementation::AppearanceViewModel>(profile.DefaultAppearance().try_as<AppearanceConfig>()) }
     {
         // Add a property changed handler to our own property changed event.
         // This propagates changes from the settings model to anybody listening to our

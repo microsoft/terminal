@@ -240,7 +240,7 @@
                         <StackPanel Style="{StaticResource PivotStackStyle}">
                             <!--  Grouping: Text  -->
                             <TextBlock x:Uid="Profile_TextHeader"
-                                       Style="{StaticResource SubtitleTextBlockStyle}"/>
+                                       Style="{StaticResource SubtitleTextBlockStyle}" />
 
                             <!--  Color Scheme  -->
                             <local:SettingContainer x:Uid="Profile_ColorScheme"
@@ -415,8 +415,8 @@
                             </local:SettingContainer>
                         </StackPanel>
 
-                        <local:Appearances Appearance="{x:Bind State.Profile.DefaultAppearance, Mode=OneWay}"
-                                           x:Name="DefaultAppearanceXaml"/>
+                        <local:Appearances x:Name="DefaultAppearanceXaml"
+                                           Appearance="{x:Bind State.Profile.DefaultAppearance, Mode=OneWay}" />
                     </StackPanel>
                 </ScrollViewer>
             </PivotItem>
