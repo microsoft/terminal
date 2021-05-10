@@ -14,8 +14,6 @@
     <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <IntermediateOutputPath>$(IntDir)</IntermediateOutputPath>
 
-    <PGOBuildMode>Instrument</PGOBuildMode>
-
     <!-- Both pairs of OutDir/OutputPath and IntDir/IntermediateOutputPath must be set;
          different parts of the project infrastructure use them (without rhyme or reason.) -->
   </PropertyGroup>

@@ -19,7 +19,6 @@
     <WarningLevel>4</WarningLevel>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
-    <PGOBuildMode>Instrument</PGOBuildMode>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)' == 'ARM64'">
     <PlatformTarget>ARM64</PlatformTarget>
