@@ -15,22 +15,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             winrt::xaml_typename<winrt::Microsoft::Terminal::Control::VisualBellLight>(),
             Windows::UI::Xaml::PropertyMetadata{ winrt::box_value(false), Windows::UI::Xaml::PropertyChangedCallback{ &VisualBellLight::OnIsTargetChanged } });
 
+    // Method Description:
+    // - This function is called when the first target UIElement is shown on the screen,
+    //   this enables delaying composition object creation until it's actually necessary.
+    // Arguments:
+    // - newElement: unused
     void VisualBellLight::OnConnected(Windows::UI::Xaml::UIElement const& /* newElement */)
     {
         if (!CompositionLight())
         {
-            // OnConnected is called when the first target UIElement is shown on the screen. This enables delaying composition object creation until it's actually necessary.
-            auto spotLight2{ Windows::UI::Xaml::Window::Current().Compositor().CreateAmbientLight() };
-            spotLight2.Color(Windows::UI::Colors::WhiteSmoke());
-            spotLight2.Intensity(static_cast<float>(1.5));
-            CompositionLight(spotLight2);
+            auto spotLight{ Windows::UI::Xaml::Window::Current().Compositor().CreateAmbientLight() };
+            spotLight.Color(Windows::UI::Colors::WhiteSmoke());
+            spotLight.Intensity(static_cast<float>(1.5));
+            CompositionLight(spotLight);
         }
     }
 
+    // Method Description:
+    // - This function is called when there are no more target UIElements on the screen
+    // - Disposes of composition resources when no longer in use
+    // Arguments:
+    // - oldElement: unused
     void VisualBellLight::OnDisconnected(Windows::UI::Xaml::UIElement const& /* oldElement */)
     {
-        // OnDisconnected is called when there are no more target UIElements on the screen.
-        // Dispose of composition resources when no longer in use.
         if (CompositionLight())
         {
             CompositionLight(nullptr);
@@ -44,10 +51,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void VisualBellLight::OnIsTargetChanged(Windows::UI::Xaml::DependencyObject const& d, Windows::UI::Xaml::DependencyPropertyChangedEventArgs const& e)
     {
-        auto uielem{ d.try_as<Windows::UI::Xaml::UIElement>() };
-        auto brush{ d.try_as<Windows::UI::Xaml::Media::Brush>() };
+        const auto& uielem{ d.try_as<Windows::UI::Xaml::UIElement>() };
+        const auto& brush{ d.try_as<Windows::UI::Xaml::Media::Brush>() };
 
-        auto isAdding = winrt::unbox_value<bool>(e.NewValue());
+        const auto isAdding = winrt::unbox_value<bool>(e.NewValue());
         if (isAdding)
         {
             if (uielem)
