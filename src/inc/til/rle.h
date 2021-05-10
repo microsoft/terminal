@@ -246,6 +246,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         };
     } // namespace details
 
+    // rle_pair is a simple clone of std::pair, with one difference:
+    // copy and move constructors and operators are explicitly defaulted.
+    // This allows rle_pair to be std::is_trivially_copyable, if both T and S are.
+    // --> rle_pair can be used with memcpy(), unlike std::pair.
     template<typename T, typename S>
     struct rle_pair
     {
@@ -336,11 +340,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _total_length = other._total_length;
 
             // C++ fun fact:
-            // "std::move" actually doesn't _really_ move stuff from A to B,
-            // but rather leaves the source in an unspecified but valid state.
+            // "std::move" actually doesn't actually promise to _really_ move stuff from A to B,
+            // but rather "leaves the source in an unspecified but valid state" according to the spec.
             // Probably for the sake of performance or something.
-            // Quite ironic given that the commitee refuses to change the STL ABI,
-            // forcing us to reinvent std::pair as til::rle_pair among others.
+            // Quite ironic given that the committee refuses to change the STL ABI,
+            // forcing us to reinvent std::pair as til::rle_pair.
             // --> Let's assume that container behavior falls into only two categories:
             //     * Moves the underlying memory, setting .size() to 0
             //     * Leaves the source intact (basically copying it)
@@ -353,8 +357,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return *this;
         }
 
-        basic_rle(std::initializer_list<rle_type> list) :
-            _runs(list), _total_length(0)
+        basic_rle(std::initializer_list<rle_type> runs) :
+            _runs(runs), _total_length(0)
+        {
+            for (const auto& run : _runs)
+            {
+                _total_length += run.length;
+            }
+        }
+
+        basic_rle(container&& runs) :
+            _runs(std::forward<container>(runs)), _total_length(0)
         {
             for (const auto& run : _runs)
             {
@@ -445,40 +458,281 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // Set the range [start_index, end_index) to the given value.
         void replace(size_type start_index, size_type end_index, const value_type& value)
         {
-            // start_index and end_index must be inside the inclusive range [0, _total_length].
-            Expects(start_index <= end_index);
+            _check_indices(start_index, end_index);
 
             rle_type new_run{ value, end_index - start_index };
-            replace(start_index, end_index, { &new_run, 1 });
+            _replace(start_index, end_index, { &new_run, 1 });
         }
 
         // Replace the range [start_index, end_index) with the given run.
         // NOTE: This can change the size/length of the vector.
-        void replace(size_type start_index, size_type end_index, rle_type new_run)
+        void replace(size_type start_index, size_type end_index, const rle_type& new_run)
         {
             replace(start_index, end_index, { &new_run, 1 });
         }
 
-        // Replace the range [start_index, end_index) with the given list of runs.
-        // NOTE: This can change the size/length of the vector.
-        void replace(size_type start_index, size_type end_index, const gsl::span<rle_type> new_runs)
+        void replace(size_type start_index, size_type end_index, const gsl::span<const rle_type> new_runs)
         {
-            if (new_runs.empty())
+            _check_indices(start_index, end_index);
+            _replace(start_index, end_index, new_runs);
+        }
+
+        // Replaces every value seen in the run with a new one
+        // Does not change the length or position of the values.
+        void replace_values(const value_type& old_value, const value_type& new_value) noexcept(std::is_nothrow_copy_assignable<value_type>::value)
+        {
+            for (auto& run : _runs)
+            {
+                if (run.value == old_value)
+                {
+                    run.value = new_value;
+                }
+            }
+
+            _compact();
+        }
+
+        // Adjust the size of the vector.
+        // If the size is being increased, the last run is extended to fill up the new vector size.
+        // If the size is being decreased, the trailing runs are cut off to fit.
+        void resize_trailing_extent(const size_type new_size)
+        {
+            if (new_size == 0)
+            {
+                _runs.clear();
+            }
+            else if (new_size < _total_length)
+            {
+                rle_scanner scanner(_runs.begin(), _runs.end());
+                auto [run, pos] = scanner.scan(new_size - 1);
+
+                run->length = pos + 1;
+
+                _runs.erase(++run, _runs.cend());
+            }
+            else if (new_size > _total_length)
+            {
+                Expects(!_runs.empty());
+                auto& run = _runs.back();
+
+                run.length += new_size - _total_length;
+            }
+
+            _total_length = new_size;
+        }
+
+        constexpr bool operator==(const basic_rle& other) const noexcept
+        {
+            return _total_length == other._total_length && _runs == other._runs;
+        }
+
+        constexpr bool operator!=(const basic_rle& other) const noexcept
+        {
+            return !(*this == other);
+        }
+
+        [[nodiscard]] const_iterator begin() const noexcept
+        {
+            return const_iterator(_runs.begin());
+        }
+
+        [[nodiscard]] const_iterator end() const noexcept
+        {
+            return const_iterator(_runs.end());
+        }
+
+        [[nodiscard]] const_reverse_iterator rbegin() const noexcept
+        {
+            return const_reverse_iterator(end());
+        }
+
+        [[nodiscard]] const_reverse_iterator rend() const noexcept
+        {
+            return const_reverse_iterator(begin());
+        }
+
+        [[nodiscard]] const_iterator cbegin() const noexcept
+        {
+            return begin();
+        }
+
+        [[nodiscard]] const_iterator cend() const noexcept
+        {
+            return end();
+        }
+
+        [[nodiscard]] const_reverse_iterator crbegin() const noexcept
+        {
+            return rbegin();
+        }
+
+        [[nodiscard]] const_reverse_iterator crend() const noexcept
+        {
+            return rend();
+        }
+
+#ifdef UNIT_TESTING
+        [[nodiscard]] std::wstring to_string() const
+        {
+            std::wstringstream ss;
+            bool beginning = true;
+
+            for (const auto& run : _runs)
+            {
+                if (beginning)
+                {
+                    beginning = false;
+                }
+                else
+                {
+                    ss << '|';
+                }
+
+                for (size_t i = 0; i < run.length; ++i)
+                {
+                    if (i != 0)
+                    {
+                        ss << ' ';
+                    }
+
+                    ss << run.value;
+                }
+            }
+
+            return ss.str();
+        }
+#endif
+
+    private:
+        template<typename It>
+        struct rle_scanner
+        {
+            explicit rle_scanner(It begin, It end) noexcept :
+                it(std::move(begin)), end(std::move(end)) {}
+
+            std::pair<It, size_type> scan(size_type index) noexcept
+            {
+                run_pos = 0;
+
+                for (; it != end; ++it)
+                {
+                    const auto new_total = total + it->length;
+                    if (new_total > index)
+                    {
+                        run_pos = index - total;
+                        break;
+                    }
+
+                    total = new_total;
+                }
+
+                return { it, run_pos };
+            }
+
+        private:
+            It it;
+            const It end;
+            size_type run_pos = 0;
+            size_type total = 0;
+        };
+
+        basic_rle(container&& runs, size_type size) :
+            _runs(std::forward<container>(runs)),
+            _total_length(size)
+        {
+        }
+
+        void _compact()
+        {
+            auto it = _runs.begin();
+            const auto end = _runs.end();
+
+            if (it == end)
             {
                 return;
             }
 
+            for (auto ref = it; ++it != end; ref = it)
+            {
+                if (ref->value == it->value)
+                {
+                    ref->length += it->length;
+
+                    while (++it != end)
+                    {
+                        if (ref->value == it->value)
+                        {
+                            ref->length += it->length;
+                        }
+                        else
+                        {
+                            *++ref = std::move(*it);
+                        }
+                    }
+
+                    _runs.erase(++ref, end);
+                    return;
+                }
+            }
+        }
+
+        inline void _check_indices(size_type start_index, size_type& end_index)
+        {
             if (end_index > _total_length)
             {
                 end_index = _total_length;
             }
 
             // start_index and end_index must be inside the inclusive range [0, _total_length].
-            Expects(start_index <= end_index);
+            if (start_index > end_index)
+            {
+                throw std::out_of_range("start_index <= end_index");
+            }
+        }
 
+        void _replace(size_type start_index, size_type end_index, const gsl::span<const rle_type> new_runs)
+        {
             rle_scanner scanner{ _runs.begin(), _runs.end() };
             auto [begin, begin_pos] = scanner.scan(start_index);
             auto [end, end_pos] = scanner.scan(end_index);
+
+            // At the moment this isn't just a shortcut for pure removals...
+            // The remaining code in this function assumes that new_runs.size() != 0
+            // and will happily access new_runs.front()/.back() for instance.
+            //
+            // TODO:
+            //   Optimally the remaining code in this method should be made compatible with empty new_runs.
+            //   Especially since this logic is extremely similar to the one below for non-empty new_runs.
+            if (new_runs.empty())
+            {
+                const auto removed = end_index - start_index;
+
+                if (start_index != 0 && end_index != _total_length)
+                {
+                    auto previous = begin_pos ? begin : begin - 1;
+                    if (previous->value == end->value)
+                    {
+                        end->length -= end_pos - (begin_pos ? begin_pos : previous->length);
+                        begin_pos = 0;
+                        end_pos = 0;
+                        begin = previous;
+                    }
+                }
+
+                if (begin_pos)
+                {
+                    begin->length = begin_pos;
+                    ++begin;
+                }
+                if (end_pos)
+                {
+                    end->length -= end_pos;
+                }
+
+                _runs.erase(begin, end);
+                _total_length -= removed;
+                return;
+            }
 
             // Two complications can occur during insertion of new_runs:
             // 1. The it/end run has the same value as the preceding/succeeding run.
@@ -488,6 +742,22 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             // 1. The it/end run has the same value as the preceding/succeeding run.
             //    --> The new runs must be joined with the existing runs.
+            //
+            // TODO:
+            //   If we have exactly such a modification... For instance:
+            //       1|2 2|1|3 3|1
+            //     +     2|4|3
+            //     = 1|2 2|4|3 3|1
+            //   Then we'll currently do the following operations (in that order)
+            //   * Set begin_additional_length to 1
+            //   * Set end_additional_length to 1
+            //   * Shorten the "2 2" run by 1 to "2"
+            //   * Shorten the "3 3" run by 1 to "3"
+            //   * Copy all 3 new runs "2|4|3" over, while overwriting the existing "2|4|3" run
+            //   * Finally add begin/end_additional_length onto the "2" and "3" runs creating "2 2|4|3 3"
+            //   -> This is wasteful and it'd be better if we instead shorting new_runs to only copy the "4".
+            //      A simple if-shortcut would solve the issue for the example above, but wouldn't solve the
+            //      general case, for instance when we not just replace but also remove or insert new runs.
             size_type begin_additional_length = 0;
             size_type end_additional_length = 0;
             if (start_index != 0)
@@ -578,12 +848,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 // The entirety of required_space was used up and new_runs was fully copied over.
                 // We now need to .erase() the unneeded space in the underlying vector.
 
-                if (mid_insertion_trailer)
-                {
-                    *begin = *std::move(mid_insertion_trailer);
-                    ++begin;
-                }
-
                 _runs.erase(begin, end);
             }
             else
@@ -624,164 +888,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 _total_length += it->length;
             }
         }
-
-        // Replaces every value seen in the run with a new one
-        // Does not change the length or position of the values.
-        void replace_values(const value_type& old_value, const value_type& new_value) noexcept(std::is_nothrow_copy_assignable<value_type>::value)
-        {
-            for (auto& run : _runs)
-            {
-                if (run.value == old_value)
-                {
-                    run.value = new_value;
-                }
-            }
-        }
-
-        // Adjust the size of the vector.
-        // If the size is being increased, the last run is extended to fill up the new vector size.
-        // If the size is being decreased, the trailing runs are cut off to fit.
-        void resize_trailing_extent(const size_type new_size)
-        {
-            if (new_size == 0)
-            {
-                _runs.clear();
-            }
-            else if (new_size < _total_length)
-            {
-                rle_scanner scanner(_runs.begin(), _runs.end());
-                auto [run, pos] = scanner.scan(new_size - 1);
-
-                run->length = pos + 1;
-
-                _runs.erase(++run, _runs.cend());
-            }
-            else if (new_size > _total_length)
-            {
-                Expects(!_runs.empty());
-                auto& run = _runs.back();
-
-                run.length += new_size - _total_length;
-            }
-
-            _total_length = new_size;
-        }
-
-        constexpr bool operator==(const basic_rle& other) const noexcept
-        {
-            return _total_length == other._total_length && _runs == other._runs;
-        }
-
-        constexpr bool operator!=(const basic_rle& other) const noexcept
-        {
-            return !(*this == other);
-        }
-
-        [[nodiscard]] const_iterator begin() const noexcept
-        {
-            return const_iterator(_runs.begin());
-        }
-
-        [[nodiscard]] const_iterator end() const noexcept
-        {
-            return const_iterator(_runs.end());
-        }
-
-        [[nodiscard]] const_reverse_iterator rbegin() const noexcept
-        {
-            return const_reverse_iterator(end());
-        }
-
-        [[nodiscard]] const_reverse_iterator rend() const noexcept
-        {
-            return const_reverse_iterator(begin());
-        }
-
-        [[nodiscard]] const_iterator cbegin() const noexcept
-        {
-            return begin();
-        }
-
-        [[nodiscard]] const_iterator cend() const noexcept
-        {
-            return end();
-        }
-
-        [[nodiscard]] const_reverse_iterator crbegin() const noexcept
-        {
-            return rbegin();
-        }
-
-        [[nodiscard]] const_reverse_iterator crend() const noexcept
-        {
-            return rend();
-        }
-
-#ifdef UNIT_TESTING
-        [[nodiscard]] std::wstring to_string() const
-        {
-            std::wstringstream ss;
-            bool beginning = true;
-
-            for (const auto& run : _runs)
-            {
-                for (size_t i = 0; i < run.length; ++i)
-                {
-                    if (beginning)
-                    {
-                        beginning = false;
-                    }
-                    else
-                    {
-                        ss << (i == 0 ? '|' : ' ');
-                    }
-
-                    ss << run.value;
-                }
-            }
-
-            return ss.str();
-        }
-#endif
-
-    private:
-        basic_rle(container&& runs, size_type size) :
-            _runs(std::forward<container>(runs)),
-            _total_length(size)
-        {
-        }
-
-        template<typename It>
-        struct rle_scanner
-        {
-            explicit rle_scanner(It begin, It end) noexcept :
-                it(std::move(begin)), end(std::move(end)) {}
-
-            std::pair<It, size_type> scan(size_type index) noexcept
-            {
-                run_pos = 0;
-
-                for (; it != end; ++it)
-                {
-                    const auto new_total = total + it->length;
-                    if (new_total > index)
-                    {
-                        run_pos = index - total;
-                        break;
-                    }
-
-                    total = new_total;
-                }
-
-                return { it, run_pos };
-            }
-
-        private:
-            It it;
-            const It end;
-            size_type run_pos = 0;
-            size_type total = 0;
-        };
 
         container _runs;
         S _total_length{ 0 };
@@ -834,65 +940,6 @@ namespace WEX::TestExecution
         static bool IsLessThan(const rle_vector& expectedLess, const rle_vector& expectedGreater) = delete;
         static bool IsGreaterThan(const rle_vector& expectedGreater, const rle_vector& expectedLess) = delete;
         static bool IsNull(const rle_vector& object) = delete;
-    };
-
-    template<typename T, typename S, typename Container>
-    class VerifyCompareTraits<::std::string_view, ::til::basic_rle<T, S, Container>>
-    {
-        using rle_vector = ::til::basic_rle<T, S, Container>;
-
-    public:
-        static bool AreEqual(const ::std::string_view& expected, const rle_vector& actual) noexcept
-        {
-            auto it = expected.data();
-            const auto end = it + expected.size();
-            size_t expected_size = 0;
-
-            for (const auto& run : actual.runs())
-            {
-                const auto actual_value = run.value;
-                const auto length = run.length;
-
-                for (size_t i = 0; i < length; ++it)
-                {
-                    if (it == end)
-                    {
-                        return false;
-                    }
-
-                    if (*it == '|' || *it == ' ')
-                    {
-                        continue;
-                    }
-
-                    rle_vector::value_type expected_value;
-                    auto [p, ec] = std::from_chars(it, it + 1, expected_value, 16);
-                    if (ec != std::errc{})
-                    {
-                        return false;
-                    }
-
-                    if (expected_value != actual_value)
-                    {
-                        return false;
-                    }
-
-                    ++i;
-                    ++expected_size;
-                }
-            }
-
-            return it == end && expected_size == actual.size();
-        }
-
-        static bool AreSame(const ::std::string_view& expected, const rle_vector& actual) noexcept
-        {
-            return false;
-        }
-
-        static bool IsLessThan(const ::std::string_view& expectedLess, const rle_vector& expectedGreater) = delete;
-        static bool IsGreaterThan(const ::std::string_view& expectedGreater, const rle_vector& expectedLess) = delete;
-        static bool IsNull(const ::std::string_view& object) = delete;
     };
 };
 #endif

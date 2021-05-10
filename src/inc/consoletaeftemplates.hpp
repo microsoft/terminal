@@ -574,6 +574,11 @@ namespace WEX::TestExecution
     public:
         static WEX::Common::NoThrowString ToString(const std::string_view& view)
         {
+            if (view.empty())
+            {
+                return L"<empty>";
+            }
+
             WEX::Common::NoThrowString s;
             s.AppendFormat(L"%.*hs", gsl::narrow_cast<unsigned int>(view.size()), view.data());
             return s;
@@ -586,6 +591,11 @@ namespace WEX::TestExecution
     public:
         static WEX::Common::NoThrowString ToString(const std::wstring_view& view)
         {
+            if (view.empty())
+            {
+                return L"<empty>";
+            }
+
             return WEX::Common::NoThrowString(view.data(), gsl::narrow<int>(view.size()));
         }
     };
