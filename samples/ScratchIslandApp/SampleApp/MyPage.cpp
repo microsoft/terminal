@@ -31,7 +31,27 @@ namespace winrt::SampleApp::implementation
         TerminalConnection::EchoConnection conn{};
         auto settings = winrt::make_self<ControlUnitTests::MockControlSettings>();
 
-        Control::TermControl control{ *settings, conn };
+        // winrt::com_ptr<TerminalConnection::ITerminalConnection> conn2{ nullptr };
+        // // auto f = conn2.get();
+        // ::IInspectable* i{ nullptr };
+        // winrt::hstring h{ L"Microsoft.Terminal.TerminalConnection.EchoConnection" };
+        // auto a = h;
+        // HSTRING hs;
+        // winrt::copy_to_abi(h, hs);
+        // HRESULT hr = RoActivateInstance(hs, &i);
+        // winrt::Windows::Foundation::IInspectable ii{ i };
+        // TerminalConnection::ITerminalConnection conn3 = ;
+
+        winrt::hstring myClass{ L"Microsoft.Terminal.TerminalConnection.EchoConnection" };
+        // winrt::hstring myClass{ L"Microsoft.Terminal.TerminalConnection.ConptyConnection" };
+        winrt::IInspectable coolInspectable{};
+        auto name = static_cast<HSTRING>(winrt::get_abi(myClass));
+        auto foo = winrt::put_abi(coolInspectable);
+        ::IInspectable** bar = reinterpret_cast<::IInspectable**>(foo);
+        RoActivateInstance(name, bar);
+        auto conn2 = coolInspectable.try_as<TerminalConnection::ITerminalConnection>();
+
+        Control::TermControl control{ *settings, conn2 };
 
         InProcContent().Children().Append(control);
 
