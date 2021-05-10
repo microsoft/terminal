@@ -102,6 +102,12 @@
     <None Include="packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
+
+  </ItemGroup>
+
   <PropertyGroup>
     <!-- This is a hack to get the ARM64 CI build working. See
     https://github.com/Microsoft/msbuild/issues/3746 - it looks like MsBuild
