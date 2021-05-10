@@ -71,7 +71,7 @@ namespace TerminalApp
 
         FindTargetWindowResult FindTargetWindow(String[] args);
 
-        Windows.Foundation.Collections.IMap<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.ActionAndArgs> GlobalHotkeys();
+        Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
 
         // See IDialogPresenter and TerminalPage's DialogPresenter for more
         // information.

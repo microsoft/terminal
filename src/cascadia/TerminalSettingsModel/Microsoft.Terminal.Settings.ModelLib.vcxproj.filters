@@ -69,10 +69,10 @@
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ActionArgs.idl" />
+    <Midl Include="ActionMap.idl" />
     <Midl Include="ColorScheme.idl" />
     <Midl Include="Command.idl" />
     <Midl Include="GlobalAppSettings.idl" />
-    <Midl Include="KeyMapping.idl" />
     <Midl Include="Profile.idl" />
     <Midl Include="TerminalWarnings.idl" />
     <Midl Include="CascadiaSettings.idl" />

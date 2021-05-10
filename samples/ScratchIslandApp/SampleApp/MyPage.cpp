@@ -34,7 +34,11 @@ namespace winrt::SampleApp::implementation
         Control::TermControl control{ *settings, conn };
 
         InProcContent().Children().Append(control);
-        // CreateOutOfProcTerminal();
+
+        // Once the control loads (and not before that), write some text for debugging:
+        control.Initialized([conn](auto&&, auto&&) {
+            conn.WriteInput(L"This TermControl is hosted in-proc...");
+        });
     }
 
     static wil::unique_process_information _createHostClassProcess(const winrt::guid& g)
@@ -82,7 +86,6 @@ namespace winrt::SampleApp::implementation
     {
         auto guidString = GuidInput().Text();
 
-        
         // Capture calling context.
         winrt::apartment_context ui_thread;
         co_await winrt::resume_background();
@@ -140,7 +143,6 @@ namespace winrt::SampleApp::implementation
         Control::ContentProcess content = create_instance<Control::ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
 
     }*/
-
 
     winrt::fire_and_forget MyPage::CreateOutOfProcTerminal()
     {

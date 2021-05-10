@@ -183,6 +183,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
+        // This template will convert to rectangle from anything that has a X, Y, Width, and Height field that are floating-point;
+        // a math type is required.
+        template<typename TilMath, typename TOther>
+        constexpr rectangle(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().X)> && std::is_floating_point_v<decltype(std::declval<TOther>().Y)> && std::is_floating_point_v<decltype(std::declval<TOther>().Width)> && std::is_floating_point_v<decltype(std::declval<TOther>().Height)>, int> /*sentinel*/ = 0) :
+            rectangle(til::point{ TilMath::template cast<ptrdiff_t>(other.X), TilMath::template cast<ptrdiff_t>(other.Y) }, til::size{ TilMath::template cast<ptrdiff_t>(other.Width), TilMath::template cast<ptrdiff_t>(other.Height) })
+        {
+        }
+
         // This template will convert to rectangle from anything that has a left, top, right, and bottom field that are floating-point;
         // a math type is required.
         template<typename TilMath, typename TOther>

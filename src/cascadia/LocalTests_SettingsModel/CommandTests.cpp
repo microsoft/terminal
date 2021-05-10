@@ -106,9 +106,9 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(1u, commands.Size());
             auto command = commands.Lookup(L"action0");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::CopyText, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<CopyTextArgs>();
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::CopyText, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
         }
         {
@@ -117,9 +117,9 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(1u, commands.Size());
             auto command = commands.Lookup(L"action0");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::PasteText, command.Action().Action());
-            VERIFY_IS_NULL(command.Action().Args());
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::PasteText, command.ActionAndArgs().Action());
+            VERIFY_IS_NULL(command.ActionAndArgs().Args());
         }
         {
             auto warnings = implementation::Command::LayerJson(commands, commands2Json);
@@ -127,9 +127,9 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(1u, commands.Size());
             auto command = commands.Lookup(L"action0");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
         }
         {
@@ -165,9 +165,9 @@ namespace SettingsModelLocalTests
         {
             auto command = commands.Lookup(L"command1");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
@@ -176,9 +176,9 @@ namespace SettingsModelLocalTests
         {
             auto command = commands.Lookup(L"command2");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitState::Horizontal, realArgs.SplitStyle());
@@ -187,9 +187,9 @@ namespace SettingsModelLocalTests
         {
             auto command = commands.Lookup(L"command4");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
@@ -198,9 +198,9 @@ namespace SettingsModelLocalTests
         {
             auto command = commands.Lookup(L"command5");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
@@ -209,9 +209,9 @@ namespace SettingsModelLocalTests
         {
             auto command = commands.Lookup(L"command6");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
@@ -239,9 +239,9 @@ namespace SettingsModelLocalTests
         {
             auto command = commands.Lookup(L"command1");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
@@ -268,9 +268,9 @@ namespace SettingsModelLocalTests
             // this test will break.
             auto command = commands.Lookup(L"Duplicate tab");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::CopyText, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<CopyTextArgs>();
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::CopyText, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
         }
     }
@@ -309,9 +309,9 @@ namespace SettingsModelLocalTests
         {
             auto command = commands.Lookup(L"Split pane");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
@@ -319,9 +319,9 @@ namespace SettingsModelLocalTests
         {
             auto command = commands.Lookup(L"Split pane, split: vertical");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
@@ -329,9 +329,9 @@ namespace SettingsModelLocalTests
         {
             auto command = commands.Lookup(L"Split pane, split: horizontal");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitState::Horizontal, realArgs.SplitStyle());
@@ -355,9 +355,9 @@ namespace SettingsModelLocalTests
         {
             auto command = commands.Lookup(L"Split pane");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
@@ -410,9 +410,9 @@ namespace SettingsModelLocalTests
         {
             auto command = commands.Lookup(L"action0");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<NewWindowArgs>();
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             const auto& terminalArgs = realArgs.TerminalArgs();
             VERIFY_IS_NOT_NULL(terminalArgs);
@@ -423,9 +423,9 @@ namespace SettingsModelLocalTests
         {
             auto command = commands.Lookup(L"action1");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             const auto& terminalArgs = realArgs.TerminalArgs();
             VERIFY_IS_NOT_NULL(terminalArgs);
@@ -436,9 +436,9 @@ namespace SettingsModelLocalTests
         {
             auto command = commands.Lookup(L"action2");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<NewWindowArgs>();
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             const auto& terminalArgs = realArgs.TerminalArgs();
             VERIFY_IS_NOT_NULL(terminalArgs);
@@ -449,9 +449,9 @@ namespace SettingsModelLocalTests
         {
             auto command = commands.Lookup(L"action3");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<NewWindowArgs>();
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             const auto& terminalArgs = realArgs.TerminalArgs();
             VERIFY_IS_NOT_NULL(terminalArgs);
@@ -462,9 +462,9 @@ namespace SettingsModelLocalTests
         {
             auto command = commands.Lookup(L"action4");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<NewWindowArgs>();
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             const auto& terminalArgs = realArgs.TerminalArgs();
             VERIFY_IS_NOT_NULL(terminalArgs);
@@ -477,9 +477,9 @@ namespace SettingsModelLocalTests
         {
             auto command = commands.Lookup(L"action5");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<NewWindowArgs>();
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             const auto& terminalArgs = realArgs.TerminalArgs();
             VERIFY_IS_NOT_NULL(terminalArgs);
@@ -492,9 +492,9 @@ namespace SettingsModelLocalTests
         {
             auto command = commands.Lookup(L"action6");
             VERIFY_IS_NOT_NULL(command);
-            VERIFY_IS_NOT_NULL(command.Action());
-            VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.Action().Action());
-            const auto& realArgs = command.Action().Args().try_as<NewWindowArgs>();
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             const auto& terminalArgs = realArgs.TerminalArgs();
             VERIFY_IS_NOT_NULL(terminalArgs);

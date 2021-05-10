@@ -102,29 +102,13 @@
     <None Include="packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
-  <ItemGroup>
-    <!--
-      the packaging project won't recurse through our dependencies, you have to
-      make sure that if you add a cppwinrt dependency to any of these projects,
-      you also update all the consumers
-    -->
-    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
-      <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
-    </ProjectReference>
-    <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
-      <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference> -->
-    <!-- For whatever reason, we can't include the TerminalControl and
-    TerminalSettings projects' winmds via project references. So we'll have to
-    manually include the winmds as References below -->
-  </ItemGroup>
   <PropertyGroup>
     <!-- This is a hack to get the ARM64 CI build working. See
     https://github.com/Microsoft/msbuild/issues/3746 - it looks like MsBuild
     just has a bug in it.-->
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>Warning</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
   </PropertyGroup>
+  <!-- ========================== Other References ========================= -->
   <ItemGroup>
     <!-- Manually add references to each of our dependent winmds. Mark them as
     private=false and CopyLocalSatelliteAssemblies=false, so that we don't
@@ -158,7 +142,7 @@
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(OpenConsoleCommonOutDir)\ConTypes.lib;WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <!-- ========================= Globals ======================== -->

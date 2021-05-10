@@ -29,11 +29,20 @@ namespace XamlAutomation
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    InteractivityAutomationPeer::InteractivityAutomationPeer(winrt::Microsoft::Terminal::Control::implementation::ControlInteractivity* owner) :
+    InteractivityAutomationPeer::InteractivityAutomationPeer(Control::implementation::ControlInteractivity* owner) :
         _interactivity{ owner }
     {
         THROW_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, _interactivity->GetUiaData(), this));
     };
+
+    void InteractivityAutomationPeer::SetControlBounds(const Windows::Foundation::Rect bounds)
+    {
+        _controlBounds = til::rectangle{ til::math::rounding, bounds };
+    }
+    void InteractivityAutomationPeer::SetControlPadding(const Core::Padding padding)
+    {
+        _controlPadding = padding;
+    }
 
     // Method Description:
     // - Signals the ui automation client that the terminal's selection has changed and should be updated
@@ -44,9 +53,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void InteractivityAutomationPeer::SignalSelectionChanged()
     {
         UiaTracing::Signal::SelectionChanged();
-        // TODO! We seemingly got Dispatcher() for free when we said we extended
+
+        // TODO:projects/5#card-50760282
+        // We seemingly got a Dispatcher() for free when we said we extended
         // Windows.UI.Automation.Peers.AutomationPeer. This is suspect to me.
-        // This probably won't work when OOP.
+        // This probably won't work when out-of-proc from the WinUI layer.
 
         Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
             // The event that is raised when the text selection is modified.
@@ -63,9 +74,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void InteractivityAutomationPeer::SignalTextChanged()
     {
         UiaTracing::Signal::TextChanged();
-        // TODO! We seemingly got Dispatcher() for free when we said we extended
+
+        // TODO:projects/5#card-50760282
+        // We seemingly got a Dispatcher() for free when we said we extended
         // Windows.UI.Automation.Peers.AutomationPeer. This is suspect to me.
-        // This probably won't work when OOP.
+        // This probably won't work when out-of-proc from the WinUI layer.
 
         Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
             // The event that is raised when textual content is modified.
@@ -82,9 +95,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void InteractivityAutomationPeer::SignalCursorChanged()
     {
         UiaTracing::Signal::CursorChanged();
-        // TODO! We seemingly got Dispatcher() for free when we said we extended
+
+        // TODO:projects/5#card-50760282
+        // We seemingly got a Dispatcher() for free when we said we extended
         // Windows.UI.Automation.Peers.AutomationPeer. This is suspect to me.
-        // This probably won't work when OOP.
+        // This probably won't work when out-of-proc from the WinUI layer.
 
         Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
             // The event that is raised when the text was changed in an edit control.
@@ -96,59 +111,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             RaiseAutomationEvent(AutomationEvents::TextPatternOnTextSelectionChanged);
         });
     }
-
-    // hstring InteractivityAutomationPeer::GetClassNameCore() const
-    // {
-    //     return L"TermControl";
-    // }
-
-    // AutomationControlType InteractivityAutomationPeer::GetAutomationControlTypeCore() const
-    // {
-    //     return AutomationControlType::Text;
-    // }
-
-    // hstring InteractivityAutomationPeer::GetLocalizedControlTypeCore() const
-    // {
-    //     return RS_(L"TerminalControl_ControlType");
-    // }
-
-    // Windows::Foundation::IInspectable InteractivityAutomationPeer::GetPatternCore(PatternInterface patternInterface) const
-    // {
-    //     switch (patternInterface)
-    //     {
-    //     case PatternInterface::Text:
-    //         return *this;
-    //         break;
-    //     default:
-    //         return nullptr;
-    //     }
-    // }
-
-    // AutomationOrientation InteractivityAutomationPeer::GetOrientationCore() const
-    // {
-    //     return AutomationOrientation::Vertical;
-    // }
-
-    // hstring InteractivityAutomationPeer::GetNameCore() const
-    // {
-    //     // fallback to title if profile name is empty
-    //     auto profileName = _interactivity->GetProfileName();
-    //     if (profileName.empty())
-    //     {
-    //         return _interactivity->GetCore().Title();
-    //     }
-    //     return profileName;
-    // }
-
-    // hstring InteractivityAutomationPeer::GetHelpTextCore() const
-    // {
-    //     return _interactivity->GetCore().Title();
-    // }
-
-    // AutomationLiveSetting InteractivityAutomationPeer::GetLiveSettingCore() const
-    // {
-    //     return AutomationLiveSetting::Polite;
-    // }
 
 #pragma region ITextProvider
     com_array<XamlAutomation::ITextRangeProvider> InteractivityAutomationPeer::GetSelection()
@@ -214,18 +176,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     RECT InteractivityAutomationPeer::GetBounds() const
     {
-        const auto padding = _interactivity->GetPadding();
-        // TODO! Get this from the core
-        const til::size dimensions{ 100, 100 };
-        const til::rectangle realBounds{ padding.origin(), dimensions };
-        return realBounds;
-        // auto rect = GetBoundingRectangle();
-        // return {
-        //     gsl::narrow_cast<LONG>(rect.X),
-        //     gsl::narrow_cast<LONG>(rect.Y),
-        //     gsl::narrow_cast<LONG>(rect.X + rect.Width),
-        //     gsl::narrow_cast<LONG>(rect.Y + rect.Height)
-        // };
+        return _controlBounds;
     }
 
     HRESULT InteractivityAutomationPeer::GetHostUiaProvider(IRawElementProviderSimple** provider)
@@ -238,13 +189,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     RECT InteractivityAutomationPeer::GetPadding() const
     {
-        return _interactivity->GetPadding();
-        // return {
-        //     gsl::narrow_cast<LONG>(padding.Left),
-        //     gsl::narrow_cast<LONG>(padding.Top),
-        //     gsl::narrow_cast<LONG>(padding.Right),
-        //     gsl::narrow_cast<LONG>(padding.Bottom)
-        // };
+        return _controlPadding;
     }
 
     double InteractivityAutomationPeer::GetScaleFactor() const

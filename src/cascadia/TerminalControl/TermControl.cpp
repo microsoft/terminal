@@ -436,10 +436,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             ScrollBar().Visibility(Visibility::Visible);
         }
 
-        _interactivity.UpdateSettings(winrt::Microsoft::Terminal::Core::Padding{ newMargin.Left,
-                                                                                 newMargin.Top,
-                                                                                 newMargin.Right,
-                                                                                 newMargin.Bottom });
+        _interactivity.UpdateSettings();
+        if (auto ap{ _automationPeer.get() })
+        {
+            ap.SetControlPadding(Core::Padding{ newMargin.Left,
+                                                newMargin.Top,
+                                                newMargin.Right,
+                                                newMargin.Bottom });
+        }
     }
 
     // Method Description:
@@ -549,6 +553,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             const auto& interactivityAutoPeer = _interactivity.OnCreateAutomationPeer();
             auto autoPeer = winrt::make_self<implementation::TermControlAutomationPeer>(this, interactivityAutoPeer);
+            _automationPeer = winrt::weak_ref<Control::TermControlAutomationPeer>(*autoPeer);
             return *autoPeer;
         }
         return nullptr;
@@ -1555,6 +1560,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto newSize = e.NewSize();
         _core.SizeChanged(newSize.Width, newSize.Height);
+
+        if (auto ap{ _automationPeer.get() })
+        {
+            ap.UpdateControlBounds();
+        }
     }
 
     // Method Description:
