@@ -45,7 +45,7 @@ namespace
         virtual void TriggerRedraw(const COORD* const){};
         virtual void TriggerRedrawCursor(const COORD* const){};
         virtual void TriggerRedrawAll(){};
-        virtual void TriggerTeardown(){};
+        virtual void TriggerTeardown() noexcept {};
         virtual void TriggerSelection(){};
         virtual void TriggerScroll(){};
         virtual void TriggerScroll(const COORD* const delta)

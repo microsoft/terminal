@@ -4,6 +4,7 @@
 #pragma once
 
 #include "ActionAndArgs.g.h"
+#include "ActionArgs.h"
 #include "TerminalWarnings.h"
 #include "../inc/cppwinrt_utils.h"
 

@@ -1,0 +1,23 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "Command.idl";
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    // This interface ensures that no changes are made to ActionMap
+    interface IActionMapView
+    {
+        Command GetActionByKeyChord(Microsoft.Terminal.Control.KeyChord keys);
+
+        Microsoft.Terminal.Control.KeyChord GetKeyBindingForAction(ShortcutAction action);
+        [method_name("GetKeyBindingForActionWithArgs")] Microsoft.Terminal.Control.KeyChord GetKeyBindingForAction(ShortcutAction action, IActionArgs actionArgs);
+
+        Windows.Foundation.Collections.IMapView<String, Command> NameMap { get; };
+        Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Command> GlobalHotkeys();
+    };
+
+    [default_interface] runtimeclass ActionMap : IActionMapView
+    {
+    }
+}

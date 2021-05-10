@@ -2,8 +2,24 @@
 Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
+Module Name:
+- InteractivityAutomationPeer.h
 
-TODO!
+Abstract:
+- This module provides UI Automation access to the ControlInteractivity,
+  to support both automation tests and accessibility (screen
+  reading) applications.
+- See TermControlAutomationPeer for more details on how UIA is implemented.
+- This is the primary implementation of the ITextProvider interface, for the
+  TermControlAutomationPeer. The TermControlAutomationPeer will be attached to
+  the actual UI tree, via FrameworkElementAutomationPeer. However, the
+  ControlInteractivity is totally oblivious to the UI tree that might be hosting
+  it. So this class implements the actual text pattern for the buffer, because
+  it has access to the buffer. TermControlAutomationPeer can then call the
+  methods on this class to expose the implemeentation in the actual UI tree.
+
+Author(s):
+- Mike Griese (migrie), May 2021
 
 --*/
 
@@ -25,16 +41,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     public:
         InteractivityAutomationPeer(Microsoft::Terminal::Control::implementation::ControlInteractivity* owner);
 
-        // #pragma region FrameworkElementAutomationPeer
-        //         hstring GetClassNameCore() const;
-        //         Windows::UI::Xaml::Automation::Peers::AutomationControlType GetAutomationControlTypeCore() const;
-        //         hstring GetLocalizedControlTypeCore() const;
-        //         Windows::Foundation::IInspectable GetPatternCore(Windows::UI::Xaml::Automation::Peers::PatternInterface patternInterface) const;
-        //         Windows::UI::Xaml::Automation::Peers::AutomationOrientation GetOrientationCore() const;
-        //         hstring GetNameCore() const;
-        //         hstring GetHelpTextCore() const;
-        //         Windows::UI::Xaml::Automation::Peers::AutomationLiveSetting GetLiveSettingCore() const;
-        // #pragma endregion
+        void SetControlBounds(const Windows::Foundation::Rect bounds);
+        void SetControlPadding(const Core::Padding padding);
 
 #pragma region IUiaEventDispatcher
         void SignalSelectionChanged() override;
@@ -61,11 +69,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         virtual HRESULT GetHostUiaProvider(IRawElementProviderSimple** provider) override;
 #pragma endregion
 
-        // RECT GetBoundingRectWrapped();
-
     private:
         ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
         winrt::Microsoft::Terminal::Control::implementation::ControlInteractivity* _interactivity;
+
+        til::rectangle _controlBounds;
+        til::rectangle _controlPadding;
+
         winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> WrapArrayOfTextRangeProviders(SAFEARRAY* textRanges);
     };
 }

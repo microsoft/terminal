@@ -24,23 +24,30 @@ namespace Microsoft.Terminal.Core
         UInt8 A;
     };
 
-    // TODO!
+    // TerminalCore declares its own Color struct to avoid depending on
+    // Windows.UI. Windows.Foundation.POint also exists, but it's composedof
+    // floating-point coordinates,whenwe almost always need integer coordinates.
     // It is supported by til::point for conversions in and out of WinRT land.
     struct Point
     {
         Int32 X;
         Int32 Y;
     };
-    // It is supported by Microsoft::Terminal::Core::ControlKeyStates for conversions in and out of WinRT land.
-    struct ControlKeyStates
-    {
-        Int32 Value;
-    };
+
+    // Same thing here, but with padding. Can't use Windows.UI.Thickness, so
+    // we'll declare our own.
     struct Padding {
         Double Left;
         Double Top;
         Double Right;
         Double Bottom;
+    };
+
+    // This is a projection of Microsoft::Terminal::Core::ControlKeyStates,
+    // for conversions in and out of WinRT land.
+    struct ControlKeyStates
+    {
+        Int32 Value;
     };
 
     declare

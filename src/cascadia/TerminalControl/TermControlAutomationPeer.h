@@ -20,6 +20,10 @@ Abstract:
 
 Author(s):
 - Carlos Zamora   (CaZamor)    2019
+
+Modifications:
+- May 2021: Pulled the core logic of ITextProvider implementation into the
+  InteractivityAutomationPeer, to support tab tear out.
 --*/
 
 #pragma once
@@ -35,12 +39,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct TermControlAutomationPeer :
         public TermControlAutomationPeerT<TermControlAutomationPeer>,
-        ::Microsoft::Console::Types::IUiaEventDispatcher /*,
-        ::Microsoft::Console::Types::IControlAccessibilityInfo*/
+        ::Microsoft::Console::Types::IUiaEventDispatcher
     {
     public:
         TermControlAutomationPeer(Microsoft::Terminal::Control::implementation::TermControl* owner,
                                   Control::InteractivityAutomationPeer implementation);
+
+        void UpdateControlBounds();
+        void SetControlPadding(const Core::Padding padding);
 
 #pragma region FrameworkElementAutomationPeer
         hstring GetClassNameCore() const;
@@ -68,22 +74,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::UI::Xaml::Automation::Provider::ITextRangeProvider DocumentRange();
 #pragma endregion
 
-        // #pragma region IControlAccessibilityInfo Pattern
-        //         // Inherited via IControlAccessibilityInfo
-        //         virtual COORD GetFontSize() const override;
-        //         virtual RECT GetBounds() const override;
-        //         virtual RECT GetPadding() const override;
-        //         virtual double GetScaleFactor() const override;
-        //         virtual void ChangeViewport(SMALL_RECT NewWindow) override;
-        //         virtual HRESULT GetHostUiaProvider(IRawElementProviderSimple** provider) override;
-        // #pragma endregion
-
-        // RECT GetBoundingRectWrapped();
-
     private:
-        // ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
-        // winrt::Microsoft::Terminal::Control::implementation::ControlInteractivity* _interactivity;
-
         winrt::Microsoft::Terminal::Control::implementation::TermControl* _termControl;
         Control::InteractivityAutomationPeer _implementation;
 

@@ -84,7 +84,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ~TermControl();
 
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
-        // ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
         const Windows::UI::Xaml::Thickness GetPadding();
 
         IControlSettings Settings() const;
@@ -170,6 +169,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         event_token _coreOutputEventToken;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
+
+        winrt::weak_ref<Control::TermControlAutomationPeer> _automationPeer{ nullptr };
 
         void _UpdateSettingsFromUIThread(IControlSettings newSettings);
         void _UpdateAppearanceFromUIThread(IControlAppearance newAppearance);

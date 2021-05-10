@@ -17,7 +17,7 @@ namespace Microsoft.Terminal.Control
                              Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
         ControlCore GetCore();
-        void UpdateSettings(Microsoft.Terminal.Core.Padding padding);
+        void UpdateSettings();
         void Initialize();
         void GainFocus();
         void LostFocus();

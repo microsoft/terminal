@@ -7,5 +7,8 @@ namespace Microsoft.Terminal.Control
         Windows.UI.Xaml.Automation.Peers.AutomationPeer,
         Windows.UI.Xaml.Automation.Provider.ITextProvider
     {
+
+        void SetControlBounds(Windows.Foundation.Rect bounds);
+        void SetControlPadding(Microsoft.Terminal.Core.Padding padding);
     }
 }
