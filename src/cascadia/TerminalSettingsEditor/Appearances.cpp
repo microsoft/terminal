@@ -17,11 +17,6 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
-static const std::array<winrt::guid, 2> InBoxProfileGuids{
-    winrt::guid{ 0x61c54bbd, 0xc2c6, 0x5271, { 0x96, 0xe7, 0x00, 0x9a, 0x87, 0xff, 0x44, 0xbf } }, // Windows Powershell
-    winrt::guid{ 0x0caa0dad, 0x35be, 0x5f56, { 0xa8, 0xff, 0xaf, 0xce, 0xee, 0xaa, 0x61, 0x01 } } // Command Prompt
-};
-
 // Function Description:
 // - This function presents a File Open "common dialog" and returns its selected file asynchronously.
 // Parameters:
@@ -111,11 +106,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    bool AppearanceViewModel::CanDeleteAppearance() const
-    {
-        return false;
-    }
-
     bool AppearanceViewModel::UseDesktopBGImage()
     {
         return BackgroundImagePath() == L"desktopWallpaper";
@@ -147,7 +137,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool AppearanceViewModel::BackgroundImageSettingsVisible()
     {
-        //return IsBaseLayer() || BackgroundImagePath() != L"";
         return BackgroundImagePath() != L"";
     }
 

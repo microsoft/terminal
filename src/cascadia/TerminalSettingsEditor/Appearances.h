@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "Font.g.h"
 #include "Appearances.g.h"
 #include "AppearanceViewModel.g.h"
 #include "Utils.h"
@@ -16,7 +15,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         AppearanceViewModel(const Model::AppearanceConfig& appearance);
-        bool CanDeleteAppearance() const;
 
         // background image
         bool UseDesktopBGImage();

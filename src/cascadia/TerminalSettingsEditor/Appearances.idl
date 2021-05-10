@@ -15,7 +15,6 @@ namespace Microsoft.Terminal.Settings.Editor
     runtimeclass AppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         Boolean UseDesktopBGImage;
-        Boolean CanDeleteAppearance { get; };
         Boolean BackgroundImageSettingsVisible { get; };
 
         Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes;
