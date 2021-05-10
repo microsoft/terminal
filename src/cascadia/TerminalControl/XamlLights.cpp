@@ -2,18 +2,34 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "TermControl.h"
 #include "XamlLights.h"
 #include "VisualBellLight.g.cpp"
-#include "TermControlAutomationPeer.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    Windows::UI::Xaml::DependencyProperty VisualBellLight::m_isTargetProperty =
-        Windows::UI::Xaml::DependencyProperty::RegisterAttached(
-            L"IsTarget",
-            winrt::xaml_typename<bool>(),
-            winrt::xaml_typename<winrt::Microsoft::Terminal::Control::VisualBellLight>(),
-            Windows::UI::Xaml::PropertyMetadata{ winrt::box_value(false), Windows::UI::Xaml::PropertyChangedCallback{ &VisualBellLight::OnIsTargetChanged } });
+    Windows::UI::Xaml::DependencyProperty VisualBellLight::_IsTargetProperty{ nullptr };
+
+    VisualBellLight::VisualBellLight()
+    {
+        _InitializeProperties();
+    }
+
+    void VisualBellLight::_InitializeProperties()
+    {
+        // Initialize any dependency properties here.
+        // This performs a lazy load on these properties, instead of
+        // initializing them when the DLL loads.
+        if (!_IsTargetProperty)
+        {
+            _IsTargetProperty =
+                Windows::UI::Xaml::DependencyProperty::RegisterAttached(
+                    L"IsTarget",
+                    winrt::xaml_typename<bool>(),
+                    winrt::xaml_typename<winrt::Microsoft::Terminal::Control::VisualBellLight>(),
+                    Windows::UI::Xaml::PropertyMetadata{ winrt::box_value(false), Windows::UI::Xaml::PropertyChangedCallback{ &VisualBellLight::OnIsTargetChanged } });
+        }
+    }
 
     // Method Description:
     // - This function is called when the first target UIElement is shown on the screen,
@@ -25,7 +41,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (!CompositionLight())
         {
             auto spotLight{ Windows::UI::Xaml::Window::Current().Compositor().CreateAmbientLight() };
-            spotLight.Color(Windows::UI::Colors::WhiteSmoke());
+            spotLight.Color(Windows::UI::Colors::White());
             spotLight.Intensity(static_cast<float>(1.5));
             CompositionLight(spotLight);
         }
