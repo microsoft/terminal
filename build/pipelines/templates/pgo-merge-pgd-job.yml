@@ -1,6 +1,7 @@
 parameters:
   dependsOn: ''
   pgoArtifact: PGO
+  platform: ''
 
 jobs:
 - job: MergePGD
@@ -10,6 +11,7 @@ jobs:
   variables:
     artifactsPath: $(Build.SourcesDirectory)\Artifacts
     pgoArtifactsPath: $(artifactsPath)\${{ parameters.pgoArtifact }}
+    buildPlatform: ${{ parameters.platform }}
 
   steps:
   # The environment variable VCToolsInstallDir isn't defined on lab machines, so we need to retrieve it ourselves.

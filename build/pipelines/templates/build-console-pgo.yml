@@ -48,3 +48,4 @@ jobs:
     dependsOn:
     - ProcessTestResults
     pgoArtifact: 'PGO'
+    platform: ${{ parameters.platform }}
