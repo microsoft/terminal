@@ -67,31 +67,32 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <!-- Dependencies -->
+
+  <!-- ========================= Project References ======================== -->
   <ItemGroup>
     <ProjectReference Include="$(OpenConsoleDir)samples\ScratchIslandApp\SampleApp\dll\SampleApp.vcxproj" />
-
-    <!-- Even though we do have proper recursive dependencies, we want to keep some of these here
-         so that the AppX Manifest contains their activatable classes. -->
-<!--     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" /> -->
   </ItemGroup>
 
-
+  <!-- ========================== Other References ========================= -->
   <ItemGroup>
-<!--     <Reference Include="Microsoft.Terminal.Control">
-      <HintPath>$(OpenConsoleCommonOutDir)TerminalControl\dll\Microsoft.Terminal.Control.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </Reference> -->
+    <!--
+    !! LOAD BEARING !!
+    Make sure these winmd's are all Private=true,
+    CopyLocalSatelliteAssemblies=true, at this layer. Those will force the
+    packaging project to actually include those winmd's in our final package. If
+    they're missing, then WinRT will have a hard time marshalling those types
+    across a process boundary.
 
-
+    Particularily tricky is Microsoft.Terminal.Core.winmd. That winmd doesn't
+    have its own DLL (it doesn't have any activatable classes, only structs and
+    interfaces). However, it too is necessary for Terminal.Control to be able to
+    marshall the Core types across the boundary.
+    -->
     <Reference Include="Microsoft.Terminal.Core">
       <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <Private>true</Private>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </Reference>
     <Reference Include="Microsoft.Terminal.TerminalConnection">
       <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>

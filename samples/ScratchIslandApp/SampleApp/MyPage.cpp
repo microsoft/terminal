@@ -32,6 +32,11 @@ namespace winrt::SampleApp::implementation
         Control::TermControl control{ *settings, conn };
 
         InProcContent().Children().Append(control);
+
+        // Once the control loads (and not before that), write some text for debugging:
+        control.Initialized([conn](auto&&, auto&&) {
+            conn.WriteInput(L"This TermControl is hosted in-proc...");
+        });
     }
 
     // Method Description:

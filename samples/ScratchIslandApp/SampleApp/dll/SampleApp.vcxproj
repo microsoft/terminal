@@ -41,10 +41,6 @@
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
-
-    <!-- <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
-      <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
-    </ProjectReference> -->
     <!-- Reference SampleAppLib here, so we can use it's App.winmd as
     our App.winmd. This didn't work correctly in VS2017, you'd need to
     manually reference the lib -->

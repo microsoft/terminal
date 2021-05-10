@@ -48,7 +48,6 @@
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
   <ItemGroup>
     <ProjectReference Include="..\WindowExe\WindowExe.vcxproj" />
-    <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WindowsTerminal\WindowsTerminal.vcxproj" /> -->
   </ItemGroup>
 
   <ItemGroup>
