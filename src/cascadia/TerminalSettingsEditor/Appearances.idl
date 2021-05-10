@@ -17,7 +17,10 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean UseDesktopBGImage;
         Boolean CanDeleteAppearance { get; };
         Boolean BackgroundImageSettingsVisible { get; };
+
         Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes;
+        IHostedInWindow WindowRoot; // necessary to send the right HWND into the file picker dialogs.
+
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, ColorSchemeName);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Boolean, RetroTerminalEffect);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
@@ -33,6 +36,8 @@ namespace Microsoft.Terminal.Settings.Editor
         Appearances();
         AppearanceViewModel Appearance;
         static Windows.UI.Xaml.DependencyProperty AppearanceProperty { get; };
+
+        void OnNavigatedTo();
 
         IInspectable CurrentCursorShape;
         Boolean IsVintageCursor { get; };

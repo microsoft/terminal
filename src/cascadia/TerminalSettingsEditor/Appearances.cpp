@@ -191,7 +191,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         const auto backgroundImgCheckboxTooltip{ ToolTipService::GetToolTip(UseDesktopImageCheckBox()) };
         Automation::AutomationProperties::SetFullDescription(UseDesktopImageCheckBox(), unbox_value<hstring>(backgroundImgCheckboxTooltip));
+    }
 
+    void Appearances::OnNavigatedTo()
+    {
         if (Appearance())
         {
             const auto& colorSchemeMap{ Appearance().Schemes() };
@@ -229,17 +232,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    //fire_and_forget Appearances::BackgroundImage_Click(IInspectable const&, RoutedEventArgs const&)
-    //{
-    //    auto lifetime = get_strong();
+    fire_and_forget Appearances::BackgroundImage_Click(IInspectable const&, RoutedEventArgs const&)
+    {
+        auto lifetime = get_strong();
 
-    //    const auto parentHwnd{ reinterpret_cast<HWND>(WindowRoot().GetHostingWindow()) };
-    //    auto file = co_await OpenImagePicker(parentHwnd);
-    //    if (!file.empty())
-    //    {
-    //        _State.Profile().BackgroundImagePath(file);
-    //    }
-    //}
+        const auto parentHwnd{ reinterpret_cast<HWND>(Appearance().WindowRoot().GetHostingWindow()) };
+        auto file = co_await OpenImagePicker(parentHwnd);
+        if (!file.empty())
+        {
+            Appearance().BackgroundImagePath(file);
+        }
+    }
 
     void Appearances::BIAlignment_Click(IInspectable const& sender, RoutedEventArgs const& /*e*/)
     {

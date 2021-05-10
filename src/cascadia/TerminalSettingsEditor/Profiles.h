@@ -40,11 +40,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         ProfileViewModel(const Model::Profile& profile);
 
-        // background image
-        bool UseDesktopBGImage();
-        void UseDesktopBGImage(const bool useDesktop);
-        bool BackgroundImageSettingsVisible();
-
         // starting directory
         bool UseParentProcessDirectory();
         void UseParentProcessDirectory(const bool useParent);
@@ -82,10 +77,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, Padding);
         OBSERVABLE_PROJECTED_SETTING(_profile, Commandline);
         OBSERVABLE_PROJECTED_SETTING(_profile, StartingDirectory);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), BackgroundImagePath);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), BackgroundImageOpacity);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), BackgroundImageStretchMode);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_SETTING(_profile, AntialiasingMode);
         OBSERVABLE_PROJECTED_SETTING(_profile, ForceFullRepaintRendering);
         OBSERVABLE_PROJECTED_SETTING(_profile, SoftwareRendering);
@@ -148,6 +139,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
             }
             viewModel.DefaultAppearance().Schemes(schemes);
+            viewModel.DefaultAppearance().WindowRoot(windowRoot);
         }
 
         void DeleteProfile();
@@ -178,11 +170,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::ColorScheme CurrentColorScheme();
         void CurrentColorScheme(const Model::ColorScheme& val);
 
-        fire_and_forget BackgroundImage_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         fire_and_forget Commandline_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         fire_and_forget StartingDirectory_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         fire_and_forget Icon_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
-        void BIAlignment_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void DeleteConfirmation_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void Pivot_SelectionChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void FontFace_SelectionChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& e);
@@ -197,7 +187,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_PROPERTY(Editor::ProfilePageNavigationState, State, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);
-        GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, State().Profile, BackgroundImageStretchMode);
         GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, State().Profile, AntialiasingMode);
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, State().Profile, CloseOnExit);
         GETSET_BINDABLE_ENUM_SETTING(BellStyle, Microsoft::Terminal::Settings::Model::BellStyle, State().Profile, BellStyle);

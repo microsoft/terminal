@@ -130,6 +130,10 @@
                         <TextBox IsEnabled="{x:Bind Appearance.BackgroundImagePath, Mode=OneWay, Converter={StaticResource StringIsNotDesktopConverter}}"
                                                  Style="{StaticResource TextBoxSettingStyle}"
                                                  Text="{x:Bind Appearance.BackgroundImagePath, Mode=TwoWay, Converter={StaticResource DesktopWallpaperToEmptyStringConverter}}" />
+                        <Button x:Uid="Profile_BackgroundImageBrowse"
+                                                Click="BackgroundImage_Click"
+                                                IsEnabled="{x:Bind Appearance.BackgroundImagePath, Mode=OneWay, Converter={StaticResource StringIsNotDesktopConverter}}"
+                                                Style="{StaticResource BrowseButtonStyle}" />
                     </StackPanel>
                     <CheckBox x:Name="UseDesktopImageCheckBox"
                                               x:Uid="Profile_UseDesktopImage"

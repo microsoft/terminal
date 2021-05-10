@@ -27,11 +27,9 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean CanDeleteProfile { get; };
         Boolean UsingMonospaceFont { get; };
         Boolean IsBaseLayer;
-        Boolean UseDesktopBGImage;
         Boolean UseParentProcessDirectory;
         Boolean ShowAllFonts;
         Boolean UseCustomStartingDirectory { get; };
-        Boolean BackgroundImageSettingsVisible { get; };
         AppearanceViewModel DefaultAppearance { get; };
 
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Name);
@@ -53,10 +51,6 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Padding);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Commandline);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, StartingDirectory);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, BackgroundImagePath);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Double, BackgroundImageOpacity);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.ConvergedAlignment, BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.TextAntialiasingMode, AntialiasingMode);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ForceFullRepaintRendering);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SoftwareRendering);
@@ -98,9 +92,6 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Profiles();
         ProfilePageNavigationState State { get; };
-
-        IInspectable CurrentBackgroundImageStretchMode;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BackgroundImageStretchModeList { get; };
 
         IInspectable CurrentAntiAliasingMode;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AntiAliasingModeList { get; };

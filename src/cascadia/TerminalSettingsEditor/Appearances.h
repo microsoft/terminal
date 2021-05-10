@@ -26,6 +26,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes() { return _Schemes; }
         void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) { _Schemes = val; }
 
+        WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
+
         OBSERVABLE_PROJECTED_SETTING(_appearance, RetroTerminalEffect);
         OBSERVABLE_PROJECTED_SETTING(_appearance, CursorShape);
         OBSERVABLE_PROJECTED_SETTING(_appearance, CursorHeight);
@@ -46,13 +48,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         Appearances();
 
+        void OnNavigatedTo();
+
         // CursorShape visibility logic
         bool IsVintageCursor() const;
 
         Model::ColorScheme CurrentColorScheme();
         void CurrentColorScheme(const Model::ColorScheme& val);
 
-        //fire_and_forget BackgroundImage_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
+        fire_and_forget BackgroundImage_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void BIAlignment_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
 
         GETSET_BINDABLE_ENUM_SETTING(CursorShape, Microsoft::Terminal::Core::CursorStyle, Appearance, CursorShape);
