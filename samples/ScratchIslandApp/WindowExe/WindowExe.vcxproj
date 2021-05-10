@@ -200,6 +200,17 @@
       </PackagingOutputs>
     </ItemGroup>
     <!-- **END TERMINALCONNECTION HACK** -->
+
+    <!-- Same thing again here, with windowsterminal.exe -->
+    <ItemGroup>
+      <_WindowsTerminalExe Include="$(OpenConsoleCommonOutDir)\WindowsTerminal\*.exe" />
+
+      <PackagingOutputs Include="@(_WindowsTerminalExe)">
+        <ProjectName>$(ProjectName)</ProjectName>
+        <OutputGroup>BuiltProjectOutputGroup</OutputGroup>
+        <TargetPath>%(Filename)%(Extension)</TargetPath>
+      </PackagingOutputs>
+    </ItemGroup>
   </Target>
 
 
