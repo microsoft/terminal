@@ -6,9 +6,12 @@
 #include "XamlLights.h"
 #include "VisualBellLight.g.cpp"
 
+using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Media;
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    Windows::UI::Xaml::DependencyProperty VisualBellLight::_IsTargetProperty{ nullptr };
+    DependencyProperty VisualBellLight::_IsTargetProperty{ nullptr };
 
     VisualBellLight::VisualBellLight()
     {
@@ -23,11 +26,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (!_IsTargetProperty)
         {
             _IsTargetProperty =
-                Windows::UI::Xaml::DependencyProperty::RegisterAttached(
+                DependencyProperty::RegisterAttached(
                     L"IsTarget",
                     winrt::xaml_typename<bool>(),
-                    winrt::xaml_typename<winrt::Microsoft::Terminal::Control::VisualBellLight>(),
-                    Windows::UI::Xaml::PropertyMetadata{ winrt::box_value(false), Windows::UI::Xaml::PropertyChangedCallback{ &VisualBellLight::OnIsTargetChanged } });
+                    winrt::xaml_typename<Control::VisualBellLight>(),
+                    PropertyMetadata{ winrt::box_value(false), PropertyChangedCallback{ &VisualBellLight::OnIsTargetChanged } });
         }
     }
 
@@ -36,11 +39,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   this enables delaying composition object creation until it's actually necessary.
     // Arguments:
     // - newElement: unused
-    void VisualBellLight::OnConnected(Windows::UI::Xaml::UIElement const& /* newElement */)
+    void VisualBellLight::OnConnected(UIElement const& /* newElement */)
     {
         if (!CompositionLight())
         {
-            auto spotLight{ Windows::UI::Xaml::Window::Current().Compositor().CreateAmbientLight() };
+            auto spotLight{ Window::Current().Compositor().CreateAmbientLight() };
             spotLight.Color(Windows::UI::Colors::White());
             spotLight.Intensity(static_cast<float>(1.5));
             CompositionLight(spotLight);
@@ -52,7 +55,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Disposes of composition resources when no longer in use
     // Arguments:
     // - oldElement: unused
-    void VisualBellLight::OnDisconnected(Windows::UI::Xaml::UIElement const& /* oldElement */)
+    void VisualBellLight::OnDisconnected(UIElement const& /* oldElement */)
     {
         if (CompositionLight())
         {
@@ -65,33 +68,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return VisualBellLight::GetIdStatic();
     }
 
-    void VisualBellLight::OnIsTargetChanged(Windows::UI::Xaml::DependencyObject const& d, Windows::UI::Xaml::DependencyPropertyChangedEventArgs const& e)
+    void VisualBellLight::OnIsTargetChanged(DependencyObject const& d, DependencyPropertyChangedEventArgs const& e)
     {
-        const auto& uielem{ d.try_as<Windows::UI::Xaml::UIElement>() };
-        const auto& brush{ d.try_as<Windows::UI::Xaml::Media::Brush>() };
+        const auto& uielem{ d.try_as<UIElement>() };
+        const auto& brush{ d.try_as<Brush>() };
+
+        if (!uielem && !brush)
+        {
+            // terminate early
+            return;
+        }
 
         const auto isAdding = winrt::unbox_value<bool>(e.NewValue());
-        if (isAdding)
-        {
-            if (uielem)
-            {
-                Windows::UI::Xaml::Media::XamlLight::AddTargetElement(VisualBellLight::GetIdStatic(), uielem);
-            }
-            else if (brush)
-            {
-                Windows::UI::Xaml::Media::XamlLight::AddTargetBrush(VisualBellLight::GetIdStatic(), brush);
-            }
-        }
-        else
-        {
-            if (uielem)
-            {
-                Windows::UI::Xaml::Media::XamlLight::RemoveTargetElement(VisualBellLight::GetIdStatic(), uielem);
-            }
-            else if (brush)
-            {
-                Windows::UI::Xaml::Media::XamlLight::RemoveTargetBrush(VisualBellLight::GetIdStatic(), brush);
-            }
-        }
+        const auto id = GetIdStatic();
+
+        isAdding ? (uielem ? XamlLight::AddTargetElement(id, uielem) : XamlLight::AddTargetBrush(id, brush)) :
+                   (uielem ? XamlLight::RemoveTargetElement(id, uielem) : XamlLight::RemoveTargetBrush(id, brush));
     }
 }
