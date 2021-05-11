@@ -17,64 +17,6 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
-// Function Description:
-// - This function presents a File Open "common dialog" and returns its selected file asynchronously.
-// Parameters:
-// - customize: A lambda that receives an IFileDialog* to customize.
-// Return value:
-// (async) path to the selected item.
-template<typename TLambda>
-static winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> OpenFilePicker(HWND parentHwnd, TLambda&& customize)
-{
-    auto fileDialog{ winrt::create_instance<IFileDialog>(CLSID_FileOpenDialog) };
-    DWORD flags{};
-    THROW_IF_FAILED(fileDialog->GetOptions(&flags));
-    THROW_IF_FAILED(fileDialog->SetOptions(flags | FOS_FORCEFILESYSTEM | FOS_NOCHANGEDIR | FOS_DONTADDTORECENT)); // filesystem objects only; no recent places
-    customize(fileDialog.get());
-
-    auto hr{ fileDialog->Show(parentHwnd) };
-    if (!SUCCEEDED(hr))
-    {
-        if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED))
-        {
-            co_return winrt::hstring{};
-        }
-        THROW_HR(hr);
-    }
-
-    winrt::com_ptr<IShellItem> result;
-    THROW_IF_FAILED(fileDialog->GetResult(result.put()));
-
-    wil::unique_cotaskmem_string filePath;
-    THROW_IF_FAILED(result->GetDisplayName(SIGDN_FILESYSPATH, &filePath));
-
-    co_return winrt::hstring{ filePath.get() };
-}
-
-// Function Description:
-// - Helper that opens a file picker pre-seeded with image file types.
-static winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> OpenImagePicker(HWND parentHwnd)
-{
-    static constexpr COMDLG_FILTERSPEC supportedImageFileTypes[] = {
-        { L"All Supported Bitmap Types (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.tiff, *.ico)", L"*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff;*.ico" },
-        { L"All Files (*.*)", L"*.*" }
-    };
-
-    static constexpr winrt::guid clientGuidImagePicker{ 0x55675F54, 0x74A1, 0x4552, { 0xA3, 0x9D, 0x94, 0xAE, 0x85, 0xD8, 0xF2, 0x7A } };
-    return OpenFilePicker(parentHwnd, [](auto&& dialog) {
-        THROW_IF_FAILED(dialog->SetClientGuid(clientGuidImagePicker));
-        try
-        {
-            auto pictureFolderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_PicturesLibrary, KF_FLAG_DEFAULT, nullptr) };
-            dialog->SetDefaultFolder(pictureFolderShellItem.get());
-        }
-        CATCH_LOG(); // non-fatal
-        THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedImageFileTypes), supportedImageFileTypes));
-        THROW_IF_FAILED(dialog->SetFileTypeIndex(1)); // the array is 1-indexed
-        THROW_IF_FAILED(dialog->SetDefaultExtension(L"jpg;jpeg;png;bmp;gif;tiff;ico"));
-    });
-}
-
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Windows::Foundation::Collections::IObservableVector<Editor::Font> AppearanceViewModel::_MonospaceFontList{ nullptr };
