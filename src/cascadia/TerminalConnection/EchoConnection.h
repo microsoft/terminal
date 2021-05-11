@@ -18,6 +18,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Resize(uint32_t rows, uint32_t columns) noexcept;
         void Close() noexcept;
 
+        void Initialize(TerminalConnection::IConnectionSettings /*settings*/){};
+
         ConnectionState State() const noexcept { return ConnectionState::Connected; }
 
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);

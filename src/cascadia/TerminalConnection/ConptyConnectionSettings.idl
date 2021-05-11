@@ -1,0 +1,26 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "IConnectionSettings.idl";
+
+namespace Microsoft.Terminal.TerminalConnection
+{
+    [default_interface] runtimeclass ConptyConnectionSettings : IConnectionSettings
+    {
+        ConptyConnectionSettings(String cmdline,
+                                 String startingDirectory,
+                                 String startingTitle,
+                                 IMapView<String, String> environment,
+                                 UInt32 rows,
+                                 UInt32 columns,
+                                 Guid guid);
+
+        String Cmdline;
+        String StartingDirectory;
+        String StartingTitle;
+        IMapView<String, String> Environment;
+        UInt32 Rows;
+        UInt32 Columns;
+        Guid Guid;
+    };
+}

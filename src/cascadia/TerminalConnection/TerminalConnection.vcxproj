@@ -15,10 +15,16 @@
     <ClInclude Include="AzureConnection.h">
       <DependentUpon>AzureConnection.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="AzureConnectionSettings.h">
+      <DependentUpon>AzureConnectionSettings.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="CTerminalHandoff.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ConptyConnection.h">
       <DependentUpon>ConptyConnection.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ConptyConnectionSettings.h">
+      <DependentUpon>ConptyConnectionSettings.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="EchoConnection.h">
       <DependentUpon>EchoConnection.idl</DependentUpon>
@@ -30,6 +36,9 @@
     <ClCompile Include="AzureConnection.cpp">
       <DependentUpon>AzureConnection.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="AzureConnectionSettings.cpp">
+      <DependentUpon>AzureConnectionSettings.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -39,13 +48,19 @@
     <ClCompile Include="ConptyConnection.cpp">
       <DependentUpon>ConptyConnection.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="ConptyConnectionSettings.cpp">
+      <DependentUpon>ConptyConnectionSettings.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ITerminalConnection.idl" />
+    <Midl Include="IConnectionSettings.idl" />
     <Midl Include="ConptyConnection.idl" />
+    <Midl Include="ConptyConnectionSettings.idl" />
     <Midl Include="EchoConnection.idl" />
     <Midl Include="AzureConnection.idl" />
+    <Midl Include="AzureConnectionSettings.idl" />
   </ItemGroup>
   <ItemGroup>
     <PRIResource Include="Resources\en-US\Resources.resw" />

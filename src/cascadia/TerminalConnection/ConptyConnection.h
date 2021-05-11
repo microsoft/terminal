@@ -32,6 +32,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             const uint32_t rows,
             const uint32_t cols,
             const guid& guid);
+
+        ConptyConnection() = default;
+        void Initialize(TerminalConnection::IConnectionSettings settings);
+
         static winrt::fire_and_forget final_release(std::unique_ptr<ConptyConnection> connection);
 
         void Start();

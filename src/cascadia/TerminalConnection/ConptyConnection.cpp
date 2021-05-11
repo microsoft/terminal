@@ -241,6 +241,28 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
     }
 
+    void ConptyConnection::Initialize(TerminalConnection::IConnectionSettings settings)
+    {
+        if (settings)
+        {
+            if (auto conptySettings{ settings.try_as<TerminalConnection::ConptyConnectionSettings>() })
+            {
+                _commandline = conptySettings.Cmdline();
+                _startingDirectory = conptySettings.StartingDirectory();
+                _startingTitle = conptySettings.StartingTitle();
+                _environment = conptySettings.Environment();
+                _initialRows = conptySettings.Rows();
+                _initialCols = conptySettings.Columns();
+                _guid = conptySettings.Guid();
+            }
+        }
+
+        if (_guid == guid{})
+        {
+            _guid = Utils::CreateGuid();
+        }
+    }
+
     winrt::guid ConptyConnection::Guid() const noexcept
     {
         return _guid;
