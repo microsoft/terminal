@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "Font.g.h"
 #include "Profiles.g.h"
 #include "ProfilePageNavigationState.g.h"
 #include "DeleteProfileEventArgs.g.h"
@@ -14,27 +13,6 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    struct FontComparator
-    {
-        bool operator()(const Font& lhs, const Font& rhs) const
-        {
-            return lhs.LocalizedName() < rhs.LocalizedName();
-        }
-    };
-
-    struct Font : FontT<Font>
-    {
-    public:
-        Font(std::wstring name, std::wstring localizedName) :
-            _Name{ name },
-            _LocalizedName{ localizedName } {};
-
-        hstring ToString() { return _LocalizedName; }
-
-        WINRT_PROPERTY(hstring, Name);
-        WINRT_PROPERTY(hstring, LocalizedName);
-    };
-
     struct ProfileViewModel : ProfileViewModelT<ProfileViewModel>, ViewModelHelper<ProfileViewModel>
     {
     public:
@@ -44,14 +22,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool UseParentProcessDirectory();
         void UseParentProcessDirectory(const bool useParent);
         bool UseCustomStartingDirectory();
-
-        // font face
-        static void UpdateFontList() noexcept;
-        Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() const noexcept;
-        Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() const noexcept;
-        bool UsingMonospaceFont() const noexcept;
-        bool ShowAllFonts() const noexcept;
-        void ShowAllFonts(const bool& value);
 
         // general profile knowledge
         bool CanDeleteProfile() const;
@@ -71,9 +41,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, UseAcrylic);
         OBSERVABLE_PROJECTED_SETTING(_profile, AcrylicOpacity);
         OBSERVABLE_PROJECTED_SETTING(_profile, ScrollState);
-        OBSERVABLE_PROJECTED_SETTING(_profile, FontFace);
-        OBSERVABLE_PROJECTED_SETTING(_profile, FontSize);
-        OBSERVABLE_PROJECTED_SETTING(_profile, FontWeight);
         OBSERVABLE_PROJECTED_SETTING(_profile, Padding);
         OBSERVABLE_PROJECTED_SETTING(_profile, Commandline);
         OBSERVABLE_PROJECTED_SETTING(_profile, StartingDirectory);
@@ -95,12 +62,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
         Editor::AppearanceViewModel _defaultAppearanceViewModel;
-        bool _ShowAllFonts;
-
-        static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
-        static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
-
-        static Editor::Font _GetFont(com_ptr<IDWriteLocalizedStrings> localizedFamilyNames);
     };
 
     struct DeleteProfileEventArgs :
@@ -161,9 +122,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         Profiles();
 
-        // font face
-        Windows::Foundation::IInspectable CurrentFontFace() const;
-
         void OnNavigatedTo(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
         void OnNavigatedFrom(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
@@ -175,13 +133,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         fire_and_forget Icon_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void DeleteConfirmation_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void Pivot_SelectionChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
-        void FontFace_SelectionChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& e);
-
-        // manually bind FontWeight
-        Windows::Foundation::IInspectable CurrentFontWeight() const;
-        void CurrentFontWeight(const Windows::Foundation::IInspectable& enumEntry);
-        bool IsCustomFontWeight();
-        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry>, FontWeightList);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
@@ -195,8 +146,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         void _UpdateBIAlignmentControl(const int32_t val);
 
-        Windows::Foundation::Collections::IMap<uint16_t, Microsoft::Terminal::Settings::Editor::EnumEntry> _FontWeightMap;
-        Editor::EnumEntry _CustomFontWeight{ nullptr };
         std::array<Windows::UI::Xaml::Controls::Primitives::ToggleButton, 9> _BIAlignmentButtons;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
     };

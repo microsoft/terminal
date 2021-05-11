@@ -12,13 +12,28 @@ import "MainPage.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
+    runtimeclass Font : Windows.Foundation.IStringable
+    {
+        String Name { get; };
+        String LocalizedName { get; };
+    }
+
     runtimeclass AppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
+        Windows.Foundation.Collections.IObservableVector<Font> CompleteFontList { get; };
+        Windows.Foundation.Collections.IObservableVector<Font> MonospaceFontList { get; };
+
+        Boolean UsingMonospaceFont { get; };
+        Boolean ShowAllFonts;
         Boolean UseDesktopBGImage;
         Boolean BackgroundImageSettingsVisible { get; };
 
         Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes;
         IHostedInWindow WindowRoot; // necessary to send the right HWND into the file picker dialogs.
+
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, FontFace);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Int32, FontSize);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.UI.Text.FontWeight, FontWeight);
 
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, ColorSchemeName);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Boolean, RetroTerminalEffect);
@@ -45,5 +60,11 @@ namespace Microsoft.Terminal.Settings.Editor
 
         IInspectable CurrentBackgroundImageStretchMode;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BackgroundImageStretchModeList { get; };
+
+        IInspectable CurrentFontWeight;
+        Boolean IsCustomFontWeight { get; };
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FontWeightList { get; };
+
+        IInspectable CurrentFontFace { get; };
     }
 }

@@ -45,15 +45,11 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <StackPanel Style="{StaticResource PivotStackStyle}">
+    <StackPanel>
         <StackPanel Style="{StaticResource PivotStackStyle}">
-            <!--  Retro Terminal Effect  -->
-            <local:SettingContainer x:Uid="Profile_RetroTerminalEffect"
-                                    ClearSettingValue="{x:Bind Appearance.ClearRetroTerminalEffect}"
-                                    HasSettingValue="{x:Bind Appearance.HasRetroTerminalEffect, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.RetroTerminalEffectOverrideSource, Mode=OneWay}">
-                <ToggleSwitch IsOn="{x:Bind Appearance.RetroTerminalEffect, Mode=TwoWay}" />
-            </local:SettingContainer>
+            <!--  Grouping: Text  -->
+            <TextBlock x:Uid="Profile_TextHeader"
+                                       Style="{StaticResource SubtitleTextBlockStyle}" />
 
             <!--  Color Scheme  -->
             <local:SettingContainer x:Uid="Profile_ColorScheme"
@@ -70,6 +66,94 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
+            </local:SettingContainer>
+
+            <!--  Font Face  -->
+            <local:SettingContainer x:Uid="Profile_FontFace"
+                                    ClearSettingValue="{x:Bind Appearance.ClearFontFace}"
+                                    HasSettingValue="{x:Bind Appearance.HasFontFace, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.FontFaceOverrideSource, Mode=OneWay}">
+                <StackPanel>
+                    <!--
+                                        Binding the ItemsSource to a separate variable that switches between the
+                                        two font lists causes a crash within the ComboBox code.
+                                        As a workaround, introduce two ComboBox controls and only display one at a time.
+                                    -->
+                    <ComboBox ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
+                                              ItemsSource="{x:Bind Appearance.MonospaceFontList, Mode=OneWay}"
+                                              SelectedItem="{x:Bind CurrentFontFace, Mode=OneWay}"
+                                              SelectionChanged="FontFace_SelectionChanged"
+                                              Style="{StaticResource ComboBoxSettingStyle}"
+                                              Visibility="{x:Bind Appearance.ShowAllFonts, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}" />
+                    <ComboBox ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
+                                              ItemsSource="{x:Bind Appearance.CompleteFontList, Mode=OneWay}"
+                                              SelectedItem="{x:Bind CurrentFontFace, Mode=OneWay}"
+                                              SelectionChanged="FontFace_SelectionChanged"
+                                              Style="{StaticResource ComboBoxSettingStyle}"
+                                              Visibility="{x:Bind Appearance.ShowAllFonts, Mode=OneWay}" />
+                    <CheckBox x:Name="ShowAllFontsCheckbox"
+                                              x:Uid="Profile_FontFaceShowAllFonts"
+                                              IsChecked="{x:Bind Appearance.ShowAllFonts, Mode=TwoWay}"
+                                              IsEnabled="{x:Bind Appearance.UsingMonospaceFont, Mode=OneWay}" />
+                </StackPanel>
+            </local:SettingContainer>
+
+            <!--  Font Size  -->
+            <local:SettingContainer x:Uid="Profile_FontSize"
+                                                    ClearSettingValue="{x:Bind Appearance.ClearFontSize}"
+                                                    HasSettingValue="{x:Bind Appearance.HasFontSize, Mode=OneWay}"
+                                                    SettingOverrideSource="{x:Bind Appearance.FontSizeOverrideSource, Mode=OneWay}">
+                <muxc:NumberBox AcceptsExpression="False"
+                                                LargeChange="10"
+                                                Maximum="128"
+                                                Minimum="1"
+                                                SmallChange="1"
+                                                Style="{StaticResource NumberBoxSettingStyle}"
+                                                Value="{x:Bind Appearance.FontSize, Mode=TwoWay}" />
+            </local:SettingContainer>
+
+            <!--  Font Weight  -->
+            <local:SettingContainer x:Name="FontWeightContainer"
+                                                    x:Uid="Profile_FontWeight"
+                                                    ClearSettingValue="{x:Bind Appearance.ClearFontWeight}"
+                                                    HasSettingValue="{x:Bind Appearance.HasFontWeight, Mode=OneWay}"
+                                                    SettingOverrideSource="{x:Bind Appearance.FontWeightOverrideSource, Mode=OneWay}">
+                <StackPanel>
+                    <ComboBox x:Name="FontWeightComboBox"
+                                              ItemTemplate="{StaticResource EnumComboBoxItemTemplate}"
+                                              ItemsSource="{x:Bind FontWeightList, Mode=OneWay}"
+                                              SelectedItem="{x:Bind CurrentFontWeight, Mode=TwoWay}"
+                                              Style="{StaticResource ComboBoxSettingStyle}" />
+
+                    <!--  Custom Font Weight Control  -->
+                    <Grid Margin="0,10,0,0"
+                                          Style="{StaticResource CustomSliderControlGridStyle}"
+                                          Visibility="{x:Bind IsCustomFontWeight, Mode=OneWay}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Slider x:Name="FontWeightSlider"
+                                                Grid.Column="0"
+                                                Maximum="1000"
+                                                Minimum="0"
+                                                TickFrequency="50"
+                                                TickPlacement="Outside"
+                                                Value="{x:Bind Appearance.FontWeight, Converter={StaticResource FontWeightConverter}, Mode=TwoWay}" />
+                        <TextBlock Grid.Column="1"
+                                                   Margin="10,0,0,0"
+                                                   Style="{StaticResource SliderValueLabelStyle}"
+                                                   Text="{Binding ElementName=FontWeightSlider, Path=Value, Mode=OneWay}" />
+                    </Grid>
+                </StackPanel>
+            </local:SettingContainer>
+
+            <!--  Retro Terminal Effect  -->
+            <local:SettingContainer x:Uid="Profile_RetroTerminalEffect"
+                                    ClearSettingValue="{x:Bind Appearance.ClearRetroTerminalEffect}"
+                                    HasSettingValue="{x:Bind Appearance.HasRetroTerminalEffect, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.RetroTerminalEffectOverrideSource, Mode=OneWay}">
+                <ToggleSwitch IsOn="{x:Bind Appearance.RetroTerminalEffect, Mode=TwoWay}" />
             </local:SettingContainer>
         </StackPanel>
 
