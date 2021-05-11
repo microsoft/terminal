@@ -4,7 +4,7 @@
 
 ## Description
 
-We generate PGO database NuGet package which is versioned based on product release version and branch name/time stamp of the code that was used for instrumentation and training.  In CI/release builds an initialization step enumerates all available versions, filters out those for other releases and branches.  Given a list of applicable versions, it will find the one that is closest (BEFORE) the time-stamp of the last commit or a fork-point from instrumented branch.  That package version will be installed and version references will be updated.  The PGO branch is determined by variable $pgoBranch in tools/MUXPGODatabase/config.ps1.  It will need to be updated if a forked branch should be PGO'd.
+We generate PGO database NuGet package which is versioned based on product release version and branch name/time stamp of the code that was used for instrumentation and training.  In CI/release builds an initialization step enumerates all available versions, filters out those for other releases and branches.  Given a list of applicable versions, it will find the one that is closest (BEFORE) the time-stamp of the last commit or a fork-point from instrumented branch.  That package version will be installed and version references will be updated.  The PGO branch is determined by variable $pgoBranch in tools/PGODatabase/config.ps1.  It will need to be updated if a forked branch should be PGO'd.
 
 ## Scenarios
 
@@ -36,7 +36,7 @@ E.g.
 
 ### Optimizing release branch
 
-A branch which will be PGO’d requires a slightly different handling.  Let’s say release/2.4 forked from main on commit 4abd4d54.  Initially, it will be configured to track main and 18b956f6 will be optimized with 2.4.2001312033-main.  When the configuration is changed to start tracking release/2.4 (change branch name $pgoBranch in tools/MUXPGODatabase/config.ps1 script), it will start tracking its own branch.
+A branch which will be PGO’d requires a slightly different handling.  Let’s say release/2.4 forked from main on commit 4abd4d54.  Initially, it will be configured to track main and 18b956f6 will be optimized with 2.4.2001312033-main.  When the configuration is changed to start tracking release/2.4 (change branch name $pgoBranch in tools/PGODatabase/config.ps1 script), it will start tracking its own branch.
 
 E.g.
 

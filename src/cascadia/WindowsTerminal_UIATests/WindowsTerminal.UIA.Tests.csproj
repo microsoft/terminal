@@ -89,7 +89,6 @@
   </Choose>
   <ItemGroup>
     <Compile Include="Common\Globals.cs" />
-    <Compile Include="Common\NativeMethods.cs" />
     <Compile Include="Common\PgoManager.cs" />
     <Compile Include="Elements\TerminalApp.cs" />
     <Compile Include="Init.cs" />

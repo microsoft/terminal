@@ -1012,6 +1012,7 @@ horiz
 HORZ
 hostable
 hostlib
+Hostx
 HPA
 HPAINTBUFFER
 hpcon
