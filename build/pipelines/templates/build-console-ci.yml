@@ -24,7 +24,7 @@ jobs:
   # when we renamed our main branch.
   - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
     displayName: 'Component Detection'
-    condition: and(succeeded(), not(eq(variables['Build.Reason'], 'PullRequest')))
+    condition: and(succeededOrFailed(), not(eq(variables['Build.Reason'], 'PullRequest')))
 
 - template: helix-runtests-job.yml
   parameters:
