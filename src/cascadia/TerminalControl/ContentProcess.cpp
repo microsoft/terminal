@@ -9,9 +9,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     ContentProcess::ContentProcess() {}
 
-    void ContentProcess::Initialize(Control::IControlSettings settings, TerminalConnection::ITerminalConnection connection)
+    void ContentProcess::Initialize(Control::IControlSettings settings,
+                                    TerminalConnection::ConnectionInformation connectionInfo)
     {
-        _interactivity = winrt::make<implementation::ControlInteractivity>(settings, connection);
+        _interactivity = winrt::make<implementation::ControlInteractivity>(settings,
+                                                                           TerminalConnection::ConnectionInformation::CreateConnection(connectionInfo));
     }
 
     Control::ControlInteractivity ContentProcess::GetInteractivity()

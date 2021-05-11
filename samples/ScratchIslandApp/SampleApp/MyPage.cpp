@@ -28,7 +28,7 @@ namespace winrt::SampleApp::implementation
 
     void MyPage::Create()
     {
-        TerminalConnection::EchoConnection conn{};
+        // TerminalConnection::EchoConnection conn{};
         auto settings = winrt::make_self<ControlUnitTests::MockControlSettings>();
 
         // winrt::com_ptr<TerminalConnection::ITerminalConnection> conn2{ nullptr };
@@ -55,7 +55,8 @@ namespace winrt::SampleApp::implementation
 
         winrt::hstring myClass{ L"Microsoft.Terminal.TerminalConnection.EchoConnection" };
         TerminalConnection::ConnectionInformation connectInfo{ myClass, nullptr };
-        Control::TermControl control{ Control::TermControl::FromConnectionInfo(*settings, connectInfo) };
+        TerminalConnection::ITerminalConnection conn{ TerminalConnection::ConnectionInformation::CreateConnection(connectInfo) };
+        Control::TermControl control{ *settings, conn };
 
         InProcContent().Children().Append(control);
 
@@ -165,6 +166,8 @@ namespace winrt::SampleApp::implementation
                                                                              winrt::guid() };
             winrt::hstring myClass{ L"Microsoft.Terminal.TerminalConnection.ConptyConnection" };
             connectInfo = TerminalConnection::ConnectionInformation(myClass, connectionSettings);
+
+            content.Initialize(settings, connectInfo);
         }
         else
         {
@@ -172,16 +175,18 @@ namespace winrt::SampleApp::implementation
 
         // Switch back to the UI thread.
         co_await ui_thread;
-        Control::TermControl control{ nullptr };
-        if (!attached)
-        {
-            control = Control::TermControl::FromConnectionInfo(settings, connectInfo);
-        }
-        else
-        {
-            // Control::TermControl control{ contentGuid, settings, conn };
-            control = Control::TermControl(contentGuid, settings, nullptr);
-        }
+        // Control::TermControl control{ nullptr };
+        // if (!attached)
+        // {
+        //     control = Control::TermControl::FromConnectionInfo(settings, connectInfo);
+        // }
+        // else
+        // {
+        //     // Control::TermControl control{ contentGuid, settings, conn };
+        //     control = Control::TermControl(contentGuid, settings, nullptr);
+        // }
+
+        Control::TermControl control{ contentGuid, settings, nullptr };
 
         OutOfProcContent().Children().Append(control);
 
@@ -218,14 +223,14 @@ namespace winrt::SampleApp::implementation
 
         if (s)
         {
-            content.Initialize(s, conn);
+            //content.Initialize(s, conn);
 
-            // Switch back to the UI thread.
-            co_await ui_thread;
+            //// Switch back to the UI thread.
+            //co_await ui_thread;
 
-            Control::TermControl control{ contentGuid, s, conn };
+            //Control::TermControl control{ contentGuid, s, conn };
 
-            OutOfProcContent().Children().Append(control);
+            //OutOfProcContent().Children().Append(control);
         }
     }
 

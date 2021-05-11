@@ -10,7 +10,7 @@ namespace Microsoft.Terminal.Control
         ContentProcess();
 
         void Initialize(IControlSettings settings,
-                        Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+                        Microsoft.Terminal.TerminalConnection.ConnectionInformation connectionInfo);
 
         ControlInteractivity GetInteractivity();
 

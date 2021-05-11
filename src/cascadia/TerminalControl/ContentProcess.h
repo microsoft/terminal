@@ -12,7 +12,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     {
         ContentProcess();
-        void Initialize(Control::IControlSettings settings, TerminalConnection::ITerminalConnection connection);
+        void Initialize(Control::IControlSettings settings,
+                        TerminalConnection::ConnectionInformation connectionInfo);
         Control::ControlInteractivity GetInteractivity();
 
         uint64_t RequestSwapChainHandle(const uint64_t pid);
