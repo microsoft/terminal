@@ -23,6 +23,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         static bool IsAzureConnectionAvailable() noexcept;
         AzureConnection(const uint32_t rows, const uint32_t cols);
 
+        AzureConnection() = default;
+        void Initialize(TerminalConnection::IConnectionSettings settings);
+
         void Start();
         void WriteInput(hstring const& data);
         void Resize(uint32_t rows, uint32_t columns);

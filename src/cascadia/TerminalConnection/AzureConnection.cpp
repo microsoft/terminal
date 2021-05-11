@@ -78,6 +78,18 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
     }
 
+    void AzureConnection::Initialize(TerminalConnection::IConnectionSettings settings)
+    {
+        if (settings)
+        {
+            if (auto azureSettings{ settings.try_as<TerminalConnection::AzureConnectionSettings>() })
+            {
+                _initialRows = azureSettings.Rows();
+                _initialCols = azureSettings.Columns();
+            }
+        }
+    }
+
     // Method description:
     // - helper that will write an unterminated string (generally, from a resource) to the output stream.
     // Arguments:

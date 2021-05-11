@@ -1,0 +1,17 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.TerminalConnection
+{
+    // MIDL 3 really doesn't like empty interfaces. If you omit the version,
+    // then you'll get an error like:
+    //
+    //   [msg]All Windows Runtime types must define a version attribute
+    //
+    // And you need the uuid specified manually, so that midl 3 can
+    // differentiate this interface vs any other empty interfaces.
+    [version(1), uuid("18BDC0AE-0215-4345-8385-9C1C928D0B1A")]
+    interface IConnectionSettings
+    {
+    };
+}
