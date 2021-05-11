@@ -45,13 +45,13 @@ DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::CopyFormat);
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    Control::TermControl TermControl::FromConnectionInfo(IControlSettings settings,
-                                                         TerminalConnection::ConnectionInformation connectInfo)
-    {
-        return winrt::make<implementation::TermControl>(winrt::guid{},
-                                                        settings,
-                                                        TerminalConnection::ConnectionInformation::CreateConnection(connectInfo));
-    }
+    // Control::TermControl TermControl::FromConnectionInfo(IControlSettings settings,
+    //                                                      TerminalConnection::ConnectionInformation connectInfo)
+    // {
+    //     return winrt::make<implementation::TermControl>(winrt::guid{},
+    //                                                     settings,
+    //                                                     TerminalConnection::ConnectionInformation::CreateConnection(connectInfo));
+    // }
 
     TermControl::TermControl(IControlSettings settings,
                              TerminalConnection::ITerminalConnection connection) :
@@ -542,10 +542,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_initializedTerminal && !_closing) // only set up the automation peer if we're ready to go live
         {
-            const auto& interactivityAutoPeer = _interactivity.OnCreateAutomationPeer();
-            auto autoPeer = winrt::make_self<implementation::TermControlAutomationPeer>(this, interactivityAutoPeer);
-            _automationPeer = winrt::weak_ref<Control::TermControlAutomationPeer>(*autoPeer);
-            return *autoPeer;
+            if (const auto& interactivityAutoPeer{ _interactivity.OnCreateAutomationPeer() })
+            {
+                auto autoPeer = winrt::make_self<implementation::TermControlAutomationPeer>(this, interactivityAutoPeer);
+                _automationPeer = winrt::weak_ref<Control::TermControlAutomationPeer>(*autoPeer);
+                return *autoPeer;
+            }
         }
         return nullptr;
     }

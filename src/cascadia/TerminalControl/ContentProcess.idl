@@ -1,0 +1,19 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ControlInteractivity.idl";
+
+namespace Microsoft.Terminal.Control
+{
+    runtimeclass ContentProcess {
+
+        ContentProcess();
+
+        void Initialize(IControlSettings settings,
+                        Microsoft.Terminal.TerminalConnection.ConnectionInformation connectionInfo);
+
+        ControlInteractivity GetInteractivity();
+
+        UInt64 RequestSwapChainHandle(UInt64 pid);
+    };
+}
