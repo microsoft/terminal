@@ -199,6 +199,7 @@ byref
 bytearray
 bytebuffer
 cac
+cacafire
 callee
 cang
 capslock

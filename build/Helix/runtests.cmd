@@ -46,7 +46,6 @@ move te.wtl te_original.wtl
 
 copy /y te_original.wtl %HELIX_WORKITEM_UPLOAD_ROOT%
 copy /y WexLogFileOutput\*.jpg %HELIX_WORKITEM_UPLOAD_ROOT%
-:: for /f "tokens=* delims=" %%a in ('dir /b *.pgc') do ren "%%a" "%testnameprefix%.%%~na.pgc"
 copy /y *.pgc %HELIX_WORKITEM_UPLOAD_ROOT%
 
 set FailedTestQuery=

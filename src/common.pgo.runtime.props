@@ -7,7 +7,9 @@
         <PlatformShortName Condition="'$(PlatformShortName)'=='AnyCPU' and '$(Prefer32Bit)'==''">x64</PlatformShortName>
         <PlatformShortName Condition="'$(PlatformShortName)'=='AnyCPU' and '$(Prefer32Bit)'=='true'">x64</PlatformShortName>
         <PlatformShortName Condition="'$(PlatformShortName)'=='AnyCPU' and '$(Prefer32Bit)'=='false'">x64</PlatformShortName>
-        <PGOFilesDir>$(VCToolsInstallDir)bin\Host$(PlatformShortName)\$(PlatformShortName)</PGOFilesDir>
+        <HostFolderName Condition="'$(VCToolArchitecture)'=='Native32Bit'">Hostx86</HostFolderName>
+        <HostFolderName Condition="'$(VCToolArchitecture)'=='Native64Bit'">Hostx64</HostFolderName>
+        <PGOFilesDir>$(VCToolsInstallDir)bin\$(HostFolderName)\$(PlatformShortName)</PGOFilesDir>
         <PGOFilesDir Condition="'$(PlatformShortName)'=='ARM' or '$(PlatformShortName)'=='ARM64'">$(VCToolsInstallDir)bin\$(PlatformShortName)</PGOFilesDir>
     </PropertyGroup>
 
