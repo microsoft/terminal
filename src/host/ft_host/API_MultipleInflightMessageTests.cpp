@@ -11,7 +11,7 @@ class MultipleInflightMessageTests
     TEST_METHOD(WriteWhileReadingInputCrash)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method") // Don't pollute other tests by isolating our codepage change to this test.
+            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method") // Don't pollute other tests by isolating our potential crash and buffer resizing to this test.
         END_TEST_METHOD_PROPERTIES()
 
         using namespace std::string_view_literals;
