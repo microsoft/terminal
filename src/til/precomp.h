@@ -28,7 +28,6 @@ Abstract:
 #define BLOCK_TIL
 // This includes support libraries from the CRT, STL, WIL, and GSL
 #include "LibraryIncludes.h"
-#include <charconv>
 
 #include "WexTestClass.h"
 

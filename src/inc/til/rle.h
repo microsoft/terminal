@@ -22,9 +22,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             using size_type = S;
             using difference_type = typename ParentIt::difference_type;
 
-            explicit rle_iterator(ParentIt&& it) :
-                _it(std::forward<ParentIt>(it)),
-                _usage(1)
+            // TODO: Enable checked iterators for _ITERATOR_DEBUG_LEVEL != 0.
+            explicit rle_iterator(ParentIt&& it) noexcept :
+                _it{ std::forward<ParentIt>(it) },
+                _usage{ 1 }
             {
             }
 
@@ -38,35 +39,34 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 return &operator*();
             }
 
-            rle_iterator& operator++()
+            rle_iterator& operator++() noexcept
             {
                 operator+=(1);
                 return *this;
             }
 
-            rle_iterator operator++(int)
+            rle_iterator operator++(int) noexcept
             {
                 rle_iterator tmp = *this;
                 operator+=(1);
                 return tmp;
             }
 
-            rle_iterator& operator--()
+            rle_iterator& operator--() noexcept
             {
                 operator-=(1);
                 return *this;
             }
 
-            rle_iterator operator--(int)
+            rle_iterator operator--(int) noexcept
             {
                 rle_iterator tmp = *this;
                 operator-=(1);
                 return tmp;
             }
 
-            rle_iterator& operator+=(difference_type move)
+            rle_iterator& operator+=(difference_type move) noexcept
             {
-                // TODO: Optional iterator debug
                 if (move >= 0) // positive direction
                 {
                     // While we still need to move...
@@ -141,28 +141,25 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 return *this;
             }
 
-            rle_iterator& operator-=(const difference_type offset)
+            rle_iterator& operator-=(const difference_type offset) noexcept
             {
-                return *this += -offset;
                 return *this += -offset;
             }
 
-            [[nodiscard]] rle_iterator operator+(const difference_type offset) const
+            [[nodiscard]] rle_iterator operator+(const difference_type offset) const noexcept
             {
                 auto tmp = *this;
                 return tmp += offset;
             }
 
-            [[nodiscard]] rle_iterator operator-(const difference_type offset) const
+            [[nodiscard]] rle_iterator operator-(const difference_type offset) const noexcept
             {
                 auto tmp = *this;
                 return tmp -= offset;
             }
 
-            [[nodiscard]] difference_type operator-(const rle_iterator& right) const
+            [[nodiscard]] difference_type operator-(const rle_iterator& right) const noexcept
             {
-                // TODO: Optional iterator debug
-
                 // Hold the accumulation.
                 difference_type accumulation = 0;
 
@@ -203,7 +200,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 return accumulation;
             }
 
-            [[nodiscard]] reference operator[](const difference_type offset) const
+            [[nodiscard]] reference operator[](const difference_type offset) const noexcept
             {
                 return *operator+(offset);
             }
@@ -384,7 +381,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 
-        void swap(basic_rle& other)
+        void swap(basic_rle& other) noexcept
         {
             _runs.swap(other._runs);
             std::swap(_total_length, other._total_length);
@@ -425,7 +422,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return it->value;
         }
 
-        [[nodiscard]] basic_rle slice(size_type start_index, size_type end_index) const
+        [[nodiscard]] basic_rle slice(size_type start_index, size_type end_index) const noexcept
         {
             if (end_index > _total_length)
             {
@@ -460,7 +457,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             _check_indices(start_index, end_index);
 
-            rle_type new_run{ value, end_index - start_index };
+            const rle_type new_run{ value, end_index - start_index };
             _replace(start_index, end_index, { &new_run, 1 });
         }
 
@@ -479,7 +476,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         // Replaces every value seen in the run with a new one
         // Does not change the length or position of the values.
-        void replace_values(const value_type& old_value, const value_type& new_value) noexcept(std::is_nothrow_copy_assignable<value_type>::value)
+        void replace_values(const value_type& old_value, const value_type& new_value)
         {
             for (auto& run : _runs)
             {
@@ -506,7 +503,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 rle_scanner scanner(_runs.begin(), _runs.end());
                 auto [run, pos] = scanner.scan(new_size - 1);
 
-                run->length = pos + 1;
+                run->length = ++pos;
 
                 _runs.erase(++run, _runs.cend());
             }
@@ -709,7 +706,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                 if (start_index != 0 && end_index != _total_length)
                 {
-                    auto previous = begin_pos ? begin : begin - 1;
+                    const auto previous = begin_pos ? begin : begin - 1;
                     if (previous->value == end->value)
                     {
                         end->length -= end_pos - (begin_pos ? begin_pos : previous->length);
@@ -762,7 +759,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             size_type end_additional_length = 0;
             if (start_index != 0)
             {
-                auto previous = begin_pos ? begin : begin - 1;
+                const auto previous = begin_pos ? begin : begin - 1;
                 if (previous->value == new_runs.front().value)
                 {
                     begin_additional_length = begin_pos ? begin_pos : previous->length;
@@ -833,15 +830,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             const auto new_runs_begin = new_runs.begin();
             const auto new_runs_end = new_runs.end();
-            auto new_runs_it = new_runs_begin;
 
             // First copy over as much data as can fit into the existing [start_index, end_index) range.
             // Afterwards two situations can occur:
             //
             // * All data was copied and we have  we have more space left
-            const auto direct_copy_end = new_runs_it + std::min(available_space, new_runs.size());
-            begin = std::copy(new_runs_it, direct_copy_end, begin);
-            new_runs_it = direct_copy_end;
+            const auto direct_copy_end = new_runs_begin + std::min(available_space, new_runs.size());
+            begin = std::copy(new_runs_begin, direct_copy_end, begin);
 
             if (available_space >= required_space)
             {
@@ -858,12 +853,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 if (mid_insertion_trailer)
                 {
                     _runs.insert(begin, required_space - available_space, {});
-                    begin = std::copy(new_runs_it, new_runs_end, _runs.begin() + begin_index);
+                    begin = std::copy(direct_copy_end, new_runs_end, _runs.begin() + begin_index);
                     *begin = *std::move(mid_insertion_trailer);
                 }
                 else
                 {
-                    _runs.insert(begin, new_runs_it, new_runs_end);
+                    _runs.insert(begin, direct_copy_end, new_runs_end);
                 }
             }
 
@@ -883,9 +878,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             _total_length -= end_index - start_index;
 
-            for (auto it = new_runs_begin; it != new_runs_end; ++it)
+            for (const auto& run : new_runs)
             {
-                _total_length += it->length;
+                _total_length += run.length;
             }
         }
 

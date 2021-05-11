@@ -45,7 +45,7 @@ public:
     std::vector<uint16_t> GetHyperlinks();
 
     bool SetAttrToEnd(const UINT iStart, const TextAttribute attr);
-    void ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAttribute& replaceWith) noexcept;
+    void ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAttribute& replaceWith);
 
     void Resize(const size_t newWidth);
 

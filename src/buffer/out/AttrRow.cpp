@@ -88,7 +88,7 @@ bool ATTR_ROW::SetAttrToEnd(const UINT iStart, const TextAttribute attr)
 // - replaceWith - the new value for the matching runs' attributes.
 // Return Value:
 // - <none>
-void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAttribute& replaceWith) noexcept
+void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAttribute& replaceWith)
 {
     _data.replace_values(toBeReplacedAttr, replaceWith);
 }
