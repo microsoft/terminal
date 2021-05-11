@@ -56,6 +56,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
 
+        // These settings are not defined in AppearanceConfig, so we grab them
+        // from the source profile itself. The reason we still want them in the
+        // AppearanceViewModel is so we can continue to have the 'Text' grouping
+        // we currently have in xaml, since that grouping has some settings that
+        // are defined in AppearanceConfig and some that are not.
         OBSERVABLE_PROJECTED_SETTING(_appearance.SourceProfile(), FontFace);
         OBSERVABLE_PROJECTED_SETTING(_appearance.SourceProfile(), FontSize);
         OBSERVABLE_PROJECTED_SETTING(_appearance.SourceProfile(), FontWeight);
