@@ -89,16 +89,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         _core = _interactivity.GetCore();
 
-        // Use a manual revoker on the output event, so we can immediately stop
-        // worrying about it on destruction.
-        _coreOutputEventToken = _core.ReceivedOutput({ this, &TermControl::_coreReceivedOutput });
+        // // Use a manual revoker on the output event, so we can immediately stop
+        // // worrying about it on destruction.
+        // _coreOutputEventToken = _core.ReceivedOutput({ this, &TermControl::_coreReceivedOutput });
 
-        // These events might all be triggered by the connection, but that
-        // should be drained and closed before we complete destruction. So these
-        // are safe.
-        _core.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
-        _core.WarningBell({ this, &TermControl::_coreWarningBell });
-        _core.CursorPositionChanged({ this, &TermControl::_CursorPositionChanged });
+        // // These events might all be triggered by the connection, but that
+        // // should be drained and closed before we complete destruction. So these
+        // // are safe.
+        // _core.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
+        // _core.WarningBell({ this, &TermControl::_coreWarningBell });
+        // _core.CursorPositionChanged({ this, &TermControl::_CursorPositionChanged });
 
         // This event is specifically triggered by the renderer thread, a BG thread. Use a weak ref here.
         _core.RendererEnteredErrorState({ get_weak(), &TermControl::_RendererEnteredErrorState });
