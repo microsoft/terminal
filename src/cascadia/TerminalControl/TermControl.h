@@ -130,9 +130,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
 
-        std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
+        // NOTE: All render engines must be ordered before _renderer.
+        //
+        // As _renderer has a dependency on the render engine (through a raw pointer)
+        // we must ensure the _renderer is deallocated first.
+        // (C++ class members are destroyed in reverse order.)
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
         std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
+        std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
 
         IControlSettings _settings;
         bool _focused;
