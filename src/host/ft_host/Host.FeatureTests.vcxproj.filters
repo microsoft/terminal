@@ -84,6 +84,9 @@
     <ClCompile Include="API_FillOutputTests.cpp">
       <Filter>Source Files\API</Filter>
     </ClCompile>
+    <ClCompile Include="API_MultipleInflightMessageTests.cpp">
+      <Filter>Source Files\API</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.hpp">
