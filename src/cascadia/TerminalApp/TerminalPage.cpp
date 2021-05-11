@@ -866,7 +866,9 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        newTabImpl->TabRenamerDeactivated([weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+        // The tab might want us to toss focus into the control, especially when
+        // transient UIs (like the context menu, or the renamer) are dismissed.
+        newTabImpl->RequestFocusActiveControl([weakThis{ get_weak() }]() {
             if (const auto page{ weakThis.get() })
             {
                 if (!page->_newTabButton.Flyout().IsOpen())
