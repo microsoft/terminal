@@ -151,8 +151,18 @@ namespace winrt::SampleApp::implementation
         // otherwise, when attaching to an existing one, just pass null, because we don't need the connection info.
         if (!attached)
         {
-            winrt::hstring myClass{ L"Microsoft.Terminal.TerminalConnection.EchoConnection" };
-            connectInfo = TerminalConnection::ConnectionInformation(myClass, nullptr);
+            // winrt::hstring myClass{ L"Microsoft.Terminal.TerminalConnection.EchoConnection" };
+            // connectInfo = TerminalConnection::ConnectionInformation(myClass, nullptr);
+
+            TerminalConnection::ConptyConnectionSettings connectionSettings{ L"cmd.exe",
+                                                                             winrt::hstring{},
+                                                                             L"",
+                                                                             nullptr,
+                                                                             32,
+                                                                             80,
+                                                                             winrt::guid() };
+            winrt::hstring myClass{ L"Microsoft.Terminal.TerminalConnection.ConptyConnection" };
+            connectInfo = TerminalConnection::ConnectionInformation(myClass, connectionSettings);
         }
         else
         {
