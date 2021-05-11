@@ -45,6 +45,9 @@ class MultipleInflightMessageTests
         bool readerThreadLaunched{ false };
         std::condition_variable readerThreadLaunchCV;
         std::mutex readerThreadLaunchMutex;
+
+        std::unique_lock lock{ readerThreadLaunchMutex };
+
         std::thread readerThread{ [&]() {
             WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
             {
@@ -55,11 +58,9 @@ class MultipleInflightMessageTests
             VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleW(inputHandle, buffer.data(), static_cast<DWORD>(buffer.size()), &read, nullptr));
         } };
 
-        {
-            std::unique_lock lock{ readerThreadLaunchMutex };
-            readerThreadLaunchCV.wait(lock, [&]() { return readerThreadLaunched; });
-            // should not progress until readerThreadLaunched is set.
-        }
+        // CV wait should allow readerThread to progress
+        readerThreadLaunchCV.wait(lock, [&]() { return readerThreadLaunched; });
+        // should not progress until readerThreadLaunched is set.
         Sleep(50); // Yeah, it's not science.
 
         std::thread writerThread{ [&]() {
