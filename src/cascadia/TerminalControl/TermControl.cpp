@@ -45,6 +45,14 @@ DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::CopyFormat);
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    Control::TermControl TermControl::FromConnectionInfo(IControlSettings settings,
+                                                         TerminalConnection::ConnectionInformation connectInfo)
+    {
+        return winrt::make<implementation::TermControl>(winrt::guid{},
+                                                        settings,
+                                                        TerminalConnection::ConnectionInformation::CreateConnection(connectInfo));
+    }
+
     TermControl::TermControl(IControlSettings settings,
                              TerminalConnection::ITerminalConnection connection) :
         TermControl(winrt::guid{}, settings, connection) {}
@@ -670,7 +678,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.RendererWarning({ get_weak(), &TermControl::_RendererWarning });
 
         const bool inProc = _contentProc == nullptr;
-       
+
         const auto coreInitialized = _core.Initialize(panelWidth,
                                                       panelHeight,
                                                       panelScaleX);
@@ -679,7 +687,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return false;
         }
         _interactivity.Initialize();
-        
+
         // TODO! very good chance we leak this handle
         const HANDLE chainHandle = reinterpret_cast<HANDLE>(_contentProc ?
                                                                 _contentProc.RequestSwapChainHandle(GetCurrentProcessId()) :

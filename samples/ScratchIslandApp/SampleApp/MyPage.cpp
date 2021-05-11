@@ -42,16 +42,20 @@ namespace winrt::SampleApp::implementation
         // winrt::Windows::Foundation::IInspectable ii{ i };
         // TerminalConnection::ITerminalConnection conn3 = ;
 
-        winrt::hstring myClass{ L"Microsoft.Terminal.TerminalConnection.EchoConnection" };
-        // winrt::hstring myClass{ L"Microsoft.Terminal.TerminalConnection.ConptyConnection" };
-        winrt::IInspectable coolInspectable{};
-        auto name = static_cast<HSTRING>(winrt::get_abi(myClass));
-        auto foo = winrt::put_abi(coolInspectable);
-        ::IInspectable** bar = reinterpret_cast<::IInspectable**>(foo);
-        RoActivateInstance(name, bar);
-        auto conn2 = coolInspectable.try_as<TerminalConnection::ITerminalConnection>();
+        // winrt::hstring myClass{ L"Microsoft.Terminal.TerminalConnection.EchoConnection" };
+        // // winrt::hstring myClass{ L"Microsoft.Terminal.TerminalConnection.ConptyConnection" };
+        // winrt::IInspectable coolInspectable{};
+        // auto name = static_cast<HSTRING>(winrt::get_abi(myClass));
+        // auto foo = winrt::put_abi(coolInspectable);
+        // ::IInspectable** bar = reinterpret_cast<::IInspectable**>(foo);
+        // RoActivateInstance(name, bar);
+        // auto conn2 = coolInspectable.try_as<TerminalConnection::ITerminalConnection>();
 
-        Control::TermControl control{ *settings, conn2 };
+        // Control::TermControl control{ *settings, conn2 };
+
+        winrt::hstring myClass{ L"Microsoft.Terminal.TerminalConnection.EchoConnection" };
+        TerminalConnection::ConnectionInformation connectInfo{ myClass, nullptr };
+        Control::TermControl control{ Control::TermControl::FromConnectionInfo(*settings, connectInfo) };
 
         InProcContent().Children().Append(control);
 
@@ -132,22 +136,42 @@ namespace winrt::SampleApp::implementation
 
         Control::ContentProcess content = create_instance<Control::ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
 
-        TerminalConnection::ITerminalConnection conn{ nullptr };
+        // TerminalConnection::ITerminalConnection conn{ nullptr };
+        TerminalConnection::ConnectionInformation connectInfo{ nullptr };
         Control::IControlSettings settings{ nullptr };
 
         settings = *winrt::make_self<implementation::MySettings>();
 
+        // if (!attached)
+        // {
+        //     conn = TerminalConnection::EchoConnection{};
+        //     // settings = *winrt::make_self<implementation::MySettings>();
+        //     content.Initialize(settings, conn);
+        // }
+
+        // When creating a terminal for the first time, pass it a connection info
+        // otherwise, when attaching to an existing one, just pass null, because we don't need the connection info.
         if (!attached)
         {
-            conn = TerminalConnection::EchoConnection{};
-            // settings = *winrt::make_self<implementation::MySettings>();
-            content.Initialize(settings, conn);
+            winrt::hstring myClass{ L"Microsoft.Terminal.TerminalConnection.EchoConnection" };
+            connectInfo = TerminalConnection::ConnectionInformation(myClass, nullptr);
+        }
+        else
+        {
         }
 
         // Switch back to the UI thread.
         co_await ui_thread;
-
-        Control::TermControl control{ contentGuid, settings, conn };
+        Control::TermControl control{ nullptr };
+        if (!attached)
+        {
+            control = Control::TermControl::FromConnectionInfo(settings, connectInfo);
+        }
+        else
+        {
+            // Control::TermControl control{ contentGuid, settings, conn };
+            control = Control::TermControl(contentGuid, settings, nullptr);
+        }
 
         OutOfProcContent().Children().Append(control);
 

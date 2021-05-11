@@ -19,8 +19,14 @@ namespace Microsoft.Terminal.Control
                     IControlSettings settings,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
+        static TermControl FromConnectionInfo(IControlSettings settings,
+                                              Microsoft.Terminal.TerminalConnection.ConnectionInformation connectInfo);
+
         TermControl(IControlSettings settings,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+
+        // TermControl(IControlSettings settings,
+        //             Microsoft.Terminal.TerminalConnection.ConnectionInformation connectInfo);
 
         static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings, UInt32 dpi);
 
