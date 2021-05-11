@@ -383,13 +383,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     IInspectable Appearances::CurrentFontFace() const
     {
         // look for the current font in our shown list of fonts
-        const auto& profileVM{ Appearance() };
-        const auto profileFontFace{ profileVM.FontFace() };
-        const auto& currentFontList{ profileVM.ShowAllFonts() ? profileVM.CompleteFontList() : profileVM.MonospaceFontList() };
+        const auto& appearanceVM{ Appearance() };
+        const auto appearanceFontFace{ appearanceVM.FontFace() };
+        const auto& currentFontList{ appearanceVM.ShowAllFonts() ? appearanceVM.CompleteFontList() : appearanceVM.MonospaceFontList() };
         IInspectable fallbackFont;
         for (const auto& font : currentFontList)
         {
-            if (font.LocalizedName() == profileFontFace)
+            if (font.LocalizedName() == appearanceFontFace)
             {
                 return box_value(font);
             }
@@ -405,7 +405,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Appearances::FontFace_SelectionChanged(IInspectable const& /*sender*/, SelectionChangedEventArgs const& e)
     {
-        // NOTE: We need to hook up a selection changed event handler here instead of directly binding to the profile view model.
+        // NOTE: We need to hook up a selection changed event handler here instead of directly binding to the appearance view model.
         //       A two way binding to the view model causes an infinite loop because both combo boxes keep fighting over which one's right.
         const auto selectedItem{ e.AddedItems().GetAt(0) };
         const auto newFontFace{ unbox_value<Editor::Font>(selectedItem) };
@@ -490,7 +490,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (const auto& tag{ button.Tag().try_as<int32_t>() })
             {
-                // Update the Profile's value and the control
+                // Update the Appearance's value and the control
                 Appearance().BackgroundImageAlignment(static_cast<ConvergedAlignment>(*tag));
                 _UpdateBIAlignmentControl(*tag);
             }
@@ -521,7 +521,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else
         {
-            // This Profile points to a color scheme that was renamed or deleted.
+            // This Appearance points to a color scheme that was renamed or deleted.
             // Fallback to Campbell.
             return Appearance().Schemes().TryLookup(L"Campbell");
         }
@@ -554,7 +554,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const Windows::UI::Text::FontWeight setting{ weight };
                 Appearance().FontWeight(setting);
 
-                // Profile does not have observable properties
+                // Appearance does not have observable properties
                 // So the TwoWay binding doesn't update on the State --> Slider direction
                 FontWeightSlider().Value(weight);
             }
@@ -565,7 +565,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool Appearances::IsCustomFontWeight()
     {
         // Use SelectedItem instead of CurrentFontWeight.
-        // CurrentFontWeight converts the Profile's value to the appropriate enum entry,
+        // CurrentFontWeight converts the Appearance's value to the appropriate enum entry,
         // whereas SelectedItem identifies which one was selected by the user.
         return FontWeightComboBox().SelectedItem() == _CustomFontWeight;
     }
