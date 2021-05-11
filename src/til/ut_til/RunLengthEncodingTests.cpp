@@ -4,6 +4,7 @@
 #include "precomp.h"
 
 #include "til/rle.h"
+#include "consoletaeftemplates.hpp"
 
 using namespace std::literals;
 using namespace WEX::Common;
@@ -12,23 +13,6 @@ using namespace WEX::TestExecution;
 
 namespace WEX::TestExecution
 {
-    template<>
-    class VerifyOutputTraits<std::string_view>
-    {
-    public:
-        static WEX::Common::NoThrowString ToString(const std::string_view& view)
-        {
-            if (view.empty())
-            {
-                return L"<empty>";
-            }
-
-            WEX::Common::NoThrowString s;
-            s.AppendFormat(L"%.*hs", gsl::narrow_cast<unsigned int>(view.size()), view.data());
-            return s;
-        }
-    };
-
     template<typename T, typename S, typename Container>
     class VerifyCompareTraits<::std::string_view, ::til::basic_rle<T, S, Container>>
     {
