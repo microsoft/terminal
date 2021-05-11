@@ -189,3 +189,8 @@ bool WriteData::Notify(const WaitTerminationReason TerminationReason,
     *pReplyStatus = Status;
     return true;
 }
+
+void WriteData::MigrateUserBuffersOnTransitionToBackgroundWait(const void* /*oldBuffer*/, void* /*newBuffer*/)
+{
+    // WriteData does not hold API message buffers across a wait
+}
