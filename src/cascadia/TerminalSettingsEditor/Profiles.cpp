@@ -512,9 +512,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // Navigate to the pivot in the provided navigation state
         ProfilesPivot().SelectedIndex(static_cast<int>(_State.LastActivePivot()));
-
-        DefaultAppearanceXaml().Appearance(_State.Profile().DefaultAppearance());
-        DefaultAppearanceXaml().OnNavigatedTo();
     }
 
     void Profiles::OnNavigatedFrom(const NavigationEventArgs& /*e*/)

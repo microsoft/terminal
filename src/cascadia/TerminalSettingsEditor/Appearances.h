@@ -46,8 +46,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         Appearances();
 
-        void OnNavigatedTo();
-
         // CursorShape visibility logic
         bool IsVintageCursor() const;
 
@@ -67,9 +65,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         void _UpdateBIAlignmentControl(const int32_t val);
-        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
-
         std::array<Windows::UI::Xaml::Controls::Primitives::ToggleButton, 9> _BIAlignmentButtons;
+
+        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
+        static void _ViewModelChanged(Windows::UI::Xaml::DependencyObject const& d, Windows::UI::Xaml::DependencyPropertyChangedEventArgs const& e);
+        void _UpdateWithNewViewModel();
     };
 };
 

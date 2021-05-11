@@ -157,7 +157,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     L"Appearance",
                     xaml_typename<Editor::AppearanceViewModel>(),
                     xaml_typename<Editor::Appearances>(),
-                    PropertyMetadata{ nullptr });
+                    PropertyMetadata{ nullptr, PropertyChangedCallback{ &Appearances::_ViewModelChanged } });
         }
 
         // manually keep track of all the Background Image Alignment buttons
@@ -182,7 +182,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Automation::AutomationProperties::SetFullDescription(UseDesktopImageCheckBox(), unbox_value<hstring>(backgroundImgCheckboxTooltip));
     }
 
-    void Appearances::OnNavigatedTo()
+
+    void Appearances::_ViewModelChanged(DependencyObject const& d, DependencyPropertyChangedEventArgs const& /*args*/)
+    {
+        const auto& obj{ d.try_as<Editor::Appearances>() };
+        get_self<Appearances>(obj)->_UpdateWithNewViewModel();
+    }
+
+    void Appearances::_UpdateWithNewViewModel()
     {
         if (Appearance())
         {

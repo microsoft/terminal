@@ -242,23 +242,6 @@
                             <TextBlock x:Uid="Profile_TextHeader"
                                        Style="{StaticResource SubtitleTextBlockStyle}" />
 
-                            <!--  Color Scheme  -->
-                            <local:SettingContainer x:Uid="Profile_ColorScheme"
-                                                    Margin="0"
-                                                    ClearSettingValue="{x:Bind State.Profile.ClearColorSchemeName}"
-                                                    HasSettingValue="{x:Bind State.Profile.HasColorSchemeName, Mode=OneWay}"
-                                                    SettingOverrideSource="{x:Bind State.Profile.ColorSchemeNameOverrideSource, Mode=OneWay}">
-                                <ComboBox ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
-                                          SelectedItem="{x:Bind CurrentColorScheme, Mode=TwoWay}"
-                                          Style="{StaticResource ComboBoxSettingStyle}">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate x:DataType="model:ColorScheme">
-                                            <TextBlock Text="{x:Bind Name, Mode=OneWay}" />
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
-                            </local:SettingContainer>
-
                             <!--  Font Face  -->
                             <local:SettingContainer x:Uid="Profile_FontFace"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearFontFace}"

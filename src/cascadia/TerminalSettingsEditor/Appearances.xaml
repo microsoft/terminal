@@ -46,7 +46,6 @@
     </UserControl.Resources>
 
     <StackPanel Style="{StaticResource PivotStackStyle}">
-
         <StackPanel Style="{StaticResource PivotStackStyle}">
             <!--  Retro Terminal Effect  -->
             <local:SettingContainer x:Uid="Profile_RetroTerminalEffect"

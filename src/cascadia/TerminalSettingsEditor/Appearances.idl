@@ -36,8 +36,6 @@ namespace Microsoft.Terminal.Settings.Editor
         AppearanceViewModel Appearance;
         static Windows.UI.Xaml.DependencyProperty AppearanceProperty { get; };
 
-        void OnNavigatedTo();
-
         IInspectable CurrentCursorShape;
         Boolean IsVintageCursor { get; };
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CursorShapeList { get; };
