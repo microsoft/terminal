@@ -40,7 +40,6 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.TextAntialiasingMode, AntialiasingMode);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ForceFullRepaintRendering);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SoftwareRendering);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, ColorSchemeName);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Foreground);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Background);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, SelectionBackground);
@@ -65,7 +64,6 @@ namespace Microsoft.Terminal.Settings.Editor
 
     runtimeclass ProfilePageNavigationState
     {
-        Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes;
         IHostedInWindow WindowRoot; // necessary to send the right HWND into the file picker dialogs.
 
         ProfileViewModel Profile;
@@ -90,8 +88,5 @@ namespace Microsoft.Terminal.Settings.Editor
 
         IInspectable CurrentScrollState;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ScrollStateList { get; };
-
-        Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };
     }
 }

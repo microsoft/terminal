@@ -133,8 +133,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _DeleteProfileHandlers(*this, *deleteProfileArgs);
     }
 
-    Profiles::Profiles() :
-        _ColorSchemeList{ single_threaded_observable_vector<ColorScheme>() }
+    Profiles::Profiles()
     {
         InitializeComponent();
 
@@ -152,12 +151,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Profiles::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::ProfilePageNavigationState>();
-
-        const auto& colorSchemeMap{ _State.Schemes() };
-        for (const auto& pair : colorSchemeMap)
-        {
-            _ColorSchemeList.Append(pair.Value());
-        }
 
         // Set the text disclaimer for the text box
         hstring disclaimer{};
@@ -201,10 +194,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentScrollState" });
             }
-            else if (settingName == L"ColorSchemeName")
-            {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
-            }
         });
 
         // Navigate to the pivot in the provided navigation state
@@ -214,26 +203,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Profiles::OnNavigatedFrom(const NavigationEventArgs& /*e*/)
     {
         _ViewModelChangedRevoker.revoke();
-    }
-
-    ColorScheme Profiles::CurrentColorScheme()
-    {
-        const auto schemeName{ _State.Profile().ColorSchemeName() };
-        if (const auto scheme{ _State.Schemes().TryLookup(schemeName) })
-        {
-            return scheme;
-        }
-        else
-        {
-            // This Profile points to a color scheme that was renamed or deleted.
-            // Fallback to Campbell.
-            return _State.Schemes().TryLookup(L"Campbell");
-        }
-    }
-
-    void Profiles::CurrentColorScheme(const ColorScheme& val)
-    {
-        _State.Profile().ColorSchemeName(val.Name());
     }
 
     void Profiles::DeleteConfirmation_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)

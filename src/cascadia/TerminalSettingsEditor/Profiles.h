@@ -47,7 +47,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, AntialiasingMode);
         OBSERVABLE_PROJECTED_SETTING(_profile, ForceFullRepaintRendering);
         OBSERVABLE_PROJECTED_SETTING(_profile, SoftwareRendering);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), ColorSchemeName);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Foreground);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Background);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), SelectionBackground);
@@ -85,7 +84,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                    const Editor::ProfilePageNavigationState& lastState,
                                    const IHostedInWindow& windowRoot) :
             _Profile{ viewModel },
-            _Schemes{ schemes },
             _WindowRoot{ windowRoot }
         {
             // If there was a previous nav state, and it was for the same
@@ -105,16 +103,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void DeleteProfile();
 
-        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes() { return _Schemes; }
-        void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) { _Schemes = val; }
-
         TYPED_EVENT(DeleteProfile, Editor::ProfilePageNavigationState, Editor::DeleteProfileEventArgs);
         WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
         WINRT_PROPERTY(Editor::ProfilesPivots, LastActivePivot, Editor::ProfilesPivots::General);
         WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
-
-    private:
-        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
     };
 
     struct Profiles : ProfilesT<Profiles>
@@ -125,9 +117,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void OnNavigatedTo(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
         void OnNavigatedFrom(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
-        Model::ColorScheme CurrentColorScheme();
-        void CurrentColorScheme(const Model::ColorScheme& val);
-
         fire_and_forget Commandline_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         fire_and_forget StartingDirectory_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         fire_and_forget Icon_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
@@ -137,7 +126,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
         WINRT_PROPERTY(Editor::ProfilePageNavigationState, State, nullptr);
-        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);
         GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, State().Profile, AntialiasingMode);
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, State().Profile, CloseOnExit);
         GETSET_BINDABLE_ENUM_SETTING(BellStyle, Microsoft::Terminal::Settings::Model::BellStyle, State().Profile, BellStyle);
