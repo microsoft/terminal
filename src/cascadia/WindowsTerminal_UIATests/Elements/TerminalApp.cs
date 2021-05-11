@@ -23,13 +23,10 @@ namespace WindowsTerminal.UIA.Tests.Elements
 
     using System.Runtime.InteropServices;
     using System.Security.Principal;
+    using OpenQA.Selenium;
 
     public class TerminalApp : IDisposable
     {
-        private static readonly string binPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe");
-        private static readonly string linkPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                                                               @"Microsoft\Windows\Start Menu\Programs\System Tools\Command Prompt.lnk");
-
         protected const string AppDriverUrl = "http://127.0.0.1:4723";
 
         private IntPtr job;
@@ -42,7 +39,13 @@ namespace WindowsTerminal.UIA.Tests.Elements
 
         private TestContext context;
 
-        public TerminalApp(TestContext context)
+        public string ContentPath { get; private set; }
+        public string GetFullTestContentPath(string filename)
+        {
+            return Path.GetFullPath(Path.Combine(ContentPath, filename));
+        }
+
+        public TerminalApp(TestContext context, string shellToLaunch = "powershell.exe")
         {
             this.context = context;
 
@@ -53,8 +56,19 @@ namespace WindowsTerminal.UIA.Tests.Elements
             {
                 path = (string)context.Properties["WTPath"];
             }
+            Log.Comment($"Windows Terminal will be launched from '{path}'");
 
-            this.CreateProcess(path);
+            // Same goes for the content directory. Set WTTestContent for where the content files are
+            // for running tests.
+            // On the build machines, the scripts lay it out at the content\ subfolder.
+            ContentPath = @"content";
+            if (context.Properties.Contains("WTTestContent"))
+            {
+                ContentPath = (string)context.Properties["WTTestContent"];
+            }
+            Log.Comment($"Test Content will be loaded from '{Path.GetFullPath(ContentPath)}'");
+
+            this.CreateProcess(path, shellToLaunch);
         }
 
         ~TerminalApp()
@@ -84,7 +98,7 @@ namespace WindowsTerminal.UIA.Tests.Elements
             }
         }
 
-        private void CreateProcess(string path)
+        private void CreateProcess(string path, string shellToLaunch)
         {
             string WindowTitleToFind = "WindowsTerminal.UIA.Tests";
 
@@ -94,7 +108,7 @@ namespace WindowsTerminal.UIA.Tests.Elements
             Log.Comment("Attempting to launch command-line application at '{0}'", path);
 
             string binaryToRunPath = path;
-            string args = $"new-tab --title \"{WindowTitleToFind}\" --suppressApplicationTitle";
+            string args = $"new-tab --title \"{WindowTitleToFind}\" --suppressApplicationTitle \"{shellToLaunch}\"";
 
             string launchArgs = $"{binaryToRunPath} {args}";
 

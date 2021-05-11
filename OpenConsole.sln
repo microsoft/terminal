@@ -396,9 +396,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnitTests_Control", "src\ca
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsTerminal.UIA.Tests", "src\cascadia\WindowsTerminal_UIATests\WindowsTerminal.UIA.Tests.csproj", "{F19DACD5-0C6E-40DC-B6E4-767A3200542C}"
-	ProjectSection(ProjectDependencies) = postProject
-		{CA5CAD1A-224A-4171-B13A-F16E576FDD12} = {CA5CAD1A-224A-4171-B13A-F16E576FDD12}
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

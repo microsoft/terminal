@@ -33,16 +33,146 @@ namespace WindowsTerminal.UIA.Tests
 
         [TestMethod]
         [TestProperty("IsPGO", "true")]
-        public void RunBigText()
+        public void RunBigTextPowershell()
         {
             using (TerminalApp app = new TerminalApp(TestContext))
             {
                 var root = app.GetRoot();
-                // Relative to the test deployment root, this is where the content file is stored.
-                // Override necessary to run locally
-                root.SendKeys(@"cat content\big.txt");
+                var contentPath = app.GetFullTestContentPath("big.txt");
+                root.SendKeys($"cat \"{contentPath}\"");
                 root.SendKeys(Keys.Enter);
                 System.Threading.Thread.Sleep(25000);
+            }
+        }
+
+        [TestMethod]
+        [TestProperty("IsPGO", "true")]
+        public void RunBigTextPowershellBulk ()
+        {
+            using (TerminalApp app = new TerminalApp(TestContext))
+            {
+                var root = app.GetRoot();
+                var contentPath = app.GetFullTestContentPath("big.txt");
+                root.SendKeys($"Get-Content -ReadCount 0 \"{contentPath}\" | Out-Default");
+                root.SendKeys(Keys.Enter);
+                System.Threading.Thread.Sleep(25000);
+            }
+        }
+
+        [TestMethod]
+        [TestProperty("IsPGO", "true")]
+        public void RunBigTextCmd()
+        {
+            using (TerminalApp app = new TerminalApp(TestContext, "cmd.exe"))
+            {
+                var root = app.GetRoot();
+                var contentPath = app.GetFullTestContentPath("big.txt");
+                root.SendKeys($"type \"{contentPath}\"");
+                root.SendKeys(Keys.Enter);
+                System.Threading.Thread.Sleep(25000);
+            }
+        }
+
+        [TestMethod]
+        [TestProperty("IsPGO", "true")]
+        public void RunCmatrixCmd()
+        {
+            using (TerminalApp app = new TerminalApp(TestContext, "cmd.exe"))
+            {
+                var root = app.GetRoot();
+                root.SendKeys("chcp 65001" + Keys.Enter); // This output needs UTF-8
+                var contentPath = app.GetFullTestContentPath("cmatrix.txt");
+                root.SendKeys($"type \"{contentPath}\"");
+                root.SendKeys(Keys.Enter);
+                System.Threading.Thread.Sleep(10000);
+            }
+        }
+
+        [TestMethod]
+        [TestProperty("IsPGO", "true")]
+        public void RunCacafireCmd()
+        {
+            using (TerminalApp app = new TerminalApp(TestContext, "cmd.exe"))
+            {
+                var root = app.GetRoot();
+                root.SendKeys("chcp 65001" + Keys.Enter); // This output needs UTF-8
+                var contentPath = app.GetFullTestContentPath("cacafire.txt");
+                root.SendKeys($"type \"{contentPath}\"");
+                root.SendKeys(Keys.Enter);
+                System.Threading.Thread.Sleep(25000);
+            }
+        }
+
+        [TestMethod]
+        [TestProperty("IsPGO", "true")]
+        public void RunChafaCmd()
+        {
+            using (TerminalApp app = new TerminalApp(TestContext, "cmd.exe"))
+            {
+                var root = app.GetRoot();
+                root.SendKeys("chcp 65001" + Keys.Enter); // This output needs UTF-8
+                var contentPath = app.GetFullTestContentPath("chafa.txt");
+                root.SendKeys($"type \"{contentPath}\"");
+                root.SendKeys(Keys.Enter);
+                System.Threading.Thread.Sleep(10000);
+            }
+        }
+
+        [TestMethod]
+        [TestProperty("IsPGO", "true")]
+        public void RunMakeKillPanes()
+        {
+            using (TerminalApp app = new TerminalApp(TestContext))
+            {
+                var root = app.GetRoot();
+
+                root.SendKeys(Keys.LeftAlt + Keys.LeftShift + "+");
+                Globals.WaitForTimeout();
+                root.SendKeys(Keys.LeftAlt + Keys.LeftShift + "+");
+                Globals.WaitForTimeout();
+                root.SendKeys(Keys.LeftAlt + Keys.LeftShift + "-");
+                Globals.WaitForTimeout();
+                root.SendKeys(Keys.LeftAlt + Keys.LeftShift + "-");
+                Globals.WaitForTimeout();
+                root.SendKeys(Keys.LeftControl + Keys.LeftShift + "W");
+                Globals.WaitForTimeout();
+                root.SendKeys(Keys.LeftControl + Keys.LeftShift + "W");
+                Globals.WaitForTimeout();
+                root.SendKeys(Keys.LeftControl + Keys.LeftShift + "W");
+                Globals.WaitForTimeout();
+                root.SendKeys(Keys.LeftControl + Keys.LeftShift + "W");
+                Globals.WaitForTimeout();
+
+                Globals.WaitForLongTimeout();
+            }
+        }
+
+        [TestMethod]
+        [TestProperty("IsPGO", "true")]
+        public void RunMakeKillTabs()
+        {
+            using (TerminalApp app = new TerminalApp(TestContext))
+            {
+                var root = app.GetRoot();
+
+                root.SendKeys(Keys.LeftAlt + Keys.LeftShift + "T");
+                Globals.WaitForTimeout();
+                root.SendKeys(Keys.LeftAlt + Keys.LeftShift + "T");
+                Globals.WaitForTimeout();
+                root.SendKeys(Keys.LeftAlt + Keys.LeftShift + "T");
+                Globals.WaitForTimeout();
+                root.SendKeys(Keys.LeftAlt + Keys.LeftShift + "T");
+                Globals.WaitForTimeout();
+                root.SendKeys(Keys.LeftControl + Keys.LeftShift + "W");
+                Globals.WaitForTimeout();
+                root.SendKeys(Keys.LeftControl + Keys.LeftShift + "W");
+                Globals.WaitForTimeout();
+                root.SendKeys(Keys.LeftControl + Keys.LeftShift + "W");
+                Globals.WaitForTimeout();
+                root.SendKeys(Keys.LeftControl + Keys.LeftShift + "W");
+                Globals.WaitForTimeout();
+
+                Globals.WaitForLongTimeout();
             }
         }
     }
