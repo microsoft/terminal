@@ -8,6 +8,7 @@ class MultipleInflightMessageTests
     BEGIN_TEST_CLASS(MultipleInflightMessageTests)
     END_TEST_CLASS()
 
+    // This test is intended to make sure that we do not regress after the _handlePostCharInputLoop fix in OpenConsole:c0ab9cb5b
     TEST_METHOD(WriteWhileReadingInputCrash)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
