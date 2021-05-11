@@ -748,13 +748,21 @@ namespace winrt::TerminalApp::implementation
             // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
             std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
             azBridgePath.replace_filename(L"TerminalAzBridge.exe");
-            connection = TerminalConnection::ConptyConnection(azBridgePath.wstring(),
-                                                              L".",
-                                                              L"Azure",
-                                                              nullptr,
-                                                              settings.InitialRows(),
-                                                              settings.InitialCols(),
-                                                              winrt::guid());
+            connection = TerminalConnection::ConptyConnection();
+            connection.Initialize(TerminalConnection::ConptyConnectionSettings{ azBridgePath.wstring(),
+                                                                                L".",
+                                                                                L"Azure",
+                                                                                nullptr,
+                                                                                ::base::saturated_cast<uint32_t>(settings.InitialRows()),
+                                                                                ::base::saturated_cast<uint32_t>(settings.InitialCols()),
+                                                                                winrt::guid() });
+            // connection = TerminalConnection::ConptyConnection(azBridgePath.wstring(),
+            //                                                   L".",
+            //                                                   L"Azure",
+            //                                                   nullptr,
+            //                                                   settings.InitialRows(),
+            //                                                   settings.InitialCols(),
+            //                                                   winrt::guid());
         }
 
         else
@@ -784,14 +792,22 @@ namespace winrt::TerminalApp::implementation
             std::filesystem::path cwd{ cwdString };
             cwd /= settings.StartingDirectory().c_str();
 
-            auto conhostConn = TerminalConnection::ConptyConnection(
-                settings.Commandline(),
-                winrt::hstring{ cwd.c_str() },
-                settings.StartingTitle(),
-                envMap.GetView(),
-                settings.InitialRows(),
-                settings.InitialCols(),
-                winrt::guid());
+            auto conhostConn = TerminalConnection::ConptyConnection();
+            conhostConn.Initialize(TerminalConnection::ConptyConnectionSettings{ settings.Commandline(),
+                                                                                 winrt::hstring{ cwd.c_str() },
+                                                                                 settings.StartingTitle(),
+                                                                                 envMap.GetView(),
+                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialRows()),
+                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialCols()),
+                                                                                 winrt::guid() });
+            // auto conhostConn = TerminalConnection::ConptyConnection(
+            //     settings.Commandline(),
+            //     winrt::hstring{ cwd.c_str() },
+            //     settings.StartingTitle(),
+            //     envMap.GetView(),
+            //     settings.InitialRows(),
+            //     settings.InitialCols(),
+            //     winrt::guid());
 
             sessionGuid = conhostConn.Guid();
             connection = conhostConn;

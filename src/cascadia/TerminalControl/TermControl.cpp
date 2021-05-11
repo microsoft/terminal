@@ -45,6 +45,14 @@ DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::CopyFormat);
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    Control::TermControl TermControl::FromConnectionInfo(IControlSettings settings,
+                                                         TerminalConnection::ConnectionInformation connectInfo)
+    {
+        return winrt::make<implementation::TermControl>(winrt::guid{},
+                                                        settings,
+                                                        TerminalConnection::ConnectionInformation::CreateConnection(connectInfo));
+    }
+
     TermControl::TermControl(IControlSettings settings,
                              TerminalConnection::ITerminalConnection connection) :
         _initializedTerminal{ false },
@@ -649,6 +657,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // the first paint will be ignored!
         _core.RendererWarning({ get_weak(), &TermControl::_RendererWarning });
 
+        const bool inProc = _contentProc == nullptr;
+
         const auto coreInitialized = _core.Initialize(panelWidth,
                                                       panelHeight,
                                                       panelScaleX);
@@ -658,7 +668,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         _interactivity.Initialize();
 
-        _AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(_core.SwapChainHandle()));
+        // TODO! very good chance we leak this handle
+        const HANDLE chainHandle = reinterpret_cast<HANDLE>(_contentProc ?
+                                                                _contentProc.RequestSwapChainHandle(GetCurrentProcessId()) :
+                                                                _core.SwapChainHandle());
+        _AttachDxgiSwapChainToXaml(chainHandle);
 
         // Tell the DX Engine to notify us when the swap chain changes. We do
         // this after we initially set the swapchain so as to avoid unnecessary
