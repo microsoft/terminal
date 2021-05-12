@@ -87,11 +87,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(ScrollPositionChanged, IInspectable, Control::ScrollPositionChangedArgs);
 
     private:
+        // NOTE: _uiaEngine must be ordered before _core.
+        //
+        // ControlCore::AttachUiaEngine receives a IRenderEngine as a raw pointer, which we own.
+        // We must ensure that we first destroy the ControlCore before the UiaEngine instance
+        // in order to safely resolve this unsafe pointer dependency. Otherwise a deallocated
+        // IRenderEngine is accessed when ControlCore calls Renderer::TriggerTeardown.
+        // (C++ class members are destroyed in reverse order.)
+        std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
+
         winrt::com_ptr<ControlCore> _core{ nullptr };
         unsigned int _rowsToScroll;
         double _internalScrollbarPosition{ 0.0 };
-
-        std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
 
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.
