@@ -146,6 +146,8 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     // remains at the bottom of the buffer.
     if (_buffer)
     {
+        // Clear the patterns first
+        _buffer->ClearPatternRecognizers();
         if (settings.DetectHyperlinks())
         {
             // Add regex pattern recognizers to the buffer
@@ -155,7 +157,6 @@ void Terminal::UpdateSettings(ICoreSettings settings)
         }
         else
         {
-            _buffer->ClearPatternRecognizers();
             ClearPatternTree();
         }
     }
