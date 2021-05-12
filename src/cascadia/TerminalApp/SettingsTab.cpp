@@ -62,7 +62,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void SettingsTab::_MakeTabViewItem()
     {
-        TabViewItem(::winrt::MUX::Controls::TabViewItem{});
+        TabBase::_MakeTabViewItem();
+
         Title(RS_(L"SettingsTab"));
         TabViewItem().Header(winrt::box_value(Title()));
     }

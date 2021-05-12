@@ -2358,6 +2358,7 @@ testmddefinition
 testmode
 testname
 testnameprefix
+testnetv
 TESTNULL
 testpass
 testpasses

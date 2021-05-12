@@ -48,6 +48,8 @@ public:
 
     bool AtEol() const noexcept;
 
+    void MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer) override;
+
     bool Notify(const WaitTerminationReason TerminationReason,
                 const bool fIsUnicode,
                 _Out_ NTSTATUS* const pReplyStatus,
