@@ -422,7 +422,7 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
     // becoming unresponsive.
     //
     // If the path is eventually invalid, we'll display warning in the
-    // ConptyConnection, when the process fails to launch.
+    // ConptyConnection when the process fails to launch.
     return std::wstring(evaluatedPath.get(), numCharsInput);
 }
 
