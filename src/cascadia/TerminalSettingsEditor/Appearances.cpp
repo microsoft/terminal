@@ -356,7 +356,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Appearances::_ViewModelChanged(DependencyObject const& d, DependencyPropertyChangedEventArgs const& /*args*/)
     {
-        const auto& obj{ d.try_as<Editor::Appearances>() };
+        const auto& obj{ d.as<Editor::Appearances>() };
         get_self<Appearances>(obj)->_UpdateWithNewViewModel();
     }
 

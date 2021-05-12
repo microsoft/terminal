@@ -1,5 +1,18 @@
-﻿// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
+﻿/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
+
+Module Name:
+- Appearances
+
+Abstract:
+- The classes defined in this module are responsible for encapsulating the appearance settings
+  of profiles and presenting them in the settings UI
+
+Author(s):
+- Pankaj Bhojwani - May 2021
+
+--*/
 
 #pragma once
 
