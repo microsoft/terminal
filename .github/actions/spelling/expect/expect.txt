@@ -18,7 +18,6 @@ ACIOSS
 ACover
 actctx
 ACTCTXW
-actionmap
 activatable
 ACTIVEBORDER
 ACTIVECAPTION
@@ -300,6 +299,8 @@ codepage
 codepath
 codepoint
 codeproject
+coffgroup
+coffgrp
 coinit
 COLLECTIONURI
 colorizing
@@ -662,6 +663,7 @@ DTest
 dtor
 DTTERM
 DUMMYUNIONNAME
+dumpbin
 DUNICODE
 DUNIT
 dup'ed
@@ -1493,7 +1495,6 @@ munges
 mutex
 mutexes
 muxes
-MUXPGO
 myapplet
 mydir
 myignite
@@ -1542,7 +1543,6 @@ nfe
 nlength
 Nls
 NLSMODE
-nmake
 NOACTIVATE
 NOAPPLYNOW
 NOCLIP
@@ -1623,7 +1623,6 @@ NTVDM
 ntverp
 NTWIN
 nuget
-NUGETEXETOOLPATH
 nullness
 nullonfailure
 nullopt
@@ -1780,6 +1779,7 @@ pgd
 pgdn
 pgorepro
 pgort
+PGU
 pguid
 pgup
 PHANDLE
@@ -2013,7 +2013,6 @@ Replymessage
 repositorypath
 rescap
 Resequence
-reserialize
 RESETCONTENT
 resheader
 resizable
@@ -2541,7 +2540,7 @@ UNORM
 unparseable
 unpause
 Unregister
-Unregistering
+unregistering
 untests
 untextured
 untimes
@@ -2849,9 +2848,9 @@ xcopy
 XCount
 xdy
 XEncoding
-xes
 XES
 Xes
+xes
 xff
 XFile
 XFORM
@@ -2911,3 +2910,4 @@ zsh
 zu
 zxcvbnm
 zy
+zz
