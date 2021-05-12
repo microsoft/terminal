@@ -5,7 +5,6 @@
 
 namespace Microsoft.Terminal.Wpf
 {
-    using System;
     using System.Runtime.InteropServices;
 
     /// <summary>

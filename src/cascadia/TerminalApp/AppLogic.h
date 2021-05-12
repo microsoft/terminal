@@ -90,7 +90,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
 
-        Windows::Foundation::Collections::IMap<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::ActionAndArgs> GlobalHotkeys();
+        Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> GlobalHotkeys();
 
         // -------------------------------- WinRT Events ---------------------------------
         TYPED_EVENT(RequestedThemeChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::ElementTheme);

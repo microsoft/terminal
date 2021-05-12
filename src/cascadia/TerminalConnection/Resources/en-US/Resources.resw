@@ -212,4 +212,8 @@
     <comment>The first argument {0...} is the hexadecimal error code. The second argument {1} is the user-specified path to a program.
       If this string is broken to multiple lines, it will not be displayed properly.</comment>
   </data>
+  <data name="BadPathText" xml:space="preserve">
+    <value>Could not access starting directory "{0}"</value>
+    <comment>The first argument {0} is a path to a directory on the filesystem, as provided by the user.</comment>
+  </data>
 </root>

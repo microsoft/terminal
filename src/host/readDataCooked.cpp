@@ -1197,3 +1197,12 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
     }
     return STATUS_SUCCESS;
 }
+
+void COOKED_READ_DATA::MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer)
+{
+    // See the comment in WaitBlock.cpp for more information.
+    if (_userBuffer == reinterpret_cast<const wchar_t*>(oldBuffer))
+    {
+        _userBuffer = reinterpret_cast<wchar_t*>(newBuffer);
+    }
+}

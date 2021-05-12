@@ -18,6 +18,7 @@ ACIOSS
 ACover
 actctx
 ACTCTXW
+actionmap
 activatable
 ACTIVEBORDER
 ACTIVECAPTION
@@ -2377,6 +2378,7 @@ testmddefinition
 testmode
 testname
 testnameprefix
+testnetv
 TESTNULL
 testpass
 testpasses
@@ -2874,6 +2876,7 @@ xterm
 XTest
 XTPOPSGR
 XTPUSHSGR
+xtr
 xunit
 xutr
 xvalue

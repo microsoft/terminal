@@ -22,10 +22,10 @@ namespace winrt::TerminalApp::implementation
         bool TryKeyChord(winrt::Microsoft::Terminal::Control::KeyChord const& kc);
 
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
-        void SetKeyMapping(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap);
+        void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
 
     private:
-        winrt::Microsoft::Terminal::Settings::Model::KeyMapping _keymap{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Model::IActionMapView _actionMap{ nullptr };
 
         winrt::TerminalApp::ShortcutActionDispatch _dispatch{ nullptr };
 

@@ -213,6 +213,7 @@ bool VtIo::IsUsingVt() const
         {
             g.pRender->AddRenderEngine(_pVtRenderEngine.get());
             g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
+            g.getConsoleInformation().GetActiveInputBuffer()->SetTerminalConnection(_pVtRenderEngine.get());
         }
         CATCH_RETURN();
     }
