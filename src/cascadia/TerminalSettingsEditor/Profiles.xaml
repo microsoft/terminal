@@ -242,7 +242,7 @@
                                     Width="350"
                                     Height="160"
                                     BorderThickness="1"
-                                    BorderBrush="{ThemeResource ToggleButtonDisabledBorderThemeBrush}"/>
+                                    BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"/>
 
                             <!--  Grouping: Text  -->
                             <TextBlock x:Uid="Profile_TextHeader"

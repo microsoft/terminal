@@ -51,7 +51,7 @@ void ScreenBufferRenderTarget::TriggerRedrawAll()
     }
 }
 
-void ScreenBufferRenderTarget::TriggerTeardown()
+void ScreenBufferRenderTarget::TriggerTeardown() noexcept
 {
     auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
     const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();

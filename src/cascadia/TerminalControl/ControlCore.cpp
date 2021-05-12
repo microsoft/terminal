@@ -100,6 +100,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     ControlCore::~ControlCore()
     {
         Close();
+
+        if (_renderer)
+        {
+            _renderer->TriggerTeardown();
+        }
     }
 
     bool ControlCore::Initialize(const double actualWidth,
@@ -1164,30 +1169,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // don't really care to wait for the connection to be completely
             // closed. We can just do it whenever.
             _asyncCloseConnection();
-
-            {
-                // GH#8734:
-                // We lock the terminal here to make sure it isn't still being
-                // used in the connection thread before we destroy the renderer.
-                // However, we must unlock it again prior to triggering the
-                // teardown, to avoid the render thread being deadlocked. The
-                // renderer may be waiting to acquire the terminal lock, while
-                // we're waiting for the renderer to finish.
-                auto lock = _terminal->LockForWriting();
-            }
-
-            if (auto localRenderEngine{ std::exchange(_renderEngine, nullptr) })
-            {
-                if (auto localRenderer{ std::exchange(_renderer, nullptr) })
-                {
-                    localRenderer->TriggerTeardown();
-                    // renderer is destroyed
-                }
-                // renderEngine is destroyed
-            }
-
-            // we don't destroy _terminal here; it now has the same lifetime as the
-            // control.
         }
     }
 
