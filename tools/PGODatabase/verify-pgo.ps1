@@ -7,7 +7,7 @@ if ( !( Test-Path $module ) )
     throw "File does not exist $module"
 }
 
-$output = ( & dumpbin.exe /headers /coffgroup $module )
+$output = ( & link.exe /dump /headers /coffgroup $module )
 
 $regex1 = [regex] '^\s*[A-F0-9]+ coffgrp(\s+[A-F0-9]+){4} \(PGU\)$'
 $regex2 = [regex] '^\s*([A-F0-9]+\s+){2}\.text\$zz$'
