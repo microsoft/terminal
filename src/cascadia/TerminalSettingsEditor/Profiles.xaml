@@ -241,8 +241,8 @@
                             <Border x:Name="ControlPreview"
                                     Width="350"
                                     Height="160"
-                                    BorderThickness="1"
-                                    BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                    BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
+                                    BorderThickness="1" />
 
                             <!--  Grouping: Text  -->
                             <TextBlock x:Uid="Profile_TextHeader"

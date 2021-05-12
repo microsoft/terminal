@@ -407,7 +407,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto currentHalfWidth = ActualWidth() / 2;
         const auto currentHalfHeight = ActualHeight() / 2;
         if ((newMargin.Left < currentHalfWidth && newMargin.Right < currentHalfWidth &&
-            newMargin.Top < currentHalfHeight && newMargin.Bottom < currentHalfHeight) ||
+             newMargin.Top < currentHalfHeight && newMargin.Bottom < currentHalfHeight) ||
             (currentHalfHeight == 0 && currentHalfWidth == 0))
         {
             SwapChainPanel().Margin(newMargin);
