@@ -96,6 +96,18 @@ steps:
       Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
 
 - task: PowerShell@2
+  displayName: 'Validate binaries are optimized'
+  condition: eq(variables['pgoBuildMode'], 'Optimize')
+  inputs:
+    targetType: inline
+    script: |
+      $Binaries = 'OpenConsole.exe', 'WindowsTerminal.exe', 'TerminalApp.dll', 'TerminalConnection.dll', 'Microsoft.Terminal.Control.dll', 'Microsoft.Terminal.Remoting.dll', 'Microsoft.Terminal.Settings.Editor.dll', 'Microsoft.Terminal.Settings.Model.dll'
+      foreach ($BinFile in $Binaries)
+      {
+        & "$(Build.SourcesDirectory)\tools\PGODatabase\verify-pgo.ps1" "$(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/$BinFile"
+      }
+
+- task: PowerShell@2
   displayName: 'Run Unit Tests'
   inputs:
     targetType: filePath

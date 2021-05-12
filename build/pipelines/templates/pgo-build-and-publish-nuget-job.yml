@@ -20,6 +20,11 @@ jobs:
     inputs:
       artifactName: ${{ parameters.pgoArtifact }}
       downloadPath: $(artifactsPath)
+  
+  - task: NuGetToolInstaller@0
+    displayName: 'Use NuGet 5.2.0'
+    inputs:
+      versionSpec: 5.2.0
 
   - task: CopyFiles@2
     displayName: 'Copy pgd files to NuGet build directory'
@@ -36,11 +41,13 @@ jobs:
       workingDirectory: $(pgoToolsPath)
       arguments: $(nuspecPath)\$(nuspecFilename).template $(nuspecPath)\$(nuspecFilename)
 
-  - task: CmdLine@1
-    displayName: 'Build NuGet package'
+  - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
+    displayName: 'NuGet pack'
     inputs:
-      filename: '$(Build.SourcesDirectory)\tools\NugetWrapper.cmd'
-      arguments: pack "$(nuspecPath)\$(nuspecFilename)" -BasePath "$(nuspecPath)" -OutputDirectory "$(Build.ArtifactStagingDirectory)" -properties PROGRAMFILES="%ProgramFiles(x86)%"
+      command: pack
+      packagesToPack: '$(nuspecPath)\$(nuspecFilename)'
+      basePath: '$(nuspecPath)'
+      packDestination: '$(Build.ArtifactStagingDirectory)'
 
   - task: PublishBuildArtifacts@1
     inputs:

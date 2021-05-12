@@ -126,7 +126,7 @@ jobs:
 
   - template: helix-createprojfile-steps.yml
     parameters:
-      condition: and(succeeded(),eq('${{ parameters.testSuite }}','PgoInstrumentationSuite'))
+      condition: and(succeeded(),or(eq('${{ parameters.testSuite }}','PgoInstrumentationSuite'),eq('${{ parameters.testSuite }}','DevTestSuite')))
       testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\WindowsTerminal.UIA.Tests.dll'
       outputProjFileName: 'RunTestsInHelix-WindowsTerminalUIATests.proj'
       testSuite: '${{ parameters.testSuite }}'
