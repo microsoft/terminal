@@ -45,7 +45,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             auto spotLight{ Window::Current().Compositor().CreateAmbientLight() };
             spotLight.Color(Windows::UI::Colors::White());
-            spotLight.Intensity(static_cast<float>(1.5));
             CompositionLight(spotLight);
         }
     }

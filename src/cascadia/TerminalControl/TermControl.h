@@ -167,6 +167,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::UI::Xaml::DispatcherTimer _autoScrollTimer;
         std::optional<std::chrono::high_resolution_clock::time_point> _lastAutoScrollUpdateTime;
 
+        winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellLightAnimation;
+
         std::optional<Windows::UI::Xaml::DispatcherTimer> _cursorTimer;
         std::optional<Windows::UI::Xaml::DispatcherTimer> _blinkTimer;
         std::optional<Windows::UI::Xaml::DispatcherTimer> _bellLightTimer;
