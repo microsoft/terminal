@@ -1172,7 +1172,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    IDXGISwapChain1* ControlCore::GetSwapChain() const
+    HANDLE ControlCore::GetSwapChainHandle() const
     {
         // This is called by:
         // * TermControl::RenderEngineSwapChainChanged, who is only registered
@@ -1180,7 +1180,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // * TermControl::_InitializeTerminal, after the call to Initialize, for
         //   _AttachDxgiSwapChainToXaml.
         // In both cases, we'll have a _renderEngine by then.
-        return _renderEngine->GetSwapChain().Get();
+        return _renderEngine->GetSwapChainHandle();
     }
 
     void ControlCore::_rendererWarning(const HRESULT hr)
