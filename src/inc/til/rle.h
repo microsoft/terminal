@@ -327,15 +327,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         basic_rle& operator=(const basic_rle& other) = default;
 
         basic_rle(basic_rle&& other) noexcept :
-            _runs(std::move(other._runs)), _total_length(std::exchange(other._total_length, 0))
+            _runs(std::move(other._runs)), _total_length(other._total_length)
         {
-        }
-
-        basic_rle& operator=(basic_rle&& other) noexcept
-        {
-            _runs = std::move(other._runs);
-            _total_length = other._total_length;
-
             // C++ fun fact:
             // "std::move" actually doesn't actually promise to _really_ move stuff from A to B,
             // but rather "leaves the source in an unspecified but valid state" according to the spec.
@@ -346,6 +339,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             //     * Moves the underlying memory, setting .size() to 0
             //     * Leaves the source intact (basically copying it)
             //     We can detect these cases using _runs.empty() and set _total_length accordingly.
+            if (other._runs.empty())
+            {
+                other._total_length = 0;
+            }
+        }
+
+        basic_rle& operator=(basic_rle&& other) noexcept
+        {
+            _runs = std::move(other._runs);
+            _total_length = other._total_length;
+
+            // See basic_rle(basic_rle&&) for why this is necessary.
             if (other._runs.empty())
             {
                 other._total_length = 0;
@@ -449,7 +454,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             slice.back().length = end_run_pos + 1;
             slice.front().length -= start_run_pos;
 
-            return { std::move(slice), end_index - start_index };
+            return { std::move(slice), static_cast<size_type>(end_index - start_index) };
         }
 
         // Set the range [start_index, end_index) to the given value.
@@ -457,7 +462,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             _check_indices(start_index, end_index);
 
-            const rle_type new_run{ value, end_index - start_index };
+            const rle_type new_run{ value, static_cast<size_type>(end_index - start_index) };
             _replace(start_index, end_index, { &new_run, 1 });
         }
 
@@ -613,7 +618,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                 for (; it != end; ++it)
                 {
-                    const auto new_total = total + it->length;
+                    const size_type new_total = total + it->length;
                     if (new_total > index)
                     {
                         run_pos = index - total;
@@ -702,7 +707,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             //   Especially since this logic is extremely similar to the one below for non-empty new_runs.
             if (new_runs.empty())
             {
-                const auto removed = end_index - start_index;
+                const size_type removed = end_index - start_index;
 
                 if (start_index != 0 && end_index != _total_length)
                 {
@@ -790,12 +795,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             std::optional<rle_type> mid_insertion_trailer;
             if (begin == end && begin_pos != 0)
             {
-                mid_insertion_trailer.emplace(begin->value, begin->length - end_pos);
+                mid_insertion_trailer.emplace(begin->value, static_cast<size_type>(begin->length - end_pos));
                 // We've "consumed" end_pos
                 end_pos = 0;
             }
 
-            // 2. The it/end run might it/end inside an existing run.
+            // 2. The runs "begin"/"end" are pointing to, might begin/end inside an existing run.
             //    --> The existing run needs to be split up.
             //
             // For example:
@@ -805,7 +810,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // = 1 1|3 3|2
             //   ^ ^     ^
             // --> We must shorten the
-            //     * it slice to a length of 2
+            //     * begin slice to a length of 2
             //     * end slice to a length of 1
             //
             // NOTE: iterators in C++ are in the range [it, end).

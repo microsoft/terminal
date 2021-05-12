@@ -25,12 +25,12 @@ Revision History:
 
 class ATTR_ROW final
 {
-    using rle_vector = til::small_rle<TextAttribute, UINT, 1>;
+    using rle_vector = til::small_rle<TextAttribute, uint16_t, 1>;
 
 public:
     using const_iterator = rle_vector::const_iterator;
 
-    ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr);
+    ATTR_ROW(uint16_t width, TextAttribute attr);
 
     ~ATTR_ROW() = default;
 
@@ -40,16 +40,13 @@ public:
     noexcept = default;
     ATTR_ROW& operator=(ATTR_ROW&&) noexcept = default;
 
-    TextAttribute GetAttrByColumn(const size_t column) const;
+    TextAttribute GetAttrByColumn(uint16_t column) const;
+    std::vector<uint16_t> GetHyperlinks() const;
 
-    std::vector<uint16_t> GetHyperlinks();
-
-    bool SetAttrToEnd(const UINT iStart, const TextAttribute attr);
+    bool SetAttrToEnd(uint16_t beginIndex, TextAttribute attr);
     void ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAttribute& replaceWith);
-
-    void Resize(const size_t newWidth);
-
-    void Replace(const size_t beginIndex, const size_t endIndex, const TextAttribute& newAttr);
+    void Resize(uint16_t newWidth);
+    void Replace(uint16_t beginIndex, uint16_t endIndex, const TextAttribute& newAttr);
 
     const_iterator begin() const noexcept;
     const_iterator end() const noexcept;

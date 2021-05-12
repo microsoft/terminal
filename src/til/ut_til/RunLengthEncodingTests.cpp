@@ -87,7 +87,7 @@ namespace WEX::TestExecution
 
 class RunLengthEncodingTests
 {
-    using rle_vector = til::small_rle<unsigned int, unsigned int, 16>;
+    using rle_vector = til::small_rle<uint16_t, uint16_t, 16>;
     using value_type = rle_vector::value_type;
     using size_type = rle_vector::size_type;
     using rle_type = rle_vector::rle_type;
