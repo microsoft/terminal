@@ -101,7 +101,12 @@ protected:
     void _doSlideAnimation(const uint32_t dropdownDuration, const bool down);
     void _globalDismissWindow(const uint32_t dropdownDuration);
 
+    static MONITORINFO _getMonitorForCursor();
+    static MONITORINFO _getMonitorForWindow(HWND foregroundWindow);
+    void _moveToMonitor(HWND foregroundWindow, const winrt::Microsoft::Terminal::Remoting::MonitorBehavior toMonitor);
+    void _moveToMonitorOfMouse();
     void _moveToMonitorOf(HWND foregroundWindow);
+    void _moveToMonitor(const MONITORINFO activeMonitor);
 
     bool _isQuakeWindow{ false };
     void _enterQuakeMode();

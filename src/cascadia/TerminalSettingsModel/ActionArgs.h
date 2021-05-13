@@ -1218,7 +1218,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Name, _Desktop, _Monitor, _ToggleVisibility);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Name, _Desktop, _Monitor, _DropdownDuration, _ToggleVisibility);
         }
     };
 

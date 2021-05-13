@@ -1035,11 +1035,34 @@ winrt::fire_and_forget IslandWindow::SummonWindow(Remoting::SummonWindowBehavior
 
     // * If the user doesn't want to toggleVisibility, then just always try to
     //   activate.
-    // * If the user does want to toggleVisibility, then dismiss the window if
-    //   we're the current foreground window.
+    // * If the user does want to toggleVisibility,
+    //   - If we're the foreground window, ToMonitor == ToMouse, and the mouse is on the monitor we are
+    //      - activate the window
+    //   - else
+    //      - dismiss the window
     if (args.ToggleVisibility() && GetForegroundWindow() == _window.get())
     {
-        _globalDismissWindow(actualDropdownDuration);
+        bool handled = false;
+        if (args.ToMonitor() == Remoting::MonitorBehavior::ToMouse)
+        {
+            const til::rectangle cursorMonitorRect{ _getMonitorForCursor().rcMonitor };
+            const til::rectangle currentMonitorRect{ _getMonitorForWindow(GetHandle()).rcMonitor };
+            if (cursorMonitorRect != currentMonitorRect)
+            {
+                _globalActivateWindow(actualDropdownDuration, args.ToMonitor());
+                handled = true;
+            }
+
+            // get the pointer position
+            // get the nearest monitor to the mouse
+            // get the nearest monitor to the window
+            // are they the same monitor? (handled=false) : (activate ; handled=true);
+        }
+
+        if (!handled)
+        {
+            _globalDismissWindow(actualDropdownDuration);
+        }
     }
     else
     {
@@ -1122,10 +1145,7 @@ void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration,
     wpc.showCmd = SW_RESTORE;
     SetWindowPlacement(_window.get(), &wpc);
 
-    if (toMonitor != Remoting::MonitorBehavior::InPlace)
-    {
-        _moveToMonitorOf(oldForegroundWindow);
-    }
+    _moveToMonitor(oldForegroundWindow, toMonitor);
 
     // Now that we're visible, animate the dropdown.
     _doSlideAnimation(dropdownDuration, true);
@@ -1183,10 +1203,7 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
             LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
 
             // Once we've been restored, throw us on the active monitor.
-            if (toMonitor != Remoting::MonitorBehavior::InPlace)
-            {
-                _moveToMonitorOf(oldForegroundWindow);
-            }
+            _moveToMonitor(oldForegroundWindow, toMonitor);
         }
     }
     else
@@ -1207,10 +1224,7 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
         LOG_LAST_ERROR_IF_NULL(SetActiveWindow(_window.get()));
 
         // Throw us on the active monitor.
-        if (toMonitor != Remoting::MonitorBehavior::InPlace)
-        {
-            _moveToMonitorOf(oldForegroundWindow);
-        }
+        _moveToMonitor(oldForegroundWindow, toMonitor);
     }
 }
 
@@ -1236,17 +1250,52 @@ void IslandWindow::_globalDismissWindow(const uint32_t dropdownDuration)
     }
 }
 
-void IslandWindow::_moveToMonitorOf(HWND forgroundWindow)
+MONITORINFO IslandWindow::_getMonitorForCursor()
 {
-    // Get the monitor info for the window's current monitor.
-    MONITORINFO currentMonitor{};
-    currentMonitor.cbSize = sizeof(currentMonitor);
-    GetMonitorInfo(MonitorFromWindow(GetHandle(), MONITOR_DEFAULTTONEAREST), &currentMonitor);
+    POINT p{};
+    GetCursorPos(&p);
 
     // Get the monitor info for the window's current monitor.
     MONITORINFO activeMonitor{};
     activeMonitor.cbSize = sizeof(activeMonitor);
-    GetMonitorInfo(MonitorFromWindow(forgroundWindow, MONITOR_DEFAULTTONEAREST), &activeMonitor);
+    GetMonitorInfo(MonitorFromPoint(p, MONITOR_DEFAULTTONEAREST), &activeMonitor);
+    return activeMonitor;
+}
+
+MONITORINFO IslandWindow::_getMonitorForWindow(HWND foregroundWindow)
+{
+    // Get the monitor info for the window's current monitor.
+    MONITORINFO activeMonitor{};
+    activeMonitor.cbSize = sizeof(activeMonitor);
+    GetMonitorInfo(MonitorFromWindow(foregroundWindow, MONITOR_DEFAULTTONEAREST), &activeMonitor);
+    return activeMonitor;
+}
+
+void IslandWindow::_moveToMonitor(HWND oldForegroundWindow, Remoting::MonitorBehavior toMonitor)
+{
+    if (toMonitor == Remoting::MonitorBehavior::ToCurrent)
+    {
+        _moveToMonitorOf(oldForegroundWindow);
+    }
+    else if (toMonitor == Remoting::MonitorBehavior::ToMouse)
+    {
+        _moveToMonitorOfMouse();
+    }
+}
+void IslandWindow::_moveToMonitorOfMouse()
+{
+    _moveToMonitor(_getMonitorForCursor());
+}
+
+void IslandWindow::_moveToMonitorOf(HWND foregroundWindow)
+{
+    _moveToMonitor(_getMonitorForWindow(foregroundWindow));
+}
+
+void IslandWindow::_moveToMonitor(const MONITORINFO activeMonitor)
+{
+    // Get the monitor info for the window's current monitor.
+    const auto currentMonitor = _getMonitorForWindow(GetHandle());
 
     til::rectangle currentRect{ currentMonitor.rcMonitor };
     til::rectangle activeRect{ activeMonitor.rcMonitor };
