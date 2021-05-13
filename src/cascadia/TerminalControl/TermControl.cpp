@@ -58,7 +58,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _lastAutoScrollUpdateTime{ std::nullopt },
         _cursorTimer{},
         _blinkTimer{},
-        _bellLightTimer{},
         _searchBox{ nullptr },
         _bellLightAnimation{ Window::Current().Compositor().CreateScalarKeyFrameAnimation() }
     {
@@ -2385,12 +2384,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_BellLightOff(Windows::Foundation::IInspectable const& /* sender */,
                                     Windows::Foundation::IInspectable const& /* e */)
     {
-        if (_bellLightTimer && !_closing)
+        if (_bellLightTimer)
         {
             // Stop the timer and switch off the light
-            _bellLightTimer.value().Stop();
-            _bellLightTimer = std::nullopt;
-            VisualBellLight::SetIsTarget(RootGrid(), false);
+            _bellLightTimer->Stop();
+            _bellLightTimer.reset();
+
+            if (!_closing)
+            {
+                VisualBellLight::SetIsTarget(RootGrid(), false);
+            }
         }
     }
 

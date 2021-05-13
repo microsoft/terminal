@@ -69,8 +69,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void VisualBellLight::OnIsTargetChanged(DependencyObject const& d, DependencyPropertyChangedEventArgs const& e)
     {
-        const auto& uielem{ d.try_as<UIElement>() };
-        const auto& brush{ d.try_as<Brush>() };
+        const auto uielem{ d.try_as<UIElement>() };
+        const auto brush{ d.try_as<Brush>() };
 
         if (!uielem && !brush)
         {
