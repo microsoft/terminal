@@ -663,7 +663,6 @@ DTest
 dtor
 DTTERM
 DUMMYUNIONNAME
-dumpbin
 DUNICODE
 DUNIT
 dup'ed
@@ -1142,6 +1141,7 @@ INPUTPROCESSORPROFILE
 inputrc
 Inputreadhandledata
 INSERTMODE
+installationpath
 intellisense
 INTERACTIVITYBASE
 INTERCEPTCOPYPASTE
@@ -2848,9 +2848,8 @@ xcopy
 XCount
 xdy
 XEncoding
-XES
-Xes
 xes
+Xes
 xff
 XFile
 XFORM
