@@ -67,7 +67,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _multiClickTimer = GetDoubleClickTime() * 1000;
     }
 
-    Control::ControlCore ControlInteractivity::GetCore()
+    Control::ControlCore ControlInteractivity::Core()
     {
         return *_core;
     }

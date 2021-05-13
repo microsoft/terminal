@@ -16,7 +16,7 @@ namespace Microsoft.Terminal.Control
         ControlInteractivity(IControlSettings settings,
                              Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
-        ControlCore GetCore();
+        ControlCore Core { get; };
         void UpdateSettings();
         void Initialize();
         void GainFocus();

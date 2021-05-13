@@ -34,9 +34,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                          Control::InteractivityAutomationPeer impl) :
         TermControlAutomationPeerT<TermControlAutomationPeer>(*owner), // pass owner to FrameworkElementAutomationPeer
         _termControl{ owner },
-        _implementation{ impl }
+        _contentAutomationPeer{ impl }
     {
         UpdateControlBounds();
+
+        // Listen for UIA signalling events from the implementation. We need to
+        // be the one to actually raise these automation events, so they go
+        // through the UI tree correctly.
+        _contentAutomationPeer.SelectionChanged([this](auto&&, auto&&) { SignalSelectionChanged(); });
+        _contentAutomationPeer.TextChanged([this](auto&&, auto&&) { SignalTextChanged(); });
+        _contentAutomationPeer.CursorChanged([this](auto&&, auto&&) { SignalCursorChanged(); });
     };
 
     // Method Description:
@@ -52,11 +59,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // FrameworkElementAutomationPeer has this great GetBoundingRectangle
         // method that's seemingly impossible to recreate just from the
         // UserControl itself. Weird. But we can use it handily here!
-        _implementation.SetControlBounds(GetBoundingRectangle());
+        _contentAutomationPeer.SetControlBounds(GetBoundingRectangle());
     }
     void TermControlAutomationPeer::SetControlPadding(const Core::Padding padding)
     {
-        _implementation.SetControlPadding(padding);
+        _contentAutomationPeer.SetControlPadding(padding);
     }
 
     // Method Description:
@@ -165,32 +172,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #pragma region ITextProvider
     com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::GetSelection()
     {
-        return _implementation.GetSelection();
+        return _contentAutomationPeer.GetSelection();
     }
 
     com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::GetVisibleRanges()
     {
-        return _implementation.GetVisibleRanges();
+        return _contentAutomationPeer.GetVisibleRanges();
     }
 
     XamlAutomation::ITextRangeProvider TermControlAutomationPeer::RangeFromChild(XamlAutomation::IRawElementProviderSimple childElement)
     {
-        return _implementation.RangeFromChild(childElement);
+        return _contentAutomationPeer.RangeFromChild(childElement);
     }
 
     XamlAutomation::ITextRangeProvider TermControlAutomationPeer::RangeFromPoint(Windows::Foundation::Point screenLocation)
     {
-        return _implementation.RangeFromPoint(screenLocation);
+        return _contentAutomationPeer.RangeFromPoint(screenLocation);
     }
 
     XamlAutomation::ITextRangeProvider TermControlAutomationPeer::DocumentRange()
     {
-        return _implementation.DocumentRange();
+        return _contentAutomationPeer.DocumentRange();
     }
 
     XamlAutomation::SupportedTextSelection TermControlAutomationPeer::SupportedTextSelection()
     {
-        return _implementation.SupportedTextSelection();
+        return _contentAutomationPeer.SupportedTextSelection();
     }
 
 #pragma endregion
