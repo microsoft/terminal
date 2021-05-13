@@ -41,9 +41,7 @@ public:
     void UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList);
     void SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList);
 
-    winrt::fire_and_forget SummonWindow(const bool toggleVisibility,
-                                        const uint32_t dropdownDuration,
-                                        const bool toCurrentMonitor);
+    winrt::fire_and_forget SummonWindow(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 
     bool IsQuakeWindow() const noexcept;
     void IsQuakeWindow(bool isQuakeWindow) noexcept;
@@ -95,8 +93,10 @@ protected:
     void _OnGetMinMaxInfo(const WPARAM wParam, const LPARAM lParam);
     long _calculateTotalSize(const bool isWidth, const long clientSize, const long nonClientSize);
 
-    void _globalActivateWindow(const uint32_t dropdownDuration, const bool toCurrentMonitor);
-    void _dropdownWindow(const uint32_t dropdownDuration, const bool toCurrentMonitor);
+    void _globalActivateWindow(const uint32_t dropdownDuration,
+                               const winrt::Microsoft::Terminal::Remoting::MonitorBehavior toMonitor);
+    void _dropdownWindow(const uint32_t dropdownDuration,
+                         const winrt::Microsoft::Terminal::Remoting::MonitorBehavior toMonitor);
     void _slideUpWindow(const uint32_t dropdownDuration);
     void _doSlideAnimation(const uint32_t dropdownDuration, const bool down);
     void _globalDismissWindow(const uint32_t dropdownDuration);

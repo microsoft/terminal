@@ -16,6 +16,7 @@ using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
+using namespace winrt::Microsoft::Terminal;
 using namespace ::Microsoft::Console::Types;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
@@ -1007,16 +1008,14 @@ void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal
 // - toggleVisibility: controls how we should behave when already in the foreground.
 // Return Value:
 // - <none>
-winrt::fire_and_forget IslandWindow::SummonWindow(const bool toggleVisibility,
-                                                  const uint32_t dropdownDuration,
-                                                  const bool toCurrentMonitor)
+winrt::fire_and_forget IslandWindow::SummonWindow(Remoting::SummonWindowBehavior args)
 {
     // On the foreground thread:
     co_await winrt::resume_foreground(_rootGrid.Dispatcher());
 
-    uint32_t actualDropdownDuration = dropdownDuration;
+    uint32_t actualDropdownDuration = args.DropdownDuration();
     // If the user requested an animation, let's check if animations are enabled in the OS.
-    if (dropdownDuration > 0)
+    if (args.DropdownDuration() > 0)
     {
         BOOL animationsEnabled = TRUE;
         SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
@@ -1038,13 +1037,13 @@ winrt::fire_and_forget IslandWindow::SummonWindow(const bool toggleVisibility,
     //   activate.
     // * If the user does want to toggleVisibility, then dismiss the window if
     //   we're the current foreground window.
-    if (toggleVisibility && GetForegroundWindow() == _window.get())
+    if (args.ToggleVisibility() && GetForegroundWindow() == _window.get())
     {
         _globalDismissWindow(actualDropdownDuration);
     }
     else
     {
-        _globalActivateWindow(actualDropdownDuration, toCurrentMonitor);
+        _globalActivateWindow(actualDropdownDuration, args.ToMonitor());
     }
 }
 
@@ -1105,7 +1104,8 @@ void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool
     SetWindowRgn(_interopWindowHandle, nullptr, true);
 }
 
-void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration, const bool toCurrentMonitor)
+void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration,
+                                   const Remoting::MonitorBehavior toMonitor)
 {
     // First, get the window that's currently in the foreground. We'll need
     // _this_ window to be able to appear on top of. If we just use
@@ -1122,7 +1122,7 @@ void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration, const bool t
     wpc.showCmd = SW_RESTORE;
     SetWindowPlacement(_window.get(), &wpc);
 
-    if (toCurrentMonitor)
+    if (toMonitor != Remoting::MonitorBehavior::InPlace)
     {
         _moveToMonitorOf(oldForegroundWindow);
     }
@@ -1157,7 +1157,7 @@ void IslandWindow::_slideUpWindow(const uint32_t dropdownDuration)
 // Return Value:
 // - <none>
 void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
-                                         const bool toCurrentMonitor)
+                                         const Remoting::MonitorBehavior toMonitor)
 {
     // First, get the window that's currently in the foreground. We'll need
     // _this_ window to be able to appear on top of. If we just use
@@ -1176,14 +1176,14 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
     {
         if (dropdownDuration > 0)
         {
-            _dropdownWindow(dropdownDuration, toCurrentMonitor);
+            _dropdownWindow(dropdownDuration, toMonitor);
         }
         else
         {
             LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
 
             // Once we've been restored, throw us on the active monitor.
-            if (toCurrentMonitor)
+            if (toMonitor != Remoting::MonitorBehavior::InPlace)
             {
                 _moveToMonitorOf(oldForegroundWindow);
             }
@@ -1207,7 +1207,7 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
         LOG_LAST_ERROR_IF_NULL(SetActiveWindow(_window.get()));
 
         // Throw us on the active monitor.
-        if (toCurrentMonitor)
+        if (toMonitor != Remoting::MonitorBehavior::InPlace)
         {
             _moveToMonitorOf(oldForegroundWindow);
         }
