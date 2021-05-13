@@ -1007,7 +1007,9 @@ void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal
 // - toggleVisibility: controls how we should behave when already in the foreground.
 // Return Value:
 // - <none>
-winrt::fire_and_forget IslandWindow::SummonWindow(const bool toggleVisibility, const uint32_t dropdownDuration)
+winrt::fire_and_forget IslandWindow::SummonWindow(const bool toggleVisibility,
+                                                  const uint32_t dropdownDuration,
+                                                  const bool toCurrentMonitor)
 {
     // On the foreground thread:
     co_await winrt::resume_foreground(_rootGrid.Dispatcher());
@@ -1042,7 +1044,7 @@ winrt::fire_and_forget IslandWindow::SummonWindow(const bool toggleVisibility, c
     }
     else
     {
-        _globalActivateWindow(actualDropdownDuration);
+        _globalActivateWindow(actualDropdownDuration, toCurrentMonitor);
     }
 }
 
@@ -1103,8 +1105,14 @@ void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool
     SetWindowRgn(_interopWindowHandle, nullptr, true);
 }
 
-void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration)
+void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration, const bool toCurrentMonitor)
 {
+    // First, get the window that's currently in the foreground. We'll need
+    // _this_ window to be able to appear on top of. If we just use
+    // GetForegroundWindow afer the SetWindowPlacement call, _we_ will be the
+    // foreground window.
+    const auto oldForegroundWindow = GetForegroundWindow();
+
     // First, restore the window. SetWindowPlacement has a fun undocumented
     // piece of functionality where it will restore the window position
     // _without_ the animation, so use that instead of ShowWindow(SW_RESTORE).
@@ -1113,6 +1121,11 @@ void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration)
     GetWindowPlacement(_window.get(), &wpc);
     wpc.showCmd = SW_RESTORE;
     SetWindowPlacement(_window.get(), &wpc);
+
+    if (toCurrentMonitor)
+    {
+        _moveToMonitorOf(oldForegroundWindow);
+    }
 
     // Now that we're visible, animate the dropdown.
     _doSlideAnimation(dropdownDuration, true);
@@ -1143,8 +1156,15 @@ void IslandWindow::_slideUpWindow(const uint32_t dropdownDuration)
 //   milliseconds. If 0, we won't perform a dropdown animation.
 // Return Value:
 // - <none>
-void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration)
+void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
+                                         const bool toCurrentMonitor)
 {
+    // First, get the window that's currently in the foreground. We'll need
+    // _this_ window to be able to appear on top of. If we just use
+    // GetForegroundWindow afer the SetWindowPlacement/ShowWindow call, _we_
+    // will be the foreground window.
+    const auto oldForegroundWindow = GetForegroundWindow();
+
     // From: https://stackoverflow.com/a/59659421
     // > The trick is to make windows ‘think’ that our process and the target
     // > window (hwnd) are related by attaching the threads (using
@@ -1156,16 +1176,22 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration)
     {
         if (dropdownDuration > 0)
         {
-            _dropdownWindow(dropdownDuration);
+            _dropdownWindow(dropdownDuration, toCurrentMonitor);
         }
         else
         {
             LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
+
+            // Once we've been restored, throw us on the active monitor.
+            if (toCurrentMonitor)
+            {
+                _moveToMonitorOf(oldForegroundWindow);
+            }
         }
     }
     else
     {
-        const DWORD windowThreadProcessId = GetWindowThreadProcessId(GetForegroundWindow(), nullptr);
+        const DWORD windowThreadProcessId = GetWindowThreadProcessId(oldForegroundWindow, nullptr);
         const DWORD currentThreadId = GetCurrentThreadId();
 
         LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, true));
@@ -1179,6 +1205,12 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration)
         // Activate the window too. This will force us to the virtual desktop this
         // window is on, if it's on another virtual desktop.
         LOG_LAST_ERROR_IF_NULL(SetActiveWindow(_window.get()));
+
+        // Throw us on the active monitor.
+        if (toCurrentMonitor)
+        {
+            _moveToMonitorOf(oldForegroundWindow);
+        }
     }
 }
 
@@ -1201,6 +1233,36 @@ void IslandWindow::_globalDismissWindow(const uint32_t dropdownDuration)
     else
     {
         LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_MINIMIZE));
+    }
+}
+
+void IslandWindow::_moveToMonitorOf(HWND forgroundWindow)
+{
+    // Get the monitor info for the window's current monitor.
+    MONITORINFO currentMonitor{};
+    currentMonitor.cbSize = sizeof(currentMonitor);
+    GetMonitorInfo(MonitorFromWindow(GetHandle(), MONITOR_DEFAULTTONEAREST), &currentMonitor);
+
+    // Get the monitor info for the window's current monitor.
+    MONITORINFO activeMonitor{};
+    activeMonitor.cbSize = sizeof(activeMonitor);
+    GetMonitorInfo(MonitorFromWindow(forgroundWindow, MONITOR_DEFAULTTONEAREST), &activeMonitor);
+
+    til::rectangle currentRect{ currentMonitor.rcMonitor };
+    til::rectangle activeRect{ activeMonitor.rcMonitor };
+    if (currentRect != activeRect)
+    {
+        til::rectangle currentWindowRect{ GetWindowRect() };
+        til::point offset{ currentWindowRect.origin() - currentRect.origin() };
+        til::point newOrigin{ activeRect.origin() + offset };
+
+        SetWindowPos(GetHandle(),
+                     0,
+                     newOrigin.x<int>(),
+                     newOrigin.y<int>(),
+                     currentWindowRect.width<int>(),
+                     currentWindowRect.height<int>(),
+                     SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
     }
 }
 
