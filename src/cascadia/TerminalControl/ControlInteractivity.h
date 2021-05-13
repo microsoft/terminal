@@ -41,7 +41,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void LostFocus();
         void UpdateSettings();
         void Initialize();
-        Control::ControlCore GetCore();
+        Control::ControlCore Core();
 
         Control::InteractivityAutomationPeer OnCreateAutomationPeer();
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;

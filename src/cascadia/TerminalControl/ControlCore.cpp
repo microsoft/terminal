@@ -480,7 +480,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return winrt::hstring{ _terminal->GetHyperlinkAtPosition(pos) };
     }
 
-    winrt::hstring ControlCore::GetHoveredUriText() const
+    winrt::hstring ControlCore::HoveredUriText() const
     {
         auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
         if (_lastHoveredCell.has_value())
@@ -490,9 +490,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return {};
     }
 
-    Windows::Foundation::IReference<Core::Point> ControlCore::GetHoveredCell() const
+    Windows::Foundation::IReference<Core::Point> ControlCore::HoveredCell() const
     {
-        return _lastHoveredCell.has_value() ? Windows::Foundation::IReference<Core::Point>(til::point{ _lastHoveredCell.value() }) : nullptr;
+        return _lastHoveredCell.has_value() ? Windows::Foundation::IReference<Core::Point>(_lastHoveredCell.value()) : nullptr;
     }
 
     // Method Description:
@@ -1099,9 +1099,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Windows::Foundation::Collections::IVector<winrt::hstring> ControlCore::SelectedText(bool trimTrailingWhitespace) const
     {
         // RetrieveSelectedTextFromBuffer will lock while it's reading
-        std::vector<std::wstring> internalResult{ _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace).text };
+        auto internalResult{ _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace).text };
 
         auto result = winrt::single_threaded_vector<winrt::hstring>();
+
         for (const auto& row : internalResult)
         {
             result.Append(winrt::hstring{ row });
@@ -1201,7 +1202,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    uint64_t ControlCore::GetSwapChainHandle() const
+    uint64_t ControlCore::SwapChainHandle() const
     {
         // This is called by:
         // * TermControl::RenderEngineSwapChainChanged, who is only registered

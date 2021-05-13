@@ -62,7 +62,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         InitializeComponent();
 
         _interactivity = winrt::make<implementation::ControlInteractivity>(settings, connection);
-        _core = _interactivity.GetCore();
+        _core = _interactivity.Core();
 
         // Use a manual revoker on the output event, so we can immediately stop
         // worrying about it on destruction.
@@ -570,7 +570,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (auto control{ weakThis.get() })
         {
-            const HANDLE chainHandle = reinterpret_cast<HANDLE>(control->_core.GetSwapChainHandle());
+            const HANDLE chainHandle = reinterpret_cast<HANDLE>(control->_core.SwapChainHandle());
             _AttachDxgiSwapChainToXaml(chainHandle);
         }
     }
@@ -658,7 +658,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         _interactivity.Initialize();
 
-        _AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(_core.GetSwapChainHandle()));
+        _AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(_core.SwapChainHandle()));
 
         // Tell the DX Engine to notify us when the swap chain changes. We do
         // this after we initially set the swapchain so as to avoid unnecessary
@@ -2386,10 +2386,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         co_await resume_foreground(Dispatcher());
         if (auto self{ weakThis.get() })
         {
-            auto lastHoveredCell = _core.GetHoveredCell();
+            auto lastHoveredCell = _core.HoveredCell();
             if (lastHoveredCell)
             {
-                const auto uriText = _core.GetHoveredUriText();
+                const auto uriText = _core.HoveredUriText();
                 if (!uriText.empty())
                 {
                     // Update the tooltip with the URI

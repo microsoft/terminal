@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void UpdateAppearance(const IControlAppearance& newAppearance);
         void SizeChanged(const double width, const double height);
         void ScaleChanged(const double scale);
-        uint64_t GetSwapChainHandle() const;
+        uint64_t SwapChainHandle() const;
 
         void AdjustFontSize(int fontSizeDelta);
         void ResetFontSize();
@@ -74,8 +74,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void UpdatePatternLocations();
         void UpdateHoveredCell(Windows::Foundation::IReference<Core::Point> terminalPosition);
         winrt::hstring GetHyperlink(const til::point position) const;
-        winrt::hstring GetHoveredUriText() const;
-        Windows::Foundation::IReference<Core::Point> GetHoveredCell() const;
+        winrt::hstring HoveredUriText() const;
+        Windows::Foundation::IReference<Core::Point> HoveredCell() const;
 
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
 

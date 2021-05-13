@@ -148,7 +148,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #pragma region IControlAccessibilityInfo
     COORD InteractivityAutomationPeer::GetFontSize() const
     {
-        return til::size{ til::math::rounding, _interactivity->GetCore().FontSize() };
+        return til::size{ til::math::rounding, _interactivity->Core().FontSize() };
     }
 
     RECT InteractivityAutomationPeer::GetBounds() const
