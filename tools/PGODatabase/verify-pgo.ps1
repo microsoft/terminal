@@ -7,6 +7,10 @@ if ( !( Test-Path $module ) )
     throw "File does not exist $module"
 }
 
+$vsPath = &(Join-Path ${env:ProgramFiles(x86)} "\Microsoft Visual Studio\Installer\vswhere.exe") -property installationpath
+Import-Module (Get-ChildItem $vsPath -Recurse -File -Filter Microsoft.VisualStudio.DevShell.dll).FullName
+Enter-VsDevShell -VsInstallPath $vsPath -SkipAutomaticLocation
+
 $output = ( & link.exe /dump /headers /coffgroup $module )
 
 $regex1 = [regex] '^\s*[A-F0-9]+ coffgrp(\s+[A-F0-9]+){4} \(PGU\)$'
