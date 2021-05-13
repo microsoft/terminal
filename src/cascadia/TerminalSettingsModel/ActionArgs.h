@@ -1158,7 +1158,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GlobalSummonArgs() = default;
         WINRT_PROPERTY(winrt::hstring, Name, L"");
         WINRT_PROPERTY(Model::DesktopBehavior, Desktop, Model::DesktopBehavior::ToCurrent);
-        WINRT_PROPERTY(Model::MonitorBehavior, Monitor, Model::MonitorBehavior::ToCurrent);
+        WINRT_PROPERTY(Model::MonitorBehavior, Monitor, Model::MonitorBehavior::ToMouse);
         WINRT_PROPERTY(bool, ToggleVisibility, true);
         WINRT_PROPERTY(uint32_t, DropdownDuration, 0);
 

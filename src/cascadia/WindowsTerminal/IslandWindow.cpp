@@ -1250,6 +1250,12 @@ void IslandWindow::_globalDismissWindow(const uint32_t dropdownDuration)
     }
 }
 
+// Method Description:
+// - Get the monitor the mouse cursor is currently on
+// Arguments:
+// - <none>
+// Return Value:
+// - The MONITORINFO for the monitor the mosue cursor is on
 MONITORINFO IslandWindow::_getMonitorForCursor()
 {
     POINT p{};
@@ -1262,6 +1268,12 @@ MONITORINFO IslandWindow::_getMonitorForCursor()
     return activeMonitor;
 }
 
+// Method Description:
+// - Get the monitor for a given HWND
+// Arguments:
+// - <none>
+// Return Value:
+// - The MONITORINFO for the given HWND
 MONITORINFO IslandWindow::_getMonitorForWindow(HWND foregroundWindow)
 {
     // Get the monitor info for the window's current monitor.
@@ -1271,6 +1283,15 @@ MONITORINFO IslandWindow::_getMonitorForWindow(HWND foregroundWindow)
     return activeMonitor;
 }
 
+// Method Description:
+// - Based on the value in toMonitor, move the window to the monitor of the
+//   given HWND, the monitor of the mouse pointer, or just leave it where it is.
+// Arguments:
+// - oldForegroundWindow: when toMonitor is ToCurrent, we'll move to the monitor
+//   of this HWND. Otherwise, this param is ignored.
+// - toMonitor: Controls which monitor we should move to.
+// Return Value:
+// - <none>
 void IslandWindow::_moveToMonitor(HWND oldForegroundWindow, Remoting::MonitorBehavior toMonitor)
 {
     if (toMonitor == Remoting::MonitorBehavior::ToCurrent)
@@ -1282,16 +1303,38 @@ void IslandWindow::_moveToMonitor(HWND oldForegroundWindow, Remoting::MonitorBeh
         _moveToMonitorOfMouse();
     }
 }
+
+// Method Description:
+// - Move our window to the monitor the mouse is on.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void IslandWindow::_moveToMonitorOfMouse()
 {
     _moveToMonitor(_getMonitorForCursor());
 }
 
+// Method Description:
+// - Move our window to the monitor that the giben HWND is on.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void IslandWindow::_moveToMonitorOf(HWND foregroundWindow)
 {
     _moveToMonitor(_getMonitorForWindow(foregroundWindow));
 }
 
+// Method Description:
+// - Move our window to the given monitor. This will do nothing if we're already
+//   on that monitor.
+// - We'll retain the same relative position on the new monitor as we had on the
+//   old monitor.
+// Arguments:
+// - activeMonitor: the monitor to move to.
+// Return Value:
+// - <none>
 void IslandWindow::_moveToMonitor(const MONITORINFO activeMonitor)
 {
     // Get the monitor info for the window's current monitor.
