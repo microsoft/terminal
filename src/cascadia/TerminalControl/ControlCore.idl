@@ -33,7 +33,7 @@ namespace Microsoft.Terminal.Control
         void UpdateSettings(IControlSettings settings);
         void UpdateAppearance(IControlAppearance appearance);
 
-        UInt64 GetSwapChainHandle();
+        UInt64 SwapChainHandle { get; };
 
         Windows.Foundation.Size FontSize { get; };
         String FontFaceName { get; };
@@ -52,30 +52,30 @@ namespace Microsoft.Terminal.Control
         void UpdateHoveredCell(Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> terminalPosition);
 
         void ResetFontSize();
-        void AdjustFontSize(Int32 fontSize);
+        void AdjustFontSize(Int32 fontSizeDelta);
         void SizeChanged(Double width, Double height);
         void ScaleChanged(Double scale);
 
         void ToggleShaderEffects();
         void ToggleReadOnlyMode();
 
-        Microsoft.Terminal.Core.Point CursorPosition();
+        Microsoft.Terminal.Core.Point CursorPosition { get; };
         void ResumeRendering();
         void BlinkAttributeTick();
         void UpdatePatternLocations();
         void Search(String text, Boolean goForward, Boolean caseSensitive);
         void SetBackgroundOpacity(Double opacity);
-        Microsoft.Terminal.Core.Color BackgroundColor();
+        Microsoft.Terminal.Core.Color BackgroundColor { get; };
 
-        Boolean HasSelection();
+        Boolean HasSelection { get; };
         IVector<String> SelectedText(Boolean trimTrailingWhitespace);
 
-        String GetHoveredUriText();
-        Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> GetHoveredCell();
+        String HoveredUriText { get; };
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> HoveredCell { get; };
 
         void Close();
         void BlinkCursor();
-        Boolean IsInReadOnlyMode();
+        Boolean IsInReadOnlyMode { get; };
         Boolean CursorOn;
         void EnablePainting();
 

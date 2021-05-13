@@ -260,8 +260,8 @@ namespace ControlUnitTests
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const TerminalInput::MouseButtonState leftMouseDown{ true, false, false };
-        const TerminalInput::MouseButtonState noMouseDown{ false, false, false };
+        const Control::MouseButtonState leftMouseDown{ true, false, false };
+        const Control::MouseButtonState noMouseDown{ false, false, false };
 
         const til::size fontSize{ 9, 21 };
 
@@ -358,8 +358,8 @@ namespace ControlUnitTests
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const TerminalInput::MouseButtonState leftMouseDown{ true, false, false };
-        const TerminalInput::MouseButtonState noMouseDown{ false, false, false };
+        const Control::MouseButtonState leftMouseDown{ true, false, false };
+        const Control::MouseButtonState noMouseDown{ false, false, false };
 
         const til::size fontSize{ 9, 21 };
 
@@ -444,7 +444,7 @@ namespace ControlUnitTests
 
         const int delta = WHEEL_DELTA / 5;
         const til::point mousePos{ 0, 0 };
-        TerminalInput::MouseButtonState state{ false, false, false };
+        Control::MouseButtonState state{ false, false, false };
 
         interactivity->MouseWheel(modifiers, delta, mousePos, state); // 1/5
         VERIFY_ARE_EQUAL(21, core->ScrollOffset());
@@ -508,8 +508,8 @@ namespace ControlUnitTests
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const TerminalInput::MouseButtonState leftMouseDown{ true, false, false };
-        const TerminalInput::MouseButtonState noMouseDown{ false, false, false };
+        const Control::MouseButtonState leftMouseDown{ true, false, false };
+        const Control::MouseButtonState noMouseDown{ false, false, false };
 
         const til::size fontSize{ 9, 21 };
 

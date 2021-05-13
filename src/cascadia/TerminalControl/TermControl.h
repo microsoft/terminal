@@ -136,17 +136,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::ControlInteractivity _interactivity{ nullptr };
         Control::ContentProcess _contentProc{ nullptr };
 
-        bool _initializedTerminal;
-
         winrt::com_ptr<SearchBoxControl> _searchBox;
 
         IControlSettings _settings;
-        bool _focused;
         std::atomic<bool> _closing;
+        bool _focused;
+        bool _initializedTerminal;
 
         std::shared_ptr<ThrottledFunc<>> _tsfTryRedrawCanvas;
         std::shared_ptr<ThrottledFunc<>> _updatePatternLocations;
-
         std::shared_ptr<ThrottledFunc<>> _playWarningBell;
 
         struct ScrollBarUpdate
