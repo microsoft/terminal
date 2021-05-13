@@ -1,0 +1,92 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.AddProfile"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <model:IconPathConverter x:Key="IconSourceConverter" />
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <ScrollViewer>
+        <StackPanel Style="{StaticResource SettingsStackStyle}">
+            <Button x:Uid="AddProfile_AddNewButton"
+                    AutomationProperties.AutomationId="AddProfile_AddNewButton"
+                    AutomationProperties.Name="{Binding Tag, RelativeSource={RelativeSource Self}}"
+                    Click="AddNewClick"
+                    Style="{StaticResource AccentButtonStyle}">
+                <Button.Content>
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                  Glyph="&#xE710;" />
+                        <TextBlock x:Uid="AddProfile_AddNewTextBlock"
+                                   Style="{StaticResource IconButtonTextBlockStyle}" />
+                    </StackPanel>
+                </Button.Content>
+            </Button>
+            <StackPanel Margin="{StaticResource StandardControlMargin}">
+                <local:SettingContainer x:Uid="AddProfile_Duplicate">
+                    <muxc:RadioButtons x:Name="Profiles"
+                                       ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}">
+                        <muxc:RadioButtons.ItemTemplate>
+                            <DataTemplate x:DataType="model:Profile">
+                                <Grid HorizontalAlignment="Stretch"
+                                      ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <!--  icon  -->
+                                        <ColumnDefinition Width="Auto" />
+                                        <!--  profile name  -->
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!--
+                                        Manually set the icon to 24x16. Why 24?
+                                        If it's a BitmapIcon, then the icon will just get clamped to 16x16.
+                                        However, if it's a FontIcon, then the icon might actually be double wide.
+                                        Giving it a width of 24 will allow a 12pt font icon enough space, in a row height of 16 wide.
+                                    -->
+                                    <IconSourceElement Grid.Column="0"
+                                                       Width="24"
+                                                       Height="16"
+                                                       IconSource="{x:Bind Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
+
+                                    <TextBlock Grid.Column="1"
+                                               Text="{x:Bind Name}" />
+
+                                </Grid>
+                            </DataTemplate>
+                        </muxc:RadioButtons.ItemTemplate>
+                    </muxc:RadioButtons>
+                </local:SettingContainer>
+                <Button x:Uid="AddProfile_DuplicateButton"
+                        Margin="{StaticResource StandardControlMargin}"
+                        AutomationProperties.AutomationId="AddProfile_DuplicateButton"
+                        AutomationProperties.Name="{Binding Tag, RelativeSource={RelativeSource Self}}"
+                        Click="DuplicateClick"
+                        Style="{StaticResource AccentButtonStyle}">
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                      Glyph="&#xE8C8;" />
+                            <TextBlock x:Uid="AddProfile_DuplicateTextBlock"
+                                       Style="{StaticResource IconButtonTextBlockStyle}" />
+                        </StackPanel>
+                    </Button.Content>
+                </Button>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

@@ -8,6 +8,7 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean Equals(IActionArgs other);
         String GenerateName();
         IActionArgs Copy();
+        UInt64 Hash();
     };
 
     interface IActionEventArgs
@@ -112,6 +113,7 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean Equals(NewTerminalArgs other);
         String GenerateName();
         String ToCommandline();
+        UInt64 Hash();
     };
 
     [default_interface] runtimeclass ActionEventArgs : IActionEventArgs

@@ -413,21 +413,17 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
     std::unique_ptr<wchar_t[]> evaluatedPath = std::make_unique<wchar_t[]>(numCharsInput);
     THROW_LAST_ERROR_IF(0 == ExpandEnvironmentStrings(directory.c_str(), evaluatedPath.get(), numCharsInput));
 
-    // Validate that the resulting path is legitimate
-    const DWORD dwFileAttributes = GetFileAttributes(evaluatedPath.get());
-    if ((dwFileAttributes != INVALID_FILE_ATTRIBUTES) && (WI_IsFlagSet(dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY)))
-    {
-        return std::wstring(evaluatedPath.get(), numCharsInput);
-    }
-    else
-    {
-        // In the event where the user supplied a path that can't be resolved, use a reasonable default (in this case, %userprofile%)
-        const DWORD numCharsDefault = ExpandEnvironmentStrings(DEFAULT_STARTING_DIRECTORY.c_str(), nullptr, 0);
-        std::unique_ptr<wchar_t[]> defaultPath = std::make_unique<wchar_t[]>(numCharsDefault);
-        THROW_LAST_ERROR_IF(0 == ExpandEnvironmentStrings(DEFAULT_STARTING_DIRECTORY.c_str(), defaultPath.get(), numCharsDefault));
-
-        return std::wstring(defaultPath.get(), numCharsDefault);
-    }
+    // Prior to GH#9541, we'd validate that the user's startingDirectory existed
+    // here. If it was invalid, we'd gracefully fall back to %USERPROFILE%.
+    //
+    // However, that could cause hangs when combined with WSL. When the WSL
+    // filesystem is slow to respond, we'll end up waiting indefinitely for
+    // their filesystem driver to respond. This can result in the whole terminal
+    // becoming unresponsive.
+    //
+    // If the path is eventually invalid, we'll display warning in the
+    // ConptyConnection when the process fails to launch.
+    return std::wstring(evaluatedPath.get(), numCharsInput);
 }
 
 // Function Description:

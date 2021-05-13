@@ -62,9 +62,6 @@
                                    Text="{x:Bind Name, Mode=OneWay}" />
 
                         <!--
-                            The block for the key chord is only visible
-                            when there's actual text set as the label. See
-                            CommandKeyChordVisibilityConverter for details.
                             Inexplicably, we don't need to set the
                             AutomationProperties to Raw here, unlike in the
                             CommandPalette. We're not quite sure why.
@@ -73,8 +70,7 @@
                                 Padding="2,0,2,0"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Center"
-                                Style="{ThemeResource KeyChordBorderStyle}"
-                                Visibility="{x:Bind KeyChordText, Mode=OneWay, Converter={StaticResource CommandKeyChordVisibilityConverter}}">
+                                Style="{ThemeResource KeyChordBorderStyle}">
 
                             <TextBlock FontSize="12"
                                        Style="{ThemeResource KeyChordTextBlockStyle}"
