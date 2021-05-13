@@ -69,6 +69,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         virtual HRESULT GetHostUiaProvider(IRawElementProviderSimple** provider) override;
 #pragma endregion
 
+        TYPED_EVENT(SelectionChanged, IInspectable, IInspectable);
+        TYPED_EVENT(TextChanged, IInspectable, IInspectable);
+        TYPED_EVENT(CursorChanged, IInspectable, IInspectable);
+
     private:
         ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
         winrt::Microsoft::Terminal::Control::implementation::ControlInteractivity* _interactivity;

@@ -37,6 +37,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _implementation{ impl }
     {
         UpdateControlBounds();
+
+        _implementation.SelectionChanged([this](auto&&, auto&&) { SignalSelectionChanged(); });
+        _implementation.TextChanged([this](auto&&, auto&&) { SignalTextChanged(); });
+        _implementation.CursorChanged([this](auto&&, auto&&) { SignalCursorChanged(); });
     };
 
     // Method Description:
