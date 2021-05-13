@@ -20,7 +20,7 @@
       }
     ],
     "RemoteFiles": [ ],
-    "Packages": [ "Microsoft.Console.Tools.Nihilist" ]
+    "Packages": [ "Microsoft.Console.Tools.Nihilist", "microsoft-windows-test-testnetv5-0" ]
   },
   "Logs": [ ],
   "Plugins": [ ],

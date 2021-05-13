@@ -45,71 +45,48 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Signals the ui automation client that the terminal's selection has changed and should be updated
+    // - Signals the ui automation client that the terminal's selection has
+    //   changed and should be updated
+    // - We will raise a new event, for out embedding control to be able to
+    //   raise the event. AutomationPeer by itself doesn't hook up to the
+    //   eventing mechanism, we need the FrameworkAutomationPeer to do that.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
     void InteractivityAutomationPeer::SignalSelectionChanged()
     {
-        UiaTracing::Signal::SelectionChanged();
-
-        // TODO:projects/5#card-50760282
-        // We seemingly got a Dispatcher() for free when we said we extended
-        // Windows.UI.Automation.Peers.AutomationPeer. This is suspect to me.
-        // This probably won't work when out-of-proc from the WinUI layer.
-
-        Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
-            // The event that is raised when the text selection is modified.
-            RaiseAutomationEvent(AutomationEvents::TextPatternOnTextSelectionChanged);
-        });
+        _SelectionChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
-    // - Signals the ui automation client that the terminal's output has changed and should be updated
+    // - Signals the ui automation client that the terminal's output has changed
+    //   and should be updated
+    // - We will raise a new event, for out embedding control to be able to
+    //   raise the event. AutomationPeer by itself doesn't hook up to the
+    //   eventing mechanism, we need the FrameworkAutomationPeer to do that.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
     void InteractivityAutomationPeer::SignalTextChanged()
     {
-        UiaTracing::Signal::TextChanged();
-
-        // TODO:projects/5#card-50760282
-        // We seemingly got a Dispatcher() for free when we said we extended
-        // Windows.UI.Automation.Peers.AutomationPeer. This is suspect to me.
-        // This probably won't work when out-of-proc from the WinUI layer.
-
-        Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
-            // The event that is raised when textual content is modified.
-            RaiseAutomationEvent(AutomationEvents::TextPatternOnTextChanged);
-        });
+        _TextChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
-    // - Signals the ui automation client that the cursor's state has changed and should be updated
+    // - Signals the ui automation client that the cursor's state has changed
+    //   and should be updated
+    // - We will raise a new event, for out embedding control to be able to
+    //   raise the event. AutomationPeer by itself doesn't hook up to the
+    //   eventing mechanism, we need the FrameworkAutomationPeer to do that.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
     void InteractivityAutomationPeer::SignalCursorChanged()
     {
-        UiaTracing::Signal::CursorChanged();
-
-        // TODO:projects/5#card-50760282
-        // We seemingly got a Dispatcher() for free when we said we extended
-        // Windows.UI.Automation.Peers.AutomationPeer. This is suspect to me.
-        // This probably won't work when out-of-proc from the WinUI layer.
-
-        Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
-            // The event that is raised when the text was changed in an edit control.
-            // Do NOT fire a TextEditTextChanged. Generally, an app on the other side
-            //    will expect more information. Though you can dispatch that event
-            //    on its own, it may result in a nullptr exception on the other side
-            //    because no additional information was provided. Crashing the screen
-            //    reader.
-            RaiseAutomationEvent(AutomationEvents::TextPatternOnTextSelectionChanged);
-        });
+        _CursorChangedHandlers(*this, nullptr);
     }
 
 #pragma region ITextProvider
@@ -134,8 +111,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         THROW_IF_FAILED(_uiaProvider->RangeFromChild(/* IRawElementProviderSimple */ nullptr,
                                                      &returnVal));
 
-        auto parentProvider = this->ProviderFromPeer(*this);
-        auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);
+        const auto parentProvider = this->ProviderFromPeer(*this);
+        const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);
         return xutr.as<XamlAutomation::ITextRangeProvider>();
     }
 
@@ -144,8 +121,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         UIA::ITextRangeProvider* returnVal;
         THROW_IF_FAILED(_uiaProvider->RangeFromPoint({ screenLocation.X, screenLocation.Y }, &returnVal));
 
-        auto parentProvider = this->ProviderFromPeer(*this);
-        auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);
+        const auto parentProvider = this->ProviderFromPeer(*this);
+        const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);
         return xutr.as<XamlAutomation::ITextRangeProvider>();
     }
 
@@ -154,8 +131,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         UIA::ITextRangeProvider* returnVal;
         THROW_IF_FAILED(_uiaProvider->get_DocumentRange(&returnVal));
 
-        auto parentProvider = this->ProviderFromPeer(*this);
-        auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);
+        const auto parentProvider = this->ProviderFromPeer(*this);
+        const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);
         return xutr.as<XamlAutomation::ITextRangeProvider>();
     }
 
@@ -171,7 +148,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #pragma region IControlAccessibilityInfo
     COORD InteractivityAutomationPeer::GetFontSize() const
     {
-        return til::size{ til::math::rounding, _interactivity->GetCore().FontSize() };
+        return til::size{ til::math::rounding, _interactivity->Core().FontSize() };
     }
 
     RECT InteractivityAutomationPeer::GetBounds() const

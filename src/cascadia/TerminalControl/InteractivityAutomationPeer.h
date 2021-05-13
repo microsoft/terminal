@@ -16,7 +16,7 @@ Abstract:
   ControlInteractivity is totally oblivious to the UI tree that might be hosting
   it. So this class implements the actual text pattern for the buffer, because
   it has access to the buffer. TermControlAutomationPeer can then call the
-  methods on this class to expose the implemeentation in the actual UI tree.
+  methods on this class to expose the implementation in the actual UI tree.
 
 Author(s):
 - Mike Griese (migrie), May 2021
@@ -68,6 +68,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         virtual void ChangeViewport(SMALL_RECT NewWindow) override;
         virtual HRESULT GetHostUiaProvider(IRawElementProviderSimple** provider) override;
 #pragma endregion
+
+        TYPED_EVENT(SelectionChanged, IInspectable, IInspectable);
+        TYPED_EVENT(TextChanged, IInspectable, IInspectable);
+        TYPED_EVENT(CursorChanged, IInspectable, IInspectable);
 
     private:
         ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;

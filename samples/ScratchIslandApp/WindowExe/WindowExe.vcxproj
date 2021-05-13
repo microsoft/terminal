@@ -83,7 +83,7 @@
     they're missing, then WinRT will have a hard time marshalling those types
     across a process boundary.
 
-    Particularily tricky is Microsoft.Terminal.Core.winmd. That winmd doesn't
+    Particularly tricky is Microsoft.Terminal.Core.winmd. That winmd doesn't
     have its own DLL (it doesn't have any activatable classes, only structs and
     interfaces). However, it too is necessary for Terminal.Control to be able to
     marshall the Core types across the boundary.
@@ -182,13 +182,13 @@
     <!-- **END VC LIBS HACK** -->
 
 
-    <!-- **BEGIN TERMINALCONNECTION HACK** -->
+    <!-- **BEGIN TERMINAL CONNECTION HACK** -->
     <!-- This is the same as the above VC libs hack, but for TerminalConnection.
     TerminalConnection depends on cpprest*.dll, and if we don't include it in
     the packaging output, we'll crash as soon as we try to load
     TerminalConnection.dll.
 
-    The Sample sln needs to do this manually - the real exe hasa
+    The Sample sln needs to do this manually - the real exe has a
     ProjectReference to TerminalConnection.vcxproj and can figure this out on
     its own. -->
     <ItemGroup>
@@ -200,9 +200,9 @@
         <TargetPath>%(Filename)%(Extension)</TargetPath>
       </PackagingOutputs>
     </ItemGroup>
-    <!-- **END TERMINALCONNECTION HACK** -->
+    <!-- **END TERMINAL CONNECTION HACK** -->
 
-    <!-- Same thing again here, with windowsterminal.exe -->
+    <!-- Same thing again here, with WindowsTerminal.exe -->
     <ItemGroup>
       <_WindowsTerminalExe Include="$(OpenConsoleCommonOutDir)\WindowsTerminal\*.exe" />
 

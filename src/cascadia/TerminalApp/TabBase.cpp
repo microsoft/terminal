@@ -46,9 +46,17 @@ namespace winrt::TerminalApp::implementation
         auto weakThis{ get_weak() };
 
         // Build the menu
-        Controls::MenuFlyout newTabFlyout;
-        _AppendCloseMenuItems(newTabFlyout);
-        TabViewItem().ContextFlyout(newTabFlyout);
+        Controls::MenuFlyout contextMenuFlyout;
+        // GH#5750 - When the context menu is dismissed with ESC, toss the focus
+        // back to our control.
+        contextMenuFlyout.Closed([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_RequestFocusActiveControlHandlers();
+            }
+        });
+        _AppendCloseMenuItems(contextMenuFlyout);
+        TabViewItem().ContextFlyout(contextMenuFlyout);
     }
 
     // Method Description:
@@ -222,5 +230,25 @@ namespace winrt::TerminalApp::implementation
         WUX::Controls::ToolTip toolTip{};
         toolTip.Content(textBlock);
         WUX::Controls::ToolTipService::SetToolTip(TabViewItem(), toolTip);
+    }
+
+    // Method Description:
+    // - Initializes a TabViewItem for this Tab instance.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TabBase::_MakeTabViewItem()
+    {
+        TabViewItem(::winrt::MUX::Controls::TabViewItem{});
+
+        // GH#3609 If the tab was tapped, and no one else was around to handle
+        // it, then ask our parent to toss focus into the active control.
+        TabViewItem().Tapped([weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_RequestFocusActiveControlHandlers();
+            }
+        });
     }
 }

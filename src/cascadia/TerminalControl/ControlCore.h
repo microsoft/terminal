@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void UpdateAppearance(const IControlAppearance& newAppearance);
         void SizeChanged(const double width, const double height);
         void ScaleChanged(const double scale);
-        uint64_t GetSwapChainHandle() const;
+        uint64_t SwapChainHandle() const;
 
         void AdjustFontSize(int fontSizeDelta);
         void ResetFontSize();
@@ -74,8 +74,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void UpdatePatternLocations();
         void UpdateHoveredCell(Windows::Foundation::IReference<Core::Point> terminalPosition);
         winrt::hstring GetHyperlink(const til::point position) const;
-        winrt::hstring GetHoveredUriText() const;
-        Windows::Foundation::IReference<Core::Point> GetHoveredCell() const;
+        winrt::hstring HoveredUriText() const;
+        Windows::Foundation::IReference<Core::Point> HoveredCell() const;
 
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
 
@@ -176,8 +176,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal{ nullptr };
 
-        std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
+        // NOTE: _renderEngine must be ordered before _renderer.
+        //
+        // As _renderer has a dependency on _renderEngine (through a raw pointer)
+        // we must ensure the _renderer is deallocated first.
+        // (C++ class members are destroyed in reverse order.)
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine{ nullptr };
+        std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
 
         IControlSettings _settings{ nullptr };
 

@@ -87,7 +87,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _interactivity = winrt::make<implementation::ControlInteractivity>(settings, connection);
         }
-        _core = _interactivity.GetCore();
+        _core = _interactivity.Core();
 
         // // Use a manual revoker on the output event, so we can immediately stop
         // // worrying about it on destruction.
@@ -600,7 +600,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // TODO! very good chance we leak this handle
             const HANDLE chainHandle = reinterpret_cast<HANDLE>(control->_contentProc ?
                                                                     control->_contentProc.RequestSwapChainHandle(GetCurrentProcessId()) :
-                                                                    control->_core.GetSwapChainHandle());
+                                                                    control->_core.SwapChainHandle());
             _AttachDxgiSwapChainToXaml(chainHandle);
         }
     }
@@ -693,7 +693,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // TODO! very good chance we leak this handle
         const HANDLE chainHandle = reinterpret_cast<HANDLE>(_contentProc ?
                                                                 _contentProc.RequestSwapChainHandle(GetCurrentProcessId()) :
-                                                                _core.GetSwapChainHandle());
+                                                                _core.SwapChainHandle());
         _AttachDxgiSwapChainToXaml(chainHandle);
 
         // Tell the DX Engine to notify us when the swap chain changes. We do
@@ -2422,10 +2422,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         co_await resume_foreground(Dispatcher());
         if (auto self{ weakThis.get() })
         {
-            auto lastHoveredCell = _core.GetHoveredCell();
+            auto lastHoveredCell = _core.HoveredCell();
             if (lastHoveredCell)
             {
-                const auto uriText = _core.GetHoveredUriText();
+                const auto uriText = _core.HoveredUriText();
                 if (!uriText.empty())
                 {
                     // Update the tooltip with the URI

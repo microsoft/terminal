@@ -25,8 +25,8 @@ namespace Microsoft.Terminal.Core
     };
 
     // TerminalCore declares its own Color struct to avoid depending on
-    // Windows.UI. Windows.Foundation.POint also exists, but it's composedof
-    // floating-point coordinates,whenwe almost always need integer coordinates.
+    // Windows.UI. Windows.Foundation.Point also exists, but it's composed of
+    // floating-point coordinates,when we almost always need integer coordinates.
     // It is supported by til::point for conversions in and out of WinRT land.
     struct Point
     {

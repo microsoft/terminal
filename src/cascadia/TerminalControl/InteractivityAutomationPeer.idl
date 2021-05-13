@@ -10,5 +10,9 @@ namespace Microsoft.Terminal.Control
 
         void SetControlBounds(Windows.Foundation.Rect bounds);
         void SetControlPadding(Microsoft.Terminal.Core.Padding padding);
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> SelectionChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> TextChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> CursorChanged;
     }
 }
