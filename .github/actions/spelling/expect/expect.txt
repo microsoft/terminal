@@ -18,10 +18,10 @@ ACIOSS
 ACover
 actctx
 ACTCTXW
-actionmap
 activatable
 ACTIVEBORDER
 ACTIVECAPTION
+adaa
 ADDALIAS
 ADDB
 ADDREF
@@ -199,6 +199,7 @@ byref
 bytearray
 bytebuffer
 cac
+cacafire
 callee
 cang
 capslock
@@ -298,6 +299,8 @@ codepage
 codepath
 codepoint
 codeproject
+coffgroup
+coffgrp
 coinit
 COLLECTIONURI
 colorizing
@@ -487,6 +490,7 @@ dai
 DATABLOCK
 DATAVIEW
 DATAW
+datetime
 DBatch
 dbcs
 DBCSCHAR
@@ -676,6 +680,7 @@ dxgidwm
 dxinterop
 dxttbmp
 eachother
+eae
 eaf
 EASTEUROPE
 eb
@@ -698,6 +703,7 @@ elems
 elif
 elseif
 emacs
+emplate
 EMPTYBOX
 enabledelayedexpansion
 endian
@@ -761,6 +767,7 @@ fcb
 fcharset
 fclose
 fcntl
+fd
 fdc
 FDD
 fdopen
@@ -781,6 +788,7 @@ FILESYSPATH
 filesystem
 FILETIME
 FILETYPE
+fileurl
 FILEW
 FILLATTR
 FILLCONSOLEOUTPUT
@@ -846,6 +854,7 @@ fuzzwrapper
 fwdecl
 fwe
 fwlink
+Fx
 GAUSSIAN
 gb
 gci
@@ -854,6 +863,7 @@ gcy
 gdi
 gdip
 gdirenderer
+GENPROFILE
 geopol
 GETALIAS
 GETALIASES
@@ -973,6 +983,7 @@ hfont
 hglobal
 hh
 hhh
+HHmm
 hhook
 hhx
 HIBYTE
@@ -1003,6 +1014,7 @@ horiz
 HORZ
 hostable
 hostlib
+Hostx
 HPA
 HPAINTBUFFER
 hpcon
@@ -1129,6 +1141,7 @@ INPUTPROCESSORPROFILE
 inputrc
 Inputreadhandledata
 INSERTMODE
+installationpath
 intellisense
 INTERACTIVITYBASE
 INTERCEPTCOPYPASTE
@@ -1430,6 +1443,7 @@ mkdir
 MMBB
 mmcc
 MMCPL
+MMdd
 mmsystem
 MNC
 MNOPQ
@@ -1618,6 +1632,7 @@ numlock
 numpad
 NUMSCROLL
 nupkg
+nuspec
 NVIDIA
 NVR
 Nx
@@ -1760,7 +1775,11 @@ PFNCONSOLECREATEIOTHREAD
 PFONT
 PFONTENUMDATA
 PFS
+pgd
 pgdn
+pgorepro
+pgort
+PGU
 pguid
 pgup
 PHANDLE
@@ -1994,7 +2013,6 @@ Replymessage
 repositorypath
 rescap
 Resequence
-reserialize
 RESETCONTENT
 resheader
 resizable
@@ -2271,6 +2289,7 @@ STX
 stylecop
 SUA
 subcompartment
+subfolder
 subkey
 SUBLANG
 sublicensable
@@ -2521,7 +2540,7 @@ UNORM
 unparseable
 unpause
 Unregister
-Unregistering
+unregistering
 untests
 untextured
 untimes
@@ -2831,7 +2850,6 @@ xdy
 XEncoding
 xes
 Xes
-XES
 xff
 XFile
 XFORM
@@ -2879,6 +2897,7 @@ YVIRTUALSCREEN
 Yw
 YWalk
 yx
+yy
 YZ
 Zc
 ZCmd
@@ -2890,3 +2909,4 @@ zsh
 zu
 zxcvbnm
 zy
+zz
