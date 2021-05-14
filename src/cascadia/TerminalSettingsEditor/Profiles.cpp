@@ -32,7 +32,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _profile{ profile },
         _defaultAppearanceViewModel{ winrt::make<implementation::AppearanceViewModel>(profile.DefaultAppearance().try_as<AppearanceConfig>()) },
         _originalProfileGuid{ profile.Guid() },
-        _appSettings{ appSettings }
+        _appSettings{ appSettings },
+        _unfocusedAppearanceViewModel{ nullptr }
     {
         // Add a property changed handler to our own property changed event.
         // This propagates changes from the settings model to anybody listening to our
@@ -62,6 +63,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (!_FontList || !_MonospaceFontList)
         {
             UpdateFontList();
+        }
+
+        if (profile.HasUnfocusedAppearance())
+        {
+            _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(profile.UnfocusedAppearance().try_as<AppearanceConfig>());
         }
     }
 
@@ -237,6 +243,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Editor::AppearanceViewModel ProfileViewModel::DefaultAppearance()
     {
         return _defaultAppearanceViewModel;
+    }
+
+    bool ProfileViewModel::HasUnfocusedAppearance()
+    {
+        return _profile.HasUnfocusedAppearance();
+    }
+
+    Editor::AppearanceViewModel ProfileViewModel::UnfocusedAppearance()
+    {
+        return _unfocusedAppearanceViewModel;
     }
 
     bool ProfileViewModel::UseParentProcessDirectory()

@@ -34,6 +34,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::guid OriginalProfileGuid() const noexcept;
         bool CanDeleteProfile() const;
         Editor::AppearanceViewModel DefaultAppearance();
+        Editor::AppearanceViewModel UnfocusedAppearance();
+        bool HasUnfocusedAppearance();
+
         WINRT_PROPERTY(bool, IsBaseLayer, false);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
@@ -77,6 +80,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static Editor::Font _GetFont(com_ptr<IDWriteLocalizedStrings> localizedFamilyNames);
 
         Model::CascadiaSettings _appSettings;
+        Editor::AppearanceViewModel _unfocusedAppearanceViewModel;
     };
 
     struct DeleteProfileEventArgs :
@@ -109,6 +113,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             viewModel.DefaultAppearance().Schemes(schemes);
             viewModel.DefaultAppearance().WindowRoot(windowRoot);
+
+            if (viewModel.UnfocusedAppearance())
+            {
+                viewModel.UnfocusedAppearance().Schemes(schemes);
+                viewModel.UnfocusedAppearance().WindowRoot(windowRoot);
+            }
         }
 
         void DeleteProfile();

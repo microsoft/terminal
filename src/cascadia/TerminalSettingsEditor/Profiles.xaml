@@ -247,7 +247,7 @@
                                 BorderThickness="1" />
 
                         <local:Appearances Appearance="{x:Bind State.Profile.DefaultAppearance, Mode=OneWay}"
-                                           SourceProfile="{x:Bind State.Profile, Mode=OneWay}" />
+                                            SourceProfile="{x:Bind State.Profile, Mode=OneWay}" />
 
                         <!--  Grouping: Acrylic  -->
                         <StackPanel Style="{StaticResource PivotStackStyle}">
@@ -323,6 +323,14 @@
                                                    SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}" />
                             </local:SettingContainer>
                         </StackPanel>
+                        <muxc:Expander Width="400"
+                                       Header="Unfocused Appearance"
+                                       ExpandDirection="Down"
+                                       HorizontalAlignment="Left"
+                                       HorizontalContentAlignment="Left"
+                                       IsEnabled="{x:Bind State.Profile.HasUnfocusedAppearance, Mode=OneWay}">
+                            <local:Appearances Appearance="{x:Bind State.Profile.UnfocusedAppearance, Mode=OneWay}" />
+                        </muxc:Expander>
                     </StackPanel>
                 </ScrollViewer>
             </PivotItem>

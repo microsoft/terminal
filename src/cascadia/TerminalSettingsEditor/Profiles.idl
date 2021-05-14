@@ -25,6 +25,8 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean UseCustomStartingDirectory { get; };
         AppearanceViewModel DefaultAppearance { get; };
         Guid OriginalProfileGuid { get; };
+        Boolean HasUnfocusedAppearance { get; };
+        AppearanceViewModel UnfocusedAppearance { get; };
 
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Name);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, Guid);
