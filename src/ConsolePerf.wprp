@@ -43,6 +43,7 @@
         <EventProvider Id="EventProvider-Microsoft.Windows.Console.Server" Name="1A541C01-589A-496E-85A7-A9E02170166D"/>
         <EventProvider Id="EventProvider-Microsoft.Windows.Console.VirtualTerminal.Parser" Name="c9ba2a84-d3ca-5e19-2bd6-776a0910cb9d"/>
         <EventProvider Id="EventProvider-Microsoft.Windows.Console.Render.VtEngine" Name="c9ba2a95-d3ca-5e19-2bd6-776a0910cb9d"/>
+        <EventProvider Id="EventProvider-Microsoft.Windows.Console.UIA" Name="e7ebce59-2161-572d-b263-2f16a6afb9e5"/>
         <!-- Now define some profiles. We'll call them by ID when collecting. Also, the Base is where it is inheriting from and is a .wprpi file built... -->
         <!-- ... into WPR automatically. Go look in the WPR install directory or in the documentation to find it. -->
         <Profile Id="ConsolePerfProfile.Verbose.File" Base="GeneralProfile.Light.File" LoggingMode="File" Name="ConsolePerfProfile" DetailLevel="Verbose" Description="Console Performance default profile">
@@ -66,6 +67,7 @@
                         <EventProviderId Value="EventProvider-Microsoft.Windows.Console.Server"/>
                         <EventProviderId Value="EventProvider-Microsoft.Windows.Console.VirtualTerminal.Parser"/>
                         <EventProviderId Value="EventProvider-Microsoft.Windows.Console.Render.VtEngine"/>
+                        <EventProviderId Value="EventProvider-Microsoft.Windows.Console.UIA"/>
                     </EventProviders>
                 </EventCollectorId>
             </Collectors>
