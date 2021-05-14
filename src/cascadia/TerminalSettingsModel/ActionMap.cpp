@@ -670,13 +670,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return nullptr;
     }
 
-    void ActionMap::RebindKeys(Control::KeyChord const& oldKeys, Control::KeyChord const& newKeys)
+    // Method Description:
+    // - Rebinds a key binding to a new key chord
+    // Arguments:
+    // - oldKeys: the key binding that we are rebinding
+    // - newKeys: the new key chord that is being used to replace oldKeys
+    // Return Value:
+    // - true, if successful. False, otherwise.
+    bool ActionMap::RebindKeys(Control::KeyChord const& oldKeys, Control::KeyChord const& newKeys)
     {
         const auto& cmd{ GetActionByKeyChord(oldKeys) };
         if (!cmd)
         {
             // oldKeys must be bound. Otherwise, we don't know what action to bind.
-            throw hresult_invalid_argument();
+            return false;
         }
 
         if (newKeys)
@@ -690,8 +697,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // unbind oldKeys
         DeleteKeyBinding(oldKeys);
+        return true;
     }
 
+    // Method Description:
+    // - Unbind a key chord
+    // Arguments:
+    // - keys: the key chord that is being unbound
+    // Return Value:
+    // - <none>
     void ActionMap::DeleteKeyBinding(KeyChord const& keys)
     {
         // create an "unbound" command

@@ -68,7 +68,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::vector<SettingsLoadWarnings> LayerJson(const Json::Value& json);
 
         // modification
-        void RebindKeys(Control::KeyChord const& oldKeys, Control::KeyChord const& newKeys);
+        bool RebindKeys(Control::KeyChord const& oldKeys, Control::KeyChord const& newKeys);
         void DeleteKeyBinding(Control::KeyChord const& keys);
 
         static Windows::System::VirtualKeyModifiers ConvertVKModifiers(Control::KeyModifiers modifiers);

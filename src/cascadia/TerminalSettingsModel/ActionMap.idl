@@ -20,7 +20,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass ActionMap : IActionMapView
     {
-        void RebindKeys(Microsoft.Terminal.Control.KeyChord oldKeys, Microsoft.Terminal.Control.KeyChord newKeys);
+        Boolean RebindKeys(Microsoft.Terminal.Control.KeyChord oldKeys, Microsoft.Terminal.Control.KeyChord newKeys);
         void DeleteKeyBinding(Microsoft.Terminal.Control.KeyChord keys);
     }
 }

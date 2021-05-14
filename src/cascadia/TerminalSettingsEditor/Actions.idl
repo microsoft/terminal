@@ -18,11 +18,14 @@ namespace Microsoft.Terminal.Settings.Editor
         String KeyChordText { get; };
 
         // UI side
-        String UIAHelpText { get; };
         Boolean ShowEditButton { get; };
         Boolean IsInEditMode { get; };
         String ProposedKeys;
         Windows.UI.Xaml.Controls.Flyout AcceptChangesFlyout;
+        String EditButtonName { get; };
+        String CancelButtonName { get; };
+        String AcceptButtonName { get; };
+        String DeleteButtonName { get; };
 
         void EnterHoverMode();
         void ExitHoverMode();

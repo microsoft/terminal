@@ -46,6 +46,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         });
     }
 
+    hstring KeyBindingViewModel::EditButtonName() const noexcept { return RS_(L"Actions_EditButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"); }
+    hstring KeyBindingViewModel::CancelButtonName() const noexcept { return RS_(L"Actions_CancelButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"); }
+    hstring KeyBindingViewModel::AcceptButtonName() const noexcept { return RS_(L"Actions_AcceptButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"); }
+    hstring KeyBindingViewModel::DeleteButtonName() const noexcept { return RS_(L"Actions_DeleteButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"); }
+
     bool KeyBindingViewModel::ShowEditButton() const noexcept
     {
         return (IsContainerFocused() || IsEditButtonFocused() || IsHovered() || IsAutomationPeerAttached()) && !IsInEditMode();
@@ -59,30 +64,36 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             // if we're in edit mode,
             // pre-populate the text box with the current keys
-            _ProposedKeys = KeyChordText();
-            _NotifyChanges(L"ProposedKeys");
+            ProposedKeys(KeyChordText());
         }
     }
 
     void KeyBindingViewModel::AttemptAcceptChanges()
     {
+        AttemptAcceptChanges(_ProposedKeys);
+    }
+
+    void KeyBindingViewModel::AttemptAcceptChanges(hstring newKeyChordText)
+    {
         auto args{ make_self<RebindKeysEventArgs>(_Keys, _Keys) };
         try
         {
             // Attempt to convert the provided key chord text
-            const auto newKeyChord{ KeyChordSerialization::FromString(_ProposedKeys) };
+            const auto newKeyChord{ KeyChordSerialization::FromString(newKeyChordText) };
             args->NewKeys(newKeyChord);
+            _RebindKeysRequestedHandlers(*this, *args);
         }
         catch (hresult_invalid_argument)
         {
             // Converting the text into a key chord failed
-            // TODO CARLOS:
+            // TODO GH #6900:
             //  This is tricky. I still haven't found a way to reference the
             //  key chord text box. It's hidden behind the data template.
             //  Ideally, some kind of notification would alert the user, but
             //  to make it look nice, we need it to somehow target the text box.
+            //  Alternatively, we want a full key chord editor/listener.
+            //  If we implement that, we won't need this validation or error message.
         }
-        _RebindKeysRequestedHandlers(*this, *args);
     }
 
     Actions::Actions()
@@ -95,6 +106,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _AutomationPeerAttached = true;
         for (const auto& kbdVM : _KeyBindingList)
         {
+            // To create a more accessible experience, we want the "edit" buttons to _always_
+            // appear when a screen reader is attached. This ensures that the edit buttons are
+            // accessible via the UIA tree.
             get_self<KeyBindingViewModel>(kbdVM)->IsAutomationPeerAttached(_AutomationPeerAttached);
         }
         return nullptr;
@@ -122,6 +136,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _KeyBindingList = single_threaded_observable_vector(std::move(keyBindingList));
     }
 
+    void Actions::KeyChordEditor_PreviewKeyDown(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+    {
+        const auto& senderTB{ sender.as<TextBox>() };
+        const auto& kbdVM{ senderTB.DataContext().as<Editor::KeyBindingViewModel>() };
+        if (e.OriginalKey() == VirtualKey::Enter)
+        {
+            // Fun fact: this is happening _before_ "_ProposedKeys" gets updated
+            // with the two-way data binding. So we need to directly extract the text
+            // and tell the view model to update itself.
+            get_self<KeyBindingViewModel>(kbdVM)->AttemptAcceptChanges(senderTB.Text());
+            e.Handled(true);
+        }
+        else if (e.OriginalKey() == VirtualKey::Escape)
+        {
+            kbdVM.ToggleEditMode();
+            e.Handled(true);
+        }
+    }
+
     void Actions::_ViewModelPropertyChangedHandler(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args)
     {
         const auto senderVM{ sender.as<Editor::KeyBindingViewModel>() };
@@ -130,18 +163,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (senderVM.IsInEditMode())
             {
+                // Ensure that...
+                // 1. we move focus to the edit mode controls
+                // 2. this is the only entry that is in edit mode
                 for (uint32_t i = 0; i < _KeyBindingList.Size(); ++i)
                 {
                     const auto& kbdVM{ _KeyBindingList.GetAt(i) };
                     if (senderVM == kbdVM)
                     {
-                        // move focus to the edit mode controls
+                        // This is the view model entry that went into edit mode.
+                        // Move focus to the edit mode controls by
+                        // extracting the list view item container.
                         const auto& container{ KeyBindingsListView().ContainerFromIndex(i).try_as<ListViewItem>() };
                         container.Focus(FocusState::Programmatic);
                     }
                     else
                     {
-                        // exit edit mode for all other containers
+                        // Exit edit mode for all other containers
                         get_self<KeyBindingViewModel>(kbdVM)->DisableEditMode();
                     }
                 }
@@ -256,7 +294,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        // TODO CARLOS:
+        // TODO GH #6900:
         //  an expedited search can be done if we use cmd.Name()
         //  to quickly search through the sorted list.
         return std::nullopt;

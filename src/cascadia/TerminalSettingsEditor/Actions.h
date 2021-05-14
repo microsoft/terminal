@@ -40,7 +40,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         hstring KeyChordText() const { return _KeyChordText; }
         Settings::Model::Command Command() const { return _Command; };
 
-        hstring UIAHelpText() const { return hstring{ fmt::format(L"{}, {}", Name(), KeyChordText()) }; };
+        // UIA Text
+        hstring EditButtonName() const noexcept;
+        hstring CancelButtonName() const noexcept;
+        hstring AcceptButtonName() const noexcept;
+        hstring DeleteButtonName() const noexcept;
+
         void EnterHoverMode() { IsHovered(true); };
         void ExitHoverMode() { IsHovered(false); };
         void FocusContainer() { IsContainerFocused(true); };
@@ -51,6 +56,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void ToggleEditMode();
         void DisableEditMode() { IsInEditMode(false); }
         void AttemptAcceptChanges();
+        void AttemptAcceptChanges(hstring newKeyChordText);
         void DeleteKeyBinding() { _DeleteKeyBindingRequestedHandlers(*this, _Keys); }
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsInEditMode, false);
@@ -85,6 +91,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
+        void KeyChordEditor_PreviewKeyDown(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_PROPERTY(Editor::ActionsPageNavigationState, State, nullptr);
