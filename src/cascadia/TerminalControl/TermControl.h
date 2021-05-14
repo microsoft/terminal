@@ -144,7 +144,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _initializedTerminal;
 
         std::shared_ptr<ThrottledFunc<winrt::Windows::UI::Core::CoreDispatcher>> _tsfTryRedrawCanvas;
-        // std::shared_ptr<ThrottledFunc<winrt::Windows::UI::Core::CoreDispatcher>> _updatePatternLocations;
         std::shared_ptr<ThrottledFunc<winrt::Windows::UI::Core::CoreDispatcher>> _playWarningBell;
 
         struct ScrollBarUpdate
@@ -244,7 +243,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                   const int fontHeight,
                                   const bool isInitialChange);
         winrt::fire_and_forget _coreTransparencyChanged(IInspectable sender, Control::TransparencyChangedEventArgs args);
-        // void _coreReceivedOutput(const IInspectable& sender, const IInspectable& args);
         void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
         void _coreWarningBell(const IInspectable& sender, const IInspectable& args);
     };

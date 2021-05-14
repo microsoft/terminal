@@ -104,6 +104,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnTerminalTaskbarProgressChanged = std::bind(&ControlCore::_terminalTaskbarProgressChanged, this);
         _terminal->TaskbarProgressChangedCallback(pfnTerminalTaskbarProgressChanged);
 
+        // Get our dispatcher. If we're hosted in-proc with XAML, this will get
+        // us the same dispatcher as TermControl::Dispatcher(). If we're out of
+        // proc, this'll return null. We'll need to instead make a new
+        // DispatcherQueue (on a new thread), so we can use that for throttled
+        // functions.
         _dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
         if (!_dispatcher)
         {
@@ -111,6 +116,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _dispatcher = controller.DispatcherQueue();
         }
 
+        // A few different events should be throttled, so they don't fire absolutely all the time:
+        // * _tsfTryRedrawCanvas: When the cursor position moves, we need to
+        //   inform TSF, so it can move the canvas for the composition. We
+        //   throttle this so that we're not hopping across the process boundary
+        //   every time that the cursor moves.
+        // * _updatePatternLocations: When there's new output, or we scroll the
+        //   viewport, we should re-check if there are any visible hyperlinks.
+        //   But we don't really need to do this every single time text is
+        //   output, we can limit this update to once every 500ms.
+        // * _updateScrollBar: Same idea as the TSF update - we don't _really_
+        //   need to hop across the process boundary every time text is output.
+        //   We can throttle this to once every 8ms, which will get us out of
+        //   the way of the main output & rendering threads.
         _tsfTryRedrawCanvas = std::make_shared<ThrottledFunc<winrt::Windows::System::DispatcherQueue>>(
             [weakThis = get_weak()]() {
                 if (auto core{ weakThis.get() })
@@ -137,22 +155,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 {
                     core->_ScrollPositionChangedHandlers(*core, update);
                 }
-
-                // if (auto control{ weakThis.get() })
-                // {
-                //     control->_isInternalScrollBarUpdate = true;
-                //     auto scrollBar = control->ScrollBar();
-                //     if (update.newValue.has_value())
-                //     {
-                //         scrollBar.Value(update.newValue.value());
-                //     }
-                //     scrollBar.Maximum(update.newMaximum);
-                //     scrollBar.Minimum(update.newMinimum);
-                //     scrollBar.ViewportSize(update.newViewportSize);
-                //     // scroll one full screen worth at a time when the scroll bar is clicked
-                //     scrollBar.LargeChange(std::max(update.newViewportSize - 1, 0.));
-                //     control->_isInternalScrollBarUpdate = false;
-                // }
             },
             ScrollBarUpdateInterval,
             _dispatcher);
@@ -1133,22 +1135,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // TODO GH#9617: refine locking around pattern tree
         _terminal->ClearPatternTree();
 
+        // Start the throttled update of our scrollbar.
         auto update{ winrt::make<ScrollPositionChangedArgs>(viewTop,
                                                             viewHeight,
                                                             bufferSize) };
-        // _ScrollPositionChangedHandlers(*this,
-        //                                winrt::make<ScrollPositionChangedArgs>(viewTop,
-        //                                                                       viewHeight,
-        //                                                                       bufferSize));
         _updateScrollBar->Run(update);
 
+        // Additionally, start the throttled update of where our links are.
         _updatePatternLocations->Run();
     }
 
     void ControlCore::_terminalCursorPositionChanged()
     {
+        // When the buffer's cursor moves, start the throttled func to
+        // eventually dispatch a CursorPositionChanged event.
         _tsfTryRedrawCanvas->Run();
-        // _CursorPositionChangedHandlers(*this, nullptr);
     }
 
     void ControlCore::_terminalTaskbarProgressChanged()
@@ -1436,19 +1437,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _terminal->Write(hstr);
 
-        // // NOTE: We're raising an event here to inform the TermControl that
-        // // output has been received, so it can queue up a throttled
-        // // UpdatePatternLocations call. In the future, we should have the
-        // // _updatePatternLocations ThrottledFunc internal to this class, and
-        // // run on this object's dispatcher queue.
-        // //
-        // // We're not doing that quite yet, because the Core will eventually
-        // // be out-of-proc from the UI thread, and won't be able to just use
-        // // the UI thread as the dispatcher queue thread.
-        // //
-        // // See TODO: https://github.com/microsoft/terminal/projects/5#card-50760282
-        // _ReceivedOutputHandlers(*this, nullptr);
-
+        // Start the throttled update of where our hyperlinks are.
         _updatePatternLocations->Run();
     }
 

@@ -756,13 +756,6 @@ namespace winrt::TerminalApp::implementation
                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialRows()),
                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialCols()),
                                                                                 winrt::guid() });
-            // connection = TerminalConnection::ConptyConnection(azBridgePath.wstring(),
-            //                                                   L".",
-            //                                                   L"Azure",
-            //                                                   nullptr,
-            //                                                   settings.InitialRows(),
-            //                                                   settings.InitialCols(),
-            //                                                   winrt::guid());
         }
 
         else
@@ -800,14 +793,6 @@ namespace winrt::TerminalApp::implementation
                                                                                  ::base::saturated_cast<uint32_t>(settings.InitialRows()),
                                                                                  ::base::saturated_cast<uint32_t>(settings.InitialCols()),
                                                                                  winrt::guid() });
-            // auto conhostConn = TerminalConnection::ConptyConnection(
-            //     settings.Commandline(),
-            //     winrt::hstring{ cwd.c_str() },
-            //     settings.StartingTitle(),
-            //     envMap.GetView(),
-            //     settings.InitialRows(),
-            //     settings.InitialCols(),
-            //     winrt::guid());
 
             sessionGuid = conhostConn.Guid();
             connection = conhostConn;

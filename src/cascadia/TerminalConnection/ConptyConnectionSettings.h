@@ -7,7 +7,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     struct ConptyConnectionSettings : ConptyConnectionSettingsT<ConptyConnectionSettings>
     {
         // WINRT_PROPERTY will be VERY unhappy if you use this templated type
-        // directly in the macro, so just typdef a helper here.
+        // directly in the macro, so just typedef a helper here.
         using EnvironmentMap = Windows::Foundation::Collections::IMapView<hstring, hstring>;
         ConptyConnectionSettings(hstring const& cmdline,
                                  hstring const& startingDirectory,
