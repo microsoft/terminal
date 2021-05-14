@@ -462,21 +462,21 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             _check_indices(start_index, end_index);
 
-            const rle_type new_run{ value, static_cast<size_type>(end_index - start_index) };
-            _replace(start_index, end_index, { &new_run, 1 });
+            const rle_type replacement{ value, static_cast<size_type>(end_index - start_index) };
+            _replace_unchecked(start_index, end_index, { &replacement, 1 });
         }
 
         // Replace the range [start_index, end_index) with the given run.
         // NOTE: This can change the size/length of the vector.
-        void replace(size_type start_index, size_type end_index, const rle_type& new_run)
+        void replace(size_type start_index, size_type end_index, const rle_type& replacement)
         {
-            replace(start_index, end_index, { &new_run, 1 });
+            replace(start_index, end_index, { &replacement, 1 });
         }
 
-        void replace(size_type start_index, size_type end_index, const gsl::span<const rle_type> new_runs)
+        void replace(size_type start_index, size_type end_index, const gsl::span<const rle_type> replacements)
         {
             _check_indices(start_index, end_index);
-            _replace(start_index, end_index, new_runs);
+            _replace_unchecked(start_index, end_index, replacements);
         }
 
         // Replaces every value seen in the run with a new one
@@ -692,20 +692,182 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 
-        void _replace(size_type start_index, size_type end_index, const gsl::span<const rle_type> new_runs)
+        // Replace the range [start_index, end_index) with replacements.
+        void _replace_unchecked(size_type start_index, size_type end_index, const gsl::span<const rle_type> replacements)
         {
+            //
+            //
+            //
+            // MUST READ: How this function (mostly) works
+            // -------------------------------------------
+            //
+            // ## Overview
+            //
+            // Assuming this instance consists of:
+            //   _runs == {{1, 3}, {2, 3}, {3, 3}}
+            // Or shown in a more visual way:
+            //   1 1 1|2 2 2|3 3 3
+            //
+            // If we're called with:
+            //   _replace_unchecked(3, 6, {{4, 2}, {5, 2}})
+            // Or shown in a more visual way:
+            //   1 1 1|2 2 2|3 3 3
+            //       ^    ^         <-- the first ^ is "start_index" (inclusive) and the second "end_index" (exclusive)
+            //       1 1|4|2        <-- the "replacements"
+            //
+            // This results in:
+            //   1 1 1 1|4|2 2|3 3 3
+            // and _total_length increases by 1.
+            //
+            //
+            // ## Trivial algorithm
+            //
+            // Assuming we have the following situation:
+            //   1 1 1|2 2 2|3 3 3
+            //       ^    ^
+            //       1 1|4|2
+            //
+            // A trivial algorithm can achieve this in 3-4 steps:
+            // 1. Remove the to be replaced range (marked with ^).
+            //    The lengths of existing runs must be modified accordingly.
+            //    Resulting in:
+            //      1 1|2|3 3 3
+            //         ^         <-- the insertion point for replacements
+            //
+            // 2. (Optional) If the replaced range starts and ends within the same run,
+            //    we need to split it up into two. An example can be found below.
+            // 3. Add the new replacements:
+            //      1 1|1 1|4|2|2|3 3 3
+            // 4. Join adjacent runs together (using _compact):
+            //      1 1 1 1|4|2 2|3 3 3
+            //
+            // An example for the optional step 2:
+            //   1 1 1|2 2 2|3 3 3
+            //           ^^
+            //           1 1
+            // Resulting in:
+            //   1 1 1|2|1 1|2|3 3 3
+            //         ^     ^        <-- the {2, 3} run was split up
+            //
+            // All 4 steps require elements in the underlying _runs vector to be shuffled around.
+            // This function is long and complex, as it determines the place of insertion
+            // as well as joining of adjacent runs before applying any modifications.
+            //
+            //
+            // ## Optimized algorithm
+            //
+            // Note: "step N" refers to the 4 steps in previous "Trivial algorithm" section.
+            //
+            // There are 3 ways to reduce the cost of the trivial algorithm.
+            // Before modifying the underlying _runs vector we must detect:
+            // * (step 2) Whether the replaced range starts and ends within the same run,
+            //   forcing us to split up a run and **add an additional element**.
+            // * (step 4) "adjacent runs" which would occur after insertion.
+            //   We must insert **one run less each** if either the first or last element
+            //   of "replacements" is the same as it's existing successor/predecessor element.
+            //   This fact is even true in case like this:
+            //     1 1|2 2|1 1
+            //         ^  ^
+            //         1 1
+            //   Resulting in a single run and the removal of 2 elements from _runs:
+            //     1 1 1 1 1 1
+            // * How many runs we need to insert in total (including the previous 2 points)
+            //   and how many existing runs this will replace. Using this information
+            //   we can merge removal (step 1) and insertion (step 3) together.
+            //
+            // Let's look at the example from the previous section and
+            // assume we apply the previously mentioned optimizations
+            // This allows us to detect the adjacent runs and turn this:
+            //   1 1 1|2 2 2|3 3 3
+            //       ^    ^
+            //       1 1|4|2
+            // Into this:
+            //   1 1 1 1|2 2|3 3 3
+            //          ^
+            //          4
+            // Our algorithm now only needs to make a single insertion into _runs.
+            //
+            // Let's look at the example for the optional step 2:
+            //   1 1 1|2 2 2|3 3 3
+            //           ^^
+            //           1 1
+            // We can detect early that we need to add an additional element.
+            // This allows us to change it into a single insertion again:
+            //   1 1 1|2|3 3 3
+            //          ^
+            //          1 1|2
+            //
+            // Similarly we can detect cases where we replace more runs than we insert.
+            // For instance:
+            //   1 1 1|2 2 2|3 3 3|4 4 4|5 5 5
+            //           ^              ^
+            //               6 6 6
+            // After shortening the existing runs this is turned into a copy operation:
+            //   1 1 1|2|3 3 3|4 4 4|5 5 5
+            //           ^    ^
+            //           6 6 6
+            // And a removal of the extra space:
+            //   1 1 1|2|6 6 6|4 4 4|5 5 5
+            //                 ^    ^
+            // Resulting in:
+            //   1 1 1|2|6 6 6|5 5 5
+            //
+            //
+            // ## Implementation
+            //
+            // The need to calculate the exact space requirements before insertion of new or
+            // removal of existing runs requires us to have our steps in a specific order.
+            //
+            // [Step1]: Detect future adjacent runs.
+            //   As this requires us to insert up to 2 runs less.
+            //   For instance:
+            //     1 1 1|2 2 2|3 3 3
+            //           ^  ^
+            //           1 1
+            //   = 1 1 1 1 1|2|3 3 3
+            //          ^-- The first run was joined in place by increasing its length by 2.
+            //   This continues in [Step7].
+            // [Step2]: Detect whether a run needs to be split in 2.
+            //   As this requires us to insert 1 additional run.
+            //   For instance:
+            //     1 1 1|2 2 2|3 3 3
+            //             ^^
+            //             1 1
+            //   = 1 1 1|2|1 1|2|3 3 3
+            //                 ^-- An additional run was inserted.
+            //   This continues in [Step5].
+            // [Step3]: Adjust the lengths of existing runs.
+            //   For instance:
+            //     1 1 1|2 2 2|3 3 3
+            //       ^  ^
+            //       3 3
+            //   = 1|3 3|2 2 2|3 3 3
+            //     ^-- The first existing run was shortened by 2.
+            // [Step4]: Copy over as many runs into the to-be-replaced range as possible.
+            // [Step5]: If we split up a run, we must copy in the trailing end now.
+            // [Step6.1]: If we still have any remaining extra space in the to-be-replaced range we need to remove it.
+            // [Step6.2]: Otherwise if the space wasn't enough we need to insert the remaining runs.
+            // [Step7]: Apply the additional lengths for adjacent runs.
+            // [Step8]: Recalculate the _total_length.
+            //
+            //
+            //
+
             rle_scanner scanner{ _runs.begin(), _runs.end() };
             auto [begin, begin_pos] = scanner.scan(start_index);
             auto [end, end_pos] = scanner.scan(end_index);
 
-            // At the moment this isn't just a shortcut for pure removals...
-            // The remaining code in this function assumes that new_runs.size() != 0
-            // and will happily access new_runs.front()/.back() for instance.
+            // This condition handles pure removals, where replacements.size() == 0.
+            //
+            // But this isn't just a shortcut optimization...
+            // The remaining code in this function assumes that replacements.size() != 0
+            // and will happily access replacements.front()/.back() for instance.
+            // Otherwise the logic within this if condition is identical to the rest of this function.
             //
             // TODO:
-            //   Optimally the remaining code in this method should be made compatible with empty new_runs.
-            //   Especially since this logic is extremely similar to the one below for non-empty new_runs.
-            if (new_runs.empty())
+            //   Optimally the remaining code in this method should be made compatible with empty replacements.
+            //   Especially since this logic is extremely similar to the one below for non-empty replacements.
+            if (replacements.empty())
             {
                 const size_type removed = end_index - start_index;
 
@@ -736,36 +898,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 return;
             }
 
-            // Two complications can occur during insertion of new_runs:
-            // 1. The it/end run has the same value as the preceding/succeeding run.
-            //    --> The new runs must be joined with the existing runs.
-            // 2. The it/end run might it/end inside an existing run.
-            //    --> The existing run needs to be split up.
-
-            // 1. The it/end run has the same value as the preceding/succeeding run.
-            //    --> The new runs must be joined with the existing runs.
-            //
-            // TODO:
-            //   If we have exactly such a modification... For instance:
-            //       1|2 2|1|3 3|1
-            //     +     2|4|3
-            //     = 1|2 2|4|3 3|1
-            //   Then we'll currently do the following operations (in that order)
-            //   * Set begin_additional_length to 1
-            //   * Set end_additional_length to 1
-            //   * Shorten the "2 2" run by 1 to "2"
-            //   * Shorten the "3 3" run by 1 to "3"
-            //   * Copy all 3 new runs "2|4|3" over, while overwriting the existing "2|4|3" run
-            //   * Finally add begin/end_additional_length onto the "2" and "3" runs creating "2 2|4|3 3"
-            //   -> This is wasteful and it'd be better if we instead shorting new_runs to only copy the "4".
-            //      A simple if-shortcut would solve the issue for the example above, but wouldn't solve the
-            //      general case, for instance when we not just replace but also remove or insert new runs.
+            // [Step1]
             size_type begin_additional_length = 0;
             size_type end_additional_length = 0;
             if (start_index != 0)
             {
                 const auto previous = begin_pos ? begin : begin - 1;
-                if (previous->value == new_runs.front().value)
+                if (previous->value == replacements.front().value)
                 {
                     begin_additional_length = begin_pos ? begin_pos : previous->length;
                     begin_pos = 0;
@@ -774,9 +913,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
             if (end_index != _total_length)
             {
-                // Like all iterators in C++ "end" already points 1 item past "end_index".
-                // --> No need for something analogue to "previous".
-                if (end->value == new_runs.back().value)
+                // end already points 1 item past "end_index".
+                // --> No need for something analogue to "previous" above.
+                if (end->value == replacements.back().value)
                 {
                     end_additional_length = end->length - end_pos;
                     end_pos = 0;
@@ -784,92 +923,72 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 }
             }
 
-            // If we have a replacement like the following:
-            //   1 1 1 1 1
-            // +     2 2
-            // It'll result in the following _three_ runs:
-            // = 1 1|2 2|1
-            //           ^
-            // mid_insertion_trailer contains the run (marked as "^")
-            // which needs to be appended after the replacement runs.
+            // [Step2]
             std::optional<rle_type> mid_insertion_trailer;
             if (begin == end && begin_pos != 0)
             {
                 mid_insertion_trailer.emplace(begin->value, static_cast<size_type>(begin->length - end_pos));
-                // We've "consumed" end_pos
+                // mid_insertion_trailer contains the element that will be inserted past
+                // the to-be-replaced range. We must ensure that we don't accidentially
+                // adjust the length of an unrelated run and thus set end_post to 0.
                 end_pos = 0;
             }
 
-            // 2. The runs "begin"/"end" are pointing to, might begin/end inside an existing run.
-            //    --> The existing run needs to be split up.
-            //
-            // For example:
-            //
-            //   1 1 1|2 2
-            // +     3 3
-            // = 1 1|3 3|2
-            //   ^ ^     ^
-            // --> We must shorten the
-            //     * begin slice to a length of 2
-            //     * end slice to a length of 1
-            //
-            // NOTE: iterators in C++ are in the range [it, end).
+            // [Step3]
             if (begin_pos)
             {
                 begin->length = begin_pos;
-                // it is part of the to-be-replaced range, was "abused" to adjust the preceding run's length.
-                // --> We must increment it.
+                // begin is part of the to-be-replaced range.
+                // We've used the run begin is pointing to adjust it's length.
+                // --> We must increment it in order to not overwrite it in [Step4].
                 ++begin;
             }
             if (end_pos)
             {
-                // end points past the to-be-replaced range and doesn't need to be decremented.
+                // Similarly to before we must adjust the length,
+                // but this time we don't need to decrement end, as it's
+                // already pointing past the to-be-replaced range anyways.
                 end->length -= end_pos;
             }
 
-            // NOTE: Due to the prior case "2." it can be greater than end!
+            // NOTE: It's possible for begin > end, as we increment begin in [Step3].
             const size_t available_space = begin < end ? end - begin : 0;
-            const size_t required_space = new_runs.size() + (mid_insertion_trailer ? 1 : 0);
-
+            const size_t required_space = replacements.size() + (mid_insertion_trailer ? 1 : 0);
             const auto begin_index = begin - _runs.begin();
+            const auto replacements_begin = replacements.begin();
+            const auto replacements_end = replacements.end();
 
-            const auto new_runs_begin = new_runs.begin();
-            const auto new_runs_end = new_runs.end();
-
-            // First copy over as much data as can fit into the existing [start_index, end_index) range.
-            // Afterwards two situations can occur:
-            //
-            // * All data was copied and we have  we have more space left
-            const auto direct_copy_end = new_runs_begin + std::min(available_space, new_runs.size());
-            begin = std::copy(new_runs_begin, direct_copy_end, begin);
+            // [Step4]
+            const auto direct_copy_end = replacements_begin + std::min(available_space, replacements.size());
+            begin = std::copy(replacements_begin, direct_copy_end, begin);
 
             if (available_space >= required_space)
             {
-                // The entirety of required_space was used up and new_runs was fully copied over.
-                // We now need to .erase() the unneeded space in the underlying vector.
-
+                // [Step6.1]
                 _runs.erase(begin, end);
             }
             else
             {
-                // The entirety of available_space was used up and we have remaining new_runs elements to copy over.
-                // We now need to make space for the new elements.
-
                 if (mid_insertion_trailer)
                 {
+                    // Unfortunately there's no efficient way to express "insert an iterator range
+                    // plus one extra element at the end" with standard vector containers.
+                    // --> First make some space for N+1 elements using default initialization.
+                    //     Then insert the new runs and finally the mid_insertion_trailer.
                     _runs.insert(begin, required_space - available_space, {});
-                    begin = std::copy(direct_copy_end, new_runs_end, _runs.begin() + begin_index);
+                    // [Step6.2]
+                    begin = std::copy(direct_copy_end, replacements_end, _runs.begin() + begin_index);
+                    // [Step5]
                     *begin = *std::move(mid_insertion_trailer);
                 }
                 else
                 {
-                    _runs.insert(begin, direct_copy_end, new_runs_end);
+                    // [Step6.2]
+                    _runs.insert(begin, direct_copy_end, replacements_end);
                 }
             }
 
-            // Due to condition "1." it's possible for two existing, neighboring runs to be joined.
-            // --> We must extend the length of those existing runs.
-            // NOTE: Both it and end below may point to the same run!
+            // [Step7]
             if (begin_additional_length)
             {
                 begin = _runs.begin() + begin_index;
@@ -881,9 +1000,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 end->length += end_additional_length;
             }
 
+            // [Step8]
             _total_length -= end_index - start_index;
-
-            for (const auto& run : new_runs)
+            for (const auto& run : replacements)
             {
                 _total_length += run.length;
             }
