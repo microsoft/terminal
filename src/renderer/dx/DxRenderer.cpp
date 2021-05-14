@@ -1244,7 +1244,7 @@ try
         _invalidMap.set_all();
     }
 
-    if (TraceLoggingProviderEnabled(g_hDxRenderProvider, WINEVENT_LEVEL_VERBOSE, 0))
+    if (TraceLoggingProviderEnabled(g_hDxRenderProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
     {
         const auto invalidatedStr = _invalidMap.to_string();
         const auto invalidated = invalidatedStr.c_str();
@@ -1253,7 +1253,8 @@ try
         TraceLoggingWrite(g_hDxRenderProvider,
                           "Invalid",
                           TraceLoggingWideString(invalidated),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
 
     if (_isEnabled)
