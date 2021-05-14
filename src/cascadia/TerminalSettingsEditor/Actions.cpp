@@ -146,6 +146,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // with the two-way data binding. So we need to directly extract the text
             // and tell the view model to update itself.
             get_self<KeyBindingViewModel>(kbdVM)->AttemptAcceptChanges(senderTB.Text());
+
+            // For an unknown reason, when 'AcceptChangesFlyout' is set in the code above,
+            // the flyout isn't shown, forcing the 'Enter' key to do nothing.
+            // To get around this, detect if the flyout was set, and display it
+            // on the text box.
+            if (kbdVM.AcceptChangesFlyout() != nullptr)
+            {
+                kbdVM.AcceptChangesFlyout().ShowAt(senderTB);
+            }
             e.Handled(true);
         }
         else if (e.OriginalKey() == VirtualKey::Escape)
