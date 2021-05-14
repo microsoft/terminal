@@ -10,7 +10,6 @@
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
-    <ClCompile Include="AttrRowTests.cpp" />
     <ClCompile Include="ReflowTests.cpp" />
     <ClCompile Include="TextColorTests.cpp" />
     <ClCompile Include="TextAttributeTests.cpp" />

@@ -21,6 +21,7 @@ SOURCES = \
     PointTests.cpp \
     MathTests.cpp \
     RectangleTests.cpp \
+    RunLengthEncodingTests.cpp \
     SizeTests.cpp \
     SomeTests.cpp \
     u8u16convertTests.cpp \
