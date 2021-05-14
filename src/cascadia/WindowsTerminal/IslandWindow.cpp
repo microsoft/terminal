@@ -1256,7 +1256,7 @@ void IslandWindow::_globalDismissWindow(const uint32_t dropdownDuration)
 // Arguments:
 // - <none>
 // Return Value:
-// - The MONITORINFO for the monitor the mosue cursor is on
+// - The MONITORINFO for the monitor the mouse cursor is on
 MONITORINFO IslandWindow::_getMonitorForCursor()
 {
     POINT p{};
@@ -1317,7 +1317,7 @@ void IslandWindow::_moveToMonitorOfMouse()
 }
 
 // Method Description:
-// - Move our window to the monitor that the giben HWND is on.
+// - Move our window to the monitor that the given HWND is on.
 // Arguments:
 // - <none>
 // Return Value:

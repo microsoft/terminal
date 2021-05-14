@@ -720,7 +720,7 @@ _all_ open windows. This will allow us to re-open with all the user's windows,
 not just the one that happened to be closed last.
 
 <a name="footnote-2"><a>[2]: **Addenda, May 2021**: In the course of
-implementation, it became apparent that there's an important UX differenct
+implementation, it became apparent that there's an important UX difference
 between summoning _to the monitor with the cursor_ vs _to the monitor with the
 foreground window_. `"monitor": "toMouse"` was added as an option, to allow the
 user to differentiate between the two behaviors.
