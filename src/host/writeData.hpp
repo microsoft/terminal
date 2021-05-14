@@ -36,6 +36,7 @@ public:
 
     void SetUtf8ConsumedCharacters(const size_t cchUtf8Consumed);
 
+    void MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer) override;
     bool Notify(const WaitTerminationReason TerminationReason,
                 const bool fIsUnicode,
                 _Out_ NTSTATUS* const pReplyStatus,

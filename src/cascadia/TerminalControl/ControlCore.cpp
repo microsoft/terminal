@@ -101,27 +101,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         Close();
 
-        // Before destroying this instance we must ensure that we destroy the _renderer
-        // before the _renderEngine, as well as calling _renderer->TriggerTeardown().
-        // _renderEngine will be destroyed naturally after this ~destructor() returns.
-
-        decltype(_renderer) renderer;
+        if (_renderer)
         {
-            // GH#8734:
-            // We lock the terminal here to make sure it isn't still being
-            // used in the connection thread before we destroy the renderer.
-            // However, we must unlock it again prior to triggering the
-            // teardown, to avoid the render thread being deadlocked. The
-            // renderer may be waiting to acquire the terminal lock, while
-            // we're waiting for the renderer to finish.
-            auto lock = _terminal->LockForWriting();
-
-            _renderer.swap(renderer);
-        }
-
-        if (renderer)
-        {
-            renderer->TriggerTeardown();
+            _renderer->TriggerTeardown();
         }
     }
 
@@ -1190,7 +1172,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    IDXGISwapChain1* ControlCore::GetSwapChain() const
+    HANDLE ControlCore::GetSwapChainHandle() const
     {
         // This is called by:
         // * TermControl::RenderEngineSwapChainChanged, who is only registered
@@ -1198,7 +1180,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // * TermControl::_InitializeTerminal, after the call to Initialize, for
         //   _AttachDxgiSwapChainToXaml.
         // In both cases, we'll have a _renderEngine by then.
-        return _renderEngine->GetSwapChain().Get();
+        return _renderEngine->GetSwapChainHandle();
     }
 
     void ControlCore::_rendererWarning(const HRESULT hr)
