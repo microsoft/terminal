@@ -15,6 +15,9 @@ namespace Microsoft.Terminal.Settings.Editor
 {
     runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
+        Windows.Foundation.Collections.IObservableVector<Font> CompleteFontList { get; };
+        Windows.Foundation.Collections.IObservableVector<Font> MonospaceFontList { get; };
+
         Boolean CanDeleteProfile { get; };
         Boolean IsBaseLayer;
         Boolean UseParentProcessDirectory;

@@ -238,8 +238,8 @@
                 <ScrollViewer>
                     <StackPanel>
 
-                        <local:Appearances x:Name="DefaultAppearanceXaml"
-                                           Appearance="{x:Bind State.Profile.DefaultAppearance, Mode=OneWay}" />
+                        <local:Appearances Appearance="{x:Bind State.Profile.DefaultAppearance, Mode=OneWay}"
+                                           SourceProfile="{x:Bind State.Profile, Mode=OneWay}"/>
 
                         <!--  Grouping: Acrylic  -->
                         <StackPanel Style="{StaticResource PivotStackStyle}">

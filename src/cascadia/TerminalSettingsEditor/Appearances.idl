@@ -3,6 +3,7 @@
 
 import "EnumEntry.idl";
 import "MainPage.idl";
+import "Profiles.idl";
 
 #include "ViewModelHelpers.idl.h"
 
@@ -20,11 +21,6 @@ namespace Microsoft.Terminal.Settings.Editor
 
     runtimeclass AppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        Windows.Foundation.Collections.IObservableVector<Font> CompleteFontList { get; };
-        Windows.Foundation.Collections.IObservableVector<Font> MonospaceFontList { get; };
-
-        Boolean UsingMonospaceFont { get; };
-        Boolean ShowAllFonts;
         Boolean UseDesktopBGImage;
         Boolean BackgroundImageSettingsVisible { get; };
 
@@ -49,7 +45,11 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Appearances();
         AppearanceViewModel Appearance;
+        ProfileViewModel SourceProfile;
         static Windows.UI.Xaml.DependencyProperty AppearanceProperty { get; };
+
+        Boolean UsingMonospaceFont { get; };
+        Boolean ShowAllFonts;
 
         IInspectable CurrentCursorShape;
         Boolean IsVintageCursor { get; };

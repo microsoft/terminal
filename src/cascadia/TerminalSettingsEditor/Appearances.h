@@ -114,14 +114,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void UseDesktopBGImage(const bool useDesktop);
         bool BackgroundImageSettingsVisible();
 
-        // font face
-        static void UpdateFontList() noexcept;
-        Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() const noexcept;
-        Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() const noexcept;
-        bool UsingMonospaceFont() const noexcept;
-        bool ShowAllFonts() const noexcept;
-        void ShowAllFonts(const bool& value);
-
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes() { return _Schemes; }
         void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) { _Schemes = val; }
 
@@ -149,12 +141,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::AppearanceConfig _appearance;
         winrt::hstring _lastBgImagePath;
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
-        bool _ShowAllFonts;
-
-        static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
-        static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
-
-        static Editor::Font _GetFont(com_ptr<IDWriteLocalizedStrings> localizedFamilyNames);
     };
 
     struct Appearances : AppearancesT<Appearances>
@@ -171,6 +157,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::ColorScheme CurrentColorScheme();
         void CurrentColorScheme(const Model::ColorScheme& val);
 
+        bool UsingMonospaceFont() const noexcept;
+        bool ShowAllFonts() const noexcept;
+        void ShowAllFonts(const bool& value);
+
         fire_and_forget BackgroundImage_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void BIAlignment_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void FontFace_SelectionChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& e);
@@ -186,10 +176,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         DEPENDENCY_PROPERTY(Editor::AppearanceViewModel, Appearance);
+        WINRT_PROPERTY(Editor::ProfileViewModel, SourceProfile, nullptr);
 
         GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, Appearance, BackgroundImageStretchMode);
 
     private:
+        bool _ShowAllFonts;
         void _UpdateBIAlignmentControl(const int32_t val);
         std::array<Windows::UI::Xaml::Controls::Primitives::ToggleButton, 9> _BIAlignmentButtons;
 

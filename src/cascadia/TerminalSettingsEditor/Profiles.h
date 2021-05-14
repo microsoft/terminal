@@ -23,6 +23,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void UseParentProcessDirectory(const bool useParent);
         bool UseCustomStartingDirectory();
 
+        // font face
+        static void UpdateFontList() noexcept;
+        Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() const noexcept;
+        Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() const noexcept;
+
         // general profile knowledge
         bool CanDeleteProfile() const;
         Editor::AppearanceViewModel DefaultAppearance();
@@ -61,6 +66,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
         Editor::AppearanceViewModel _defaultAppearanceViewModel;
+
+        static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
+        static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
+
+        static Editor::Font _GetFont(com_ptr<IDWriteLocalizedStrings> localizedFamilyNames);
     };
 
     struct DeleteProfileEventArgs :
