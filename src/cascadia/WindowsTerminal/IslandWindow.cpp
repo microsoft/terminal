@@ -954,7 +954,8 @@ void IslandWindow::UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Co
                       "UnsetHotkeys",
                       TraceLoggingDescription("Emitted when clearing previously set hotkeys"),
                       TraceLoggingInt64(hotkeyList.size(), "numHotkeys", "The number of hotkeys to unset"),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
     for (int i = 0; i < ::base::saturated_cast<int>(hotkeyList.size()); i++)
     {
@@ -977,7 +978,8 @@ void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal
                       "SetGlobalHotkeys",
                       TraceLoggingDescription("Emitted when setting hotkeys"),
                       TraceLoggingInt64(hotkeyList.size(), "numHotkeys", "The number of hotkeys to set"),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     int index = 0;
     for (const auto& hotkey : hotkeyList)
     {
