@@ -239,7 +239,7 @@
                     <StackPanel>
 
                         <local:Appearances Appearance="{x:Bind State.Profile.DefaultAppearance, Mode=OneWay}"
-                                           SourceProfile="{x:Bind State.Profile, Mode=OneWay}"/>
+                                           SourceProfile="{x:Bind State.Profile, Mode=OneWay}" />
 
                         <!--  Grouping: Acrylic  -->
                         <StackPanel Style="{StaticResource PivotStackStyle}">
