@@ -89,7 +89,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // // should be drained and closed before we complete destruction. So these
         // // are safe.
         // _core.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
-        // _core.WarningBell({ this, &TermControl::_coreWarningBell });
+        _core.WarningBell({ this, &TermControl::_coreWarningBell });
         _core.CursorPositionChanged({ this, &TermControl::_CursorPositionChanged });
 
         // This event is specifically triggered by the renderer thread, a BG thread. Use a weak ref here.
@@ -136,15 +136,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             TsfRedrawInterval,
             Dispatcher());
 
-        _updatePatternLocations = std::make_shared<ThrottledFunc<winrt::Windows::UI::Core::CoreDispatcher>>(
-            [weakThis = get_weak()]() {
-                if (auto control{ weakThis.get() })
-                {
-                    control->_core.UpdatePatternLocations();
-                }
-            },
-            UpdatePatternLocationsInterval,
-            Dispatcher());
+        // _updatePatternLocations = std::make_shared<ThrottledFunc<winrt::Windows::UI::Core::CoreDispatcher>>(
+        //     [weakThis = get_weak()]() {
+        //         if (auto control{ weakThis.get() })
+        //         {
+        //             control->_core.UpdatePatternLocations();
+        //         }
+        //     },
+        //     UpdatePatternLocationsInterval,
+        //     Dispatcher());
 
         _playWarningBell = std::make_shared<ThrottledFunc<winrt::Windows::UI::Core::CoreDispatcher>>(
             [weakThis = get_weak()]() {
@@ -1276,22 +1276,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         CATCH_LOG();
     }
 
-    void TermControl::_coreReceivedOutput(const IInspectable& /*sender*/,
-                                          const IInspectable& /*args*/)
-    {
-        // Queue up a throttled UpdatePatternLocations call. In the future, we
-        // should have the _updatePatternLocations ThrottledFunc internal to
-        // ControlCore, and run on that object's dispatcher queue.
-        //
-        // We're not doing that quite yet, because the Core will eventually
-        // be out-of-proc from the UI thread, and won't be able to just use
-        // the UI thread as the dispatcher queue thread.
-        //
-        // THIS IS CALLED ON EVERY STRING OF TEXT OUTPUT TO THE TERMINAL. Think
-        // twice before adding anything here.
+    // void TermControl::_coreReceivedOutput(const IInspectable& /*sender*/,
+    //                                       const IInspectable& /*args*/)
+    // {
+    //     // Queue up a throttled UpdatePatternLocations call. In the future, we
+    //     // should have the _updatePatternLocations ThrottledFunc internal to
+    //     // ControlCore, and run on that object's dispatcher queue.
+    //     //
+    //     // We're not doing that quite yet, because the Core will eventually
+    //     // be out-of-proc from the UI thread, and won't be able to just use
+    //     // the UI thread as the dispatcher queue thread.
+    //     //
+    //     // THIS IS CALLED ON EVERY STRING OF TEXT OUTPUT TO THE TERMINAL. Think
+    //     // twice before adding anything here.
 
-        _updatePatternLocations->Run();
-    }
+    //     _updatePatternLocations->Run();
+    // }
 
     // Method Description:
     // - Reset the font size of the terminal to its default size.
@@ -1331,7 +1331,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             update.newValue.reset();
         });
 
-        _updatePatternLocations->Run();
+        // _updatePatternLocations->Run();
     }
 
     // Method Description:
@@ -1669,7 +1669,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         update.newValue = args.ViewTop();
 
         _updateScrollBar->Run(update);
-        _updatePatternLocations->Run();
+        // _updatePatternLocations->Run();
     }
 
     // Method Description:

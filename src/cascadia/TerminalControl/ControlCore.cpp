@@ -26,6 +26,9 @@ using namespace winrt::Windows::ApplicationModel::DataTransfer;
 // The minimum delay between updating the TSF input control.
 constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 
+// The minimum delay between updating the locations of regex patterns
+constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
@@ -109,11 +112,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 if (auto core{ weakThis.get() })
                 {
                     core->_CursorPositionChangedHandlers(*core, nullptr);
-
-                    // control->TSFInputControl().TryRedrawCanvas();
                 }
             },
             TsfRedrawInterval,
+            _dispatcher);
+
+        _updatePatternLocations = std::make_shared<ThrottledFunc<winrt::Windows::System::DispatcherQueue>>(
+            [weakThis = get_weak()]() {
+                if (auto core{ weakThis.get() })
+                {
+                    core->UpdatePatternLocations();
+                }
+            },
+            UpdatePatternLocationsInterval,
             _dispatcher);
 
         UpdateSettings(settings);
@@ -1106,6 +1117,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                        winrt::make<ScrollPositionChangedArgs>(viewTop,
                                                                               viewHeight,
                                                                               bufferSize));
+
+        _updatePatternLocations->Run();
     }
 
     void ControlCore::_terminalCursorPositionChanged()
@@ -1399,18 +1412,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _terminal->Write(hstr);
 
-        // NOTE: We're raising an event here to inform the TermControl that
-        // output has been received, so it can queue up a throttled
-        // UpdatePatternLocations call. In the future, we should have the
-        // _updatePatternLocations ThrottledFunc internal to this class, and
-        // run on this object's dispatcher queue.
-        //
-        // We're not doing that quite yet, because the Core will eventually
-        // be out-of-proc from the UI thread, and won't be able to just use
-        // the UI thread as the dispatcher queue thread.
-        //
-        // See TODO: https://github.com/microsoft/terminal/projects/5#card-50760282
-        _ReceivedOutputHandlers(*this, nullptr);
+        // // NOTE: We're raising an event here to inform the TermControl that
+        // // output has been received, so it can queue up a throttled
+        // // UpdatePatternLocations call. In the future, we should have the
+        // // _updatePatternLocations ThrottledFunc internal to this class, and
+        // // run on this object's dispatcher queue.
+        // //
+        // // We're not doing that quite yet, because the Core will eventually
+        // // be out-of-proc from the UI thread, and won't be able to just use
+        // // the UI thread as the dispatcher queue thread.
+        // //
+        // // See TODO: https://github.com/microsoft/terminal/projects/5#card-50760282
+        // _ReceivedOutputHandlers(*this, nullptr);
+
+        _updatePatternLocations->Run();
     }
 
 }
