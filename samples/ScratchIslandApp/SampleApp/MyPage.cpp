@@ -174,7 +174,6 @@ namespace winrt::SampleApp::implementation
         //     // Control::TermControl control{ contentGuid, settings, conn };
         //     control = Control::TermControl(contentGuid, settings, nullptr);
         // }
-
         Control::TermControl control{ contentGuid, settings, nullptr };
 
         OutOfProcContent().Children().Append(control);

@@ -208,6 +208,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
         std::shared_ptr<ThrottledFunc<winrt::Windows::System::DispatcherQueue>> _tsfTryRedrawCanvas;
+        std::shared_ptr<ThrottledFunc<winrt::Windows::System::DispatcherQueue>> _updatePatternLocations;
 
         winrt::fire_and_forget _asyncCloseConnection();
 
