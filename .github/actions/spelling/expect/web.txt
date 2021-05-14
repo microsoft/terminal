@@ -1,6 +1,7 @@
 http
-td
 www
+easyrgb
+php
 ecma
 rapidtables
 WCAG
@@ -10,9 +11,9 @@ robertelder
 kovidgoyal
 leonerd
 fixterms
-uk
 winui
 appshellintegration
+mdtauk
 cppreference
 gfycat
 Guake
