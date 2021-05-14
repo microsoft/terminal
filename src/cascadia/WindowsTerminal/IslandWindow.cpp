@@ -1043,20 +1043,20 @@ winrt::fire_and_forget IslandWindow::SummonWindow(Remoting::SummonWindowBehavior
     if (args.ToggleVisibility() && GetForegroundWindow() == _window.get())
     {
         bool handled = false;
+
+        // They want to toggle the window when it is the FG window, and we are
+        // the FG window. However, if we're on a different monitor than the
+        // mouse, then we should move to that monitor instead of dismissing.
         if (args.ToMonitor() == Remoting::MonitorBehavior::ToMouse)
         {
             const til::rectangle cursorMonitorRect{ _getMonitorForCursor().rcMonitor };
             const til::rectangle currentMonitorRect{ _getMonitorForWindow(GetHandle()).rcMonitor };
             if (cursorMonitorRect != currentMonitorRect)
             {
+                // We're not on the same monitor as the mouse. Go to that monitor.
                 _globalActivateWindow(actualDropdownDuration, args.ToMonitor());
                 handled = true;
             }
-
-            // get the pointer position
-            // get the nearest monitor to the mouse
-            // get the nearest monitor to the window
-            // are they the same monitor? (handled=false) : (activate ; handled=true);
         }
 
         if (!handled)
@@ -1145,6 +1145,7 @@ void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration,
     wpc.showCmd = SW_RESTORE;
     SetWindowPlacement(_window.get(), &wpc);
 
+    // Possibly go to the monitor of the mouse / old foreground window.
     _moveToMonitor(oldForegroundWindow, toMonitor);
 
     // Now that we're visible, animate the dropdown.
