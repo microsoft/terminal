@@ -23,6 +23,10 @@ using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 
+// The minimum delay between updates to the scroll bar's values.
+// The updates are throttled to limit power usage.
+constexpr const auto ScrollBarUpdateInterval = std::chrono::milliseconds(8);
+
 // The minimum delay between updating the TSF input control.
 constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 
@@ -125,6 +129,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             },
             UpdatePatternLocationsInterval,
+            _dispatcher);
+
+        _updateScrollBar = std::make_shared<ThrottledFunc<winrt::Windows::System::DispatcherQueue, Control::ScrollPositionChangedArgs>>(
+            [weakThis = get_weak()](const auto& update) {
+                if (auto core{ weakThis.get() })
+                {
+                    core->_ScrollPositionChangedHandlers(*core, update);
+                }
+
+                // if (auto control{ weakThis.get() })
+                // {
+                //     control->_isInternalScrollBarUpdate = true;
+                //     auto scrollBar = control->ScrollBar();
+                //     if (update.newValue.has_value())
+                //     {
+                //         scrollBar.Value(update.newValue.value());
+                //     }
+                //     scrollBar.Maximum(update.newMaximum);
+                //     scrollBar.Minimum(update.newMinimum);
+                //     scrollBar.ViewportSize(update.newViewportSize);
+                //     // scroll one full screen worth at a time when the scroll bar is clicked
+                //     scrollBar.LargeChange(std::max(update.newViewportSize - 1, 0.));
+                //     control->_isInternalScrollBarUpdate = false;
+                // }
+            },
+            ScrollBarUpdateInterval,
             _dispatcher);
 
         UpdateSettings(settings);
@@ -1113,10 +1143,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // TODO GH#9617: refine locking around pattern tree
         _terminal->ClearPatternTree();
 
-        _ScrollPositionChangedHandlers(*this,
-                                       winrt::make<ScrollPositionChangedArgs>(viewTop,
-                                                                              viewHeight,
-                                                                              bufferSize));
+        auto update{ winrt::make<ScrollPositionChangedArgs>(viewTop,
+                                                            viewHeight,
+                                                            bufferSize) };
+        // _ScrollPositionChangedHandlers(*this,
+        //                                winrt::make<ScrollPositionChangedArgs>(viewTop,
+        //                                                                       viewHeight,
+        //                                                                       bufferSize));
+        _updateScrollBar->Run(update);
 
         _updatePatternLocations->Run();
     }

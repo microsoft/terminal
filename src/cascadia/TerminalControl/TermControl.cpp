@@ -88,7 +88,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // // These events might all be triggered by the connection, but that
         // // should be drained and closed before we complete destruction. So these
         // // are safe.
-        // _core.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
+        _core.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
         _core.WarningBell({ this, &TermControl::_coreWarningBell });
         _core.CursorPositionChanged({ this, &TermControl::_CursorPositionChanged });
 
