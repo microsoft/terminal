@@ -53,15 +53,6 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        // GH#9162 - when the header is done renaming, ask for focus to be
-        // tossed back to the control, rather into ourselves.
-        _headerControl.RenameEnded([weakThis = get_weak()](auto&&, auto&&) {
-            if (auto tab{ weakThis.get() })
-            {
-                tab->_RequestFocusActiveControlHandlers();
-            }
-        });
-
         _UpdateHeaderControlMaxWidth();
 
         // Use our header control as the TabViewItem's header
@@ -92,7 +83,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::_MakeTabViewItem()
     {
-        TabBase::_MakeTabViewItem();
+        TabViewItem(::winrt::MUX::Controls::TabViewItem{});
 
         TabViewItem().DoubleTapped([weakThis = get_weak()](auto&& /*s*/, auto&& /*e*/) {
             if (auto tab{ weakThis.get() })
@@ -858,23 +849,14 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Build the menu
-        Controls::MenuFlyout contextMenuFlyout;
+        Controls::MenuFlyout newTabFlyout;
         Controls::MenuFlyoutSeparator menuSeparator;
-        contextMenuFlyout.Items().Append(chooseColorMenuItem);
-        contextMenuFlyout.Items().Append(renameTabMenuItem);
-        contextMenuFlyout.Items().Append(duplicateTabMenuItem);
-        contextMenuFlyout.Items().Append(menuSeparator);
-
-        // GH#5750 - When the context menu is dismissed with ESC, toss the focus
-        // back to our control.
-        contextMenuFlyout.Closed([weakThis](auto&&, auto&&) {
-            if (auto tab{ weakThis.get() })
-            {
-                tab->_RequestFocusActiveControlHandlers();
-            }
-        });
-        _AppendCloseMenuItems(contextMenuFlyout);
-        TabViewItem().ContextFlyout(contextMenuFlyout);
+        newTabFlyout.Items().Append(chooseColorMenuItem);
+        newTabFlyout.Items().Append(renameTabMenuItem);
+        newTabFlyout.Items().Append(duplicateTabMenuItem);
+        newTabFlyout.Items().Append(menuSeparator);
+        _AppendCloseMenuItems(newTabFlyout);
+        TabViewItem().ContextFlyout(newTabFlyout);
     }
 
     // Method Description:

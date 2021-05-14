@@ -90,6 +90,7 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(ColorCleared, _colorCleared, winrt::delegate<>);
         DECLARE_EVENT(TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
         DECLARE_EVENT(DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
+        FORWARDED_TYPED_EVENT(TabRenamerDeactivated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, (&_headerControl), RenameEnded);
 
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };
@@ -117,7 +118,7 @@ namespace winrt::TerminalApp::implementation
         std::optional<Windows::UI::Xaml::DispatcherTimer> _bellIndicatorTimer;
         void _BellIndicatorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
 
-        void _MakeTabViewItem() override;
+        void _MakeTabViewItem();
 
         winrt::fire_and_forget _UpdateHeaderControlMaxWidth();
 

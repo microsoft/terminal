@@ -25,8 +25,6 @@ namespace winrt::TerminalApp::implementation
         void UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs);
         void SetKeyMap(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap);
 
-        WINRT_CALLBACK(RequestFocusActiveControl, winrt::delegate<void()>);
-
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         WINRT_CALLBACK(CloseRequested, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
@@ -53,8 +51,6 @@ namespace winrt::TerminalApp::implementation
 
         virtual void _CreateContextMenu();
         virtual winrt::hstring _CreateToolTipTitle();
-
-        virtual void _MakeTabViewItem();
 
         void _AppendCloseMenuItems(winrt::Windows::UI::Xaml::Controls::MenuFlyout flyout);
         void _EnableCloseMenuItems();

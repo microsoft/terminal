@@ -210,9 +210,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        // The tab might want us to toss focus into the control, especially when
-        // transient UIs (like the context menu, or the renamer) are dismissed.
-        newTabImpl->RequestFocusActiveControl([weakThis{ get_weak() }]() {
+        newTabImpl->TabRenamerDeactivated([weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
             if (const auto page{ weakThis.get() })
             {
                 page->_FocusCurrentTab(false);
