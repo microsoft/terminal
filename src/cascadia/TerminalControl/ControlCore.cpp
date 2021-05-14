@@ -23,6 +23,9 @@ using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 
+// The minimum delay between updating the TSF input control.
+constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
@@ -93,6 +96,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto pfnTerminalTaskbarProgressChanged = std::bind(&ControlCore::_terminalTaskbarProgressChanged, this);
         _terminal->TaskbarProgressChangedCallback(pfnTerminalTaskbarProgressChanged);
+
+        _dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
+        if (!_dispatcher)
+        {
+            auto controller{ winrt::Windows::System::DispatcherQueueController::CreateOnDedicatedThread() };
+            _dispatcher = controller.DispatcherQueue();
+        }
+
+        _tsfTryRedrawCanvas = std::make_shared<ThrottledFunc<winrt::Windows::System::DispatcherQueue>>(
+            [weakThis = get_weak()]() {
+                if (auto core{ weakThis.get() })
+                {
+                    core->_CursorPositionChangedHandlers(*core, nullptr);
+
+                    // control->TSFInputControl().TryRedrawCanvas();
+                }
+            },
+            TsfRedrawInterval,
+            _dispatcher);
 
         UpdateSettings(settings);
     }
@@ -1078,7 +1100,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::_terminalCursorPositionChanged()
     {
-        _CursorPositionChangedHandlers(*this, nullptr);
+        _tsfTryRedrawCanvas->Run();
+        // _CursorPositionChangedHandlers(*this, nullptr);
     }
 
     void ControlCore::_terminalTaskbarProgressChanged()

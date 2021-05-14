@@ -9,11 +9,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     ContentProcess::ContentProcess() {}
 
-    void ContentProcess::Initialize(Control::IControlSettings settings,
+    bool ContentProcess::Initialize(Control::IControlSettings settings,
                                     TerminalConnection::ConnectionInformation connectionInfo)
     {
-        _interactivity = winrt::make<implementation::ControlInteractivity>(settings,
-                                                                           TerminalConnection::ConnectionInformation::CreateConnection(connectionInfo));
+        auto conn{ TerminalConnection::ConnectionInformation::CreateConnection(connectionInfo) };
+        if (conn == nullptr)
+        {
+            return false;
+        }
+        _interactivity = winrt::make<implementation::ControlInteractivity>(settings, conn);
+        return true;
     }
 
     Control::ControlInteractivity ContentProcess::GetInteractivity()
@@ -24,7 +29,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     uint64_t ContentProcess::RequestSwapChainHandle(const uint64_t pid)
     {
         auto ourPid = GetCurrentProcessId();
-        HANDLE ourHandle = reinterpret_cast<HANDLE>(_interactivity.GetCore().GetSwapChainHandle());
+        HANDLE ourHandle = reinterpret_cast<HANDLE>(_interactivity.Core().SwapChainHandle());
         if (pid == ourPid)
         {
             return reinterpret_cast<uint64_t>(ourHandle);

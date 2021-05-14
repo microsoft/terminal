@@ -17,6 +17,9 @@ namespace winrt::SampleApp::implementation
 
         hstring Title();
 
+        winrt::fire_and_forget CreateClicked(const IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& eventArgs);
+        // winrt::fire_and_forget _attachToContent(winrt::guid contentGuid);
+
     private:
         friend struct MyPageT<MyPage>; // for Xaml to bind events
     };

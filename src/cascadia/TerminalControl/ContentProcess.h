@@ -12,7 +12,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     {
         ContentProcess();
-        void Initialize(Control::IControlSettings settings,
+        bool Initialize(Control::IControlSettings settings,
                         TerminalConnection::ConnectionInformation connectionInfo);
         Control::ControlInteractivity GetInteractivity();
 

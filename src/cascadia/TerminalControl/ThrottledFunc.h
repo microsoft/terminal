@@ -16,13 +16,13 @@ Module Name:
 //   pending, then the previous call with the previous arguments will be
 //   cancelled and the call will be made with the new arguments instead.
 // - The function will be run on the the specified dispatcher.
-template<typename... Args>
-class ThrottledFunc : public std::enable_shared_from_this<ThrottledFunc<Args...>>
+template<typename T, typename... Args>
+class ThrottledFunc : public std::enable_shared_from_this<ThrottledFunc<T, Args...>>
 {
 public:
     using Func = std::function<void(Args...)>;
 
-    ThrottledFunc(Func func, winrt::Windows::Foundation::TimeSpan delay, winrt::Windows::UI::Core::CoreDispatcher dispatcher) :
+    ThrottledFunc(Func func, winrt::Windows::Foundation::TimeSpan delay, T dispatcher) :
         _func{ func },
         _delay{ delay },
         _dispatcher{ dispatcher }
@@ -90,7 +90,7 @@ public:
     }
 
 private:
-    static winrt::fire_and_forget _Fire(winrt::Windows::Foundation::TimeSpan delay, winrt::Windows::UI::Core::CoreDispatcher dispatcher, std::weak_ptr<ThrottledFunc> weakThis)
+    static winrt::fire_and_forget _Fire(winrt::Windows::Foundation::TimeSpan delay, T dispatcher, std::weak_ptr<ThrottledFunc> weakThis)
     {
         co_await winrt::resume_after(delay);
         co_await winrt::resume_foreground(dispatcher);
@@ -109,7 +109,7 @@ private:
 
     Func _func;
     winrt::Windows::Foundation::TimeSpan _delay;
-    winrt::Windows::UI::Core::CoreDispatcher _dispatcher;
+    T _dispatcher;
 
     std::mutex _lock;
     std::optional<std::tuple<Args...>> _pendingRunArgs;
@@ -120,13 +120,13 @@ private:
 //   and rate-limited such that if the code tries to run the function while a
 //   call to the function is already pending, the request will be ignored.
 // - The function will be run on the the specified dispatcher.
-template<>
-class ThrottledFunc<> : public std::enable_shared_from_this<ThrottledFunc<>>
+template<typename T>
+class ThrottledFunc<T> : public std::enable_shared_from_this<ThrottledFunc<T>>
 {
 public:
     using Func = std::function<void()>;
 
-    ThrottledFunc(Func func, winrt::Windows::Foundation::TimeSpan delay, winrt::Windows::UI::Core::CoreDispatcher dispatcher) :
+    ThrottledFunc(Func func, winrt::Windows::Foundation::TimeSpan delay, T dispatcher) :
         _func{ func },
         _delay{ delay },
         _dispatcher{ dispatcher }
@@ -153,7 +153,7 @@ public:
     }
 
 private:
-    static winrt::fire_and_forget _Fire(winrt::Windows::Foundation::TimeSpan delay, winrt::Windows::UI::Core::CoreDispatcher dispatcher, std::weak_ptr<ThrottledFunc> weakThis)
+    static winrt::fire_and_forget _Fire(winrt::Windows::Foundation::TimeSpan delay, T dispatcher, std::weak_ptr<ThrottledFunc> weakThis)
     {
         co_await winrt::resume_after(delay);
         co_await winrt::resume_foreground(dispatcher);
@@ -167,7 +167,7 @@ private:
 
     Func _func;
     winrt::Windows::Foundation::TimeSpan _delay;
-    winrt::Windows::UI::Core::CoreDispatcher _dispatcher;
+    T _dispatcher;
 
     std::atomic_flag _isRunPending;
 };
