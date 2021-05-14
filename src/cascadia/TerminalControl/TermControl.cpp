@@ -45,14 +45,6 @@ DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::CopyFormat);
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    // Control::TermControl TermControl::FromConnectionInfo(IControlSettings settings,
-    //                                                      TerminalConnection::ConnectionInformation connectInfo)
-    // {
-    //     return winrt::make<implementation::TermControl>(winrt::guid{},
-    //                                                     settings,
-    //                                                     TerminalConnection::ConnectionInformation::CreateConnection(connectInfo));
-    // }
-
     TermControl::TermControl(IControlSettings settings,
                              TerminalConnection::ITerminalConnection connection) :
         TermControl(winrt::guid{}, settings, connection) {}
@@ -98,7 +90,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // // are safe.
         // _core.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
         // _core.WarningBell({ this, &TermControl::_coreWarningBell });
-        // _core.CursorPositionChanged({ this, &TermControl::_CursorPositionChanged });
+        _core.CursorPositionChanged({ this, &TermControl::_CursorPositionChanged });
 
         // This event is specifically triggered by the renderer thread, a BG thread. Use a weak ref here.
         _core.RendererEnteredErrorState({ get_weak(), &TermControl::_RendererEnteredErrorState });
@@ -134,7 +126,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Core eventually won't have access to. When we get to
         // https://github.com/microsoft/terminal/projects/5#card-50760282
         // then we'll move the applicable ones.
-        _tsfTryRedrawCanvas = std::make_shared<ThrottledFunc<>>(
+        _tsfTryRedrawCanvas = std::make_shared<ThrottledFunc<winrt::Windows::UI::Core::CoreDispatcher>>(
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() })
                 {
@@ -144,7 +136,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             TsfRedrawInterval,
             Dispatcher());
 
-        _updatePatternLocations = std::make_shared<ThrottledFunc<>>(
+        _updatePatternLocations = std::make_shared<ThrottledFunc<winrt::Windows::UI::Core::CoreDispatcher>>(
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() })
                 {
@@ -154,7 +146,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             UpdatePatternLocationsInterval,
             Dispatcher());
 
-        _playWarningBell = std::make_shared<ThrottledFunc<>>(
+        _playWarningBell = std::make_shared<ThrottledFunc<winrt::Windows::UI::Core::CoreDispatcher>>(
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() })
                 {
@@ -164,7 +156,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             TerminalWarningBellInterval,
             Dispatcher());
 
-        _updateScrollBar = std::make_shared<ThrottledFunc<ScrollBarUpdate>>(
+        _updateScrollBar = std::make_shared<ThrottledFunc<winrt::Windows::UI::Core::CoreDispatcher, ScrollBarUpdate>>(
             [weakThis = get_weak()](const auto& update) {
                 if (auto control{ weakThis.get() })
                 {

@@ -28,42 +28,29 @@ namespace winrt::SampleApp::implementation
 
     void MyPage::Create()
     {
-        // TerminalConnection::EchoConnection conn{};
-        auto settings = winrt::make_self<ControlUnitTests::MockControlSettings>();
-
-        // winrt::com_ptr<TerminalConnection::ITerminalConnection> conn2{ nullptr };
-        // // auto f = conn2.get();
-        // ::IInspectable* i{ nullptr };
-        // winrt::hstring h{ L"Microsoft.Terminal.TerminalConnection.EchoConnection" };
-        // auto a = h;
-        // HSTRING hs;
-        // winrt::copy_to_abi(h, hs);
-        // HRESULT hr = RoActivateInstance(hs, &i);
-        // winrt::Windows::Foundation::IInspectable ii{ i };
-        // TerminalConnection::ITerminalConnection conn3 = ;
+        auto settings = winrt::make_self<implementation::MySettings>();
 
         // winrt::hstring myClass{ L"Microsoft.Terminal.TerminalConnection.EchoConnection" };
-        // // winrt::hstring myClass{ L"Microsoft.Terminal.TerminalConnection.ConptyConnection" };
-        // winrt::IInspectable coolInspectable{};
-        // auto name = static_cast<HSTRING>(winrt::get_abi(myClass));
-        // auto foo = winrt::put_abi(coolInspectable);
-        // ::IInspectable** bar = reinterpret_cast<::IInspectable**>(foo);
-        // RoActivateInstance(name, bar);
-        // auto conn2 = coolInspectable.try_as<TerminalConnection::ITerminalConnection>();
 
-        // Control::TermControl control{ *settings, conn2 };
+        TerminalConnection::ConptyConnectionSettings connectionSettings{ L"cmd.exe /k echo This TermControl is hosted in-proc...",
+                                                                         winrt::hstring{},
+                                                                         L"",
+                                                                         nullptr,
+                                                                         32,
+                                                                         80,
+                                                                         winrt::guid() };
+        winrt::hstring myClass{ L"Microsoft.Terminal.TerminalConnection.ConptyConnection" };
+        TerminalConnection::ConnectionInformation connectInfo{ myClass, connectionSettings };
 
-        winrt::hstring myClass{ L"Microsoft.Terminal.TerminalConnection.EchoConnection" };
-        TerminalConnection::ConnectionInformation connectInfo{ myClass, nullptr };
         TerminalConnection::ITerminalConnection conn{ TerminalConnection::ConnectionInformation::CreateConnection(connectInfo) };
         Control::TermControl control{ *settings, conn };
 
         InProcContent().Children().Append(control);
 
-        // Once the control loads (and not before that), write some text for debugging:
-        control.Initialized([conn](auto&&, auto&&) {
-            conn.WriteInput(L"This TermControl is hosted in-proc...");
-        });
+        // // Once the control loads (and not before that), write some text for debugging:
+        // control.Initialized([conn](auto&&, auto&&) {
+        //     conn.WriteInput(L"This TermControl is hosted in-proc...");
+        // });
     }
 
     static wil::unique_process_information _createHostClassProcess(const winrt::guid& g)
@@ -164,10 +151,14 @@ namespace winrt::SampleApp::implementation
                                                                              32,
                                                                              80,
                                                                              winrt::guid() };
-            winrt::hstring myClass{ L"Microsoft.Terminal.TerminalConnection.ConptyConnection" };
+            // winrt::hstring myClass{ L"Microsoft.Terminal.TerminalConnection.ConptyConnection" };
+            winrt::hstring myClass{ winrt::name_of<TerminalConnection::ConptyConnection>() };
             connectInfo = TerminalConnection::ConnectionInformation(myClass, connectionSettings);
 
-            content.Initialize(settings, connectInfo);
+            if (!content.Initialize(settings, connectInfo))
+            {
+                co_return;
+            }
         }
         else
         {
@@ -194,43 +185,6 @@ namespace winrt::SampleApp::implementation
         {
             auto guidStr{ ::Microsoft::Console::Utils::GuidToString(contentGuid) };
             GuidInput().Text(guidStr);
-        }
-    }
-
-    /*winrt::fire_and_forget MyPage::_attachToContent(winrt::guid contentGuid)
-    {
-        Control::ContentProcess content = create_instance<Control::ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
-
-    }*/
-
-    winrt::fire_and_forget MyPage::CreateOutOfProcTerminal()
-    {
-        // 1. Generate a GUID.
-        winrt::guid contentGuid{ ::Microsoft::Console::Utils::CreateGuid() };
-
-        // Capture calling context.
-        winrt::apartment_context ui_thread;
-        co_await winrt::resume_background();
-
-        // 2. Spawn a Server.exe, with the guid on the commandline
-        auto piContent{ std::move(_createHostClassProcess(contentGuid)) };
-
-        Control::ContentProcess content = create_instance<Control::ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
-
-        TerminalConnection::EchoConnection conn{};
-        auto settings = winrt::make_self<implementation::MySettings>();
-        Control::IControlSettings s = *settings;
-
-        if (s)
-        {
-            //content.Initialize(s, conn);
-
-            //// Switch back to the UI thread.
-            //co_await ui_thread;
-
-            //Control::TermControl control{ contentGuid, s, conn };
-
-            //OutOfProcContent().Children().Append(control);
         }
     }
 
