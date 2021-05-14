@@ -65,7 +65,7 @@ Tracing Tracing::s_TraceApiCall(const NTSTATUS& result, PCSTR traceName)
         TraceLoggingString(traceName, "ApiName"),
         TraceLoggingOpcode(WINEVENT_OPCODE_START),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
         TraceLoggingKeyword(TraceKeywords::API));
 
     return Tracing([traceName, &result] {
@@ -398,6 +398,7 @@ void Tracing::s_TraceInputRecord(const INPUT_RECORD& inputRecord)
             "Unknown Input Record",
             TraceLoggingHexUInt16(inputRecord.EventType, "EventType"),
             TraceLoggingLevel(WINEVENT_LEVEL_ERROR),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
             TraceLoggingKeyword(TraceKeywords::Input));
         break;
     }
@@ -417,5 +418,6 @@ void __stdcall Tracing::TraceFailure(const wil::FailureInfo& failure) noexcept
         TraceLoggingString(failure.pszModule, "Module"),
         TraceLoggingPointer(failure.returnAddress, "Site"),
         TraceLoggingString(failure.pszCode, "Code"),
-        TraceLoggingLevel(WINEVENT_LEVEL_ERROR));
+        TraceLoggingLevel(WINEVENT_LEVEL_ERROR),
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 }
