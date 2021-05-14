@@ -250,6 +250,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _profile.HasUnfocusedAppearance();
     }
 
+    void ProfileViewModel::CreateUnfocusedAppearance()
+    {
+        _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(_profile.DefaultAppearance().try_as<AppearanceConfig>());
+        _NotifyChanges(L"UnfocusedAppearance");
+    }
+
     Editor::AppearanceViewModel ProfileViewModel::UnfocusedAppearance()
     {
         return _unfocusedAppearanceViewModel;
@@ -437,6 +443,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto state{ winrt::get_self<ProfilePageNavigationState>(_State) };
         state->DeleteProfile();
+    }
+
+    void Profiles::Expander_Expanded(IInspectable const& /*sender*/, winrt::Microsoft::UI::Xaml::Controls::ExpanderExpandingEventArgs const& /*e*/)
+    {
+        if (!_State.Profile().HasUnfocusedAppearance())
+        {
+            // tell the PVM to create an unfocused appearance
+            _State.Profile().CreateUnfocusedAppearance();
+        }
+    }
+
+    void Profiles::Expander_Collapsed(IInspectable const& /*sender*/, winrt::Microsoft::UI::Xaml::Controls::ExpanderCollapsedEventArgs const& /*e*/)
+    {
+        const auto ay = 1;
     }
 
     fire_and_forget Profiles::Icon_Click(IInspectable const&, RoutedEventArgs const&)

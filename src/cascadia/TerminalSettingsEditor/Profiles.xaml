@@ -328,7 +328,9 @@
                                        ExpandDirection="Down"
                                        HorizontalAlignment="Left"
                                        HorizontalContentAlignment="Left"
-                                       IsEnabled="{x:Bind State.Profile.HasUnfocusedAppearance, Mode=OneWay}">
+                                       IsExpanded="{x:Bind State.Profile.HasUnfocusedAppearance, Mode=OneWay}"
+                                       Expanding="Expander_Expanded"
+                                       Collapsed="Expander_Collapsed">
                             <local:Appearances Appearance="{x:Bind State.Profile.UnfocusedAppearance, Mode=OneWay}" />
                         </muxc:Expander>
                     </StackPanel>

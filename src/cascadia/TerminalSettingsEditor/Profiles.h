@@ -36,6 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::AppearanceViewModel DefaultAppearance();
         Editor::AppearanceViewModel UnfocusedAppearance();
         bool HasUnfocusedAppearance();
+        void CreateUnfocusedAppearance();
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
 
@@ -119,6 +120,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 viewModel.UnfocusedAppearance().Schemes(schemes);
                 viewModel.UnfocusedAppearance().WindowRoot(windowRoot);
             }
+
+            const auto revoker = viewModel.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
+                const auto settingName{ args.PropertyName() };
+                if (settingName == L"UnfocusedAppearance")
+                {
+                    viewModel.UnfocusedAppearance().Schemes(schemes);
+                    viewModel.UnfocusedAppearance().WindowRoot(windowRoot);
+                }
+            });
         }
 
         void DeleteProfile();
@@ -148,6 +158,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         fire_and_forget Icon_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void DeleteConfirmation_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void Pivot_SelectionChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
+        void Expander_Expanded(Windows::Foundation::IInspectable const& sender, winrt::Microsoft::UI::Xaml::Controls::ExpanderExpandingEventArgs const& e);
+        void Expander_Collapsed(Windows::Foundation::IInspectable const& sender, winrt::Microsoft::UI::Xaml::Controls::ExpanderCollapsedEventArgs const& e);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
