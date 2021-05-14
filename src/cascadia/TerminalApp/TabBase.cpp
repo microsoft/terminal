@@ -62,6 +62,7 @@ namespace winrt::TerminalApp::implementation
 
         // Build the menu
         Controls::MenuFlyout newTabFlyout;
+        newTabFlyout.Items().Append(_CreateCloseSubMenu());
         newTabFlyout.Items().Append(closeTabMenuItem);
         TabViewItem().ContextFlyout(newTabFlyout);
     }

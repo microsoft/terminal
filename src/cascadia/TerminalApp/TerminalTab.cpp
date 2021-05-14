@@ -852,6 +852,7 @@ namespace winrt::TerminalApp::implementation
         newTabFlyout.Items().Append(chooseColorMenuItem);
         newTabFlyout.Items().Append(renameTabMenuItem);
         newTabFlyout.Items().Append(menuSeparator);
+        newTabFlyout.Items().Append(_CreateCloseSubMenu());
         newTabFlyout.Items().Append(closeTabMenuItem);
         TabViewItem().ContextFlyout(newTabFlyout);
     }
