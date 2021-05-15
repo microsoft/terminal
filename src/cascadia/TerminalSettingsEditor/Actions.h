@@ -67,6 +67,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsHovered, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsContainerFocused, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsEditButtonFocused, false);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::UI::Xaml::Media::Brush, ContainerBackground, nullptr);
         TYPED_EVENT(RebindKeysRequested, Editor::KeyBindingViewModel, Editor::RebindKeysEventArgs);
         TYPED_EVENT(DeleteKeyBindingRequested, Editor::KeyBindingViewModel, Terminal::Control::KeyChord);
 

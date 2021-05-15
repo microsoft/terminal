@@ -192,11 +192,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                         get_self<KeyBindingViewModel>(kbdVM)->DisableEditMode();
                     }
                 }
+
+                const auto& containerBackgroundColor{ Resources().Lookup(box_value(L"SystemListMediumColor")).as<Windows::UI::Color>() };
+                Windows::UI::Xaml::Media::SolidColorBrush brush;
+                brush.Color(containerBackgroundColor);
+                get_self<KeyBindingViewModel>(senderVM)->ContainerBackground(brush);
             }
             else
             {
                 // Focus on the list view item
                 KeyBindingsListView().ContainerFromItem(senderVM).as<Controls::Control>().Focus(FocusState::Programmatic);
+
+                Windows::UI::Xaml::Media::SolidColorBrush brush;
+                brush.Color(Windows::UI::Colors::Transparent());
+                get_self<KeyBindingViewModel>(senderVM)->ContainerBackground(brush);
             }
         }
     }

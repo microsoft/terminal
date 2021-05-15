@@ -140,6 +140,7 @@
                 <Setter Property="VerticalAlignment" Value="Center" />
                 <Setter Property="TextAlignment" Value="Right" />
                 <Setter Property="TextWrapping" Value="Wrap" />
+                <Setter Property="IsSpellCheckEnabled" Value="False" />
             </Style>
             <x:Int32 x:Key="EditButtonSize">32</x:Int32>
             <x:Double x:Key="EditButtonIconSize">15</x:Double>
@@ -169,13 +170,13 @@
                           x:DataType="local:KeyBindingViewModel">
                 <ListViewItem AutomationProperties.AcceleratorKey="{x:Bind KeyChordText, Mode=OneWay}"
                               AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
+                              Background="{x:Bind ContainerBackground, Mode=OneWay}"
                               GotFocus="{x:Bind FocusContainer}"
                               LostFocus="{x:Bind UnfocusContainer}"
                               PointerEntered="{x:Bind EnterHoverMode}"
                               PointerExited="{x:Bind ExitHoverMode}"
                               Style="{StaticResource KeyBindingContainerStyle}">
-                    <Grid Background="Transparent"
-                          ColumnSpacing="8">
+                    <Grid ColumnSpacing="8">
                         <Grid.ColumnDefinitions>
                             <!--  command name  -->
                             <ColumnDefinition Width="*" />

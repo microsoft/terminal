@@ -26,6 +26,7 @@ namespace Microsoft.Terminal.Settings.Editor
         String CancelButtonName { get; };
         String AcceptButtonName { get; };
         String DeleteButtonName { get; };
+        Windows.UI.Xaml.Media.Brush ContainerBackground { get; };
 
         void EnterHoverMode();
         void ExitHoverMode();
