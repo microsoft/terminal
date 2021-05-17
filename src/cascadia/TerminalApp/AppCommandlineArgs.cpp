@@ -493,8 +493,18 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
 
     if (*subcommand.tabColorOption)
     {
-        const auto tabColor = Microsoft::Console::Utils::ColorFromHexString(_startingTabColor);
-        args.TabColor(static_cast<winrt::Windows::UI::Color>(tabColor));
+        try
+        {
+            // This is gonna throw whenever the string that's currently being parsed
+            // isn't a valid hex string. Let's just eat anything this throws because
+            // we should only lock in the TabColor arg when the user gives a valid hex
+            // str, and we shouldn't crash when the user gives us anything else.
+            const auto tabColor = Microsoft::Console::Utils::ColorFromHexString(_startingTabColor);
+            args.TabColor(static_cast<winrt::Windows::UI::Color>(tabColor));
+        }
+        catch (...)
+        {
+        }
     }
 
     if (*subcommand.suppressApplicationTitleOption)
