@@ -1110,7 +1110,7 @@ void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration)
     // First, restore the window. SetWindowPlacement has a fun undocumented
     // piece of functionality where it will restore the window position
     // _without_ the animation, so use that instead of ShowWindow(SW_RESTORE).
-    WINDOWPLACEMENT wpc;
+    WINDOWPLACEMENT wpc{};
     wpc.length = sizeof(WINDOWPLACEMENT);
     GetWindowPlacement(_window.get(), &wpc);
     wpc.showCmd = SW_RESTORE;
@@ -1126,7 +1126,7 @@ void IslandWindow::_slideUpWindow(const uint32_t dropdownDuration)
     _doSlideAnimation(dropdownDuration, false);
 
     // Then, use SetWindowPlacement to minimize without the animation.
-    WINDOWPLACEMENT wpc;
+    WINDOWPLACEMENT wpc{};
     wpc.length = sizeof(WINDOWPLACEMENT);
     GetWindowPlacement(_window.get(), &wpc);
     wpc.showCmd = SW_MINIMIZE;
