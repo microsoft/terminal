@@ -23,7 +23,8 @@ void ParserTracing::TraceStateChange(const std::wstring_view name) const noexcep
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_EnterState",
                       TraceLoggingCountedWideString(name.data(), gsl::narrow_cast<ULONG>(name.size())),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 }
 
 void ParserTracing::TraceOnAction(const std::wstring_view name) const noexcept
@@ -31,7 +32,8 @@ void ParserTracing::TraceOnAction(const std::wstring_view name) const noexcept
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_Action",
                       TraceLoggingCountedWideString(name.data(), gsl::narrow_cast<ULONG>(name.size())),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 }
 
 void ParserTracing::TraceOnExecute(const wchar_t wch) const
@@ -41,7 +43,8 @@ void ParserTracing::TraceOnExecute(const wchar_t wch) const
                       "StateMachine_Execute",
                       TraceLoggingWChar(wch),
                       TraceLoggingHexInt16(sch),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 }
 
 void ParserTracing::TraceOnExecuteFromEscape(const wchar_t wch) const
@@ -51,7 +54,8 @@ void ParserTracing::TraceOnExecuteFromEscape(const wchar_t wch) const
                       "StateMachine_ExecuteFromEscape",
                       TraceLoggingWChar(wch),
                       TraceLoggingHexInt16(sch),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 }
 
 void ParserTracing::TraceOnEvent(const std::wstring_view name) const noexcept
@@ -59,7 +63,8 @@ void ParserTracing::TraceOnEvent(const std::wstring_view name) const noexcept
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_Event",
                       TraceLoggingCountedWideString(name.data(), gsl::narrow_cast<ULONG>(name.size())),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 }
 
 void ParserTracing::TraceCharInput(const wchar_t wch)
@@ -71,13 +76,14 @@ void ParserTracing::TraceCharInput(const wchar_t wch)
                       "StateMachine_NewChar",
                       TraceLoggingWChar(wch),
                       TraceLoggingHexInt16(sch),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 }
 
 void ParserTracing::AddSequenceTrace(const wchar_t wch)
 {
     // Don't waste time storing this if no one is listening.
-    if (TraceLoggingProviderEnabled(g_hConsoleVirtTermParserEventTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
+    if (TraceLoggingProviderEnabled(g_hConsoleVirtTermParserEventTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
     {
         _sequenceTrace.push_back(wch);
     }
@@ -90,14 +96,16 @@ void ParserTracing::DispatchSequenceTrace(const bool fSuccess) noexcept
         TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                           "StateMachine_Sequence_OK",
                           TraceLoggingWideString(_sequenceTrace.c_str()),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
     else
     {
         TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                           "StateMachine_Sequence_FAIL",
                           TraceLoggingWideString(_sequenceTrace.c_str()),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
 
     ClearSequenceTrace();
@@ -119,7 +127,8 @@ void ParserTracing::DispatchPrintRunTrace(const std::wstring_view string) const
                           "StateMachine_PrintRun",
                           TraceLoggingWChar(wch),
                           TraceLoggingHexInt16(sch),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
     else
     {
@@ -129,7 +138,8 @@ void ParserTracing::DispatchPrintRunTrace(const std::wstring_view string) const
                           "StateMachine_PrintRun",
                           TraceLoggingCountedWideString(string.data(), length),
                           TraceLoggingValue(length),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
 }
 

@@ -1447,11 +1447,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GlobalSummonArgs() = default;
         ACTION_ARG(winrt::hstring, Name, L"");
         ACTION_ARG(Model::DesktopBehavior, Desktop, Model::DesktopBehavior::ToCurrent);
+        ACTION_ARG(Model::MonitorBehavior, Monitor, Model::MonitorBehavior::ToMouse);
         ACTION_ARG(bool, ToggleVisibility, true);
+        ACTION_ARG(uint32_t, DropdownDuration, 0);
 
         static constexpr std::string_view NameKey{ "name" };
         static constexpr std::string_view DesktopKey{ "desktop" };
+        static constexpr std::string_view MonitorKey{ "monitor" };
         static constexpr std::string_view ToggleVisibilityKey{ "toggleVisibility" };
+        static constexpr std::string_view DropdownDurationKey{ "dropdownDuration" };
 
     public:
         hstring GenerateName() const;
@@ -1462,6 +1466,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 return otherAsUs->_Name == _Name &&
                        otherAsUs->_Desktop == _Desktop &&
+                       otherAsUs->_Monitor == _Monitor &&
+                       otherAsUs->_DropdownDuration == _DropdownDuration &&
                        otherAsUs->_ToggleVisibility == _ToggleVisibility;
             }
             return false;
@@ -1472,6 +1478,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto args = winrt::make_self<GlobalSummonArgs>();
             JsonUtils::GetValueForKey(json, NameKey, args->_Name);
             JsonUtils::GetValueForKey(json, DesktopKey, args->_Desktop);
+            JsonUtils::GetValueForKey(json, MonitorKey, args->_Monitor);
+            JsonUtils::GetValueForKey(json, DropdownDurationKey, args->_DropdownDuration);
             JsonUtils::GetValueForKey(json, ToggleVisibilityKey, args->_ToggleVisibility);
             return { *args, {} };
         }
@@ -1485,6 +1493,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             const auto args{ get_self<GlobalSummonArgs>(val) };
             JsonUtils::SetValueForKey(json, NameKey, args->_Name);
             JsonUtils::SetValueForKey(json, DesktopKey, args->_Desktop);
+            JsonUtils::SetValueForKey(json, MonitorKey, args->_Monitor);
+            JsonUtils::GetValueForKey(json, DropdownDurationKey, args->_DropdownDuration);
             JsonUtils::SetValueForKey(json, ToggleVisibilityKey, args->_ToggleVisibility);
             return json;
         }
@@ -1493,6 +1503,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<GlobalSummonArgs>() };
             copy->_Name = _Name;
             copy->_Desktop = _Desktop;
+            copy->_Monitor = _Monitor;
+            copy->_DropdownDuration = _DropdownDuration;
             copy->_ToggleVisibility = _ToggleVisibility;
             return *copy;
         }
@@ -1502,12 +1514,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<GlobalSummonArgs>();
+            // We want to summon the window with the name "_quake" specifically.
             args->_Name = QuakeWindowName;
+            // We want the window to dropdown, with a 200ms duration.
+            args->_DropdownDuration = 200;
             return { *args, {} };
         }
         size_t Hash() const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Name(), Desktop(), ToggleVisibility());
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Name(), Desktop(), Monitor(), DropdownDuration(), ToggleVisibility());
         }
     };
 
