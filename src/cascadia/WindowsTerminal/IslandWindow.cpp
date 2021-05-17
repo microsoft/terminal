@@ -1344,13 +1344,13 @@ void IslandWindow::_moveToMonitor(const MONITORINFO activeMonitor)
     // Get the monitor info for the window's current monitor.
     const auto currentMonitor = _getMonitorForWindow(GetHandle());
 
-    til::rectangle currentRect{ currentMonitor.rcMonitor };
-    til::rectangle activeRect{ activeMonitor.rcMonitor };
+    const til::rectangle currentRect{ currentMonitor.rcMonitor };
+    const til::rectangle activeRect{ activeMonitor.rcMonitor };
     if (currentRect != activeRect)
     {
-        til::rectangle currentWindowRect{ GetWindowRect() };
-        til::point offset{ currentWindowRect.origin() - currentRect.origin() };
-        til::point newOrigin{ activeRect.origin() + offset };
+        const til::rectangle currentWindowRect{ GetWindowRect() };
+        const til::point offset{ currentWindowRect.origin() - currentRect.origin() };
+        const til::point newOrigin{ activeRect.origin() + offset };
 
         SetWindowPos(GetHandle(),
                      0,
