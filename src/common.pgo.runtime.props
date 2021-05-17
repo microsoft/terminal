@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- From our friends at MUX: https://github.com/microsoft/microsoft-ui-xaml/blob/main/PGO.runtime.props -->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <PlatformShortName Condition="'$(PlatformShortName)'==''">$(Platform)</PlatformShortName>
+        <PlatformShortName Condition="'$(PlatformShortName)'=='Win32'">x86</PlatformShortName>
+        <PlatformShortName Condition="'$(PlatformShortName)'=='AnyCPU' and '$(Prefer32Bit)'==''">x64</PlatformShortName>
+        <PlatformShortName Condition="'$(PlatformShortName)'=='AnyCPU' and '$(Prefer32Bit)'=='true'">x64</PlatformShortName>
+        <PlatformShortName Condition="'$(PlatformShortName)'=='AnyCPU' and '$(Prefer32Bit)'=='false'">x64</PlatformShortName>
+        <HostFolderName Condition="'$(VCToolArchitecture)'=='Native32Bit'">Hostx86</HostFolderName>
+        <HostFolderName Condition="'$(VCToolArchitecture)'=='Native64Bit'">Hostx64</HostFolderName>
+        <PGOFilesDir>$(VCToolsInstallDir)bin\$(HostFolderName)\$(PlatformShortName)</PGOFilesDir>
+        <PGOFilesDir Condition="'$(PlatformShortName)'=='ARM' or '$(PlatformShortName)'=='ARM64'">$(VCToolsInstallDir)bin\$(PlatformShortName)</PGOFilesDir>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="$(PGOFilesDir)\pgort140.dll">
+            <Link>%(Filename)%(Extension)</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="$(PGOFilesDir)\pgosweep.exe">
+            <Link>%(Filename)%(Extension)</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="$(PGOFilesDir)\vcruntime140.dll" Condition="Exists('$(PGOFilesDir)\vcruntime140.dll')">
+            <Link>%(Filename)%(Extension)</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+</Project>

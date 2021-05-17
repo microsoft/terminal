@@ -955,7 +955,8 @@ void IslandWindow::UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Co
                       "UnsetHotkeys",
                       TraceLoggingDescription("Emitted when clearing previously set hotkeys"),
                       TraceLoggingInt64(hotkeyList.size(), "numHotkeys", "The number of hotkeys to unset"),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
     for (int i = 0; i < ::base::saturated_cast<int>(hotkeyList.size()); i++)
     {
@@ -978,7 +979,8 @@ void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal
                       "SetGlobalHotkeys",
                       TraceLoggingDescription("Emitted when setting hotkeys"),
                       TraceLoggingInt64(hotkeyList.size(), "numHotkeys", "The number of hotkeys to set"),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     int index = 0;
     for (const auto& hotkey : hotkeyList)
     {
@@ -1139,7 +1141,7 @@ void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration,
     // First, restore the window. SetWindowPlacement has a fun undocumented
     // piece of functionality where it will restore the window position
     // _without_ the animation, so use that instead of ShowWindow(SW_RESTORE).
-    WINDOWPLACEMENT wpc;
+    WINDOWPLACEMENT wpc{};
     wpc.length = sizeof(WINDOWPLACEMENT);
     GetWindowPlacement(_window.get(), &wpc);
     wpc.showCmd = SW_RESTORE;
@@ -1158,7 +1160,7 @@ void IslandWindow::_slideUpWindow(const uint32_t dropdownDuration)
     _doSlideAnimation(dropdownDuration, false);
 
     // Then, use SetWindowPlacement to minimize without the animation.
-    WINDOWPLACEMENT wpc;
+    WINDOWPLACEMENT wpc{};
     wpc.length = sizeof(WINDOWPLACEMENT);
     GetWindowPlacement(_window.get(), &wpc);
     wpc.showCmd = SW_MINIMIZE;
@@ -1254,7 +1256,8 @@ void IslandWindow::_globalDismissWindow(const uint32_t dropdownDuration)
 // Method Description:
 // - Get the monitor the mouse cursor is currently on
 // Arguments:
-// - <none>
+// - dropdownDuration: The duration to play the slide-up animation, in
+//   milliseconds. If 0, we won't perform a slide-up animation.
 // Return Value:
 // - The MONITORINFO for the monitor the mouse cursor is on
 MONITORINFO IslandWindow::_getMonitorForCursor()
