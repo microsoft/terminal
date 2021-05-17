@@ -161,9 +161,13 @@
                 <Setter Property="Width" Value="{StaticResource EditButtonSize}" />
             </Style>
 
-            <!--  Converters  -->
+            <!--  Converters & Misc.  -->
             <model:IconPathConverter x:Key="IconSourceConverter" />
             <local:InvertedBooleanToVisibilityConverter x:Key="InvertedBooleanToVisibilityConverter" />
+            <SolidColorBrush x:Key="EditModeContainerBackground"
+                             Color="{ThemeResource SystemListMediumColor}" />
+            <SolidColorBrush x:Key="NonEditModeContainerBackground"
+                             Color="Transparent" />
 
             <!--  Templates  -->
             <DataTemplate x:Key="KeyBindingTemplate"

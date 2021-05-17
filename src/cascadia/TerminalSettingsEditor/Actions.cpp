@@ -103,7 +103,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Automation::Peers::AutomationPeer Actions::OnCreateAutomationPeer()
     {
-        _AutomationPeerAttached = true;
         for (const auto& kbdVM : _KeyBindingList)
         {
             // To create a more accessible experience, we want the "edit" buttons to _always_
@@ -193,19 +192,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     }
                 }
 
-                const auto& containerBackgroundColor{ Resources().Lookup(box_value(L"SystemListMediumColor")).as<Windows::UI::Color>() };
-                Windows::UI::Xaml::Media::SolidColorBrush brush;
-                brush.Color(containerBackgroundColor);
-                get_self<KeyBindingViewModel>(senderVM)->ContainerBackground(brush);
+                const auto& containerBackground{ Resources().Lookup(box_value(L"EditModeContainerBackground")).as<Windows::UI::Xaml::Media::Brush>() };
+                get_self<KeyBindingViewModel>(senderVM)->ContainerBackground(containerBackground);
             }
             else
             {
                 // Focus on the list view item
                 KeyBindingsListView().ContainerFromItem(senderVM).as<Controls::Control>().Focus(FocusState::Programmatic);
 
-                Windows::UI::Xaml::Media::SolidColorBrush brush;
-                brush.Color(Windows::UI::Colors::Transparent());
-                get_self<KeyBindingViewModel>(senderVM)->ContainerBackground(brush);
+                const auto& containerBackground{ Resources().Lookup(box_value(L"NonEditModeContainerBackground")).as<Windows::UI::Xaml::Media::Brush>() };
+                get_self<KeyBindingViewModel>(senderVM)->ContainerBackground(containerBackground);
             }
         }
     }
