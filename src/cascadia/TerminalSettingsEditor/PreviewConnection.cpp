@@ -8,7 +8,7 @@
 using namespace ::winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::winrt::Windows::Foundation;
 
-static constexpr std::wstring_view PreviewText{ L"Windows Terminal\r\nCopyright (c) Microsoft Corporation.\r\n\nC:\\Windows\\Terminal> " };
+static constexpr std::wstring_view PreviewText{ L"Windows Terminal\r\nCopyright (c) Microsoft Corporation\r\n\nC:\\Windows\\Terminal> " };
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
