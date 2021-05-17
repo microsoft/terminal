@@ -308,7 +308,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     //   actually on the current desktop.
     // Return Value:
     // - the ID of the most recent peasant, otherwise 0 if we could not find one.
-    uint64_t Monarch::_getMostRecentPeasantID(const bool limitToCurrentDesktop)
+    uint64_t Monarch::_getMostRecentPeasantID(const bool limitToCurrentDesktop, const bool ignoreQuakeWindow)
     {
         if (_mruPeasants.empty())
         {
@@ -375,7 +375,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 continue;
             }
 
-            if (peasant.WindowName() == QuakeWindowName)
+            if (ignoreQuakeWindow && peasant.WindowName() == QuakeWindowName)
             {
                 // The _quake window should never be treated as the MRU window.
                 // Skip it if we see it. Users can still target it with `wt -w
@@ -487,10 +487,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 // lookup to find the window that spawned this process (then
                 // fall back to sameDesktop if we can't find a match). For now,
                 // it's good enough to just try to find a match on this desktop.
-                windowID = _getMostRecentPeasantID(true);
+                //
+                // GH#projects/5#card-60325142 - Don't try to glom to the quake window.
+                windowID = _getMostRecentPeasantID(true, true);
                 break;
             case WindowingBehaviorUseAnyExisting:
-                windowID = _getMostRecentPeasantID(false);
+                windowID = _getMostRecentPeasantID(false, true);
                 break;
             case WindowingBehaviorUseName:
                 windowID = _lookupPeasantIdForName(targetWindowName);
@@ -714,7 +716,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 // Use the value of the `desktop` arg to determine if we should
                 // limit to the current desktop (desktop:onCurrent) or not
                 // (desktop:any or desktop:toCurrent)
-                windowId = _getMostRecentPeasantID(args.OnCurrentDesktop());
+                windowId = _getMostRecentPeasantID(args.OnCurrentDesktop(), false);
             }
             else
             {
