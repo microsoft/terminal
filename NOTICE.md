@@ -252,9 +252,25 @@ DEALINGS IN THE SOFTWARE.
 
 ```
 
+# Microsoft Open Source
+
+This product also incorporates source code from other Microsoft open source projects, all licensed under the MIT license.
+
+## `GSL`
+
+**Source**: [https://github.com/microsoft/GSL](https://github.com/microsoft/GSL)
+
+## `Microsoft-UI-XAML`
+
+**Source**: [https://github.com/microsoft/Microsoft-UI-XAML](https://github.com/microsoft/Microsoft-UI-XAML)
+
 ## `VirtualDesktopUtils`
 
 **Source**: [https://github.com/microsoft/PowerToys](https://github.com/microsoft/PowerToys)
+
+## `wil`
+
+**Source**: [https://github.com/microsoft/wil](https://github.com/microsoft/wil)
 
 ### License
 

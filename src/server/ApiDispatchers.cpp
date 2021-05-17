@@ -40,6 +40,7 @@
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "API_GetConsoleMode",
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE),
                       TraceLoggingOpcode(WINEVENT_OPCODE_START));
 
     auto tracing = wil::scope_exit([&]() {
@@ -47,6 +48,7 @@
         TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                           "API_GetConsoleMode",
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE),
                           TraceLoggingOpcode(WINEVENT_OPCODE_STOP));
     });
 

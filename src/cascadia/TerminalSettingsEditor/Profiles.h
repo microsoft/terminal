@@ -37,7 +37,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ProfileViewModel : ProfileViewModelT<ProfileViewModel>, ViewModelHelper<ProfileViewModel>
     {
     public:
-        ProfileViewModel(const Model::Profile& profile);
+        ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings);
+
+        Model::TerminalSettings TermSettings() const;
 
         // background image
         bool UseDesktopBGImage();
@@ -110,6 +112,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
 
         static Editor::Font _GetFont(com_ptr<IDWriteLocalizedStrings> localizedFamilyNames);
+
+        Model::CascadiaSettings _appSettings;
     };
 
     struct DeleteProfileEventArgs :
@@ -207,6 +211,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::EnumEntry _CustomFontWeight{ nullptr };
         std::array<Windows::UI::Xaml::Controls::Primitives::ToggleButton, 9> _BIAlignmentButtons;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
+
+        Microsoft::Terminal::Control::TermControl _previewControl;
     };
 };
 

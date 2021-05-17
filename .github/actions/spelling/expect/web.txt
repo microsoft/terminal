@@ -1,5 +1,4 @@
 http
-td
 www
 ecma
 rapidtables
@@ -10,7 +9,6 @@ robertelder
 kovidgoyal
 leonerd
 fixterms
-uk
 winui
 appshellintegration
 cppreference
