@@ -148,7 +148,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     {
         // Clear the patterns first
         _buffer->ClearPatternRecognizers();
-        if (settings.DetectHyperlinks())
+        if (settings.DetectURLs())
         {
             // Add regex pattern recognizers to the buffer
             // For now, we only add the URI regex pattern

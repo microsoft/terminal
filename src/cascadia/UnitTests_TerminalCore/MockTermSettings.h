@@ -44,7 +44,7 @@ namespace TerminalCoreUnitTests
         winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color> TabColor() { return nullptr; }
         winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color> StartingTabColor() { return nullptr; }
         bool TrimBlockSelection() { return false; }
-        bool DetectHyperlinks() { return true; }
+        bool DetectURLs() { return true; }
 
         // other implemented methods
         til::color GetColorTableEntry(int32_t) const { return 123; }
@@ -71,7 +71,7 @@ namespace TerminalCoreUnitTests
         void TabColor(const IInspectable&) {}
         void StartingTabColor(const IInspectable&) {}
         void TrimBlockSelection(bool) {}
-        void DetectHyperlinks(bool) {}
+        void DetectURLs(bool) {}
 
     private:
         int32_t _historySize;
