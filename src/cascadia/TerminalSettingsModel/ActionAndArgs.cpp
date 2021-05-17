@@ -226,7 +226,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 const auto shortcutActionIter{ ActionToStringMap.find(val.Action()) };
                 if (shortcutActionIter != ActionToStringMap.end())
                 {
-                    return JsonKey(shortcutActionIter->second);
+                    return static_cast<std::string>(shortcutActionIter->second);
                 }
             }
             else
@@ -247,16 +247,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
                 // Set the "action" part
                 const auto shortcutActionIter{ ActionToStringMap.find(val.Action()) };
-                result[JsonKey(ActionKey)] = shortcutActionIter == ActionToStringMap.end() ?
-                                                 JsonKey(UnboundKey) :
-                                                 JsonKey(shortcutActionIter->second);
+                result[static_cast<std::string>(ActionKey)] = shortcutActionIter == ActionToStringMap.end() ?
+                                                                  static_cast<std::string>(UnboundKey) :
+                                                                  static_cast<std::string>(shortcutActionIter->second);
 
                 return result;
             }
         }
 
         // "command": "unbound"
-        return JsonKey(UnboundKey);
+        return static_cast<std::string>(UnboundKey);
     }
 
     com_ptr<ActionAndArgs> ActionAndArgs::Copy() const

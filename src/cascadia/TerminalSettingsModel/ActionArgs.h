@@ -136,6 +136,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const Model::NewTerminalArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<NewTerminalArgs>(val) };
             JsonUtils::SetValueForKey(json, CommandlineKey, args->_Commandline);
@@ -199,6 +203,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<CopyTextArgs>(val) };
             JsonUtils::SetValueForKey(json, SingleLineKey, args->_SingleLine);
@@ -247,6 +255,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             const auto args{ get_self<NewTabArgs>(val) };
             return NewTerminalArgs::ToJson(args->_TerminalArgs);
         }
@@ -292,6 +304,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<SwitchToTabArgs>(val) };
             JsonUtils::SetValueForKey(json, TabIndexKey, args->_TabIndex);
@@ -344,6 +360,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<ResizePaneArgs>(val) };
             JsonUtils::SetValueForKey(json, DirectionKey, args->_ResizeDirection);
@@ -399,6 +419,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<MoveFocusArgs>(val) };
             JsonUtils::SetValueForKey(json, DirectionKey, args->_FocusDirection);
@@ -444,6 +468,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<AdjustFontSizeArgs>(val) };
             JsonUtils::SetValueForKey(json, AdjustFontSizeDelta, args->_Delta);
@@ -492,6 +520,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<SendInputArgs>(val) };
             JsonUtils::SetValueForKey(json, InputKey, args->_Input);
@@ -544,7 +576,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (otherAsUs)
             {
                 return otherAsUs->_SplitStyle == _SplitStyle &&
-                       (otherAsUs->_TerminalArgs ? otherAsUs->_TerminalArgs.Equals(TerminalArgs()) :
+                       (otherAsUs->_TerminalArgs ? otherAsUs->_TerminalArgs.Equals(_TerminalArgs) :
                                                    otherAsUs->_TerminalArgs == _TerminalArgs) &&
                        otherAsUs->_SplitSize == _SplitSize &&
                        otherAsUs->_SplitMode == _SplitMode;
@@ -567,6 +599,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             const auto args{ get_self<SplitPaneArgs>(val) };
             auto json{ NewTerminalArgs::ToJson(args->_TerminalArgs) };
             JsonUtils::SetValueForKey(json, SplitKey, args->_SplitStyle);
@@ -619,6 +655,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<OpenSettingsArgs>(val) };
             JsonUtils::SetValueForKey(json, TargetKey, args->_Target);
@@ -670,6 +710,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<SetColorSchemeArgs>(val) };
             JsonUtils::SetValueForKey(json, NameKey, args->_SchemeName);
@@ -715,6 +759,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<SetTabColorArgs>(val) };
             JsonUtils::SetValueForKey(json, ColorKey, args->_TabColor);
@@ -760,6 +808,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<RenameTabArgs>(val) };
             JsonUtils::SetValueForKey(json, TitleKey, args->_Title);
@@ -811,6 +863,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<ExecuteCommandlineArgs>(val) };
             JsonUtils::SetValueForKey(json, CommandlineKey, args->_Commandline);
@@ -858,6 +914,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<CloseOtherTabsArgs>(val) };
             JsonUtils::SetValueForKey(json, IndexKey, args->_Index);
@@ -905,6 +965,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<CloseTabsAfterArgs>(val) };
             JsonUtils::SetValueForKey(json, IndexKey, args->_Index);
@@ -959,6 +1023,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<MoveTabArgs>(val) };
             JsonUtils::SetValueForKey(json, DirectionKey, args->_Direction);
@@ -1004,6 +1072,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<ScrollUpArgs>(val) };
             JsonUtils::SetValueForKey(json, RowsToScrollKey, args->_RowsToScroll);
@@ -1049,6 +1121,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<ScrollDownArgs>(val) };
             JsonUtils::SetValueForKey(json, RowsToScrollKey, args->_RowsToScroll);
@@ -1096,6 +1172,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<ToggleCommandPaletteArgs>(val) };
             JsonUtils::SetValueForKey(json, LaunchModeKey, args->_LaunchMode);
@@ -1150,6 +1230,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<FindMatchArgs>(val) };
             JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
@@ -1195,6 +1279,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             const auto args{ get_self<NewWindowArgs>(val) };
             return NewTerminalArgs::ToJson(args->_TerminalArgs);
         }
@@ -1237,6 +1325,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<PrevTabArgs>(val) };
             JsonUtils::SetValueForKey(json, SwitcherModeKey, args->_SwitcherMode);
@@ -1281,6 +1373,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<NextTabArgs>(val) };
             JsonUtils::SetValueForKey(json, SwitcherModeKey, args->_SwitcherMode);
@@ -1325,6 +1421,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<RenameWindowArgs>(val) };
             JsonUtils::SetValueForKey(json, NameKey, args->_Name);
@@ -1377,6 +1477,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         static Json::Value ToJson(const IActionArgs& val)
         {
+            if (!val)
+            {
+                return {};
+            }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<GlobalSummonArgs>(val) };
             JsonUtils::SetValueForKey(json, NameKey, args->_Name);

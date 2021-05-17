@@ -419,11 +419,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         else
         {
             // we'll write out one command per key mapping
-            for (auto keys{ _keyMappings.begin() }; keys != _keyMappings.end(); ++keys)
+            for (const auto& keys : _keyMappings)
             {
                 Json::Value cmdJson{ Json::ValueType::objectValue };
 
-                if (keys == _keyMappings.begin())
+                if (keys == *_keyMappings.begin())
                 {
                     // First iteration also writes icon and name
                     JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
@@ -435,7 +435,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     cmdJson[JsonKey(ActionKey)] = ActionAndArgs::ToJson(_ActionAndArgs);
                 }
 
-                JsonUtils::SetValueForKey(cmdJson, KeysKey, *keys);
+                JsonUtils::SetValueForKey(cmdJson, KeysKey, keys);
                 cmdList.append(cmdJson);
             }
         }

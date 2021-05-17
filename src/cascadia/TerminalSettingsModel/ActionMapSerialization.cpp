@@ -59,8 +59,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     Json::Value ActionMap::ToJson() const
     {
         Json::Value actionList{ Json::ValueType::arrayValue };
+
+        // Serialize all standard Command objects in the current layer
         for (const auto& [_, cmd] : _ActionMap)
         {
+            // Command serializes to an array of JSON objects.
+            // This is because a Command may have multiple key chords associated with it.
+            // The name and icon are only serialized in the first object.
+            // Example:
+            // { "name": "Custom Copy", "command": "copy", "keys": "ctrl+c" }
+            // {                        "command": "copy", "keys": "ctrl+shift+c" }
+            // {                        "command": "copy", "keys": "ctrl+ins" }
             const auto cmdImpl{ winrt::get_self<implementation::Command>(cmd) };
             const auto& cmdJsonArray{ cmdImpl->ToJson() };
             for (const auto& cmdJson : cmdJsonArray)
@@ -68,6 +77,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 actionList.append(cmdJson);
             }
         }
+
+        // Serialize all nested Command objects added in the current layer
         for (const auto& [_, cmd] : _NestedCommands)
         {
             const auto cmdImpl{ winrt::get_self<implementation::Command>(cmd) };
