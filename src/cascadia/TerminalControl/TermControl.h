@@ -209,6 +209,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // we must ensure the _renderer is deallocated first.
         // (C++ class members are destroyed in reverse order.)
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
+        // (further, the TermControlAutomationPeer must be destructed after _uiaEngine!)
+        winrt::Windows::UI::Xaml::Automation::Peers::AutomationPeer _automationPeer{ nullptr };
         std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
 
