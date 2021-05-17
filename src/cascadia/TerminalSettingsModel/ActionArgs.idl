@@ -92,6 +92,13 @@ namespace Microsoft.Terminal.Settings.Model
         OnCurrent,
     };
 
+    enum MonitorBehavior
+    {
+        Any,
+        ToCurrent,
+        ToMouse,
+    };
+
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
@@ -266,6 +273,7 @@ namespace Microsoft.Terminal.Settings.Model
     {
         String Name { get; };
         DesktopBehavior Desktop { get; };
+        MonitorBehavior Monitor { get; };
         Boolean ToggleVisibility { get; };
         UInt32 DropdownDuration { get; };
     };

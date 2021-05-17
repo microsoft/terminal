@@ -589,9 +589,13 @@ bool AppHost::HasWindow()
 void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*sender*/,
                                    Remoting::CommandlineArgs args)
 {
+    const Remoting::SummonWindowBehavior summonArgs{};
+    summonArgs.MoveToCurrentDesktop(false);
+    summonArgs.DropdownDuration(0);
+    summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
     // Summon the window whenever we dispatch a commandline to it. This will
     // make it obvious when a new tab/pane is created in a window.
-    _window->SummonWindow(false, 0);
+    _window->SummonWindow(summonArgs);
     _logic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory());
 }
 
@@ -695,6 +699,19 @@ void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
             args.SummonBehavior().ToggleVisibility(summonArgs.ToggleVisibility());
             args.SummonBehavior().DropdownDuration(summonArgs.DropdownDuration());
 
+            switch (summonArgs.Monitor())
+            {
+            case Settings::Model::MonitorBehavior::Any:
+                args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::InPlace);
+                break;
+            case Settings::Model::MonitorBehavior::ToCurrent:
+                args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToCurrent);
+                break;
+            case Settings::Model::MonitorBehavior::ToMouse:
+                args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToMouse);
+                break;
+            }
+
             _windowManager.SummonWindow(args);
             if (args.FoundMatch())
             {
@@ -776,7 +793,7 @@ bool AppHost::_LazyLoadDesktopManager()
 void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                             const Remoting::SummonWindowBehavior& args)
 {
-    _window->SummonWindow(args.ToggleVisibility(), args.DropdownDuration());
+    _window->SummonWindow(args);
 
     if (args != nullptr && args.MoveToCurrentDesktop())
     {

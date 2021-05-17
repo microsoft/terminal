@@ -1158,11 +1158,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GlobalSummonArgs() = default;
         WINRT_PROPERTY(winrt::hstring, Name, L"");
         WINRT_PROPERTY(Model::DesktopBehavior, Desktop, Model::DesktopBehavior::ToCurrent);
+        WINRT_PROPERTY(Model::MonitorBehavior, Monitor, Model::MonitorBehavior::ToMouse);
         WINRT_PROPERTY(bool, ToggleVisibility, true);
         WINRT_PROPERTY(uint32_t, DropdownDuration, 0);
 
         static constexpr std::string_view NameKey{ "name" };
         static constexpr std::string_view DesktopKey{ "desktop" };
+        static constexpr std::string_view MonitorKey{ "monitor" };
         static constexpr std::string_view ToggleVisibilityKey{ "toggleVisibility" };
         static constexpr std::string_view DropdownDurationKey{ "dropdownDuration" };
 
@@ -1175,6 +1177,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 return otherAsUs->_Name == _Name &&
                        otherAsUs->_Desktop == _Desktop &&
+                       otherAsUs->_Monitor == _Monitor &&
                        otherAsUs->_DropdownDuration == _DropdownDuration &&
                        otherAsUs->_ToggleVisibility == _ToggleVisibility;
             }
@@ -1186,6 +1189,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto args = winrt::make_self<GlobalSummonArgs>();
             JsonUtils::GetValueForKey(json, NameKey, args->_Name);
             JsonUtils::GetValueForKey(json, DesktopKey, args->_Desktop);
+            JsonUtils::GetValueForKey(json, MonitorKey, args->_Monitor);
             JsonUtils::GetValueForKey(json, DropdownDurationKey, args->_DropdownDuration);
             JsonUtils::GetValueForKey(json, ToggleVisibilityKey, args->_ToggleVisibility);
             return { *args, {} };
@@ -1195,6 +1199,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<GlobalSummonArgs>() };
             copy->_Name = _Name;
             copy->_Desktop = _Desktop;
+            copy->_Monitor = _Monitor;
             copy->_DropdownDuration = _DropdownDuration;
             copy->_ToggleVisibility = _ToggleVisibility;
             return *copy;
@@ -1213,7 +1218,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Name, _Desktop, _ToggleVisibility);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Name, _Desktop, _Monitor, _DropdownDuration, _ToggleVisibility);
         }
     };
 
