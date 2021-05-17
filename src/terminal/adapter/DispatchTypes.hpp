@@ -249,6 +249,15 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Scrollback = 3
     };
 
+    enum class TaskbarState : size_t
+    {
+        Clear = 0,
+        Set = 1,
+        Error = 2,
+        Indeterminate = 3,
+        Paused = 4
+    };
+
     enum GraphicsOptions : size_t
     {
         Off = 0,

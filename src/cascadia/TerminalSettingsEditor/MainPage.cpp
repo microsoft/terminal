@@ -39,9 +39,9 @@ static const std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    static Editor::ProfileViewModel _viewModelForProfile(const Model::Profile& profile)
+    static Editor::ProfileViewModel _viewModelForProfile(const Model::Profile& profile, const Model::CascadiaSettings& appSettings)
     {
-        return winrt::make<implementation::ProfileViewModel>(profile);
+        return winrt::make<implementation::ProfileViewModel>(profile, appSettings);
     }
 
     MainPage::MainPage(const CascadiaSettings& settings) :
@@ -361,7 +361,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // profile changes.
         for (const auto& profile : _settingsClone.AllProfiles())
         {
-            auto navItem = _CreateProfileNavViewItem(_viewModelForProfile(profile));
+            auto navItem = _CreateProfileNavViewItem(_viewModelForProfile(profile, _settingsClone));
             SettingsNav().MenuItems().Append(navItem);
         }
 
@@ -370,9 +370,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         addProfileItem.Content(box_value(RS_(L"Nav_AddNewProfile/Content")));
         addProfileItem.Tag(box_value(addProfileTag));
 
-        FontIcon icon;
+        // Wrap this icon up in a IconSourceElement, so we can bind to it in the
+        // Header above the Pivot.
+        WUX::Controls::IconSourceElement icon;
+        FontIconSource fontIcon;
         // This is the "Add" symbol
-        icon.Glyph(L"\xE710");
+        fontIcon.Glyph(L"\xE710");
+        icon.IconSource(fontIcon);
         addProfileItem.Icon(icon);
 
         SettingsNav().MenuItems().Append(addProfileItem);
@@ -381,7 +385,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void MainPage::_CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile& profile)
     {
         const auto newProfile{ profile ? profile : _settingsClone.CreateNewProfile() };
-        const auto profileViewModel{ _viewModelForProfile(newProfile) };
+        const auto profileViewModel{ _viewModelForProfile(newProfile, _settingsClone) };
         const auto navItem{ _CreateProfileNavViewItem(profileViewModel) };
         SettingsNav().MenuItems().InsertAt(index, navItem);
 

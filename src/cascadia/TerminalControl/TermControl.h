@@ -66,7 +66,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ToggleShaderEffects();
 
         winrt::fire_and_forget RenderEngineSwapChainChanged(IInspectable sender, IInspectable args);
-        void _AttachDxgiSwapChainToXaml(IDXGISwapChain1* swapChain);
+        void _AttachDxgiSwapChainToXaml(HANDLE swapChainHandle);
         winrt::fire_and_forget _RendererEnteredErrorState(IInspectable sender, IInspectable args);
 
         void _RenderRetryButton_Click(IInspectable const& button, IInspectable const& args);
@@ -88,6 +88,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const Windows::UI::Xaml::Thickness GetPadding();
 
         IControlSettings Settings() const;
+        void Settings(IControlSettings newSettings);
 
         static Windows::Foundation::Size GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi);
         static Windows::Foundation::Size GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,
@@ -130,22 +131,26 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
 
-        winrt::com_ptr<ControlCore> _core;
-        winrt::com_ptr<ControlInteractivity> _interactivity;
-
-        bool _initializedTerminal;
-
-        winrt::com_ptr<SearchBoxControl> _searchBox;
-
+        // NOTE: _uiaEngine must be ordered before _core.
+        //
+        // ControlCore::AttachUiaEngine receives a IRenderEngine as a raw pointer, which we own.
+        // We must ensure that we first destroy the ControlCore before the UiaEngine instance
+        // in order to safely resolve this unsafe pointer dependency. Otherwise a deallocated
+        // IRenderEngine is accessed when ControlCore calls Renderer::TriggerTeardown.
+        // (C++ class members are destroyed in reverse order.)
         std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
 
+        winrt::com_ptr<ControlCore> _core;
+        winrt::com_ptr<ControlInteractivity> _interactivity;
+        winrt::com_ptr<SearchBoxControl> _searchBox;
+
         IControlSettings _settings;
-        bool _focused;
         std::atomic<bool> _closing;
+        bool _focused;
+        bool _initializedTerminal;
 
         std::shared_ptr<ThrottledFunc<>> _tsfTryRedrawCanvas;
         std::shared_ptr<ThrottledFunc<>> _updatePatternLocations;
-
         std::shared_ptr<ThrottledFunc<>> _playWarningBell;
 
         struct ScrollBarUpdate

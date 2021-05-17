@@ -33,7 +33,6 @@
                 <TextBlock FontFamily="{x:Bind Name}"
                            Text="{x:Bind LocalizedName}" />
             </DataTemplate>
-
             <local:ColorToBrushConverter x:Key="ColorToBrushConverter" />
             <local:PercentageConverter x:Key="PercentageConverter" />
             <local:FontWeightConverter x:Key="FontWeightConverter" />
@@ -238,6 +237,13 @@
                 <ScrollViewer>
                     <StackPanel>
                         <StackPanel Style="{StaticResource PivotStackStyle}">
+                            <!--  Control Preview  -->
+                            <Border x:Name="ControlPreview"
+                                    Width="350"
+                                    Height="160"
+                                    BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
+                                    BorderThickness="1" />
+
                             <!--  Grouping: Text  -->
                             <TextBlock x:Uid="Profile_TextHeader"
                                        Style="{StaticResource SubtitleTextBlockStyle}" />

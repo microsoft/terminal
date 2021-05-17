@@ -227,6 +227,10 @@
     <value>Automatically copy selection to clipboard</value>
     <comment>Header for a control to toggle whether selected text should be copied to the clipboard automatically, or not.</comment>
   </data>
+  <data name="Globals_DetectURLs.Header" xml:space="preserve">
+    <value>Automatically detect URLs and make them clickable</value>
+    <comment>Header for a control to toggle whether the terminal should automatically detect URLs and make them clickable, or not.</comment>
+  </data>
   <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
     <value>Remove trailing white-space in rectangular selection</value>
     <comment>Header for a control to toggle whether a text selected with block selection should be trimmed of white spaces when copied to the clipboard, or not.</comment>
