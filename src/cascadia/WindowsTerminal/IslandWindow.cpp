@@ -16,6 +16,7 @@ using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
+using namespace winrt::Microsoft::Terminal;
 using namespace ::Microsoft::Console::Types;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
@@ -1009,14 +1010,14 @@ void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal
 // - toggleVisibility: controls how we should behave when already in the foreground.
 // Return Value:
 // - <none>
-winrt::fire_and_forget IslandWindow::SummonWindow(const bool toggleVisibility, const uint32_t dropdownDuration)
+winrt::fire_and_forget IslandWindow::SummonWindow(Remoting::SummonWindowBehavior args)
 {
     // On the foreground thread:
     co_await winrt::resume_foreground(_rootGrid.Dispatcher());
 
-    uint32_t actualDropdownDuration = dropdownDuration;
+    uint32_t actualDropdownDuration = args.DropdownDuration();
     // If the user requested an animation, let's check if animations are enabled in the OS.
-    if (dropdownDuration > 0)
+    if (args.DropdownDuration() > 0)
     {
         BOOL animationsEnabled = TRUE;
         SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
@@ -1036,15 +1037,38 @@ winrt::fire_and_forget IslandWindow::SummonWindow(const bool toggleVisibility, c
 
     // * If the user doesn't want to toggleVisibility, then just always try to
     //   activate.
-    // * If the user does want to toggleVisibility, then dismiss the window if
-    //   we're the current foreground window.
-    if (toggleVisibility && GetForegroundWindow() == _window.get())
+    // * If the user does want to toggleVisibility,
+    //   - If we're the foreground window, ToMonitor == ToMouse, and the mouse is on the monitor we are
+    //      - activate the window
+    //   - else
+    //      - dismiss the window
+    if (args.ToggleVisibility() && GetForegroundWindow() == _window.get())
     {
-        _globalDismissWindow(actualDropdownDuration);
+        bool handled = false;
+
+        // They want to toggle the window when it is the FG window, and we are
+        // the FG window. However, if we're on a different monitor than the
+        // mouse, then we should move to that monitor instead of dismissing.
+        if (args.ToMonitor() == Remoting::MonitorBehavior::ToMouse)
+        {
+            const til::rectangle cursorMonitorRect{ _getMonitorForCursor().rcMonitor };
+            const til::rectangle currentMonitorRect{ _getMonitorForWindow(GetHandle()).rcMonitor };
+            if (cursorMonitorRect != currentMonitorRect)
+            {
+                // We're not on the same monitor as the mouse. Go to that monitor.
+                _globalActivateWindow(actualDropdownDuration, args.ToMonitor());
+                handled = true;
+            }
+        }
+
+        if (!handled)
+        {
+            _globalDismissWindow(actualDropdownDuration);
+        }
     }
     else
     {
-        _globalActivateWindow(actualDropdownDuration);
+        _globalActivateWindow(actualDropdownDuration, args.ToMonitor());
     }
 }
 
@@ -1105,8 +1129,15 @@ void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool
     SetWindowRgn(_interopWindowHandle, nullptr, true);
 }
 
-void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration)
+void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration,
+                                   const Remoting::MonitorBehavior toMonitor)
 {
+    // First, get the window that's currently in the foreground. We'll need
+    // _this_ window to be able to appear on top of. If we just use
+    // GetForegroundWindow afer the SetWindowPlacement call, _we_ will be the
+    // foreground window.
+    const auto oldForegroundWindow = GetForegroundWindow();
+
     // First, restore the window. SetWindowPlacement has a fun undocumented
     // piece of functionality where it will restore the window position
     // _without_ the animation, so use that instead of ShowWindow(SW_RESTORE).
@@ -1115,6 +1146,9 @@ void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration)
     GetWindowPlacement(_window.get(), &wpc);
     wpc.showCmd = SW_RESTORE;
     SetWindowPlacement(_window.get(), &wpc);
+
+    // Possibly go to the monitor of the mouse / old foreground window.
+    _moveToMonitor(oldForegroundWindow, toMonitor);
 
     // Now that we're visible, animate the dropdown.
     _doSlideAnimation(dropdownDuration, true);
@@ -1145,8 +1179,15 @@ void IslandWindow::_slideUpWindow(const uint32_t dropdownDuration)
 //   milliseconds. If 0, we won't perform a dropdown animation.
 // Return Value:
 // - <none>
-void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration)
+void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
+                                         const Remoting::MonitorBehavior toMonitor)
 {
+    // First, get the window that's currently in the foreground. We'll need
+    // _this_ window to be able to appear on top of. If we just use
+    // GetForegroundWindow afer the SetWindowPlacement/ShowWindow call, _we_
+    // will be the foreground window.
+    const auto oldForegroundWindow = GetForegroundWindow();
+
     // From: https://stackoverflow.com/a/59659421
     // > The trick is to make windows ‘think’ that our process and the target
     // > window (hwnd) are related by attaching the threads (using
@@ -1158,16 +1199,19 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration)
     {
         if (dropdownDuration > 0)
         {
-            _dropdownWindow(dropdownDuration);
+            _dropdownWindow(dropdownDuration, toMonitor);
         }
         else
         {
             LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
+
+            // Once we've been restored, throw us on the active monitor.
+            _moveToMonitor(oldForegroundWindow, toMonitor);
         }
     }
     else
     {
-        const DWORD windowThreadProcessId = GetWindowThreadProcessId(GetForegroundWindow(), nullptr);
+        const DWORD windowThreadProcessId = GetWindowThreadProcessId(oldForegroundWindow, nullptr);
         const DWORD currentThreadId = GetCurrentThreadId();
 
         LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, true));
@@ -1181,6 +1225,9 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration)
         // Activate the window too. This will force us to the virtual desktop this
         // window is on, if it's on another virtual desktop.
         LOG_LAST_ERROR_IF_NULL(SetActiveWindow(_window.get()));
+
+        // Throw us on the active monitor.
+        _moveToMonitor(oldForegroundWindow, toMonitor);
     }
 }
 
@@ -1203,6 +1250,115 @@ void IslandWindow::_globalDismissWindow(const uint32_t dropdownDuration)
     else
     {
         LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_MINIMIZE));
+    }
+}
+
+// Method Description:
+// - Get the monitor the mouse cursor is currently on
+// Arguments:
+// - dropdownDuration: The duration to play the slide-up animation, in
+//   milliseconds. If 0, we won't perform a slide-up animation.
+// Return Value:
+// - The MONITORINFO for the monitor the mouse cursor is on
+MONITORINFO IslandWindow::_getMonitorForCursor()
+{
+    POINT p{};
+    GetCursorPos(&p);
+
+    // Get the monitor info for the window's current monitor.
+    MONITORINFO activeMonitor{};
+    activeMonitor.cbSize = sizeof(activeMonitor);
+    GetMonitorInfo(MonitorFromPoint(p, MONITOR_DEFAULTTONEAREST), &activeMonitor);
+    return activeMonitor;
+}
+
+// Method Description:
+// - Get the monitor for a given HWND
+// Arguments:
+// - <none>
+// Return Value:
+// - The MONITORINFO for the given HWND
+MONITORINFO IslandWindow::_getMonitorForWindow(HWND foregroundWindow)
+{
+    // Get the monitor info for the window's current monitor.
+    MONITORINFO activeMonitor{};
+    activeMonitor.cbSize = sizeof(activeMonitor);
+    GetMonitorInfo(MonitorFromWindow(foregroundWindow, MONITOR_DEFAULTTONEAREST), &activeMonitor);
+    return activeMonitor;
+}
+
+// Method Description:
+// - Based on the value in toMonitor, move the window to the monitor of the
+//   given HWND, the monitor of the mouse pointer, or just leave it where it is.
+// Arguments:
+// - oldForegroundWindow: when toMonitor is ToCurrent, we'll move to the monitor
+//   of this HWND. Otherwise, this param is ignored.
+// - toMonitor: Controls which monitor we should move to.
+// Return Value:
+// - <none>
+void IslandWindow::_moveToMonitor(HWND oldForegroundWindow, Remoting::MonitorBehavior toMonitor)
+{
+    if (toMonitor == Remoting::MonitorBehavior::ToCurrent)
+    {
+        _moveToMonitorOf(oldForegroundWindow);
+    }
+    else if (toMonitor == Remoting::MonitorBehavior::ToMouse)
+    {
+        _moveToMonitorOfMouse();
+    }
+}
+
+// Method Description:
+// - Move our window to the monitor the mouse is on.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void IslandWindow::_moveToMonitorOfMouse()
+{
+    _moveToMonitor(_getMonitorForCursor());
+}
+
+// Method Description:
+// - Move our window to the monitor that the given HWND is on.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void IslandWindow::_moveToMonitorOf(HWND foregroundWindow)
+{
+    _moveToMonitor(_getMonitorForWindow(foregroundWindow));
+}
+
+// Method Description:
+// - Move our window to the given monitor. This will do nothing if we're already
+//   on that monitor.
+// - We'll retain the same relative position on the new monitor as we had on the
+//   old monitor.
+// Arguments:
+// - activeMonitor: the monitor to move to.
+// Return Value:
+// - <none>
+void IslandWindow::_moveToMonitor(const MONITORINFO activeMonitor)
+{
+    // Get the monitor info for the window's current monitor.
+    const auto currentMonitor = _getMonitorForWindow(GetHandle());
+
+    const til::rectangle currentRect{ currentMonitor.rcMonitor };
+    const til::rectangle activeRect{ activeMonitor.rcMonitor };
+    if (currentRect != activeRect)
+    {
+        const til::rectangle currentWindowRect{ GetWindowRect() };
+        const til::point offset{ currentWindowRect.origin() - currentRect.origin() };
+        const til::point newOrigin{ activeRect.origin() + offset };
+
+        SetWindowPos(GetHandle(),
+                     0,
+                     newOrigin.x<int>(),
+                     newOrigin.y<int>(),
+                     currentWindowRect.width<int>(),
+                     currentWindowRect.height<int>(),
+                     SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
     }
 }
 
