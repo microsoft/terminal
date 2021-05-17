@@ -679,7 +679,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
             _renderer->AddRenderEngine(_uiaEngine.get());
-            return *autoPeer;
+            _automationPeer = *autoPeer;
+            return _automationPeer;
         }
         return nullptr;
     }
@@ -2680,6 +2681,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Stop accepting new output and state changes before we disconnect everything.
             _connection.TerminalOutput(_connectionOutputEventToken);
             _connectionStateChangedRevoker.revoke();
+
+            // These four throttled functions are triggered by terminal output and interact with the UI.
+            // Since Close() is the point after which we are removed from the UI, but before the destructor
+            // has run, we should disconnect them *right now*. If we don't, they may fire between the
+            // throttle delay (from the final output) and the dtor.
+            _tsfTryRedrawCanvas.reset();
+            _updatePatternLocations.reset();
+            _updateScrollBar.reset();
+            _playWarningBell.reset();
 
             TSFInputControl().Close(); // Disconnect the TSF input control so it doesn't receive EditContext events.
             _autoScrollTimer.Stop();
