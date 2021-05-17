@@ -591,7 +591,7 @@ void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*se
 {
     // Summon the window whenever we dispatch a commandline to it. This will
     // make it obvious when a new tab/pane is created in a window.
-    _window->SummonWindow(false);
+    _window->SummonWindow(false, 0);
     _logic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory());
 }
 
@@ -693,6 +693,7 @@ void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
             args.OnCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::OnCurrent);
             args.SummonBehavior().MoveToCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::ToCurrent);
             args.SummonBehavior().ToggleVisibility(summonArgs.ToggleVisibility());
+            args.SummonBehavior().DropdownDuration(summonArgs.DropdownDuration());
 
             _windowManager.SummonWindow(args);
             if (args.FoundMatch())
@@ -775,7 +776,7 @@ bool AppHost::_LazyLoadDesktopManager()
 void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                             const Remoting::SummonWindowBehavior& args)
 {
-    _window->SummonWindow(args.ToggleVisibility());
+    _window->SummonWindow(args.ToggleVisibility(), args.DropdownDuration());
 
     if (args != nullptr && args.MoveToCurrentDesktop())
     {

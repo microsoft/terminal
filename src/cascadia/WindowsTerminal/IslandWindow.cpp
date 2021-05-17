@@ -1009,10 +1009,30 @@ void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal
 // - toggleVisibility: controls how we should behave when already in the foreground.
 // Return Value:
 // - <none>
-winrt::fire_and_forget IslandWindow::SummonWindow(const bool toggleVisibility)
+winrt::fire_and_forget IslandWindow::SummonWindow(const bool toggleVisibility, const uint32_t dropdownDuration)
 {
     // On the foreground thread:
     co_await winrt::resume_foreground(_rootGrid.Dispatcher());
+
+    uint32_t actualDropdownDuration = dropdownDuration;
+    // If the user requested an animation, let's check if animations are enabled in the OS.
+    if (dropdownDuration > 0)
+    {
+        BOOL animationsEnabled = TRUE;
+        SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
+        if (!animationsEnabled)
+        {
+            // The OS has animations disabled - we should respect that and
+            // disable the animation here.
+            //
+            // We're doing this here, rather than in _doSlideAnimation, to
+            // preempt any other specific behavior that
+            // _globalActivateWindow/_globalDismissWindow might do if they think
+            // there should be an animation (like making the window appear with
+            // SetWindowPlacement rather than ShowWindow)
+            actualDropdownDuration = 0;
+        }
+    }
 
     // * If the user doesn't want to toggleVisibility, then just always try to
     //   activate.
@@ -1020,23 +1040,112 @@ winrt::fire_and_forget IslandWindow::SummonWindow(const bool toggleVisibility)
     //   we're the current foreground window.
     if (toggleVisibility && GetForegroundWindow() == _window.get())
     {
-        _globalDismissWindow();
+        _globalDismissWindow(actualDropdownDuration);
     }
     else
     {
-        _globalActivateWindow();
+        _globalActivateWindow(actualDropdownDuration);
     }
+}
+
+// Method Description:
+// - Helper for performing a sliding animation. This will animate our _Xaml
+//   Island_, either growing down or shrinking up, using SetWindowRgn.
+// - This function does the entire animation on the main thread (the UI thread),
+//   and **DOES NOT YIELD IT**. The window will be animating for the entire
+//   duration of dropdownDuration.
+// - At the end of the animation, we'll reset the window region, so that it's as
+//   if nothing occurred.
+// Arguments:
+// - dropdownDuration: The duration to play the animation, in milliseconds. If
+//   0, we won't perform a dropdown animation.
+// - down: if true, increase the height from top to bottom. otherwise, decrease
+//   the height, from bottom to top.
+// Return Value:
+// - <none>
+void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool down)
+{
+    til::rectangle fullWindowSize{ GetWindowRect() };
+    const double fullHeight = fullWindowSize.height<double>();
+
+    const double animationDuration = dropdownDuration; // use floating-point math throughout
+    const auto start = std::chrono::system_clock::now();
+
+    // Do at most dropdownDuration frames. After that, just bail straight to the
+    // final state.
+    for (uint32_t i = 0; i < dropdownDuration; i++)
+    {
+        const auto end = std::chrono::system_clock::now();
+        const auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        const double dt = ::base::saturated_cast<double>(millis.count());
+
+        if (dt > animationDuration)
+        {
+            break;
+        }
+
+        // If going down, increase the height over time. If going up, decrease the height.
+        const double currentHeight = ::base::saturated_cast<double>(
+            down ? ((dt / animationDuration) * fullHeight) :
+                   ((1.0 - (dt / animationDuration)) * fullHeight));
+
+        wil::unique_hrgn rgn{ CreateRectRgn(0,
+                                            0,
+                                            fullWindowSize.width<int>(),
+                                            ::base::saturated_cast<int>(currentHeight)) };
+
+        SetWindowRgn(_interopWindowHandle, rgn.get(), true);
+
+        // Go immediately into another frame. This prevents the window from
+        // doing anything else (tearing our state). A Sleep() here will cause a
+        // weird stutter, and causes the animation to not be as smooth.
+    }
+
+    // Reset the window.
+    SetWindowRgn(_interopWindowHandle, nullptr, true);
+}
+
+void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration)
+{
+    // First, restore the window. SetWindowPlacement has a fun undocumented
+    // piece of functionality where it will restore the window position
+    // _without_ the animation, so use that instead of ShowWindow(SW_RESTORE).
+    WINDOWPLACEMENT wpc{};
+    wpc.length = sizeof(WINDOWPLACEMENT);
+    GetWindowPlacement(_window.get(), &wpc);
+    wpc.showCmd = SW_RESTORE;
+    SetWindowPlacement(_window.get(), &wpc);
+
+    // Now that we're visible, animate the dropdown.
+    _doSlideAnimation(dropdownDuration, true);
+}
+
+void IslandWindow::_slideUpWindow(const uint32_t dropdownDuration)
+{
+    // First, animate the window sliding up.
+    _doSlideAnimation(dropdownDuration, false);
+
+    // Then, use SetWindowPlacement to minimize without the animation.
+    WINDOWPLACEMENT wpc{};
+    wpc.length = sizeof(WINDOWPLACEMENT);
+    GetWindowPlacement(_window.get(), &wpc);
+    wpc.showCmd = SW_MINIMIZE;
+    SetWindowPlacement(_window.get(), &wpc);
 }
 
 // Method Description:
 // - Force activate this window. This method will bring us to the foreground and
 //   activate us. If the window is minimized, it will restore the window. If the
 //   window is on another desktop, the OS will switch to that desktop.
+// - If the window is minimized, and dropdownDuration is greater than 0, we'll
+//   perform a "slide in" animation. We won't do this if the window is already
+//   on the screen (since that seems silly).
 // Arguments:
-// - <none>
+// - dropdownDuration: The duration to play the dropdown animation, in
+//   milliseconds. If 0, we won't perform a dropdown animation.
 // Return Value:
 // - <none>
-void IslandWindow::_globalActivateWindow()
+void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration)
 {
     // From: https://stackoverflow.com/a/59659421
     // > The trick is to make windows ‘think’ that our process and the target
@@ -1047,34 +1156,54 @@ void IslandWindow::_globalActivateWindow()
     // restore-down the window.
     if (IsIconic(_window.get()))
     {
-        LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
+        if (dropdownDuration > 0)
+        {
+            _dropdownWindow(dropdownDuration);
+        }
+        else
+        {
+            LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
+        }
     }
-    const DWORD windowThreadProcessId = GetWindowThreadProcessId(GetForegroundWindow(), nullptr);
-    const DWORD currentThreadId = GetCurrentThreadId();
+    else
+    {
+        const DWORD windowThreadProcessId = GetWindowThreadProcessId(GetForegroundWindow(), nullptr);
+        const DWORD currentThreadId = GetCurrentThreadId();
 
-    LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, true));
-    // Just in case, add the thread detach as a scope_exit, to make _sure_ we do it.
-    auto detachThread = wil::scope_exit([windowThreadProcessId, currentThreadId]() {
-        LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, false));
-    });
-    LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
-    LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_SHOW));
+        LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, true));
+        // Just in case, add the thread detach as a scope_exit, to make _sure_ we do it.
+        auto detachThread = wil::scope_exit([windowThreadProcessId, currentThreadId]() {
+            LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, false));
+        });
+        LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
+        LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_SHOW));
 
-    // Activate the window too. This will force us to the virtual desktop this
-    // window is on, if it's on another virtual desktop.
-    LOG_LAST_ERROR_IF_NULL(SetActiveWindow(_window.get()));
+        // Activate the window too. This will force us to the virtual desktop this
+        // window is on, if it's on another virtual desktop.
+        LOG_LAST_ERROR_IF_NULL(SetActiveWindow(_window.get()));
+    }
 }
 
 // Method Description:
 // - Minimize the window. This is called when the window is summoned, but is
 //   already active
+// - If dropdownDuration is greater than 0, we'll perform a "slide in"
+//   animation, before minimizing the window.
 // Arguments:
-// - <none>
+// - dropdownDuration: The duration to play the slide-up animation, in
+//   milliseconds. If 0, we won't perform a slide-up animation.
 // Return Value:
 // - <none>
-void IslandWindow::_globalDismissWindow()
+void IslandWindow::_globalDismissWindow(const uint32_t dropdownDuration)
 {
-    LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_MINIMIZE));
+    if (dropdownDuration > 0)
+    {
+        _slideUpWindow(dropdownDuration);
+    }
+    else
+    {
+        LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_MINIMIZE));
+    }
 }
 
 bool IslandWindow::IsQuakeWindow() const noexcept

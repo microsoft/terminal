@@ -267,5 +267,6 @@ namespace Microsoft.Terminal.Settings.Model
         String Name { get; };
         DesktopBehavior Desktop { get; };
         Boolean ToggleVisibility { get; };
+        UInt32 DropdownDuration { get; };
     };
 }

@@ -1159,10 +1159,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(winrt::hstring, Name, L"");
         WINRT_PROPERTY(Model::DesktopBehavior, Desktop, Model::DesktopBehavior::ToCurrent);
         WINRT_PROPERTY(bool, ToggleVisibility, true);
+        WINRT_PROPERTY(uint32_t, DropdownDuration, 0);
 
         static constexpr std::string_view NameKey{ "name" };
         static constexpr std::string_view DesktopKey{ "desktop" };
         static constexpr std::string_view ToggleVisibilityKey{ "toggleVisibility" };
+        static constexpr std::string_view DropdownDurationKey{ "dropdownDuration" };
 
     public:
         hstring GenerateName() const;
@@ -1173,6 +1175,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 return otherAsUs->_Name == _Name &&
                        otherAsUs->_Desktop == _Desktop &&
+                       otherAsUs->_DropdownDuration == _DropdownDuration &&
                        otherAsUs->_ToggleVisibility == _ToggleVisibility;
             }
             return false;
@@ -1183,6 +1186,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto args = winrt::make_self<GlobalSummonArgs>();
             JsonUtils::GetValueForKey(json, NameKey, args->_Name);
             JsonUtils::GetValueForKey(json, DesktopKey, args->_Desktop);
+            JsonUtils::GetValueForKey(json, DropdownDurationKey, args->_DropdownDuration);
             JsonUtils::GetValueForKey(json, ToggleVisibilityKey, args->_ToggleVisibility);
             return { *args, {} };
         }
@@ -1191,6 +1195,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<GlobalSummonArgs>() };
             copy->_Name = _Name;
             copy->_Desktop = _Desktop;
+            copy->_DropdownDuration = _DropdownDuration;
             copy->_ToggleVisibility = _ToggleVisibility;
             return *copy;
         }
@@ -1200,7 +1205,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<GlobalSummonArgs>();
+            // We want to summon the window with the name "_quake" specifically.
             args->_Name = QuakeWindowName;
+            // We want the window to dropdown, with a 200ms duration.
+            args->_DropdownDuration = 200;
             return { *args, {} };
         }
         size_t Hash() const
