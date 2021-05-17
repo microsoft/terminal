@@ -197,7 +197,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (multiClickMapper == 1)
             {
                 _singleClickTouchdownPos = pixelPosition;
-                _singleClickTouchdownTerminalPos = terminalPosition;
 
                 if (!_core->HasSelection())
                 {
@@ -266,10 +265,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto fontSizeInDips{ _core->FontSizeInDips() };
                 if (distance >= (std::min(fontSizeInDips.width(), fontSizeInDips.height()) / 4.f))
                 {
-                    _core->SetSelectionAnchor(terminalPosition);
+                    // GH#9955.c: Make sure to use the terminal location of the
+                    // _touchdown_ point here. We want to start the selection
+                    // from where the user initially clicked, not where they are
+                    // now.
+                    _core->SetSelectionAnchor(_getTerminalPosition(touchdownPoint));
+
                     // stop tracking the touchdown point
                     _singleClickTouchdownPos = std::nullopt;
-                    _singleClickTouchdownTerminalPos = std::nullopt;
                 }
             }
 
@@ -303,12 +306,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // panning down)
                 const float numRows = -1.0f * (dy / fontSizeInDips.height<float>());
 
-                const auto currentOffset = ::base::ClampedNumeric<double>(_core->ScrollOffset());
-                const auto newValue = numRows + currentOffset;
+                const double currentOffset = ::base::ClampedNumeric<double>(_core->ScrollOffset());
+                const double newValue = numRows + currentOffset;
 
                 // Update the Core's viewport position, and raise a
                 // ScrollPositionChanged event to update the scrollbar
-                _updateScrollbar(newValue);
+                UpdateScrollbar(newValue);
 
                 // Use this point as our new scroll anchor.
                 _touchAnchor = newTouchPoint;
@@ -341,7 +344,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _singleClickTouchdownPos = std::nullopt;
-        _singleClickTouchdownTerminalPos = std::nullopt;
     }
 
     void ControlInteractivity::TouchReleased()
@@ -396,7 +398,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            _mouseScrollHandler(delta, terminalPosition, state.isLeftButtonDown);
+            _mouseScrollHandler(delta, pixelPosition, state.isLeftButtonDown);
         }
         return false;
     }
@@ -428,35 +430,50 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Scroll the visible viewport in response to a mouse wheel event.
     // Arguments:
     // - mouseDelta: the mouse wheel delta that triggered this event.
-    // - point: the location of the mouse during this event
+    // - pixelPosition: the location of the mouse during this event
     // - isLeftButtonPressed: true iff the left mouse button was pressed during this event.
     void ControlInteractivity::_mouseScrollHandler(const double mouseDelta,
-                                                   const til::point terminalPosition,
+                                                   const til::point pixelPosition,
                                                    const bool isLeftButtonPressed)
     {
-        const auto currentOffset = _core->ScrollOffset();
+        // GH#9955.b: Start scrolling from our internal scrollbar position. This
+        // lets us accumulate fractional numbers of rows to scroll with each
+        // event. Especially for precision trackpads, we might be getting scroll
+        // deltas smaller than a single row, but we still want lots of those to
+        // accumulate.
+        //
+        // At the start, let's compare what we _think_ the scrollbar is, with
+        // what it should be. It's possible the core scrolled out from
+        // underneath us. We wouldn't know - we don't want the overhead of
+        // another ScrollPositionChanged handler. If the scrollbar should be
+        // somewhere other than where it is currently, then start from that row.
+        const int currentInternalRow = ::base::saturated_cast<int>(::std::round(_internalScrollbarPosition));
+        const int currentCoreRow = _core->ScrollOffset();
+        const double currentOffset = currentInternalRow == currentCoreRow ?
+                                         _internalScrollbarPosition :
+                                         currentCoreRow;
 
         // negative = down, positive = up
         // However, for us, the signs are flipped.
         // With one of the precision mice, one click is always a multiple of 120 (WHEEL_DELTA),
         // but the "smooth scrolling" mode results in non-int values
-        const auto rowDelta = mouseDelta / (-1.0 * WHEEL_DELTA);
+        const double rowDelta = mouseDelta / (-1.0 * WHEEL_DELTA);
 
         // WHEEL_PAGESCROLL is a Win32 constant that represents the "scroll one page
         // at a time" setting. If we ignore it, we will scroll a truly absurd number
         // of rows.
-        const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? _core->ViewHeight() : _rowsToScroll };
+        const double rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? ::base::saturated_cast<double>(_core->ViewHeight()) : _rowsToScroll };
         double newValue = (rowsToScroll * rowDelta) + (currentOffset);
 
         // Update the Core's viewport position, and raise a
         // ScrollPositionChanged event to update the scrollbar
-        _updateScrollbar(::base::saturated_cast<int>(newValue));
+        UpdateScrollbar(newValue);
 
         if (isLeftButtonPressed)
         {
             // If user is mouse selecting and scrolls, they then point at new
             // character. Make sure selection reflects that immediately.
-            SetEndSelectionPoint(terminalPosition);
+            SetEndSelectionPoint(pixelPosition);
         }
     }
 
@@ -476,15 +493,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - newValue: The new top of the viewport
     // Return Value:
     // - <none>
-    void ControlInteractivity::_updateScrollbar(const int newValue)
+    void ControlInteractivity::UpdateScrollbar(const double newValue)
     {
-        _core->UserScrollViewport(newValue);
+        // Set this as the new value of our internal scrollbar representation.
+        // We're doing this so we can accumulate fractional amounts of a row to
+        // scroll each time the mouse scrolls.
+        _internalScrollbarPosition = std::clamp<double>(newValue, 0.0, _core->BufferHeight());
 
-        // _core->ScrollOffset() is now set to newValue
-        _ScrollPositionChangedHandlers(*this,
-                                       winrt::make<ScrollPositionChangedArgs>(_core->ScrollOffset(),
-                                                                              _core->ViewHeight(),
-                                                                              _core->BufferHeight()));
+        // If the new scrollbar position, rounded to an int, is at a different
+        // row, then actually update the scroll position in the core, and raise
+        // a ScrollPositionChanged to inform the control.
+        int viewTop = ::base::saturated_cast<int>(::std::round(_internalScrollbarPosition));
+        if (viewTop != _core->ScrollOffset())
+        {
+            _core->UserScrollViewport(viewTop);
+
+            // _core->ScrollOffset() is now set to newValue
+            _ScrollPositionChangedHandlers(*this,
+                                           winrt::make<ScrollPositionChangedArgs>(_core->ScrollOffset(),
+                                                                                  _core->ViewHeight(),
+                                                                                  _core->BufferHeight()));
+        }
     }
 
     void ControlInteractivity::_hyperlinkHandler(const std::wstring_view uri)

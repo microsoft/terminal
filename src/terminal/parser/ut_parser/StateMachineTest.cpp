@@ -32,10 +32,20 @@ public:
     {
         printed.clear();
         passedThrough.clear();
+        executed.clear();
+        csiId = 0;
         csiParams.clear();
+        dcsId = 0;
+        dcsParams.clear();
+        dcsDataString.clear();
     }
 
-    bool ActionExecute(const wchar_t /* wch */) override { return true; };
+    bool ActionExecute(const wchar_t wch) override
+    {
+        executed += wch;
+        return true;
+    };
+
     bool ActionExecuteFromEscape(const wchar_t /* wch */) override { return true; };
     bool ActionPrint(const wchar_t /* wch */) override { return true; };
     bool ActionPrintString(const std::wstring_view string) override
@@ -78,7 +88,7 @@ public:
     bool DispatchIntermediatesFromEscape() const override { return false; };
 
     // ActionCsiDispatch is the only method that's actually implemented.
-    bool ActionCsiDispatch(const VTID /*id*/, const VTParameters parameters) override
+    bool ActionCsiDispatch(const VTID id, const VTParameters parameters) override
     {
         // If flush to terminal is registered for a test, then use it.
         if (pfnFlushToTerminal)
@@ -88,6 +98,7 @@ public:
         }
         else
         {
+            csiId = id;
             for (size_t i = 0; i < parameters.size(); i++)
             {
                 csiParams.push_back(parameters.at(i).value_or(0));
@@ -96,7 +107,19 @@ public:
         }
     }
 
-    // This will only be populated if ActionCsiDispatch is called.
+    IStateMachineEngine::StringHandler ActionDcsDispatch(const VTID id, const VTParameters parameters) override
+    {
+        dcsId = id;
+        for (size_t i = 0; i < parameters.size(); i++)
+        {
+            dcsParams.push_back(parameters.at(i).value_or(0));
+        }
+        dcsDataString.clear();
+        return [=](const auto ch) { dcsDataString += ch; return true; };
+    }
+
+    // These will only be populated if ActionCsiDispatch is called.
+    uint64_t csiId = 0;
     std::vector<size_t> csiParams;
 
     // Flush function for pass-through test.
@@ -107,6 +130,14 @@ public:
 
     // Printed string.
     std::wstring printed;
+
+    // Executed string.
+    std::wstring executed;
+
+    // These will only be populated if ActionDcsDispatch is called.
+    uint64_t dcsId = 0;
+    std::vector<size_t> dcsParams;
+    std::wstring dcsDataString;
 };
 
 class Microsoft::Console::VirtualTerminal::StateMachineTest
@@ -129,6 +160,8 @@ class Microsoft::Console::VirtualTerminal::StateMachineTest
     TEST_METHOD(RunStorageBeforeEscape);
     TEST_METHOD(BulkTextPrint);
     TEST_METHOD(PassThroughUnhandledSplitAcrossWrites);
+
+    TEST_METHOD(DcsDataStringsReceivedByHandler);
 };
 
 void StateMachineTest::TwoStateMachinesDoNotInterfereWithEachother()
@@ -245,4 +278,67 @@ void StateMachineTest::PassThroughUnhandledSplitAcrossWrites()
     machine.ProcessString(L"\\");
     VERIFY_ARE_EQUAL(L"\x1b]99;foo\x1b\\", engine.passedThrough);
     VERIFY_ARE_EQUAL(L"", engine.printed);
+}
+
+void StateMachineTest::DcsDataStringsReceivedByHandler()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:terminatorType", L"{ 0, 1, 2, 3 }")
+    END_TEST_METHOD_PROPERTIES()
+
+    size_t terminatorType;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"terminatorType", terminatorType));
+
+    auto enginePtr{ std::make_unique<TestStateMachineEngine>() };
+    // this dance is required because StateMachine presumes to take ownership of its engine.
+    auto& engine{ *enginePtr.get() };
+    StateMachine machine{ std::move(enginePtr) };
+
+    uint64_t expectedCsiId = 0;
+    std::wstring expectedExecuted = L"";
+
+    std::wstring terminatorString;
+    switch (terminatorType)
+    {
+    case 0:
+        Log::Comment(L"Data string terminated with ST");
+        terminatorString = L"\033\\";
+        break;
+    case 1:
+        Log::Comment(L"Data string terminated with CSI sequence");
+        terminatorString = L"\033[m";
+        expectedCsiId = VTID(L'm');
+        break;
+    case 2:
+        Log::Comment(L"Data string terminated with CAN");
+        terminatorString = L"\030";
+        expectedExecuted = L"\030";
+        break;
+    case 3:
+        Log::Comment(L"Data string terminated with SUB");
+        terminatorString = L"\032";
+        expectedExecuted = L"\032";
+        break;
+    }
+
+    // Output a DCS sequence terminated with the current test string
+    machine.ProcessString(L"\033P1;2;3|data string");
+    machine.ProcessString(terminatorString);
+    machine.ProcessString(L"printed text");
+
+    // Verify the sequence ID and parameters are received.
+    VERIFY_ARE_EQUAL(VTID("|"), engine.dcsId);
+    VERIFY_ARE_EQUAL(std::vector<size_t>({ 1, 2, 3 }), engine.dcsParams);
+
+    // Verify that the data string is received (ESC terminated).
+    VERIFY_ARE_EQUAL(L"data string\033", engine.dcsDataString);
+
+    // Verify the characters following the sequence are printed.
+    VERIFY_ARE_EQUAL(L"printed text", engine.printed);
+
+    // Verify the CSI sequence was received (if expected).
+    VERIFY_ARE_EQUAL(expectedCsiId, engine.csiId);
+
+    // Verify the control characters were executed (if expected).
+    VERIFY_ARE_EQUAL(expectedExecuted, engine.executed);
 }

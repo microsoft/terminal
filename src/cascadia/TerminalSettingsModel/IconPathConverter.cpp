@@ -131,7 +131,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                         // Note: you _do_ need to manually set the font here.
                         icon.FontFamily(winrt::Windows::UI::Xaml::Media::FontFamily{ L"Segoe UI" });
                     }
-                    icon.FontSize(12);
                     icon.Glyph(iconPath);
                     iconSource = icon;
                 }

@@ -31,7 +31,7 @@ namespace winrt::TerminalApp::implementation
         void Focus(winrt::Windows::UI::Xaml::FocusState focusState) override;
 
     private:
-        void _MakeTabViewItem();
+        void _MakeTabViewItem() override;
         winrt::fire_and_forget _CreateIcon();
     };
 }

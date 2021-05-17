@@ -21,6 +21,34 @@
 #include "til/visualize_control_codes.h"
 #include "til/pmr.h"
 
+// Use keywords on TraceLogging providers to specify the category
+// of event that we are emitting for filtering purposes.
+// The bottom 48 bits (0..47) are definable by each provider.
+// The top 16 bits are reserved by Microsoft.
+// NOTE: Any provider registering TraceLoggingOptionMicrosoftTelemetry
+// should also reserve bits 43..47 for telemetry controls.
+//
+// To ensure that providers that transmit both telemetry
+// and diagnostic information do not do excess work when only
+// a telemetry listener is attached, please set a keyword
+// on all TraceLoggingWrite statements.
+//
+// Use TIL_KEYWORD_TRACE if you are basically
+// using it as a printf-like debugging tool for super
+// deep diagnostics reasons only.
+//
+// Please do NOT leave events marked without a keyword
+// or filtering on intent will not be possible.
+//
+// See also https://osgwiki.com/wiki/TraceLogging#Semantics
+//
+// Note that Conhost had already defined some keywords
+// between bits 0..11 so be sure to not overlap those.
+// See `TraceKeywords`.
+// We will therefore try to reserve 32..42 for TIL
+// as common flags for the entire Terminal team projects.
+#define TIL_KEYWORD_TRACE 0x0000000100000000 // bit 32
+
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     template<typename T>

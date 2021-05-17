@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "Profiles.h"
+#include "PreviewConnection.h"
 #include "Profiles.g.cpp"
 #include "EnumEntry.h"
 
@@ -27,9 +28,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
 
-    ProfileViewModel::ProfileViewModel(const Model::Profile& profile) :
+    ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings) :
         _profile{ profile },
-        _defaultAppearanceViewModel{ winrt::make<implementation::AppearanceViewModel>(profile.DefaultAppearance().try_as<AppearanceConfig>()) }
+        _defaultAppearanceViewModel{ winrt::make<implementation::AppearanceViewModel>(profile.DefaultAppearance().try_as<AppearanceConfig>()) },
+        _appSettings{ appSettings }
     {
         // Add a property changed handler to our own property changed event.
         // This propagates changes from the settings model to anybody listening to our
@@ -60,6 +62,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             UpdateFontList();
         }
+    }
+
+    Model::TerminalSettings ProfileViewModel::TermSettings() const
+    {
+        return Model::TerminalSettings::CreateWithProfileByID(_appSettings, _profile.Guid(), nullptr).DefaultSettings();
     }
 
     // Method Description:
@@ -278,7 +285,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _DeleteProfileHandlers(*this, *deleteProfileArgs);
     }
 
-    Profiles::Profiles()
+    Profiles::Profiles() :
+        _previewControl{ Control::TermControl(Model::TerminalSettings{}, make<PreviewConnection>()) }
     {
         InitializeComponent();
 
@@ -291,6 +299,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Automation::AutomationProperties::SetFullDescription(StartingDirectoryUseParentCheckbox(), unbox_value<hstring>(startingDirCheckboxTooltip));
 
         Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"Profile_DeleteButton/Text"));
+
+        _previewControl.IsEnabled(false);
+        _previewControl.AllowFocusWhenDisabled(false);
+        ControlPreview().Child(_previewControl);
     }
 
     void Profiles::OnNavigatedTo(const NavigationEventArgs& e)
@@ -345,10 +357,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentScrollState" });
             }
+            _previewControl.Settings(_State.Profile().TermSettings());
+            _previewControl.UpdateSettings();
         });
 
         // Navigate to the pivot in the provided navigation state
         ProfilesPivot().SelectedIndex(static_cast<int>(_State.LastActivePivot()));
+
+        _previewControl.Settings(_State.Profile().TermSettings());
+        // There is a possibility that the control has not fully initialized yet,
+        // so wait for it to initialize before updating the settings (so we know
+        // that the renderer is set up)
+        _previewControl.Initialized([&](auto&& /*s*/, auto&& /*e*/) {
+            _previewControl.UpdateSettings();
+        });
     }
 
     void Profiles::OnNavigatedFrom(const NavigationEventArgs& /*e*/)

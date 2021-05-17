@@ -100,6 +100,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     ControlCore::~ControlCore()
     {
         Close();
+
+        if (_renderer)
+        {
+            _renderer->TriggerTeardown();
+        }
     }
 
     bool ControlCore::Initialize(const double actualWidth,
@@ -413,7 +418,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   region to change, such as when new text enters the buffer or the viewport is scrolled
     void ControlCore::UpdatePatternLocations()
     {
-        _terminal->UpdatePatterns();
+        auto lock = _terminal->LockForWriting();
+        _terminal->UpdatePatternsUnderLock();
     }
 
     // Method description:
@@ -1164,34 +1170,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // don't really care to wait for the connection to be completely
             // closed. We can just do it whenever.
             _asyncCloseConnection();
-
-            {
-                // GH#8734:
-                // We lock the terminal here to make sure it isn't still being
-                // used in the connection thread before we destroy the renderer.
-                // However, we must unlock it again prior to triggering the
-                // teardown, to avoid the render thread being deadlocked. The
-                // renderer may be waiting to acquire the terminal lock, while
-                // we're waiting for the renderer to finish.
-                auto lock = _terminal->LockForWriting();
-            }
-
-            if (auto localRenderEngine{ std::exchange(_renderEngine, nullptr) })
-            {
-                if (auto localRenderer{ std::exchange(_renderer, nullptr) })
-                {
-                    localRenderer->TriggerTeardown();
-                    // renderer is destroyed
-                }
-                // renderEngine is destroyed
-            }
-
-            // we don't destroy _terminal here; it now has the same lifetime as the
-            // control.
         }
     }
 
-    IDXGISwapChain1* ControlCore::GetSwapChain() const
+    HANDLE ControlCore::GetSwapChainHandle() const
     {
         // This is called by:
         // * TermControl::RenderEngineSwapChainChanged, who is only registered
@@ -1199,7 +1181,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // * TermControl::_InitializeTerminal, after the call to Initialize, for
         //   _AttachDxgiSwapChainToXaml.
         // In both cases, we'll have a _renderEngine by then.
-        return _renderEngine->GetSwapChain().Get();
+        return _renderEngine->GetSwapChainHandle();
     }
 
     void ControlCore::_rendererWarning(const HRESULT hr)

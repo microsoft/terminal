@@ -6,7 +6,7 @@
 #include "Command.g.cpp"
 
 #include "ActionAndArgs.h"
-#include "JsonUtils.h"
+#include "KeyChordSerialization.h"
 #include <LibraryResources.h>
 #include "TerminalSettingsSerializationHelpers.h"
 
@@ -26,6 +26,7 @@ static constexpr std::string_view ActionKey{ "command" };
 static constexpr std::string_view ArgsKey{ "args" };
 static constexpr std::string_view IterateOnKey{ "iterateOn" };
 static constexpr std::string_view CommandsKey{ "commands" };
+static constexpr std::string_view KeysKey{ "keys" };
 
 static constexpr std::string_view ProfileNameToken{ "${profile.name}" };
 static constexpr std::string_view ProfileIconToken{ "${profile.icon}" };
@@ -35,16 +36,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     Command::Command()
     {
-        _setAction(nullptr);
     }
 
     com_ptr<Command> Command::Copy() const
     {
         auto command{ winrt::make_self<Command>() };
-        command->_Name = _Name;
-        command->_Action = _Action;
-        command->_KeyChordText = _KeyChordText;
-        command->_IconPath = _IconPath;
+        command->_name = _name;
+        command->_ActionAndArgs = *get_self<implementation::ActionAndArgs>(_ActionAndArgs)->Copy();
+        command->_keyMappings = _keyMappings;
+        command->_iconPath = _iconPath;
         command->_IterateOn = _IterateOn;
 
         command->_originalJson = _originalJson;
@@ -65,10 +65,135 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _subcommands ? _subcommands.GetView() : nullptr;
     }
 
+    // Function Description:
+    // - reports if the current command has nested commands
+    // - This CANNOT detect { "name": "foo", "commands": null }
     bool Command::HasNestedCommands() const
     {
         return _subcommands ? _subcommands.Size() > 0 : false;
     }
+
+    // Function Description:
+    // - reports if the current command IS a nested command
+    // - This CAN be used to detect cases like { "name": "foo", "commands": null }
+    bool Command::IsNestedCommand() const noexcept
+    {
+        return _nestedCommand;
+    }
+
+    bool Command::HasName() const noexcept
+    {
+        return _name.has_value();
+    }
+
+    hstring Command::Name() const noexcept
+    {
+        if (_name.has_value())
+        {
+            // name was explicitly set, return that value.
+            return hstring{ _name.value() };
+        }
+        else if (_ActionAndArgs)
+        {
+            // generate a name from our action
+            return get_self<implementation::ActionAndArgs>(_ActionAndArgs)->GenerateName();
+        }
+        else
+        {
+            // we have no name
+            return {};
+        }
+    }
+
+    void Command::Name(const hstring& value)
+    {
+        if (!_name.has_value() || _name.value() != value)
+        {
+            _name = value;
+        }
+    }
+
+    std::vector<Control::KeyChord> Command::KeyMappings() const noexcept
+    {
+        return _keyMappings;
+    }
+
+    // Function Description:
+    // - Add the key chord to the command's list of key mappings.
+    // - If the key chord was already registered, move it to the back
+    //   of the line, and dispatch a notification that Command::Keys changed.
+    // Arguments:
+    // - keys: the new key chord that we are registering this command to
+    // Return Value:
+    // - <none>
+    void Command::RegisterKey(const Control::KeyChord& keys)
+    {
+        if (!keys)
+        {
+            return;
+        }
+
+        // Remove the KeyChord and add it to the back of the line.
+        // This makes it so that the main key chord associated with this
+        // command is updated.
+        EraseKey(keys);
+        _keyMappings.push_back(keys);
+    }
+
+    // Function Description:
+    // - Remove the key chord from the command's list of key mappings.
+    // Arguments:
+    // - keys: the key chord that we are unregistering
+    // Return Value:
+    // - <none>
+    void Command::EraseKey(const Control::KeyChord& keys)
+    {
+        _keyMappings.erase(std::remove_if(_keyMappings.begin(), _keyMappings.end(), [&keys](const Control::KeyChord& iterKey) {
+                               return keys.Modifiers() == iterKey.Modifiers() && keys.Vkey() == iterKey.Vkey();
+                           }),
+                           _keyMappings.end());
+    }
+
+    // Function Description:
+    // - Keys is the Command's identifying KeyChord. The command may have multiple keys associated
+    //   with it, but we'll only ever display the most recently added one externally. To do this,
+    //   _keyMappings stores all of the associated key chords, but ensures that the last entry
+    //   is the most recently added one.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the primary key chord associated with this Command
+    Control::KeyChord Command::Keys() const noexcept
+    {
+        if (_keyMappings.empty())
+        {
+            return nullptr;
+        }
+        return _keyMappings.back();
+    }
+
+    hstring Command::KeyChordText() const noexcept
+    {
+        return KeyChordSerialization::ToString(Keys());
+    }
+
+    hstring Command::IconPath() const noexcept
+    {
+        if (_iconPath.has_value())
+        {
+            return hstring{ *_iconPath };
+        }
+        return {};
+    }
+
+    void Command::IconPath(const hstring& val)
+    {
+        if (!_iconPath.has_value() || _iconPath.value() != val)
+        {
+            _iconPath = val;
+        }
+    }
+
     // Function Description:
     // - attempt to get the name of this command from the provided json object.
     //   * If the "name" property is a string, return that value.
@@ -79,7 +204,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - json: The Json::Value representing the command object we should get the name for.
     // Return Value:
     // - the empty string if we couldn't find a name, otherwise the command's name.
-    static winrt::hstring _nameFromJson(const Json::Value& json)
+    static std::optional<std::wstring> _nameFromJson(const Json::Value& json)
     {
         if (const auto name{ json[JsonKey(NameKey)] })
         {
@@ -89,43 +214,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 {
                     if (HasLibraryResourceWithName(*resourceKey))
                     {
-                        return GetLibraryResourceString(*resourceKey);
+                        return std::wstring{ GetLibraryResourceString(*resourceKey) };
                     }
                 }
             }
             else if (name.isString())
             {
-                return JsonUtils::GetValue<winrt::hstring>(name);
+                return JsonUtils::GetValue<std::wstring>(name);
             }
         }
-
-        return L"";
-    }
-
-    // Method Description:
-    // - Get the name for the command specified in `json`. If there is no "name"
-    //   property in the provided json object, then instead generate a name for
-    //   the provided ActionAndArgs.
-    // Arguments:
-    // - json: json for the command to generate a name for.
-    // - actionAndArgs: An ActionAndArgs object to use to generate a name for,
-    //   if the json object doesn't contain a "name".
-    // Return Value:
-    // - The "name" from the json, or the generated name from ActionAndArgs::GenerateName
-    static winrt::hstring _nameFromJsonOrAction(const Json::Value& json,
-                                                winrt::com_ptr<ActionAndArgs> actionAndArgs)
-    {
-        auto manualName = _nameFromJson(json);
-        if (!manualName.empty())
+        else if (json.isMember(JsonKey(NameKey)))
         {
-            return manualName;
-        }
-        if (!actionAndArgs)
-        {
-            return L"";
+            // { "name": null, "command": "copy" } will land in this case, which
+            // should also be used for unbinding.
+            return std::wstring{};
         }
 
-        return actionAndArgs->GenerateName();
+        return std::nullopt;
     }
 
     // Method Description:
@@ -158,6 +263,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // Initialize our list of subcommands.
             result->_subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
+            result->_nestedCommand = true;
             auto nestedWarnings = Command::LayerJson(result->_subcommands, nestedCommandsJson);
             // It's possible that the nested commands have some warnings
             warnings.insert(warnings.end(), nestedWarnings.begin(), nestedWarnings.end());
@@ -165,7 +271,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (result->_subcommands.Size() == 0)
             {
                 warnings.push_back(SettingsLoadWarnings::FailedToParseSubCommands);
-                return nullptr;
+                result->_ActionAndArgs = make<implementation::ActionAndArgs>();
             }
 
             nested = true;
@@ -174,58 +280,59 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // { "name": "foo", "commands": null } will land in this case, which
             // should also be used for unbinding.
-            return nullptr;
+
+            // create an "invalid" ActionAndArgs
+            result->_ActionAndArgs = make<implementation::ActionAndArgs>();
+            result->_nestedCommand = true;
         }
 
-        JsonUtils::GetValueForKey(json, IconKey, result->_IconPath);
+        JsonUtils::GetValueForKey(json, IconKey, result->_iconPath);
 
         // If we're a nested command, we can ignore the current action.
         if (!nested)
         {
             if (const auto actionJson{ json[JsonKey(ActionKey)] })
             {
-                auto actionAndArgs = ActionAndArgs::FromJson(actionJson, warnings);
-
-                if (actionAndArgs)
-                {
-                    result->_setAction(*actionAndArgs);
-                }
-                else
-                {
-                    // Something like
-                    //      { name: "foo", action: "unbound" }
-                    // will _remove_ the "foo" command, by returning null here.
-                    return nullptr;
-                }
-
-                // If an iterable command doesn't have a name set, we'll still just
-                // try and generate a fake name for the command give the string we
-                // currently have. It'll probably generate something like "New tab,
-                // profile: ${profile.name}". This string will only be temporarily
-                // used internally, so there's no problem.
-                result->_setName(_nameFromJsonOrAction(json, actionAndArgs));
+                result->_ActionAndArgs = *ActionAndArgs::FromJson(actionJson, warnings);
             }
             else
             {
                 // { name: "foo", action: null } will land in this case, which
                 // should also be used for unbinding.
-                return nullptr;
+
+                // create an "invalid" ActionAndArgs
+                result->_ActionAndArgs = make<implementation::ActionAndArgs>();
+            }
+
+            // GH#4239 - If the user provided more than one key
+            // chord to a "keys" array, warn the user here.
+            // TODO: GH#1334 - remove this check.
+            const auto keysJson{ json[JsonKey(KeysKey)] };
+            if (keysJson.isArray() && keysJson.size() > 1)
+            {
+                warnings.push_back(SettingsLoadWarnings::TooManyKeysForChord);
+            }
+            else
+            {
+                Control::KeyChord keys{ nullptr };
+                if (JsonUtils::GetValueForKey(json, KeysKey, keys))
+                {
+                    result->RegisterKey(keys);
+                }
             }
         }
-        else
-        {
-            result->_setName(_nameFromJson(json));
-        }
+
+        // If an iterable command doesn't have a name set, we'll still just
+        // try and generate a fake name for the command give the string we
+        // currently have. It'll probably generate something like "New tab,
+        // profile: ${profile.name}". This string will only be temporarily
+        // used internally, so there's no problem.
+        result->_name = _nameFromJson(json);
 
         // Stash the original json value in this object. If the command is
         // iterable, we'll need to re-parse it later, once we know what all the
         // values we can iterate on are.
         result->_originalJson = json;
-
-        if (result->_Name.empty())
-        {
-            return nullptr;
-        }
 
         return result;
     }
@@ -252,22 +359,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 try
                 {
-                    auto result = Command::FromJson(value, warnings);
-                    if (result)
-                    {
-                        // Override commands with the same name
-                        commands.Insert(result->Name(), *result);
-                    }
-                    else
+                    const auto result = Command::FromJson(value, warnings);
+                    if (result->ActionAndArgs().Action() == ShortcutAction::Invalid && !result->HasNestedCommands())
                     {
                         // If there wasn't a parsed command, then try to get the
                         // name from the json blob. If that name currently
                         // exists in our list of commands, we should remove it.
                         const auto name = _nameFromJson(value);
-                        if (!name.empty())
+                        if (name.has_value() && !name->empty())
                         {
-                            commands.Remove(name);
+                            commands.Remove(*name);
                         }
+                    }
+                    else
+                    {
+                        // Override commands with the same name
+                        commands.Insert(result->Name(), *result);
                     }
                 }
                 CATCH_LOG();
