@@ -7,10 +7,10 @@
 
   <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
     <application>
-        <!-- Windows 10 1903 -->
+        <!-- Windows 10 20H1 -->
         <!-- See https://docs.microsoft.com/en-us/windows/apps/desktop/modernize/xaml-islands -->
         <!-- "maxversiontested" is CASE SENSITIVE. Do not change this.-->
-        <maxversiontested Id="10.0.18362.0"/>
+        <maxversiontested Id="10.0.19041.0"/>
         <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
     </application>
   </compatibility>

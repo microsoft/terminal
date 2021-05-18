@@ -25,8 +25,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         void TraceStateChange(const std::wstring_view name) const noexcept;
         void TraceOnAction(const std::wstring_view name) const noexcept;
-        void TraceOnExecute(const wchar_t wch) const;
-        void TraceOnExecuteFromEscape(const wchar_t wch) const;
+        void TraceOnExecute(const wchar_t wch) const noexcept;
+        void TraceOnExecuteFromEscape(const wchar_t wch) const noexcept;
         void TraceOnEvent(const std::wstring_view name) const noexcept;
         void TraceCharInput(const wchar_t wch);
 

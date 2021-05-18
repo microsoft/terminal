@@ -1,5 +1,6 @@
 ACCEPTFILES
 ACCESSDENIED
+alignas
 alignof
 bitfield
 bitfields

@@ -7,7 +7,6 @@
     <ProjectName>VtPipeTerm</ProjectName>
     <TargetName>VtPipeTerm</TargetName>
     <ConfigurationType>Application</ConfigurationType>
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="..\..\common.build.pre.props" />
   <ItemGroup>

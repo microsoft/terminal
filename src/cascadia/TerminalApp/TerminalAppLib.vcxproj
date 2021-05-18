@@ -6,7 +6,6 @@
     <RootNamespace>TerminalApp</RootNamespace>
     <ProjectName>TerminalAppLib</ProjectName>
     <TargetName>TerminalAppLib</TargetName>
-    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>

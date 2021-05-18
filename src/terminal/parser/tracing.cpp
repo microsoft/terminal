@@ -7,11 +7,8 @@
 using namespace Microsoft::Console::VirtualTerminal;
 
 #pragma warning(push)
-#pragma warning(disable : 26494) // _Tlgdata uninitialized from TraceLoggingWrite
-#pragma warning(disable : 26477) // Use nullptr instead of NULL or 0 from TraceLoggingWrite
-#pragma warning(disable : 26485) // _Tlgdata, no array to pointer decay from TraceLoggingWrite
-#pragma warning(disable : 26446) // Prefer gsl::at over unchecked subscript from TraceLoggingLevel
-#pragma warning(disable : 26482) // Only index to arrays with constant expressions from TraceLoggingLevel
+#pragma warning(disable : 26447) // The function is declared 'noexcept' but calls function '_tlgWrapBinary<wchar_t>()' which may throw exceptions
+#pragma warning(disable : 26477) // Use 'nullptr' rather than 0 or NULL
 
 ParserTracing::ParserTracing() noexcept
 {
@@ -36,7 +33,7 @@ void ParserTracing::TraceOnAction(const std::wstring_view name) const noexcept
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 }
 
-void ParserTracing::TraceOnExecute(const wchar_t wch) const
+void ParserTracing::TraceOnExecute(const wchar_t wch) const noexcept
 {
     const auto sch = gsl::narrow_cast<INT16>(wch);
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
@@ -47,7 +44,7 @@ void ParserTracing::TraceOnExecute(const wchar_t wch) const
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 }
 
-void ParserTracing::TraceOnExecuteFromEscape(const wchar_t wch) const
+void ParserTracing::TraceOnExecuteFromEscape(const wchar_t wch) const noexcept
 {
     const auto sch = gsl::narrow_cast<INT16>(wch);
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
