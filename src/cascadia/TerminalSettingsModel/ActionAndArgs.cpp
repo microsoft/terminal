@@ -66,9 +66,9 @@ static constexpr std::string_view ActionKey{ "action" };
 // This key is reserved to remove a keybinding, instead of mapping it to an action.
 static constexpr std::string_view UnboundKey{ "unbound" };
 
-#define KEY_TO_ACTION_PAIR(action) { action##Key, ShortcutAction::##action },
-#define ACTION_TO_KEY_PAIR(action) { ShortcutAction::##action, action##Key },
-#define ACTION_TO_SERIALIZERS_PAIR(action) { ShortcutAction::##action##, {##action##Args::FromJson, ##action##Args::ToJson } },
+#define KEY_TO_ACTION_PAIR(action) { action##Key, ShortcutAction::action },
+#define ACTION_TO_KEY_PAIR(action) { ShortcutAction::action, action##Key },
+#define ACTION_TO_SERIALIZERS_PAIR(action) { ShortcutAction::action, { action##Args::FromJson, action##Args::ToJson } },
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -220,18 +220,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (val)
         {
+            // Search for the ShortcutAction
+            const auto shortcutActionIter{ ActionToStringMap.find(val.Action()) };
+            if (shortcutActionIter == ActionToStringMap.end())
+            {
+                // Couldn't find the ShortcutAction,
+                // return... "command": "unbound"
+                return static_cast<std::string>(UnboundKey);
+            }
+
             if (!val.Args())
             {
-                // "command": "copy"
-                const auto shortcutActionIter{ ActionToStringMap.find(val.Action()) };
-                if (shortcutActionIter != ActionToStringMap.end())
-                {
-                    return static_cast<std::string>(shortcutActionIter->second);
-                }
+                // No args to serialize,
+                // output something like... "command": "copy"
+                return static_cast<std::string>(shortcutActionIter->second);
             }
             else
             {
-                // "command": { "action": "copy", "singleLine": false }
+                // Serialize any set args,
+                // output something like... "command": { "action": "copy", "singleLine": false }
                 Json::Value result{ Json::ValueType::objectValue };
 
                 // Set the action args, if any
@@ -246,10 +253,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 }
 
                 // Set the "action" part
-                const auto shortcutActionIter{ ActionToStringMap.find(val.Action()) };
-                result[static_cast<std::string>(ActionKey)] = shortcutActionIter == ActionToStringMap.end() ?
-                                                                  static_cast<std::string>(UnboundKey) :
-                                                                  static_cast<std::string>(shortcutActionIter->second);
+                result[static_cast<std::string>(ActionKey)] = static_cast<std::string>(shortcutActionIter->second);
 
                 return result;
             }
