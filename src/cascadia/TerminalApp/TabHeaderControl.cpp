@@ -62,7 +62,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - true if the renamer is open.
-    bool TabHeaderControl::InRename() const noexcept
+    bool TabHeaderControl::InRename()
     {
         return Windows::UI::Xaml::Visibility::Visible == HeaderRenamerTextBox().Visibility();
     }
