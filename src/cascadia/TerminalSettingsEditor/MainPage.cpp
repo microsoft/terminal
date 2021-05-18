@@ -370,13 +370,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         addProfileItem.Content(box_value(RS_(L"Nav_AddNewProfile/Content")));
         addProfileItem.Tag(box_value(addProfileTag));
 
-        // Wrap this icon up in a IconSourceElement, so we can bind to it in the
-        // Header above the Pivot.
-        WUX::Controls::IconSourceElement icon;
-        FontIconSource fontIcon;
+        FontIcon icon;
         // This is the "Add" symbol
-        fontIcon.Glyph(L"\xE710");
-        icon.IconSource(fontIcon);
+        icon.Glyph(L"\xE710");
         addProfileItem.Icon(icon);
 
         SettingsNav().MenuItems().Append(addProfileItem);
