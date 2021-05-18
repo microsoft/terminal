@@ -27,13 +27,13 @@ Revision History:
 #include "unicode.hpp"
 
 // For use when til::rle supports .replace
-#define TIL_RLE_WORKS_LIKE_STRING 0
+#define TIL_RLE_WORKS_LIKE_STRING 1
 // When 0, use basic_string<uint16_t> for column counts
-#define ROW_USE_RLE 0
+#define ROW_USE_RLE 1
 #define BACKING_BUFFER_IS_STRINGLIKE (!ROW_USE_RLE || TIL_RLE_WORKS_LIKE_STRING)
 
 #if ROW_USE_RLE
-#include "../../../rle.h"
+#include <til/rle.h>
 #endif
 
 #pragma warning(push)
@@ -88,6 +88,7 @@ private:
     // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
     bool _doubleBytePadded;
 
+public:
     std::wstring _data;
 #if !ROW_USE_RLE
     std::basic_string<uint16_t> _cwid;
@@ -97,6 +98,90 @@ private:
 
     std::tuple<size_t, size_t, size_t, size_t> _indicesForCol(size_t col, typename decltype(_data)::size_type hint = 0, size_t colstart = 0) const
     {
+#if 1
+        (void)colstart;
+        (void)hint;
+        size_t c{ 0 /*colstart*/ };
+        size_t cwc{ 0 };
+        auto rit{ _cwid.runs().cbegin() };
+        while (rit != _cwid.runs().cend())
+        {
+            // Each compressed pair tells us how many columns x N wchar_t
+            const auto colsConsumedByRun{ rit->value * rit->length };
+            if (c + colsConsumedByRun > col)
+            {
+                // we've found it. Somehow. We should try to figure out where now.
+                // c is how many columns we'd consumed before
+                // which means that we need to get N-c wchar_t into the run
+                break;
+            }
+            c += colsConsumedByRun;
+            cwc += rit->length;
+            rit++;
+        }
+        // rit points at the run that would make us overshoot.
+        // cwc is how many wchar_t we are into the string
+        // c is how many columns we've consumed (before this run)
+        // col-c is how many columns are left unaccounted for (how far into this run we need to go)
+        // col-c is also how many wchar_t there are, because we already accounted for the col sizes
+        // start point is going to be cwc + length-that-gets-us-to-this-many-col
+        // if rit-remain==0, check the next run (should be a 0)
+        // if it is a 0, we add the entire run length to wch_len
+        // column damage: might be col mod lenth
+        // how big are we: rit->value
+        // notes to self: we need this math to be right if we're damaging the left or right col (odd number) of a 2-col run
+        // so this isn't quite correct.
+
+        // we are *guaranteed* that the hit is in this run -- no need to check rit->length
+        auto remCol{ col - c };
+        cwc += remCol / rit->value; // one wch per col count -- rounds down
+        /*
+        auto newc{ c };
+        auto remL = rit->length;
+        auto remDis = std::min<uint16_t>(rit->length, col - newc);
+        while (remL && newc <= col)
+        {
+            newc += rit->value;
+            cwc++;
+            remL--;
+            remDis--;
+        }
+        if (remDis != 0)
+        {
+            __debugbreak();
+        }
+
+        // c was base for last col
+
+        // IF WE OVERSHOT- we were partway through a column
+        if (newc > col)
+        {
+            // backup one wch
+            cwc--;
+        }
+        */
+
+        size_t len{ 1 };
+        // there were more remaining columns than fit (use >= to capture partial column hit?)
+        if (((remCol+rit->value) >= (rit->value*rit->length)) && rit != _cwid.runs().cend())
+        {
+            auto nit{ rit + 1 };
+            if (nit != _cwid.runs().cend() && nit->value == 0)
+            {
+                // we were at the boundary of a column run, so if the next one is 0 it tells us that each
+                // wchar after it is a trailer
+                len += nit->length;
+            }
+        }
+        return {
+            cwc, // wchar start
+            len, // wchar size
+            (remCol) % rit->value, // how far into column we were (col-c is how many columns within this run)
+            rit->value // how many columns total
+        };
+#endif
+
+#if 0
         // WISHLIST: I want to be able to iterate *compressed runs* so that I don't need to sum up individual column counts one by one
         size_t c{ colstart };
         auto it{ _cwid.cbegin() + hint };
@@ -120,6 +205,7 @@ private:
         const auto len{ eit - it };
         const auto cols{ *it }; // how big was the char we landed on
         return { it - _cwid.cbegin(), len, col - c, cols };
+#endif
     }
 
 public:
@@ -167,8 +253,11 @@ public:
             // for any code units past the first.)
             _data.replace(begin, len, glyph);
 #if BACKING_BUFFER_IS_STRINGLIKE // rle doesn't work like string here
-            _cwid.replace(begin, len, glyph.size(), 0);
-            _cwid.at(begin) = (uint16_t)ncols;
+            typename decltype(_cwid)::rle_type newRuns[]{
+                { gsl::narrow_cast<uint8_t>(ncols), 1 },
+                { 0, gsl::narrow_cast<uint16_t>(glyph.size() - 1) },
+            };
+            _cwid.replace(gsl::narrow_cast<uint16_t>(begin), gsl::narrow_cast<uint16_t>(begin + len), gsl::make_span(&newRuns[0], glyph.size() == 1 ? 1 : 2));
 #else
             auto old = _cwid.substr(uint16_t(begin + len));
             _cwid.fill(ncols, begin);
@@ -200,11 +289,22 @@ public:
             //  to insert [1]s for each
             //  damaged column.
 #if BACKING_BUFFER_IS_STRINGLIKE // rle doesn't work like string here
-            std::basic_string<uint16_t> cadvs(replacementCodeUnits, 1);
-            cadvs.replace(col - minDamageColumn, 1, 1, (uint16_t)ncols); // our glyph takes up ncols
-            cadvs.replace(col - minDamageColumn + 1, glyph.size() - 1, glyph.size() - 1, (uint16_t)0); // and its trailers take up 0
+            boost::container::small_vector<typename decltype(_cwid)::rle_type, 4> newRuns;
+            if (col - minDamageColumn)
+            {
+                newRuns.emplace_back((uint8_t)1, gsl::narrow_cast<uint16_t>(col - minDamageColumn));
+            }
+            newRuns.emplace_back(gsl::narrow_cast<uint8_t>(ncols), (uint16_t)1);
+            if (glyph.size() > 1)
+            {
+                newRuns.emplace_back((uint8_t)0, gsl::narrow_cast<uint16_t>(glyph.size() - 1)); // trailers
+            }
+            if (maxDamageColumnExclusive - (col + ncols))
+            {
+                newRuns.emplace_back((uint8_t)1, gsl::narrow_cast<uint16_t>(maxDamageColumnExclusive - (col + ncols)));
+            }
             _data.replace(begin, len, replacement);
-            _cwid.replace(begin, len, cadvs);
+            _cwid.replace(gsl::narrow_cast<uint16_t>(begin), gsl::narrow_cast<uint16_t>(begin + len), gsl::make_span(newRuns));
 #else
             auto old = _cwid.substr(uint16_t(begin + replacementCodeUnits));
             _data.replace(begin, len, replacement);
@@ -220,7 +320,7 @@ public:
         if (_cwid.size() != _data.size())
         {
 #if BACKING_BUFFER_IS_STRINGLIKE // rle doesn't work like string
-            _cwid.resize(_data.size(), 0);
+            _cwid.resize_trailing_extent(gsl::narrow_cast<uint16_t>(_data.size()));
 #else
             const auto old{ _cwid.size() };
             _cwid.resize(_data.size());
