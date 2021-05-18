@@ -35,91 +35,54 @@
     </Page.Resources>
 
     <muxc:NavigationView x:Name="SettingsNav"
+                         Header="{Binding ElementName=SettingsNav, Path=SelectedItem.Content, Mode=OneWay}"
                          IsBackButtonVisible="Collapsed"
                          IsSettingsVisible="False"
                          ItemInvoked="SettingsNav_ItemInvoked"
                          Loaded="SettingsNav_Loaded"
                          TabFocusNavigation="Cycle">
 
-        <muxc:NavigationView.Header>
-            <StackPanel Orientation="Horizontal">
-                <!--
-                    This height is taken from NavigationViewTitleHeaderContentControlTextStyle's
-                    FontSize. Our icons may or may not be font icons, so we want to make sure to clamp them to this size.
-                -->
-                <IconSourceElement Height="28"
-                                   Margin="{ThemeResource NavigationViewHeaderMargin}"
-                                   IconSource="{Binding ElementName=SettingsNav, Path=SelectedItem.Icon.IconSource, Mode=OneWay}" />
-                <TextBlock Margin="{ThemeResource NavigationViewHeaderMargin}"
-                           Text="{Binding ElementName=SettingsNav, Path=SelectedItem.Content, Mode=OneWay}" />
-            </StackPanel>
-        </muxc:NavigationView.Header>
-
         <muxc:NavigationView.MenuItems>
 
             <muxc:NavigationViewItem x:Uid="Nav_Launch"
                                      Tag="Launch_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <IconSourceElement>
-                        <IconSourceElement.IconSource>
-                            <FontIconSource Glyph="&#xE7B5;" />
-                        </IconSourceElement.IconSource>
-                    </IconSourceElement>
+                    <FontIcon Glyph="&#xE7B5;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItem x:Uid="Nav_Interaction"
                                      Tag="Interaction_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <IconSourceElement>
-                        <IconSourceElement.IconSource>
-                            <FontIconSource Glyph="&#xE7C9;" />
-                        </IconSourceElement.IconSource>
-                    </IconSourceElement>
+                    <FontIcon Glyph="&#xE7C9;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItem x:Uid="Nav_Appearance"
                                      Tag="GlobalAppearance_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <IconSourceElement>
-                        <IconSourceElement.IconSource>
-                            <FontIconSource Glyph="&#xE771;" />
-                        </IconSourceElement.IconSource>
-                    </IconSourceElement>
+                    <FontIcon Glyph="&#xE771;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItem x:Uid="Nav_ColorSchemes"
                                      Tag="ColorSchemes_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <IconSourceElement>
-                        <IconSourceElement.IconSource>
-                            <FontIconSource Glyph="&#xE790;" />
-                        </IconSourceElement.IconSource>
-                    </IconSourceElement>
+                    <FontIcon Glyph="&#xE790;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItem x:Uid="Nav_Rendering"
                                      Tag="Rendering_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <IconSourceElement>
-                        <IconSourceElement.IconSource>
-                            <FontIconSource Glyph="&#xE7F8;" />
-                        </IconSourceElement.IconSource>
-                    </IconSourceElement>
+                    <FontIcon Glyph="&#xE7F8;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItem x:Uid="Nav_Actions"
                                      Tag="Actions_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <IconSourceElement>
-                        <IconSourceElement.IconSource>
-                            <FontIconSource Glyph="&#xE765;" />
-                        </IconSourceElement.IconSource>
-                    </IconSourceElement>
+                    <FontIcon Glyph="&#xE765;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
@@ -134,11 +97,7 @@
                                      KeyDown="OpenJsonKeyDown"
                                      Tapped="OpenJsonTapped">
                 <muxc:NavigationViewItem.Icon>
-                    <IconSourceElement>
-                        <IconSourceElement.IconSource>
-                            <FontIconSource Glyph="&#xE713;" />
-                        </IconSourceElement.IconSource>
-                    </IconSourceElement>
+                    <FontIcon Glyph="&#xE713;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
         </muxc:NavigationView.PaneFooter>
