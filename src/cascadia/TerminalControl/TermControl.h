@@ -138,6 +138,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // in order to safely resolve this unsafe pointer dependency. Otherwise a deallocated
         // IRenderEngine is accessed when ControlCore calls Renderer::TriggerTeardown.
         // (C++ class members are destroyed in reverse order.)
+        // Further, the TermControlAutomationPeer must be destructed after _uiaEngine!
+        winrt::Windows::UI::Xaml::Automation::Peers::AutomationPeer _automationPeer{ nullptr };
         std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
 
         winrt::com_ptr<ControlCore> _core;

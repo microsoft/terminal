@@ -535,7 +535,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
             _core->AttachUiaEngine(_uiaEngine.get());
-            return *autoPeer;
+            _automationPeer = *autoPeer;
+            return _automationPeer;
         }
         return nullptr;
     }
@@ -1718,6 +1719,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _core->ReceivedOutput(_coreOutputEventToken);
 
             _RestorePointerCursorHandlers(*this, nullptr);
+
+            // These four throttled functions are triggered by terminal output and interact with the UI.
+            // Since Close() is the point after which we are removed from the UI, but before the destructor
+            // has run, we should disconnect them *right now*. If we don't, they may fire between the
+            // throttle delay (from the final output) and the dtor.
+            _tsfTryRedrawCanvas.reset();
+            _updatePatternLocations.reset();
+            _updateScrollBar.reset();
+            _playWarningBell.reset();
 
             // Disconnect the TSF input control so it doesn't receive EditContext events.
             TSFInputControl().Close();
