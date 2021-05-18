@@ -311,6 +311,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // Arguments:
     // - limitToCurrentDesktop: if true, only return the MRU peasant that's
     //   actually on the current desktop.
+    // - ignoreQuakeWindow: if true, then don't return the _quake window when we
+    //   find it. This allows us to change our behavior for glomming vs
+    //   summoning. When summoning the window, this parameter should be true.
+    //   When glomming, this should be false, as to prevent glomming to the
+    //   _quake window.
     // Return Value:
     // - the ID of the most recent peasant, otherwise 0 if we could not find one.
     uint64_t Monarch::_getMostRecentPeasantID(const bool limitToCurrentDesktop, const bool ignoreQuakeWindow)
