@@ -99,85 +99,62 @@ public:
     std::tuple<size_t, size_t, size_t, size_t> _indicesForCol(size_t col, typename decltype(_data)::size_type hint = 0, size_t colstart = 0) const
     {
 #if 1
-        (void)colstart;
-        (void)hint;
-        size_t c{ 0 /*colstart*/ };
-        size_t cwc{ 0 };
-        auto rit{ _cwid.runs().cbegin() };
-        while (rit != _cwid.runs().cend())
+        size_t currentCol{ 0 };
+        size_t currentWchar{ 0 };
+        auto it{ _cwid.runs().cbegin() };
+        while (it != _cwid.runs().cend())
         {
             // Each compressed pair tells us how many columns x N wchar_t
-            const auto colsConsumedByRun{ rit->value * rit->length };
-            if (c + colsConsumedByRun > col)
+            const auto colsCoveredByRun{ it->value * it->length };
+            if (currentCol + colsCoveredByRun > col)
             {
-                // we've found it. Somehow. We should try to figure out where now.
-                // c is how many columns we'd consumed before
-                // which means that we need to get N-c wchar_t into the run
+                // We want to break out of the loop to manually handle this run, because
+                // we've determined that it is the run that covers the column of interest.
                 break;
             }
-            c += colsConsumedByRun;
-            cwc += rit->length;
-            rit++;
+            currentCol += colsCoveredByRun;
+            currentWchar += it->length;
+            it++;
         }
-        // rit points at the run that would make us overshoot.
-        // cwc is how many wchar_t we are into the string
-        // c is how many columns we've consumed (before this run)
-        // col-c is how many columns are left unaccounted for (how far into this run we need to go)
-        // col-c is also how many wchar_t there are, because we already accounted for the col sizes
-        // start point is going to be cwc + length-that-gets-us-to-this-many-col
-        // if rit-remain==0, check the next run (should be a 0)
-        // if it is a 0, we add the entire run length to wch_len
-        // column damage: might be col mod lenth
-        // how big are we: rit->value
-        // notes to self: we need this math to be right if we're damaging the left or right col (odd number) of a 2-col run
-        // so this isn't quite correct.
 
-        // we are *guaranteed* that the hit is in this run -- no need to check rit->length
-        auto remCol{ col - c };
-        cwc += remCol / rit->value; // one wch per col count -- rounds down
-        /*
-        auto newc{ c };
-        auto remL = rit->length;
-        auto remDis = std::min<uint16_t>(rit->length, col - newc);
-        while (remL && newc <= col)
+        if (it == _cwid.runs().cend())
         {
-            newc += rit->value;
-            cwc++;
-            remL--;
-            remDis--;
-        }
-        if (remDis != 0)
-        {
+            // SHOULD NEVER HIT THIS???
             __debugbreak();
         }
+        // currentWchar is how many wchar_t we are into the string before processing this run
+        // currentCol is how many columns we've covered before processing this run
 
-        // c was base for last col
+        // We are *guaranteed* that the hit is in this run -- no need to check it->length
+        // col-currentCol is how many columns are left unaccounted for (how far into this run we need to go)
+        const auto colsLeftToCountInCurrentRun{ col - currentCol };
+        currentWchar += colsLeftToCountInCurrentRun / it->value; // one wch per column unit -- rounds down (correct behavior)
 
-        // IF WE OVERSHOT- we were partway through a column
-        if (newc > col)
+        size_t lenInWchars{ 1 }; // the first hit takes up one wchar
+
+        // We use this to determine if we have exhausted every column this run can cough up.
+        // colsLeftToCountInCurrentRun is 0-indexed, but colsConsumedByRun is 1-indexed (index 0 consumes N columns, etc.)
+        // therefore, we reindex colsLeftToCountInCurrentRun and compare it to colsConsumedByRun
+        const auto colsConsumedFromRun{ colsLeftToCountInCurrentRun + it->value };
+        const auto colsCoveredByRun{ it->value * it->length };
+        // If we *have* consumed every column this run can provide, we must check the run after it:
+        // if it contributes "0" columns, it is actually a set of trailing code units.
+        if (colsConsumedFromRun >= colsCoveredByRun && it != _cwid.runs().cend())
         {
-            // backup one wch
-            cwc--;
-        }
-        */
-
-        size_t len{ 1 };
-        // there were more remaining columns than fit (use >= to capture partial column hit?)
-        if (((remCol+rit->value) >= (rit->value*rit->length)) && rit != _cwid.runs().cend())
-        {
-            auto nit{ rit + 1 };
-            if (nit != _cwid.runs().cend() && nit->value == 0)
+            const auto nextRunIt{ it + 1 };
+            if (nextRunIt != _cwid.runs().cend() && nextRunIt->value == 0)
             {
                 // we were at the boundary of a column run, so if the next one is 0 it tells us that each
                 // wchar after it is a trailer
-                len += nit->length;
+                lenInWchars += nextRunIt->length;
             }
         }
+
         return {
-            cwc, // wchar start
-            len, // wchar size
-            (remCol) % rit->value, // how far into column we were (col-c is how many columns within this run)
-            rit->value // how many columns total
+            currentWchar, // wchar start
+            lenInWchars, // wchar size
+            colsLeftToCountInCurrentRun % it->value, // how far into the value's column count we were (if we are partway through a 2-wide or 3-wide glyph)
+            it->value // how many columns is the thing we hit?
         };
 #endif
 
