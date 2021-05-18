@@ -2342,9 +2342,9 @@ namespace winrt::TerminalApp::implementation
             {
                 sui.SetHostingWindow(reinterpret_cast<uint64_t>(*_hostingHwnd));
             }
-            sui.PreviewKeyDown({ this, &TerminalPage::_KeyDownHandler });
+            sui.KeyDown({ this, &TerminalPage::_KeyDownHandler });
 
-            sui.PreviewKeyDown({ this, &TerminalPage::_SUIPreviewKeyDownHandler });
+            // sui.PreviewKeyDown({ this, &TerminalPage::_SUIPreviewKeyDownHandler });
 
             sui.OpenJson([weakThis{ get_weak() }](auto&& /*s*/, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget e) {
                 if (auto page{ weakThis.get() })
