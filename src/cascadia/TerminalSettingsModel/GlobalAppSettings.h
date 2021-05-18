@@ -90,6 +90,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, FocusFollowMouse, false);
         INHERITABLE_SETTING(Model::GlobalAppSettings, Model::WindowingMode, WindowingBehavior, Model::WindowingMode::UseNew);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, TrimBlockSelection, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, DetectURLs, true);
 
     private:
         guid _defaultProfile;
