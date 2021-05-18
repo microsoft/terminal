@@ -56,6 +56,18 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Returns true if we're in the middle of a tab rename. This is used to
+    //   mitigate GH#10112.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - true if the renamer is open.
+    bool TabHeaderControl::InRename()
+    {
+        return Windows::UI::Xaml::Visibility::Visible == HeaderRenamerTextBox().Visibility();
+    }
+
+    // Method Description:
     // - Show the tab rename box for the user to rename the tab title
     // - We automatically use the previous title as the initial text of the box
     void TabHeaderControl::BeginRename()
