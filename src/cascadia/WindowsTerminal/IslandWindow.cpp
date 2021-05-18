@@ -448,6 +448,15 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     {
         return _OnSizing(wparam, lparam);
     }
+    case WM_SIZE:
+    {
+        if (wparam == SIZE_MINIMIZED && _isQuakeWindow)
+        {
+            ShowWindow(GetHandle(), SW_HIDE);
+            return 0;
+        }
+        break;
+    }
     case WM_MOVING:
     {
         return _OnMoving(wparam, lparam);
@@ -1144,6 +1153,13 @@ void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration,
     WINDOWPLACEMENT wpc{};
     wpc.length = sizeof(WINDOWPLACEMENT);
     GetWindowPlacement(_window.get(), &wpc);
+
+    // If the window is hidden, SW_SHOW it first.
+    if (!IsWindowVisible(GetHandle()))
+    {
+        wpc.showCmd = SW_SHOW;
+        SetWindowPlacement(_window.get(), &wpc);
+    }
     wpc.showCmd = SW_RESTORE;
     SetWindowPlacement(_window.get(), &wpc);
 
@@ -1203,7 +1219,15 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
         }
         else
         {
-            LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_RESTORE));
+            // If the window is hidden, SW_SHOW it first. Note that hidden !=
+            // minimized. A hidden window doesn't appear in the taskbar, while a
+            // minimized window will. If you don't do this, then we won't be
+            // able to properly set this as the foreground window.
+            if (!IsWindowVisible(GetHandle()))
+            {
+                ShowWindow(_window.get(), SW_SHOW);
+            }
+            ShowWindow(_window.get(), SW_RESTORE);
 
             // Once we've been restored, throw us on the active monitor.
             _moveToMonitor(oldForegroundWindow, toMonitor);
@@ -1220,7 +1244,7 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
             LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, false));
         });
         LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
-        LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_SHOW));
+        ShowWindow(_window.get(), SW_SHOW);
 
         // Activate the window too. This will force us to the virtual desktop this
         // window is on, if it's on another virtual desktop.
@@ -1249,7 +1273,7 @@ void IslandWindow::_globalDismissWindow(const uint32_t dropdownDuration)
     }
     else
     {
-        LOG_IF_WIN32_BOOL_FALSE(ShowWindow(_window.get(), SW_MINIMIZE));
+        ShowWindow(_window.get(), SW_MINIMIZE);
     }
 }
 
