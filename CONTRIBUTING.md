@@ -111,7 +111,7 @@ However, some issues/features will require careful thought & formal design befor
 
 Specs help collaborators discuss different approaches to solve a problem, describe how the feature will behave, how the feature will impact the user, what happens if something goes wrong, etc. Driving towards agreement in a spec, before any code is written, often results in simpler code, and less wasted effort in the long run.
 
-Specs will be managed in a very similar manner as code contributions so please follow the "[Fork, Branch and Create your PR" below](CONTRIBUTING.md#fork-clone-branch-and-create-your-pr)".
+Specs will be managed in a very similar manner as code contributions so please follow the "[Fork, Branch and Create your PR](CONTRIBUTING.md#fork-clone-branch-and-create-your-pr)" section below.
 
 ### Writing / Contributing-to a Spec
 
