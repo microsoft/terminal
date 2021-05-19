@@ -46,7 +46,6 @@
           "type": "string",
           "enum": [
             "audible",
-            "visual",
             "taskbar",
             "window",
             "all",
