@@ -436,7 +436,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(BackgroundImageStretchMode, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch, L"Profile_BackgroundImageStretchMode", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(AntiAliasingMode, TextAntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode, L"Profile_AntialiasingMode", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(CloseOnExitMode, CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
-        INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(BellStyle, BellStyle, winrt::Microsoft::Terminal::Settings::Model::BellStyle, L"Profile_BellStyle", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::Control::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
 
         // manually add Custom FontWeight option. Don't add it to the Map
@@ -506,6 +505,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         State().Profile().FontFace(newFontFace.LocalizedName());
     }
 
+    void Profiles::BellStyle_SelectionChanged(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        Model::BellStyle bellStyle{};
+        WI_SetFlagIf(bellStyle, Model::BellStyle::Audible, AudibleCheckBox().IsChecked().GetBoolean());
+        WI_SetFlagIf(bellStyle, Model::BellStyle::Window, WindowCheckBox().IsChecked().GetBoolean());
+        WI_SetFlagIf(bellStyle, Model::BellStyle::Taskbar, TaskbarCheckBox().IsChecked().GetBoolean());
+        State().Profile().BellStyle(bellStyle);
+    }
+
     void Profiles::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::ProfilePageNavigationState>();
@@ -573,7 +581,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (settingName == L"BellStyle")
             {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentBellStyle" });
+                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"BellStyleAudible" });
+                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"BellStyleWindow" });
+                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"BellStyleTaskbar" });
             }
             else if (settingName == L"ScrollState")
             {
@@ -625,6 +635,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Profiles::CurrentColorScheme(const ColorScheme& val)
     {
         _State.Profile().ColorSchemeName(val.Name());
+    }
+
+    bool Profiles::BellStyleAudible()
+    {
+        return WI_IsFlagSet(_State.Profile().BellStyle(), Model::BellStyle::Audible);
+    }
+
+    bool Profiles::BellStyleWindow()
+    {
+        return WI_IsFlagSet(_State.Profile().BellStyle(), Model::BellStyle::Window);
+    }
+
+    bool Profiles::BellStyleTaskbar()
+    {
+        return WI_IsFlagSet(_State.Profile().BellStyle(), Model::BellStyle::Taskbar);
     }
 
     void Profiles::DeleteConfirmation_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)

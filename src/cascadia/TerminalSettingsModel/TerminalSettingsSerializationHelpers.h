@@ -50,10 +50,10 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollbarState)
 
 JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
 {
-    static constexpr std::array<pair_type, 5> mappings = {
+    static constexpr std::array<pair_type, 6> mappings = {
         pair_type{ "none", AllClear },
         pair_type{ "audible", ValueType::Audible },
-        //pair_type{ "visual", ValueType::Visual },
+        pair_type{ "visual", ValueType::Window | ValueType::Taskbar },
         pair_type{ "window", ValueType::Window },
         pair_type{ "taskbar", ValueType::Taskbar },
         pair_type{ "all", AllSet },
@@ -64,14 +64,6 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
         if (json.isBool())
         {
             return json.asBool() ? AllSet : AllClear;
-        }
-        else if (json.isString())
-        {
-            const auto name = Detail::GetStringView(json);
-            if (name == "visual")
-            {
-                return (ValueType::Taskbar | ValueType::Window);
-            }
         }
         return BaseFlagMapper::FromJson(json);
     }

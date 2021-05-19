@@ -68,9 +68,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto map = single_threaded_map<winrt::hstring, Model::BellStyle>();
             for (auto [enumStr, enumVal] : JsonUtils::ConversionTrait<Model::BellStyle>::mappings)
             {
-                map.Insert(winrt::to_hstring(enumStr), enumVal);
+                const auto enumHStr = winrt::to_hstring(enumStr);
+                // skip visual
+                if (enumHStr != L"visual")
+                {
+                    map.Insert(enumHStr, enumVal);
+                }
             }
-            map.Insert(winrt::to_hstring(L"visual"), Model::BellStyle::Window | Model::BellStyle::Taskbar);
             return map;
         }();
         return enumMap;
