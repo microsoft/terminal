@@ -709,7 +709,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             //   1 1 1|2 2 2|3 3 3
             //
             // If we're called with:
-            //   _replace_unchecked(3, 6, {{4, 2}, {5, 2}})
+            //   _replace_unchecked(3, 6, {{1, 2}, {4, 1}, {2, 1}})
             // Or shown in a more visual way:
             //   1 1 1|2 2 2|3 3 3
             //       ^    ^         <-- the first ^ is "start_index" (inclusive) and the second "end_index" (exclusive)

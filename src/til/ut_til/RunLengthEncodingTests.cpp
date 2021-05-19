@@ -361,15 +361,10 @@ class RunLengthEncodingTests
 
             rle.replace(test_case.start_index, test_case.end_index, change);
 
-            try
-            {
-                VERIFY_ARE_EQUAL(test_case.expected, rle);
-            }
-            catch (...)
-            {
-                // I couldn't figure out how to attach additional info
-                // to a failed assertion so I'm doing it this way...
-                Log::Comment(NoThrowString().Format(
+            VERIFY_ARE_EQUAL(
+                test_case.expected,
+                rle,
+                NoThrowString().Format(
                     L"test case:   %d\nsource:      %hs\nstart_index: %u\nend_index:   %u\nchange:      %hs\nexpected:    %hs\nactual:      %s",
                     idx,
                     test_case.source.data(),
@@ -378,8 +373,6 @@ class RunLengthEncodingTests
                     test_case.change.data(),
                     test_case.expected.data(),
                     rle.to_string().c_str()));
-                throw;
-            }
 
             ++idx;
         }
@@ -449,11 +442,23 @@ class RunLengthEncodingTests
     {
         constexpr std::string_view data{ "133211155" };
 
+        // shrink
         for (size_type length = 0; length <= data.size(); length++)
         {
             rle_vector rle{ rle_encode(data) };
             rle.resize_trailing_extent(length);
             VERIFY_ARE_EQUAL(data.substr(0, length), rle);
+        }
+
+        // grow
+        {
+            std::string expected{ data };
+            expected.insert(expected.end(), 5, expected.back());
+
+            rle_vector actual{ rle_encode(data) };
+            actual.resize_trailing_extent(static_cast<size_type>(expected.size()));
+
+            VERIFY_ARE_EQUAL(std::string_view{ expected }, actual);
         }
     }
 
