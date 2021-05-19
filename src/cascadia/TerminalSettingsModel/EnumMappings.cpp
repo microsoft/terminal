@@ -59,7 +59,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return enumMap;
     }
 
-    // Bellstyle is special because we deprecated 'visual' for the settings UI but
+    // BellStyle is special because we deprecated 'visual' for the settings UI but
     // want to allow it for legacy users
     winrt::Windows::Foundation::Collections::IMap<winrt::hstring, Model::BellStyle> EnumMappings::BellStyle()
     {
