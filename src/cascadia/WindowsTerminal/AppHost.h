@@ -82,5 +82,7 @@ private:
     void _IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable& sender,
                                const winrt::Windows::Foundation::IInspectable& args);
 
-    void _NotifyIconPressed();
+    void _UpdateTrayIcon();
+    void _TrayIconPressed();
+    std::optional<NOTIFYICONDATA> _TrayIconData;
 };

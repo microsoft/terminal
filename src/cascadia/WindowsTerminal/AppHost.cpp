@@ -77,7 +77,7 @@ AppHost::AppHost() noexcept :
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
-    _window->NotifyIconPressed({ this, &AppHost::_NotifyIconPressed });
+    _window->NotifyIconPressed({ this, &AppHost::_TrayIconPressed });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
 
@@ -640,6 +640,9 @@ winrt::fire_and_forget AppHost::_WindowActivated()
 void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
+    // Look at me, I'm the captain now.
+    _UpdateTrayIcon();
+
     _setupGlobalHotkeys();
 }
 
@@ -919,7 +922,42 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
     _window->IsQuakeWindow(_logic.IsQuakeWindow());
 }
 
-void AppHost::_NotifyIconPressed()
+void AppHost::_UpdateTrayIcon()
+{
+    if (_TrayIconData)
+    {
+        auto nid = _TrayIconData.value();
+        nid.hWnd = _window->GetHandle();
+        Shell_NotifyIcon(NIM_MODIFY, &nid);
+    }
+    else
+    {
+        NOTIFYICONDATA nid{};
+
+        if (HMODULE hModule = GetModuleHandleW(nullptr))
+        {
+            nid.hIcon = static_cast<HICON>(LoadImageW(hModule, MAKEINTRESOURCEW(IDI_APPICON), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE));
+        }
+
+        nid.hWnd = _window->GetHandle();
+        nid.uID = 1;
+        nid.uCallbackMessage = WM_APP + 1;
+        StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), L"Windows Terminal");
+        nid.uFlags = NIF_MESSAGE | NIF_SHOWTIP | NIF_TIP | NIF_ICON;
+
+        // Add the icon to the tray
+        // TODO: Only if there isn't already an Icon.
+        // If there is, we only need to update the HWND.
+        Shell_NotifyIcon(NIM_ADD, &nid);
+
+        nid.uVersion = NOTIFYICON_VERSION_4;
+        Shell_NotifyIcon(NIM_SETVERSION, &nid);
+
+        _TrayIconData = nid;
+    }
+}
+
+void AppHost::_TrayIconPressed()
 {
     // No name provided means show the MRU window.
     Remoting::SummonWindowSelectionArgs args{};
@@ -932,8 +970,4 @@ void AppHost::_NotifyIconPressed()
     args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToCurrent);
 
     _windowManager.SummonWindow(args);
-    if (args.FoundMatch())
-    {
-        // Excellent, the window was found. We have nothing else to do here.
-    }
 }
