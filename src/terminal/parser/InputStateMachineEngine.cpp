@@ -99,7 +99,9 @@ InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispat
 InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch, const bool lookingForDSR) :
     _pDispatch(std::move(pDispatch)),
     _lookingForDSR(lookingForDSR),
-    _pfnFlushToInputQueue(nullptr)
+    _pfnFlushToInputQueue(nullptr),
+    _doubleClickTime(GetDoubleClickTime()),
+    _lastMouseClickTime(time(nullptr))
 {
     THROW_HR_IF_NULL(E_INVALIDARG, _pDispatch.get());
 }
@@ -878,7 +880,7 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
         {
             // difftime returns in seconds but double click time returns in milliseconds
             if (til::point(uiPos) == _lastMouseClickPos &&
-                (difftime(currentTime, _lastMouseClickTime) * 1000) < GetDoubleClickTime())
+                (difftime(currentTime, _lastMouseClickTime) * 1000) < _doubleClickTime)
             {
                 eventFlags |= DOUBLE_CLICK;
             }

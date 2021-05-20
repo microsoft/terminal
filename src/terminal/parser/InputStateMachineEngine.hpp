@@ -171,6 +171,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _lookingForDSR;
         DWORD _mouseButtonState = 0;
         COORD _lastMouseClickPos{ 0, 0 };
+        uint64_t _doubleClickTime;
         std::time_t _lastMouseClickTime;
 
         DWORD _GetCursorKeysModifierState(const VTParameters parameters, const VTID id) noexcept;
