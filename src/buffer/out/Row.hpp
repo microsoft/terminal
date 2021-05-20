@@ -93,12 +93,14 @@ public:
 #if !ROW_USE_RLE
     std::basic_string<uint16_t> _cwid;
 #else
-    til::rle<uint8_t, uint16_t> _cwid;
+    til::small_rle<uint8_t, uint16_t, 3> _cwid;
 #endif
 
     std::tuple<size_t, size_t, size_t, size_t> _indicesForCol(size_t col, typename decltype(_data)::size_type hint = 0, size_t colstart = 0) const
     {
 #if 1
+        (void)hint;
+        (void)colstart;
         size_t currentCol{ 0 };
         size_t currentWchar{ 0 };
         auto it{ _cwid.runs().cbegin() };
@@ -153,7 +155,7 @@ public:
         return {
             currentWchar, // wchar start
             lenInWchars, // wchar size
-            colsLeftToCountInCurrentRun % it->value, // how far into the value's column count we were (if we are partway through a 2-wide or 3-wide glyph)
+            colsLeftToCountInCurrentRun % it->value, // how far into the wide glyph we were (if we are partway through a 2-wide or 3-wide glyph)
             it->value // how many columns is the thing we hit?
         };
 #endif

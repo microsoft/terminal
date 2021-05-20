@@ -177,7 +177,6 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
                     uint16_t d = it->DbcsAttr().IsSingle() ? 1 : 2;
                     std::tie(ibegin, ihintcol) = WriteGlyphAtMeasured(currentIndex, d, it->Chars(), ibegin, ihintcol);
                     currentIndex += d - 1;
-                    colorUses += d - 1;
                     while (d > 0)
                     { // TODO(DH) FFS
                         ++it;
