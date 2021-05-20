@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT License. See LICENSE in the project root for license information. -->
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+     <PlatformShortName Condition="'$(PlatformShortName)'==''">$(Platform)</PlatformShortName>
+     <PlatformShortName Condition="'$(PlatformShortName)'=='Win32'">x86</PlatformShortName>
+     <PlatformShortName Condition="'$(PlatformShortName)'=='AnyCPU' and '$(Prefer32Bit)'==''">x64</PlatformShortName>
+     <PlatformShortName Condition="'$(PlatformShortName)'=='AnyCPU' and '$(Prefer32Bit)'=='true'">x64</PlatformShortName>
+     <PlatformShortName Condition="'$(PlatformShortName)'=='AnyCPU' and '$(Prefer32Bit)'=='false'">x64</PlatformShortName>
+     <ProfileGuidedDatabaseFileName>$(MSBuildThisFileDirectory)..\tools\$(PlatformShortName)\$(TargetName).pgd</ProfileGuidedDatabaseFileName>
+  </PropertyGroup>
+  <!-- Enable PGO optimization only for if the pgds file exists. -->
+  <ItemDefinitionGroup Condition="'$(Configuration)' == 'Release' and '$(PGOBuildMode)' == 'Optimize' and Exists('$(ProfileGuidedDatabaseFileName)')">
+      <Link>
+          <LinkTimeCodeGeneration>PGUpdate</LinkTimeCodeGeneration>
+          <ProfileGuidedDatabase>$(ProfileGuidedDatabaseFileName)</ProfileGuidedDatabase>
+          <AdditionalOptions>/force:pgorepro %(AdditionalOptions)</AdditionalOptions>
+      </Link>
+  </ItemDefinitionGroup>
+</Project>

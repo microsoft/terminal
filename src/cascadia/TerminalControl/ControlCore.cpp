@@ -418,19 +418,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   region to change, such as when new text enters the buffer or the viewport is scrolled
     void ControlCore::UpdatePatternLocations()
     {
-        _terminal->UpdatePatterns();
+        auto lock = _terminal->LockForWriting();
+        _terminal->UpdatePatternsUnderLock();
     }
 
     // Method description:
     // - Updates last hovered cell, renders / removes rendering of hyper-link if required
     // Arguments:
     // - terminalPosition: The terminal position of the pointer
-    void ControlCore::UpdateHoveredCell(Windows::Foundation::IReference<Core::Point> pos)
+    void ControlCore::SetHoveredCell(Core::Point pos)
     {
-        auto terminalPosition = pos ?
-                                    std::optional<til::point>{ pos.Value() } :
-                                    std::optional<til::point>{};
+        _updateHoveredCell(std::optional<til::point>{ pos });
+    }
+    void ControlCore::ClearHoveredCell()
+    {
+        _updateHoveredCell(std::nullopt);
+    }
 
+    void ControlCore::_updateHoveredCell(const std::optional<til::point> terminalPosition)
+    {
         if (terminalPosition == _lastHoveredCell)
         {
             return;
@@ -492,7 +498,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     Windows::Foundation::IReference<Core::Point> ControlCore::HoveredCell() const
     {
-        return _lastHoveredCell.has_value() ? Windows::Foundation::IReference<Core::Point>(_lastHoveredCell.value()) : nullptr;
+        return _lastHoveredCell.has_value() ? Windows::Foundation::IReference<Core::Point>{ _lastHoveredCell.value() } : nullptr;
     }
 
     // Method Description:

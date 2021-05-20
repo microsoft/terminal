@@ -30,12 +30,21 @@ namespace Microsoft.Terminal.Remoting
         Windows.Foundation.DateTime ActivatedTime { get; };
     };
 
+
+    enum MonitorBehavior
+    {
+        InPlace,
+        ToCurrent,
+        ToMouse,
+    };
+
+
     [default_interface] runtimeclass SummonWindowBehavior {
         SummonWindowBehavior();
         Boolean MoveToCurrentDesktop;
         Boolean ToggleVisibility;
-        // Other options:
-        // * CurrentMonitor
+        UInt32 DropdownDuration;
+        MonitorBehavior ToMonitor;
     }
 
     interface IPeasant

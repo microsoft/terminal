@@ -9,8 +9,7 @@
     <uap:SupportedUsers>multiple</uap:SupportedUsers>
   </Properties>
   <Dependencies>
-    <!-- We're manually setting the version here, because the CI only runs windows 17763 -->
-    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.17763.0" MaxVersionTested="10.0.17763.0" />
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
   </Dependencies>
   <Resources>
     <Resource Language="x-generate" />

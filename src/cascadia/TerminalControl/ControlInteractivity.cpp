@@ -29,7 +29,7 @@ static constexpr unsigned int MAX_CLICK_COUNT = 3;
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    TerminalInput::MouseButtonState toInternalMouseState(const Control::MouseButtonState& state)
+    static constexpr TerminalInput::MouseButtonState toInternalMouseState(const Control::MouseButtonState& state)
     {
         return TerminalInput::MouseButtonState{
             state.IsLeftButtonDown != 0, state.IsMiddleButtonDown != 0, state.IsRightButtonDown != 0
@@ -311,7 +311,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             SetEndSelectionPoint(pixelPosition);
         }
 
-        _core->UpdateHoveredCell(Windows::Foundation::IReference<Core::Point>{ terminalPosition });
+        _core->SetHoveredCell(terminalPosition);
     }
 
     void ControlInteractivity::TouchMoved(const til::point newTouchPoint,

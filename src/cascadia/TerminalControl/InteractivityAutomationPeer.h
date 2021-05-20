@@ -77,8 +77,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
         winrt::Microsoft::Terminal::Control::implementation::ControlInteractivity* _interactivity;
 
-        til::rectangle _controlBounds;
-        til::rectangle _controlPadding;
+        til::rectangle _controlBounds{};
+        til::rectangle _controlPadding{};
 
         winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> WrapArrayOfTextRangeProviders(SAFEARRAY* textRanges);
     };

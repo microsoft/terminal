@@ -55,7 +55,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           "Peasant_ExecuteCommandline",
                           TraceLoggingUInt64(GetID(), "peasantID", "Our ID"),
                           TraceLoggingWideString(args.CurrentDirectory().c_str(), "directory", "the provided cwd"),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
         // Raise an event with these args. The AppHost will listen for this
         // event to know when to take these args and dispatch them to a
@@ -102,7 +103,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           "Peasant_ActivateWindow",
                           TraceLoggingUInt64(GetID(), "peasantID", "Our ID"),
                           TraceLoggingBoolean(successfullyNotified, "successfullyNotified", "true if we successfully notified the monarch"),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
 
     // Method Description:
@@ -135,7 +137,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           "Peasant_Summon",
                           TraceLoggingUInt64(GetID(), "peasantID", "Our ID"),
                           TraceLoggingUInt64(localCopy.MoveToCurrentDesktop(), "MoveToCurrentDesktop", "true if we should move to the current desktop"),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
         _SummonRequestedHandlers(*this, localCopy);
     }
@@ -184,7 +187,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           "Peasant_RequestIdentifyWindows",
                           TraceLoggingUInt64(GetID(), "peasantID", "Our ID"),
                           TraceLoggingBoolean(successfullyNotified, "successfullyNotified", "true if we successfully notified the monarch"),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
 
     void Peasant::RequestRename(const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args)
@@ -215,6 +219,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingWideString(args.NewName().c_str(), "newName", "The proposed name"),
                           TraceLoggingBoolean(args.Succeeded(), "succeeded", "true if the monarch ok'd this new name for us."),
                           TraceLoggingBoolean(successfullyNotified, "successfullyNotified", "true if we successfully notified the monarch"),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
 }
