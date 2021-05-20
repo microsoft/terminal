@@ -53,6 +53,7 @@ namespace winrt::TerminalApp::implementation
         void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
         void ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         void NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+        bool FocusPane(const uint32_t& id);
 
         void UpdateSettings(const Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings, const GUID& profile);
         winrt::fire_and_forget UpdateTitle();
@@ -104,8 +105,8 @@ namespace winrt::TerminalApp::implementation
         winrt::TerminalApp::TabHeaderControl _headerControl{};
         winrt::TerminalApp::TerminalTabStatus _tabStatus{};
 
-        std::vector<uint16_t> _mruPanes;
-        uint16_t _nextPaneId{ 0 };
+        std::vector<uint32_t> _mruPanes;
+        uint32_t _nextPaneId{ 0 };
 
         bool _receivedKeyDown{ false };
         bool _iconHidden{ false };

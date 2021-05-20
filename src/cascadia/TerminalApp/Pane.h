@@ -76,9 +76,9 @@ public:
     void Maximize(std::shared_ptr<Pane> zoomedPane);
     void Restore(std::shared_ptr<Pane> zoomedPane);
 
-    std::optional<uint16_t> Id() noexcept;
-    void Id(uint16_t id) noexcept;
-    void FocusPane(const uint16_t id);
+    std::optional<uint32_t> Id() noexcept;
+    void Id(uint32_t id) noexcept;
+    bool FocusPane(const uint32_t id);
 
     bool ContainsReadOnly() const;
 
@@ -103,7 +103,7 @@ private:
     winrt::Microsoft::Terminal::Settings::Model::SplitState _splitState{ winrt::Microsoft::Terminal::Settings::Model::SplitState::None };
     float _desiredSplitPosition;
 
-    std::optional<uint16_t> _id;
+    std::optional<uint32_t> _id;
 
     bool _lastActive{ false };
     std::optional<GUID> _profile{ std::nullopt };

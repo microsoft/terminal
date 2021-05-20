@@ -1564,7 +1564,7 @@ void Pane::Restore(std::shared_ptr<Pane> zoomedPane)
 //   otherwise the ID value will not make sense (leaves have IDs, parents do not)
 // Return Value:
 // - The ID of this pane
-std::optional<uint16_t> Pane::Id() noexcept
+std::optional<uint32_t> Pane::Id() noexcept
 {
     return _id;
 }
@@ -1574,7 +1574,7 @@ std::optional<uint16_t> Pane::Id() noexcept
 // - Panes are given IDs upon creation by TerminalTab
 // Arguments:
 // - The number to set this pane's ID to
-void Pane::Id(uint16_t id) noexcept
+void Pane::Id(uint32_t id) noexcept
 {
     _id = id;
 }
@@ -1583,20 +1583,24 @@ void Pane::Id(uint16_t id) noexcept
 // - Recursive function that focuses a pane with the given ID
 // Arguments:
 // - The ID of the pane we want to focus
-void Pane::FocusPane(const uint16_t id)
+bool Pane::FocusPane(const uint32_t id)
 {
     if (_IsLeaf() && id == _id)
     {
-        _control.Focus(FocusState::Programmatic);
+        // Make sure to use _FocusFirstChild here - that'll properly update the
+        // focus if we're in startup.
+        _FocusFirstChild();
+        return true;
     }
     else
     {
         if (_firstChild && _secondChild)
         {
-            _firstChild->FocusPane(id);
-            _secondChild->FocusPane(id);
+            return _firstChild->FocusPane(id) ||
+                   _secondChild->FocusPane(id);
         }
     }
+    return false;
 }
 
 // Method Description:

@@ -790,4 +790,21 @@ namespace winrt::TerminalApp::implementation
         // if it wasn't bound at all.
         args.Handled(false);
     }
+
+    void TerminalPage::_HandleFocusPane(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<FocusPaneArgs>())
+            {
+                const auto paneId = realArgs.Id();
+                if (const auto activeTab{ _GetFocusedTabImpl() })
+                {
+                    _UnZoomIfNeeded();
+                    args.Handled(activeTab->FocusPane(paneId));
+                }
+            }
+        }
+    }
 }

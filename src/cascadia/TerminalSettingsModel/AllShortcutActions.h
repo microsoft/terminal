@@ -74,4 +74,5 @@
     ON_ALL_ACTIONS(RenameWindow)         \
     ON_ALL_ACTIONS(OpenWindowRenamer)    \
     ON_ALL_ACTIONS(GlobalSummon)         \
-    ON_ALL_ACTIONS(QuakeMode)
+    ON_ALL_ACTIONS(QuakeMode)            \
+    ON_ALL_ACTIONS(FocusPane)

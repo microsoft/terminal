@@ -497,6 +497,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    bool TerminalTab::FocusPane(const uint32_t& id)
+    {
+        return _rootPane->FocusPane(id);
+    }
+
     // Method Description:
     // - Prepares this tab for being removed from the UI hierarchy by shutting down all active connections.
     void TerminalTab::Shutdown()
