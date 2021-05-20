@@ -803,8 +803,8 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
 //   "Default" later.
 static bool _IsValidProfileObject(const Json::Value& profileJson)
 {
-    return profileJson.isMember(&*NameKey.begin(), &*NameKey.end()) || // has a name (can generate a guid)
-           profileJson.isMember(&*GuidKey.begin(), &*GuidKey.end()); // or has a guid
+    return profileJson.isMember(&*NameKey.cbegin(), (&*NameKey.cbegin()) + NameKey.size()) || // has a name (can generate a guid)
+           profileJson.isMember(&*GuidKey.cbegin(), (&*GuidKey.cbegin()) + GuidKey.size()); // or has a guid
 }
 
 // Method Description:
