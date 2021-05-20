@@ -9,6 +9,68 @@ Module Name:
 #pragma once
 #include "pch.h"
 
+template<typename... Args>
+class ThrottledFuncStorage
+{
+public:
+    template<typename... MakeArgs>
+    bool Emplace(MakeArgs&&... args)
+    {
+        std::scoped_lock guard{ _lock };
+
+        const bool hadValue = _pendingRunArgs.has_value();
+        _pendingRunArgs.emplace(std::forward<MakeArgs>(args)...);
+        return hadValue;
+    }
+
+    template<typename F>
+    void ModifyPending(F f)
+    {
+        std::scoped_lock guard{ _lock };
+
+        if (_pendingRunArgs.has_value())
+        {
+            std::apply(f, _pendingRunArgs.value());
+        }
+    }
+
+    std::tuple<Args...> Extract()
+    {
+        decltype(_pendingRunArgs) args;
+        std::scoped_lock guard{ _lock };
+        _pendingRunArgs.swap(args);
+        return args.value();
+    }
+
+private:
+    std::mutex _lock;
+    std::optional<std::tuple<Args...>> _pendingRunArgs;
+};
+
+template<>
+class ThrottledFuncStorage<>
+{
+public:
+    bool Emplace()
+    {
+        return _isRunPending.test_and_set(std::memory_order_relaxed);
+    }
+
+    std::tuple<> Extract()
+    {
+        Reset();
+        return {};
+    }
+
+    void Reset()
+    {
+        _isRunPending.clear(std::memory_order_relaxed);
+    }
+
+private:
+    std::atomic_flag _isRunPending;
+};
+
 // Class Description:
 // - Represents a function that takes arguments and whose invocation is
 //   delayed by a specified duration and rate-limited such that if the code
@@ -16,16 +78,16 @@ Module Name:
 //   pending, then the previous call with the previous arguments will be
 //   cancelled and the call will be made with the new arguments instead.
 // - The function will be run on the the specified dispatcher.
-template<typename... Args>
-class ThrottledFunc : public std::enable_shared_from_this<ThrottledFunc<Args...>>
+template<bool leading, typename... Args>
+class ThrottledFunc : public std::enable_shared_from_this<ThrottledFunc<leading, Args...>>
 {
 public:
     using Func = std::function<void(Args...)>;
 
-    ThrottledFunc(Func func, winrt::Windows::Foundation::TimeSpan delay, winrt::Windows::UI::Core::CoreDispatcher dispatcher) :
-        _func{ func },
-        _delay{ delay },
-        _dispatcher{ dispatcher }
+    ThrottledFunc(winrt::Windows::UI::Core::CoreDispatcher dispatcher, winrt::Windows::Foundation::TimeSpan delay, Func func) :
+        _dispatcher{ std::move(dispatcher) },
+        _delay{ std::move(delay) },
+        _func{ std::move(func) }
     {
     }
 
@@ -37,26 +99,16 @@ public:
     // - This method is always thread-safe. It can be called multiple times on
     //   different threads.
     // Arguments:
-    // - arg: the argument to pass to the function
+    // - args: the arguments to pass to the function
     // Return Value:
     // - <none>
     template<typename... MakeArgs>
     void Run(MakeArgs&&... args)
     {
+        if (!_storage.Emplace(std::forward<MakeArgs>(args)...))
         {
-            std::lock_guard guard{ _lock };
-
-            bool hadValue = _pendingRunArgs.has_value();
-            _pendingRunArgs.emplace(std::forward<MakeArgs>(args)...);
-
-            if (hadValue)
-            {
-                // already pending
-                return;
-            }
+            _Fire();
         }
-
-        _Fire(_delay, _dispatcher, this->weak_from_this());
     }
 
     // Method Description:
@@ -81,93 +133,54 @@ public:
     template<typename F>
     void ModifyPending(F f)
     {
-        std::lock_guard guard{ _lock };
-
-        if (_pendingRunArgs.has_value())
-        {
-            std::apply(f, _pendingRunArgs.value());
-        }
+        _storage.ModifyPending(f);
     }
 
 private:
-    static winrt::fire_and_forget _Fire(winrt::Windows::Foundation::TimeSpan delay, winrt::Windows::UI::Core::CoreDispatcher dispatcher, std::weak_ptr<ThrottledFunc> weakThis)
+    winrt::fire_and_forget _Fire()
     {
-        co_await winrt::resume_after(delay);
-        co_await winrt::resume_foreground(dispatcher);
+        const auto dispatcher = _dispatcher;
+        auto weakSelf = this->weak_from_this();
 
-        if (auto self{ weakThis.lock() })
+        if constexpr (leading)
         {
-            std::optional<std::tuple<Args...>> args;
+            co_await winrt::resume_foreground(dispatcher);
+
+            if (auto self{ weakSelf.lock() })
             {
-                std::lock_guard guard{ self->_lock };
-                self->_pendingRunArgs.swap(args);
+                self->_func();
+            }
+            else
+            {
+                co_return;
             }
 
-            std::apply(self->_func, args.value());
+            co_await winrt::resume_after(_delay);
+
+            if (auto self{ weakSelf.lock() })
+            {
+                self->_storage.Reset();
+            }
+        }
+        else
+        {
+            co_await winrt::resume_after(_delay);
+            co_await winrt::resume_foreground(dispatcher);
+
+            if (auto self{ weakSelf.lock() })
+            {
+                std::apply(self->_func, self->_storage.Extract());
+            }
         }
     }
 
-    Func _func;
-    winrt::Windows::Foundation::TimeSpan _delay;
     winrt::Windows::UI::Core::CoreDispatcher _dispatcher;
+    winrt::Windows::Foundation::TimeSpan _delay;
+    Func _func;
 
-    std::mutex _lock;
-    std::optional<std::tuple<Args...>> _pendingRunArgs;
+    ThrottledFuncStorage<Args...> _storage;
 };
 
-// Class Description:
-// - Represents a function whose invocation is delayed by a specified duration
-//   and rate-limited such that if the code tries to run the function while a
-//   call to the function is already pending, the request will be ignored.
-// - The function will be run on the the specified dispatcher.
-template<>
-class ThrottledFunc<> : public std::enable_shared_from_this<ThrottledFunc<>>
-{
-public:
-    using Func = std::function<void()>;
-
-    ThrottledFunc(Func func, winrt::Windows::Foundation::TimeSpan delay, winrt::Windows::UI::Core::CoreDispatcher dispatcher) :
-        _func{ func },
-        _delay{ delay },
-        _dispatcher{ dispatcher }
-    {
-    }
-
-    // Method Description:
-    // - Runs the function later, except if `Run` is called again before
-    //   with a new argument, in which case the request will be ignored.
-    // - For more information, read the class' documentation.
-    // - This method is always thread-safe. It can be called multiple times on
-    //   different threads.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    template<typename... MakeArgs>
-    void Run(MakeArgs&&... args)
-    {
-        if (!_isRunPending.test_and_set(std::memory_order_relaxed))
-        {
-            _Fire(_delay, _dispatcher, this->weak_from_this());
-        }
-    }
-
-private:
-    static winrt::fire_and_forget _Fire(winrt::Windows::Foundation::TimeSpan delay, winrt::Windows::UI::Core::CoreDispatcher dispatcher, std::weak_ptr<ThrottledFunc> weakThis)
-    {
-        co_await winrt::resume_after(delay);
-        co_await winrt::resume_foreground(dispatcher);
-
-        if (auto self{ weakThis.lock() })
-        {
-            self->_isRunPending.clear(std::memory_order_relaxed);
-            self->_func();
-        }
-    }
-
-    Func _func;
-    winrt::Windows::Foundation::TimeSpan _delay;
-    winrt::Windows::UI::Core::CoreDispatcher _dispatcher;
-
-    std::atomic_flag _isRunPending;
-};
+template<typename... Args>
+using ThrottledFuncTrailing = ThrottledFunc<false, Args...>;
+using ThrottledFuncLeading = ThrottledFunc<true>;

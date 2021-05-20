@@ -151,9 +151,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _focused;
         bool _initializedTerminal;
 
-        std::shared_ptr<ThrottledFunc<>> _tsfTryRedrawCanvas;
-        std::shared_ptr<ThrottledFunc<>> _updatePatternLocations;
-        std::shared_ptr<ThrottledFunc<>> _playWarningBell;
+        std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
+        std::shared_ptr<ThrottledFuncTrailing<>> _updatePatternLocations;
+        std::shared_ptr<ThrottledFuncLeading> _playWarningBell;
 
         struct ScrollBarUpdate
         {
@@ -162,7 +162,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             double newMinimum;
             double newViewportSize;
         };
-        std::shared_ptr<ThrottledFunc<ScrollBarUpdate>> _updateScrollBar;
+        std::shared_ptr<ThrottledFuncTrailing<ScrollBarUpdate>> _updateScrollBar;
         bool _isInternalScrollBarUpdate;
 
         // Auto scroll occurs when user, while selecting, drags cursor outside viewport. View is then scrolled to 'follow' the cursor.
