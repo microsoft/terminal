@@ -153,7 +153,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
         std::shared_ptr<ThrottledFuncTrailing<>> _updatePatternLocations;
-        std::shared_ptr<ThrottledFuncTrailing<>> _playWarningBell;
+        std::shared_ptr<ThrottledFuncLeading> _playWarningBell;
 
         struct ScrollBarUpdate
         {

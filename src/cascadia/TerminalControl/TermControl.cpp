@@ -130,7 +130,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             });
 
-        _playWarningBell = std::make_shared<ThrottledFuncTrailing<>>(
+        _playWarningBell = std::make_shared<ThrottledFuncLeading>(
             Dispatcher(),
             TerminalWarningBellInterval,
             [weakThis = get_weak()]() {

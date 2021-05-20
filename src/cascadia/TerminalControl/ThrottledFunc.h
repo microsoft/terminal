@@ -99,7 +99,7 @@ public:
     // - This method is always thread-safe. It can be called multiple times on
     //   different threads.
     // Arguments:
-    // - arg: the argument to pass to the function
+    // - args: the arguments to pass to the function
     // Return Value:
     // - <none>
     template<typename... MakeArgs>
@@ -144,25 +144,33 @@ private:
 
         if constexpr (leading)
         {
-            _func();
-        }
+            co_await winrt::resume_foreground(dispatcher);
 
-        co_await winrt::resume_after(_delay);
-        co_await winrt::resume_foreground(dispatcher);
+            if (auto self{ weakSelf.lock() })
+            {
+                self->_func();
+            }
+            else
+            {
+                co_return;
+            }
 
-        auto self{ weakSelf.lock() };
-        if (!self)
-        {
-            co_return;
-        }
+            co_await winrt::resume_after(_delay);
 
-        if constexpr (leading)
-        {
-            self->_storage.Reset();
+            if (auto self{ weakSelf.lock() })
+            {
+                self->_storage.Reset();
+            }
         }
         else
         {
-            std::apply(self->_func, self->_storage.Extract());
+            co_await winrt::resume_after(_delay);
+            co_await winrt::resume_foreground(dispatcher);
+
+            if (auto self{ weakSelf.lock() })
+            {
+                std::apply(self->_func, self->_storage.Extract());
+            }
         }
     }
 
