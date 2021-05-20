@@ -75,3 +75,30 @@
     ON_ALL_ACTIONS(OpenWindowRenamer)    \
     ON_ALL_ACTIONS(GlobalSummon)         \
     ON_ALL_ACTIONS(QuakeMode)
+
+#define ALL_SHORTCUT_ACTIONS_WITH_ARGS           \
+    ON_ALL_ACTIONS_WITH_ARGS(AdjustFontSize)     \
+    ON_ALL_ACTIONS_WITH_ARGS(CloseOtherTabs)     \
+    ON_ALL_ACTIONS_WITH_ARGS(CloseTabsAfter)     \
+    ON_ALL_ACTIONS_WITH_ARGS(CopyText)           \
+    ON_ALL_ACTIONS_WITH_ARGS(ExecuteCommandline) \
+    ON_ALL_ACTIONS_WITH_ARGS(FindMatch)          \
+    ON_ALL_ACTIONS_WITH_ARGS(GlobalSummon)       \
+    ON_ALL_ACTIONS_WITH_ARGS(MoveFocus)          \
+    ON_ALL_ACTIONS_WITH_ARGS(MoveTab)            \
+    ON_ALL_ACTIONS_WITH_ARGS(NewTab)             \
+    ON_ALL_ACTIONS_WITH_ARGS(NewWindow)          \
+    ON_ALL_ACTIONS_WITH_ARGS(NextTab)            \
+    ON_ALL_ACTIONS_WITH_ARGS(OpenSettings)       \
+    ON_ALL_ACTIONS_WITH_ARGS(PrevTab)            \
+    ON_ALL_ACTIONS_WITH_ARGS(RenameTab)          \
+    ON_ALL_ACTIONS_WITH_ARGS(RenameWindow)       \
+    ON_ALL_ACTIONS_WITH_ARGS(ResizePane)         \
+    ON_ALL_ACTIONS_WITH_ARGS(ScrollDown)         \
+    ON_ALL_ACTIONS_WITH_ARGS(ScrollUp)           \
+    ON_ALL_ACTIONS_WITH_ARGS(SendInput)          \
+    ON_ALL_ACTIONS_WITH_ARGS(SetColorScheme)     \
+    ON_ALL_ACTIONS_WITH_ARGS(SetTabColor)        \
+    ON_ALL_ACTIONS_WITH_ARGS(SplitPane)          \
+    ON_ALL_ACTIONS_WITH_ARGS(SwitchToTab)        \
+    ON_ALL_ACTIONS_WITH_ARGS(ToggleCommandPalette)
