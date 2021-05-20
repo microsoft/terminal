@@ -40,7 +40,12 @@ namespace Microsoft::Console::ErrorReporting
         if (!alreadyReported && FallbackProvider)
         {
 #pragma warning(suppress : 26477 26485 26494 26482 26446) // We don't control TraceLoggingWrite
-            TraceLoggingWrite(FallbackProvider, "FallbackError", TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY), TraceLoggingLevel(WINEVENT_LEVEL_ERROR), CONSOLE_WIL_TRACELOGGING_FAILURE_PARAMS(failure));
+            TraceLoggingWrite(FallbackProvider,
+                              "FallbackError",
+                              TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage),
+                              TraceLoggingLevel(WINEVENT_LEVEL_ERROR),
+                              CONSOLE_WIL_TRACELOGGING_FAILURE_PARAMS(failure));
         }
     }
     catch (...)

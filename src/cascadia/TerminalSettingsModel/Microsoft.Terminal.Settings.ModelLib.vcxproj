@@ -6,7 +6,6 @@
     <ProjectName>Microsoft.Terminal.Settings.Model.Lib</ProjectName>
     <RootNamespace>Microsoft.Terminal.Settings.Model</RootNamespace>
     <TargetName>Microsoft.Terminal.Settings.Model.Lib</TargetName>
-    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
@@ -241,6 +240,6 @@
   <Target Name="_TerminalAppGenerateUserSettingsH" Inputs="userDefaults.json" Outputs="Generated Files\userDefaults.h" BeforeTargets="BeforeClCompile">
     <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile userDefaults.json -OutPath '&quot;Generated Files\userDefaults.h&quot;' -VariableName UserSettingsJson" />
   </Target>
-  
+
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

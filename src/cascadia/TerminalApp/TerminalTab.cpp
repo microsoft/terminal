@@ -899,7 +899,13 @@ namespace winrt::TerminalApp::implementation
         contextMenuFlyout.Closed([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_RequestFocusActiveControlHandlers();
+                // GH#10112 - if we're opening the tab renamer, don't
+                // immediately toss focus to the control. We don't want to steal
+                // focus from the tab renamer.
+                if (!tab->_headerControl.InRename())
+                {
+                    tab->_RequestFocusActiveControlHandlers();
+                }
             }
         });
         _AppendCloseMenuItems(contextMenuFlyout);

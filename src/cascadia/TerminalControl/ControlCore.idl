@@ -49,7 +49,8 @@ namespace Microsoft.Terminal.Control
         void SendInput(String text);
         void PasteText(String text);
 
-        void UpdateHoveredCell(Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> terminalPosition);
+        void SetHoveredCell(Microsoft.Terminal.Core.Point terminalPosition);
+        void ClearHoveredCell();
 
         void ResetFontSize();
         void AdjustFontSize(Int32 fontSizeDelta);

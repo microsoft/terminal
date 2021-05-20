@@ -42,6 +42,7 @@ namespace ControlUnitTests
         winrt::Microsoft::Terminal::Core::ICoreAppearance UnfocusedAppearance() { return {}; };
 
         WINRT_PROPERTY(bool, TrimBlockSelection, false);
+        WINRT_PROPERTY(bool, DetectURLs, true);
         // ------------------------ End of Core Settings -----------------------
 
         WINRT_PROPERTY(winrt::hstring, ProfileName);
