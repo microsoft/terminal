@@ -148,11 +148,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
 
-        std::shared_ptr<ThrottledFunc<>> _tsfTryRedrawCanvas;
-
-        std::shared_ptr<ThrottledFunc<>> _updatePatternLocations;
-
-        std::shared_ptr<ThrottledFunc<>> _playWarningBell;
+        std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
+        std::shared_ptr<ThrottledFuncTrailing<>> _updatePatternLocations;
+        std::shared_ptr<ThrottledFuncLeading> _playWarningBell;
 
         struct ScrollBarUpdate
         {
@@ -161,7 +159,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             double newMinimum;
             double newViewportSize;
         };
-        std::shared_ptr<ThrottledFunc<ScrollBarUpdate>> _updateScrollBar;
+        std::shared_ptr<ThrottledFuncTrailing<ScrollBarUpdate>> _updateScrollBar;
         bool _isInternalScrollBarUpdate;
 
         unsigned int _rowsToScroll;

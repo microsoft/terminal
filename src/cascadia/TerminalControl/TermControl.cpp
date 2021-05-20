@@ -152,37 +152,39 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
         });
 
-        _tsfTryRedrawCanvas = std::make_shared<ThrottledFunc<>>(
+        _tsfTryRedrawCanvas = std::make_shared<ThrottledFuncTrailing<>>(
+            Dispatcher(),
+            TsfRedrawInterval,
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() })
                 {
                     control->TSFInputControl().TryRedrawCanvas();
                 }
-            },
-            TsfRedrawInterval,
-            Dispatcher());
+            });
 
-        _updatePatternLocations = std::make_shared<ThrottledFunc<>>(
+        _updatePatternLocations = std::make_shared<ThrottledFuncTrailing<>>(
+            Dispatcher(),
+            UpdatePatternLocationsInterval,
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() })
                 {
                     control->UpdatePatternLocations();
                 }
-            },
-            UpdatePatternLocationsInterval,
-            Dispatcher());
+            });
 
-        _playWarningBell = std::make_shared<ThrottledFunc<>>(
+        _playWarningBell = std::make_shared<ThrottledFuncLeading>(
+            Dispatcher(),
+            TerminalWarningBellInterval,
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() })
                 {
                     control->_TerminalWarningBell();
                 }
-            },
-            TerminalWarningBellInterval,
-            Dispatcher());
+            });
 
-        _updateScrollBar = std::make_shared<ThrottledFunc<ScrollBarUpdate>>(
+        _updateScrollBar = std::make_shared<ThrottledFuncTrailing<ScrollBarUpdate>>(
+            Dispatcher(),
+            ScrollBarUpdateInterval,
             [weakThis = get_weak()](const auto& update) {
                 if (auto control{ weakThis.get() })
                 {
@@ -200,9 +202,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                     control->_isInternalScrollBarUpdate = false;
                 }
-            },
-            ScrollBarUpdateInterval,
-            Dispatcher());
+            });
 
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
