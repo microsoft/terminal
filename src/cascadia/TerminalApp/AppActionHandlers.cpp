@@ -790,4 +790,11 @@ namespace winrt::TerminalApp::implementation
         // if it wasn't bound at all.
         args.Handled(false);
     }
+
+    void TerminalPage::_HandleMinimizeToTray(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        _MinimizeToTrayRequestedHandlers(*this, nullptr);
+        args.Handled(true);
+    }
 }

@@ -77,7 +77,7 @@ AppHost::AppHost() noexcept :
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
-    _window->NotifyIconPressed({ this, &AppHost::_TrayIconPressed });
+    _window->NotifyTrayIconPressed({ this, &AppHost::_HandleTrayIconPressed });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
 
@@ -267,6 +267,7 @@ void AppHost::Initialize()
     _logic.RenameWindowRequested({ this, &AppHost::_RenameWindowRequested });
     _logic.SettingsChanged({ this, &AppHost::_HandleSettingsChanged });
     _logic.IsQuakeWindowChanged({ this, &AppHost::_IsQuakeWindowChanged });
+    _logic.MinimizeToTrayRequested({ this, &AppHost::_MinimizeToTrayRequested });
 
     _window->UpdateTitle(_logic.Title());
 
@@ -957,7 +958,7 @@ void AppHost::_UpdateTrayIcon()
     }
 }
 
-void AppHost::_TrayIconPressed()
+void AppHost::_HandleTrayIconPressed()
 {
     // No name provided means show the MRU window.
     Remoting::SummonWindowSelectionArgs args{};
@@ -970,4 +971,10 @@ void AppHost::_TrayIconPressed()
     args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToCurrent);
 
     _windowManager.SummonWindow(args);
+}
+
+void AppHost::_MinimizeToTrayRequested(const winrt::Windows::Foundation::IInspectable sender,
+                                       const winrt::Windows::Foundation::IInspectable args)
+{
+
 }
