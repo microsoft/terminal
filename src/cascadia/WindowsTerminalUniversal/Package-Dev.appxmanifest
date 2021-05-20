@@ -1,46 +1,46 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 
-<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" 
-         xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" 
-         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" 
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+         xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
+         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
          IgnorableNamespaces="uap mp">
-         
+
   <Identity
     Name="WindowsTerminalUniversalDev"
     Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
     Version="0.0.1.0" />
   <mp:PhoneIdentity PhoneProductId="7fb1e1dc-944a-46c9-b7ec-3626d73c6580" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
-    
+
   <Properties>
     <DisplayName>ms-resource:AppNameDev</DisplayName>
     <PublisherDisplayName>A Lone Developer</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
-  
+
   <Dependencies>
-    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.18362.0" MaxVersionTested="10.0.18362.0" />
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.18362.0" MaxVersionTested="10.0.19041.0" />
   </Dependencies>
-  
+
   <Resources>
     <Resource Language="x-generate" />
   </Resources>
-  
+
   <Applications>
-    <Application Id="App" 
-      Executable="$targetnametoken$.exe" 
+    <Application Id="App"
+      Executable="$targetnametoken$.exe"
       EntryPoint="WindowsTerminalUniversal.App">
-      <uap:VisualElements 
-        DisplayName="ms-resource:AppNameDev" 
+      <uap:VisualElements
+        DisplayName="ms-resource:AppNameDev"
         Description="ms-resource:AppDescriptionDev"
-        Square150x150Logo="Images\Square150x150Logo.png" 
-        Square44x44Logo="Images\Square44x44Logo.png" 
+        Square150x150Logo="Images\Square150x150Logo.png"
+        Square44x44Logo="Images\Square44x44Logo.png"
         BackgroundColor="transparent">
         <uap:SplashScreen Image="Images\SplashScreen.png" />
         <uap:DefaultTile/>
       </uap:VisualElements>
     </Application>
   </Applications>
-  
+
   <Capabilities>
     <Capability Name="internetClient" />
     <Capability Name="privateNetworkClientServer"/>

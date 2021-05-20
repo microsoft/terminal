@@ -22,7 +22,7 @@ Param(
     [Parameter(HelpMessage="Path to makeappx.exe")]
     [ValidateScript({Test-Path $_ -Type Leaf})]
     [string]
-    $MakeAppxPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x86\MakeAppx.exe"
+    $MakeAppxPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x86\MakeAppx.exe"
 )
 
 If ($null -Eq (Get-Item $MakeAppxPath -EA:SilentlyContinue)) {
