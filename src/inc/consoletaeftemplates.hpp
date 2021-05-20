@@ -569,36 +569,58 @@ namespace WEX::TestExecution
     };
 
     template<>
+    class VerifyOutputTraits<std::string_view>
+    {
+    public:
+        static WEX::Common::NoThrowString ToString(const std::string_view& view)
+        {
+            if (view.empty())
+            {
+                return L"<empty>";
+            }
+
+            WEX::Common::NoThrowString s;
+            s.AppendFormat(L"%.*hs", gsl::narrow_cast<unsigned int>(view.size()), view.data());
+            return s;
+        }
+    };
+
+    template<>
     class VerifyOutputTraits<std::wstring_view>
     {
     public:
         static WEX::Common::NoThrowString ToString(const std::wstring_view& view)
         {
+            if (view.empty())
+            {
+                return L"<empty>";
+            }
+
             return WEX::Common::NoThrowString(view.data(), gsl::narrow<int>(view.size()));
         }
     };
 
-    template<>
-    class VerifyCompareTraits<std::wstring_view, std::wstring_view>
+    template<typename Elem>
+    class VerifyCompareTraits<std::basic_string_view<Elem>, std::basic_string_view<Elem>>
     {
     public:
-        static bool AreEqual(const std::wstring_view& expected, const std::wstring_view& actual)
+        static bool AreEqual(const std::basic_string_view<Elem>& expected, const std::basic_string_view<Elem>& actual)
         {
             return expected == actual;
         }
 
-        static bool AreSame(const std::wstring_view& expected, const std::wstring_view& actual)
+        static bool AreSame(const std::basic_string_view<Elem>& expected, const std::basic_string_view<Elem>& actual)
         {
             return expected.data() == actual.data();
         }
 
-        static bool IsLessThan(const std::wstring_view&, const std::wstring_view&) = delete;
+        static bool IsLessThan(const std::basic_string_view<Elem>&, const std::basic_string_view<Elem>&) = delete;
 
-        static bool IsGreaterThan(const std::wstring_view&, const std::wstring_view&) = delete;
+        static bool IsGreaterThan(const std::basic_string_view<Elem>&, const std::basic_string_view<Elem>&) = delete;
 
-        static bool IsNull(const std::wstring_view& object)
+        static bool IsNull(const std::basic_string_view<Elem>& object)
         {
-            return object.size() == 0;
+            return object.empty();
         }
     };
 }

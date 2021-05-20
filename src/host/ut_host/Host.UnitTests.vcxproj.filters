@@ -111,6 +111,9 @@
     <ClCompile Include="ObjectTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ConptyOutputTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="UnicodeLiteral.hpp">

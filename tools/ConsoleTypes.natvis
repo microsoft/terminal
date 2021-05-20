@@ -22,10 +22,6 @@
         </Expand>
     </Type>
 
-    <Type Name="TextAttributeRun">
-        <DisplayString>Length={_cchLength} Attr={_attributes}</DisplayString>
-    </Type>
-
     <Type Name="Microsoft::Console::Types::Viewport">
         <!-- Can't call functions in here -->
         <DisplayString>{{LT({_sr.Left}, {_sr.Top}) RB({_sr.Right}, {_sr.Bottom}) [{_sr.Right-_sr.Left+1} x { _sr.Bottom-_sr.Top+1}]}}</DisplayString>
@@ -50,9 +46,8 @@
     </Type>
 
     <Type Name="ATTR_ROW">
-        <DisplayString>{{ size={_cchRowWidth} }}</DisplayString>
         <Expand>
-            <ExpandedItem>_list</ExpandedItem>
+            <ExpandedItem>_data</ExpandedItem>
         </Expand>
     </Type>
 
@@ -96,5 +91,27 @@
 
     <Type Name="til::color">
       <DisplayString>{{RGB: {(int)r,d}, {(int)g,d}, {(int)b,d}; α: {(int)a,d}}}</DisplayString>
+    </Type>
+
+    <Type Name="til::rle&lt;*&gt;">
+        <DisplayString>{{Size: {_total_length,d}}}</DisplayString>
+        <Expand>
+            <Item Name="[size]">_total_length</Item>
+            <ExpandedItem>_runs</ExpandedItem>
+        </Expand>
+    </Type>
+
+    <Type Name="til::details::rle_const_iterator&lt;*&gt;">
+        <DisplayString>{{run of {_it->first,d} for {_it->second,d} at {_usage,d}}}</DisplayString>
+    </Type>
+
+    <Type Name="boost::container::small_vector&lt;*&gt;">
+        <Expand>
+            <Item Name="[size]">m_holder.m_size</Item>
+            <ArrayItems>
+                <Size>m_holder.m_size</Size>
+                <ValuePointer>m_holder.m_start</ValuePointer>
+            </ArrayItems>
+        </Expand>
     </Type>
 </AutoVisualizer>
