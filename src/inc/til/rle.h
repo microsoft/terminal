@@ -77,15 +77,25 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             rle_iterator& operator+=(difference_type move) noexcept
             {
+                // Splitting our function into a forward and backward move
+                // makes implementing the arithmetic quite a bit simpler.
                 if (move >= 0)
                 {
                     while (move > 0)
                     {
+                        // If we have a run like this:
+                        //   1 1 1|2 2 2|3 3 3
+                        //           ^
+                        // And this iterator points to ^, then space will be 2,
+                        // as that's the number of times this iterator would continue
+                        // yielding the number "2", if we were using operator++().
                         const auto space = static_cast<difference_type>(_it->length - _pos);
 
-                        if (space > move)
+                        if (move < space)
                         {
-                            _pos += static_cast<size_type>(move);
+                            // At this point: move <= std::numeric_limits<size_type>::max().
+                            // --> the narrowing is safe.
+                            _pos += gsl::narrow_cast<size_type>(move);
                             break;
                         }
 
@@ -100,16 +110,30 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                     while (move > 0)
                     {
+                        // If we have a run like this:
+                        //   1 1 1|2 2 2|3 3 3
+                        //           ^
+                        // And this iterator points to ^, then space will be 1,
+                        // as that's the number of times this iterator would continue
+                        // yielding the number "2", if we were using operator--().
                         const auto space = static_cast<difference_type>(_pos);
 
-                        if (space >= move)
+                        if (move <= space)
                         {
-                            _pos -= static_cast<size_type>(move);
+                            // At this point: move <= std::numeric_limits<size_type>::max()
+                            // --> the narrowing is safe.
+                            _pos -= gsl::narrow_cast<size_type>(move);
                             break;
                         }
 
-                        move -= _pos + 1;
+                        // When moving backwards we want to move to the last item
+                        // in the previous run (that is: _pos == length - 1).
+                        // --> Don't just move to the beginning of this run (-= _pos),
+                        //     but actually one item further (-= 1).
+                        move -= static_cast<difference_type>(_pos) + 1;
                         --_it;
+                        // _pos is supposed to be in the range [0, _it->length).
+                        // --> The last position in the previous run is length - 1;
                         _pos = _it->length - 1;
                     }
                 }
@@ -136,20 +160,36 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             [[nodiscard]] difference_type operator-(const rle_iterator& right) const noexcept
             {
-                difference_type accumulation = 0;
+                // If we figure out which of the two iterators is "lower" (nearer to begin()) and
+                // "upper" (nearer to end()), we can simplify the way we think about this algorithm:
+                // The distance equals the length of all runs between lower and upper,
+                // excluding the positions of the lower and upper iterator.
+                //
+                // For instance:
+                //   1 1 1|2 2 2 2|3 3|4 4 4
+                //       ^               ^
+                //     lower           upper
+                //   _pos == 2       _pos == 1
+                //
+                // The total distance equals the total length all runs that are covered by
+                // lower up until (but not including) upper (here: 9), minus the number of
+                // items not covered by lower (here: 2, the same as _pos), plus the ones
+                // covered by upper, excluding itself (here: 1, the same as _pos).
+
                 const auto negative = *this < right;
                 const auto& lower = negative ? *this : right;
                 const auto& upper = negative ? right : *this;
+                difference_type distance = 0;
 
                 for (auto it = lower._it; it < upper._it; ++it)
                 {
-                    accumulation += it->length;
+                    distance += it->length;
                 }
 
-                accumulation -= lower._pos;
-                accumulation += upper._pos;
+                distance -= lower._pos;
+                distance += upper._pos;
 
-                return negative ? -accumulation : accumulation;
+                return negative ? -distance : distance;
             }
 
             [[nodiscard]] reference operator[](const difference_type offset) const noexcept
