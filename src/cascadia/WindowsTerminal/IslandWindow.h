@@ -51,6 +51,7 @@ public:
     WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
     WINRT_CALLBACK(WindowActivated, winrt::delegate<void()>);
     WINRT_CALLBACK(HotkeyPressed, winrt::delegate<void(long)>);
+    WINRT_CALLBACK(NotifyIconPressed, winrt::delegate<void()>);
 
 protected:
     void ForceResize()

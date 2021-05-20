@@ -77,6 +77,7 @@ AppHost::AppHost() noexcept :
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
+    _window->NotifyIconPressed({ this, &AppHost::_NotifyIconPressed });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
 
@@ -916,4 +917,23 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
                                     const winrt::Windows::Foundation::IInspectable&)
 {
     _window->IsQuakeWindow(_logic.IsQuakeWindow());
+}
+
+void AppHost::_NotifyIconPressed()
+{
+    // No name provided means show the MRU window.
+    Remoting::SummonWindowSelectionArgs args{};
+
+    // For now, just show the window where it originally was.
+    args.OnCurrentDesktop(true);
+    args.SummonBehavior().MoveToCurrentDesktop(false);
+    args.SummonBehavior().ToggleVisibility(false);
+    args.SummonBehavior().DropdownDuration(0);
+    args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToCurrent);
+
+    _windowManager.SummonWindow(args);
+    if (args.FoundMatch())
+    {
+        // Excellent, the window was found. We have nothing else to do here.
+    }
 }

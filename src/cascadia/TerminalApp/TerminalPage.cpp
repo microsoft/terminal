@@ -59,7 +59,30 @@ namespace winrt::TerminalApp::implementation
     HRESULT TerminalPage::Initialize(HWND hwnd)
     {
         _hostingHwnd = hwnd;
+
+        TestNotifyIconFunction();
+
         return S_OK;
+    }
+
+    void TerminalPage::TestNotifyIconFunction()
+    {
+        if (_hostingHwnd)
+        {
+            NOTIFYICONDATA nid{};
+
+            nid.hWnd = _hostingHwnd.value();
+            nid.uID = 1;
+            nid.uCallbackMessage = WM_APP + 1;
+            StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), L"Windows Terminal");
+            nid.uFlags = NIF_MESSAGE | NIF_SHOWTIP | NIF_TIP;
+
+            // Add the icon to the tray
+            Shell_NotifyIcon(NIM_ADD, &nid);
+
+            nid.uVersion = NOTIFYICON_VERSION_4;
+            Shell_NotifyIcon(NIM_SETVERSION, &nid);
+        }
     }
 
     // Function Description:

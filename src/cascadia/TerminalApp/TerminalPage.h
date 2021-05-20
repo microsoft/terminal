@@ -341,6 +341,8 @@ namespace winrt::TerminalApp::implementation
 
         void _SetFocusMode(const bool inFocusMode);
 
+        void TestNotifyIconFunction();
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
 #define ON_ALL_ACTIONS(action) DECLARE_ACTION_HANDLER(action);
