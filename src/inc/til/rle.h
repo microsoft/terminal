@@ -22,10 +22,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             using size_type = S;
             using difference_type = typename ParentIt::difference_type;
 
-            // TODO: Enable checked iterators for _ITERATOR_DEBUG_LEVEL != 0.
+            // TODO GH#10135: Enable checked iterators for _ITERATOR_DEBUG_LEVEL != 0.
             explicit rle_iterator(ParentIt&& it) noexcept :
                 _it{ std::forward<ParentIt>(it) },
-                _usage{ 1 }
+                _pos{ 0 }
             {
             }
 
@@ -41,103 +41,79 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             rle_iterator& operator++() noexcept
             {
-                operator+=(1);
+                ++_pos;
+                if (_pos == _it->length)
+                {
+                    ++_it;
+                    _pos = 0;
+                }
                 return *this;
             }
 
             rle_iterator operator++(int) noexcept
             {
-                rle_iterator tmp = *this;
-                operator+=(1);
+                auto tmp = *this;
+                ++tmp;
                 return tmp;
             }
 
             rle_iterator& operator--() noexcept
             {
-                operator-=(1);
+                if (_pos == 0)
+                {
+                    --_it;
+                    _pos = _it->length;
+                }
+                --_pos;
                 return *this;
             }
 
             rle_iterator operator--(int) noexcept
             {
-                rle_iterator tmp = *this;
-                operator-=(1);
+                auto tmp = *this;
+                --tmp;
                 return tmp;
             }
 
             rle_iterator& operator+=(difference_type move) noexcept
             {
-                if (move >= 0) // positive direction
+                if (move >= 0)
                 {
-                    // While we still need to move...
                     while (move > 0)
                     {
-                        // Check how much space we have left on this run.
-                        // A run that is 6 long (_it->length) and
-                        // we have addressed the 4th position (_usage, starts at 1).
-                        // Then there are 2 left.
-                        const auto space = static_cast<difference_type>(_it->length - _usage);
+                        const auto space = static_cast<difference_type>(_it->length - _pos);
 
-                        // If we have enough space to move...
-                        if (space >= move)
+                        if (space > move)
                         {
-                            // Move the storage forward the requested distance.
-                            _usage += gsl::narrow_cast<decltype(_usage)>(move);
-                            move = 0;
+                            _pos += static_cast<size_type>(move);
+                            break;
                         }
-                        // If we do NOT have enough space.
-                        else
-                        {
-                            // Reduce the requested distance by the remaining space
-                            // to count "burning out" this run.
-                            // + 1 more for jumping to the next item.
-                            move -= space + 1;
 
-                            // Advance the underlying iterator.
-                            ++_it;
-
-                            // Signify we're on the first position.
-                            _usage = 1;
-                        }
+                        move -= space;
+                        ++_it;
+                        _pos = 0;
                     }
                 }
-                else // negative direction
+                else
                 {
-                    // Flip the sign to make first just the magnitude since this
-                    // branch is already the direction.
                     move = -move;
 
-                    // While we still need to move...
                     while (move > 0)
                     {
-                        // Check how much space we have used on this run.
-                        // A run that is 6 long (_it->length) and
-                        // we have addressed the 4th position (_usage, starts at 1).
-                        // We can move to the 1st position, or 3 to the left.
-                        const auto space = static_cast<difference_type>(_usage - 1);
+                        const auto space = static_cast<difference_type>(_pos);
 
-                        // If we have enough space to move...
                         if (space >= move)
                         {
-                            // Move the storage forward the requested distance.
-                            _usage -= gsl::narrow_cast<decltype(_usage)>(move);
-                            move = 0;
+                            _pos -= static_cast<size_type>(move);
+                            break;
                         }
-                        // If we do NOT have enough space.
-                        else
-                        {
-                            // Reduce the requested distance by the total usage
-                            // to count "burning out" this run.
-                            move -= _usage;
 
-                            // Advance the underlying iterator.
-                            --_it;
-
-                            // Signify we're on the last position.
-                            _usage = _it->length;
-                        }
+                        move -= _pos + 1;
+                        --_it;
+                        _pos = _it->length - 1;
                     }
                 }
+
                 return *this;
             }
 
@@ -160,44 +136,20 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             [[nodiscard]] difference_type operator-(const rle_iterator& right) const noexcept
             {
-                // Hold the accumulation.
                 difference_type accumulation = 0;
+                const auto negative = *this < right;
+                const auto& lower = negative ? *this : right;
+                const auto& upper = negative ? right : *this;
 
-                // Make ourselves a copy of the right side. We'll
-                auto tmp = right;
-
-                // While we're pointing to a run that is RIGHT of tmp...
-                while (_it > tmp._it)
+                for (auto it = lower._it; it < upper._it; ++it)
                 {
-                    // Add all remaining space in tmp to the accumulation.
-                    // + 1 more for jumping to the next item.
-                    accumulation += tmp._it->length - tmp._usage + 1;
-
-                    // Move tmp's iterator rightward.
-                    ++tmp._it;
-
-                    // Set first to the first position in the run.
-                    tmp._usage = 1;
+                    accumulation += it->length;
                 }
 
-                // While we're pointing to a run that is LEFT of tmp...
-                while (_it < tmp._it)
-                {
-                    // Subtract all used space in tmp from the accumulation.
-                    accumulation -= _usage;
+                accumulation -= lower._pos;
+                accumulation += upper._pos;
 
-                    // Move tmp's iterator leftward.
-                    --tmp._it;
-
-                    // Set first to the last position in the run.
-                    tmp._usage = tmp._it->length;
-                }
-
-                // Now both iterators should be at the same position.
-                // Just accumulate the difference between their usages.
-                accumulation += _usage - tmp._usage;
-
-                return accumulation;
+                return negative ? -accumulation : accumulation;
             }
 
             [[nodiscard]] reference operator[](const difference_type offset) const noexcept
@@ -207,8 +159,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             [[nodiscard]] bool operator==(const rle_iterator& right) const noexcept
             {
-                // TODO: Optional iterator debug
-                return _it == right._it && _usage == right._usage;
+                return _it == right._it && _pos == right._pos;
             }
 
             [[nodiscard]] bool operator!=(const rle_iterator& right) const noexcept
@@ -218,8 +169,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             [[nodiscard]] bool operator<(const rle_iterator& right) const noexcept
             {
-                // TODO: Optional iterator debug
-                return _it < right._it || (_it == right._it && _usage < right._usage);
+                return _it < right._it || (_it == right._it && _pos < right._pos);
             }
 
             [[nodiscard]] bool operator>(const rle_iterator& right) const noexcept
@@ -239,7 +189,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         private:
             ParentIt _it;
-            size_type _usage;
+            size_type _pos;
         };
     } // namespace details
 
@@ -427,6 +377,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return it->value;
         }
 
+        // Returns the range [start_index, end_index) as a new vector.
+        // It works just like std::string::substr(), but with absolute indices.
         [[nodiscard]] basic_rle slice(size_type start_index, size_type end_index) const noexcept
         {
             if (end_index > _total_length)
@@ -457,7 +409,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return { std::move(slice), static_cast<size_type>(end_index - start_index) };
         }
 
-        // Set the range [start_index, end_index) to the given value.
+        // Replace the range [start_index, end_index) with the given value.
+        // If end_index is larger than size() it's set to size().
+        // start_index must be smaller or equal to end_index.
         void replace(size_type start_index, size_type end_index, const value_type& value)
         {
             _check_indices(start_index, end_index);
@@ -467,20 +421,23 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // Replace the range [start_index, end_index) with the given run.
-        // NOTE: This can change the size/length of the vector.
+        // If end_index is larger than size() it's set to size().
+        // start_index must be smaller or equal to end_index.
         void replace(size_type start_index, size_type end_index, const rle_type& replacement)
         {
             replace(start_index, end_index, { &replacement, 1 });
         }
 
+        // Replace the range [start_index, end_index) with replacements.
+        // If end_index is larger than size() it's set to size().
+        // start_index must be smaller or equal to end_index.
         void replace(size_type start_index, size_type end_index, const gsl::span<const rle_type> replacements)
         {
             _check_indices(start_index, end_index);
             _replace_unchecked(start_index, end_index, replacements);
         }
 
-        // Replaces every value seen in the run with a new one
-        // Does not change the length or position of the values.
+        // Replaces every instance of old_value in this vector with new_value.
         void replace_values(const value_type& old_value, const value_type& new_value)
         {
             for (auto& run : _runs)
@@ -853,6 +810,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             //
             //
 
+            // TODO GH#10135: Ensure replacements contains no runs with .length == 0.
+
             rle_scanner scanner{ _runs.begin(), _runs.end() };
             auto [begin, begin_pos] = scanner.scan(start_index);
             auto [end, end_pos] = scanner.scan(end_index);
@@ -864,7 +823,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // and will happily access replacements.front()/.back() for instance.
             // Otherwise the logic within this if condition is identical to the rest of this function.
             //
-            // TODO:
+            // NOTE:
             //   Optimally the remaining code in this method should be made compatible with empty replacements.
             //   Especially since this logic is extremely similar to the one below for non-empty replacements.
             if (replacements.empty())

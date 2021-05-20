@@ -227,10 +227,10 @@ class RunLengthEncodingTests
         VERIFY_ARE_EQUAL(expected_full, rle1);
         VERIFY_ARE_EQUAL(expected_full, rle2);
 
-        // prepare rle1 for the upcoming move
+        // make sure we can detect whether the upcoming move failed
+        rle1 = { { { 1, 1 } } };
 
         // move
-        rle1 = { { { 1, 1 } } };
         rle1 = std::move(rle2);
         VERIFY_ARE_EQUAL(expected_full, rle1);
     }
@@ -412,18 +412,12 @@ class RunLengthEncodingTests
         for (const auto& test_case : test_cases)
         {
             rle_vector rle{ rle_encode(test_case.source) };
-
             rle.replace_values(test_case.old_value, test_case.new_value);
 
-            try
-            {
-                VERIFY_ARE_EQUAL(test_case.expected, rle);
-            }
-            catch (...)
-            {
-                // I couldn't figure out how to attach additional info
-                // to a failed assertion so I'm doing it this way...
-                Log::Comment(NoThrowString().Format(
+            VERIFY_ARE_EQUAL(
+                test_case.expected,
+                rle,
+                NoThrowString().Format(
                     L"test case: %d\nsource:    %hs\nold_value: %u\nnew_value: %u\nexpected:  %hs\nactual:    %s",
                     idx,
                     test_case.source.data(),
@@ -431,9 +425,6 @@ class RunLengthEncodingTests
                     test_case.new_value,
                     test_case.expected.data(),
                     rle.to_string().c_str()));
-                throw;
-            }
-
             ++idx;
         }
     }
@@ -478,9 +469,12 @@ class RunLengthEncodingTests
 
     TEST_METHOD(Iterators)
     {
+        using difference_type = rle_vector::const_iterator::difference_type;
+
         constexpr std::string_view expected{ "133211155" };
         rle_vector rle{ rle_encode(expected) };
 
+        // linear forward iteration (the most common use case)
         {
             std::string actual;
             actual.reserve(expected.size());
@@ -493,24 +487,118 @@ class RunLengthEncodingTests
             VERIFY_ARE_EQUAL(expected, actual);
         }
 
+        // linear backward iteration
+        {
+            std::string reverse_expectation{ expected };
+            std::reverse(reverse_expectation.begin(), reverse_expectation.end());
+
+            std::string actual;
+            actual.reserve(reverse_expectation.size());
+
+            for (auto it = rle.rbegin(); it != rle.rend(); ++it)
+            {
+                actual.push_back(static_cast<char>(*it + '0'));
+            }
+
+            VERIFY_ARE_EQUAL(reverse_expectation, actual);
+        }
+
+        // random forward iteration
         {
             auto it = rle.begin();
             const auto end = rle.end();
 
+            // 133211155
+            // ^
             it += 2;
             VERIFY_ARE_EQUAL(3u, *it);
 
+            // 133211155
+            //    ^
             it += 1;
             VERIFY_ARE_EQUAL(2u, *it);
 
-            it += 3;
+            // 133211155
+            //     ^
+            it += 1;
             VERIFY_ARE_EQUAL(1u, *it);
 
+            // 133211155
+            //       ^
+            it += 2;
+            VERIFY_ARE_EQUAL(1u, *it);
+
+            // 133211155
+            //         ^
             it += 2;
             VERIFY_ARE_EQUAL(5u, *it);
 
+            // 133211155
+            //          ^
             ++it;
             VERIFY_ARE_EQUAL(end, it);
+        }
+
+        // random backward iteration
+        {
+            auto it = rle.end();
+
+            // 133211155
+            //         ^
+            --it;
+            VERIFY_ARE_EQUAL(5u, *it);
+
+            // 133211155
+            //       ^
+            it -= 2;
+            VERIFY_ARE_EQUAL(1u, *it);
+
+            // 133211155
+            //     ^
+            it -= 2;
+            VERIFY_ARE_EQUAL(1u, *it);
+
+            // 133211155
+            //    ^
+            it -= 1;
+            VERIFY_ARE_EQUAL(2u, *it);
+
+            // 133211155
+            // ^
+            it -= 1;
+            VERIFY_ARE_EQUAL(3u, *it);
+        }
+
+        // difference (basic test)
+        {
+            const auto beg = rle.begin();
+            auto it = beg;
+
+            for (size_t i = 0; i <= expected.size(); ++i, ++it)
+            {
+                VERIFY_ARE_EQUAL(static_cast<difference_type>(i), it - beg);
+                VERIFY_ARE_EQUAL(-static_cast<difference_type>(i), beg - it);
+            }
+        }
+
+        // difference (in the middle of the vector)
+        {
+            const auto beg = rle.begin();
+            const auto lower = beg + 2;
+            const auto upper = beg + 5;
+
+            VERIFY_ARE_EQUAL(static_cast<difference_type>(3), upper - lower);
+            VERIFY_ARE_EQUAL(-static_cast<difference_type>(3), lower - upper);
+        }
+
+        // difference (in the middle of a run)
+        {
+            const auto beg = rle.begin();
+            const auto lower = beg + 5;
+            const auto upper = beg + 6;
+
+            VERIFY_ARE_EQUAL(static_cast<difference_type>(1), upper - lower);
+            VERIFY_ARE_EQUAL(-static_cast<difference_type>(1), lower - upper);
         }
     }
 };
