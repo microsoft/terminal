@@ -96,7 +96,9 @@ int wmain(int /*argc*/, wchar_t** /*argv*/)
 
     const auto size = GetConsoleScreenSize(conOut);
 
-    AzureConnection azureConn{ gsl::narrow_cast<uint32_t>(size.Y), gsl::narrow_cast<uint32_t>(size.X) };
+    AzureConnection azureConn{};
+    AzureConnectionSettings settings{ gsl::narrow_cast<uint32_t>(size.Y), gsl::narrow_cast<uint32_t>(size.X) };
+    azureConn.Initialize(settings);
 
     const auto state = RunConnectionToCompletion(azureConn, conOut, conIn);
 
