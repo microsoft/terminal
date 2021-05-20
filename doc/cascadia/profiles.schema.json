@@ -188,6 +188,7 @@
         "duplicateTab",
         "find",
         "findMatch",
+        "focusPane",
         "identifyWindow",
         "identifyWindows",
         "moveFocus",
@@ -798,6 +799,22 @@
         }
       ]
     },
+    "FocusPaneAction": {
+      "description": "Arguments corresponding to a focusPane Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "focusPane" },
+            "id": {
+              "type": "string",
+              "default": "",
+              "description": "The ID of the pane to focus"
+            }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -828,6 +845,7 @@
               { "$ref": "#/definitions/PrevTabAction" },
               { "$ref": "#/definitions/RenameTabAction" },
               { "$ref": "#/definitions/RenameWindowAction" },
+              { "$ref": "#/definitions/FocusPaneAction" },
               { "type": "null" }
             ]
         },
