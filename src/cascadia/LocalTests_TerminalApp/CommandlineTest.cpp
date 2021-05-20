@@ -57,6 +57,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(ParseFocusTabArgs);
         TEST_METHOD(ParseMoveFocusArgs);
         TEST_METHOD(ParseArgumentsWithParsingTerminators);
+        TEST_METHOD(ParseFocusPaneArgs);
 
         TEST_METHOD(ParseNoCommandIsNewTab);
 
@@ -1203,6 +1204,108 @@ namespace TerminalAppLocalTests
             myArgs = actionAndArgs.Args().try_as<MoveFocusArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
             VERIFY_ARE_EQUAL(FocusDirection::Right, myArgs.FocusDirection());
+        }
+    }
+
+    void CommandlineTest::ParseFocusPaneArgs()
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:useShortForm", L"{false, true}")
+        END_TEST_METHOD_PROPERTIES()
+
+        INIT_TEST_PROPERTY(bool, useShortForm, L"If true, use `fp` instead of `focus-pane`");
+        const wchar_t* subcommand = useShortForm ? L"fp" : L"focus-pane";
+
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand };
+            Log::Comment(NoThrowString().Format(
+                L"Just the subcommand, without a target, should fail."));
+
+            _buildCommandlinesExpectFailureHelper(appArgs, 1u, rawCommands);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand, L"left" };
+
+            Log::Comment(NoThrowString().Format(
+                L"focus-pane without a  target should fail."));
+            _buildCommandlinesExpectFailureHelper(appArgs, 1u, rawCommands);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand, L"1" };
+
+            Log::Comment(NoThrowString().Format(
+                L"focus-pane without a target should fail."));
+            _buildCommandlinesExpectFailureHelper(appArgs, 1u, rawCommands);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand, L"--target", L"0" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(2u, appArgs._startupActions.size());
+
+            // The first action is going to always be a new-tab action
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
+
+            auto actionAndArgs = appArgs._startupActions.at(1);
+            VERIFY_ARE_EQUAL(ShortcutAction::FocusPane, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<FocusPaneArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_ARE_EQUAL(0u, myArgs.Id());
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand, L"-t", L"100" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(2u, appArgs._startupActions.size());
+
+            // The first action is going to always be a new-tab action
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
+
+            auto actionAndArgs = appArgs._startupActions.at(1);
+            VERIFY_ARE_EQUAL(ShortcutAction::FocusPane, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<FocusPaneArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_ARE_EQUAL(100u, myArgs.Id());
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand, L"--target", L"-1" };
+            Log::Comment(NoThrowString().Format(
+                L"focus-pane with an invalid target should fail."));
+            _buildCommandlinesExpectFailureHelper(appArgs, 1u, rawCommands);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"move-focus", L"left", L";", subcommand, L"-t", L"1" };
+            _buildCommandlinesHelper(appArgs, 2u, rawCommands);
+
+            VERIFY_ARE_EQUAL(3u, appArgs._startupActions.size());
+
+            // The first action is going to always be a new-tab action
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
+            {
+                auto actionAndArgs = appArgs._startupActions.at(1);
+                VERIFY_ARE_EQUAL(ShortcutAction::MoveFocus, actionAndArgs.Action());
+                VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+                auto myArgs = actionAndArgs.Args().try_as<MoveFocusArgs>();
+                VERIFY_IS_NOT_NULL(myArgs);
+                VERIFY_ARE_EQUAL(FocusDirection::Left, myArgs.FocusDirection());
+            }
+            {
+                auto actionAndArgs = appArgs._startupActions.at(2);
+                VERIFY_ARE_EQUAL(ShortcutAction::FocusPane, actionAndArgs.Action());
+                VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+                auto myArgs = actionAndArgs.Args().try_as<FocusPaneArgs>();
+                VERIFY_IS_NOT_NULL(myArgs);
+                VERIFY_ARE_EQUAL(1u, myArgs.Id());
+            }
         }
     }
 

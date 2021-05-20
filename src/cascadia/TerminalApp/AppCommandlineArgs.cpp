@@ -2,12 +2,10 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "AppLogic.h"
 #include "AppCommandlineArgs.h"
 #include "../types/inc/utils.hpp"
 #include <LibraryResources.h>
 
-using namespace winrt::TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace TerminalApp;
 
@@ -401,8 +399,8 @@ void AppCommandlineArgs::_buildMoveFocusParser()
 }
 
 // Method Description:
-// - Adds the `focus-tab` subcommand and related options to the commandline parser.
-// - Additionally adds the `ft` subcommand, which is just a shortened version of `focus-tab`
+// - Adds the `focus-pane` subcommand and related options to the commandline parser.
+// - Additionally adds the `fp` subcommand, which is just a shortened version of `focus-pane`
 // Arguments:
 // - <none>
 // Return Value:
@@ -413,10 +411,11 @@ void AppCommandlineArgs::_buildFocusPaneParser()
     _focusPaneShort = _app.add_subcommand("fp", RS_A(L"CmdFPDesc"));
 
     auto setupSubcommand = [this](auto* subcommand) {
-        subcommand->add_option("-t,--target",
-                               _focusPaneTarget,
-                               RS_A(L"CmdFocusPaneTargetArgDesc"));
-
+        auto* targetOpt = subcommand->add_option("-t,--target",
+                                                 _focusPaneTarget,
+                                                 RS_A(L"CmdFocusPaneTargetArgDesc"));
+        targetOpt->required();
+        targetOpt->check(CLI::NonNegativeNumber);
         // When ParseCommand is called, if this subcommand was provided, this
         // callback function will be triggered on the same thread. We can be sure
         // that `this` will still be safe - this function just lets us know this
