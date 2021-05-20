@@ -1,0 +1,90 @@
+parameters:
+  dependsOn: ''
+  pgoArtifact: PGO
+  platform: ''
+
+jobs:
+- job: MergePGD
+  dependsOn: ${{ parameters.dependsOn }}
+  pool:
+    vmImage: 'windows-2019'
+  variables:
+    artifactsPath: $(Build.SourcesDirectory)\Artifacts
+    pgoArtifactsPath: $(artifactsPath)\${{ parameters.pgoArtifact }}
+    buildPlatform: ${{ parameters.platform }}
+
+  steps:
+  # The environment variable VCToolsInstallDir isn't defined on lab machines, so we need to retrieve it ourselves.
+  - script: |
+      "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -Latest -requires Microsoft.Component.MSBuild -property InstallationPath > %TEMP%\vsinstalldir.txt
+      set /p _VSINSTALLDIR15=<%TEMP%\vsinstalldir.txt
+      del %TEMP%\vsinstalldir.txt
+      call "%_VSINSTALLDIR15%\Common7\Tools\VsDevCmd.bat"
+      echo VCToolsInstallDir = %VCToolsInstallDir%
+      echo ##vso[task.setvariable variable=VCToolsInstallDir]%VCToolsInstallDir%
+    displayName: 'Retrieve VC tools directory'
+
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      artifactName: ${{ parameters.pgoArtifact }}
+      downloadPath: $(artifactsPath)
+
+  - script: |
+      cd $(buildPlatform)
+      "%VCToolsInstallDir%\bin\hostx64\x64\pgomgr.exe" /merge WindowsTerminal*.pgc WindowsTerminal.pgd
+    displayName: 'Merge Terminal pgc files into pgd'
+    workingDirectory: $(pgoArtifactsPath)
+
+  - script: |
+      cd $(buildPlatform)
+      "%VCToolsInstallDir%\bin\hostx64\x64\pgomgr.exe" /merge OpenConsole*.pgc OpenConsole.pgd
+    displayName: 'Merge OpenConsole pgc files into pgd'
+    workingDirectory: $(pgoArtifactsPath)
+
+  - script: |
+      cd $(buildPlatform)
+      "%VCToolsInstallDir%\bin\hostx64\x64\pgomgr.exe" /merge Microsoft.Terminal.Control*.pgc Microsoft.Terminal.Control.pgd
+    displayName: 'Merge Microsoft.Terminal.Control pgc files into pgd'
+    workingDirectory: $(pgoArtifactsPath)
+
+  - script: |
+      cd $(buildPlatform)
+      "%VCToolsInstallDir%\bin\hostx64\x64\pgomgr.exe" /merge Microsoft.Terminal.Remoting*.pgc Microsoft.Terminal.Remoting.pgd
+    displayName: 'Merge Microsoft.Terminal.Remoting pgc files into pgd'
+    workingDirectory: $(pgoArtifactsPath)
+
+  - script: |
+      cd $(buildPlatform)
+      "%VCToolsInstallDir%\bin\hostx64\x64\pgomgr.exe" /merge Microsoft.Terminal.Settings.Editor*.pgc Microsoft.Terminal.Settings.Editor.pgd
+    displayName: 'Merge Microsoft.Terminal.Settings.Editor pgc files into pgd'
+    workingDirectory: $(pgoArtifactsPath)
+
+  - script: |
+      cd $(buildPlatform)
+      "%VCToolsInstallDir%\bin\hostx64\x64\pgomgr.exe" /merge Microsoft.Terminal.Settings.Model*.pgc Microsoft.Terminal.Settings.Model.pgd
+    displayName: 'Merge Microsoft.Terminal.Settings.Model pgc files into pgd'
+    workingDirectory: $(pgoArtifactsPath)
+
+  - script: |
+      cd $(buildPlatform)
+      "%VCToolsInstallDir%\bin\hostx64\x64\pgomgr.exe" /merge TerminalApp*.pgc TerminalApp.pgd
+    displayName: 'Merge TerminalApp pgc files into pgd'
+    workingDirectory: $(pgoArtifactsPath)
+
+  - script: |
+      cd $(buildPlatform)
+      "%VCToolsInstallDir%\bin\hostx64\x64\pgomgr.exe" /merge TerminalConnection*.pgc TerminalConnection.pgd
+    displayName: 'Merge TerminalConnection pgc files into pgd'
+    workingDirectory: $(pgoArtifactsPath)
+
+  - task: CopyFiles@2
+    displayName: 'Copy merged pgd to artifact staging'
+    inputs:
+      sourceFolder: $(pgoArtifactsPath)
+      contents: '**\$(buildPlatform)\*.pgd'
+      targetFolder: $(Build.ArtifactStagingDirectory)
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: $(Build.ArtifactStagingDirectory)
+      artifactName: ${{ parameters.pgoArtifact }}

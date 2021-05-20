@@ -437,13 +437,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _interactivity.UpdateSettings();
-        if (auto ap{ _automationPeer.get() })
-        {
-            ap.SetControlPadding(Core::Padding{ newMargin.Left,
-                                                newMargin.Top,
-                                                newMargin.Right,
-                                                newMargin.Bottom });
-        }
+        _automationPeer.SetControlPadding(Core::Padding{ newMargin.Left,
+                                                         newMargin.Top,
+                                                         newMargin.Right,
+                                                         newMargin.Bottom });
     }
 
     // Method Description:
@@ -551,9 +548,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_initializedTerminal && !_closing) // only set up the automation peer if we're ready to go live
         {
+            // create a custom automation peer with this code pattern:
+            // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
             const auto& interactivityAutoPeer = _interactivity.OnCreateAutomationPeer();
             auto autoPeer = winrt::make_self<implementation::TermControlAutomationPeer>(this, interactivityAutoPeer);
-            _automationPeer = winrt::weak_ref<Control::TermControlAutomationPeer>(*autoPeer);
+            _automationPeer = *autoPeer;
             return *autoPeer;
         }
         return nullptr;
@@ -1561,10 +1560,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto newSize = e.NewSize();
         _core.SizeChanged(newSize.Width, newSize.Height);
 
-        if (auto ap{ _automationPeer.get() })
-        {
-            ap.UpdateControlBounds();
-        }
+        _automationPeer.UpdateControlBounds();
     }
 
     // Method Description:
@@ -1733,6 +1729,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _core.ReceivedOutput(_coreOutputEventToken);
 
             _RestorePointerCursorHandlers(*this, nullptr);
+
+            // These four throttled functions are triggered by terminal output and interact with the UI.
+            // Since Close() is the point after which we are removed from the UI, but before the destructor
+            // has run, we should disconnect them *right now*. If we don't, they may fire between the
+            // throttle delay (from the final output) and the dtor.
+            _tsfTryRedrawCanvas.reset();
+            _updatePatternLocations.reset();
+            _updateScrollBar.reset();
+            _playWarningBell.reset();
 
             // Disconnect the TSF input control so it doesn't receive EditContext events.
             TSFInputControl().Close();
@@ -2349,6 +2354,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _settings;
     }
 
+    void TermControl::Settings(IControlSettings newSettings)
+    {
+        _settings = newSettings;
+    }
+
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControl::TabColor() noexcept
     {
         // NOTE TO FUTURE READERS: TabColor is down in the Core for the
@@ -2402,7 +2412,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_PointerExitedHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                             Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
     {
-        _core.UpdateHoveredCell(nullptr);
+        _core.ClearHoveredCell();
     }
 
     winrt::fire_and_forget TermControl::_hoveredHyperlinkChanged(IInspectable sender,

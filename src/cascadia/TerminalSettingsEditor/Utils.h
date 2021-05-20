@@ -70,6 +70,27 @@ private:                                                                        
     winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _##name##List;                       \
     winrt::Windows::Foundation::Collections::IMap<enumType, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _##name##Map;
 
+// This macro defines a dependency property for a WinRT class.
+// Use this in your class' header file after declaring it in the idl.
+// Remember to register your dependency property in the respective cpp file.
+#define DEPENDENCY_PROPERTY(type, name)                                  \
+public:                                                                  \
+    static winrt::Windows::UI::Xaml::DependencyProperty name##Property() \
+    {                                                                    \
+        return _##name##Property;                                        \
+    }                                                                    \
+    type name() const                                                    \
+    {                                                                    \
+        return winrt::unbox_value<type>(GetValue(_##name##Property));    \
+    }                                                                    \
+    void name(type const& value)                                         \
+    {                                                                    \
+        SetValue(_##name##Property, winrt::box_value(value));            \
+    }                                                                    \
+                                                                         \
+private:                                                                 \
+    static winrt::Windows::UI::Xaml::DependencyProperty _##name##Property;
+
 namespace winrt::Microsoft::Terminal::Settings
 {
     winrt::hstring GetSelectedItemTag(winrt::Windows::Foundation::IInspectable const& comboBoxAsInspectable);

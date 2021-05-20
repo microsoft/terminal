@@ -22,6 +22,7 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Windows.Foundation.Collections.IObservableVector<Font> CompleteFontList { get; };
         Windows.Foundation.Collections.IObservableVector<Font> MonospaceFontList { get; };
+        Microsoft.Terminal.Settings.Model.TerminalSettings TermSettings { get; };
 
         Boolean CanDeleteProfile { get; };
         Boolean UsingMonospaceFont { get; };

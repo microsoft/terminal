@@ -1,13 +1,4 @@
-AAAAAABBBBBBCCC
-AAAAABBBBBBBCCC
-AAAAABBBBBBCCC
-AAAAABCCCCCCCCC
-AAAAADCCCCCCCCC
 ABANDONFONT
-abcd
-ABCDEFGHIJKLMNO
-ABCG
-abf
 abgr
 abi
 ACCESSTOKEN
@@ -18,10 +9,10 @@ ACIOSS
 ACover
 actctx
 ACTCTXW
-actionmap
 activatable
 ACTIVEBORDER
 ACTIVECAPTION
+adaa
 ADDALIAS
 ADDB
 ADDREF
@@ -45,7 +36,6 @@ ALTF
 ALTNUMPAD
 ALWAYSTIP
 amd
-ansd
 ansicode
 ansicpg
 ANSISYS
@@ -61,7 +51,6 @@ APCs
 api
 APIENTRY
 apiset
-apos
 APPBARDATA
 appconsult
 APPICON
@@ -73,10 +62,6 @@ APPLMODAL
 appmodel
 apps
 APPWINDOW
-appx
-appxbundle
-appxerror
-appxmanifest
 APrep
 apsect
 APSTUDIO
@@ -132,11 +117,8 @@ backstory
 Batang
 baz
 Bazz
-BBBBBCCC
-BBBBCCCCC
 BBDM
 bbwe
-bc
 bcount
 bcrypt
 bcx
@@ -199,6 +181,7 @@ byref
 bytearray
 bytebuffer
 cac
+cacafire
 callee
 cang
 capslock
@@ -257,7 +240,6 @@ Childitem
 chk
 chrono
 CHT
-ci
 Cic
 cjk
 ckuehl
@@ -298,6 +280,8 @@ codepage
 codepath
 codepoint
 codeproject
+coffgroup
+coffgrp
 coinit
 COLLECTIONURI
 colorizing
@@ -350,7 +334,6 @@ conlibk
 conmsgl
 CONNECTINFO
 CONOUT
-conpixels
 conprops
 conpropsp
 conpty
@@ -391,7 +374,7 @@ cout
 CPG
 cpinfo
 CPINFOEX
-cplinfo
+CPLINFO
 cplusplus
 cpp
 CPPCORECHECK
@@ -411,7 +394,7 @@ cref
 crend
 CRLFs
 crloew
-crt
+Crt
 CRTLIBS
 csbi
 csbiex
@@ -454,13 +437,11 @@ CURSORCOLOR
 CURSORSIZE
 CURSORTYPE
 CUU
-cw
 Cwa
 cwch
 cwchar
 cwctype
 cwd
-cx
 cxcy
 CXFRAME
 CXFULLSCREEN
@@ -487,6 +468,7 @@ dai
 DATABLOCK
 DATAVIEW
 DATAW
+datetime
 DBatch
 dbcs
 DBCSCHAR
@@ -601,11 +583,9 @@ devicecode
 devicefamily
 devops
 Dext
-df
 DFactory
 DFF
 DFMT
-dh
 dhandler
 dialogbox
 diffing
@@ -663,7 +643,6 @@ DUNICODE
 DUNIT
 dup'ed
 dvi
-dw
 dwl
 DWLP
 dwm
@@ -676,9 +655,9 @@ dxgidwm
 dxinterop
 dxttbmp
 eachother
+eae
 eaf
 EASTEUROPE
-eb
 ECH
 echokey
 ecount
@@ -692,12 +671,12 @@ edu
 Efast
 EHsc
 EJO
-EK
 ELEMENTNOTAVAILABLE
 elems
 elif
 elseif
 emacs
+emplate
 EMPTYBOX
 enabledelayedexpansion
 endian
@@ -725,7 +704,6 @@ etcoreapp
 ETW
 ETX
 EUDC
-ev
 EVENTID
 eventing
 everytime
@@ -738,7 +716,6 @@ executables
 executionengine
 exemain
 EXETYPE
-exeuwp
 exewin
 exitwin
 expectedinput
@@ -781,6 +758,7 @@ FILESYSPATH
 filesystem
 FILETIME
 FILETYPE
+fileurl
 FILEW
 FILLATTR
 FILLCONSOLEOUTPUT
@@ -847,13 +825,13 @@ fwdecl
 fwe
 fwlink
 GAUSSIAN
-gb
 gci
 gcx
 gcy
 gdi
 gdip
 gdirenderer
+GENPROFILE
 geopol
 GETALIAS
 GETALIASES
@@ -911,7 +889,6 @@ getwriter
 GFEh
 Gfun
 gfx
-gh
 GHIJK
 GHIJKL
 GHIJKLM
@@ -928,7 +905,6 @@ gonce
 Google
 goutput
 GPUs
-Gravell's
 grayscale
 GREENSCROLL
 Grehan
@@ -961,7 +937,6 @@ HBMMENU
 hbmp
 hbr
 hbrush
-hc
 HCmd
 hdc
 hdr
@@ -971,8 +946,8 @@ HEIGHTSCROLL
 hfile
 hfont
 hglobal
-hh
 hhh
+HHmm
 hhook
 hhx
 HIBYTE
@@ -987,7 +962,6 @@ HISTORYNODUP
 HISTORYSIZE
 hittest
 HIWORD
-hk
 HKCU
 hkey
 hkl
@@ -1003,6 +977,7 @@ horiz
 HORZ
 hostable
 hostlib
+Hostx
 HPA
 HPAINTBUFFER
 hpcon
@@ -1033,7 +1008,6 @@ HTRIGHT
 HTTOP
 HTTOPLEFT
 HTTOPRIGHT
-hu
 hungapp
 HVP
 hwheel
@@ -1129,6 +1103,7 @@ INPUTPROCESSORPROFILE
 inputrc
 Inputreadhandledata
 INSERTMODE
+installationpath
 intellisense
 INTERACTIVITYBASE
 INTERCEPTCOPYPASTE
@@ -1211,7 +1186,6 @@ kcub
 kcud
 kcuf
 kcuu
-Kd
 kernelbase
 kernelbasestaging
 KEYBDINPUT
@@ -1226,19 +1200,15 @@ Keymapping
 keyscan
 keystate
 keyup
-KF
 khome
 KILLACTIVE
 KILLFOCUS
 kinda
-KJ
 KLF
 KLMNO
 KLMNOPQRST
 KLMNOPQRSTQQQQQ
-KU
 KVM
-KX
 langid
 LANGUAGELIST
 lasterror
@@ -1276,7 +1246,6 @@ listbox
 listproperties
 listptr
 listptrsize
-lk
 lld
 LLVM
 llx
@@ -1430,6 +1399,7 @@ mkdir
 MMBB
 mmcc
 MMCPL
+MMdd
 mmsystem
 MNC
 MNOPQ
@@ -1495,7 +1465,6 @@ namestream
 nano
 natvis
 nbsp
-nc
 NCCALCSIZE
 NCCREATE
 NCLBUTTONDOWN
@@ -1618,10 +1587,9 @@ numlock
 numpad
 NUMSCROLL
 nupkg
+nuspec
 NVIDIA
 NVR
-Nx
-oa
 OACR
 oauth
 objbase
@@ -1633,8 +1601,6 @@ oemcp
 OEMFONT
 OEMFORMAT
 offboarded
-OI
-Oj
 OLEAUT
 OLECHAR
 onecore
@@ -1647,7 +1613,6 @@ onecoreuuid
 ONECOREWINDOWS
 onehalf
 ONLCR
-Oo
 openbash
 opencode
 opencon
@@ -1659,7 +1624,6 @@ openps
 opensource
 openvt
 openxmlformats
-oq
 ORIGINALFILENAME
 osc
 OSCBG
@@ -1677,7 +1641,6 @@ osign
 oss
 ostream
 ostringstream
-Ou
 ouicompat
 outdir
 outfile
@@ -1686,7 +1649,6 @@ OUTOFCONTEXT
 OUTOFMEMORY
 outout
 Outptr
-Ov
 OVERLAPPEDWINDOW
 OWNDC
 OWNERDRAWFIXED
@@ -1706,7 +1668,6 @@ passthrough
 PATCOPY
 pathcch
 PATTERNID
-pb
 PBOOL
 PBYTE
 pcat
@@ -1760,7 +1721,11 @@ PFNCONSOLECREATEIOTHREAD
 PFONT
 PFONTENUMDATA
 PFS
+pgd
 pgdn
+pgorepro
+pgort
+PGU
 pguid
 pgup
 PHANDLE
@@ -1897,22 +1862,17 @@ PUNICODE
 pushd
 putchar
 putwchar
-pv
 PVOID
-pw
 pwch
 PWCHAR
 PWDDMCONSOLECONTEXT
 PWORD
+pws
 pwsh
 pwstr
 pwsz
-px
-py
 pythonw
-qi
-QJ
-qo
+qos
 QRSTU
 qsort
 queryable
@@ -1994,7 +1954,6 @@ Replymessage
 repositorypath
 rescap
 Resequence
-reserialize
 RESETCONTENT
 resheader
 resizable
@@ -2023,13 +1982,11 @@ rgui
 rgw
 rgwch
 rhs
-ri
 RIGHTALIGN
 RIGHTBUTTON
 riid
 RIPMSG
-Rl
-rmdir
+RIS
 RMENU
 roadmap
 robomac
@@ -2045,7 +2002,6 @@ RTFTo
 Rtl
 RTLREADING
 RTTI
-ru
 ruleset
 runas
 runasradio
@@ -2197,7 +2153,6 @@ SLIST
 slmult
 sln
 slpit
-smalllogo
 SManifest
 SMARTQUOTE
 SMTO
@@ -2211,7 +2166,6 @@ SOURCESDIRECTORY
 SPACEBAR
 spammy
 spand
-splashscreen
 sprintf
 sqlproj
 srand
@@ -2255,7 +2209,6 @@ stgm
 stl
 stoi
 stol
-storelogo
 stoul
 stoutapot
 strikethrough
@@ -2271,6 +2224,7 @@ STX
 stylecop
 SUA
 subcompartment
+subfolder
 subkey
 SUBLANG
 sublicensable
@@ -2288,15 +2242,13 @@ swappable
 SWMR
 SWP
 swprintf
-sx
-sy
 SYMED
 SYNCPAINT
+sys
 syscalls
 SYSCHAR
 SYSCOMMAND
 SYSDEADCHAR
-Sysinternals
 SYSKEYDOWN
 SYSKEYUP
 SYSLINK
@@ -2305,7 +2257,6 @@ sysparams
 sysparamsext
 SYSTEMHAND
 SYSTEMMENU
-sz
 tabview
 TAdd
 taef
@@ -2378,7 +2329,6 @@ textinfo
 TEXTMETRIC
 TEXTMETRICW
 textmode
-tf
 TFCAT
 tfoo
 TFunction
@@ -2393,7 +2343,6 @@ Timeline
 titlebar
 TITLEISLINKNAME
 TJson
-tl
 TLambda
 TLEN
 Tlg
@@ -2445,7 +2394,6 @@ tsf
 TStr
 TSTRFORMAT
 TSub
-tt
 TTBITMAP
 ttf
 TTFONT
@@ -2472,7 +2420,7 @@ uapadmin
 UAX
 ubuntu
 ucd
-UCD
+ucd
 ucdxml
 uch
 UCHAR
@@ -2490,7 +2438,6 @@ uielem
 UIELEMENTENABLEDONLY
 uint
 uintptr
-ul
 ulcch
 ulong
 Unadvise
@@ -2521,7 +2468,7 @@ UNORM
 unparseable
 unpause
 Unregister
-Unregistering
+unregistering
 untests
 untextured
 untimes
@@ -2585,7 +2532,6 @@ vec
 VERCTRL
 versioning
 VERTBAR
-vf
 VFT
 vga
 vgaoem
@@ -2594,7 +2540,6 @@ viewports
 Virt
 VIRTTERM
 Virtualizing
-vk
 vkey
 VKKEYSCAN
 VMs
@@ -2809,9 +2754,7 @@ WUX
 WVerify
 wwaproj
 WWith
-wx
 wxh
-xa
 xact
 xaml
 Xamlmeta
@@ -2831,7 +2774,6 @@ xdy
 XEncoding
 xes
 Xes
-XES
 xff
 XFile
 XFORM
@@ -2842,7 +2784,7 @@ xml
 xmlns
 xor
 xorg
-XOrg
+xorg
 Xpath
 XPosition
 XResource
@@ -2862,7 +2804,6 @@ xutr
 xvalue
 XVIRTUALSCREEN
 XWalk
-xy
 Xzn
 yact
 YAML
@@ -2876,17 +2817,8 @@ YPosition
 YSize
 YSubstantial
 YVIRTUALSCREEN
-Yw
 YWalk
-yx
-YZ
-Zc
 ZCmd
 ZCtrl
-zd
-zh
-ZM
 zsh
-zu
 zxcvbnm
-zy
