@@ -2366,7 +2366,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::BellLightOn()
     {
-        if (!_bellLightTimer)
+        Windows::Foundation::Numerics::float2 zeroSize{ 0, 0 };
+        // If the grid has 0 size or if the bell timer is
+        // already active, do nothing
+        if (RootGrid().ActualSize() != zeroSize && !_bellLightTimer)
         {
             // Start the timer, when the timer ticks we switch off the light
             DispatcherTimer invertTimer;

@@ -172,9 +172,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void CurrentColorScheme(const Model::ColorScheme& val);
 
         // bell style bits
-        bool BellStyleAudible();
-        bool BellStyleWindow();
-        bool BellStyleTaskbar();
+        bool IsBellStyleFlagSet(const uint32_t flag);
+        void SetBellStyleAudible(winrt::Windows::Foundation::IReference<bool> on);
+        void SetBellStyleWindow(winrt::Windows::Foundation::IReference<bool> on);
+        void SetBellStyleTaskbar(winrt::Windows::Foundation::IReference<bool> on);
 
         fire_and_forget BackgroundImage_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         fire_and_forget Commandline_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
@@ -184,7 +185,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void DeleteConfirmation_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void Pivot_SelectionChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void FontFace_SelectionChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& e);
-        void BellStyle_SelectionChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
 
         // CursorShape visibility logic
         bool IsVintageCursor() const;

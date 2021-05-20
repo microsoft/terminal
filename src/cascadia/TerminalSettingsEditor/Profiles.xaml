@@ -770,18 +770,12 @@
                                                 HasSettingValue="{x:Bind State.Profile.HasBellStyle, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.BellStyleOverrideSource, Mode=OneWay}">
                             <StackPanel>
-                                <CheckBox x:Name="AudibleCheckBox"
-                                          x:Uid="Profile_BellStyleAudible"
-                                          Click="BellStyle_SelectionChanged"
-                                          IsChecked="{x:Bind BellStyleAudible, Mode=OneWay}" />
-                                <CheckBox x:Name="WindowCheckBox"
-                                          x:Uid="Profile_BellStyleWindow"
-                                          Click="BellStyle_SelectionChanged"
-                                          IsChecked="{x:Bind BellStyleWindow, Mode=OneWay}" />
-                                <CheckBox x:Name="TaskbarCheckBox"
-                                          x:Uid="Profile_BellStyleTaskbar"
-                                          Click="BellStyle_SelectionChanged"
-                                          IsChecked="{x:Bind BellStyleTaskbar, Mode=OneWay}" />
+                                <CheckBox x:Uid="Profile_BellStyleAudible"
+                                          IsChecked="{x:Bind IsBellStyleFlagSet(1), BindBack=SetBellStyleAudible, Mode=TwoWay}" />
+                                <CheckBox x:Uid="Profile_BellStyleWindow"
+                                          IsChecked="{x:Bind IsBellStyleFlagSet(2), BindBack=SetBellStyleWindow, Mode=TwoWay}" />
+                                <CheckBox x:Uid="Profile_BellStyleTaskbar"
+                                          IsChecked="{x:Bind IsBellStyleFlagSet(4), BindBack=SetBellStyleTaskbar, Mode=TwoWay}" />
                             </StackPanel>
                         </local:SettingContainer>
                     </StackPanel>

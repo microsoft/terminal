@@ -100,9 +100,10 @@ namespace Microsoft.Terminal.Settings.Editor
         Profiles();
         ProfilePageNavigationState State { get; };
 
-        Boolean BellStyleAudible { get; };
-        Boolean BellStyleWindow { get; };
-        Boolean BellStyleTaskbar { get; };
+        Boolean IsBellStyleFlagSet(UInt32 flag);
+        void SetBellStyleAudible(Windows.Foundation.IReference<Boolean> on);
+        void SetBellStyleWindow(Windows.Foundation.IReference<Boolean> on);
+        void SetBellStyleTaskbar(Windows.Foundation.IReference<Boolean> on);
 
         IInspectable CurrentCursorShape;
         Boolean IsVintageCursor { get; };

@@ -505,15 +505,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         State().Profile().FontFace(newFontFace.LocalizedName());
     }
 
-    void Profiles::BellStyle_SelectionChanged(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
-    {
-        Model::BellStyle bellStyle{};
-        WI_SetFlagIf(bellStyle, Model::BellStyle::Audible, AudibleCheckBox().IsChecked().GetBoolean());
-        WI_SetFlagIf(bellStyle, Model::BellStyle::Window, WindowCheckBox().IsChecked().GetBoolean());
-        WI_SetFlagIf(bellStyle, Model::BellStyle::Taskbar, TaskbarCheckBox().IsChecked().GetBoolean());
-        State().Profile().BellStyle(bellStyle);
-    }
-
     void Profiles::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::ProfilePageNavigationState>();
@@ -637,19 +628,42 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _State.Profile().ColorSchemeName(val.Name());
     }
 
-    bool Profiles::BellStyleAudible()
+    bool Profiles::IsBellStyleFlagSet(const uint32_t flag)
     {
-        return WI_IsFlagSet(_State.Profile().BellStyle(), Model::BellStyle::Audible);
+        // 'flag' is not a compile time constant, so we cannot
+        // use it directly with WI_IsFlagSet and we have to use this
+        // seemingly redundant switch statement instead
+        switch (static_cast<Model::BellStyle>(flag))
+        {
+        case Model::BellStyle::Audible:
+            return WI_IsFlagSet(_State.Profile().BellStyle(), Model::BellStyle::Audible);
+        case Model::BellStyle::Window:
+            return WI_IsFlagSet(_State.Profile().BellStyle(), Model::BellStyle::Window);
+        case Model::BellStyle::Taskbar:
+            return WI_IsFlagSet(_State.Profile().BellStyle(), Model::BellStyle::Taskbar);
+        }
+        return false;
     }
 
-    bool Profiles::BellStyleWindow()
+    void Profiles::SetBellStyleAudible(winrt::Windows::Foundation::IReference<bool> on)
     {
-        return WI_IsFlagSet(_State.Profile().BellStyle(), Model::BellStyle::Window);
+        auto currentStyle = State().Profile().BellStyle();
+        on.GetBoolean() ? WI_SetFlag(currentStyle, Model::BellStyle::Audible) : WI_ClearFlag(currentStyle, Model::BellStyle::Audible);
+        State().Profile().BellStyle(currentStyle);
     }
 
-    bool Profiles::BellStyleTaskbar()
+    void Profiles::SetBellStyleWindow(winrt::Windows::Foundation::IReference<bool> on)
     {
-        return WI_IsFlagSet(_State.Profile().BellStyle(), Model::BellStyle::Taskbar);
+        auto currentStyle = State().Profile().BellStyle();
+        on.GetBoolean() ? WI_SetFlag(currentStyle, Model::BellStyle::Window) : WI_ClearFlag(currentStyle, Model::BellStyle::Window);
+        State().Profile().BellStyle(currentStyle);
+    }
+
+    void Profiles::SetBellStyleTaskbar(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = State().Profile().BellStyle();
+        on.GetBoolean() ? WI_SetFlag(currentStyle, Model::BellStyle::Taskbar) : WI_ClearFlag(currentStyle, Model::BellStyle::Taskbar);
+        State().Profile().BellStyle(currentStyle);
     }
 
     void Profiles::DeleteConfirmation_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
