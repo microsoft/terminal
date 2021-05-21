@@ -400,4 +400,35 @@ extern "C" VOID WINAPI ConptyClosePseudoConsole(_In_ HPCON hPC)
     }
 }
 
+// NOTE: This one is not defined in the Windows headers but is
+// necessary for our outside recipient in the Terminal
+// to set up a PTY session in fundamentally the same way as the
+// Creation functions. Using the same HPCON pack enables
+// resizing and closing to "just work."
+
+// Function Description:
+// Packs loose handle information for an inbound ConPTY
+//  session into the same HPCON as a created session.
+extern "C" HRESULT WINAPI ConptyPackPsuedoConsole(_In_ HANDLE hProcess,
+                                                  _In_ HANDLE hRef,
+                                                  _In_ HANDLE hSignal,
+                                                  _Out_ HPCON* phPC)
+{
+    RETURN_HR_IF(E_INVALIDARG, nullptr == phPC);
+    *phPC = nullptr;
+    RETURN_HR_IF(E_INVALIDARG, !_HandleIsValid(hProcess));
+    RETURN_HR_IF(E_INVALIDARG, !_HandleIsValid(hRef));
+    RETURN_HR_IF(E_INVALIDARG, !_HandleIsValid(hSignal));
+
+    PseudoConsole* pPty = (PseudoConsole*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(PseudoConsole));
+    RETURN_IF_NULL_ALLOC(pPty);
+
+    RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), hProcess, GetCurrentProcess(), &pPty->hConPtyProcess, 0, FALSE, DUPLICATE_SAME_ACCESS));
+    RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), hRef, GetCurrentProcess(), &pPty->hPtyReference, 0, FALSE, DUPLICATE_SAME_ACCESS));
+    RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), hSignal, GetCurrentProcess(), &pPty->hSignal, 0, FALSE, DUPLICATE_SAME_ACCESS));
+
+    *phPC = (HPCON)pPty;
+    return S_OK;
+}
+
 #pragma warning(pop)
