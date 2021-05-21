@@ -216,7 +216,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _guid = Utils::CreateGuid();
         }
 
-        THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), hClientProcess, GetCurrentProcess(), &_piClient.hProcess, 0, FALSE, DUPLICATE_SAME_ACCESS));
+        _piClient.hProcess = hClientProcess;
     }
 
     ConptyConnection::ConptyConnection(const hstring& commandline,
