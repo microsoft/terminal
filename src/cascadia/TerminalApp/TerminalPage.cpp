@@ -2071,9 +2071,7 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_SetFocusMode(const bool inFocusMode)
     {
-        // If we're the quake window, we must always be in focus mode.
-        // Prevent leaving focus mode here.
-        const bool newInFocusMode = inFocusMode || IsQuakeWindow();
+        const bool newInFocusMode = inFocusMode;
         if (newInFocusMode != FocusMode())
         {
             _isInFocusMode = newInFocusMode;
