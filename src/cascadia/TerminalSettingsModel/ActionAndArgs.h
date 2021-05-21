@@ -15,6 +15,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static const std::map<std::string_view, ShortcutAction, std::less<>> ActionKeyNamesMap;
         static winrt::com_ptr<ActionAndArgs> FromJson(const Json::Value& json,
                                                       std::vector<SettingsLoadWarnings>& warnings);
+        static Json::Value ToJson(const Model::ActionAndArgs& val);
 
         ActionAndArgs() = default;
         ActionAndArgs(ShortcutAction action, IActionArgs args) :

@@ -411,10 +411,6 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, DetectURLsKey,                  _DetectURLs);
     // clang-format on
 
-    // TODO GH#8100: keymap needs to be serialized here
-    //   For deserialization, we iterate over each action in the Json and interpret it as a keybinding, then as a command.
-    //   Converting this back to JSON is a problem because we have no way to know if a Command and Keybinding come from
-    //     the same entry.
-
+    json[JsonKey(ActionsKey)] = _actionMap->ToJson();
     return json;
 }
