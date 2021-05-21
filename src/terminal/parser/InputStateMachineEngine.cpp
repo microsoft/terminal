@@ -884,7 +884,7 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
                 eventFlags |= DOUBLE_CLICK;
             }
             _lastMouseClickPos = uiPos;
-            _lastMouseClickTime = currentTime;
+            //_lastMouseClickTime = currentTime;
         }
         break;
     case CsiMouseButtonCodes::Right:
