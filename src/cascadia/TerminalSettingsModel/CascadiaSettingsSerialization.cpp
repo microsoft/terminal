@@ -795,6 +795,18 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
     return changedFile;
 }
 
+// Function Description:
+// - Given a json serialization of a profile, this function will determine
+//   whether it is "well-formed". We introduced a bug (GH#9962, fixed in GH#9964)
+//   that would result in one or more nameless, guid-less profiles being emitted
+//   into the user's settings file. Those profiles would show up in the list as
+//   "Default" later.
+static bool _IsValidProfileObject(const Json::Value& profileJson)
+{
+    return profileJson.isMember(&*NameKey.cbegin(), (&*NameKey.cbegin()) + NameKey.size()) || // has a name (can generate a guid)
+           profileJson.isMember(&*GuidKey.cbegin(), (&*GuidKey.cbegin()) + GuidKey.size()); // or has a guid
+}
+
 // Method Description:
 // - Create a new instance of this class from a serialized JsonObject.
 // Arguments:
@@ -837,7 +849,7 @@ void CascadiaSettings::LayerJson(const Json::Value& json)
 
     for (auto profileJson : _GetProfilesJsonObject(json))
     {
-        if (profileJson.isObject())
+        if (profileJson.isObject() && _IsValidProfileObject(profileJson))
         {
             _LayerOrCreateProfile(profileJson);
         }
