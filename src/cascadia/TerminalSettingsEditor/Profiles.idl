@@ -32,6 +32,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean ShowAllFonts;
         Boolean UseCustomStartingDirectory { get; };
         Boolean BackgroundImageSettingsVisible { get; };
+        Guid OriginalProfileGuid { get; };
 
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Name);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, Guid);
