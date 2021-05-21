@@ -16,7 +16,6 @@ CYICON
 dataobject
 dcomp
 DERR
-difftime
 dlldata
 DONTADDTORECENT
 DWORDLONG
