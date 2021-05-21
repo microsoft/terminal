@@ -48,40 +48,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    // Method Description:
-    // - Searches through our list of monospace fonts to determine if the settings model's current font face is a monospace font
-    bool Appearances::UsingMonospaceFont() const noexcept
-    {
-        bool result{ false };
-        const auto currentFont{ Appearance().FontFace() };
-        for (const auto& font : SourceProfile().MonospaceFontList())
-        {
-            if (font.LocalizedName() == currentFont)
-            {
-                result = true;
-            }
-        }
-        return result;
-    }
-
-    // Method Description:
-    // - Determines whether we should show the list of all the fonts, or we should just show monospace fonts
-    bool Appearances::ShowAllFonts() const noexcept
-    {
-        // - _ShowAllFonts is directly bound to the checkbox. So this is the user set value.
-        // - If we are not using a monospace font, show all of the fonts so that the ComboBox is still properly bound
-        return _ShowAllFonts || !UsingMonospaceFont();
-    }
-
-    void Appearances::ShowAllFonts(const bool& value)
-    {
-        if (_ShowAllFonts != value)
-        {
-            _ShowAllFonts = value;
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"ShowAllFonts" });
-        }
-    }
-
     bool AppearanceViewModel::UseDesktopBGImage()
     {
         return BackgroundImagePath() == L"desktopWallpaper";
@@ -165,6 +131,40 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         const auto backgroundImgCheckboxTooltip{ ToolTipService::GetToolTip(UseDesktopImageCheckBox()) };
         Automation::AutomationProperties::SetFullDescription(UseDesktopImageCheckBox(), unbox_value<hstring>(backgroundImgCheckboxTooltip));
+    }
+
+    // Method Description:
+    // - Searches through our list of monospace fonts to determine if the settings model's current font face is a monospace font
+    bool Appearances::UsingMonospaceFont() const noexcept
+    {
+        bool result{ false };
+        const auto currentFont{ Appearance().FontFace() };
+        for (const auto& font : SourceProfile().MonospaceFontList())
+        {
+            if (font.LocalizedName() == currentFont)
+            {
+                result = true;
+            }
+        }
+        return result;
+    }
+
+    // Method Description:
+    // - Determines whether we should show the list of all the fonts, or we should just show monospace fonts
+    bool Appearances::ShowAllFonts() const noexcept
+    {
+        // - _ShowAllFonts is directly bound to the checkbox. So this is the user set value.
+        // - If we are not using a monospace font, show all of the fonts so that the ComboBox is still properly bound
+        return _ShowAllFonts || !UsingMonospaceFont();
+    }
+
+    void Appearances::ShowAllFonts(const bool& value)
+    {
+        if (_ShowAllFonts != value)
+        {
+            _ShowAllFonts = value;
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"ShowAllFonts" });
+        }
     }
 
     IInspectable Appearances::CurrentFontFace() const

@@ -240,10 +240,10 @@
                         <Border x:Name="ControlPreview"
                                 Width="350"
                                 Height="160"
-                                BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
-                                BorderThickness="1"
+                                Margin="0,0,0,12"
                                 HorizontalAlignment="Left"
-                                Margin="0,0,0,12" />
+                                BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
+                                BorderThickness="1" />
 
                         <local:Appearances Appearance="{x:Bind State.Profile.DefaultAppearance, Mode=OneWay}"
                                            SourceProfile="{x:Bind State.Profile, Mode=OneWay}" />
