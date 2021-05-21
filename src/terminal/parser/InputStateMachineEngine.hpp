@@ -170,9 +170,9 @@ namespace Microsoft::Console::VirtualTerminal
         std::function<bool()> _pfnFlushToInputQueue;
         bool _lookingForDSR;
         DWORD _mouseButtonState = 0;
-        COORD _lastMouseClickPos{ 0, 0 };
-        uint64_t _doubleClickTime;
-        std::time_t _lastMouseClickTime;
+        std::chrono::milliseconds _doubleClickTime;
+        std::optional<COORD> _lastMouseClickPos{};
+        std::optional<std::chrono::steady_clock::time_point> _lastMouseClickTime{};
 
         DWORD _GetCursorKeysModifierState(const VTParameters parameters, const VTID id) noexcept;
         DWORD _GetGenericKeysModifierState(const VTParameters parameters) noexcept;

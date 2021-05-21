@@ -100,8 +100,7 @@ InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispat
     _pDispatch(std::move(pDispatch)),
     _lookingForDSR(lookingForDSR),
     _pfnFlushToInputQueue(nullptr),
-    _doubleClickTime(GetDoubleClickTime()),
-    _lastMouseClickTime(time(nullptr))
+    _doubleClickTime(std::chrono::milliseconds(GetDoubleClickTime()))
 {
     THROW_HR_IF_NULL(E_INVALIDARG, _pDispatch.get());
 }
@@ -865,7 +864,7 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
     // This retrieves the 2 MSBs and concatenates them to the 2 LSBs to create BBBB in binary
     // This represents which button had a change in state
     const auto buttonID = (sgrEncoding & 0x3) | ((sgrEncoding & 0xC0) >> 4);
-    const auto currentTime = time(nullptr);
+    const auto currentTime = std::chrono::steady_clock::now();
     // Step 1: Translate which button was affected
     // NOTE: if scrolled, having buttonFlag = 0 means
     //       we don't actually update the buttonState
@@ -878,9 +877,9 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
         // and also update our last clicked position and time
         if (id == CsiActionCodes::MouseDown)
         {
-            // difftime returns in seconds but double click time returns in milliseconds
-            if (til::point(uiPos) == _lastMouseClickPos &&
-                (difftime(currentTime, _lastMouseClickTime) * 1000) < _doubleClickTime)
+            if (_lastMouseClickPos && _lastMouseClickTime &&
+                til::point(uiPos) == _lastMouseClickPos &&
+                (currentTime - _lastMouseClickTime.value()) < _doubleClickTime)
             {
                 eventFlags |= DOUBLE_CLICK;
             }
