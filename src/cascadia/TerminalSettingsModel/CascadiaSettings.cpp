@@ -1197,7 +1197,8 @@ IObservableVector<Settings::Model::DefaultTerminal> CascadiaSettings::DefaultTer
 // Method Description:
 // - Returns the currently selected default terminal application.
 // - DANGER! This will be null unless you've called
-//   CascadiaSettings::RefreshDefaultTerminals. At te time of this comment (May
+//   CascadiaSettings::RefreshDefaultTerminals. At the time of this comment (May
+
 //   2021), only the Launch page in the settings UI calls that method, so this
 //   value is unset unless you've navigated to that page.
 // Arguments:
