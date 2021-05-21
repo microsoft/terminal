@@ -43,6 +43,8 @@ constexpr const auto TerminalWarningBellInterval = std::chrono::milliseconds(100
 
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::CopyFormat);
 
+DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::MouseButtonState);
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     TermControl::TermControl(IControlSettings settings,
@@ -1219,9 +1221,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                    const bool rightButtonDown)
     {
         const auto modifiers = _GetPressedModifierKeys();
-        Control::MouseButtonState state{ leftButtonDown,
-                                         midButtonDown,
-                                         rightButtonDown };
+
+        Control::MouseButtonState state{};
+        WI_SetFlagIf(state, Control::MouseButtonState::IsLeftButtonDown, leftButtonDown);
+        WI_SetFlagIf(state, Control::MouseButtonState::IsMiddleButtonDown, midButtonDown);
+        WI_SetFlagIf(state, Control::MouseButtonState::IsRightButtonDown, rightButtonDown);
+
         return _interactivity.MouseWheel(modifiers, delta, _toTerminalOrigin(location), state);
     }
 
@@ -2453,9 +2458,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     Control::MouseButtonState TermControl::GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point)
     {
-        return Control::MouseButtonState{ point.Properties().IsLeftButtonPressed(),
-                                          point.Properties().IsMiddleButtonPressed(),
-                                          point.Properties().IsRightButtonPressed() };
+        Control::MouseButtonState state{};
+        WI_SetFlagIf(state, Control::MouseButtonState::IsLeftButtonDown, point.Properties().IsLeftButtonPressed());
+        WI_SetFlagIf(state, Control::MouseButtonState::IsMiddleButtonDown, point.Properties().IsMiddleButtonPressed());
+        WI_SetFlagIf(state, Control::MouseButtonState::IsRightButtonDown, point.Properties().IsRightButtonPressed());
+        return state;
     }
 
     unsigned int TermControl::GetPointerUpdateKind(const winrt::Windows::UI::Input::PointerPoint point)
