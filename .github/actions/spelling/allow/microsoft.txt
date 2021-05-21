@@ -19,6 +19,7 @@ CPRs
 cryptbase
 DACL
 DACLs
+defaultlib
 diffs
 disposables
 dotnetfeed
@@ -27,6 +28,8 @@ DWINRT
 enablewttlogging
 Intelli
 IVisual
+libucrt
+libucrtd
 LKG
 LOCKFILE
 Lxss
@@ -36,8 +39,10 @@ microsoftonline
 MSAA
 msixbundle
 MSVC
+MSVCP
 muxc
 netcore
+Onefuzz
 osgvsowi
 PFILETIME
 pgc
@@ -62,6 +67,8 @@ systemroot
 taskkill
 tasklist
 tdbuildteamid
+ucrt
+ucrtd
 unvirtualized
 VCRT
 vcruntime
