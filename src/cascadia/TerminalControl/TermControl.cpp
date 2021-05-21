@@ -437,10 +437,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _interactivity.UpdateSettings();
-        _automationPeer.SetControlPadding(Core::Padding{ newMargin.Left,
-                                                         newMargin.Top,
-                                                         newMargin.Right,
-                                                         newMargin.Bottom });
+        if (_automationPeer)
+        {
+            _automationPeer.SetControlPadding(Core::Padding{ newMargin.Left,
+                                                             newMargin.Top,
+                                                             newMargin.Right,
+                                                             newMargin.Bottom });
+        }
     }
 
     // Method Description:
@@ -550,10 +553,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // create a custom automation peer with this code pattern:
             // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
-            const auto& interactivityAutoPeer = _interactivity.OnCreateAutomationPeer();
-            auto autoPeer = winrt::make_self<implementation::TermControlAutomationPeer>(this, interactivityAutoPeer);
-            _automationPeer = *autoPeer;
-            return *autoPeer;
+            if (const auto& interactivityAutoPeer{ _interactivity.OnCreateAutomationPeer() })
+            {
+                auto autoPeer = winrt::make_self<implementation::TermControlAutomationPeer>(this, interactivityAutoPeer);
+                _automationPeer = *autoPeer;
+                return *autoPeer;
+            }
         }
         return nullptr;
     }
@@ -1560,7 +1565,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto newSize = e.NewSize();
         _core.SizeChanged(newSize.Width, newSize.Height);
 
-        _automationPeer.UpdateControlBounds();
+        if (_automationPeer)
+        {
+            _automationPeer.UpdateControlBounds();
+        }
     }
 
     // Method Description:

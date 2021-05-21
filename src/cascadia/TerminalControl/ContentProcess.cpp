@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     uint64_t ContentProcess::RequestSwapChainHandle(const uint64_t pid)
     {
         auto ourPid = GetCurrentProcessId();
-        HANDLE ourHandle = reinterpret_cast<HANDLE>(_interactivity.GetCore().GetSwapChainHandle());
+        HANDLE ourHandle = reinterpret_cast<HANDLE>(_interactivity.Core().SwapChainHandle());
         if (pid == ourPid)
         {
             return reinterpret_cast<uint64_t>(ourHandle);
