@@ -879,7 +879,7 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
         {
             if (_lastMouseClickPos && _lastMouseClickTime &&
                 til::point(uiPos) == _lastMouseClickPos &&
-                (std::chrono::steady_clock::time_point() - _lastMouseClickTime.value()) > _doubleClickTime)
+                (std::chrono::steady_clock::time_point() - _lastMouseClickTime.value()) < _doubleClickTime)
             {
                 eventFlags |= DOUBLE_CLICK;
             }
