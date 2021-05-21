@@ -628,7 +628,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool Profiles::IsBellStyleFlagSet(const uint32_t flag)
     {
-        return WI_EnumValue(_State.Profile().BellStyle()) & flag;
+        return (WI_EnumValue(_State.Profile().BellStyle()) & flag) == flag;
     }
 
     void Profiles::SetBellStyleAudible(winrt::Windows::Foundation::IReference<bool> on)
