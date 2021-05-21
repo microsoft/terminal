@@ -144,6 +144,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         std::array<Windows::UI::Xaml::Controls::Primitives::ToggleButton, 9> _BIAlignmentButtons;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
+        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _AppearanceViewModelChangedRevoker;
 
         Microsoft::Terminal::Control::TermControl _previewControl;
     };

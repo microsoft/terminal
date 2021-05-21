@@ -361,6 +361,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _previewControl.UpdateSettings();
         });
 
+        // The Appearances object handles updating the values in the settings UI, but
+        // we still need to listen to the changes here just to update the preview control
+        _AppearanceViewModelChangedRevoker = _State.Profile().DefaultAppearance().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& /*args*/) {
+            _previewControl.Settings(_State.Profile().TermSettings());
+            _previewControl.UpdateSettings();
+        });
+
         // Navigate to the pivot in the provided navigation state
         ProfilesPivot().SelectedIndex(static_cast<int>(_State.LastActivePivot()));
 
@@ -376,6 +383,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Profiles::OnNavigatedFrom(const NavigationEventArgs& /*e*/)
     {
         _ViewModelChangedRevoker.revoke();
+        _AppearanceViewModelChangedRevoker.revoke();
     }
 
     void Profiles::DeleteConfirmation_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
