@@ -37,12 +37,7 @@ bool ROW::Reset(const TextAttribute Attr)
     _lineRendition = LineRendition::SingleWidth;
     _wrapForced = false;
     _doubleBytePadded = false;
-#if BACKING_BUFFER_IS_STRINGLIKE
     _cwid.replace(0, _rowWidth, { 1, _rowWidth }); // replace entire RLE with one run
-#else
-    _cwid.resize(_rowWidth);
-    _cwid.fill(1);
-#endif
     _data.replace(0, _rowWidth, _rowWidth, UNICODE_SPACE);
     try
     {
@@ -65,17 +60,12 @@ bool ROW::Reset(const TextAttribute Attr)
 [[nodiscard]] HRESULT ROW::Resize(const unsigned short width)
 {
     _data.resize(width, L' ');
-#if BACKING_BUFFER_IS_STRINGLIKE
     auto oldEnd{ _cwid.size() };
     _cwid.resize_trailing_extent(width);
     if (width > oldEnd)
     {
         _cwid.replace(oldEnd, width, { 1, gsl::narrow_cast<uint16_t>(width - oldEnd) });
     }
-#else
-    _cwid.resize(width);
-    _cwid.fill(1);
-#endif
     try
     {
         _attrRow.Resize(width);
@@ -121,8 +111,6 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
     uint16_t colorStarts = gsl::narrow_cast<uint16_t>(index);
     uint16_t currentIndex = colorStarts;
 
-    auto [ibegin, ilen, ioff, icols] = _indicesForCol(currentIndex);
-    auto ihintcol = currentIndex - ioff;
     while (it && currentIndex <= finalColumnInRow)
     {
         // Fill the color if the behavior isn't set to keeping the current color.
@@ -175,7 +163,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
                 if (!it->DbcsAttr().IsTrailing())
                 {
                     uint16_t d = it->DbcsAttr().IsSingle() ? 1 : 2;
-                    std::tie(ibegin, ihintcol) = WriteGlyphAtMeasured(currentIndex, d, it->Chars(), ibegin, ihintcol);
+                    WriteGlyphAtMeasured(currentIndex, d, it->Chars());
                     currentIndex += d - 1;
                     while (d > 0)
                     { // TODO(DH) FFS

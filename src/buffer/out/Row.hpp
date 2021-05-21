@@ -26,16 +26,6 @@ Revision History:
 #include "OutputCellIterator.hpp"
 #include "unicode.hpp"
 
-// For use when til::rle supports .replace
-#define TIL_RLE_WORKS_LIKE_STRING 1
-// When 0, use basic_string<uint16_t> for column counts
-#define ROW_USE_RLE 1
-#define BACKING_BUFFER_IS_STRINGLIKE (!ROW_USE_RLE || TIL_RLE_WORKS_LIKE_STRING)
-
-#if ROW_USE_RLE
-#include <til/rle.h>
-#endif
-
 #pragma warning(push)
 #pragma warning(disable : 4267)
 class TextBuffer;
@@ -88,19 +78,20 @@ private:
     // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
     bool _doubleBytePadded;
 
+    struct ColumnLookupResult
+    {
+        size_t dataOffset;
+        size_t dataLength;
+        uint8_t columnOffsetWithinGlyph;
+        uint8_t numberOfColumns;
+    };
+
 public:
     std::wstring _data;
-#if !ROW_USE_RLE
-    std::basic_string<uint16_t> _cwid;
-#else
     til::small_rle<uint8_t, uint16_t, 3> _cwid;
-#endif
 
-    std::tuple<size_t, size_t, size_t, size_t> _indicesForCol(size_t col, typename decltype(_data)::size_type hint = 0, size_t colstart = 0) const
+    ColumnLookupResult _indicesForCol(size_t col) const
     {
-#if 1
-        (void)hint;
-        (void)colstart;
         size_t currentCol{ 0 };
         size_t currentWchar{ 0 };
         auto it{ _cwid.runs().cbegin() };
@@ -121,8 +112,11 @@ public:
 
         if (it == _cwid.runs().cend())
         {
-            // SHOULD NEVER HIT THIS???
-            __debugbreak();
+            // this is an interesting case- somebody requested a column we cannot answer for.
+            // The string might actually have data, and the caller might be interested in where that data is.
+            // Ideally, we would return the index of the first char out-of-bounds, and the length of the remaining data as a single unit.
+            // We can't answer for how much space it takes up, though.
+            return { currentWchar, _data.size() - currentWchar, 0u, 0u };
         }
         // currentWchar is how many wchar_t we are into the string before processing this run
         // currentCol is how many columns we've covered before processing this run
@@ -158,43 +152,16 @@ public:
             colsLeftToCountInCurrentRun % it->value, // how far into the wide glyph we were (if we are partway through a 2-wide or 3-wide glyph)
             it->value // how many columns is the thing we hit?
         };
-#endif
-
-#if 0
-        // WISHLIST: I want to be able to iterate *compressed runs* so that I don't need to sum up individual column counts one by one
-        size_t c{ colstart };
-        auto it{ _cwid.cbegin() + hint };
-        while (it != _cwid.cend())
-        {
-            if (c + *it > col)
-            {
-                // if we would overshoot, be done
-                break;
-            }
-            c += *it++;
-        } // accumulate columns until we hit the requested one
-        if (it == _cwid.cend())
-        {
-            // we never hit it!
-            throw 0;
-        }
-        // it points at the column width of the character that tripped us over the limit (char that was a hit)
-        auto eit{ std::find_if_not(it + 1, _cwid.cend(), [](auto&& c) { return c == 0; }) };
-        // eit points at first column that is nonzero after it, or the end
-        const auto len{ eit - it };
-        const auto cols{ *it }; // how big was the char we landed on
-        return { it - _cwid.cbegin(), len, col - c, cols };
-#endif
     }
 
 public:
     std::wstring_view GlyphAt(size_t col) const
     {
-        auto [begin, len, off, _] = _indicesForCol(col);
-        return { _data.data() + begin, len };
+        const auto lookup{ _indicesForCol(col) };
+        return { _data.data() + lookup.dataOffset, lookup.dataLength };
     }
 
-    std::pair<size_t, size_t> WriteGlyphAtMeasured(size_t col, size_t ncols, std::wstring_view glyph, typename decltype(_data)::size_type hint = 0, size_t colstart = 0)
+    std::pair<size_t, size_t> WriteGlyphAtMeasured(size_t col, size_t ncols, std::wstring_view glyph)
     {
         // When we want to replace a column, or set of columns, with a glyph, we need to:
         // * Figure out the physical extent of the character in that cell (UTF-16 code units).
@@ -210,13 +177,13 @@ public:
         // they were double-width characters that are being cut in half,
         // or single-width characters that are collateral damage from stomping
         // them with a double-width character.
-        auto [begin, len, off, cols]{ _indicesForCol(col, hint, colstart) };
+        auto [begin, len, off, cols]{ _indicesForCol(col) };
         const auto minDamageColumn{ col - off }; // Column damage to the left (where we overlapped the right of a wide glyph)
         auto maxDamageColumnExclusive{ minDamageColumn + cols }; // Column damage to the right (where we overlapped the left of a wide glyph)
 
         while (maxDamageColumnExclusive < col + ncols)
         {
-            auto [nbegin, nlen, noff, newcols]{ _indicesForCol(maxDamageColumnExclusive, begin, minDamageColumn) };
+            auto [nbegin, nlen, noff, newcols]{ _indicesForCol(maxDamageColumnExclusive) };
             // *INVARIANT* the beginning of the next column range must have a different beginning byte
             // This column began at a different data index, so we have to delete its data too.
             // Since it's contiguous, just increment len.
@@ -231,19 +198,11 @@ public:
             // column counts with [col, 0, 0...] (with as many zeroes as we need to account
             // for any code units past the first.)
             _data.replace(begin, len, glyph);
-#if BACKING_BUFFER_IS_STRINGLIKE // rle doesn't work like string here
             typename decltype(_cwid)::rle_type newRuns[]{
                 { gsl::narrow_cast<uint8_t>(ncols), 1 },
                 { 0, gsl::narrow_cast<uint16_t>(glyph.size() - 1) },
             };
             _cwid.replace(gsl::narrow_cast<uint16_t>(begin), gsl::narrow_cast<uint16_t>(begin + len), gsl::make_span(&newRuns[0], glyph.size() == 1 ? 1 : 2));
-#else
-            auto old = _cwid.substr(uint16_t(begin + len));
-            _cwid.fill(ncols, begin);
-            _cwid.fill(0, begin + 1);
-            _cwid.assign(old.run_cbegin(), old.run_cend(), begin + glyph.size());
-            _cwid.resize(_data.size());
-#endif
         }
         else
         {
@@ -267,7 +226,6 @@ public:
             //  is one column wide. We have
             //  to insert [1]s for each
             //  damaged column.
-#if BACKING_BUFFER_IS_STRINGLIKE // rle doesn't work like string here
             boost::container::small_vector<typename decltype(_cwid)::rle_type, 4> newRuns;
             if (col - minDamageColumn)
             {
@@ -284,28 +242,10 @@ public:
             }
             _data.replace(begin, len, replacement);
             _cwid.replace(gsl::narrow_cast<uint16_t>(begin), gsl::narrow_cast<uint16_t>(begin + len), gsl::make_span(newRuns));
-#else
-            auto old = _cwid.substr(uint16_t(begin + replacementCodeUnits));
-            _data.replace(begin, len, replacement);
-            _cwid.resize(_data.size());
-            _cwid.fill(1, begin);
-            _cwid.fill(ncols, begin + (col - minDamageColumn));
-            _cwid.fill(0, begin + (col - minDamageColumn) + 1);
-            _cwid.fill(1, begin + (col - minDamageColumn) + glyph.size());
-            _cwid.assign(old.run_cbegin(), old.run_cend(), begin + replacementCodeUnits);
-            _cwid.resize(_data.size());
-#endif
         }
         if (_cwid.size() != _data.size())
         {
-#if BACKING_BUFFER_IS_STRINGLIKE // rle doesn't work like string
             _cwid.resize_trailing_extent(gsl::narrow_cast<uint16_t>(_data.size()));
-#else
-            const auto old{ _cwid.size() };
-            _cwid.resize(_data.size());
-            if (old < _cwid.size())
-                _cwid.fill(0, old);
-#endif
         }
 
         // Distance from requested column to final
