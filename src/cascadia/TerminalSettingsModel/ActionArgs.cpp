@@ -30,6 +30,7 @@
 #include "NextTabArgs.g.cpp"
 #include "RenameWindowArgs.g.cpp"
 #include "GlobalSummonArgs.g.cpp"
+#include "FocusPaneArgs.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -597,5 +598,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             ss << std::wstring_view(Name());
         }
         return winrt::hstring{ ss.str() };
+    }
+
+    winrt::hstring FocusPaneArgs::GenerateName() const
+    {
+        // "Focus pane {Id}"
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"FocusPaneCommandKey")),
+                        Id())
+        };
     }
 }

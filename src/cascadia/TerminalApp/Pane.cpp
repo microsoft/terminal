@@ -597,18 +597,25 @@ void Pane::_FocusFirstChild()
 {
     if (_IsLeaf())
     {
-        if (_root.ActualWidth() == 0 && _root.ActualHeight() == 0)
-        {
-            // When these sizes are 0, then the pane might still be in startup,
-            // and doesn't yet have a real size. In that case, the control.Focus
-            // event won't be handled until _after_ the startup events are all
-            // processed. This will lead to the Tab not being notified that the
-            // focus moved to a different Pane.
-            //
-            // In that scenario, trigger the event manually here, to correctly
-            // inform the Tab that we're now focused.
-            _GotFocusHandlers(shared_from_this());
-        }
+        // Originally, we would only raise a GotFocus event here when:
+        //
+        // if (_root.ActualWidth() == 0 && _root.ActualHeight() == 0)
+        //
+        // When these sizes are 0, then the pane might still be in startup,
+        // and doesn't yet have a real size. In that case, the control.Focus
+        // event won't be handled until _after_ the startup events are all
+        // processed. This will lead to the Tab not being notified that the
+        // focus moved to a different Pane.
+        //
+        // However, with the ability to execute multiple actions at a time, in
+        // already existing windows, we need to always raise this event manually
+        // here, to correctly inform the Tab that we're now focused. This will
+        // take care of commandlines like:
+        //
+        // `wtd -w 0 mf down ; sp`
+        // `wtd -w 0 fp -t 1 ; sp`
+
+        _GotFocusHandlers(shared_from_this());
 
         _control.Focus(FocusState::Programmatic);
     }
@@ -1564,7 +1571,7 @@ void Pane::Restore(std::shared_ptr<Pane> zoomedPane)
 //   otherwise the ID value will not make sense (leaves have IDs, parents do not)
 // Return Value:
 // - The ID of this pane
-std::optional<uint16_t> Pane::Id() noexcept
+std::optional<uint32_t> Pane::Id() noexcept
 {
     return _id;
 }
@@ -1574,7 +1581,7 @@ std::optional<uint16_t> Pane::Id() noexcept
 // - Panes are given IDs upon creation by TerminalTab
 // Arguments:
 // - The number to set this pane's ID to
-void Pane::Id(uint16_t id) noexcept
+void Pane::Id(uint32_t id) noexcept
 {
     _id = id;
 }
@@ -1583,20 +1590,24 @@ void Pane::Id(uint16_t id) noexcept
 // - Recursive function that focuses a pane with the given ID
 // Arguments:
 // - The ID of the pane we want to focus
-void Pane::FocusPane(const uint16_t id)
+bool Pane::FocusPane(const uint32_t id)
 {
     if (_IsLeaf() && id == _id)
     {
-        _control.Focus(FocusState::Programmatic);
+        // Make sure to use _FocusFirstChild here - that'll properly update the
+        // focus if we're in startup.
+        _FocusFirstChild();
+        return true;
     }
     else
     {
         if (_firstChild && _secondChild)
         {
-            _firstChild->FocusPane(id);
-            _secondChild->FocusPane(id);
+            return _firstChild->FocusPane(id) ||
+                   _secondChild->FocusPane(id);
         }
     }
+    return false;
 }
 
 // Method Description:
