@@ -881,12 +881,17 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
                 uiPos == _lastMouseClickPos &&
                 (std::chrono::steady_clock::now() - _lastMouseClickTime.value()) < _doubleClickTime)
             {
+                // This was a double click, set the flag and reset our trackers
+                // for last clicked position and time (this is so we don't send
+                // another double click on a third click)
                 eventFlags |= DOUBLE_CLICK;
                 _lastMouseClickPos.reset();
                 _lastMouseClickTime.reset();
             }
             else
             {
+                // This was a single click, update our trackers for last
+                // clicked position and time
                 _lastMouseClickPos = uiPos;
                 _lastMouseClickTime = currentTime;
             }
