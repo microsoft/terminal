@@ -1554,6 +1554,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, IdKey, args->_Id);
             return { *args, {} };
         }
+        static Json::Value ToJson(const IActionArgs& val)
+        {
+            if (!val)
+            {
+                return {};
+            }
+            Json::Value json{ Json::ValueType::objectValue };
+            const auto args{ get_self<FocusPaneArgs>(val) };
+            JsonUtils::SetValueForKey(json, IdKey, args->_Id);
+            return json;
+        }
         IActionArgs Copy() const
         {
             auto copy{ winrt::make_self<FocusPaneArgs>() };
