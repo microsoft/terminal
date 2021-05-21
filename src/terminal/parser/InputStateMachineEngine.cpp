@@ -877,14 +877,17 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
         // and also update our last clicked position and time
         if (id == CsiActionCodes::MouseDown)
         {
-            if (_lastMouseClickPos && _lastMouseClickTime &&
-                til::point(uiPos) == _lastMouseClickPos &&
-                (currentTime - _lastMouseClickTime.value()) < _doubleClickTime)
+            if (_lastMouseClickPos && _lastMouseClickTime)
             {
-                eventFlags |= DOUBLE_CLICK;
+                const auto delta{ currentTime - _lastMouseClickTime.value() };
+                if (til::point(uiPos) == _lastMouseClickPos &&
+                    !(delta > _doubleClickTime))
+                {
+                    eventFlags |= DOUBLE_CLICK;
+                }
             }
             _lastMouseClickPos = uiPos;
-            //_lastMouseClickTime = currentTime;
+            _lastMouseClickTime = currentTime;
         }
         break;
     case CsiMouseButtonCodes::Right:
