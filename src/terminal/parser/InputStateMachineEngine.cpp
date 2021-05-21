@@ -910,6 +910,10 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
         eventFlags |= MOUSE_WHEELED;
         break;
     }
+    case CsiMouseButtonCodes::Released:
+        // hover event, we still want to send these but we don't
+        // need to do anything special here, so just break
+        break;
     default:
         // no detectable buttonID, so we can't update the state
         return false;
