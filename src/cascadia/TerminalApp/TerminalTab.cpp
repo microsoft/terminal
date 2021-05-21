@@ -497,7 +497,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    bool TerminalTab::FocusPane(const uint32_t& id)
+    bool TerminalTab::FocusPane(const uint32_t id)
     {
         return _rootPane->FocusPane(id);
     }

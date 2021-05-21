@@ -422,10 +422,9 @@ void AppCommandlineArgs::_buildFocusPaneParser()
         // command was parsed.
         subcommand->callback([&, this]() {
             // Build the action from the values we've parsed on the commandline.
-            ActionAndArgs focusPaneAction{};
-
             if (_focusPaneTarget >= 0)
             {
+                ActionAndArgs focusPaneAction{};
                 focusPaneAction.Action(ShortcutAction::FocusPane);
                 FocusPaneArgs args{ static_cast<uint32_t>(_focusPaneTarget) };
                 focusPaneAction.Args(args);
