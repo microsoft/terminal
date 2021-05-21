@@ -13,16 +13,13 @@
     <ApplicationType>Windows Store</ApplicationType>
     <WindowsStoreApp>true</WindowsStoreApp>
     <WindowsAppContainer>false</WindowsAppContainer>
-    <!-- IMPORTANT! Xaml Islands only works on >= 17709 -->
-    <!-- IMPORTANT! cppwinrt.pre.props specifies 17134 -->
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
     <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
     <PgoTarget>true</PgoTarget>
   </PropertyGroup>
 
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-  
+
   <ItemDefinitionGroup>
     <ClCompile>
       <SDLCheck>true</SDLCheck>
@@ -174,4 +171,3 @@
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
   <Import Project="..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets" Condition="Exists('..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets')" />
 </Project>
-

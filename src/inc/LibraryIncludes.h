@@ -103,7 +103,14 @@
 #include <sal.h>
 
 // WRL
+// Microsoft::WRL::Details::StaticStorage contains a programming error.
+// The author attempted to create a properly aligned backing storage for a type T,
+// but instead of giving the member the proper alignas, the struct got it.
+// The compiler doesn't like that. --> Suppress the warning.
+#pragma warning(push)
+#pragma warning(disable: 4324) // structure was padded due to alignment specifier
 #include <wrl.h>
+#pragma warning(pop)
 
 // WEX/TAEF testing
 // Include before TIL if we're unit testing so it can light up WEX/TAEF template extensions

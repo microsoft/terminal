@@ -77,6 +77,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     {
         static constexpr std::optional<T> EmptyV() { return std::nullopt; }
         static constexpr bool HasValue(const std::optional<T>& o) { return o.has_value(); }
+        // We can return a reference here because the original value is stored inside an std::optional
         static constexpr auto&& Value(const std::optional<T>& o) { return *o; }
     };
 
@@ -85,7 +86,8 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     {
         static constexpr ::winrt::Windows::Foundation::IReference<T> EmptyV() { return nullptr; }
         static constexpr bool HasValue(const ::winrt::Windows::Foundation::IReference<T>& o) { return static_cast<bool>(o); }
-        static constexpr auto&& Value(const ::winrt::Windows::Foundation::IReference<T>& o) { return o.Value(); }
+        // We CANNOT return a reference here because IReference does NOT return a reference to its internal memory
+        static constexpr auto Value(const ::winrt::Windows::Foundation::IReference<T>& o) { return o.Value(); }
     };
 
     class SerializationError : public std::runtime_error

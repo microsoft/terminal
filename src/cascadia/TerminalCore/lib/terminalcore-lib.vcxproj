@@ -6,7 +6,6 @@
     <ProjectName>TerminalCore</ProjectName>
     <TargetName>TerminalCore</TargetName>
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
     <RootNamespace>Microsoft.Terminal.Core</RootNamespace>
 
     <!-- sets a bunch of Windows Universal properties -->

@@ -2069,6 +2069,8 @@ selectany
 SELECTEDFONT
 SELECTSTRING
 Selfhosters
+serializer
+serializers
 SERVERDLL
 SETACTIVE
 SETBUDDYINT

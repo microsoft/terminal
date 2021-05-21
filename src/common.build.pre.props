@@ -23,8 +23,6 @@
     <OpenConsoleCommonOutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OpenConsoleCommonOutDir>
   </PropertyGroup>
 
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="AuditMode|Win32">
       <Configuration>AuditMode</Configuration>
@@ -77,8 +75,11 @@
   </ItemGroup>
 
   <PropertyGroup Label="Globals">
-    <WindowsTargetPlatformVersion Condition="'$(WindowsTargetPlatformVersion)' == ''">10.0.18362.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion Condition="'$(WindowsTargetPlatformVersion)' == ''">10.0.19041.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion Condition="'$(WindowsTargetPlatformMinVersion)' == ''">10.0.18362.0</WindowsTargetPlatformMinVersion>
   </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
 
   <!-- For ALL build types-->
   <PropertyGroup Label="Configuration">
