@@ -640,6 +640,14 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     _setupGlobalHotkeys();
+
+    // The monarch is just going to be THE listener for inbound connections.
+    _listenForInboundConnections();
+}
+
+void AppHost::_listenForInboundConnections()
+{
+    _logic.SetInboundListener();
 }
 
 winrt::fire_and_forget AppHost::_setupGlobalHotkeys()

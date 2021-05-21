@@ -1664,7 +1664,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_CursorPositionChanged(const IInspectable& /*sender*/,
                                              const IInspectable& /*args*/)
     {
-        _tsfTryRedrawCanvas->Run();
+        if (_tsfTryRedrawCanvas)
+        {
+            _tsfTryRedrawCanvas->Run();
+        }
     }
 
     hstring TermControl::Title()
