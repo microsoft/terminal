@@ -572,9 +572,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (settingName == L"BellStyle")
             {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"BellStyleAudible" });
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"BellStyleWindow" });
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"BellStyleTaskbar" });
+                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsBellStyleFlagSet" });
             }
             else if (settingName == L"ScrollState")
             {
@@ -630,39 +628,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool Profiles::IsBellStyleFlagSet(const uint32_t flag)
     {
-        // 'flag' is not a compile time constant, so we cannot
-        // use it directly with WI_IsFlagSet and we have to use this
-        // seemingly redundant switch statement instead
-        switch (static_cast<Model::BellStyle>(flag))
-        {
-        case Model::BellStyle::Audible:
-            return WI_IsFlagSet(_State.Profile().BellStyle(), Model::BellStyle::Audible);
-        case Model::BellStyle::Window:
-            return WI_IsFlagSet(_State.Profile().BellStyle(), Model::BellStyle::Window);
-        case Model::BellStyle::Taskbar:
-            return WI_IsFlagSet(_State.Profile().BellStyle(), Model::BellStyle::Taskbar);
-        }
-        return false;
+        return WI_EnumValue(_State.Profile().BellStyle()) & flag;
     }
 
     void Profiles::SetBellStyleAudible(winrt::Windows::Foundation::IReference<bool> on)
     {
         auto currentStyle = State().Profile().BellStyle();
-        on.GetBoolean() ? WI_SetFlag(currentStyle, Model::BellStyle::Audible) : WI_ClearFlag(currentStyle, Model::BellStyle::Audible);
+        WI_UpdateFlag(currentStyle, Model::BellStyle::Audible, winrt::unbox_value<bool>(on));
         State().Profile().BellStyle(currentStyle);
     }
 
     void Profiles::SetBellStyleWindow(winrt::Windows::Foundation::IReference<bool> on)
     {
         auto currentStyle = State().Profile().BellStyle();
-        on.GetBoolean() ? WI_SetFlag(currentStyle, Model::BellStyle::Window) : WI_ClearFlag(currentStyle, Model::BellStyle::Window);
+        WI_UpdateFlag(currentStyle, Model::BellStyle::Window, winrt::unbox_value<bool>(on));
         State().Profile().BellStyle(currentStyle);
     }
 
     void Profiles::SetBellStyleTaskbar(winrt::Windows::Foundation::IReference<bool> on)
     {
         auto currentStyle = State().Profile().BellStyle();
-        on.GetBoolean() ? WI_SetFlag(currentStyle, Model::BellStyle::Taskbar) : WI_ClearFlag(currentStyle, Model::BellStyle::Taskbar);
+        WI_UpdateFlag(currentStyle, Model::BellStyle::Taskbar, winrt::unbox_value<bool>(on));
         State().Profile().BellStyle(currentStyle);
     }
 
