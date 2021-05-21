@@ -2336,14 +2336,6 @@ namespace winrt::TerminalApp::implementation
     {
         // TODO: GH 9458 will give us more context so we can try to choose a better profile.
         _OpenNewTab(nullptr, connection);
-
-        // Attempt to force ourselves into the foreground if we can.
-        // If not, oh well.
-        if (_hostingHwnd)
-        {
-            SetForegroundWindow(_hostingHwnd.value());
-            SetActiveWindow(_hostingHwnd.value());
-        }
     }
 
     // Method Description:
