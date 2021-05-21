@@ -1313,7 +1313,15 @@ void CascadiaSettings::WriteSettingsToDisk() const
     _WriteSettings(styledString, settingsPath);
 
     // Persists the default terminal choice
-    Model::DefaultTerminal::Current(_currentDefaultTerminal);
+    //
+    // GH#10003 - Only do this if _currentDefaultTerminal was actually
+    // initialized. It's only initialized when Launch.cpp calls
+    // `CascadiaSettings::RefreshDefaultTerminals`. We really don't need it
+    // otherwise.
+    if (_currentDefaultTerminal)
+    {
+        Model::DefaultTerminal::Current(_currentDefaultTerminal);
+    }
 }
 
 // Method Description:
