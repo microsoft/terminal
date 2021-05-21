@@ -848,7 +848,7 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
                                                          const size_t sgrEncoding,
                                                          DWORD& buttonState,
                                                          DWORD& eventFlags,
-                                                         COORD uiPos) noexcept
+                                                         COORD uiPos)
 {
     // Starting with the state from the last mouse event we received
     buttonState = _mouseButtonState;
@@ -877,14 +877,11 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
         // and also update our last clicked position and time
         if (id == CsiActionCodes::MouseDown)
         {
-            if (_lastMouseClickPos && _lastMouseClickTime)
+            if (_lastMouseClickPos && _lastMouseClickTime &&
+                til::point(uiPos) == _lastMouseClickPos &&
+                (std::chrono::steady_clock::time_point() - _lastMouseClickTime.value()) > _doubleClickTime)
             {
-                const auto delta{ currentTime - _lastMouseClickTime.value() };
-                if (til::point(uiPos) == _lastMouseClickPos &&
-                    !(delta > _doubleClickTime))
-                {
-                    eventFlags |= DOUBLE_CLICK;
-                }
+                eventFlags |= DOUBLE_CLICK;
             }
             _lastMouseClickPos = uiPos;
             _lastMouseClickTime = currentTime;

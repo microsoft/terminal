@@ -185,7 +185,7 @@ namespace Microsoft::Console::VirtualTerminal
                                         const size_t sgrEncoding,
                                         DWORD& buttonState,
                                         DWORD& eventFlags,
-                                        COORD uiPos) noexcept;
+                                        COORD uiPos);
         bool _GetGenericVkey(const GenericKeyIdentifiers identifier, short& vkey) const;
         bool _GetCursorKeysVkey(const VTID id, short& vkey) const;
         bool _GetSs3KeysVkey(const wchar_t wch, short& vkey) const;
