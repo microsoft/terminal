@@ -387,7 +387,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         DWORD buttonState = 0;
         DWORD eventFlags = 0;
         const size_t firstParameter = parameters.at(0).value_or(0);
-        const COORD uiPos{ gsl::narrow<short>(parameters.at(1)) - 1, gsl::narrow<short>(parameters.at(2)) - 1 };
+        const til::point uiPos{ parameters.at(1) - 1, parameters.at(2) - 1 };
 
         modifierState = _GetSGRMouseModifierState(firstParameter);
         success = _UpdateSGRMouseButtonState(id, firstParameter, buttonState, eventFlags, uiPos);
@@ -726,7 +726,7 @@ bool InputStateMachineEngine::_WriteSingleKey(const short vkey, const DWORD modi
 // - eventFlags - the type of mouse event to write to the mouse record.
 // Return Value:
 // - true iff we successfully wrote the keypress to the input callback.
-bool InputStateMachineEngine::_WriteMouseEvent(const COORD uiPos, const DWORD buttonState, const DWORD controlKeyState, const DWORD eventFlags)
+bool InputStateMachineEngine::_WriteMouseEvent(const til::point uiPos, const DWORD buttonState, const DWORD controlKeyState, const DWORD eventFlags)
 {
     INPUT_RECORD rgInput;
     rgInput.EventType = MOUSE_EVENT;
@@ -848,7 +848,7 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
                                                          const size_t sgrEncoding,
                                                          DWORD& buttonState,
                                                          DWORD& eventFlags,
-                                                         COORD uiPos)
+                                                         const til::point uiPos)
 {
     // Starting with the state from the last mouse event we received
     buttonState = _mouseButtonState;
@@ -878,10 +878,12 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
         if (id == CsiActionCodes::MouseDown)
         {
             if (_lastMouseClickPos && _lastMouseClickTime &&
-                til::point(uiPos) == _lastMouseClickPos &&
-                (std::chrono::steady_clock::time_point() - _lastMouseClickTime.value()) < _doubleClickTime)
+                uiPos == _lastMouseClickPos &&
+                (std::chrono::steady_clock::now() - _lastMouseClickTime.value()) < _doubleClickTime)
             {
                 eventFlags |= DOUBLE_CLICK;
+                _lastMouseClickPos.reset();
+                _lastMouseClickTime.reset();
             }
             _lastMouseClickPos = uiPos;
             _lastMouseClickTime = currentTime;
