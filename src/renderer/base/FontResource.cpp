@@ -133,9 +133,9 @@ void FontResource::_regenerateFont()
     fontResource.dfBitsOffset = sizeof(FONTINFO);
     fontResource.dfFlags = DFF_FIXED | DFF_1COLOR;
 
-    // We use the steady_clock to create a unique name for the font.
-    const auto uniqueValue = std::chrono::steady_clock::now().time_since_epoch().count();
-    sprintf_s(fontResource.szFaceName, "WTSOFTFONT%016llX", uniqueValue);
+    // We use an atomic counter to create a locally-unique name for the font.
+    static std::atomic<uint64_t> faceNameCounter;
+    sprintf_s(fontResource.szFaceName, "WTSOFTFONT%016llX", faceNameCounter++);
 
     // Each character has a fixed size and position in the font bitmap, but we
     // still need to fill in the header table with that information.
