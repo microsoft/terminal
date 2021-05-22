@@ -1271,7 +1271,7 @@ void InputEngineTest::SGRMouseTest_DoubleClick()
         {   { CsiMouseButtonCodes::Left, 0, { 1, 1 }, CsiActionCodes::MouseDown },         { FROM_LEFT_1ST_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
         {   { CsiMouseButtonCodes::Left, 0, { 1, 1 }, CsiActionCodes::MouseUp },           { 0, 0, { 0, 0 }, 0 } },
 
-        {   { CsiMouseButtonCodes::Left, 0, { 1, 1 }, CsiActionCodes::MouseDown },         { FROM_LEFT_1ST_BUTTON_PRESSED, 0, { 0, 0 }, 2 } },
+        {   { CsiMouseButtonCodes::Left, 0, { 1, 1 }, CsiActionCodes::MouseDown },         { FROM_LEFT_1ST_BUTTON_PRESSED, 0, { 0, 0 }, DOUBLE_CLICK } },
         {   { CsiMouseButtonCodes::Left, 0, { 1, 1 }, CsiActionCodes::MouseUp },           { 0, 0, { 0, 0 }, 0 } },
 
         {   { CsiMouseButtonCodes::Left, 0, { 1, 1 }, CsiActionCodes::MouseDown },         { FROM_LEFT_1ST_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
@@ -1299,8 +1299,8 @@ void InputEngineTest::SGRMouseTest_Hover()
     // clang-format off
     const std::vector<std::tuple<SGR_PARAMS, MOUSE_EVENT_PARAMS>> testData = {
         //  TEST INPUT                                                                     EXPECTED OUTPUT
-        {   { CsiMouseButtonCodes::Released, 0, { 1, 1 }, CsiActionCodes::MouseUp },         { 0, 0, { 0, 0 }, 0 } },
-        {   { CsiMouseButtonCodes::Released, 0, { 2, 2 }, CsiActionCodes::MouseUp },         { 0, 0, { 1, 1 }, 0 } },
+        {   { CsiMouseButtonCodes::Released, CsiMouseModifierCodes::Drag, { 1, 1 }, CsiActionCodes::MouseUp },         { 0, 0, { 0, 0 }, MOUSE_MOVED } },
+        {   { CsiMouseButtonCodes::Released, CsiMouseModifierCodes::Drag, { 2, 2 }, CsiActionCodes::MouseUp },         { 0, 0, { 1, 1 }, MOUSE_MOVED } },
     };
     // clang-format on
 
