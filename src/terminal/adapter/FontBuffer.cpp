@@ -501,10 +501,10 @@ void FontBuffer::_packAndCenterBitPatterns()
     {
         if ((srcLine % MAX_HEIGHT) < _fullHeight)
         {
-            auto characterScanline = _buffer.at(srcLine);
+            auto characterScanline = til::at(_buffer, srcLine);
             characterScanline &= textClippingMask;
             characterScanline >>= _textOffset;
-            _buffer.at(dstLine++) = characterScanline;
+            til::at(_buffer, dstLine++) = characterScanline;
         }
     }
 }
@@ -584,7 +584,7 @@ auto FontBuffer::_generateErrorGlyph() -> std::array<uint16_t, MAX_HEIGHT>
         const auto yBit = (1 << y);
         if (heightMask & yBit)
         {
-            const uint16_t inputScanline = inputBitPattern.at(y);
+            const uint16_t inputScanline = til::at(inputBitPattern, y);
             uint16_t outputScanline = 0;
             for (auto x = MAX_WIDTH; x-- > 0;)
             {
