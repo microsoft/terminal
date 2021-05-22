@@ -72,7 +72,6 @@ namespace
         DWORD dfReserved1[4];
         GLYPHENTRY dfCharTable[CHAR_COUNT];
         CHAR szFaceName[LF_FACESIZE];
-        BYTE bitmaps[1];
     };
 #pragma pack(pop)
 }
@@ -131,7 +130,7 @@ void FontResource::_regenerateFont()
     fontResource.dfFirstChar = L' ';
     fontResource.dfLastChar = fontResource.dfFirstChar + CHAR_COUNT - 1;
     fontResource.dfFace = offsetof(FONTINFO, szFaceName);
-    fontResource.dfBitsOffset = offsetof(FONTINFO, bitmaps);
+    fontResource.dfBitsOffset = sizeof(FONTINFO);
     fontResource.dfFlags = DFF_FIXED | DFF_1COLOR;
 
     // We use the steady_clock to create a unique name for the font.
@@ -150,7 +149,8 @@ void FontResource::_regenerateFont()
     // Raster fonts aren't generally scalable, so we need to resize the bit
     // patterns for the character glyphs to the requested target size, and
     // copy the results into the resource structure.
-    _resizeBitPattern({ fontResource.bitmaps, fontBitmapSize });
+    auto fontResourceSpan = gsl::span<byte>(fontResourceBuffer);
+    _resizeBitPattern(fontResourceSpan.subspan(fontResource.dfBitsOffset));
 
     DWORD fontCount = 0;
     _resourceHandle.reset(AddFontMemResourceEx(&fontResource, fontResourceSize, nullptr, &fontCount));
