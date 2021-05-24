@@ -409,7 +409,7 @@ extern "C" VOID WINAPI ConptyClosePseudoConsole(_In_ HPCON hPC)
 // Function Description:
 // Packs loose handle information for an inbound ConPTY
 //  session into the same HPCON as a created session.
-extern "C" HRESULT WINAPI ConptyPackPsuedoConsole(_In_ HANDLE hProcess,
+extern "C" HRESULT WINAPI ConptyPackPseudoConsole(_In_ HANDLE hProcess,
                                                   _In_ HANDLE hRef,
                                                   _In_ HANDLE hSignal,
                                                   _Out_ HPCON* phPC)

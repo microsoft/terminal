@@ -210,7 +210,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _inPipe{ hIn },
         _outPipe{ hOut }
     {
-        THROW_IF_FAILED(ConptyPackPsuedoConsole(hServerProcess, hRef, hSig, &_hPC));
+        THROW_IF_FAILED(ConptyPackPseudoConsole(hServerProcess, hRef, hSig, &_hPC));
         if (_guid == guid{})
         {
             _guid = Utils::CreateGuid();
