@@ -20,7 +20,7 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 // Arguments:
 // - textAttributes - Text attributes to use for the colors and character rendition
 // - pData - The interface to console data structures required for rendering
-// - usingSoftFont - Whether we're rendering characters from a soft soft
+// - usingSoftFont - Whether we're rendering characters from a soft font
 // - isSettingDefaultBrushes: indicates if we should change the background color of
 //      the window. Unused for VT
 // Return Value:
