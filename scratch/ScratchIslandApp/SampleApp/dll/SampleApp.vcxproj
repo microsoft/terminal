@@ -44,7 +44,7 @@
     <!-- Reference SampleAppLib here, so we can use it's App.winmd as
     our App.winmd. This didn't work correctly in VS2017, you'd need to
     manually reference the lib -->
-    <ProjectReference Include="$(OpenConsoleDir)samples\ScratchIslandApp\SampleApp\SampleAppLib.vcxproj">
+    <ProjectReference Include="$(OpenConsoleDir)scratch\ScratchIslandApp\SampleApp\SampleAppLib.vcxproj">
       <Private>true</Private>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </ProjectReference>

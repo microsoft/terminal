@@ -70,7 +70,7 @@
 
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
-    <ProjectReference Include="$(OpenConsoleDir)samples\ScratchIslandApp\SampleApp\dll\SampleApp.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)scratch\ScratchIslandApp\SampleApp\dll\SampleApp.vcxproj" />
   </ItemGroup>
 
   <!-- ========================== Other References ========================= -->
