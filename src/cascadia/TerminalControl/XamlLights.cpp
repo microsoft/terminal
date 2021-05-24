@@ -81,7 +81,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto isAdding = winrt::unbox_value<bool>(e.NewValue());
         const auto id = GetIdStatic();
 
-        isAdding ? (uielem ? XamlLight::AddTargetElement(id, uielem) : XamlLight::AddTargetBrush(id, brush)) :
-                   (uielem ? XamlLight::RemoveTargetElement(id, uielem) : XamlLight::RemoveTargetBrush(id, brush));
+        if (isAdding)
+        {
+            if (uielem)
+            {
+                XamlLight::AddTargetElement(id, uielem);
+            }
+            else
+            {
+                XamlLight::AddTargetBrush(id, brush);
+            }
+        }
+        else
+        {
+            if (uielem)
+            {
+                XamlLight::RemoveTargetElement(id, uielem);
+            }
+            else
+            {
+                XamlLight::RemoveTargetBrush(id, brush);
+            }
+        }
     }
 }
