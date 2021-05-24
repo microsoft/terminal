@@ -1268,7 +1268,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto& control{ _GetActiveControl() })
             {
-                const auto termHeight = control.ViewHeight();
+                const auto termHeight = control.GetViewHeight();
                 auto scrollDelta = _ComputeScrollDelta(scrollDirection, termHeight);
                 terminalTab->Scroll(scrollDelta);
             }
