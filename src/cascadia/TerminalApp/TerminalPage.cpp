@@ -898,30 +898,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // Handles preview key on the SUI tab, by handling close tab / next tab / previous tab
-    // This is a temporary solution - we need to fix all key-bindings work from SUI as long as they don't harm
-    // the SUI behavior
-    // Arguments:
-    // - e: the KeyRoutedEventArgs containing info about the keystroke.
-    // Return Value:
-    // - <none>
-    void TerminalPage::_SUIPreviewKeyDownHandler(Windows::Foundation::IInspectable const& /*sender*/, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
-    {
-        auto key = e.OriginalKey();
-        auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
-        auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
-        auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
-
-        winrt::Microsoft::Terminal::Control::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
-        const auto cmd{ _settings.ActionMap().GetActionByKeyChord(kc) };
-        if (cmd && (cmd.ActionAndArgs().Action() == ShortcutAction::CloseTab || cmd.ActionAndArgs().Action() == ShortcutAction::NextTab || cmd.ActionAndArgs().Action() == ShortcutAction::PrevTab || cmd.ActionAndArgs().Action() == ShortcutAction::ClosePane))
-        {
-            _actionDispatch->DoAction(cmd.ActionAndArgs());
-            e.Handled(true);
-        }
-    }
-
-    // Method Description:
     // - Configure the AppKeyBindings to use our ShortcutActionDispatch and the updated ActionMap
     //    as the object to handle dispatching ShortcutAction events.
     // Arguments:
@@ -1287,10 +1263,12 @@ namespace winrt::TerminalApp::implementation
         // Do nothing if for some reason, there's no terminal tab in focus. We don't want to crash.
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
-            const auto control = _GetActiveControl();
-            const auto termHeight = control.ViewHeight();
-            auto scrollDelta = _ComputeScrollDelta(scrollDirection, termHeight);
-            terminalTab->Scroll(scrollDelta);
+            if (const auto& control{ _GetActiveControl() })
+            {
+                const auto termHeight = control.ViewHeight();
+                auto scrollDelta = _ComputeScrollDelta(scrollDirection, termHeight);
+                terminalTab->Scroll(scrollDelta);
+            }
         }
     }
 
@@ -1699,8 +1677,11 @@ namespace winrt::TerminalApp::implementation
     // - true iff we we able to copy text (if a selection was active)
     bool TerminalPage::_CopyText(const bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
     {
-        const auto control = _GetActiveControl();
-        return control.CopySelectionToClipboard(singleLine, formats);
+        if (const auto& control{ _GetActiveControl() })
+        {
+            return control.CopySelectionToClipboard(singleLine, formats);
+        }
+        return false;
     }
 
     // Method Description:
@@ -1718,8 +1699,10 @@ namespace winrt::TerminalApp::implementation
     // - Paste text from the Windows Clipboard to the focused terminal
     void TerminalPage::_PasteText()
     {
-        const auto control = _GetActiveControl();
-        control.PasteTextFromClipboard();
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.PasteTextFromClipboard();
+        }
     }
 
     // Function Description:
@@ -2053,8 +2036,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_Find()
     {
-        const auto termControl = _GetActiveControl();
-        termControl.CreateSearchBoxControl();
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.CreateSearchBoxControl();
+        }
     }
 
     // Method Description:
@@ -2332,7 +2317,8 @@ namespace winrt::TerminalApp::implementation
                 sui.SetHostingWindow(reinterpret_cast<uint64_t>(*_hostingHwnd));
             }
 
-            sui.PreviewKeyDown({ this, &TerminalPage::_SUIPreviewKeyDownHandler });
+            // GH#8767 - let unhandled keys in the SUI try to run commands too.
+            sui.KeyDown({ this, &TerminalPage::_KeyDownHandler });
 
             sui.OpenJson([weakThis{ get_weak() }](auto&& /*s*/, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget e) {
                 if (auto page{ weakThis.get() })
