@@ -32,7 +32,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     static constexpr TerminalInput::MouseButtonState toInternalMouseState(const Control::MouseButtonState& state)
     {
         return TerminalInput::MouseButtonState{
-            state.IsLeftButtonDown != 0, state.IsMiddleButtonDown != 0, state.IsRightButtonDown != 0
+            WI_IsFlagSet(state, MouseButtonState::IsLeftButtonDown),
+            WI_IsFlagSet(state, MouseButtonState::IsMiddleButtonDown),
+            WI_IsFlagSet(state, MouseButtonState::IsRightButtonDown)
         };
     }
 
@@ -202,7 +204,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // GH#9396: we prioritize hyper-link over VT mouse events
         auto hyperlink = _core->GetHyperlink(terminalPosition);
-        if (buttonState.IsLeftButtonDown &&
+        if (WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown) &&
             ctrlEnabled && !hyperlink.empty())
         {
             const auto clickCount = _numberOfClicks(pixelPosition, timestamp);
@@ -216,7 +218,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _core->SendMouseEvent(terminalPosition, pointerUpdateKind, modifiers, 0, toInternalMouseState(buttonState));
         }
-        else if (buttonState.IsLeftButtonDown)
+        else if (WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown))
         {
             const auto clickCount = _numberOfClicks(pixelPosition, timestamp);
             // This formula enables the number of clicks to cycle properly
@@ -251,7 +253,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _singleClickTouchdownPos = std::nullopt;
             }
         }
-        else if (buttonState.IsRightButtonDown)
+        else if (WI_IsFlagSet(buttonState, MouseButtonState::IsRightButtonDown))
         {
             // CopyOnSelect right click always pastes
             if (_core->CopyOnSelect() || !_core->HasSelection())
@@ -283,7 +285,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _core->SendMouseEvent(terminalPosition, pointerUpdateKind, modifiers, 0, toInternalMouseState(buttonState));
         }
-        else if (focused && buttonState.IsLeftButtonDown)
+        else if (focused && WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown))
         {
             if (_singleClickTouchdownPos)
             {
@@ -430,7 +432,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            _mouseScrollHandler(delta, pixelPosition, buttonState.IsLeftButtonDown);
+            _mouseScrollHandler(delta, pixelPosition, WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown));
         }
         return false;
     }

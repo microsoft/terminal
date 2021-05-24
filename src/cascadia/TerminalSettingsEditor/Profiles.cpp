@@ -88,6 +88,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings) :
         _profile{ profile },
+        _originalProfileGuid{ profile.Guid() },
         _ShowAllFonts{ false },
         _appSettings{ appSettings }
     {
@@ -323,6 +324,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _ShowAllFonts = value;
             _NotifyChanges(L"ShowAllFonts");
         }
+    }
+
+    winrt::guid ProfileViewModel::OriginalProfileGuid() const noexcept
+    {
+        return _originalProfileGuid;
     }
 
     bool ProfileViewModel::CanDeleteProfile() const

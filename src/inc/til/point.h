@@ -344,7 +344,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
-        operator winrt::Microsoft::Terminal::Core::Point() const noexcept
+        operator winrt::Microsoft::Terminal::Core::Point() const
         {
             winrt::Microsoft::Terminal::Core::Point ret;
             ret.X = x<int>();

@@ -43,6 +43,8 @@ constexpr const auto TerminalWarningBellInterval = std::chrono::milliseconds(100
 
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::CopyFormat);
 
+DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::MouseButtonState);
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     TermControl::TermControl(IControlSettings settings,
@@ -109,37 +111,39 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Core eventually won't have access to. When we get to
         // https://github.com/microsoft/terminal/projects/5#card-50760282
         // then we'll move the applicable ones.
-        _tsfTryRedrawCanvas = std::make_shared<ThrottledFunc<>>(
+        _tsfTryRedrawCanvas = std::make_shared<ThrottledFuncTrailing<>>(
+            Dispatcher(),
+            TsfRedrawInterval,
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() })
                 {
                     control->TSFInputControl().TryRedrawCanvas();
                 }
-            },
-            TsfRedrawInterval,
-            Dispatcher());
+            });
 
-        _updatePatternLocations = std::make_shared<ThrottledFunc<>>(
+        _updatePatternLocations = std::make_shared<ThrottledFuncTrailing<>>(
+            Dispatcher(),
+            UpdatePatternLocationsInterval,
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() })
                 {
                     control->_core.UpdatePatternLocations();
                 }
-            },
-            UpdatePatternLocationsInterval,
-            Dispatcher());
+            });
 
-        _playWarningBell = std::make_shared<ThrottledFunc<>>(
+        _playWarningBell = std::make_shared<ThrottledFuncLeading>(
+            Dispatcher(),
+            TerminalWarningBellInterval,
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() })
                 {
                     control->_WarningBellHandlers(*control, nullptr);
                 }
-            },
-            TerminalWarningBellInterval,
-            Dispatcher());
+            });
 
-        _updateScrollBar = std::make_shared<ThrottledFunc<ScrollBarUpdate>>(
+        _updateScrollBar = std::make_shared<ThrottledFuncTrailing<ScrollBarUpdate>>(
+            Dispatcher(),
+            ScrollBarUpdateInterval,
             [weakThis = get_weak()](const auto& update) {
                 if (auto control{ weakThis.get() })
                 {
@@ -158,9 +162,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                     control->_isInternalScrollBarUpdate = false;
                 }
-            },
-            ScrollBarUpdateInterval,
-            Dispatcher());
+            });
 
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
@@ -1219,9 +1221,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                    const bool rightButtonDown)
     {
         const auto modifiers = _GetPressedModifierKeys();
-        Control::MouseButtonState state{ leftButtonDown,
-                                         midButtonDown,
-                                         rightButtonDown };
+
+        Control::MouseButtonState state{};
+        WI_SetFlagIf(state, Control::MouseButtonState::IsLeftButtonDown, leftButtonDown);
+        WI_SetFlagIf(state, Control::MouseButtonState::IsMiddleButtonDown, midButtonDown);
+        WI_SetFlagIf(state, Control::MouseButtonState::IsRightButtonDown, rightButtonDown);
+
         return _interactivity.MouseWheel(modifiers, delta, _toTerminalOrigin(location), state);
     }
 
@@ -2346,7 +2351,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Gets the internal taskbar state value
     // Return Value:
     // - The taskbar state of this control
-    const size_t TermControl::TaskbarState() const noexcept
+    const uint64_t TermControl::TaskbarState() const noexcept
     {
         return _core.TaskbarState();
     }
@@ -2355,7 +2360,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Gets the internal taskbar progress value
     // Return Value:
     // - The taskbar progress of this control
-    const size_t TermControl::TaskbarProgress() const noexcept
+    const uint64_t TermControl::TaskbarProgress() const noexcept
     {
         return _core.TaskbarProgress();
     }
@@ -2453,9 +2458,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     Control::MouseButtonState TermControl::GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point)
     {
-        return Control::MouseButtonState{ point.Properties().IsLeftButtonPressed(),
-                                          point.Properties().IsMiddleButtonPressed(),
-                                          point.Properties().IsRightButtonPressed() };
+        Control::MouseButtonState state{};
+        WI_SetFlagIf(state, Control::MouseButtonState::IsLeftButtonDown, point.Properties().IsLeftButtonPressed());
+        WI_SetFlagIf(state, Control::MouseButtonState::IsMiddleButtonDown, point.Properties().IsMiddleButtonPressed());
+        WI_SetFlagIf(state, Control::MouseButtonState::IsRightButtonDown, point.Properties().IsRightButtonPressed());
+        return state;
     }
 
     unsigned int TermControl::GetPointerUpdateKind(const winrt::Windows::UI::Input::PointerPoint point)

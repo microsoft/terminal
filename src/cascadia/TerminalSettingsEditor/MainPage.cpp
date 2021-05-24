@@ -146,7 +146,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                         {
                             if (const auto& selectedItemProfileTag{ selectedItemTag.try_as<ProfileViewModel>() })
                             {
-                                if (profileTag->Guid() == selectedItemProfileTag->Guid())
+                                if (profileTag->OriginalProfileGuid() == selectedItemProfileTag->OriginalProfileGuid())
                                 {
                                     // found the one that was selected before the refresh
                                     SettingsNav().SelectedItem(item);

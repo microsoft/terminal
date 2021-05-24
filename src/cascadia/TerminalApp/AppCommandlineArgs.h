@@ -82,6 +82,8 @@ private:
     CLI::App* _focusTabShort;
     CLI::App* _moveFocusCommand;
     CLI::App* _moveFocusShort;
+    CLI::App* _focusPaneCommand;
+    CLI::App* _focusPaneShort;
 
     // Are you adding a new sub-command? Make sure to update _noCommandsProvided!
 
@@ -105,6 +107,8 @@ private:
     int _focusTabIndex{ -1 };
     bool _focusNextTab{ false };
     bool _focusPrevTab{ false };
+
+    int _focusPaneTarget{ -1 };
     // Are you adding more args here? Make sure to reset them in _resetStateToDefault
 
     const Commandline* _currentCommandline{ nullptr };
@@ -124,6 +128,7 @@ private:
     void _buildSplitPaneParser();
     void _buildFocusTabParser();
     void _buildMoveFocusParser();
+    void _buildFocusPaneParser();
     bool _noCommandsProvided();
     void _resetStateToDefault();
     int _handleExit(const CLI::App& command, const CLI::Error& e);

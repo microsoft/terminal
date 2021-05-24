@@ -1,6 +1,7 @@
 Apc
 apc
 clickable
+copyable
 dalet
 Dcs
 dcs

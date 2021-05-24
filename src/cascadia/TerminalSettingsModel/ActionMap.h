@@ -65,7 +65,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // population
         void AddAction(const Model::Command& cmd);
+
+        // JSON
+        static com_ptr<ActionMap> FromJson(const Json::Value& json);
         std::vector<SettingsLoadWarnings> LayerJson(const Json::Value& json);
+        Json::Value ToJson() const;
 
         // modification
         bool RebindKeys(Control::KeyChord const& oldKeys, Control::KeyChord const& newKeys);

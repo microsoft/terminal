@@ -60,6 +60,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void ShowAllFonts(const bool& value);
 
         // general profile knowledge
+        winrt::guid OriginalProfileGuid() const noexcept;
         bool CanDeleteProfile() const;
         WINRT_PROPERTY(bool, IsBaseLayer, false);
 
@@ -104,6 +105,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Model::Profile _profile;
+        winrt::guid _originalProfileGuid;
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
         bool _ShowAllFonts;
