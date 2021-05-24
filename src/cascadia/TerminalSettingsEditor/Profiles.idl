@@ -102,6 +102,11 @@ namespace Microsoft.Terminal.Settings.Editor
         Profiles();
         ProfilePageNavigationState State { get; };
 
+        Boolean IsBellStyleFlagSet(UInt32 flag);
+        void SetBellStyleAudible(Windows.Foundation.IReference<Boolean> on);
+        void SetBellStyleWindow(Windows.Foundation.IReference<Boolean> on);
+        void SetBellStyleTaskbar(Windows.Foundation.IReference<Boolean> on);
+
         IInspectable CurrentCursorShape;
         Boolean IsVintageCursor { get; };
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CursorShapeList { get; };
@@ -114,9 +119,6 @@ namespace Microsoft.Terminal.Settings.Editor
 
         IInspectable CurrentCloseOnExitMode;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CloseOnExitModeList { get; };
-
-        IInspectable CurrentBellStyle;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BellStyleList { get; };
 
         IInspectable CurrentScrollState;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ScrollStateList { get; };
