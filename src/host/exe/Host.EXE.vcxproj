@@ -7,7 +7,9 @@
     <ProjectName>Host.EXE</ProjectName>
     <TargetName>OpenConsole</TargetName>
     <ConfigurationType>Application</ConfigurationType>
+    <PgoTarget>true</PgoTarget>
   </PropertyGroup>
+  <Import Project="$(SolutionDir)common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />
@@ -90,5 +92,5 @@
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="..\..\common.build.post.props" />
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
 </Project>

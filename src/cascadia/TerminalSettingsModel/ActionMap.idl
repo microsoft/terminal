@@ -14,10 +14,13 @@ namespace Microsoft.Terminal.Settings.Model
         [method_name("GetKeyBindingForActionWithArgs")] Microsoft.Terminal.Control.KeyChord GetKeyBindingForAction(ShortcutAction action, IActionArgs actionArgs);
 
         Windows.Foundation.Collections.IMapView<String, Command> NameMap { get; };
-        Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Command> GlobalHotkeys();
+        Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Command> KeyBindings { get; };
+        Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Command> GlobalHotkeys { get; };
     };
 
     [default_interface] runtimeclass ActionMap : IActionMapView
     {
+        Boolean RebindKeys(Microsoft.Terminal.Control.KeyChord oldKeys, Microsoft.Terminal.Control.KeyChord newKeys);
+        void DeleteKeyBinding(Microsoft.Terminal.Control.KeyChord keys);
     }
 }

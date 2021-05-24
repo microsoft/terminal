@@ -42,8 +42,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         float SnapDimensionToGrid(const bool widthOrHeight, const float dimension);
 
 #pragma region ICoreState
-        const size_t TaskbarState() const noexcept;
-        const size_t TaskbarProgress() const noexcept;
+        const uint64_t TaskbarState() const noexcept;
+        const uint64_t TaskbarProgress() const noexcept;
 
         hstring Title();
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
@@ -89,6 +89,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const Windows::UI::Xaml::Thickness GetPadding();
 
         IControlSettings Settings() const;
+        void Settings(IControlSettings newSettings);
 
         static Windows::Foundation::Size GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi);
         static Windows::Foundation::Size GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,
@@ -133,6 +134,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
 
+        // NOTE: _uiaEngine must be ordered before _core.
+        //
+        // ControlCore::AttachUiaEngine receives a IRenderEngine as a raw pointer, which we own.
+        // We must ensure that we first destroy the ControlCore before the UiaEngine instance
+        // in order to safely resolve this unsafe pointer dependency. Otherwise a deallocated
+        // IRenderEngine is accessed when ControlCore calls Renderer::TriggerTeardown.
+        // (C++ class members are destroyed in reverse order.)
+        // Further, the TermControlAutomationPeer must be destructed after _uiaEngine!
+        Control::TermControlAutomationPeer _automationPeer{ nullptr };
         Control::ControlCore _core{ nullptr };
         Control::ControlInteractivity _interactivity{ nullptr };
 
@@ -143,8 +153,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _focused;
         bool _initializedTerminal;
 
-        std::shared_ptr<ThrottledFunc<winrt::Windows::UI::Core::CoreDispatcher>> _tsfTryRedrawCanvas;
-        std::shared_ptr<ThrottledFunc<winrt::Windows::UI::Core::CoreDispatcher>> _playWarningBell;
+        std::shared_ptr<ThrottledFuncTrailing<winrt::Windows::UI::Core::CoreDispatcher>> _tsfTryRedrawCanvas;
+        std::shared_ptr<ThrottledFuncLeading<winrt::Windows::UI::Core::CoreDispatcher>> _playWarningBell;
 
         struct ScrollBarUpdate
         {
@@ -153,7 +163,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             double newMinimum;
             double newViewportSize;
         };
-        std::shared_ptr<ThrottledFunc<winrt::Windows::UI::Core::CoreDispatcher, ScrollBarUpdate>> _updateScrollBar;
+
+        std::shared_ptr<ThrottledFuncTrailing<winrt::Windows::UI::Core::CoreDispatcher, ScrollBarUpdate>> _updateScrollBar;
+
         bool _isInternalScrollBarUpdate;
 
         // Auto scroll occurs when user, while selecting, drags cursor outside viewport. View is then scrolled to 'follow' the cursor.
@@ -168,8 +180,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         event_token _coreOutputEventToken;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
-
-        winrt::weak_ref<Control::TermControlAutomationPeer> _automationPeer{ nullptr };
 
         void _UpdateSettingsFromUIThread(IControlSettings newSettings);
         void _UpdateAppearanceFromUIThread(IControlAppearance newAppearance);

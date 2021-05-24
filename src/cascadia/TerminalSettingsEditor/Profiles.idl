@@ -22,6 +22,7 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Windows.Foundation.Collections.IObservableVector<Font> CompleteFontList { get; };
         Windows.Foundation.Collections.IObservableVector<Font> MonospaceFontList { get; };
+        Microsoft.Terminal.Settings.Model.TerminalSettings TermSettings { get; };
 
         Boolean CanDeleteProfile { get; };
         Boolean UsingMonospaceFont { get; };
@@ -31,6 +32,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean ShowAllFonts;
         Boolean UseCustomStartingDirectory { get; };
         Boolean BackgroundImageSettingsVisible { get; };
+        Guid OriginalProfileGuid { get; };
 
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Name);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, Guid);

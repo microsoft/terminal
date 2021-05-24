@@ -48,6 +48,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         command->_IterateOn = _IterateOn;
 
         command->_originalJson = _originalJson;
+        command->_nestedCommand = _nestedCommand;
         if (HasNestedCommands())
         {
             command->_subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
@@ -381,6 +382,65 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
         return warnings;
+    }
+
+    // Function Description:
+    // - Serialize the Command into an array of json actions
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - an array of serialized actions
+    Json::Value Command::ToJson() const
+    {
+        Json::Value cmdList{ Json::ValueType::arrayValue };
+
+        if (_nestedCommand)
+        {
+            // handle nested command
+            // For nested commands, we can trust _originalJson to be correct.
+            // In fact, we _need_ to use it here because we don't actually deserialize `iterateOn`
+            //   until we expand the command.
+            cmdList.append(_originalJson);
+        }
+        else if (_keyMappings.empty())
+        {
+            // only write out one command
+            Json::Value cmdJson{ Json::ValueType::objectValue };
+            JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
+            JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
+
+            if (_ActionAndArgs)
+            {
+                cmdJson[JsonKey(ActionKey)] = ActionAndArgs::ToJson(_ActionAndArgs);
+            }
+
+            cmdList.append(cmdJson);
+        }
+        else
+        {
+            // we'll write out one command per key mapping
+            for (auto keys{ _keyMappings.begin() }; keys != _keyMappings.end(); ++keys)
+            {
+                Json::Value cmdJson{ Json::ValueType::objectValue };
+
+                if (keys == _keyMappings.begin())
+                {
+                    // First iteration also writes icon and name
+                    JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
+                    JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
+                }
+
+                if (_ActionAndArgs)
+                {
+                    cmdJson[JsonKey(ActionKey)] = ActionAndArgs::ToJson(_ActionAndArgs);
+                }
+
+                JsonUtils::SetValueForKey(cmdJson, KeysKey, *keys);
+                cmdList.append(cmdJson);
+            }
+        }
+
+        return cmdList;
     }
 
     // Function Description:

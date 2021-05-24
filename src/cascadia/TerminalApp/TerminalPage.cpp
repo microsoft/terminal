@@ -2006,11 +2006,11 @@ namespace winrt::TerminalApp::implementation
     // - Gets the taskbar state value from the last active control
     // Return Value:
     // - The taskbar state of the last active control
-    size_t TerminalPage::GetLastActiveControlTaskbarState()
+    uint64_t TerminalPage::GetLastActiveControlTaskbarState()
     {
         if (auto control{ _GetActiveControl() })
         {
-            return gsl::narrow_cast<size_t>(control.TaskbarState());
+            return control.TaskbarState();
         }
         return {};
     }
@@ -2019,11 +2019,11 @@ namespace winrt::TerminalApp::implementation
     // - Gets the taskbar progress value from the last active control
     // Return Value:
     // - The taskbar progress of the last active control
-    size_t TerminalPage::GetLastActiveControlTaskbarProgress()
+    uint64_t TerminalPage::GetLastActiveControlTaskbarProgress()
     {
         if (auto control{ _GetActiveControl() })
         {
-            return gsl::narrow_cast<size_t>(control.TaskbarProgress());
+            return control.TaskbarProgress();
         }
         return {};
     }
@@ -2072,9 +2072,7 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_SetFocusMode(const bool inFocusMode)
     {
-        // If we're the quake window, we must always be in focus mode.
-        // Prevent leaving focus mode here.
-        const bool newInFocusMode = inFocusMode || IsQuakeWindow();
+        const bool newInFocusMode = inFocusMode;
         if (newInFocusMode != FocusMode())
         {
             _isInFocusMode = newInFocusMode;

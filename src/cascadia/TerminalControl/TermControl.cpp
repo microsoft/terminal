@@ -43,6 +43,8 @@ constexpr const auto TerminalWarningBellInterval = std::chrono::milliseconds(100
 
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::CopyFormat);
 
+DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::MouseButtonState);
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     TermControl::TermControl(IControlSettings settings,
@@ -105,27 +107,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Core eventually won't have access to. When we get to
         // https://github.com/microsoft/terminal/projects/5#card-50760282
         // then we'll move the applicable ones.
-        _tsfTryRedrawCanvas = std::make_shared<ThrottledFunc<winrt::Windows::UI::Core::CoreDispatcher>>(
+        _tsfTryRedrawCanvas = std::make_shared<ThrottledFuncTrailing<winrt::Windows::UI::Core::CoreDispatcher>>(
+            Dispatcher(),
+            TsfRedrawInterval,
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() })
                 {
                     control->TSFInputControl().TryRedrawCanvas();
                 }
-            },
-            TsfRedrawInterval,
-            Dispatcher());
+            });
 
-        _playWarningBell = std::make_shared<ThrottledFunc<winrt::Windows::UI::Core::CoreDispatcher>>(
+        _playWarningBell = std::make_shared<ThrottledFuncLeading<winrt::Windows::UI::Core::CoreDispatcher>>(
+            Dispatcher(),
+            TerminalWarningBellInterval,
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() })
                 {
                     control->_WarningBellHandlers(*control, nullptr);
                 }
-            },
-            TerminalWarningBellInterval,
-            Dispatcher());
+            });
 
-        _updateScrollBar = std::make_shared<ThrottledFunc<winrt::Windows::UI::Core::CoreDispatcher, ScrollBarUpdate>>(
+        _updateScrollBar = std::make_shared<ThrottledFuncTrailing<winrt::Windows::UI::Core::CoreDispatcher, ScrollBarUpdate>>(
+            Dispatcher(),
+            ScrollBarUpdateInterval,
             [weakThis = get_weak()](const auto& update) {
                 if (auto control{ weakThis.get() })
                 {
@@ -144,9 +148,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                     control->_isInternalScrollBarUpdate = false;
                 }
-            },
-            ScrollBarUpdateInterval,
-            Dispatcher());
+            });
 
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
@@ -406,13 +408,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _interactivity.UpdateSettings();
-        if (auto ap{ _automationPeer.get() })
-        {
-            ap.SetControlPadding(Core::Padding{ newMargin.Left,
-                                                newMargin.Top,
-                                                newMargin.Right,
-                                                newMargin.Bottom });
-        }
+        _automationPeer.SetControlPadding(Core::Padding{ newMargin.Left,
+                                                         newMargin.Top,
+                                                         newMargin.Right,
+                                                         newMargin.Bottom });
     }
 
     // Method Description:
@@ -520,10 +519,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_initializedTerminal && !_closing) // only set up the automation peer if we're ready to go live
         {
+            // create a custom automation peer with this code pattern:
+            // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
             if (const auto& interactivityAutoPeer{ _interactivity.OnCreateAutomationPeer() })
             {
                 auto autoPeer = winrt::make_self<implementation::TermControlAutomationPeer>(this, interactivityAutoPeer);
-                _automationPeer = winrt::weak_ref<Control::TermControlAutomationPeer>(*autoPeer);
+                _automationPeer = *autoPeer;
                 return *autoPeer;
             }
         }
@@ -1210,9 +1211,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                    const bool rightButtonDown)
     {
         const auto modifiers = _GetPressedModifierKeys();
-        Control::MouseButtonState state{ leftButtonDown,
-                                         midButtonDown,
-                                         rightButtonDown };
+
+        Control::MouseButtonState state{};
+        WI_SetFlagIf(state, Control::MouseButtonState::IsLeftButtonDown, leftButtonDown);
+        WI_SetFlagIf(state, Control::MouseButtonState::IsMiddleButtonDown, midButtonDown);
+        WI_SetFlagIf(state, Control::MouseButtonState::IsRightButtonDown, rightButtonDown);
+
         return _interactivity.MouseWheel(modifiers, delta, _toTerminalOrigin(location), state);
     }
 
@@ -1506,10 +1510,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto newSize = e.NewSize();
         _core.SizeChanged(newSize.Width, newSize.Height);
 
-        if (auto ap{ _automationPeer.get() })
-        {
-            ap.UpdateControlBounds();
-        }
+        _automationPeer.UpdateControlBounds();
     }
 
     // Method Description:
@@ -1677,6 +1678,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _core.ReceivedOutput(_coreOutputEventToken);
 
             _RestorePointerCursorHandlers(*this, nullptr);
+
+            // These four throttled functions are triggered by terminal output and interact with the UI.
+            // Since Close() is the point after which we are removed from the UI, but before the destructor
+            // has run, we should disconnect them *right now*. If we don't, they may fire between the
+            // throttle delay (from the final output) and the dtor.
+            _tsfTryRedrawCanvas.reset();
+            _updateScrollBar.reset();
+            _playWarningBell.reset();
 
             // Disconnect the TSF input control so it doesn't receive EditContext events.
             TSFInputControl().Close();
@@ -2293,6 +2302,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _settings;
     }
 
+    void TermControl::Settings(IControlSettings newSettings)
+    {
+        _settings = newSettings;
+    }
+
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControl::TabColor() noexcept
     {
         // NOTE TO FUTURE READERS: TabColor is down in the Core for the
@@ -2306,7 +2320,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Gets the internal taskbar state value
     // Return Value:
     // - The taskbar state of this control
-    const size_t TermControl::TaskbarState() const noexcept
+    const uint64_t TermControl::TaskbarState() const noexcept
     {
         return _core.TaskbarState();
     }
@@ -2315,7 +2329,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Gets the internal taskbar progress value
     // Return Value:
     // - The taskbar progress of this control
-    const size_t TermControl::TaskbarProgress() const noexcept
+    const uint64_t TermControl::TaskbarProgress() const noexcept
     {
         return _core.TaskbarProgress();
     }
@@ -2346,7 +2360,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_PointerExitedHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                             Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
     {
-        _core.UpdateHoveredCell(nullptr);
+        _core.ClearHoveredCell();
     }
 
     winrt::fire_and_forget TermControl::_hoveredHyperlinkChanged(IInspectable sender,
@@ -2413,9 +2427,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     Control::MouseButtonState TermControl::GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point)
     {
-        return Control::MouseButtonState{ point.Properties().IsLeftButtonPressed(),
-                                          point.Properties().IsMiddleButtonPressed(),
-                                          point.Properties().IsRightButtonPressed() };
+        Control::MouseButtonState state{};
+        WI_SetFlagIf(state, Control::MouseButtonState::IsLeftButtonDown, point.Properties().IsLeftButtonPressed());
+        WI_SetFlagIf(state, Control::MouseButtonState::IsMiddleButtonDown, point.Properties().IsMiddleButtonPressed());
+        WI_SetFlagIf(state, Control::MouseButtonState::IsRightButtonDown, point.Properties().IsRightButtonPressed());
+        return state;
     }
 
     unsigned int TermControl::GetPointerUpdateKind(const winrt::Windows::UI::Input::PointerPoint point)

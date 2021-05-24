@@ -8,6 +8,8 @@
 
 using namespace Microsoft::Console::Types;
 
+// NOTE: See `til.h` for which keyword flags are reserved
+// to ensure newly added ones do NOT overlap.
 enum TraceKeywords
 {
     //Font = 0x001, // _DBGFONTS
@@ -63,6 +65,7 @@ Tracing Tracing::s_TraceApiCall(const NTSTATUS& result, PCSTR traceName)
         TraceLoggingString(traceName, "ApiName"),
         TraceLoggingOpcode(WINEVENT_OPCODE_START),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
         TraceLoggingKeyword(TraceKeywords::API));
 
     return Tracing([traceName, &result] {
@@ -73,6 +76,7 @@ Tracing Tracing::s_TraceApiCall(const NTSTATUS& result, PCSTR traceName)
             TraceLoggingHResult(result, "Result"),
             TraceLoggingOpcode(WINEVENT_OPCODE_STOP),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
             TraceLoggingKeyword(TraceKeywords::API));
     });
     // clang-format on
@@ -89,6 +93,7 @@ void Tracing::s_TraceApi(const NTSTATUS status, const CONSOLE_GETLARGESTWINDOWSI
         TraceLoggingInt32(a->Size.X, "MaxWindowWidthInChars"),
         TraceLoggingInt32(a->Size.Y, "MaxWindowHeightInChars"),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
         TraceLoggingKeyword(TraceKeywords::API));
 }
 
@@ -110,6 +115,7 @@ void Tracing::s_TraceApi(const NTSTATUS status, const CONSOLE_SCREENBUFFERINFO_M
             TraceLoggingInt32(a->MaximumWindowSize.X, "MaxWindowWidthInChars"),
             TraceLoggingInt32(a->MaximumWindowSize.Y, "MaxWindowHeightInChars"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
             TraceLoggingKeyword(TraceKeywords::API));
     }
     else
@@ -125,6 +131,7 @@ void Tracing::s_TraceApi(const NTSTATUS status, const CONSOLE_SCREENBUFFERINFO_M
             TraceLoggingInt32(a->MaximumWindowSize.X, "MaxWindowWidthInChars"),
             TraceLoggingInt32(a->MaximumWindowSize.Y, "MaxWindowHeightInChars"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
             TraceLoggingKeyword(TraceKeywords::API));
     }
 }
@@ -138,6 +145,7 @@ void Tracing::s_TraceApi(const NTSTATUS status, const CONSOLE_SETSCREENBUFFERSIZ
         TraceLoggingInt32(a->Size.X, "BufferWidthInChars"),
         TraceLoggingInt32(a->Size.Y, "BufferHeightInChars"),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
         TraceLoggingKeyword(TraceKeywords::API));
 }
 
@@ -153,6 +161,7 @@ void Tracing::s_TraceApi(const NTSTATUS status, const CONSOLE_SETWINDOWINFO_MSG*
         TraceLoggingInt32(a->Window.Top, "WindowRectTop"),
         TraceLoggingInt32(a->Window.Bottom, "WindowRectBottom"),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
         TraceLoggingKeyword(TraceKeywords::API));
 }
 
@@ -169,6 +178,7 @@ void Tracing::s_TraceApi(_In_ const void* const buffer, const CONSOLE_WRITECONSO
             TraceLoggingUInt32(a->NumBytes, "NumBytes"),
             TraceLoggingCountedWideString(buf, static_cast<UINT16>(a->NumBytes / sizeof(wchar_t)), "input buffer"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
             TraceLoggingKeyword(TraceKeywords::API));
     }
     else
@@ -181,6 +191,7 @@ void Tracing::s_TraceApi(_In_ const void* const buffer, const CONSOLE_WRITECONSO
             TraceLoggingUInt32(a->NumBytes, "NumBytes"),
             TraceLoggingCountedString(buf, static_cast<UINT16>(a->NumBytes / sizeof(char)), "input buffer"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
             TraceLoggingKeyword(TraceKeywords::API));
     }
     // clang-format on
@@ -206,6 +217,7 @@ void Tracing::s_TraceApi(const CONSOLE_SCREENBUFFERINFO_MSG* const a)
         TraceLoggingBoolean(a->FullscreenSupported, "FullscreenSupported"),
         TraceLoggingHexUInt32FixedArray((UINT32 const*)a->ColorTable, _countof(a->ColorTable), "ColorTable"),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
         TraceLoggingKeyword(TraceKeywords::API));
     static_assert(sizeof(UINT32) == sizeof(*a->ColorTable), "a->ColorTable");
 }
@@ -218,6 +230,7 @@ void Tracing::s_TraceApi(const CONSOLE_MODE_MSG* const a, const std::wstring_vie
         TraceLoggingHexUInt32(a->Mode, "Mode"),
         TraceLoggingCountedWideString(handleType.data(), gsl::narrow_cast<ULONG>(handleType.size()), "Handle type"),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
         TraceLoggingKeyword(TraceKeywords::API));
 }
 
@@ -228,6 +241,7 @@ void Tracing::s_TraceApi(const CONSOLE_SETTEXTATTRIBUTE_MSG* const a)
         "API_SetConsoleTextAttribute",
         TraceLoggingHexUInt16(a->Attributes, "Attributes"),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
         TraceLoggingKeyword(TraceKeywords::API));
 }
 
@@ -241,6 +255,7 @@ void Tracing::s_TraceApi(const CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const a)
         TraceLoggingHexUInt32(a->StringType, "StringType"),
         TraceLoggingUInt32(a->NumRecords, "NumRecords"),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
         TraceLoggingKeyword(TraceKeywords::API));
 }
 
@@ -254,6 +269,7 @@ void Tracing::s_TraceWindowViewport(const Viewport& viewport)
         TraceLoggingInt32(viewport.Top(), "OriginTop"),
         TraceLoggingInt32(viewport.Left(), "OriginLeft"),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
         TraceLoggingKeyword(TraceKeywords::General));
 }
 
@@ -270,6 +286,7 @@ void Tracing::s_TraceChars(_In_z_ const char* pszMessage, ...)
         "CharsTrace",
         TraceLoggingString(szBuffer),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
         TraceLoggingKeyword(TraceKeywords::Chars));
 
     if (s_ulDebugFlag & TraceKeywords::Chars)
@@ -291,6 +308,7 @@ void Tracing::s_TraceOutput(_In_z_ const char* pszMessage, ...)
         "OutputTrace",
         TraceLoggingString(szBuffer),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
         TraceLoggingKeyword(TraceKeywords::Output));
 
     if (s_ulDebugFlag & TraceKeywords::Output)
@@ -308,6 +326,7 @@ void Tracing::s_TraceWindowMessage(const MSG& msg)
         TraceLoggingHexUInt64(msg.wParam, "wParam"),
         TraceLoggingHexUInt64(msg.lParam, "lParam"),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
         TraceLoggingKeyword(TraceKeywords::Input));
 }
 
@@ -329,6 +348,7 @@ void Tracing::s_TraceInputRecord(const INPUT_RECORD& inputRecord)
             TraceLoggingHexUInt8(inputRecord.Event.KeyEvent.uChar.AsciiChar, "Hex AsciiChar"),
             TraceLoggingHexUInt32(inputRecord.Event.KeyEvent.dwControlKeyState, "dwControlKeyState"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
             TraceLoggingKeyword(TraceKeywords::Input));
         break;
     case MOUSE_EVENT:
@@ -341,6 +361,7 @@ void Tracing::s_TraceInputRecord(const INPUT_RECORD& inputRecord)
             TraceLoggingHexUInt32(inputRecord.Event.MouseEvent.dwControlKeyState, "dwControlKeyState"),
             TraceLoggingHexUInt32(inputRecord.Event.MouseEvent.dwEventFlags, "dwEventFlags"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
             TraceLoggingKeyword(TraceKeywords::Input));
         break;
     case WINDOW_BUFFER_SIZE_EVENT:
@@ -350,6 +371,7 @@ void Tracing::s_TraceInputRecord(const INPUT_RECORD& inputRecord)
             TraceLoggingInt16(inputRecord.Event.WindowBufferSizeEvent.dwSize.X, "dwSize.X"),
             TraceLoggingInt16(inputRecord.Event.WindowBufferSizeEvent.dwSize.Y, "dwSize.Y"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
             TraceLoggingKeyword(TraceKeywords::Input));
         break;
     case MENU_EVENT:
@@ -358,6 +380,7 @@ void Tracing::s_TraceInputRecord(const INPUT_RECORD& inputRecord)
             "Menu Event Input Record",
             TraceLoggingHexUInt64(inputRecord.Event.MenuEvent.dwCommandId, "dwCommandId"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
             TraceLoggingKeyword(TraceKeywords::Input));
         break;
     case FOCUS_EVENT:
@@ -366,6 +389,7 @@ void Tracing::s_TraceInputRecord(const INPUT_RECORD& inputRecord)
             "Focus Event Input Record",
             TraceLoggingBool(inputRecord.Event.FocusEvent.bSetFocus, "bSetFocus"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
             TraceLoggingKeyword(TraceKeywords::Input));
         break;
     default:
@@ -374,6 +398,7 @@ void Tracing::s_TraceInputRecord(const INPUT_RECORD& inputRecord)
             "Unknown Input Record",
             TraceLoggingHexUInt16(inputRecord.EventType, "EventType"),
             TraceLoggingLevel(WINEVENT_LEVEL_ERROR),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
             TraceLoggingKeyword(TraceKeywords::Input));
         break;
     }
@@ -393,5 +418,6 @@ void __stdcall Tracing::TraceFailure(const wil::FailureInfo& failure) noexcept
         TraceLoggingString(failure.pszModule, "Module"),
         TraceLoggingPointer(failure.returnAddress, "Site"),
         TraceLoggingString(failure.pszCode, "Code"),
-        TraceLoggingLevel(WINEVENT_LEVEL_ERROR));
+        TraceLoggingLevel(WINEVENT_LEVEL_ERROR),
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 }

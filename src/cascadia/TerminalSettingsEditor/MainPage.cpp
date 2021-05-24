@@ -39,9 +39,9 @@ static const std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    static Editor::ProfileViewModel _viewModelForProfile(const Model::Profile& profile)
+    static Editor::ProfileViewModel _viewModelForProfile(const Model::Profile& profile, const Model::CascadiaSettings& appSettings)
     {
-        return winrt::make<implementation::ProfileViewModel>(profile);
+        return winrt::make<implementation::ProfileViewModel>(profile, appSettings);
     }
 
     MainPage::MainPage(const CascadiaSettings& settings) :
@@ -146,7 +146,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                         {
                             if (const auto& selectedItemProfileTag{ selectedItemTag.try_as<ProfileViewModel>() })
                             {
-                                if (profileTag->Guid() == selectedItemProfileTag->Guid())
+                                if (profileTag->OriginalProfileGuid() == selectedItemProfileTag->OriginalProfileGuid())
                                 {
                                     // found the one that was selected before the refresh
                                     SettingsNav().SelectedItem(item);
@@ -286,14 +286,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == actionsTag)
         {
-            auto actionsState{ winrt::make<ActionsPageNavigationState>(_settingsClone) };
-            actionsState.OpenJson([weakThis = get_weak()](auto&&, auto&& arg) {
-                if (auto self{ weakThis.get() })
-                {
-                    self->_OpenJsonHandlers(nullptr, arg);
-                }
-            });
-            contentFrame().Navigate(xaml_typename<Editor::Actions>(), actionsState);
+            contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsPageNavigationState>(_settingsClone));
         }
         else if (clickedItemTag == colorSchemesTag)
         {
@@ -368,7 +361,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // profile changes.
         for (const auto& profile : _settingsClone.AllProfiles())
         {
-            auto navItem = _CreateProfileNavViewItem(_viewModelForProfile(profile));
+            auto navItem = _CreateProfileNavViewItem(_viewModelForProfile(profile, _settingsClone));
             SettingsNav().MenuItems().Append(navItem);
         }
 
@@ -388,7 +381,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void MainPage::_CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile& profile)
     {
         const auto newProfile{ profile ? profile : _settingsClone.CreateNewProfile() };
-        const auto profileViewModel{ _viewModelForProfile(newProfile) };
+        const auto profileViewModel{ _viewModelForProfile(newProfile, _settingsClone) };
         const auto navItem{ _CreateProfileNavViewItem(profileViewModel) };
         SettingsNav().MenuItems().InsertAt(index, navItem);
 

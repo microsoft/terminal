@@ -188,6 +188,7 @@
         "duplicateTab",
         "find",
         "findMatch",
+        "focusPane",
         "identifyWindow",
         "identifyWindows",
         "moveFocus",
@@ -798,6 +799,22 @@
         }
       ]
     },
+    "FocusPaneAction": {
+      "description": "Arguments corresponding to a focusPane Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "focusPane" },
+            "id": {
+              "type": "string",
+              "default": "",
+              "description": "The ID of the pane to focus"
+            }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -828,6 +845,7 @@
               { "$ref": "#/definitions/PrevTabAction" },
               { "$ref": "#/definitions/RenameTabAction" },
               { "$ref": "#/definitions/RenameWindowAction" },
+              { "$ref": "#/definitions/FocusPaneAction" },
               { "type": "null" }
             ]
         },
@@ -903,6 +921,11 @@
         "trimBlockSelection": {
           "default": false,
           "description": "When set to true, trailing white-spaces will be removed from text in rectangular (block) selection while copied to your clipboard. When set to false, the white-spaces will be preserved.",
+          "type": "boolean"
+        },
+        "experimental.detectURLs": {
+          "default": true,
+          "description": "When set to true, URLs will be detected by the Terminal. This will cause URLs to underline on hover and be clickable by pressing Ctrl.",
           "type": "boolean"
         },
         "disableAnimations": {

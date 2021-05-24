@@ -457,3 +457,12 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::DesktopBehavior)
         pair_type{ "onCurrent", ValueType::OnCurrent },
     };
 };
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MonitorBehavior)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "any", ValueType::Any },
+        pair_type{ "toCurrent", ValueType::ToCurrent },
+        pair_type{ "toMouse", ValueType::ToMouse },
+    };
+};

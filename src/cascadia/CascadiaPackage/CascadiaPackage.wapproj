@@ -3,8 +3,6 @@
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\wap-common.build.pre.props" />
   <PropertyGroup Label="Configuration">
-    <TargetPlatformVersion>10.0.18362.0</TargetPlatformVersion>
-    <TargetPlatformMinVersion>10.0.18362.0</TargetPlatformMinVersion>
     <!--
     These two properties are very important!
     Without them, msbuild will stomp MinVersion and MaxVersionTested in the
