@@ -509,6 +509,7 @@ DEADCHAR
 dealloc
 debolden
 debounce
+debugtype
 DECALN
 DECANM
 DECAUPSS
