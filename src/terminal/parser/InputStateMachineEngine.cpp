@@ -873,29 +873,6 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
     {
     case CsiMouseButtonCodes::Left:
         buttonFlag = FROM_LEFT_1ST_BUTTON_PRESSED;
-        // If this is a mouse down, check if it's a double click
-        // and also update our last clicked position and time
-        if (id == CsiActionCodes::MouseDown)
-        {
-            if (_lastMouseClickPos && _lastMouseClickTime &&
-                uiPos == _lastMouseClickPos &&
-                (currentTime - _lastMouseClickTime.value()) < _doubleClickTime)
-            {
-                // This was a double click, set the flag and reset our trackers
-                // for last clicked position and time (this is so we don't send
-                // another double click on a third click)
-                eventFlags |= DOUBLE_CLICK;
-                _lastMouseClickPos.reset();
-                _lastMouseClickTime.reset();
-            }
-            else
-            {
-                // This was a single click, update our trackers for last
-                // clicked position and time
-                _lastMouseClickPos = uiPos;
-                _lastMouseClickTime = currentTime;
-            }
-        }
         break;
     case CsiMouseButtonCodes::Right:
         buttonFlag = RIGHTMOST_BUTTON_PRESSED;
@@ -937,6 +914,31 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
         // NOTE: scroll events have buttonFlag = 0
         //       so this intentionally does nothing
         buttonState |= buttonFlag;
+        // Check if this mouse down is a double click
+        // and also update our trackers for last clicked position, time and button
+        if (_lastMouseClickPos && _lastMouseClickTime && _lastMouseClickButton &&
+            uiPos == _lastMouseClickPos &&
+            (currentTime - _lastMouseClickTime.value()) < _doubleClickTime &&
+            buttonID == _lastMouseClickButton)
+        {
+            // This was a double click, set the flag and reset our trackers
+            // for last clicked position, time and button (this is so we don't send
+            // another double click on a third click)
+            eventFlags |= DOUBLE_CLICK;
+            _lastMouseClickPos.reset();
+            _lastMouseClickTime.reset();
+            _lastMouseClickButton.reset();
+        }
+        else if (buttonID == CsiMouseButtonCodes::Left ||
+                 buttonID == CsiMouseButtonCodes::Right ||
+                 buttonID == CsiMouseButtonCodes::Middle)
+        {
+            // This was a single click, update our trackers for last
+            // clicked position and time
+            _lastMouseClickPos = uiPos;
+            _lastMouseClickTime = currentTime;
+            _lastMouseClickButton = buttonID;
+        }
         break;
     case CsiActionCodes::MouseUp:
         // clear flag

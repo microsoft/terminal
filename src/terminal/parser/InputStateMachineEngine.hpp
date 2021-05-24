@@ -173,6 +173,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::chrono::milliseconds _doubleClickTime;
         std::optional<til::point> _lastMouseClickPos{};
         std::optional<std::chrono::steady_clock::time_point> _lastMouseClickTime{};
+        std::optional<size_t> _lastMouseClickButton{};
 
         DWORD _GetCursorKeysModifierState(const VTParameters parameters, const VTID id) noexcept;
         DWORD _GetGenericKeysModifierState(const VTParameters parameters) noexcept;
