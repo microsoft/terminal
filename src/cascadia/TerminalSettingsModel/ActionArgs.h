@@ -32,6 +32,7 @@
 #include "NextTabArgs.g.h"
 #include "RenameWindowArgs.g.h"
 #include "GlobalSummonArgs.g.h"
+#include "FocusPaneArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
@@ -1526,6 +1527,56 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
+    struct FocusPaneArgs : public FocusPaneArgsT<FocusPaneArgs>
+    {
+        FocusPaneArgs() = default;
+        FocusPaneArgs(uint32_t id) :
+            _Id{ id } {};
+        WINRT_PROPERTY(uint32_t, Id);
+        static constexpr std::string_view IdKey{ "id" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<FocusPaneArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Id == _Id;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<FocusPaneArgs>();
+            JsonUtils::GetValueForKey(json, IdKey, args->_Id);
+            return { *args, {} };
+        }
+        static Json::Value ToJson(const IActionArgs& val)
+        {
+            if (!val)
+            {
+                return {};
+            }
+            Json::Value json{ Json::ValueType::objectValue };
+            const auto args{ get_self<FocusPaneArgs>(val) };
+            JsonUtils::SetValueForKey(json, IdKey, args->_Id);
+            return json;
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<FocusPaneArgs>() };
+            copy->_Id = _Id;
+            return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Id);
+        }
+    };
+
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
@@ -1544,4 +1595,5 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(OpenSettingsArgs);
     BASIC_FACTORY(FindMatchArgs);
     BASIC_FACTORY(NewWindowArgs);
+    BASIC_FACTORY(FocusPaneArgs);
 }
