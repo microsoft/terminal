@@ -9,6 +9,7 @@
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "resource.h"
 #include "VirtualDesktopUtils.h"
+#include "icon.h"
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
@@ -78,6 +79,7 @@ AppHost::AppHost() noexcept :
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
     _window->NotifyTrayIconPressed({ this, &AppHost::_HandleTrayIconPressed });
+    _window->NotifyWindowMinimized({ this, &AppHost::_HandleWindowMinimized });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
 
@@ -267,7 +269,6 @@ void AppHost::Initialize()
     _logic.RenameWindowRequested({ this, &AppHost::_RenameWindowRequested });
     _logic.SettingsChanged({ this, &AppHost::_HandleSettingsChanged });
     _logic.IsQuakeWindowChanged({ this, &AppHost::_IsQuakeWindowChanged });
-    _logic.MinimizeToTrayRequested({ this, &AppHost::_MinimizeToTrayRequested });
 
     _window->UpdateTitle(_logic.Title());
 
@@ -641,9 +642,6 @@ winrt::fire_and_forget AppHost::_WindowActivated()
 void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
-    // Look at me, I'm the captain now.
-    _UpdateTrayIcon();
-
     _setupGlobalHotkeys();
 }
 
@@ -925,56 +923,35 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
 
 void AppHost::_UpdateTrayIcon()
 {
-    if (_TrayIconData)
-    {
-        auto nid = _TrayIconData.value();
-        nid.hWnd = _window->GetHandle();
-        Shell_NotifyIcon(NIM_MODIFY, &nid);
-    }
-    else
-    {
-        NOTIFYICONDATA nid{};
+    NOTIFYICONDATA nid{};
 
-        if (HMODULE hModule = GetModuleHandleW(nullptr))
-        {
-            nid.hIcon = static_cast<HICON>(LoadImageW(hModule, MAKEINTRESOURCEW(IDI_APPICON), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE));
-        }
+    // This HWND will receive the callbacks sent by the tray icon.
+    nid.hWnd = _window->GetHandle();
 
-        nid.hWnd = _window->GetHandle();
-        nid.uID = 1;
-        nid.uCallbackMessage = WM_APP + 1;
-        StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), L"Windows Terminal");
-        nid.uFlags = NIF_MESSAGE | NIF_SHOWTIP | NIF_TIP | NIF_ICON;
+    nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(ICON_SMALL));
+    nid.uID = 1;
+    nid.uCallbackMessage = WM_APP + 1;
+    StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), L"Windows Terminal");
+    nid.uFlags = NIF_MESSAGE | NIF_SHOWTIP | NIF_TIP | NIF_ICON;
+    Shell_NotifyIcon(NIM_ADD, &nid);
 
-        // Add the icon to the tray
-        // TODO: Only if there isn't already an Icon.
-        // If there is, we only need to update the HWND.
-        Shell_NotifyIcon(NIM_ADD, &nid);
-
-        nid.uVersion = NOTIFYICON_VERSION_4;
-        Shell_NotifyIcon(NIM_SETVERSION, &nid);
-
-        _TrayIconData = nid;
-    }
+    // NIM_ADD won't set the version even if uVersion is set in the nid.
+    // We have to perform a NIM_SETVERSION call separately.
+    nid.uVersion = NOTIFYICON_VERSION_4;
+    Shell_NotifyIcon(NIM_SETVERSION, &nid);
 }
 
 void AppHost::_HandleTrayIconPressed()
 {
-    // No name provided means show the MRU window.
-    Remoting::SummonWindowSelectionArgs args{};
-
-    // For now, just show the window where it originally was.
-    args.OnCurrentDesktop(true);
-    args.SummonBehavior().MoveToCurrentDesktop(false);
-    args.SummonBehavior().ToggleVisibility(false);
-    args.SummonBehavior().DropdownDuration(0);
-    args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToCurrent);
-
-    _windowManager.SummonWindow(args);
+    _window->SummonWindow({});
 }
 
-void AppHost::_MinimizeToTrayRequested(const winrt::Windows::Foundation::IInspectable sender,
-                                       const winrt::Windows::Foundation::IInspectable args)
+void AppHost::_HandleWindowMinimized()
 {
-
+    // Scoping "minimize to tray" to just the quake window.
+    // Broader support will come in later.
+    if (_logic.IsQuakeWindow())
+    {
+        _UpdateTrayIcon();
+    }
 }

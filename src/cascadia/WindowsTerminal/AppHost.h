@@ -84,7 +84,5 @@ private:
 
     void _UpdateTrayIcon();
     void _HandleTrayIconPressed();
-    void _MinimizeToTrayRequested(const winrt::Windows::Foundation::IInspectable sender,
-                                  const winrt::Windows::Foundation::IInspectable args);
-    std::optional<NOTIFYICONDATA> _TrayIconData;
+    void _HandleWindowMinimized();
 };

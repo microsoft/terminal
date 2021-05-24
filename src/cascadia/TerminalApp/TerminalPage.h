@@ -124,7 +124,6 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(IdentifyWindowsRequested, IInspectable, IInspectable);
         TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs);
         TYPED_EVENT(IsQuakeWindowChanged, IInspectable, IInspectable);
-        TYPED_EVENT(MinimizeToTrayRequested, IInspectable, IInspectable);
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
