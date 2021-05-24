@@ -1030,6 +1030,8 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
                                                    WI_IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
             }
 
+            Tracing::s_TraceCookedRead(_backupLimit);
+
             // check for alias
             ProcessAliases(LineCount);
         }
