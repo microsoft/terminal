@@ -89,7 +89,7 @@
                                         <!--  profile name and author  -->
                                         <ColumnDefinition Width="*" />
                                         <!--  version  -->
-                                        <ColumnDefinition Width="48" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
 
                                     <Grid.RowDefinitions>

@@ -301,6 +301,8 @@ namespace winrt::TerminalApp::implementation
         void _SetNewTabButtonColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor);
         void _ClearNewTabButtonColor();
 
+        void _StartInboundListener();
+
         void _CompleteInitialization();
 
         void _FocusActiveControl(IInspectable sender, IInspectable eventArgs);
