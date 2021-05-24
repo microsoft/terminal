@@ -423,9 +423,9 @@ extern "C" HRESULT WINAPI ConptyPackPseudoConsole(_In_ HANDLE hProcess,
     PseudoConsole* pPty = (PseudoConsole*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(PseudoConsole));
     RETURN_IF_NULL_ALLOC(pPty);
 
-    RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), hProcess, GetCurrentProcess(), &pPty->hConPtyProcess, 0, FALSE, DUPLICATE_SAME_ACCESS));
-    RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), hRef, GetCurrentProcess(), &pPty->hPtyReference, 0, FALSE, DUPLICATE_SAME_ACCESS));
-    RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), hSignal, GetCurrentProcess(), &pPty->hSignal, 0, FALSE, DUPLICATE_SAME_ACCESS));
+    pPty->hConPtyProcess = hProcess;
+    pPty->hPtyReference = hRef;
+    pPty->hSignal = hSignal;
 
     *phPC = (HPCON)pPty;
     return S_OK;
