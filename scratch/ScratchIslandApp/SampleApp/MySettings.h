@@ -79,6 +79,8 @@ namespace winrt::SampleApp::implementation
 
         WINRT_PROPERTY(winrt::hstring, PixelShaderPath);
 
+        WINRT_PROPERTY(bool, DetectURLs, true);
+
     private:
         std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> _ColorTable;
 
