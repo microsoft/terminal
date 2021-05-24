@@ -19,7 +19,6 @@ namespace winrt
     namespace WUX = Windows::UI::Xaml;
 }
 
-
 namespace winrt::TerminalApp::implementation
 {
     TabRowControl::TabRowControl()
@@ -71,6 +70,5 @@ namespace winrt::TerminalApp::implementation
         e.DragUIOverride().IsContentVisible(false);
         // Sets if the glyph is visible
         e.DragUIOverride().IsGlyphVisible(false);
-
     }
 }

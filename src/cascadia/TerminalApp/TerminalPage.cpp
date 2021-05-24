@@ -176,7 +176,7 @@ namespace winrt::TerminalApp::implementation
                 page->_OpenNewTerminal(NewTerminalArgs());
             }
         });
-        _newTabButton.Drop([weakThis{ get_weak() }](Windows::Foundation::IInspectable const& , winrt::Windows::UI::Xaml::DragEventArgs e) {
+        _newTabButton.Drop([weakThis{ get_weak() }](Windows::Foundation::IInspectable const&, winrt::Windows::UI::Xaml::DragEventArgs e) {
             if (auto page{ weakThis.get() })
             {
                 page->NewTerminalByDrop(e);
@@ -728,7 +728,7 @@ namespace winrt::TerminalApp::implementation
         const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
         const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
         const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
-            WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+                                WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
         const auto shiftState{ window.GetKeyState(VirtualKey::Shift) };
         const auto rShiftState = window.GetKeyState(VirtualKey::RightShift);
@@ -739,15 +739,15 @@ namespace winrt::TerminalApp::implementation
 
         // Check for DebugTap
         bool debugTap = this->_settings.GlobalSettings().DebugFeaturesEnabled() &&
-            WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
-            WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+                        WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
+                        WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
         if (altPressed && !debugTap)
         {
             this->_SplitPane(SplitState::Automatic,
-                SplitType::Manual,
-                0.5f,
-                newTerminalArgs);
+                             SplitType::Manual,
+                             0.5f,
+                             newTerminalArgs);
         }
         else if (shiftPressed && !debugTap)
         {
