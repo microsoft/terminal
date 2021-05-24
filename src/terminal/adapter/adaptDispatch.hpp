@@ -295,6 +295,7 @@ namespace Microsoft::Console::VirtualTerminal
         TerminalInput& _terminalInput;
         TerminalOutput _termOutput;
         PageManager _pages;
+        friend class SixelParser;
         std::unique_ptr<FontBuffer> _fontBuffer;
         std::shared_ptr<MacroBuffer> _macroBuffer;
         std::optional<unsigned int> _initialCodePage;
