@@ -1013,6 +1013,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #ifdef UNIT_TESTING
         friend class ::RunLengthEncodingTests;
 #endif
+
+        template<typename It>
+        rle_scanner(It b, It e) -> rle_scanner<It>;
     };
 
     template<typename T, typename S = std::size_t>
