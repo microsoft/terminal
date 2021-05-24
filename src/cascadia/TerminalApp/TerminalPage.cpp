@@ -342,7 +342,7 @@ namespace winrt::TerminalApp::implementation
         if (_shouldStartInboundListener)
         {
             _shouldStartInboundListener = false;
-            
+
             try
             {
                 winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
