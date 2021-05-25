@@ -141,8 +141,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // (C++ class members are destroyed in reverse order.)
         // Further, the TermControlAutomationPeer must be destructed after _uiaEngine!
         Control::TermControlAutomationPeer _automationPeer{ nullptr };
-        Control::ControlCore _core{ nullptr };
         Control::ControlInteractivity _interactivity{ nullptr };
+        Control::ControlCore _core{ nullptr };
 
         winrt::com_ptr<SearchBoxControl> _searchBox;
 
