@@ -13,24 +13,21 @@
 
     <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
-            <Style
-                x:Key="SecondaryTextBlockStyle"
-                TargetType="TextBlock">
+            <Style x:Key="SecondaryTextBlockStyle"
+                   TargetType="TextBlock">
                 <Setter Property="Foreground" Value="{ThemeResource SystemBaseMediumColor}" />
             </Style>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
-            <Style
-                x:Key="SecondaryTextBlockStyle"
-                TargetType="TextBlock">
+            <Style x:Key="SecondaryTextBlockStyle"
+                   TargetType="TextBlock">
                 <Setter Property="Foreground" Value="{ThemeResource SystemBaseMediumColor}" />
             </Style>
         </ResourceDictionary>
         <ResourceDictionary x:Key="HighContrast">
-            <Style
-                x:Key="SecondaryTextBlockStyle"
-                TargetType="TextBlock"/>
-                <!-- Do not mess with the foreground color for High Contrast. Let it ride as is.-->
+            <Style x:Key="SecondaryTextBlockStyle"
+                   TargetType="TextBlock" />
+            <!--  Do not mess with the foreground color for High Contrast. Let it ride as is.  -->
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
