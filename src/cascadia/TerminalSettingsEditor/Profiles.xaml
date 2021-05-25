@@ -775,9 +775,14 @@
                                                 ClearSettingValue="{x:Bind State.Profile.ClearBellStyle}"
                                                 HasSettingValue="{x:Bind State.Profile.HasBellStyle, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.BellStyleOverrideSource, Mode=OneWay}">
-                            <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                               ItemsSource="{x:Bind BellStyleList, Mode=OneWay}"
-                                               SelectedItem="{x:Bind CurrentBellStyle, Mode=TwoWay}" />
+                            <StackPanel>
+                                <CheckBox x:Uid="Profile_BellStyleAudible"
+                                          IsChecked="{x:Bind IsBellStyleFlagSet(1), BindBack=SetBellStyleAudible, Mode=TwoWay}" />
+                                <CheckBox x:Uid="Profile_BellStyleWindow"
+                                          IsChecked="{x:Bind IsBellStyleFlagSet(2), BindBack=SetBellStyleWindow, Mode=TwoWay}" />
+                                <CheckBox x:Uid="Profile_BellStyleTaskbar"
+                                          IsChecked="{x:Bind IsBellStyleFlagSet(4), BindBack=SetBellStyleTaskbar, Mode=TwoWay}" />
+                            </StackPanel>
                         </local:SettingContainer>
                     </StackPanel>
                 </ScrollViewer>

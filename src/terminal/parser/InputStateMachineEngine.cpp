@@ -99,7 +99,8 @@ InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispat
 InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch, const bool lookingForDSR) :
     _pDispatch(std::move(pDispatch)),
     _lookingForDSR(lookingForDSR),
-    _pfnFlushToInputQueue(nullptr)
+    _pfnFlushToInputQueue(nullptr),
+    _doubleClickTime(std::chrono::milliseconds(GetDoubleClickTime()))
 {
     THROW_HR_IF_NULL(E_INVALIDARG, _pDispatch.get());
 }
@@ -386,9 +387,11 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         DWORD buttonState = 0;
         DWORD eventFlags = 0;
         const size_t firstParameter = parameters.at(0).value_or(0);
+        const til::point uiPos{ parameters.at(1) - 1, parameters.at(2) - 1 };
+
         modifierState = _GetSGRMouseModifierState(firstParameter);
-        success = _UpdateSGRMouseButtonState(id, firstParameter, buttonState, eventFlags);
-        success = success && _WriteMouseEvent(parameters.at(1), parameters.at(2), buttonState, modifierState, eventFlags);
+        success = _UpdateSGRMouseButtonState(id, firstParameter, buttonState, eventFlags, uiPos);
+        success = success && _WriteMouseEvent(uiPos, buttonState, modifierState, eventFlags);
         break;
     }
     // case CsiActionCodes::DSR_DeviceStatusReportResponse:
@@ -723,10 +726,8 @@ bool InputStateMachineEngine::_WriteSingleKey(const short vkey, const DWORD modi
 // - eventFlags - the type of mouse event to write to the mouse record.
 // Return Value:
 // - true iff we successfully wrote the keypress to the input callback.
-bool InputStateMachineEngine::_WriteMouseEvent(const size_t column, const size_t line, const DWORD buttonState, const DWORD controlKeyState, const DWORD eventFlags)
+bool InputStateMachineEngine::_WriteMouseEvent(const til::point uiPos, const DWORD buttonState, const DWORD controlKeyState, const DWORD eventFlags)
 {
-    COORD uiPos = { gsl::narrow<short>(column) - 1, gsl::narrow<short>(line) - 1 };
-
     INPUT_RECORD rgInput;
     rgInput.EventType = MOUSE_EVENT;
     rgInput.Event.MouseEvent.dwMousePosition = uiPos;
@@ -846,7 +847,8 @@ DWORD InputStateMachineEngine::_GetModifier(const size_t modifierParam) noexcept
 bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
                                                          const size_t sgrEncoding,
                                                          DWORD& buttonState,
-                                                         DWORD& eventFlags) noexcept
+                                                         DWORD& eventFlags,
+                                                         const til::point uiPos)
 {
     // Starting with the state from the last mouse event we received
     buttonState = _mouseButtonState;
@@ -862,7 +864,7 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
     // This retrieves the 2 MSBs and concatenates them to the 2 LSBs to create BBBB in binary
     // This represents which button had a change in state
     const auto buttonID = (sgrEncoding & 0x3) | ((sgrEncoding & 0xC0) >> 4);
-
+    const auto currentTime = std::chrono::steady_clock::now();
     // Step 1: Translate which button was affected
     // NOTE: if scrolled, having buttonFlag = 0 means
     //       we don't actually update the buttonState
@@ -894,6 +896,10 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
         eventFlags |= MOUSE_WHEELED;
         break;
     }
+    case CsiMouseButtonCodes::Released:
+        // hover event, we still want to send these but we don't
+        // need to do anything special here, so just break
+        break;
     default:
         // no detectable buttonID, so we can't update the state
         return false;
@@ -908,6 +914,31 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
         // NOTE: scroll events have buttonFlag = 0
         //       so this intentionally does nothing
         buttonState |= buttonFlag;
+        // Check if this mouse down is a double click
+        // and also update our trackers for last clicked position, time and button
+        if (_lastMouseClickPos && _lastMouseClickTime && _lastMouseClickButton &&
+            uiPos == _lastMouseClickPos &&
+            (currentTime - _lastMouseClickTime.value()) < _doubleClickTime &&
+            buttonID == _lastMouseClickButton)
+        {
+            // This was a double click, set the flag and reset our trackers
+            // for last clicked position, time and button (this is so we don't send
+            // another double click on a third click)
+            eventFlags |= DOUBLE_CLICK;
+            _lastMouseClickPos.reset();
+            _lastMouseClickTime.reset();
+            _lastMouseClickButton.reset();
+        }
+        else if (buttonID == CsiMouseButtonCodes::Left ||
+                 buttonID == CsiMouseButtonCodes::Right ||
+                 buttonID == CsiMouseButtonCodes::Middle)
+        {
+            // This was a single click, update our trackers for last
+            // clicked position and time
+            _lastMouseClickPos = uiPos;
+            _lastMouseClickTime = currentTime;
+            _lastMouseClickButton = buttonID;
+        }
         break;
     case CsiActionCodes::MouseUp:
         // clear flag

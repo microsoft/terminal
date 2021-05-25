@@ -59,7 +59,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _lastAutoScrollUpdateTime{ std::nullopt },
         _cursorTimer{},
         _blinkTimer{},
-        _searchBox{ nullptr }
+        _searchBox{ nullptr },
+        _bellLightAnimation{ Window::Current().Compositor().CreateScalarKeyFrameAnimation() }
     {
         InitializeComponent();
 
@@ -153,6 +154,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
+
+        // Add key frames and a duration to our bell light animation
+        _bellLightAnimation.InsertKeyFrame(0.0, 2.0);
+        _bellLightAnimation.InsertKeyFrame(1.0, 1.0);
+        _bellLightAnimation.Duration(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(TerminalWarningBellInterval)));
 
         _ApplyUISettings(_settings);
     }
@@ -408,10 +414,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _interactivity.UpdateSettings();
-        _automationPeer.SetControlPadding(Core::Padding{ newMargin.Left,
-                                                         newMargin.Top,
-                                                         newMargin.Right,
-                                                         newMargin.Bottom });
+        if (_automationPeer)
+        {
+            _automationPeer.SetControlPadding(Core::Padding{ newMargin.Left,
+                                                             newMargin.Top,
+                                                             newMargin.Right,
+                                                             newMargin.Bottom });
+        }
     }
 
     // Method Description:
@@ -1510,7 +1519,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto newSize = e.NewSize();
         _core.SizeChanged(newSize.Width, newSize.Height);
 
-        _automationPeer.UpdateControlBounds();
+        if (_automationPeer)
+        {
+            _automationPeer.UpdateControlBounds();
+        }
     }
 
     // Method Description:
@@ -1623,7 +1635,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_CursorPositionChanged(const IInspectable& /*sender*/,
                                              const IInspectable& /*args*/)
     {
-        _tsfTryRedrawCanvas->Run();
+        if (_tsfTryRedrawCanvas)
+        {
+            _tsfTryRedrawCanvas->Run();
+        }
     }
 
     hstring TermControl::Title()
@@ -2332,6 +2347,42 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     const uint64_t TermControl::TaskbarProgress() const noexcept
     {
         return _core.TaskbarProgress();
+    }
+
+    void TermControl::BellLightOn()
+    {
+        Windows::Foundation::Numerics::float2 zeroSize{ 0, 0 };
+        // If the grid has 0 size or if the bell timer is
+        // already active, do nothing
+        if (RootGrid().ActualSize() != zeroSize && !_bellLightTimer)
+        {
+            // Start the timer, when the timer ticks we switch off the light
+            DispatcherTimer invertTimer;
+            invertTimer.Interval(std::chrono::milliseconds(TerminalWarningBellInterval));
+            invertTimer.Tick({ get_weak(), &TermControl::_BellLightOff });
+            invertTimer.Start();
+            _bellLightTimer.emplace(std::move(invertTimer));
+
+            // Switch on the light and animate the intensity to fade out
+            VisualBellLight::SetIsTarget(RootGrid(), true);
+            BellLight().CompositionLight().StartAnimation(L"Intensity", _bellLightAnimation);
+        }
+    }
+
+    void TermControl::_BellLightOff(Windows::Foundation::IInspectable const& /* sender */,
+                                    Windows::Foundation::IInspectable const& /* e */)
+    {
+        if (_bellLightTimer)
+        {
+            // Stop the timer and switch off the light
+            _bellLightTimer->Stop();
+            _bellLightTimer.reset();
+
+            if (!_closing)
+            {
+                VisualBellLight::SetIsTarget(RootGrid(), false);
+            }
+        }
     }
 
     // Method Description:

@@ -30,8 +30,10 @@ namespace Microsoft.Terminal.Settings.Model
     [flags]
     enum BellStyle
     {
+        // !! If you update this, you must update the values in TerminalSettingsEditor/Profiles.xaml
         Audible = 0x1,
-        Visual = 0x2,
+        Window = 0x2,
+        Taskbar = 0x4,
         All = 0xffffffff
     };
 

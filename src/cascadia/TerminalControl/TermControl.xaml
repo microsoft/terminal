@@ -33,6 +33,9 @@
     -->
 
     <Grid x:Name="RootGrid">
+        <Grid.Lights>
+            <local:VisualBellLight x:Name="BellLight" />
+        </Grid.Lights>
         <Image x:Name="BackgroundImage"
                AutomationProperties.AccessibilityView="Raw" />
         <Grid>
