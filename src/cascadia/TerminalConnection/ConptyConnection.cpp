@@ -194,6 +194,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     ConptyConnection::ConptyConnection(const HANDLE hSig,
                                        const HANDLE hIn,
                                        const HANDLE hOut,
+                                       const HANDLE hRef,
+                                       const HANDLE hServerProcess,
                                        const HANDLE hClientProcess) :
         _initialRows{ 25 },
         _initialCols{ 80 },
@@ -208,7 +210,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _inPipe{ hIn },
         _outPipe{ hOut }
     {
-        hSig; // TODO: GH 9464 this needs to be packed into the hpcon
+        THROW_IF_FAILED(ConptyPackPseudoConsole(hServerProcess, hRef, hSig, &_hPC));
         if (_guid == guid{})
         {
             _guid = Utils::CreateGuid();
@@ -500,10 +502,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     winrt::event_token ConptyConnection::NewConnection(NewConnectionHandler const& handler) { return _newConnectionHandlers.add(handler); };
     void ConptyConnection::NewConnection(winrt::event_token const& token) { _newConnectionHandlers.remove(token); };
 
-    HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE process) noexcept
+    HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client) noexcept
     try
     {
-        auto conn = winrt::make<implementation::ConptyConnection>(signal, in, out, process);
+        auto conn = winrt::make<implementation::ConptyConnection>(signal, in, out, ref, server, client);
         _newConnectionHandlers(conn);
 
         return S_OK;

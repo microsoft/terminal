@@ -20,7 +20,8 @@ enum TraceKeywords
     Input = 0x200,
     API = 0x400,
     UIA = 0x800,
-    All = 0xFFF
+    CookedRead = 0x1000,
+    All = 0x1FFF
 };
 DEFINE_ENUM_FLAG_OPERATORS(TraceKeywords);
 
@@ -402,6 +403,16 @@ void Tracing::s_TraceInputRecord(const INPUT_RECORD& inputRecord)
             TraceLoggingKeyword(TraceKeywords::Input));
         break;
     }
+}
+
+void Tracing::s_TraceCookedRead(_In_z_ const wchar_t* pwszCookedBuffer)
+{
+    TraceLoggingWrite(
+        g_hConhostV2EventTraceProvider,
+        "CookedRead",
+        TraceLoggingWideString(pwszCookedBuffer, "ReadBuffer"),
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+        TraceLoggingKeyword(TraceKeywords::CookedRead));
 }
 
 void __stdcall Tracing::TraceFailure(const wil::FailureInfo& failure) noexcept

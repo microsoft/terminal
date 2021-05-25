@@ -99,7 +99,7 @@
             <com:ComInterface>
                 <com:ProxyStub Id="DEC4804D-56D1-4F73-9FBE-6828E7C85C56" DisplayName="OpenConsoleHandoffProxy" Path="OpenConsoleProxy.dll"/>
                 <com:Interface Id="2B607BC1-43EB-40C3-95AE-2856ADDB7F23" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/>
-                <com:Interface Id="FA1E3AB4-9AEC-4A3C-96CA-E6078C30BD74" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/>
+                <com:Interface Id="59D55CCE-FC8A-48B4-ACE8-0A9286C6557F" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/>
             </com:ComInterface>
         </com:Extension>
         <com:Extension Category="windows.comServer">

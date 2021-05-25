@@ -170,6 +170,10 @@ namespace Microsoft::Console::VirtualTerminal
         std::function<bool()> _pfnFlushToInputQueue;
         bool _lookingForDSR;
         DWORD _mouseButtonState = 0;
+        std::chrono::milliseconds _doubleClickTime;
+        std::optional<til::point> _lastMouseClickPos{};
+        std::optional<std::chrono::steady_clock::time_point> _lastMouseClickTime{};
+        std::optional<size_t> _lastMouseClickButton{};
 
         DWORD _GetCursorKeysModifierState(const VTParameters parameters, const VTID id) noexcept;
         DWORD _GetGenericKeysModifierState(const VTParameters parameters) noexcept;
@@ -181,7 +185,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool _UpdateSGRMouseButtonState(const VTID id,
                                         const size_t sgrEncoding,
                                         DWORD& buttonState,
-                                        DWORD& eventFlags) noexcept;
+                                        DWORD& eventFlags,
+                                        const til::point uiPos);
         bool _GetGenericVkey(const GenericKeyIdentifiers identifier, short& vkey) const;
         bool _GetCursorKeysVkey(const VTID id, short& vkey) const;
         bool _GetSs3KeysVkey(const wchar_t wch, short& vkey) const;
@@ -189,7 +194,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _WriteSingleKey(const short vkey, const DWORD modifierState);
         bool _WriteSingleKey(const wchar_t wch, const short vkey, const DWORD modifierState);
 
-        bool _WriteMouseEvent(const size_t column, const size_t line, const DWORD buttonState, const DWORD controlKeyState, const DWORD eventFlags);
+        bool _WriteMouseEvent(const til::point uiPos, const DWORD buttonState, const DWORD controlKeyState, const DWORD eventFlags);
 
         void _GenerateWrappedSequence(const wchar_t wch,
                                       const short vkey,

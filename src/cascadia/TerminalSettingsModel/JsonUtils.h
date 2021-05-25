@@ -632,7 +632,8 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
                 for (const auto& pair : TBase::mappings)
                 {
                     if (pair.second != AllClear &&
-                        (val & pair.second) == pair.second)
+                        (val & pair.second) == pair.second &&
+                        WI_IsSingleFlagSet(pair.second))
                     {
                         json.append(BaseEnumMapper::ToJson(pair.second));
                     }
