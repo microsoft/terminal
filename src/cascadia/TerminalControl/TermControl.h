@@ -28,8 +28,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
-        static Control::TermControl FromConnectionInfo(IControlSettings settings, TerminalConnection::ConnectionInformation connectInfo);
-
         winrt::fire_and_forget UpdateSettings();
         winrt::fire_and_forget UpdateAppearance(const IControlAppearance newAppearance);
 
@@ -156,8 +154,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _focused;
         bool _initializedTerminal;
 
-        std::shared_ptr<ThrottledFuncTrailing<winrt::Windows::UI::Core::CoreDispatcher>> _tsfTryRedrawCanvas;
-        std::shared_ptr<ThrottledFuncLeading<winrt::Windows::UI::Core::CoreDispatcher>> _playWarningBell;
+        std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
+        std::shared_ptr<ThrottledFuncTrailing<>> _updatePatternLocations;
+        std::shared_ptr<ThrottledFuncLeading> _playWarningBell;
 
         struct ScrollBarUpdate
         {
@@ -166,9 +165,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             double newMinimum;
             double newViewportSize;
         };
-
-        std::shared_ptr<ThrottledFuncTrailing<winrt::Windows::UI::Core::CoreDispatcher, ScrollBarUpdate>> _updateScrollBar;
-
+        std::shared_ptr<ThrottledFuncTrailing<ScrollBarUpdate>> _updateScrollBar;
         bool _isInternalScrollBarUpdate;
 
         // Auto scroll occurs when user, while selecting, drags cursor outside viewport. View is then scrolled to 'follow' the cursor.
@@ -260,6 +257,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                   const int fontHeight,
                                   const bool isInitialChange);
         winrt::fire_and_forget _coreTransparencyChanged(IInspectable sender, Control::TransparencyChangedEventArgs args);
+        void _coreReceivedOutput(const IInspectable& sender, const IInspectable& args);
         void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
         void _coreWarningBell(const IInspectable& sender, const IInspectable& args);
     };
