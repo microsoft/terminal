@@ -507,8 +507,6 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     case WM_THEMECHANGED:
         UpdateWindowIconForActiveMetrics(_window.get());
         return 0;
-    // TODO: Give this a better name, something like WT_NOTIFYICON
-    // WM_APP to 0xBFFF is available for use for apps apparently.
     case WM_APP + 1:
     {
         switch (LOWORD(lparam))
@@ -517,12 +515,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         case NIN_KEYSELECT:
         {
             _NotifyTrayIconPressedHandlers();
-            break;
-        }
-        case WM_CONTEXTMENU:
-        {
-            // TODO: show the context menu - buncho options to open specific windows?
-            break;
+            return 0;
         }
         }
         break;

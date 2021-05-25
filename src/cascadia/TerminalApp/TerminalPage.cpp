@@ -59,18 +59,7 @@ namespace winrt::TerminalApp::implementation
     HRESULT TerminalPage::Initialize(HWND hwnd)
     {
         _hostingHwnd = hwnd;
-
-        TestNotifyIconFunction();
-
         return S_OK;
-    }
-
-    void TerminalPage::TestNotifyIconFunction()
-    {
-        if (_hostingHwnd)
-        {
-
-        }
     }
 
     // Function Description:

@@ -93,7 +93,6 @@ AppHost::AppHost() noexcept :
 AppHost::~AppHost()
 {
     // destruction order is important for proper teardown here
-
     _window = nullptr;
     _app.Close();
     _app = nullptr;
@@ -921,6 +920,25 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
     _window->IsQuakeWindow(_logic.IsQuakeWindow());
 }
 
+void AppHost::_HandleTrayIconPressed()
+{
+    // TODO:
+    // Scoping "minimize to tray" to only the quake window, and so
+    // we can just summon ourselves. When we allow any window to be
+    // minimized, this could bring up the quake or MRU or all windows.
+    _window->SummonWindow({});
+}
+
+void AppHost::_HandleWindowMinimized()
+{
+    // TODO:
+    // Scoping "minimize to tray" to only the quake window.
+    if (_logic.IsQuakeWindow())
+    {
+        _UpdateTrayIcon();
+    }
+}
+
 void AppHost::_UpdateTrayIcon()
 {
     NOTIFYICONDATA nid{};
@@ -939,19 +957,4 @@ void AppHost::_UpdateTrayIcon()
     // We have to perform a NIM_SETVERSION call separately.
     nid.uVersion = NOTIFYICON_VERSION_4;
     Shell_NotifyIcon(NIM_SETVERSION, &nid);
-}
-
-void AppHost::_HandleTrayIconPressed()
-{
-    _window->SummonWindow({});
-}
-
-void AppHost::_HandleWindowMinimized()
-{
-    // Scoping "minimize to tray" to just the quake window.
-    // Broader support will come in later.
-    if (_logic.IsQuakeWindow())
-    {
-        _UpdateTrayIcon();
-    }
 }
