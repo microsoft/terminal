@@ -28,8 +28,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
-        static Control::TermControl FromConnectionInfo(IControlSettings settings, TerminalConnection::ConnectionInformation connectInfo);
-
         winrt::fire_and_forget UpdateSettings();
         winrt::fire_and_forget UpdateAppearance(const IControlAppearance newAppearance);
 
