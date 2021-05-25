@@ -918,15 +918,24 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
                                     const winrt::Windows::Foundation::IInspectable&)
 {
+    if (_window->IsQuakeWindow() && !_logic.IsQuakeWindow())
+    {
+        // If we're exiting quake mode, we should make our
+        // tray icon disappear.
+        if (_trayIconData)
+        {
+            Shell_NotifyIcon(NIM_DELETE, &_trayIconData.value());
+            _trayIconData.reset();
+        }
+    }
+
     _window->IsQuakeWindow(_logic.IsQuakeWindow());
 }
 
 void AppHost::_HandleTrayIconPressed()
 {
-    // TODO:
-    // Currently scoping "minimize to tray" to only the quake
-    // window, which means that only when a quake window is
-    // hidden will the icon appear.
+    // Currently scoping "minimize to tray" to only
+    // the quake window.
     if (_logic.IsQuakeWindow())
     {
         _window->SummonWindow({});
@@ -941,6 +950,14 @@ void AppHost::_HandleWindowHidden()
     }
 }
 
+// Method Description:
+// - Creates and adds an icon to the notification tray.
+// Updates the current tray icon with the current window's
+// HWND if an icon already exists.
+// Arguments:
+// - <unused>
+// Return Value:
+// - <none>
 void AppHost::_UpdateTrayIcon()
 {
     if (!_trayIconData)
@@ -950,15 +967,23 @@ void AppHost::_UpdateTrayIcon()
         // This HWND will receive the callbacks sent by the tray icon.
         nid.hWnd = _window->GetHandle();
 
-        nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(ICON_SMALL));
+        // App-defined identifier of the icon. The HWND and ID are used
+        // to identify which icon to operate on when calling Shell_NotifyIcon.
+        // Multiple icons can be associated with one HWND, but here we're only
+        // going to be showing one so the ID doesn't really matter.
         nid.uID = 1;
+
         nid.uCallbackMessage = WM_APP + 1;
+
+        nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(ICON_SMALL));
         StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), L"Windows Terminal");
         nid.uFlags = NIF_MESSAGE | NIF_SHOWTIP | NIF_TIP | NIF_ICON;
         Shell_NotifyIcon(NIM_ADD, &nid);
 
-        // NIM_ADD won't set the version even if uVersion is set in the nid.
-        // We have to perform a NIM_SETVERSION call separately.
+        // For whatever reason, the NIM_ADD call doesn't seem to set the version
+        // properly, resulting in us being unable to receive the expected notification
+        // events. We actually have to make a separate NIM_SETVERSION call for it to
+        // work properly.
         nid.uVersion = NOTIFYICON_VERSION_4;
         Shell_NotifyIcon(NIM_SETVERSION, &nid);
 
