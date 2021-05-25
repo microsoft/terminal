@@ -85,4 +85,6 @@ private:
     void _UpdateTrayIcon();
     void _HandleTrayIconPressed();
     void _HandleWindowHidden();
+
+    std::optional<NOTIFYICONDATA> _trayIconData;
 };

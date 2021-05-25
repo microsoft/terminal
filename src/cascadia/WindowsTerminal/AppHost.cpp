@@ -924,16 +924,17 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
 void AppHost::_HandleTrayIconPressed()
 {
     // TODO:
-    // Scoping "minimize to tray" to only the quake window, and so
-    // we can just summon ourselves. When we allow any window to be
-    // minimized, this could bring up the quake or MRU or all windows.
-    _window->SummonWindow({});
+    // Currently scoping "minimize to tray" to only the quake
+    // window, which means that only when a quake window is
+    // hidden will the icon appear.
+    if (_logic.IsQuakeWindow())
+    {
+        _window->SummonWindow({});
+    }
 }
 
 void AppHost::_HandleWindowHidden()
 {
-    // TODO:
-    // Scoping "minimize to tray" to only the quake window.
     if (_logic.IsQuakeWindow())
     {
         _UpdateTrayIcon();
@@ -942,20 +943,32 @@ void AppHost::_HandleWindowHidden()
 
 void AppHost::_UpdateTrayIcon()
 {
-    NOTIFYICONDATA nid{};
+    if (!_trayIconData)
+    {
+        NOTIFYICONDATA nid{};
 
-    // This HWND will receive the callbacks sent by the tray icon.
-    nid.hWnd = _window->GetHandle();
+        // This HWND will receive the callbacks sent by the tray icon.
+        nid.hWnd = _window->GetHandle();
 
-    nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(ICON_SMALL));
-    nid.uID = 1;
-    nid.uCallbackMessage = WM_APP + 1;
-    StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), L"Windows Terminal");
-    nid.uFlags = NIF_MESSAGE | NIF_SHOWTIP | NIF_TIP | NIF_ICON;
-    Shell_NotifyIcon(NIM_ADD, &nid);
+        nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(ICON_SMALL));
+        nid.uID = 1;
+        nid.uCallbackMessage = WM_APP + 1;
+        StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), L"Windows Terminal");
+        nid.uFlags = NIF_MESSAGE | NIF_SHOWTIP | NIF_TIP | NIF_ICON;
+        Shell_NotifyIcon(NIM_ADD, &nid);
 
-    // NIM_ADD won't set the version even if uVersion is set in the nid.
-    // We have to perform a NIM_SETVERSION call separately.
-    nid.uVersion = NOTIFYICON_VERSION_4;
-    Shell_NotifyIcon(NIM_SETVERSION, &nid);
+        // NIM_ADD won't set the version even if uVersion is set in the nid.
+        // We have to perform a NIM_SETVERSION call separately.
+        nid.uVersion = NOTIFYICON_VERSION_4;
+        Shell_NotifyIcon(NIM_SETVERSION, &nid);
+
+        _trayIconData = nid;
+    }
+    else
+    {
+        auto nid = _trayIconData.value();
+        nid.hWnd = _window->GetHandle();
+        Shell_NotifyIcon(NIM_MODIFY, &nid);
+    }
+
 }
