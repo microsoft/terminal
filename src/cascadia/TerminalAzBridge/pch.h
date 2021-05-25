@@ -33,6 +33,7 @@ Abstract:
 #include <wil/cppwinrt.h>
 
 #include <winrt/Windows.system.h>
+#include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 
 #include <wil/resource.h>

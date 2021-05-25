@@ -7,12 +7,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     struct ConnectionInformation : ConnectionInformationT<ConnectionInformation>
     {
         ConnectionInformation(hstring const& className,
-                              TerminalConnection::IConnectionSettings settings);
+                              const Windows::Foundation::Collections::ValueSet& settings);
 
         static TerminalConnection::ITerminalConnection CreateConnection(TerminalConnection::ConnectionInformation info);
 
         WINRT_PROPERTY(hstring, ClassName);
-        WINRT_PROPERTY(TerminalConnection::IConnectionSettings, Settings);
+        WINRT_PROPERTY(Windows::Foundation::Collections::ValueSet, Settings);
     };
 }
 namespace winrt::Microsoft::Terminal::TerminalConnection::factory_implementation

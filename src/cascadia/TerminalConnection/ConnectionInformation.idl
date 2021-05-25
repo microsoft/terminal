@@ -2,15 +2,14 @@
 // Licensed under the MIT license.
 
 import "ITerminalConnection.idl";
-import "IConnectionSettings.idl";
 
 namespace Microsoft.Terminal.TerminalConnection
 {
     [default_interface] runtimeclass ConnectionInformation
     {
-        ConnectionInformation(String className, IConnectionSettings settings);
+        ConnectionInformation(String className, Windows.Foundation.Collections.ValueSet settings);
         String ClassName { get; };
-        IConnectionSettings Settings { get; };
+        Windows.Foundation.Collections.ValueSet Settings { get; };
 
         static ITerminalConnection CreateConnection(ConnectionInformation info);
     }

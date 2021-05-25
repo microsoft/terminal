@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import "IConnectionSettings.idl";
 
 namespace Microsoft.Terminal.TerminalConnection
 {
@@ -18,7 +17,7 @@ namespace Microsoft.Terminal.TerminalConnection
 
     interface ITerminalConnection
     {
-        void Initialize(IConnectionSettings settings);
+        void Initialize(Windows.Foundation.Collections.ValueSet settings);
 
         void Start();
         void WriteInput(String data);

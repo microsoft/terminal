@@ -116,17 +116,23 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 // add additional WT env vars like WT_SETTINGS, WT_DEFAULTS and WT_PROFILE_ID
                 for (auto item : _environment)
                 {
-                    auto key = item.Key();
-                    auto value = item.Value();
-
-                    // avoid clobbering WSLENV
-                    if (std::wstring_view{ key } == L"WSLENV")
+                    try
                     {
-                        auto current = environment[L"WSLENV"];
-                        value = current + L":" + value;
-                    }
+                        auto key = item.Key();
+                        // This will throw if the value isn't a string. If that
+                        // happens, then just skip this enntry.
+                        auto value = winrt::unbox_value<hstring>(item.Value());
 
-                    environment.insert_or_assign(key.c_str(), value.c_str());
+                        // avoid clobbering WSLENV
+                        if (std::wstring_view{ key } == L"WSLENV")
+                        {
+                            auto current = environment[L"WSLENV"];
+                            value = current + L":" + value;
+                        }
+
+                        environment.insert_or_assign(key.c_str(), value.c_str());
+                    }
+                    CATCH_LOG();
                 }
             }
 
@@ -219,44 +225,21 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _piClient.hProcess = hClientProcess;
     }
 
-    ConptyConnection::ConptyConnection(const hstring& commandline,
-                                       const hstring& startingDirectory,
-                                       const hstring& startingTitle,
-                                       const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
-                                       const uint32_t initialRows,
-                                       const uint32_t initialCols,
-                                       const guid& initialGuid) :
-        _initialRows{ initialRows },
-        _initialCols{ initialCols },
-        _commandline{ commandline },
-        _startingDirectory{ startingDirectory },
-        _startingTitle{ startingTitle },
-        _environment{ environment },
-        _guid{ initialGuid },
-        _u8State{},
-        _u16Str{},
-        _buffer{}
-    {
-        if (_guid == guid{})
-        {
-            _guid = Utils::CreateGuid();
-        }
-    }
-
-    void ConptyConnection::Initialize(TerminalConnection::IConnectionSettings settings)
+    void ConptyConnection::Initialize(const Windows::Foundation::Collections::ValueSet& settings)
     {
         if (settings)
         {
-            if (auto conptySettings{ settings.try_as<TerminalConnection::ConptyConnectionSettings>() })
-            {
-                _commandline = conptySettings.Cmdline();
-                _startingDirectory = conptySettings.StartingDirectory();
-                _startingTitle = conptySettings.StartingTitle();
-                _environment = conptySettings.Environment();
-                _initialRows = conptySettings.Rows();
-                _initialCols = conptySettings.Columns();
-                _guid = conptySettings.Guid();
-            }
+            // For the record, the following won't crash:
+            // auto bad = unbox_value_or<hstring>(settings.TryLookup(L"foo").try_as<IPropertyValue>(), nullptr);
+            // It'll just return null
+
+            _commandline = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"commandline").try_as<Windows::Foundation::IPropertyValue>(), _commandline);
+            _startingDirectory = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"startingDirectory").try_as<Windows::Foundation::IPropertyValue>(), _startingDirectory);
+            _startingTitle = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"startingTitle").try_as<Windows::Foundation::IPropertyValue>(), _startingTitle);
+            _initialRows = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _initialRows);
+            _initialCols = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _initialCols);
+            _guid = winrt::unbox_value_or<winrt::guid>(settings.TryLookup(L"guid").try_as<Windows::Foundation::IPropertyValue>(), _guid);
+            _environment = settings.TryLookup(L"environment").try_as<Windows::Foundation::Collections::ValueSet>();
         }
 
         if (_guid == guid{})

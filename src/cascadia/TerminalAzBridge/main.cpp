@@ -97,8 +97,10 @@ int wmain(int /*argc*/, wchar_t** /*argv*/)
     const auto size = GetConsoleScreenSize(conOut);
 
     AzureConnection azureConn{};
-    AzureConnectionSettings settings{ gsl::narrow_cast<uint32_t>(size.Y), gsl::narrow_cast<uint32_t>(size.X) };
-    azureConn.Initialize(settings);
+    winrt::Windows::Foundation::Collections::ValueSet vs{};
+    vs.Insert(L"initialRows", winrt::Windows::Foundation::PropertyValue::CreateUInt32(gsl::narrow_cast<uint32_t>(size.Y)));
+    vs.Insert(L"initialCols", winrt::Windows::Foundation::PropertyValue::CreateUInt32(gsl::narrow_cast<uint32_t>(size.X)));
+    azureConn.Initialize(vs);
 
     const auto state = RunConnectionToCompletion(azureConn, conOut, conIn);
 

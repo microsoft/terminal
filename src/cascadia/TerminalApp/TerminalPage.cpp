@@ -740,6 +740,35 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    Windows::Foundation::Collections::ValueSet _createConptySettings(std::wstring_view cmdline,
+                                                                     std::wstring_view startingDirectory,
+                                                                     std::wstring_view startingTitle,
+                                                                     Windows::Foundation::Collections::IMapView<hstring, hstring> const& environment,
+                                                                     uint32_t rows,
+                                                                     uint32_t columns,
+                                                                     winrt::guid const& guid)
+    {
+        Windows::Foundation::Collections::ValueSet vs{};
+
+        vs.Insert(L"commandline", Windows::Foundation::PropertyValue::CreateString(cmdline));
+        vs.Insert(L"startingDirectory", Windows::Foundation::PropertyValue::CreateString(startingDirectory));
+        vs.Insert(L"startingTitle", Windows::Foundation::PropertyValue::CreateString(startingTitle));
+        vs.Insert(L"initialRows", Windows::Foundation::PropertyValue::CreateUInt32(rows));
+        vs.Insert(L"initialCols", Windows::Foundation::PropertyValue::CreateUInt32(columns));
+        vs.Insert(L"guid", Windows::Foundation::PropertyValue::CreateGuid(guid));
+
+        if (environment)
+        {
+            Windows::Foundation::Collections::ValueSet env{};
+            for (const auto& [k, v] : environment)
+            {
+                env.Insert(k, Windows::Foundation::PropertyValue::CreateString(v));
+            }
+            vs.Insert(L"environment", env);
+        }
+        return vs;
+    }
+
     // Method Description:
     // - Creates a new connection based on the profile settings
     // Arguments:
@@ -764,13 +793,13 @@ namespace winrt::TerminalApp::implementation
             std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
             azBridgePath.replace_filename(L"TerminalAzBridge.exe");
             connection = TerminalConnection::ConptyConnection();
-            connection.Initialize(TerminalConnection::ConptyConnectionSettings{ azBridgePath.wstring(),
-                                                                                L".",
-                                                                                L"Azure",
-                                                                                nullptr,
-                                                                                ::base::saturated_cast<uint32_t>(settings.InitialRows()),
-                                                                                ::base::saturated_cast<uint32_t>(settings.InitialCols()),
-                                                                                winrt::guid() });
+            connection.Initialize(_createConptySettings(azBridgePath.wstring(),
+                                                        L".",
+                                                        L"Azure",
+                                                        nullptr,
+                                                        ::base::saturated_cast<uint32_t>(settings.InitialRows()),
+                                                        ::base::saturated_cast<uint32_t>(settings.InitialCols()),
+                                                        winrt::guid()));
         }
 
         else
@@ -801,13 +830,13 @@ namespace winrt::TerminalApp::implementation
             cwd /= settings.StartingDirectory().c_str();
 
             auto conhostConn = TerminalConnection::ConptyConnection();
-            conhostConn.Initialize(TerminalConnection::ConptyConnectionSettings{ settings.Commandline(),
-                                                                                 winrt::hstring{ cwd.c_str() },
-                                                                                 settings.StartingTitle(),
-                                                                                 envMap.GetView(),
-                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialRows()),
-                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialCols()),
-                                                                                 winrt::guid() });
+            conhostConn.Initialize(_createConptySettings(settings.Commandline(),
+                                                         winrt::hstring{ cwd.c_str() },
+                                                         settings.StartingTitle(),
+                                                         envMap.GetView(),
+                                                         ::base::saturated_cast<uint32_t>(settings.InitialRows()),
+                                                         ::base::saturated_cast<uint32_t>(settings.InitialCols()),
+                                                         winrt::guid()));
 
             sessionGuid = conhostConn.Guid();
             connection = conhostConn;

@@ -18,7 +18,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Resize(uint32_t rows, uint32_t columns) noexcept;
         void Close() noexcept;
 
-        void Initialize(TerminalConnection::IConnectionSettings /*settings*/){};
+        void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/){};
 
         ConnectionState State() const noexcept { return ConnectionState::Connected; }
 

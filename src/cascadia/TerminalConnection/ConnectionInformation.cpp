@@ -5,7 +5,7 @@
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     ConnectionInformation::ConnectionInformation(hstring const& className,
-                                                 TerminalConnection::IConnectionSettings settings) :
+                                                 const Windows::Foundation::Collections::ValueSet& settings) :
         _ClassName{ className },
         _Settings{ settings }
     {

@@ -24,7 +24,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _TerminalOutputHandlers(PreviewText);
     }
 
-    void PreviewConnection::Initialize(TerminalConnection::IConnectionSettings /*settings*/) noexcept
+    void PreviewConnection::Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) noexcept
     {
     }
 
