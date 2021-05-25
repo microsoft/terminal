@@ -114,12 +114,12 @@
 
                                     <TextBlock Grid.Row="1"
                                                Grid.Column="1"
-                                               Foreground="{StaticResource SystemBaseMediumColor}"
+                                               Style="{ThemeResource SecondaryTextBlockStyle}"
                                                Text="{x:Bind Author}" />
 
                                     <TextBlock Grid.Row="1"
                                                Grid.Column="2"
-                                               Foreground="{StaticResource SystemBaseMediumColor}"
+                                               Style="{ThemeResource SecondaryTextBlockStyle}"
                                                Text="{x:Bind Version}" />
 
                                 </Grid>
