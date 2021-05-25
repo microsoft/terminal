@@ -42,6 +42,8 @@ namespace TerminalApp
         void LoadSettings();
         Windows.UI.Xaml.UIElement GetRoot();
 
+        void SetInboundListener();
+
         String Title { get; };
 
         Boolean FocusMode { get; };

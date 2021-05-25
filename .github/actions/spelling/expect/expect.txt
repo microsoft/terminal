@@ -1850,7 +1850,6 @@ psp
 PSPCB
 psr
 PSTR
-psuedoconsole
 psz
 ptch
 ptr

@@ -26,7 +26,7 @@ Author(s):
 #define __CLSID_CTerminalHandoff "051F34EE-C1FD-4B19-AF75-9BA54648434C"
 #endif
 
-using NewHandoffFunction = HRESULT (*)(HANDLE, HANDLE, HANDLE, HANDLE);
+using NewHandoffFunction = HRESULT (*)(HANDLE, HANDLE, HANDLE, HANDLE, HANDLE, HANDLE);
 
 struct __declspec(uuid(__CLSID_CTerminalHandoff))
     CTerminalHandoff : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::RuntimeClassType::ClassicCom>, ITerminalHandoff>
@@ -35,7 +35,9 @@ struct __declspec(uuid(__CLSID_CTerminalHandoff))
     STDMETHODIMP EstablishPtyHandoff(HANDLE in,
                                      HANDLE out,
                                      HANDLE signal,
-                                     HANDLE process) noexcept override;
+                                     HANDLE ref,
+                                     HANDLE server,
+                                     HANDLE client) noexcept override;
 
 #pragma endregion
 
