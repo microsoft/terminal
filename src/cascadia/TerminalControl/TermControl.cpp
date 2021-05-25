@@ -656,9 +656,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         _interactivity.Initialize();
 
-        // TODO! very good chance we leak this handle
-        const HANDLE chainHandle = reinterpret_cast<HANDLE>(_core.SwapChainHandle());
-        _AttachDxgiSwapChainToXaml(chainHandle);
+        _AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(_core.SwapChainHandle()));
 
         // Tell the DX Engine to notify us when the swap chain changes. We do
         // this after we initially set the swapchain so as to avoid unnecessary
