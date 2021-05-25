@@ -23,8 +23,7 @@
             <TextBox x:Name="GuidInput"
                      Width="400"
                      PlaceholderText="{}{guid here}" />
-            <Button Grid.Row="0"
-                    Tapped="CreateClicked">
+            <Button Grid.Row="0">
                 Create
             </Button>
 

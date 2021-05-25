@@ -225,6 +225,35 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _piClient.hProcess = hClientProcess;
     }
 
+    Windows::Foundation::Collections::ValueSet ConptyConnection::CreateSettings(const winrt::hstring& cmdline,
+                                                                                const winrt::hstring& startingDirectory,
+                                                                                const winrt::hstring& startingTitle,
+                                                                                Windows::Foundation::Collections::IMapView<hstring, hstring> const& environment,
+                                                                                uint32_t rows,
+                                                                                uint32_t columns,
+                                                                                winrt::guid const& guid)
+    {
+        Windows::Foundation::Collections::ValueSet vs{};
+
+        vs.Insert(L"commandline", Windows::Foundation::PropertyValue::CreateString(cmdline));
+        vs.Insert(L"startingDirectory", Windows::Foundation::PropertyValue::CreateString(startingDirectory));
+        vs.Insert(L"startingTitle", Windows::Foundation::PropertyValue::CreateString(startingTitle));
+        vs.Insert(L"initialRows", Windows::Foundation::PropertyValue::CreateUInt32(rows));
+        vs.Insert(L"initialCols", Windows::Foundation::PropertyValue::CreateUInt32(columns));
+        vs.Insert(L"guid", Windows::Foundation::PropertyValue::CreateGuid(guid));
+
+        if (environment)
+        {
+            Windows::Foundation::Collections::ValueSet env{};
+            for (const auto& [k, v] : environment)
+            {
+                env.Insert(k, Windows::Foundation::PropertyValue::CreateString(v));
+            }
+            vs.Insert(L"environment", env);
+        }
+        return vs;
+    }
+
     void ConptyConnection::Initialize(const Windows::Foundation::Collections::ValueSet& settings)
     {
         if (settings)

@@ -44,6 +44,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         static winrt::event_token NewConnection(NewConnectionHandler const& handler);
         static void NewConnection(winrt::event_token const& token);
 
+        static Windows::Foundation::Collections::ValueSet CreateSettings(const winrt::hstring& cmdline,
+                                                                         const winrt::hstring& startingDirectory,
+                                                                         const winrt::hstring& startingTitle,
+                                                                         Windows::Foundation::Collections::IMapView<hstring, hstring> const& environment,
+                                                                         uint32_t rows,
+                                                                         uint32_t columns,
+                                                                         winrt::guid const& guid);
+
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
 
     private:
