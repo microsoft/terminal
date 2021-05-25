@@ -452,7 +452,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     {
         if (wparam == SIZE_MINIMIZED && _isQuakeWindow)
         {
-            _NotifyWindowMinimizedHandlers();
+            _NotifyWindowHiddenHandlers();
             ShowWindow(GetHandle(), SW_HIDE);
             return 0;
         }
@@ -1289,8 +1289,6 @@ void IslandWindow::_globalDismissWindow(const uint32_t dropdownDuration)
     {
         ShowWindow(_window.get(), SW_MINIMIZE);
     }
-
-    _NotifyWindowMinimizedHandlers();
 }
 
 // Method Description:

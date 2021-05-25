@@ -52,7 +52,7 @@ public:
     WINRT_CALLBACK(WindowActivated, winrt::delegate<void()>);
     WINRT_CALLBACK(HotkeyPressed, winrt::delegate<void(long)>);
     WINRT_CALLBACK(NotifyTrayIconPressed, winrt::delegate<void()>);
-    WINRT_CALLBACK(NotifyWindowMinimized, winrt::delegate<void()>);
+    WINRT_CALLBACK(NotifyWindowHidden, winrt::delegate<void()>);
 
 protected:
     void ForceResize()

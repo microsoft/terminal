@@ -84,5 +84,5 @@ private:
 
     void _UpdateTrayIcon();
     void _HandleTrayIconPressed();
-    void _HandleWindowMinimized();
+    void _HandleWindowHidden();
 };

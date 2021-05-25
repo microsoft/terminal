@@ -79,7 +79,7 @@ AppHost::AppHost() noexcept :
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
     _window->NotifyTrayIconPressed({ this, &AppHost::_HandleTrayIconPressed });
-    _window->NotifyWindowMinimized({ this, &AppHost::_HandleWindowMinimized });
+    _window->NotifyWindowHidden({ this, &AppHost::_HandleWindowHidden });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
 
@@ -93,6 +93,7 @@ AppHost::AppHost() noexcept :
 AppHost::~AppHost()
 {
     // destruction order is important for proper teardown here
+
     _window = nullptr;
     _app.Close();
     _app = nullptr;
@@ -929,7 +930,7 @@ void AppHost::_HandleTrayIconPressed()
     _window->SummonWindow({});
 }
 
-void AppHost::_HandleWindowMinimized()
+void AppHost::_HandleWindowHidden()
 {
     // TODO:
     // Scoping "minimize to tray" to only the quake window.
