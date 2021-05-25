@@ -120,7 +120,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     {
                         auto key = item.Key();
                         // This will throw if the value isn't a string. If that
-                        // happens, then just skip this enntry.
+                        // happens, then just skip this entry.
                         auto value = winrt::unbox_value<hstring>(item.Value());
 
                         // avoid clobbering WSLENV
@@ -225,6 +225,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _piClient.hProcess = hClientProcess;
     }
 
+    // Function Description:
+    // - Helper function for constructing a ValueSet that we can use to get our settings from.
     Windows::Foundation::Collections::ValueSet ConptyConnection::CreateSettings(const winrt::hstring& cmdline,
                                                                                 const winrt::hstring& startingDirectory,
                                                                                 const winrt::hstring& startingTitle,

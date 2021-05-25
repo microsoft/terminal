@@ -11,25 +11,51 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
     }
 
-    TerminalConnection::ITerminalConnection ConnectionInformation::CreateConnection(
-        TerminalConnection::ConnectionInformation info)
+    // Function Description:
+    // - Create an instance of the connection specified in the
+    //   ConnectionInformation, and Initialize it.
+    // - This static method allows the content process to create a connection
+    //   from information that lives in the window process.
+    // Arguments:
+    // - info: A ConnectionInformation object that possibly lives out-of-proc,
+    //   containing the name of the WinRT class we should activate for this
+    //   connection, and a bag of setting to use to initialize that object.
+    // Return Value:
+    // - <none>
+    TerminalConnection::ITerminalConnection ConnectionInformation::CreateConnection(TerminalConnection::ConnectionInformation info)
+    try
     {
-        Windows::Foundation::IInspectable coolInspectable{};
+        Windows::Foundation::IInspectable inspectable{};
 
         auto name = static_cast<HSTRING>(winrt::get_abi(info.ClassName()));
-        auto foo = winrt::put_abi(coolInspectable);
-        ::IInspectable** bar = reinterpret_cast<::IInspectable**>(foo);
+        auto pointer = winrt::put_abi(inspectable);
+        ::IInspectable** raw = reinterpret_cast<::IInspectable**>(pointer);
 
-        if (LOG_IF_FAILED(RoActivateInstance(name, bar)))
+        // RoActivateInstance() will try to create an instance of the object,
+        // who's fully qualified name is the string in Name().
+        //
+        // The class has to be activatable. For the Terminal, this is easy
+        // enough - we're not hosting anything that's not already in our
+        // manifest, or living as a .dll & .winmd SxS.
+        //
+        // When we get to extensions (GH#4000), we may want to revisit.
+        if (LOG_IF_FAILED(RoActivateInstance(name, raw)))
         {
             return nullptr;
         }
 
-        if (auto conn2{ coolInspectable.try_as<TerminalConnection::ITerminalConnection>() })
+        // Now that thing we made, make sure it's actually a ITerminalConnection
+        if (auto connection{ inspectable.try_as<TerminalConnection::ITerminalConnection>() })
         {
-            conn2.Initialize(info.Settings());
-            return conn2;
+            // Initialize it, and return it.
+            connection.Initialize(info.Settings());
+            return connection;
         }
+        return nullptr;
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
         return nullptr;
     }
 }
