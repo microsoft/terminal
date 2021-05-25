@@ -78,13 +78,13 @@ private:
 //   pending, then the previous call with the previous arguments will be
 //   cancelled and the call will be made with the new arguments instead.
 // - The function will be run on the the specified dispatcher.
-template<bool leading, typename... Args>
-class ThrottledFunc : public std::enable_shared_from_this<ThrottledFunc<leading, Args...>>
+template<bool leading, typename T, typename... Args>
+class ThrottledFunc : public std::enable_shared_from_this<ThrottledFunc<leading, T, Args...>>
 {
 public:
     using Func = std::function<void(Args...)>;
 
-    ThrottledFunc(winrt::Windows::UI::Core::CoreDispatcher dispatcher, winrt::Windows::Foundation::TimeSpan delay, Func func) :
+    ThrottledFunc(T dispatcher, winrt::Windows::Foundation::TimeSpan delay, Func func) :
         _dispatcher{ std::move(dispatcher) },
         _delay{ std::move(delay) },
         _func{ std::move(func) }
@@ -174,13 +174,14 @@ private:
         }
     }
 
-    winrt::Windows::UI::Core::CoreDispatcher _dispatcher;
+    T _dispatcher;
     winrt::Windows::Foundation::TimeSpan _delay;
     Func _func;
 
     ThrottledFuncStorage<Args...> _storage;
 };
 
-template<typename... Args>
-using ThrottledFuncTrailing = ThrottledFunc<false, Args...>;
-using ThrottledFuncLeading = ThrottledFunc<true>;
+template<typename T, typename... Args>
+using ThrottledFuncTrailing = ThrottledFunc<false, T, Args...>;
+template<typename T, typename... Args>
+using ThrottledFuncLeading = ThrottledFunc<true, T, Args...>;
