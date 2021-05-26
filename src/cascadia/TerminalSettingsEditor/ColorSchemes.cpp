@@ -17,6 +17,7 @@ using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Media;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
+using namespace winrt::Microsoft::UI::Xaml::Controls;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
