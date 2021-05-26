@@ -96,8 +96,17 @@
       <TreatSpecificWarningsAsErrors>4189;4100;4242;4389;4244</TreatSpecificWarningsAsErrors>
       <!--<WarningLevel>EnableAllWarnings</WarningLevel>-->
       <TreatWarningAsError>true</TreatWarningAsError>
-      <!-- disable warning on nameless structs (4201) -->
-      <DisableSpecificWarnings>4201;4312;4467;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <!--
+        C4103: alignment changed after including header, may be due to missing #pragma pack(pop)
+          Caused by a regression in VS 16.10, it detects the use of /pshpack[1248].h/ in system headers.
+        C4201: nonstandard extension used: nameless struct/union
+          Conhost code uses a lot of nameless structs/unions.
+        C4312: 'type cast': conversion from 'A' to 'B' of greater size
+          Conhost code converts DWORDs to HANDLEs for instance.
+        C4467: usage of ATL attributes is deprecated
+          Conhost code still uses ATL.
+      -->
+      <DisableSpecificWarnings>4103;4201;4312;4467;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <PreprocessorDefinitions>_WINDOWS;EXTERNAL_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
