@@ -82,7 +82,7 @@
 
                     <Button.Flyout>
                         <Flyout>
-                            <ColorPicker ColorChanged="ColorPickerChanged"
+                            <muxc:ColorPicker ColorChanged="ColorPickerChanged"
                                          Tag="{x:Bind Tag, Mode=OneWay}"
                                          Color="{x:Bind Color, Mode=OneWay}" />
                         </Flyout>
