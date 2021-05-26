@@ -60,9 +60,6 @@ AppHost::AppHost() noexcept :
         _window = std::make_unique<IslandWindow>();
     }
 
-    // Update our own internal state tracking if we're in quake mode or not.
-    _IsQuakeWindowChanged(nullptr, nullptr);
-
     // Tell the window to callback to us when it's about to handle a WM_CREATE
     auto pfn = std::bind(&AppHost::_HandleCreateWindow,
                          this,
@@ -79,9 +76,11 @@ AppHost::AppHost() noexcept :
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
     _window->NotifyTrayIconPressed({ this, &AppHost::_HandleTrayIconPressed });
-    _window->NotifyWindowHidden({ this, &AppHost::_HandleWindowHidden });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
+
+    // Update our own internal state tracking if we're in quake mode or not.
+    _IsQuakeWindowChanged(nullptr, nullptr);
 
     _windowManager.BecameMonarch({ this, &AppHost::_BecomeMonarch });
     if (_windowManager.IsMonarch())
@@ -928,6 +927,10 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
             _trayIconData.reset();
         }
     }
+    else if (!_window->IsQuakeWindow() && _logic.IsQuakeWindow())
+    {
+        _UpdateTrayIcon();
+    }
 
     _window->IsQuakeWindow(_logic.IsQuakeWindow());
 }
@@ -938,22 +941,14 @@ void AppHost::_HandleTrayIconPressed()
     // the quake window.
     if (_logic.IsQuakeWindow())
     {
-        _window->SummonWindow({});
-    }
-}
-
-void AppHost::_HandleWindowHidden()
-{
-    if (_logic.IsQuakeWindow())
-    {
-        _UpdateTrayIcon();
+        const Remoting::SummonWindowBehavior summonArgs{};
+        summonArgs.DropdownDuration(200);
+        _window->SummonWindow(summonArgs);
     }
 }
 
 // Method Description:
 // - Creates and adds an icon to the notification tray.
-// Updates the current tray icon with the current window's
-// HWND if an icon already exists.
 // Arguments:
 // - <unused>
 // Return Value:
@@ -973,7 +968,7 @@ void AppHost::_UpdateTrayIcon()
         // going to be showing one so the ID doesn't really matter.
         nid.uID = 1;
 
-        nid.uCallbackMessage = WM_APP + 1;
+        nid.uCallbackMessage = CM_NOTIFY_FROM_TRAY;
 
         nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(ICON_SMALL));
         StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), L"Windows Terminal");
@@ -989,11 +984,4 @@ void AppHost::_UpdateTrayIcon()
 
         _trayIconData = nid;
     }
-    else
-    {
-        auto nid = _trayIconData.value();
-        nid.hWnd = _window->GetHandle();
-        Shell_NotifyIcon(NIM_MODIFY, &nid);
-    }
-
 }

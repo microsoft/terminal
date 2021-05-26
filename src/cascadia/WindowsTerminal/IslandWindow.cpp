@@ -507,7 +507,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     case WM_THEMECHANGED:
         UpdateWindowIconForActiveMetrics(_window.get());
         return 0;
-    case WM_APP + 1:
+    case CM_NOTIFY_FROM_TRAY:
     {
         switch (LOWORD(lparam))
         {
