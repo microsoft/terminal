@@ -4,15 +4,20 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="using:TerminalApp"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
         mc:Ignorable="d">
     <Flyout.FlyoutPresenterStyle>
         <Style TargetType="FlyoutPresenter">
             <Setter Property="MinWidth" Value="0" />
+            <Setter Property="MaxWidth" Value="9999"/>
+            <Setter Property="Padding" Value="16"></Setter>
+            <Setter Property="CornerRadius" Value="{ThemeResource OverlayCornerRadius}"></Setter>
         </Style>
     </Flyout.FlyoutPresenterStyle>
     <StackPanel Orientation="Horizontal">
         <StackPanel XYFocusKeyboardNavigation="Enabled">
-            <VariableSizedWrapGrid Margin="0,3,0,0"
+            <Grid Padding="-2">
+            <VariableSizedWrapGrid Margin="0"
                                    HorizontalAlignment="Center"
                                    MaximumRowsOrColumns="4"
                                    Orientation="Horizontal">
@@ -22,8 +27,10 @@
                         <Setter Property="Height" Value="30" />
                     </Style>
                     <Style TargetType="Button">
-                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Padding" Value="-1" />
                         <Setter Property="Margin" Value="2" />
+                        <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
+                        <Setter Property="BorderBrush" Value="{StaticResource SystemBaseLowColor}" />
                     </Style>
                 </VariableSizedWrapGrid.Resources>
                 <Button x:Uid="CrimsonColorButton"
@@ -139,55 +146,56 @@
                     </Button.Content>
                 </Button>
             </VariableSizedWrapGrid>
-            <StackPanel HorizontalAlignment="Center"
-                        Orientation="Horizontal">
-                <StackPanel.Resources>
-                    <Style TargetType="Button">
-                        <Setter Property="Margin" Value="2" />
-                        <Setter Property="HorizontalAlignment" Value="Stretch" />
-                    </Style>
-                </StackPanel.Resources>
-                <Button x:Name="ClearColorButton"
-                        x:Uid="TabColorClearButton"
-                        Padding="5"
-                        Click="ClearColorButton_Click"
-                        Content="Reset"
-                        CornerRadius="2" />
-                <Button x:Name="CustomColorButton"
-                        x:Uid="TabColorCustomButton"
-                        Padding="5"
-                        Click="ShowColorPickerButton_Click"
-                        Content="Custom..."
-                        CornerRadius="2" />
-            </StackPanel>
+            </Grid>
+            <Grid Padding="-2" Margin="0,12,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"></ColumnDefinition>
+                    <ColumnDefinition Width="*"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                    <Button x:Name="ClearColorButton"
+                            x:Uid="TabColorClearButton"
+                            Click="ClearColorButton_Click"
+                            Content="Reset"
+                            HorizontalAlignment="Stretch"
+                            Grid.Column="0"
+                            Margin="2" />
+                    <ToggleButton x:Name="CustomColorButton"
+                                  x:Uid="TabColorCustomButton"
+                                  Click="ShowColorPickerButton_Click"
+                                  Content="Custom"
+                                  HorizontalAlignment="Stretch"
+                                  Grid.Column="1"
+                                  Margin="2"
+                                  IsChecked="False" />
+            </Grid>
         </StackPanel>
         <Grid x:Name="customColorPanel"
-              Margin="5"
+              Margin="16,0,0,0"
               Visibility="Collapsed">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <ColorPicker x:Name="customColorPicker"
-                         Grid.Row="0"
-                         ColorChanged="ColorPicker_ColorChanged"
-                         FontSize="10"
-                         IsAlphaEnabled="False"
-                         IsAlphaSliderVisible="False"
-                         IsAlphaTextInputVisible="False"
-                         IsColorChannelTextInputVisible="True"
-                         IsColorSliderVisible="True"
-                         IsHexInputVisible="True"
-                         IsMoreButtonVisible="True" />
+            <muxc:ColorPicker x:Name="customColorPicker"
+                              Grid.Row="0"
+                              ColorChanged="ColorPicker_ColorChanged"
+                              FontSize="10"
+                              IsAlphaEnabled="False"
+                              IsAlphaSliderVisible="False"
+                              IsAlphaTextInputVisible="False"
+                              IsColorChannelTextInputVisible="True"
+                              IsColorSliderVisible="True"
+                              IsHexInputVisible="True"
+                              IsMoreButtonVisible="True"
+                              Margin="0,0,0,12" />
             <Button x:Name="OkButton"
                     x:Uid="OkButton"
                     Grid.Row="1"
                     MinWidth="130"
-                    MinHeight="12"
-                    Margin="0,5,0,0"
-                    HorizontalAlignment="Center"
+                    HorizontalAlignment="Right"
                     Click="CustomColorButton_Click"
-                    Content="**OK**" />
+                    Content="Ok"
+                    Style="{ThemeResource AccentButtonStyle}" />
         </Grid>
     </StackPanel>
 </Flyout>
