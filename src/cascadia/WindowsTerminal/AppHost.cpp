@@ -587,7 +587,7 @@ bool AppHost::HasWindow()
 // - args: the bundle of a commandline and working directory to use for this invocation.
 // Return Value:
 // - <none>
-void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*sender*/,
+void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable sender,
                                    Remoting::CommandlineArgs args)
 {
     const Remoting::SummonWindowBehavior summonArgs{};
@@ -596,7 +596,7 @@ void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*se
     summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
     // Summon the window whenever we dispatch a commandline to it. This will
     // make it obvious when a new tab/pane is created in a window.
-    _window->SummonWindow(summonArgs);
+    _HandleSummon(sender, summonArgs);
     _logic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory());
 }
 
@@ -927,7 +927,7 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
     _window->IsQuakeWindow(_logic.IsQuakeWindow());
 }
 
-void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable&,
+void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                      const winrt::Windows::Foundation::IInspectable&)
 
 {
@@ -935,7 +935,5 @@ void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspecta
     summonArgs.MoveToCurrentDesktop(false);
     summonArgs.DropdownDuration(0);
     summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
-    // Summon the window whenever we dispatch a commandline to it. This will
-    // make it obvious when a new tab/pane is created in a window.
-    _window->SummonWindow(summonArgs);
+    _HandleSummon(sender, summonArgs);
 }
