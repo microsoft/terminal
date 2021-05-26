@@ -11,6 +11,26 @@
         <ResourceDictionary Source="SettingContainerStyle.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+            <Style x:Key="SecondaryTextBlockStyle"
+                   TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{ThemeResource SystemBaseMediumColor}" />
+            </Style>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+            <Style x:Key="SecondaryTextBlockStyle"
+                   TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{ThemeResource SystemBaseMediumColor}" />
+            </Style>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="HighContrast">
+            <Style x:Key="SecondaryTextBlockStyle"
+                   TargetType="TextBlock" />
+            <!--  Do not mess with the foreground color for High Contrast. Let it ride as is.  -->
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+
     <x:Double x:Key="StandardIconSize">14.0</x:Double>
     <Thickness x:Key="StandardIndentMargin">13,0,0,0</Thickness>
     <Thickness x:Key="StandardControlMargin">0,24,0,0</Thickness>
