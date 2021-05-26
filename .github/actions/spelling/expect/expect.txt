@@ -2777,6 +2777,7 @@ Xes
 xff
 XFile
 XFORM
+xIcon
 XManifest
 XMath
 XMFLOAT
@@ -2811,6 +2812,7 @@ YCast
 YCENTER
 YCount
 YDPI
+yIcon
 yml
 YOffset
 YPosition
