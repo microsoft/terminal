@@ -266,6 +266,7 @@ void AppHost::Initialize()
     _logic.RenameWindowRequested({ this, &AppHost::_RenameWindowRequested });
     _logic.SettingsChanged({ this, &AppHost::_HandleSettingsChanged });
     _logic.IsQuakeWindowChanged({ this, &AppHost::_IsQuakeWindowChanged });
+    _logic.SummonWindowRequested({ this, &AppHost::_SummonWindowRequested });
 
     _window->UpdateTitle(_logic.Title());
 
@@ -924,4 +925,17 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
                                     const winrt::Windows::Foundation::IInspectable&)
 {
     _window->IsQuakeWindow(_logic.IsQuakeWindow());
+}
+
+void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable&,
+                                     const winrt::Windows::Foundation::IInspectable&)
+
+{
+    const Remoting::SummonWindowBehavior summonArgs{};
+    summonArgs.MoveToCurrentDesktop(false);
+    summonArgs.DropdownDuration(0);
+    summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
+    // Summon the window whenever we dispatch a commandline to it. This will
+    // make it obvious when a new tab/pane is created in a window.
+    _window->SummonWindow(summonArgs);
 }
