@@ -19,6 +19,12 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Microsoft::UI::Xaml::Controls;
 
+namespace winrt
+{
+    namespace MUX = Microsoft::UI::Xaml;
+    namespace WUX = Windows::UI::Xaml;
+}
+
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     // The first 8 entries of the color table are non-bright colors, whereas the rest are bright.
@@ -218,10 +224,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // Return Value:
     // - <none>
     void ColorSchemes::ColorPickerChanged(IInspectable const& sender,
-                                          ColorChangedEventArgs const& args)
+                                          MUX::ColorChangedEventArgs const& args)
     {
         const til::color newColor{ args.NewColor() };
-        if (const auto& picker{ sender.try_as<ColorPicker>() })
+        if (const auto& picker{ sender.try_as<MUX::ColorPicker>() })
         {
             if (const auto& tag{ picker.Tag() })
             {
