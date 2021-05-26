@@ -183,7 +183,6 @@ bytebuffer
 cac
 cacafire
 callee
-cang
 capslock
 CARETBLINKINGENABLED
 CARRIAGERETURN
@@ -1368,7 +1367,6 @@ MEASUREITEM
 megamix
 memallocator
 memcmp
-memcopy
 memcpy
 memmove
 memset
@@ -1968,7 +1966,6 @@ rftp
 rgb
 rgba
 rgbi
-rgch
 rgci
 rgfae
 rgfte
@@ -2044,8 +2041,6 @@ scriptload
 Scrollable
 scrollback
 scrollbar
-Scrolldown
-Scrolldownpage
 Scroller
 SCROLLFORWARD
 SCROLLINFO
@@ -2053,8 +2048,6 @@ scrolllock
 scrolloffset
 SCROLLSCALE
 SCROLLSCREENBUFFER
-Scrollup
-Scrolluppage
 scursor
 sddl
 sdeleted
@@ -2069,7 +2062,6 @@ selectany
 SELECTEDFONT
 SELECTSTRING
 Selfhosters
-serializer
 serializers
 SERVERDLL
 SETACTIVE
