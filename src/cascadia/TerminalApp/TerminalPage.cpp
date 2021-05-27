@@ -2319,6 +2319,9 @@ namespace winrt::TerminalApp::implementation
     {
         // TODO: GH 9458 will give us more context so we can try to choose a better profile.
         _OpenNewTab(nullptr, connection);
+
+        // Request a summon of this window to the foreground
+        _SummonWindowRequestedHandlers(*this, nullptr);
     }
 
     // Method Description:
