@@ -9,9 +9,9 @@
     <Flyout.FlyoutPresenterStyle>
         <Style TargetType="FlyoutPresenter">
             <Setter Property="MinWidth" Value="0" />
-            <Setter Property="MaxWidth" Value="9999"/>
-            <Setter Property="Padding" Value="16"></Setter>
-            <Setter Property="CornerRadius" Value="{ThemeResource OverlayCornerRadius}"></Setter>
+            <Setter Property="MaxWidth" Value="9999" />
+            <Setter Property="Padding" Value="{StaticResource FlyoutContentPadding}" />
+            <Setter Property="CornerRadius" Value="{ThemeResource OverlayCornerRadius}" />
         </Style>
     </Flyout.FlyoutPresenterStyle>
     <StackPanel Orientation="Horizontal">
@@ -147,26 +147,26 @@
                     </Button>
                 </VariableSizedWrapGrid>
             </Grid>
-            <Grid Padding="-2" Margin="0,12,0,0">
+            <Grid Margin="0,12,0,0" Padding="-2">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"></ColumnDefinition>
-                    <ColumnDefinition Width="*"></ColumnDefinition>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                    <Button x:Name="ClearColorButton"
-                            x:Uid="TabColorClearButton"
-                            Click="ClearColorButton_Click"
-                            Content="Reset"
-                            HorizontalAlignment="Stretch"
-                            Grid.Column="0"
-                            Margin="2" />
-                    <ToggleButton x:Name="CustomColorButton"
-                                  x:Uid="TabColorCustomButton"
-                                  Click="ShowColorPickerButton_Click"
-                                  Content="Custom"
-                                  HorizontalAlignment="Stretch"
-                                  Grid.Column="1"
-                                  Margin="2"
-                                  IsChecked="False" />
+                <Button x:Name="ClearColorButton"
+                        x:Uid="TabColorClearButton"
+                        Grid.Column="0"
+                        Margin="2"
+                        HorizontalAlignment="Stretch"
+                        Click="ClearColorButton_Click"
+                        Content="Reset" />
+                <ToggleButton x:Name="CustomColorButton"
+                              x:Uid="TabColorCustomButton"
+                              Grid.Column="1"
+                              Margin="2"
+                              HorizontalAlignment="Stretch"
+                              Click="ShowColorPickerButton_Click"
+                              Content="Custom"
+                              IsChecked="False" />
             </Grid>
         </StackPanel>
         <Grid x:Name="customColorPanel"
@@ -178,6 +178,7 @@
             </Grid.RowDefinitions>
             <muxc:ColorPicker x:Name="customColorPicker"
                               Grid.Row="0"
+                              Margin="0,0,0,12"
                               ColorChanged="ColorPicker_ColorChanged"
                               FontSize="10"
                               IsAlphaEnabled="False"
@@ -186,15 +187,14 @@
                               IsColorChannelTextInputVisible="True"
                               IsColorSliderVisible="True"
                               IsHexInputVisible="True"
-                              IsMoreButtonVisible="True"
-                              Margin="0,0,0,12" />
+                              IsMoreButtonVisible="True" />
             <Button x:Name="OkButton"
                     x:Uid="OkButton"
                     Grid.Row="1"
                     MinWidth="130"
                     HorizontalAlignment="Right"
                     Click="CustomColorButton_Click"
-                    Content="Ok"
+                    Content="OK"
                     Style="{ThemeResource AccentButtonStyle}" />
         </Grid>
     </StackPanel>
