@@ -147,7 +147,8 @@
                     </Button>
                 </VariableSizedWrapGrid>
             </Grid>
-            <Grid Margin="0,12,0,0" Padding="-2">
+            <Grid Margin="0,12,0,0"
+                  Padding="-2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
