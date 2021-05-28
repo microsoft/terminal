@@ -1206,7 +1206,7 @@ namespace winrt::TerminalApp::implementation
             // in and be routed to an event with no handlers or a non-ready Page.
             if (_appArgs.IsHandoffListener())
             {
-                SetInboundListener();
+                _root->SetInboundListener(true);
             }
         }
 
@@ -1222,7 +1222,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void AppLogic::SetInboundListener()
     {
-        _root->SetInboundListener();
+        _root->SetInboundListener(false);
     }
 
     // Method Description:
