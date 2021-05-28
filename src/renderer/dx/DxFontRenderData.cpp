@@ -694,7 +694,8 @@ CATCH_RETURN()
             familyName = fallbackFace;
             // With these fonts, don't attempt the nearby lookup. We're looking
             // for system fonts only. If one of the nearby fonts is causing us
-            // problems (like in GH##10211), then we don't want to go anywhere
+            // problems (like in GH#10211), then we don't want to go anywhere
+
             // near it in this part.
             face = _FindFontFace(familyName, weight, stretch, style, localeName, false);
 
