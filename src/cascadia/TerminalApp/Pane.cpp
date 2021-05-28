@@ -329,10 +329,19 @@ void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundatio
     }
 
     const auto newConnectionState = _control.ConnectionState();
+    const auto previousConnectionState = std::exchange(_connectionState, newConnectionState);
 
     if (newConnectionState < ConnectionState::Closed)
     {
         // Pane doesn't care if the connection isn't entering a terminal state.
+        return;
+    }
+
+    if (previousConnectionState < ConnectionState::Connected && newConnectionState >= ConnectionState::Failed)
+    {
+        // A failure to complete the connection (before it has _connected_) is not covered by "closeOnExit".
+        // This is to prevent a misconfiguration (closeOnExit: always, startingDirectory: garbage) resulting
+        // in Terminal flashing open and immediately closed.
         return;
     }
 
@@ -709,6 +718,7 @@ void Pane::_CloseChild(const bool closeFirst)
 
         // take the control, profile and id of the pane that _wasn't_ closed.
         _control = remainingChild->_control;
+        _connectionState = remainingChild->_connectionState;
         _profile = remainingChild->_profile;
         _id = remainingChild->Id();
 
@@ -1476,6 +1486,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     //   Move our control, guid into the first one.
     //   Move the new guid, control into the second.
     _firstChild = std::make_shared<Pane>(_profile.value(), _control);
+    _firstChild->_connectionState = std::exchange(_connectionState, ConnectionState::NotConnected);
     _profile = std::nullopt;
     _control = { nullptr };
     _secondChild = std::make_shared<Pane>(profile, control);
