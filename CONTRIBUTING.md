@@ -93,7 +93,7 @@ When you hit "New Issue", select the type of issue closest to what you want to r
 
 > ⚠ DO NOT post "+1", "me too", or similar comments - they just add noise to an issue.
 
-If you don't have any additional info/context to add but would like to indicate that you're affected by the issue, upvote the original issue by clicking its [+😊] button and hitting 👍 (+1) icon. This way we can actually measure how impactful an issue is.
+If you don't have any additional info/context to add, but would like to indicate that you're affected by the issue, upvote the original issue by clicking its [+😊] button and hitting 👍 (+1) icon. This way we can actually measure how impactful an issue is.
 
 ---
 
