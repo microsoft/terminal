@@ -979,7 +979,7 @@ void AppHost::_HandleTrayIconPressed()
 // - <none>
 void AppHost::_UpdateTrayIcon()
 {
-    if (!_trayIconData)
+    if (!_trayIconData && _window->GetHandle())
     {
         NOTIFYICONDATA nid{};
 
