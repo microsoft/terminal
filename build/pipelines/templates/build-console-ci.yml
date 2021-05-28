@@ -30,7 +30,7 @@ jobs:
   parameters:
     name: 'RunTestsInHelix'
     dependsOn: Build${{ parameters.platform }}${{ parameters.configuration }}
-    condition: and(succeeded(), and(eq('${{ parameters.platform }}', 'x64'), not(eq(variables['Build.Reason'], 'PullRequest')))) 
+    condition: and(succeeded(), eq('${{ parameters.platform }}', 'x64')) 
     testSuite: 'DevTestSuite'
     rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
     
@@ -38,6 +38,6 @@ jobs:
   parameters:
     dependsOn:
     - RunTestsInHelix
-    condition: and(succeededOrFailed(), and(eq('${{ parameters.platform }}', 'x64'), not(eq(variables['Build.Reason'], 'PullRequest')))) 
+    condition: and(succeededOrFailed(), eq('${{ parameters.platform }}', 'x64'))
     rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
     minimumExpectedTestsExecutedCount: ${{ parameters.minimumExpectedTestsExecutedCount }}

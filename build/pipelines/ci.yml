@@ -1,14 +1,14 @@
-trigger:
-  batch: true
-  branches:
-    include:
-      - main
-      - feature/*
-  paths:
-    exclude:
-      - doc/*
-      - samples/*
-      - tools/*
+# trigger:
+#   batch: true
+#   branches:
+#     include:
+#       - main
+#       - feature/*
+#   paths:
+#     exclude:
+#       - doc/*
+#       - samples/*
+#       - tools/*
 
 pr:
   branches:
