@@ -162,4 +162,4 @@ Once your code has been reviewed and approved by the requisite number of team me
 
 ## Thank you
 
-Thank you in advance for your contribution! Now, [what's next on the list](https://github.com/microsoft/terminal/labels/Help%20Wanted)? 😜
+Thank you in advance for your contribution! Don't be sad if your contribution/pull request was not accepted because of a certain issue. You will still be able to contribute in the future. We still appreciate you taking time to ensure the best for this project! Now, [what's next on the list](https://github.com/microsoft/terminal/labels/Help%20Wanted)? 😜
