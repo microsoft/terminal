@@ -84,6 +84,7 @@ private:
 
     void _UpdateTrayIcon();
     void _HandleTrayIconPressed();
+    void _CreateTrayContextMenu(const til::point coord);
 
     std::optional<NOTIFYICONDATA> _trayIconData;
 };

@@ -452,7 +452,6 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     {
         if (wparam == SIZE_MINIMIZED && _isQuakeWindow)
         {
-            _NotifyWindowHiddenHandlers();
             ShowWindow(GetHandle(), SW_HIDE);
             return 0;
         }
@@ -517,8 +516,18 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             _NotifyTrayIconPressedHandlers();
             return 0;
         }
+        case WM_CONTEXTMENU:
+        {
+            const til::point eventPoint{ GET_X_LPARAM(wparam), GET_Y_LPARAM(wparam) };
+            _NotifyShowTrayContextMenuHandlers(eventPoint);
+            return 0;
+        }
         }
         break;
+    }
+    case WM_COMMAND:
+    {
+        return 0;
     }
     }
 

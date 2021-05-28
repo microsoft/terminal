@@ -76,6 +76,7 @@ AppHost::AppHost() noexcept :
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
     _window->NotifyTrayIconPressed({ this, &AppHost::_HandleTrayIconPressed });
+    _window->NotifyShowTrayContextMenu({this, &AppHost::_CreateTrayContextMenu });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
 
@@ -641,6 +642,7 @@ winrt::fire_and_forget AppHost::_WindowActivated()
 void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
+    _UpdateTrayIcon();
     _setupGlobalHotkeys();
 }
 
@@ -917,38 +919,19 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
                                     const winrt::Windows::Foundation::IInspectable&)
 {
-    if (_window->IsQuakeWindow() && !_logic.IsQuakeWindow())
-    {
-        // If we're exiting quake mode, we should make our
-        // tray icon disappear.
-        if (_trayIconData)
-        {
-            Shell_NotifyIcon(NIM_DELETE, &_trayIconData.value());
-            _trayIconData.reset();
-        }
-    }
-    else if (!_window->IsQuakeWindow() && _logic.IsQuakeWindow())
-    {
-        _UpdateTrayIcon();
-    }
-
     _window->IsQuakeWindow(_logic.IsQuakeWindow());
 }
 
 void AppHost::_HandleTrayIconPressed()
 {
-    // Currently scoping "minimize to tray" to only
-    // the quake window.
-    if (_logic.IsQuakeWindow())
-    {
-        const Remoting::SummonWindowBehavior summonArgs{};
-        summonArgs.DropdownDuration(200);
-        _window->SummonWindow(summonArgs);
-    }
+    // No name in the args means summon the mru window.
+    _windowManager.SummonWindow({});
 }
 
 // Method Description:
 // - Creates and adds an icon to the notification tray.
+// If an icon already exists, update the HWND associated
+// to the icon with this window's HWND.
 // Arguments:
 // - <unused>
 // Return Value:
@@ -983,5 +966,43 @@ void AppHost::_UpdateTrayIcon()
         Shell_NotifyIcon(NIM_SETVERSION, &nid);
 
         _trayIconData = nid;
+    }
+    else
+    {
+        _trayIconData.value().hWnd = _window->GetHandle();
+        Shell_NotifyIcon(NIM_MODIFY, &_trayIconData.value());
+    }
+}
+
+void AppHost::_CreateTrayContextMenu(const til::point coord)
+{
+    auto hmenu = CreatePopupMenu();
+    if (hmenu)
+    {
+        // https://docs.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-menuinfo
+        MENUINFO mi{};
+        mi.fMask = MIM_APPLYTOSUBMENUS | MIM_STYLE;
+        mi.dwStyle = MNS_NOCHECK | MNS_NOTIFYBYPOS;
+        SetMenuInfo(hmenu, &mi);
+
+        // Just testing how to insert menu items
+        InsertMenu(hmenu, 0, MF_STRING, 0, L"Start");
+
+        // We'll need to set our window to the foreground before calling
+        // TrackPopupMenuEx or else the menu won't dismiss when clicking away.
+        SetForegroundWindow(_window->GetHandle());
+
+        UINT uFlags = TPM_RIGHTBUTTON;
+        if (GetSystemMetrics(SM_MENUDROPALIGNMENT) != 0)
+        {
+            uFlags |= TPM_RIGHTALIGN;
+        }
+        else
+        {
+            uFlags |= TPM_LEFTALIGN;
+        }
+
+        TrackPopupMenuEx(hmenu, uFlags, (int)coord.x(), (int)coord.y(), _window->GetHandle(), NULL);
+        DestroyMenu(hmenu);
     }
 }
