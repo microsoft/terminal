@@ -1,30 +1,30 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#pragma once
+ once
 
-#include "AppLogic.g.h"
-#include "FindTargetWindowResult.g.h"
-#include "TerminalPage.h"
-#include "Jumplist.h"
-#include "../../cascadia/inc/cppwinrt_utils.h"
+ "AppLogic.g.h"
+ "FindTargetWindowResult.g.h"
+ "TerminalPage.h"
+ "Jumplist.h"
+ "../../cascadia/inc/cppwinrt_utils.h"
 
-#ifdef UNIT_TESTING
-// fwdecl unittest classes
-namespace TerminalAppLocalTests
+ UNIT_TESTING
+// unittest classes
+ TerminalAppLocalTests
 {
-    class CommandlineTest;
+    CommandlineTest;
 };
-#endif
 
-namespace winrt::TerminalApp::implementation
+
+  winrt TerminalApp implementation
 {
-    struct FindTargetWindowResult : FindTargetWindowResultT<FindTargetWindowResult>
+     FindTargetWindowResult  FindTargetWindowResultT FindTargetWindowResult
     {
         WINRT_PROPERTY(int32_t, WindowId, -1);
         WINRT_PROPERTY(winrt::hstring, WindowName, L"");
 
-    public:
+  
         FindTargetWindowResult(const int32_t id, const winrt::hstring& name) :
             _WindowId{ id }, _WindowName{ name } {};
 
@@ -32,77 +32,78 @@ namespace winrt::TerminalApp::implementation
             FindTargetWindowResult(id, L""){};
     };
 
-    struct AppLogic : AppLogicT<AppLogic, IInitializeWithWindow>
+    
+    AppLogic : AppLogicT<AppLogic, IInitializeWithWindow>
     {
-    public:
-        static AppLogic* Current() noexcept;
-        static const Microsoft::Terminal::Settings::Model::CascadiaSettings CurrentAppSettings();
+    
+         AppLogic* Current() noexcept;
+          Microsoft Terminal Settings Model CascadiaSettings CurrentAppSettings();
 
         AppLogic();
-        ~AppLogic() = default;
+        ~AppLogic() default;
 
         STDMETHODIMP Initialize(HWND hwnd);
 
-        void Create();
-        bool IsUwp() const noexcept;
-        void RunAsUwp();
-        bool IsElevated() const noexcept;
-        void LoadSettings();
-        [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
+         Create();
+         IsUwp()  ;
+         RunAsUwp();
+         IsElevated()  ;
+         LoadSettings();
+        [[nodiscard]] Microsoft Terminal Settings Model CascadiaSettings GetSettings() ;
 
-        int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
-        int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd);
+        int32_t SetStartupCommandline(array_view winrt::hstring actions);
+        int32_t ExecuteCommandline(array_view winrt::hstring actions, const winrt::hstring& cwd);
         TerminalApp::FindTargetWindowResult FindTargetWindow(array_view<const winrt::hstring> actions);
         winrt::hstring ParseCommandlineMessage();
-        bool ShouldExitEarly();
+         ShouldExitEarly();
 
-        bool FocusMode() const;
-        bool Fullscreen() const;
-        bool AlwaysOnTop() const;
+        FocusMode() ;
+        Fullscreen() ;
+         AlwaysOnTop() ;
 
-        void IdentifyWindow();
-        void RenameFailed();
-        winrt::hstring WindowName();
-        void WindowName(const winrt::hstring& name);
+        IdentifyWindow();
+        RenameFailed();
+        winrt hstring WindowName();
+        WindowName( winrt hstring& name);
         uint64_t WindowId();
-        void WindowId(const uint64_t& id);
-        bool IsQuakeWindow() const noexcept;
+        WindowId(uint64_t& id);
+         IsQuakeWindow()  noexcept;
 
-        Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);
-        bool CenterOnLaunch();
-        TerminalApp::InitialPosition GetInitialPosition(int64_t defaultInitialX, int64_t defaultInitialY);
-        winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme();
-        Microsoft::Terminal::Settings::Model::LaunchMode GetLaunchMode();
-        bool GetShowTabsInTitlebar();
-        bool GetInitialAlwaysOnTop();
-        float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
+        Windows Foundation GetLaunchDimensions(uint32_ dpi);
+         CenterOnLaunch();
+        TerminalApp InitialPosition GetInitialPosition(int64_t defaultInitialX, int64_t defaultInitialY);
+        winrt Windows UI Xaml ElementTheme GetRequestedTheme();
+        Microsoft Terminal Settings Model LaunchMode GetLaunchMode();
+         GetShowTabsInTitlebar();
+         GetInitialAlwaysOnTop();
+         CalcSnappedDimension( widthOrHeight, dimension) ;
 
-        Windows::UI::Xaml::UIElement GetRoot() noexcept;
+        Windows UI Xaml UIElement GetRoot() ;
 
-        void SetInboundListener();
+         SetInboundListener();
 
         hstring Title();
-        void TitlebarClicked();
-        bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
+         TitlebarClicked();
+         OnDirectKeyEvent( uint32_t vkey,  uint8_t scanCode,  down);
 
-        void WindowCloseButtonClicked();
+          WindowCloseButtonClicked();
 
         size_t GetLastActiveControlTaskbarState();
         size_t GetLastActiveControlTaskbarProgress();
 
-        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
+        winrt Windows Foundation IAsyncOperationwinrt Windows UI Xaml Controls ContentDialogResult ShowDialog(winrt Windows UI Xaml Controls ContentDialog dialog);
 
-        Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> GlobalHotkeys();
+        Windows Foundation Collections IMapView Microsoft Terminal Control KeyChord, Microsoft Terminal Settings Model Command GlobalHotkeys();
 
         // -------------------------------- WinRT Events ---------------------------------
-        TYPED_EVENT(RequestedThemeChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::ElementTheme);
-        TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(RequestedThemeChanged, winrt Windows Foundation IInspectable, winrt Windows UI Xaml ElementTheme);
+        TYPED_EVENT(SettingsChanged, winrt Windows Foundation IInspectable, winrt Windows Foundation IInspectable);
 
-    private:
-        bool _isUwp{ false };
-        bool _isElevated{ false };
+    
+         _isUwp{ false };
+         _isElevated{ false };
 
-        // If you add controls here, but forget to null them either here or in
+        // you add controls here, but forget to null them either here or in
         // the ctor, you're going to have a bad time. It'll mysteriously fail to
         // activate the AppLogic.
         // ALSO: If you add any UIElements as roots here, make sure they're
@@ -124,14 +125,14 @@ namespace winrt::TerminalApp::implementation
 
         ::TerminalApp::AppCommandlineArgs _appArgs;
         ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
-        int _ParseArgs(winrt::array_view<const hstring>& args);
-        static TerminalApp::FindTargetWindowResult _doFindTargetWindow(winrt::array_view<const hstring> args,
+        _ParseArgs(winrt::array_view<const hstring>& args);
+         TerminalApp::FindTargetWindowResult _doFindTargetWindow(winrt::array_view<const hstring> args,
                                                                        const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior);
 
-        void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);
-        void _ShowLoadWarningsDialog();
-        bool _IsKeyboardServiceEnabled();
-        void _ShowKeyboardServiceDisabledDialog();
+         _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);
+        _ShowLoadWarningsDialog();
+        _IsKeyboardServiceEnabled();
+        _ShowKeyboardServiceDisabledDialog();
 
         fire_and_forget _LoadErrorsDialogRoutine();
         fire_and_forget _ShowLoadWarningsDialogRoutine();
@@ -173,9 +174,9 @@ namespace winrt::TerminalApp::implementation
     };
 }
 
-namespace winrt::TerminalApp::factory_implementation
+ winrt::TerminalApp::factory_implementation
 {
-    struct AppLogic : AppLogicT<AppLogic, implementation::AppLogic>
+     AppLogic : AppLogicT<AppLogic, implementation::AppLogic>
     {
     };
 }
