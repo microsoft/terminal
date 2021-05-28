@@ -1845,9 +1845,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // will take up.
         // TODO: MSFT:21254947 - use a static function to do this instead of
         // instantiating a DxEngine
+        // GH#10211 - UNDER NO CIRCUMSTANCE should this fail. If it does, the
+        // whole app will crash instantaneously on launch, which is no good.
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-        THROW_IF_FAILED(dxEngine->UpdateDpi(dpi));
-        THROW_IF_FAILED(dxEngine->UpdateFont(desiredFont, actualFont));
+        LOG_IF_FAILED(dxEngine->UpdateDpi(dpi));
+        LOG_IF_FAILED(dxEngine->UpdateFont(desiredFont, actualFont));
 
         const auto scale = dxEngine->GetScaling();
         const auto fontSize = actualFont.GetSize();

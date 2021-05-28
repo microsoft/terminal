@@ -71,7 +71,8 @@ namespace Microsoft::Console::Render
                                                                                DWRITE_FONT_WEIGHT& weight,
                                                                                DWRITE_FONT_STRETCH& stretch,
                                                                                DWRITE_FONT_STYLE& style,
-                                                                               std::wstring& localeName) const;
+                                                                               std::wstring& localeName,
+                                                                               const bool withNearbyLookup) const;
 
         [[nodiscard]] std::wstring _GetFontFamilyName(gsl::not_null<IDWriteFontFamily*> const fontFamily,
                                                       std::wstring& localeName) const;
