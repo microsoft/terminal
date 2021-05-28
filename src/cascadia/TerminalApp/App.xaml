@@ -1,4 +1,4 @@
-<!--
+﻿<!--
     Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
     the MIT License. See LICENSE in the project root for license information.
 -->
@@ -45,7 +45,7 @@
                                      Color="{ThemeResource SystemErrorTextColor}" />
 
                     <!--  Suppress top padding  -->
-                    <Thickness x:Key="TabViewHeaderPadding">8,0,8,0</Thickness>
+                    <Thickness x:Key="TabViewHeaderPadding">9,0,4,0</Thickness>
 
                     <ResourceDictionary.ThemeDictionaries>
                         <ResourceDictionary x:Key="Dark">
