@@ -277,4 +277,10 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean ToggleVisibility { get; };
         UInt32 DropdownDuration { get; };
     };
+
+    [default_interface] runtimeclass FocusPaneArgs : IActionArgs
+    {
+        FocusPaneArgs(UInt32 Id);
+        UInt32 Id { get; };
+    };
 }

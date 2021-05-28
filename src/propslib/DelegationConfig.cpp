@@ -185,11 +185,14 @@ try
 {
     packages.clear();
 
+    // Get consoles and terminals.
+    // If we fail to look up any, we should still have ONE come back to us as the hardcoded default console host.
+    // The errors aren't really useful except for debugging, so log only.
     std::vector<DelegationConsole> consoles;
-    RETURN_IF_FAILED(s_GetAvailableConsoles(consoles));
+    LOG_IF_FAILED(s_GetAvailableConsoles(consoles));
 
     std::vector<DelegationTerminal> terminals;
-    RETURN_IF_FAILED(s_GetAvailableTerminals(terminals));
+    LOG_IF_FAILED(s_GetAvailableTerminals(terminals));
 
     // TODO: I hate this algorithm (it's bad performance), but I couldn't
     // find an AppModel interface that would let me look up all the extensions

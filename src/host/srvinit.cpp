@@ -14,6 +14,7 @@
 
 #include "../types/inc/GlyphWidth.hpp"
 
+#include "../server/DeviceHandle.h"
 #include "../server/Entrypoints.h"
 #include "../server/IoSorter.h"
 
@@ -414,6 +415,14 @@ try
     wil::unique_handle clientProcess{ OpenProcess(PROCESS_QUERY_INFORMATION | SYNCHRONIZE, TRUE, static_cast<DWORD>(connectMessage->Descriptor.Process)) };
     RETURN_LAST_ERROR_IF_NULL(clientProcess.get());
 
+    wil::unique_handle refHandle;
+    RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateClientHandle(refHandle.addressof(),
+                                                               Server,
+                                                               L"\\Reference",
+                                                               FALSE));
+
+    const auto serverProcess = GetCurrentProcess();
+
     ::Microsoft::WRL::ComPtr<ITerminalHandoff> handoff;
 
     RETURN_IF_FAILED(CoCreateInstance(g.handoffTerminalClsid.value(), nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&handoff)));
@@ -421,6 +430,8 @@ try
     RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeTheirSide.get(),
                                                   outPipeTheirSide.get(),
                                                   signalPipeTheirSide.get(),
+                                                  refHandle.get(),
+                                                  serverProcess,
                                                   clientProcess.get()));
 
     inPipeTheirSide.release();

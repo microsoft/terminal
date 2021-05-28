@@ -88,6 +88,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings) :
         _profile{ profile },
+        _originalProfileGuid{ profile.Guid() },
         _ShowAllFonts{ false },
         _appSettings{ appSettings }
     {
@@ -325,6 +326,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    winrt::guid ProfileViewModel::OriginalProfileGuid() const noexcept
+    {
+        return _originalProfileGuid;
+    }
+
     bool ProfileViewModel::CanDeleteProfile() const
     {
         const auto guid{ Guid() };
@@ -444,7 +450,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(BackgroundImageStretchMode, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch, L"Profile_BackgroundImageStretchMode", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(AntiAliasingMode, TextAntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode, L"Profile_AntialiasingMode", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(CloseOnExitMode, CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
-        INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(BellStyle, BellStyle, winrt::Microsoft::Terminal::Settings::Model::BellStyle, L"Profile_BellStyle", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::Control::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
 
         // manually add Custom FontWeight option. Don't add it to the Map
@@ -585,7 +590,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (settingName == L"BellStyle")
             {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentBellStyle" });
+                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsBellStyleFlagSet" });
             }
             else if (settingName == L"ScrollState")
             {
@@ -647,6 +652,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Profiles::CurrentColorScheme(const ColorScheme& val)
     {
         _State.Profile().ColorSchemeName(val.Name());
+    }
+
+    bool Profiles::IsBellStyleFlagSet(const uint32_t flag)
+    {
+        return (WI_EnumValue(_State.Profile().BellStyle()) & flag) == flag;
+    }
+
+    void Profiles::SetBellStyleAudible(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = State().Profile().BellStyle();
+        WI_UpdateFlag(currentStyle, Model::BellStyle::Audible, winrt::unbox_value<bool>(on));
+        State().Profile().BellStyle(currentStyle);
+    }
+
+    void Profiles::SetBellStyleWindow(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = State().Profile().BellStyle();
+        WI_UpdateFlag(currentStyle, Model::BellStyle::Window, winrt::unbox_value<bool>(on));
+        State().Profile().BellStyle(currentStyle);
+    }
+
+    void Profiles::SetBellStyleTaskbar(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = State().Profile().BellStyle();
+        WI_UpdateFlag(currentStyle, Model::BellStyle::Taskbar, winrt::unbox_value<bool>(on));
+        State().Profile().BellStyle(currentStyle);
     }
 
     void Profiles::DeleteConfirmation_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)

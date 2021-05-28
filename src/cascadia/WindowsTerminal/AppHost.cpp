@@ -273,6 +273,7 @@ void AppHost::Initialize()
     _logic.RenameWindowRequested({ this, &AppHost::_RenameWindowRequested });
     _logic.SettingsChanged({ this, &AppHost::_HandleSettingsChanged });
     _logic.IsQuakeWindowChanged({ this, &AppHost::_IsQuakeWindowChanged });
+    _logic.SummonWindowRequested({ this, &AppHost::_SummonWindowRequested });
 
     _window->UpdateTitle(_logic.Title());
 
@@ -593,7 +594,7 @@ bool AppHost::HasWindow()
 // - args: the bundle of a commandline and working directory to use for this invocation.
 // Return Value:
 // - <none>
-void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*sender*/,
+void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable sender,
                                    Remoting::CommandlineArgs args)
 {
     const Remoting::SummonWindowBehavior summonArgs{};
@@ -602,7 +603,7 @@ void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*se
     summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
     // Summon the window whenever we dispatch a commandline to it. This will
     // make it obvious when a new tab/pane is created in a window.
-    _window->SummonWindow(summonArgs);
+    _HandleSummon(sender, summonArgs);
     _logic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory());
 }
 
@@ -647,6 +648,14 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     _setupGlobalHotkeys();
+
+    // The monarch is just going to be THE listener for inbound connections.
+    _listenForInboundConnections();
+}
+
+void AppHost::_listenForInboundConnections()
+{
+    _logic.SetInboundListener();
 }
 
 winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
@@ -938,6 +947,16 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
     }
 
     _window->IsQuakeWindow(_logic.IsQuakeWindow());
+}
+
+void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                     const winrt::Windows::Foundation::IInspectable&)
+{
+    const Remoting::SummonWindowBehavior summonArgs{};
+    summonArgs.MoveToCurrentDesktop(false);
+    summonArgs.DropdownDuration(0);
+    summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
+    _HandleSummon(sender, summonArgs);
 }
 
 void AppHost::_HandleTrayIconPressed()

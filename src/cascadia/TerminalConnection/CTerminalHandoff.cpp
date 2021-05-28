@@ -84,12 +84,14 @@ static HRESULT _duplicateHandle(const HANDLE in, HANDLE& out) noexcept
 // - in - PTY input handle that we will read from
 // - out - PTY output handle that we will write to
 // - signal - PTY signal handle for out of band messaging
-// - process - Process handle to client so we can track its lifetime and exit appropriately
+// - ref - Client reference handle for console session so it stays alive until we let go
+// - server - PTY process handle to track for lifetime/cleanup
+// - client - Process handle to client so we can track its lifetime and exit appropriately
 // Return Value:
 // - E_NOT_VALID_STATE if a event handler is not registered before calling. `::DuplicateHandle`
 //   error codes if we cannot manage to make our own copy of handles to retain. Or S_OK/error
 //   from the registered handler event function.
-HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE process) noexcept
+HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client) noexcept
 {
     // Report an error if no one registered a handoff function before calling this.
     RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _pfnHandoff);
@@ -101,8 +103,10 @@ HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE sign
     RETURN_IF_FAILED(_duplicateHandle(in, in));
     RETURN_IF_FAILED(_duplicateHandle(out, out));
     RETURN_IF_FAILED(_duplicateHandle(signal, signal));
-    RETURN_IF_FAILED(_duplicateHandle(process, process));
+    RETURN_IF_FAILED(_duplicateHandle(ref, ref));
+    RETURN_IF_FAILED(_duplicateHandle(server, server));
+    RETURN_IF_FAILED(_duplicateHandle(client, client));
 
     // Call registered handler from when we started listening.
-    return _pfnHandoff(in, out, signal, process);
+    return _pfnHandoff(in, out, signal, ref, server, client);
 }

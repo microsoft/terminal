@@ -72,3 +72,20 @@ public:                                                   \
 // setting, but which cannot be erased.
 #define PERMANENT_OBSERVABLE_PROJECTED_SETTING(target, name) \
     _BASE_OBSERVABLE_PROJECTED_SETTING(target, name)
+
+// Defines a basic observable property that uses the _NotifyChanges
+// system from ViewModelHelper.
+#define VIEW_MODEL_OBSERVABLE_PROPERTY(type, name, ...) \
+public:                                                 \
+    type name() const noexcept { return _##name; };     \
+    void name(const type& value)                        \
+    {                                                   \
+        if (_##name != value)                           \
+        {                                               \
+            _##name = value;                            \
+            _NotifyChanges(L#name);                     \
+        }                                               \
+    };                                                  \
+                                                        \
+private:                                                \
+    type _##name{ __VA_ARGS__ };
