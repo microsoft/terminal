@@ -356,7 +356,27 @@ namespace winrt::TerminalApp::implementation
             // we would be left with an empty terminal frame with no tabs.
             // Instead, crash out so COM sees the server die and things unwind
             // without a weird empty frame window.
-            CATCH_FAIL_FAST()
+            catch (...)
+            {
+                // However, we cannot always fail fast because of MSFT:33501832. Sometimes the COM catalog
+                // tears the state between old and new versions and fails here for that reason.
+                // As we're always becoming an inbound server in the monarch, even when COM didn't strictly
+                // ask us yet...we might just crash always.
+                // Instead... we're going to differentiate. If COM started us... we will fail fast
+                // so it sees the process die and falls back.
+                // If we were just starting normally as a Monarch and opportunistically listening for
+                // inbound connections... then we'll just log the failure and move on assuming
+                // the version state is torn and will fix itself whenever the packaging upgrade
+                // tasks decide to clean up.
+                if (_isEmbeddingInboundListener)
+                {
+                    FAIL_FAST_CAUGHT_EXCEPTION();
+                }
+                else
+                {
+                    LOG_CAUGHT_EXCEPTION();
+                }
+            }
         }
     }
 
@@ -1981,12 +2001,13 @@ namespace winrt::TerminalApp::implementation
     //   listener for command-line tools attempting to join this Terminal
     //   through the default application channel.
     // Arguments:
-    // - <none> - Implicitly sets to true. Default page state is false.
+    // - isEmbedding - True if COM started us to be a server. False if we're doing it of our own accord.
     // Return Value:
     // - <none>
-    void TerminalPage::SetInboundListener()
+    void TerminalPage::SetInboundListener(bool isEmbedding)
     {
         _shouldStartInboundListener = true;
+        _isEmbeddingInboundListener = isEmbedding;
 
         // If the page has already passed the NotInitialized state,
         // then it is ready-enough for us to just start this immediately.
