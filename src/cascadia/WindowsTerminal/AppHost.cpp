@@ -60,6 +60,9 @@ AppHost::AppHost() noexcept :
         _window = std::make_unique<IslandWindow>();
     }
 
+    // Update our own internal state tracking if we're in quake mode or not.
+    _IsQuakeWindowChanged(nullptr, nullptr);
+
     // Tell the window to callback to us when it's about to handle a WM_CREATE
     auto pfn = std::bind(&AppHost::_HandleCreateWindow,
                          this,
@@ -79,8 +82,10 @@ AppHost::AppHost() noexcept :
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
 
-    // Update our own internal state tracking if we're in quake mode or not.
-    _IsQuakeWindowChanged(nullptr, nullptr);
+    if (_window->IsQuakeWindow())
+    {
+        _UpdateTrayIcon();
+    }
 
     _windowManager.BecameMonarch({ this, &AppHost::_BecomeMonarch });
     if (_windowManager.IsMonarch())
