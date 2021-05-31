@@ -553,7 +553,7 @@ namespace winrt::TerminalApp::implementation
     //   attaches it to the button. Populates the flyout with one entry per
     //   Profile, displaying the profile's name. Clicking each flyout item will
     //   open a new tab with that profile.
-    //   Below the profiles are the static menu items: settings, feedback
+    //   Below the profiles are the static menu items: settings, command palette
     void TerminalPage::_CreateNewTabFlyout()
     {
         auto newTabFlyout = WUX::Controls::MenuFlyout{};
@@ -703,17 +703,23 @@ namespace winrt::TerminalApp::implementation
                     _SetAcceleratorForMenuItem(settingsItem, settingsKeyChord);
                 }
 
-                // Create the feedback button.
-                auto feedbackFlyout = WUX::Controls::MenuFlyoutItem{};
-                feedbackFlyout.Text(RS_(L"FeedbackMenuItem"));
+                // Create the command palette button.
+                auto commandPaletteFlyout = WUX::Controls::MenuFlyoutItem{};
+                commandPaletteFlyout.Text(RS_(L"CommandPaletteMenuItem"));
 
-                WUX::Controls::FontIcon feedbackIcon{};
-                feedbackIcon.Glyph(L"\xE939");
-                feedbackIcon.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
-                feedbackFlyout.Icon(feedbackIcon);
+                WUX::Controls::FontIcon commandPaletteIcon{};
+                commandPaletteIcon.Glyph(L"\xE945");
+                commandPaletteIcon.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+                commandPaletteFlyout.Icon(commandPaletteIcon);
 
-                feedbackFlyout.Click({ this, &TerminalPage::_FeedbackButtonOnClick });
-                newTabFlyout.Items().Append(feedbackFlyout);
+                commandPaletteFlyout.Click({ this, &TerminalPage::_CommandPaletteButtonOnClick });
+                newTabFlyout.Items().Append(commandPaletteFlyout);
+
+                const auto commandPaletteKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::ToggleCommandPalette) };
+                if (commandPaletteKeyChord)
+                {
+                    _SetAcceleratorForMenuItem(commandPaletteFlyout, commandPaletteKeyChord);
+                }
             }
 
             // Create the about button.
@@ -884,15 +890,12 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Called when the feedback button is clicked. Launches github in your
-    //   default browser, navigated to the "issues" page of the Terminal repo.
-    void TerminalPage::_FeedbackButtonOnClick(const IInspectable&,
-                                              const RoutedEventArgs&)
+    // - Called when the command palette button is clicked. Opens the command palette.
+    void TerminalPage::_CommandPaletteButtonOnClick(const IInspectable&,
+                                                    const RoutedEventArgs&)
     {
-        const auto feedbackUriValue = RS_(L"FeedbackUriValue");
-        winrt::Windows::Foundation::Uri feedbackUri{ feedbackUriValue };
-
-        winrt::Windows::System::Launcher::LaunchUriAsync(feedbackUri);
+        CommandPalette().EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
+        CommandPalette().Visibility(Visibility::Visible);
     }
 
     // Method Description:
