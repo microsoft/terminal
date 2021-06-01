@@ -28,7 +28,7 @@ Abstract:
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {
-    struct WindowManager final : public WindowManagerT<WindowManager>
+    struct WindowManager : public WindowManagerT<WindowManager>
     {
         WindowManager();
         ~WindowManager();

@@ -11,6 +11,7 @@
   <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.210309.3\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.210309.3\build\native\Microsoft.Windows.CppWinRT.props')" />
 
   <PropertyGroup Label="Globals">
+    <CppWinRTHeapEnforcement>AnyValueHereWillDisableTheOptOut</CppWinRTHeapEnforcement>
     <CppWinRTEnabled>true</CppWinRTEnabled>
     <CppWinRTOptimized>true</CppWinRTOptimized>
     <DefaultLanguage>en-US</DefaultLanguage>
@@ -75,10 +76,6 @@
       <DisableSpecificWarnings>28204;%(DisableSpecificWarnings)</DisableSpecificWarnings>
 
       <AdditionalUsingDirectories>$(WindowsSDK_WindowsMetadata);$(AdditionalUsingDirectories)</AdditionalUsingDirectories>
-
-      <!-- Many of our projects use XAML, which cannot handle make detection.
-      We cannot link static libs with differing values of WINRT_NO_MAKE_DETECTION, so let's force it for everyone. -->
-      <PreprocessorDefinitions>WINRT_NO_MAKE_DETECTION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem Condition="'%(SubSystem)'==''">Console</SubSystem>
