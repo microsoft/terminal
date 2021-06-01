@@ -42,6 +42,8 @@ namespace TerminalApp
         void LoadSettings();
         Windows.UI.Xaml.UIElement GetRoot();
 
+        void SetInboundListener();
+
         String Title { get; };
 
         Boolean FocusMode { get; };
@@ -90,5 +92,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> SettingsChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
     }
 }

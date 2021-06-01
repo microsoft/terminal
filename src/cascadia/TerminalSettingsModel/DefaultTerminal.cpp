@@ -11,7 +11,7 @@ using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
 winrt::Windows::Foundation::Collections::IVector<Model::DefaultTerminal> DefaultTerminal::_available = winrt::single_threaded_vector<Model::DefaultTerminal>();
-std::optional<Model::DefaultTerminal> DefaultTerminal::_current;
+Model::DefaultTerminal DefaultTerminal::_current = nullptr;
 
 DefaultTerminal::DefaultTerminal(DelegationConfig::DelegationPackage pkg) :
     _pkg(pkg)
@@ -81,7 +81,10 @@ Model::DefaultTerminal DefaultTerminal::Current()
     {
         Refresh();
     }
-    return _current.value();
+
+    // The potential of returning nullptr feels weird, but XAML can handle that appropriately
+    // and will select nothing as current in the dropdown.
+    return _current;
 }
 
 void DefaultTerminal::Current(const Model::DefaultTerminal& term)

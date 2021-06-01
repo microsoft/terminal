@@ -14,7 +14,6 @@ DLLDEF                  =
 
 SOURCES = \
     $(SOURCES) \
-    AttrRowTests.cpp \
     ReflowTests.cpp \
     TextColorTests.cpp \
     TextAttributeTests.cpp \

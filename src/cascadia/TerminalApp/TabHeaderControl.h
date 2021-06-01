@@ -18,6 +18,8 @@ namespace winrt::TerminalApp::implementation
         void RenameBoxLostFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                        winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
+        bool InRename();
+
         WINRT_CALLBACK(TitleChangeRequested, TerminalApp::TitleChangeRequestedArgs);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);

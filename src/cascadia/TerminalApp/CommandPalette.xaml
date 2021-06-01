@@ -48,15 +48,8 @@
                           x:DataType="local:FilteredCommand">
                 <Grid HorizontalAlignment="Stretch"
                       ColumnSpacing="8">
-
-                    <!--
-                        Manually set the icon to 24x16. Why 24?
-                        If it's a BitmapIcon, then the icon will just get clamped to 16x16.
-                        However, if it's a FontIcon, then the icon might actually be double wide.
-                        Giving it a width of 24 will allow a 12pt font icon enough space, in a row height of 16 wide.
-                    -->
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="24" />
+                        <ColumnDefinition Width="16" />
                         <!--  icon  -->
                         <ColumnDefinition Width="Auto" />
                         <!--  command label  -->
@@ -67,7 +60,7 @@
                     </Grid.ColumnDefinitions>
 
                     <IconSourceElement Grid.Column="0"
-                                       Width="24"
+                                       Width="16"
                                        Height="16"
                                        IconSource="{x:Bind Item.Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
 
@@ -106,7 +99,7 @@
                 <Grid HorizontalAlignment="Stretch"
                       ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="24" />
+                        <ColumnDefinition Width="16" />
                         <!--  icon  -->
                         <ColumnDefinition Width="Auto" />
                         <!--  command label  -->
@@ -117,7 +110,7 @@
                     </Grid.ColumnDefinitions>
 
                     <IconSourceElement Grid.Column="0"
-                                       Width="24"
+                                       Width="16"
                                        Height="16"
                                        IconSource="{x:Bind Item.Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
 
@@ -169,7 +162,7 @@
                       AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
                       ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="24" />
+                        <ColumnDefinition Width="16" />
                         <!--  icon / progress  -->
                         <ColumnDefinition Width="Auto" />
                         <!--  command label  -->
@@ -192,7 +185,7 @@
                                       Value="{x:Bind Item.(local:TabPaletteItem.TabStatus).ProgressValue, Mode=OneWay}" />
 
                     <IconSourceElement Grid.Column="0"
-                                       Width="24"
+                                       Width="16"
                                        Height="16"
                                        IconSource="{x:Bind Item.Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
 

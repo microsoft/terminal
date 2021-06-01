@@ -193,37 +193,77 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (!_GlobalHotkeysCache)
         {
-            std::unordered_set<InternalActionID> visitedActionIDs{};
             std::unordered_map<Control::KeyChord, Model::Command, KeyChordHash, KeyChordEquality> globalHotkeys;
-            for (const auto& cmd : _GetCumulativeActions())
+            for (const auto& [keys, cmd] : KeyBindings())
             {
-                // Only populate GlobalHotkeys with actions that...
-                // (1) ShortcutAction is GlobalSummon or QuakeMode
-                const auto& actionAndArgs{ cmd.ActionAndArgs() };
-                if (actionAndArgs.Action() == ShortcutAction::GlobalSummon || actionAndArgs.Action() == ShortcutAction::QuakeMode)
+                // Only populate GlobalHotkeys with actions whose
+                // ShortcutAction is GlobalSummon or QuakeMode
+                if (cmd.ActionAndArgs().Action() == ShortcutAction::GlobalSummon || cmd.ActionAndArgs().Action() == ShortcutAction::QuakeMode)
                 {
-                    // (2) haven't been visited already
-                    const auto actionID{ Hash(actionAndArgs) };
-                    if (visitedActionIDs.find(actionID) == visitedActionIDs.end())
-                    {
-                        const auto& cmdImpl{ get_self<Command>(cmd) };
-                        for (const auto& keys : cmdImpl->KeyMappings())
-                        {
-                            // (3) haven't had that key chord added yet
-                            if (globalHotkeys.find(keys) == globalHotkeys.end())
-                            {
-                                globalHotkeys.emplace(keys, cmd);
-                            }
-                        }
-
-                        // Record that we already handled adding this action to the NameMap.
-                        visitedActionIDs.emplace(actionID);
-                    }
+                    globalHotkeys.emplace(keys, cmd);
                 }
             }
             _GlobalHotkeysCache = single_threaded_map<Control::KeyChord, Model::Command>(std::move(globalHotkeys));
         }
         return _GlobalHotkeysCache.GetView();
+    }
+
+    Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> ActionMap::KeyBindings()
+    {
+        if (!_KeyBindingMapCache)
+        {
+            // populate _KeyBindingMapCache
+            std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> keyBindingsMap;
+            std::unordered_set<KeyChord, KeyChordHash, KeyChordEquality> unboundKeys;
+            _PopulateKeyBindingMapWithStandardCommands(keyBindingsMap, unboundKeys);
+
+            _KeyBindingMapCache = single_threaded_map<KeyChord, Model::Command>(std::move(keyBindingsMap));
+        }
+        return _KeyBindingMapCache.GetView();
+    }
+
+    // Method Description:
+    // - Populates the provided keyBindingsMap with all of our actions and our parents actions
+    //    while omitting the key bindings that were already added before.
+    // - This needs to be a bottom up approach to ensure that we only add each key chord once.
+    // Arguments:
+    // - keyBindingsMap: the keyBindingsMap we're populating. This maps the key chord of a command to the command itself.
+    // - unboundKeys: a set of keys that are explicitly unbound
+    void ActionMap::_PopulateKeyBindingMapWithStandardCommands(std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality>& keyBindingsMap, std::unordered_set<Control::KeyChord, KeyChordHash, KeyChordEquality>& unboundKeys) const
+    {
+        // Update KeyBindingsMap with our current layer
+        for (const auto& [keys, actionID] : _KeyMap)
+        {
+            const auto cmd{ _GetActionByID(actionID).value() };
+            if (cmd)
+            {
+                // iterate over all of the action's bound keys
+                const auto cmdImpl{ get_self<Command>(cmd) };
+                for (const auto& keys : cmdImpl->KeyMappings())
+                {
+                    // Only populate KeyBindingsMap with actions that...
+                    // (1) haven't been visited already
+                    // (2) aren't explicitly unbound
+                    if (keyBindingsMap.find(keys) == keyBindingsMap.end() && unboundKeys.find(keys) == unboundKeys.end())
+                    {
+                        keyBindingsMap.emplace(keys, cmd);
+                    }
+                }
+            }
+            else
+            {
+                // record any keys that are explicitly unbound,
+                // but don't add them to the list of key bindings
+                unboundKeys.emplace(keys);
+            }
+        }
+
+        // Update KeyBindingsMap and visitedKeyChords with our parents
+        FAIL_FAST_IF(_parents.size() > 1);
+        for (const auto& parent : _parents)
+        {
+            parent->_PopulateKeyBindingMapWithStandardCommands(keyBindingsMap, unboundKeys);
+        }
     }
 
     com_ptr<ActionMap> ActionMap::Copy() const
@@ -276,6 +316,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // invalidate caches
         _NameMapCache = nullptr;
         _GlobalHotkeysCache = nullptr;
+        _KeyBindingMapCache = nullptr;
 
         // Handle nested commands
         const auto cmdImpl{ get_self<Command>(cmd) };
@@ -627,5 +668,51 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // This key binding does not exist
         return nullptr;
+    }
+
+    // Method Description:
+    // - Rebinds a key binding to a new key chord
+    // Arguments:
+    // - oldKeys: the key binding that we are rebinding
+    // - newKeys: the new key chord that is being used to replace oldKeys
+    // Return Value:
+    // - true, if successful. False, otherwise.
+    bool ActionMap::RebindKeys(Control::KeyChord const& oldKeys, Control::KeyChord const& newKeys)
+    {
+        const auto& cmd{ GetActionByKeyChord(oldKeys) };
+        if (!cmd)
+        {
+            // oldKeys must be bound. Otherwise, we don't know what action to bind.
+            return false;
+        }
+
+        if (newKeys)
+        {
+            // Bind newKeys
+            const auto newCmd{ make_self<Command>() };
+            newCmd->ActionAndArgs(cmd.ActionAndArgs());
+            newCmd->RegisterKey(newKeys);
+            AddAction(*newCmd);
+        }
+
+        // unbind oldKeys
+        DeleteKeyBinding(oldKeys);
+        return true;
+    }
+
+    // Method Description:
+    // - Unbind a key chord
+    // Arguments:
+    // - keys: the key chord that is being unbound
+    // Return Value:
+    // - <none>
+    void ActionMap::DeleteKeyBinding(KeyChord const& keys)
+    {
+        // create an "unbound" command
+        // { "command": "unbound", "keys": <keys> }
+        const auto cmd{ make_self<Command>() };
+        cmd->ActionAndArgs(make<ActionAndArgs>());
+        cmd->RegisterKey(keys);
+        AddAction(*cmd);
     }
 }

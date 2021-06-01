@@ -63,6 +63,8 @@ namespace Microsoft.Terminal.Control
         void ToggleShaderEffects();
         void SendInput(String input);
 
+        void BellLightOn();
+
         Boolean ReadOnly { get; };
         void ToggleReadOnly();
     }

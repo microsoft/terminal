@@ -134,8 +134,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Return Value:
     // - <none>
     void TSFInputControl::TryRedrawCanvas()
+    try
     {
-        if (!_focused)
+        if (!_focused || !Canvas())
         {
             return;
         }
@@ -164,6 +165,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _RedrawCanvas();
     }
+    CATCH_LOG()
 
     // Method Description:
     // - Redraw the Canvas and update the current Text Bounds and Control Bounds for
