@@ -1023,7 +1023,15 @@ winrt::fire_and_forget IslandWindow::SummonWindow(Remoting::SummonWindowBehavior
 {
     // On the foreground thread:
     co_await winrt::resume_foreground(_rootGrid.Dispatcher());
+    _summonWindowRoutineBody(args);
+}
 
+// Method Description:
+// - As above.
+//   BODGY: ARM64 BUILD FAILED WITH fatal error C1001: Internal compiler error
+//   when this was part of the coroutine body.
+void IslandWindow::_summonWindowRoutineBody(Remoting::SummonWindowBehavior args)
+{
     uint32_t actualDropdownDuration = args.DropdownDuration();
     // If the user requested an animation, let's check if animations are enabled in the OS.
     if (args.DropdownDuration() > 0)
