@@ -298,6 +298,7 @@
         { "command": "commandPalette", "keys":"ctrl+shift+p" },
         { "command": "identifyWindow" },
         { "command": "openWindowRenamer" },
+        { "command": "quakeMode", "keys":"win+`" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.

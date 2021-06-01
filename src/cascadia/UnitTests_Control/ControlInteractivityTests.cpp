@@ -29,6 +29,9 @@ namespace ControlUnitTests
         TEST_METHOD(TestScrollWithMouse);
 
         TEST_METHOD(CreateSubsequentSelectionWithDragging);
+        TEST_METHOD(ScrollWithSelection);
+        TEST_METHOD(TestScrollWithTrackpad);
+        TEST_METHOD(TestQuickDragOnSelect);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -226,11 +229,13 @@ namespace ControlUnitTests
         Log::Comment(L"Scroll down 21 more times, to the bottom");
         for (int i = 0; i < 21; ++i)
         {
+            Log::Comment(NoThrowString().Format(L"---scroll down #%d---", i));
             expectedTop++;
             interactivity->MouseWheel(modifiers,
                                       -WHEEL_DELTA,
                                       til::point{ 0, 0 },
                                       { false, false, false });
+            Log::Comment(NoThrowString().Format(L"internal scrollbar pos:%f", interactivity->_internalScrollbarPosition));
         }
         Log::Comment(L"Scrolling up more should do nothing");
         expectedTop = 21;
@@ -329,5 +334,212 @@ namespace ControlUnitTests
         Log::Comment(L"Verify that there's now one selection");
         VERIFY_IS_TRUE(core->HasSelection());
         VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
+    }
+
+    void ControlInteractivityTests::ScrollWithSelection()
+    {
+        // This is a test for GH#9955.a
+        auto [settings, conn] = _createSettingsAndConnection();
+        auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
+        _standardInit(core, interactivity);
+        // For the sake of this test, scroll one line at a time
+        interactivity->_rowsToScroll = 1;
+
+        Log::Comment(L"Add some test to the terminal so we can scroll");
+        for (int i = 0; i < 40; ++i)
+        {
+            conn->WriteInput(L"Foo\r\n");
+        }
+        // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
+        VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
+        VERIFY_ARE_EQUAL(21, core->ScrollOffset());
+        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(41, core->BufferHeight());
+
+        // For this test, don't use any modifiers
+        const auto modifiers = ControlKeyStates();
+        const TerminalInput::MouseButtonState leftMouseDown{ true, false, false };
+        const TerminalInput::MouseButtonState noMouseDown{ false, false, false };
+
+        const til::size fontSize{ 9, 21 };
+
+        Log::Comment(L"Click on the terminal");
+        const til::point terminalPosition0{ 5, 5 };
+        const til::point cursorPosition0{ terminalPosition0 * fontSize };
+        interactivity->PointerPressed(leftMouseDown,
+                                      WM_LBUTTONDOWN, //pointerUpdateKind
+                                      0, // timestamp
+                                      modifiers,
+                                      cursorPosition0);
+
+        Log::Comment(L"Verify that there's not yet a selection");
+        VERIFY_IS_FALSE(core->HasSelection());
+
+        VERIFY_IS_TRUE(interactivity->_singleClickTouchdownPos.has_value());
+        VERIFY_ARE_EQUAL(cursorPosition0, interactivity->_singleClickTouchdownPos.value());
+
+        Log::Comment(L"Drag the mouse just a little");
+        // move not quite a whole cell, but enough to start a selection
+        const til::point cursorPosition1{ cursorPosition0 + til::point{ 6, 0 } };
+        interactivity->PointerMoved(leftMouseDown,
+                                    WM_LBUTTONDOWN, //pointerUpdateKind
+                                    modifiers,
+                                    true, // focused,
+                                    cursorPosition1);
+        Log::Comment(L"Verify that there's one selection");
+        VERIFY_IS_TRUE(core->HasSelection());
+        VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
+
+        Log::Comment(L"Verify the location of the selection");
+        // The viewport is on row 21, so the selection will be on:
+        // {(5, 5)+(0, 21)} to {(5, 5)+(0, 21)}
+        COORD expectedAnchor{ 5, 26 };
+        VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
+        VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionEnd());
+
+        Log::Comment(L"Scroll up a line, with the left mouse button selected");
+        interactivity->MouseWheel(modifiers,
+                                  WHEEL_DELTA,
+                                  cursorPosition1,
+                                  { true, false, false });
+
+        Log::Comment(L"Verify the location of the selection");
+        // The viewport is now on row 20, so the selection will be on:
+        // {(5, 5)+(0, 20)} to {(5, 5)+(0, 21)}
+        COORD newExpectedAnchor{ 5, 25 };
+        // Remember, the anchor is always before the end in the buffer. So yes,
+        // se started the selection on 5,26, but now that's the end.
+        VERIFY_ARE_EQUAL(newExpectedAnchor, core->_terminal->GetSelectionAnchor());
+        VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionEnd());
+    }
+
+    void ControlInteractivityTests::TestScrollWithTrackpad()
+    {
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+
+        auto [settings, conn] = _createSettingsAndConnection();
+        auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
+        _standardInit(core, interactivity);
+        // For the sake of this test, scroll one line at a time
+        interactivity->_rowsToScroll = 1;
+
+        for (int i = 0; i < 40; ++i)
+        {
+            conn->WriteInput(L"Foo\r\n");
+        }
+        // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
+        VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
+        VERIFY_ARE_EQUAL(21, core->ScrollOffset());
+        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(41, core->BufferHeight());
+
+        Log::Comment(L"Scroll up a line");
+        const auto modifiers = ControlKeyStates();
+
+        // Deltas that I saw while scrolling with the surface laptop trackpad
+        // were on the range [-22, 7], though I'm sure they could be greater in
+        // magnitude.
+        //
+        // WHEEL_DELTA is 120, so we'll use 24 for now as the delta, just so the tests don't take forever.
+
+        const int delta = WHEEL_DELTA / 5;
+        const til::point mousePos{ 0, 0 };
+        TerminalInput::MouseButtonState state{ false, false, false };
+
+        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 1/5
+        VERIFY_ARE_EQUAL(21, core->ScrollOffset());
+
+        Log::Comment(L"Scroll up 4 more times. Once we're at 3/5 scrolls, "
+                     L"we'll round the internal scrollbar position to scrolling to the next row.");
+        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 2/5
+        VERIFY_ARE_EQUAL(21, core->ScrollOffset());
+        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 3/5
+        VERIFY_ARE_EQUAL(20, core->ScrollOffset());
+        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 4/5
+        VERIFY_ARE_EQUAL(20, core->ScrollOffset());
+        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 5/5
+        VERIFY_ARE_EQUAL(20, core->ScrollOffset());
+
+        Log::Comment(L"Jump to line 5, so we can scroll down from there.");
+        interactivity->UpdateScrollbar(5);
+        VERIFY_ARE_EQUAL(5, core->ScrollOffset());
+        Log::Comment(L"Scroll down 5 times, at which point we should accumulate a whole row of delta.");
+        interactivity->MouseWheel(modifiers, -delta, mousePos, state); // 1/5
+        VERIFY_ARE_EQUAL(5, core->ScrollOffset());
+        interactivity->MouseWheel(modifiers, -delta, mousePos, state); // 2/5
+        VERIFY_ARE_EQUAL(5, core->ScrollOffset());
+        interactivity->MouseWheel(modifiers, -delta, mousePos, state); // 3/5
+        VERIFY_ARE_EQUAL(6, core->ScrollOffset());
+        interactivity->MouseWheel(modifiers, -delta, mousePos, state); // 4/5
+        VERIFY_ARE_EQUAL(6, core->ScrollOffset());
+        interactivity->MouseWheel(modifiers, -delta, mousePos, state); // 5/5
+        VERIFY_ARE_EQUAL(6, core->ScrollOffset());
+
+        Log::Comment(L"Jump to the bottom.");
+        interactivity->UpdateScrollbar(21);
+        VERIFY_ARE_EQUAL(21, core->ScrollOffset());
+        Log::Comment(L"Scroll a bit, then emit a line of text. We should reset our internal scroll position.");
+        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 1/5
+        VERIFY_ARE_EQUAL(21, core->ScrollOffset());
+        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 2/5
+        VERIFY_ARE_EQUAL(21, core->ScrollOffset());
+
+        conn->WriteInput(L"Foo\r\n");
+        VERIFY_ARE_EQUAL(22, core->ScrollOffset());
+        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 1/5
+        VERIFY_ARE_EQUAL(22, core->ScrollOffset());
+        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 2/5
+        VERIFY_ARE_EQUAL(22, core->ScrollOffset());
+        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 3/5
+        VERIFY_ARE_EQUAL(21, core->ScrollOffset());
+        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 4/5
+        VERIFY_ARE_EQUAL(21, core->ScrollOffset());
+        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 5/5
+        VERIFY_ARE_EQUAL(21, core->ScrollOffset());
+    }
+
+    void ControlInteractivityTests::TestQuickDragOnSelect()
+    {
+        // This is a test for GH#9955.c
+
+        auto [settings, conn] = _createSettingsAndConnection();
+        auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
+        _standardInit(core, interactivity);
+
+        // For this test, don't use any modifiers
+        const auto modifiers = ControlKeyStates();
+        const TerminalInput::MouseButtonState leftMouseDown{ true, false, false };
+        const TerminalInput::MouseButtonState noMouseDown{ false, false, false };
+
+        const til::size fontSize{ 9, 21 };
+
+        Log::Comment(L"Click on the terminal");
+        const til::point cursorPosition0{ 6, 0 };
+        interactivity->PointerPressed(leftMouseDown,
+                                      WM_LBUTTONDOWN, //pointerUpdateKind
+                                      0, // timestamp
+                                      modifiers,
+                                      cursorPosition0);
+
+        Log::Comment(L"Verify that there's not yet a selection");
+        VERIFY_IS_FALSE(core->HasSelection());
+
+        VERIFY_IS_TRUE(interactivity->_singleClickTouchdownPos.has_value());
+        VERIFY_ARE_EQUAL(cursorPosition0, interactivity->_singleClickTouchdownPos.value());
+
+        Log::Comment(L"Drag the mouse a lot. This simulates dragging the mouse real fast.");
+        const til::point cursorPosition1{ 6 + fontSize.width<int>() * 2, 0 };
+        interactivity->PointerMoved(leftMouseDown,
+                                    WM_LBUTTONDOWN, //pointerUpdateKind
+                                    modifiers,
+                                    true, // focused,
+                                    cursorPosition1);
+        Log::Comment(L"Verify that there's one selection");
+        VERIFY_IS_TRUE(core->HasSelection());
+        VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
+
+        Log::Comment(L"Verify that it started on the first cell we clicked on, not the one we dragged to");
+        COORD expectedAnchor{ 0, 0 };
+        VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
     }
 }

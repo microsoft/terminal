@@ -7,8 +7,6 @@
     <ProjectName>UnitTests_TerminalApp</ProjectName>
     <TargetName>Terminal.App.Unit.Tests</TargetName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <WindowsTargetPlatformMinVersion>10.0.18362.0</WindowsTargetPlatformMinVersion>
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
     <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
   </PropertyGroup>
 
@@ -72,6 +70,13 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <!--
+      SettingsModelLib contains a DllMain that we need to force the use of.
+      If you don't have this, then you'll see an error like
+      "(init.obj) : error LNK2005: DllMain already defined in MSVCRTD.lib(dll_dllmain_stub.obj)"
+      -->
+      <AdditionalOptions Condition="'$(Platform)'=='Win32'">/INCLUDE:_DllMain@12</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Platform)'!='Win32'">/INCLUDE:DllMain</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
 

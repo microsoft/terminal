@@ -190,3 +190,8 @@ bool DirectReadData::Notify(const WaitTerminationReason TerminationReason,
     }
     return retVal;
 }
+
+void DirectReadData::MigrateUserBuffersOnTransitionToBackgroundWait(const void* /*oldBuffer*/, void* /*newBuffer*/)
+{
+    // Direct read doesn't hold API message buffers
+}

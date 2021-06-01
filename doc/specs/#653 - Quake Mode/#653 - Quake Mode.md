@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2021-02-23
-last updated: 2021-04-21
+last updated: 2021-05-13
 issue id: #653
 ---
 
@@ -132,7 +132,7 @@ the window. To try and satisfy all these scenarios, I'm proposing the following
 two arguments to the `globalSummon` action:
 
 ```json
-"monitor": "any"|"toCurrent"|"onCurrent"|int,
+"monitor": "any"|"toCurrent"|"toMouse"|"onCurrent"|int,
 "desktop": "any"|"toCurrent"|"onCurrent"
 ```
 
@@ -141,8 +141,10 @@ The way these settings can be combined is in a table below. As an overview:
 * `monitor`: This controls the monitor that the window will be summoned from/to
   - `"any"`: Summon the MRU window, regardless of which monitor it's currently
     on.
-  - `"toCurrent"`/omitted: (_default_): Summon the MRU window **TO** the current
-    monitor.
+  - `"toCurrent"`/omitted: (_default_): Summon the MRU window **TO** the monitor
+    with the current **foreground** window.
+  - `"toMouse"`: Summon the MRU window **TO** the monitor where the **mouse**
+    cursor is.
   - `"onCurrent"`: Summon the MRU window **ALREADY ON** the current monitor.
   - `int`: Summon the MRU window for the given monitor (as identified by the
     "Identify" displays feature in the OS settings)
@@ -193,16 +195,33 @@ Else:
 </tr>
 <!-- ----------------------------------------------------------------------- -->
 <tr>
-<td><code>"toCurrent"</code><br> Summon the MRU window TO the current monitor</td>
-<td>Go to the desktop the window is on, move to this monitor</td>
-<td>Move the window to this desktop, move to this monitor</td>
+<td><code>"toCurrent"</code><br> Summon the MRU window TO the monitor with the foreground window</td>
+<td>Go to the desktop the window is on, move to the monitor with the foreground window</td>
+<td>Move the window to this desktop, move to the monitor with the foreground window</td>
 <td>
 
 If there isn't one on this desktop:
-* create a new one (on this monitor)
+* create a new one (on the monitor with the foreground window)
 
 Else:
-* activate the one on this desktop, move to this window
+* activate the one on this desktop, move to the monitor with the foreground window
+</td>
+</tr>
+<!-- ----------------------------------------------------------------------- -->
+<tr>
+<td>
+  <code>"toMouse"</code>
+  <sup><a href="#footnote-2">[2]</a></sup> <br>
+  Summon the MRU window TO the monitor with the mouse</td>
+<td>Go to the desktop the window is on, move to the monitor with the mouse</td>
+<td>Move the window to this desktop, move to the monitor with the mouse</td>
+<td>
+
+If there isn't one on this desktop:
+* create a new one (on the monitor with the mouse)
+
+Else:
+* activate the one on this desktop, move to the monitor with the mouse
 </td>
 </tr>
 <!-- ----------------------------------------------------------------------- -->
@@ -673,6 +692,8 @@ aren't already included in this spec.
   ```
   That would allow the user some further customizations on the quake mode
   behaviors.
+  - This was later converted to the idea in [#9992] - Add per-window-name global
+    settings
 * Another proposed idea was a simplification of some of the summoning modes. `{
   "monitor": "any", "desktop": "any" }` is a little long, and maybe not the most
   apparent naming. Perhaps we could add another property like `summonMode` that
@@ -698,9 +719,16 @@ windows. Once [#766] lands, this will give us a chance to persist the state of
 _all_ open windows. This will allow us to re-open with all the user's windows,
 not just the one that happened to be closed last.
 
+<a name="footnote-2"><a>[2]: **Addenda, May 2021**: In the course of
+implementation, it became apparent that there's an important UX difference
+between summoning _to the monitor with the cursor_ vs _to the monitor with the
+foreground window_. `"monitor": "toMouse"` was added as an option, to allow the
+user to differentiate between the two behaviors.
+
 [#653]: https://github.com/microsoft/terminal/issues/653
 [#766]: https://github.com/microsoft/terminal/issues/766
 [#5727]: https://github.com/microsoft/terminal/issues/5727
+[#9992]: https://github.com/microsoft/terminal/issues/9992
 
 [Process Model 2.0 Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%235000%20-%20Process%20Model%202.0/%235000%20-%20Process%20Model%202.0.md
 [Quake 3 sample]: https://youtu.be/ZmR6HQbuHPA?t=27

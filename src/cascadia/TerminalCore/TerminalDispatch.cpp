@@ -510,7 +510,7 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
         {
             // A state parameter is defined, parse it out
             const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), state);
-            if (!stateSuccess)
+            if (!stateSuccess && !til::at(parts, 1).empty())
             {
                 return false;
             }
@@ -518,7 +518,7 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
             {
                 // A progress parameter is also defined, parse it out
                 const auto progressSuccess = Utils::StringToUint(til::at(parts, 2), progress);
-                if (!progressSuccess)
+                if (!progressSuccess && !til::at(parts, 2).empty())
                 {
                     return false;
                 }
@@ -535,7 +535,7 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
             // progress is greater than the maximum allowed value, clamp it to the max
             progress = TaskbarMaxProgress;
         }
-        return _terminalApi.SetTaskbarProgress(state, progress);
+        return _terminalApi.SetTaskbarProgress(static_cast<DispatchTypes::TaskbarState>(state), progress);
     }
     // 9 is SetWorkingDirectory, which informs the terminal about the current working directory.
     else if (subParam == 9)

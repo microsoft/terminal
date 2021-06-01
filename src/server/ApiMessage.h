@@ -82,6 +82,13 @@ public:
     void SetReplyStatus(const NTSTATUS Status);
     void SetReplyInformation(const ULONG_PTR pInformation);
 
+    // MSFT-33127449, GH#9692
+    // We are not writing a copy constructor for this class
+    // so as to scope a fix as narrowly as possible to the
+    // "invalid user buffer" crash.
+    // TODO GH#10076: remove this.
+    void UpdateUserBufferPointers();
+
     // DO NOT PUT MORE FIELDS DOWN HERE.
     // The tail end of this structure will have a console driver packet
     // copied over it and it will overwrite any fields declared here.

@@ -42,6 +42,8 @@ namespace TerminalApp
         void LoadSettings();
         Windows.UI.Xaml.UIElement GetRoot();
 
+        void SetInboundListener();
+
         String Title { get; };
 
         Boolean FocusMode { get; };
@@ -71,7 +73,7 @@ namespace TerminalApp
 
         FindTargetWindowResult FindTargetWindow(String[] args);
 
-        Windows.Foundation.Collections.IMap<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.ActionAndArgs> GlobalHotkeys();
+        Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
 
         // See IDialogPresenter and TerminalPage's DialogPresenter for more
         // information.
@@ -90,5 +92,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> SettingsChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
     }
 }

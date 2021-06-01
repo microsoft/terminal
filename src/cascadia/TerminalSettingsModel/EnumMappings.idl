@@ -21,7 +21,6 @@ namespace Microsoft.Terminal.Settings.Model
         static Windows.Foundation.Collections.IMap<String, Windows.UI.Xaml.Media.Stretch> BackgroundImageStretchMode { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.TextAntialiasingMode> TextAntialiasingMode { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Core.CursorStyle> CursorStyle { get; };
-        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.BellStyle> BellStyle { get; };
         static Windows.Foundation.Collections.IMap<String, UInt16> FontWeight { get; };
     }
 }

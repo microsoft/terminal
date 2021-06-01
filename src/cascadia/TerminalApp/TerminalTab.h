@@ -53,6 +53,7 @@ namespace winrt::TerminalApp::implementation
         void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
         void ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         void NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+        bool FocusPane(const uint32_t id);
 
         void UpdateSettings(const Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings, const GUID& profile);
         winrt::fire_and_forget UpdateTitle();
@@ -91,7 +92,6 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(ColorCleared, _colorCleared, winrt::delegate<>);
         DECLARE_EVENT(TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
         DECLARE_EVENT(DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
-        FORWARDED_TYPED_EVENT(TabRenamerDeactivated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, (&_headerControl), RenameEnded);
         TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
 
     private:
@@ -105,8 +105,8 @@ namespace winrt::TerminalApp::implementation
         winrt::TerminalApp::TabHeaderControl _headerControl{};
         winrt::TerminalApp::TerminalTabStatus _tabStatus{};
 
-        std::vector<uint16_t> _mruPanes;
-        uint16_t _nextPaneId{ 0 };
+        std::vector<uint32_t> _mruPanes;
+        uint32_t _nextPaneId{ 0 };
 
         bool _receivedKeyDown{ false };
         bool _iconHidden{ false };
@@ -120,7 +120,7 @@ namespace winrt::TerminalApp::implementation
         std::optional<Windows::UI::Xaml::DispatcherTimer> _bellIndicatorTimer;
         void _BellIndicatorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
 
-        void _MakeTabViewItem();
+        void _MakeTabViewItem() override;
 
         winrt::fire_and_forget _UpdateHeaderControlMaxWidth();
 

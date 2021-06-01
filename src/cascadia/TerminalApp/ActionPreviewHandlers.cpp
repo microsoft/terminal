@@ -42,11 +42,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_EndPreview()
     {
-        if (_lastPreviewedCommand == nullptr || _lastPreviewedCommand.Action() == nullptr)
+        if (_lastPreviewedCommand == nullptr || _lastPreviewedCommand.ActionAndArgs() == nullptr)
         {
             return;
         }
-        switch (_lastPreviewedCommand.Action().Action())
+        switch (_lastPreviewedCommand.ActionAndArgs().Action())
         {
         case ShortcutAction::SetColorScheme:
         {
@@ -160,17 +160,17 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_PreviewActionHandler(const IInspectable& /*sender*/,
                                              const Microsoft::Terminal::Settings::Model::Command& args)
     {
-        if (args == nullptr || args.Action() == nullptr)
+        if (args == nullptr || args.ActionAndArgs() == nullptr)
         {
             _EndPreview();
         }
         else
         {
-            switch (args.Action().Action())
+            switch (args.ActionAndArgs().Action())
             {
             case ShortcutAction::SetColorScheme:
             {
-                _PreviewColorScheme(args.Action().Args().try_as<SetColorSchemeArgs>());
+                _PreviewColorScheme(args.ActionAndArgs().Args().try_as<SetColorSchemeArgs>());
                 break;
             }
             }

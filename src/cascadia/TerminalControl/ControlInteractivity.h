@@ -73,6 +73,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         const int32_t delta,
                         const til::point pixelPosition,
                         const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
+
+        void UpdateScrollbar(const double newValue);
+
 #pragma endregion
 
         bool CopySelectionToClipboard(bool singleLine,
@@ -83,6 +86,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     private:
         winrt::com_ptr<ControlCore> _core{ nullptr };
         unsigned int _rowsToScroll;
+        double _internalScrollbarPosition{ 0.0 };
 
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.
@@ -97,7 +101,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Timestamp _lastMouseClickTimestamp;
         std::optional<til::point> _lastMouseClickPos;
         std::optional<til::point> _singleClickTouchdownPos;
-        std::optional<til::point> _singleClickTouchdownTerminalPos;
         std::optional<til::point> _lastMouseClickPosNoSelection;
         // This field tracks whether the selection has changed meaningfully
         // since it was last copied. It's generally used to prevent copyOnSelect
@@ -124,7 +127,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _canSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
 
         void _sendPastedTextToConnection(std::wstring_view wstr);
-        void _updateScrollbar(const int newValue);
         til::point _getTerminalPosition(const til::point& pixelPosition);
 
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);

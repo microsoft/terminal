@@ -76,20 +76,18 @@ namespace winrt::TerminalApp::implementation
         for (const auto& nameAndCmd : commands)
         {
             const auto& command = nameAndCmd.Value();
-            // If there's a keybinding that's bound to exactly this command,
-            // then get the string for that keychord and display it as a
-            // part of the command in the UI. Each Command's KeyChordText is
-            // unset by default, so we don't need to worry about clearing it
-            // if there isn't a key associated with it.
-            auto keyChord{ settings.KeyMap().GetKeyBindingForActionWithArgs(command.Action()) };
-
-            if (keyChord)
-            {
-                command.KeyChordText(KeyChordSerialization::ToString(keyChord));
-            }
             if (command.HasNestedCommands())
             {
                 _recursiveUpdateCommandKeybindingLabels(settings, command.NestedCommands());
+            }
+            else
+            {
+                // If there's a keybinding that's bound to exactly this command,
+                // then get the keychord and display it as a
+                // part of the command in the UI.
+                // We specifically need to do this for nested commands.
+                const auto keyChord{ settings.ActionMap().GetKeyBindingForAction(command.ActionAndArgs().Action(), command.ActionAndArgs().Args()) };
+                command.RegisterKey(keyChord);
             }
         }
     }
@@ -108,7 +106,7 @@ namespace winrt::TerminalApp::implementation
             // happen before the Settings UI is reloaded and tries to re-read
             // those values.
             _UpdateCommandsForPalette();
-            CommandPalette().SetKeyMap(_settings.KeyMap());
+            CommandPalette().SetActionMap(_settings.ActionMap());
 
             if (needRefreshUI)
             {
@@ -124,7 +122,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::Create()
     {
         // Hookup the key bindings
-        _HookupKeyBindings(_settings.KeyMap());
+        _HookupKeyBindings(_settings.ActionMap());
 
         _tabContent = this->TabContent();
         _tabRow = this->TabRow();
@@ -277,7 +275,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_OnDispatchCommandRequested(const IInspectable& /*sender*/, const Microsoft::Terminal::Settings::Model::Command& command)
     {
-        const auto& actionAndArgs = command.Action();
+        const auto& actionAndArgs = command.ActionAndArgs();
         _actionDispatch->DoAction(actionAndArgs);
     }
 
@@ -327,22 +325,57 @@ namespace winrt::TerminalApp::implementation
             // This MUST be done after we've registered the event listener for the new connections
             // or the COM server might start receiving requests on another thread and dispatch
             // them to nowhere.
-            if (_shouldStartInboundListener)
+            _StartInboundListener();
+        }
+    }
+
+    // Routine Description:
+    // - Will start the listener for inbound console handoffs if we have already determined
+    //   that we should do so.
+    // NOTE: Must be after TerminalPage::_OnNewConnection has been connected up.
+    // Arguments:
+    // - <unused> - Looks at _shouldStartInboundListener
+    // Return Value:
+    // - <none> - May fail fast if setup fails as that would leave us in a weird state.
+    void TerminalPage::_StartInboundListener()
+    {
+        if (_shouldStartInboundListener)
+        {
+            _shouldStartInboundListener = false;
+
+            try
             {
-                try
+                winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
+            }
+            // If we failed to start the listener, it will throw.
+            // We should fail fast here or the Terminal will be in a very strange state.
+            // We only start the listener if the Terminal was started with the COM server
+            // `-Embedding` flag and we make no tabs as a result.
+            // Therefore, if the listener cannot start itself up to make that tab with
+            // the inbound connection that caused the COM activation in the first place...
+            // we would be left with an empty terminal frame with no tabs.
+            // Instead, crash out so COM sees the server die and things unwind
+            // without a weird empty frame window.
+            catch (...)
+            {
+                // However, we cannot always fail fast because of MSFT:33501832. Sometimes the COM catalog
+                // tears the state between old and new versions and fails here for that reason.
+                // As we're always becoming an inbound server in the monarch, even when COM didn't strictly
+                // ask us yet...we might just crash always.
+                // Instead... we're going to differentiate. If COM started us... we will fail fast
+                // so it sees the process die and falls back.
+                // If we were just starting normally as a Monarch and opportunistically listening for
+                // inbound connections... then we'll just log the failure and move on assuming
+                // the version state is torn and will fix itself whenever the packaging upgrade
+                // tasks decide to clean up.
+                if (_isEmbeddingInboundListener)
                 {
-                    winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
+                    FAIL_FAST_CAUGHT_EXCEPTION();
                 }
-                // If we failed to start the listener, it will throw.
-                // We should fail fast here or the Terminal will be in a very strange state.
-                // We only start the listener if the Terminal was started with the COM server
-                // `-Embedding` flag and we make no tabs as a result.
-                // Therefore, if the listener cannot start itself up to make that tab with
-                // the inbound connection that caused the COM activation in the first place...
-                // we would be left with an empty terminal frame with no tabs.
-                // Instead, crash out so COM sees the server die and things unwind
-                // without a weird empty frame window.
-                CATCH_FAIL_FAST()
+                else
+                {
+                    LOG_CAUGHT_EXCEPTION();
+                }
             }
         }
     }
@@ -524,8 +557,9 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_CreateNewTabFlyout()
     {
         auto newTabFlyout = WUX::Controls::MenuFlyout{};
-        auto keyBindings = _settings.KeyMap();
+        newTabFlyout.Placement(WUX::Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
 
+        auto actionMap = _settings.ActionMap();
         const auto defaultProfileGuid = _settings.GlobalSettings().DefaultProfile();
         // the number of profiles should not change in the loop for this to work
         auto const profileCount = gsl::narrow_cast<int>(_settings.ActiveProfiles().Size());
@@ -539,8 +573,7 @@ namespace winrt::TerminalApp::implementation
             // NewTab(ProfileIndex=N) action
             NewTerminalArgs newTerminalArgs{ profileIndex };
             NewTabArgs newTabArgs{ newTerminalArgs };
-            ActionAndArgs actionAndArgs{ ShortcutAction::NewTab, newTabArgs };
-            auto profileKeyChord{ keyBindings.GetKeyBindingForActionWithArgs(actionAndArgs) };
+            auto profileKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::NewTab, newTabArgs) };
 
             // make sure we find one to display
             if (profileKeyChord)
@@ -664,9 +697,7 @@ namespace winrt::TerminalApp::implementation
                 settingsItem.Click({ this, &TerminalPage::_SettingsButtonOnClick });
                 newTabFlyout.Items().Append(settingsItem);
 
-                Microsoft::Terminal::Settings::Model::OpenSettingsArgs args{ SettingsTarget::SettingsUI };
-                Microsoft::Terminal::Settings::Model::ActionAndArgs settingsAction{ ShortcutAction::OpenSettings, args };
-                const auto settingsKeyChord{ keyBindings.GetKeyBindingForActionWithArgs(settingsAction) };
+                const auto settingsKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::OpenSettings, OpenSettingsArgs{ SettingsTarget::SettingsUI }) };
                 if (settingsKeyChord)
                 {
                     _SetAcceleratorForMenuItem(settingsItem, settingsKeyChord);
@@ -713,13 +744,10 @@ namespace winrt::TerminalApp::implementation
 
     // Function Description:
     // Called when the openNewTabDropdown keybinding is used.
-    // Adds the flyout show option to left-align the dropdown with the split button.
     // Shows the dropdown flyout.
     void TerminalPage::_OpenNewTabDropdown()
     {
-        WUX::Controls::Primitives::FlyoutShowOptions options{};
-        options.Placement(WUX::Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
-        _newTabButton.Flyout().ShowAt(_newTabButton, options);
+        _newTabButton.Flyout().ShowAt(_newTabButton);
     }
 
     winrt::fire_and_forget TerminalPage::_RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page)
@@ -893,51 +921,26 @@ namespace winrt::TerminalApp::implementation
         auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
 
         winrt::Microsoft::Terminal::Control::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
-        const auto actionAndArgs = _settings.KeyMap().TryLookup(kc);
-        if (actionAndArgs)
+        if (const auto cmd{ _settings.ActionMap().GetActionByKeyChord(kc) })
         {
-            if (CommandPalette().Visibility() == Visibility::Visible && actionAndArgs.Action() != ShortcutAction::ToggleCommandPalette)
+            if (CommandPalette().Visibility() == Visibility::Visible && cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
             {
                 CommandPalette().Visibility(Visibility::Collapsed);
             }
-            _actionDispatch->DoAction(actionAndArgs);
+            _actionDispatch->DoAction(cmd.ActionAndArgs());
             e.Handled(true);
         }
     }
 
     // Method Description:
-    // Handles preview key on the SUI tab, by handling close tab / next tab / previous tab
-    // This is a temporary solution - we need to fix all key-bindings work from SUI as long as they don't harm
-    // the SUI behavior
+    // - Configure the AppKeyBindings to use our ShortcutActionDispatch and the updated ActionMap
+    //    as the object to handle dispatching ShortcutAction events.
     // Arguments:
-    // - e: the KeyRoutedEventArgs containing info about the keystroke.
-    // Return Value:
-    // - <none>
-    void TerminalPage::_SUIPreviewKeyDownHandler(Windows::Foundation::IInspectable const& /*sender*/, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
-    {
-        auto key = e.OriginalKey();
-        auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
-        auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
-        auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
-
-        winrt::Microsoft::Terminal::Control::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
-        const auto actionAndArgs = _settings.KeyMap().TryLookup(kc);
-        if (actionAndArgs && (actionAndArgs.Action() == ShortcutAction::CloseTab || actionAndArgs.Action() == ShortcutAction::NextTab || actionAndArgs.Action() == ShortcutAction::PrevTab || actionAndArgs.Action() == ShortcutAction::ClosePane))
-        {
-            _actionDispatch->DoAction(actionAndArgs);
-            e.Handled(true);
-        }
-    }
-
-    // Method Description:
-    // - Configure the AppKeyBindings to use our ShortcutActionDispatch and the updated KeyMapping
-    // as the object to handle dispatching ShortcutAction events.
-    // Arguments:
-    // - bindings: A AppKeyBindings object to wire up with our event handlers
-    void TerminalPage::_HookupKeyBindings(const KeyMapping& keymap) noexcept
+    // - bindings: An IActionMapView object to wire up with our event handlers
+    void TerminalPage::_HookupKeyBindings(const IActionMapView& actionMap) noexcept
     {
         _bindings->SetDispatch(*_actionDispatch);
-        _bindings->SetKeyMapping(keymap);
+        _bindings->SetActionMap(actionMap);
     }
 
     // Method Description:
@@ -1295,10 +1298,12 @@ namespace winrt::TerminalApp::implementation
         // Do nothing if for some reason, there's no terminal tab in focus. We don't want to crash.
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
-            const auto control = _GetActiveControl();
-            const auto termHeight = control.ViewHeight();
-            auto scrollDelta = _ComputeScrollDelta(scrollDirection, termHeight);
-            terminalTab->Scroll(scrollDelta);
+            if (const auto& control{ _GetActiveControl() })
+            {
+                const auto termHeight = control.ViewHeight();
+                auto scrollDelta = _ComputeScrollDelta(scrollDirection, termHeight);
+                terminalTab->Scroll(scrollDelta);
+            }
         }
     }
 
@@ -1391,7 +1396,7 @@ namespace winrt::TerminalApp::implementation
             menuShortcut.Key(static_cast<Windows::System::VirtualKey>(keyChord.Vkey()));
 
             // inspect the modifiers from the KeyChord and set the flags int he XAML value
-            auto modifiers = AppKeyBindings::ConvertVKModifiers(keyChord.Modifiers());
+            auto modifiers = ActionMap::ConvertVKModifiers(keyChord.Modifiers());
 
             // add the modifiers to the shortcut
             menuShortcut.Modifiers(modifiers);
@@ -1707,8 +1712,11 @@ namespace winrt::TerminalApp::implementation
     // - true iff we we able to copy text (if a selection was active)
     bool TerminalPage::_CopyText(const bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
     {
-        const auto control = _GetActiveControl();
-        return control.CopySelectionToClipboard(singleLine, formats);
+        if (const auto& control{ _GetActiveControl() })
+        {
+            return control.CopySelectionToClipboard(singleLine, formats);
+        }
+        return false;
     }
 
     // Method Description:
@@ -1726,8 +1734,10 @@ namespace winrt::TerminalApp::implementation
     // - Paste text from the Windows Clipboard to the focused terminal
     void TerminalPage::_PasteText()
     {
-        const auto control = _GetActiveControl();
-        control.PasteTextFromClipboard();
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.PasteTextFromClipboard();
+        }
     }
 
     // Function Description:
@@ -1824,7 +1834,7 @@ namespace winrt::TerminalApp::implementation
     {
         // Re-wire the keybindings to their handlers, as we'll have created a
         // new AppKeyBindings object.
-        _HookupKeyBindings(_settings.KeyMap());
+        _HookupKeyBindings(_settings.ActionMap());
 
         // Refresh UI elements
         auto profiles = _settings.ActiveProfiles();
@@ -1872,7 +1882,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             auto tabImpl{ winrt::get_self<TabBase>(tab) };
-            tabImpl->SetKeyMap(_settings.KeyMap());
+            tabImpl->SetActionMap(_settings.ActionMap());
         }
 
         auto weakThis{ get_weak() };
@@ -1953,7 +1963,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_UpdateCommandsForPalette()
     {
-        IMap<winrt::hstring, Command> copyOfCommands = _ExpandCommands(_settings.GlobalSettings().Commands(),
+        IMap<winrt::hstring, Command> copyOfCommands = _ExpandCommands(_settings.GlobalSettings().ActionMap().NameMap(),
                                                                        _settings.ActiveProfiles().GetView(),
                                                                        _settings.GlobalSettings().ColorSchemes());
 
@@ -1991,12 +2001,20 @@ namespace winrt::TerminalApp::implementation
     //   listener for command-line tools attempting to join this Terminal
     //   through the default application channel.
     // Arguments:
-    // - <none> - Implicitly sets to true. Default page state is false.
+    // - isEmbedding - True if COM started us to be a server. False if we're doing it of our own accord.
     // Return Value:
     // - <none>
-    void TerminalPage::SetInboundListener()
+    void TerminalPage::SetInboundListener(bool isEmbedding)
     {
         _shouldStartInboundListener = true;
+        _isEmbeddingInboundListener = isEmbedding;
+
+        // If the page has already passed the NotInitialized state,
+        // then it is ready-enough for us to just start this immediately.
+        if (_startupState != StartupState::NotInitialized)
+        {
+            _StartInboundListener();
+        }
     }
 
     winrt::TerminalApp::IDialogPresenter TerminalPage::DialogPresenter() const
@@ -2061,8 +2079,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_Find()
     {
-        const auto termControl = _GetActiveControl();
-        termControl.CreateSearchBoxControl();
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.CreateSearchBoxControl();
+        }
     }
 
     // Method Description:
@@ -2079,9 +2099,7 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_SetFocusMode(const bool inFocusMode)
     {
-        // If we're the quake window, we must always be in focus mode.
-        // Prevent leaving focus mode here.
-        const bool newInFocusMode = inFocusMode || IsQuakeWindow();
+        const bool newInFocusMode = inFocusMode;
         if (newInFocusMode != FocusMode())
         {
             _isInFocusMode = newInFocusMode;
@@ -2322,6 +2340,9 @@ namespace winrt::TerminalApp::implementation
     {
         // TODO: GH 9458 will give us more context so we can try to choose a better profile.
         _OpenNewTab(nullptr, connection);
+
+        // Request a summon of this window to the foreground
+        _SummonWindowRequestedHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -2342,7 +2363,8 @@ namespace winrt::TerminalApp::implementation
                 sui.SetHostingWindow(reinterpret_cast<uint64_t>(*_hostingHwnd));
             }
 
-            sui.PreviewKeyDown({ this, &TerminalPage::_SUIPreviewKeyDownHandler });
+            // GH#8767 - let unhandled keys in the SUI try to run commands too.
+            sui.KeyDown({ this, &TerminalPage::_KeyDownHandler });
 
             sui.OpenJson([weakThis{ get_weak() }](auto&& /*s*/, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget e) {
                 if (auto page{ weakThis.get() })
@@ -2358,7 +2380,7 @@ namespace winrt::TerminalApp::implementation
             _mruTabs.Append(*newTabImpl);
 
             newTabImpl->SetDispatch(*_actionDispatch);
-            newTabImpl->SetKeyMap(_settings.KeyMap());
+            newTabImpl->SetActionMap(_settings.ActionMap());
 
             // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
             _UpdateTabIndices();

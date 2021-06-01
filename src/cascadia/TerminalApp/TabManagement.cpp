@@ -130,7 +130,7 @@ namespace winrt::TerminalApp::implementation
         _mruTabs.Append(*newTabImpl);
 
         newTabImpl->SetDispatch(*_actionDispatch);
-        newTabImpl->SetKeyMap(_settings.KeyMap());
+        newTabImpl->SetActionMap(_settings.ActionMap());
 
         // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
         _UpdateTabIndices();
@@ -215,7 +215,9 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        newTabImpl->TabRenamerDeactivated([weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+        // The tab might want us to toss focus into the control, especially when
+        // transient UIs (like the context menu, or the renamer) are dismissed.
+        newTabImpl->RequestFocusActiveControl([weakThis{ get_weak() }]() {
             if (const auto page{ weakThis.get() })
             {
                 page->_FocusCurrentTab(false);

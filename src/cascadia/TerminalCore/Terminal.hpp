@@ -17,6 +17,9 @@
 #include "../../cascadia/terminalcore/ITerminalApi.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 
+static constexpr std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
+static constexpr size_t TaskbarMinProgress{ 10 };
+
 // You have to forward decl the ICoreSettings here, instead of including the header.
 // If you include the header, there will be compilation errors with other
 //      headers that include Terminal.hpp
@@ -125,7 +128,7 @@ public:
     bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept override;
     bool EndHyperlink() noexcept override;
 
-    bool SetTaskbarProgress(const size_t state, const size_t progress) noexcept override;
+    bool SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) noexcept override;
     bool SetWorkingDirectory(std::wstring_view uri) noexcept override;
     std::wstring_view GetWorkingDirectory() noexcept override;
 
@@ -207,7 +210,7 @@ public:
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
 
-    void UpdatePatterns() noexcept;
+    void UpdatePatternsUnderLock() noexcept;
     void ClearPatternTree() noexcept;
 
     const std::optional<til::color> GetTabColor() const noexcept;

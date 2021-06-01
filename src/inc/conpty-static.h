@@ -24,6 +24,8 @@ HRESULT WINAPI ConptyResizePseudoConsole(HPCON hPC, COORD size);
 
 VOID WINAPI ConptyClosePseudoConsole(HPCON hPC);
 
+HRESULT WINAPI ConptyPackPseudoConsole(HANDLE hServerProcess, HANDLE hRef, HANDLE hSignal, HPCON* phPC);
+
 #ifdef __cplusplus
 }
 #endif

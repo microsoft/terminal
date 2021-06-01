@@ -67,7 +67,7 @@ namespace Microsoft::Terminal::Core
         virtual bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept = 0;
         virtual bool EndHyperlink() noexcept = 0;
 
-        virtual bool SetTaskbarProgress(const size_t state, const size_t progress) noexcept = 0;
+        virtual bool SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) noexcept = 0;
 
         virtual bool SetWorkingDirectory(std::wstring_view uri) noexcept = 0;
         virtual std::wstring_view GetWorkingDirectory() noexcept = 0;

@@ -58,5 +58,4 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         DesktopWallpaperToEmptyStringConverter();
     };
-
 }

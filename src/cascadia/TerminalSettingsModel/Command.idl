@@ -1,20 +1,42 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "KeyMapping.idl";
+#include "AllShortcutActions.h"
+
+import "ActionArgs.idl";
 import "Profile.idl";
 import "ColorScheme.idl";
 import "TerminalWarnings.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
+    enum ShortcutAction
+    {
+        Invalid = 0, // treat Invalid as unbound actions
+
+        // When adding a new action, add them to AllShortcutActions.h!
+        #define ON_ALL_ACTIONS(action) action,
+        ALL_SHORTCUT_ACTIONS
+        #undef ON_ALL_ACTIONS
+    };
+
+    [default_interface] runtimeclass ActionAndArgs {
+        ActionAndArgs();
+        ActionAndArgs(ShortcutAction action, IActionArgs args);
+
+        IActionArgs Args;
+        ShortcutAction Action;
+    };
+
     [default_interface] runtimeclass Command : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         Command();
 
-        String Name;
-        ActionAndArgs Action;
-        String KeyChordText;
+        String Name { get; };
+        ActionAndArgs ActionAndArgs { get; };
+        Microsoft.Terminal.Control.KeyChord Keys { get; };
+        void RegisterKey(Microsoft.Terminal.Control.KeyChord keys);
+        String KeyChordText { get; };
 
         String IconPath;
 

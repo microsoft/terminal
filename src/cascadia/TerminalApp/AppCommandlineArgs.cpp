@@ -2,12 +2,10 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "AppLogic.h"
 #include "AppCommandlineArgs.h"
 #include "../types/inc/utils.hpp"
 #include <LibraryResources.h>
 
-using namespace winrt::TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace TerminalApp;
 
@@ -194,6 +192,7 @@ void AppCommandlineArgs::_buildParser()
     _buildSplitPaneParser();
     _buildFocusTabParser();
     _buildMoveFocusParser();
+    _buildFocusPaneParser();
 }
 
 // Method Description:
@@ -400,6 +399,45 @@ void AppCommandlineArgs::_buildMoveFocusParser()
 }
 
 // Method Description:
+// - Adds the `focus-pane` subcommand and related options to the commandline parser.
+// - Additionally adds the `fp` subcommand, which is just a shortened version of `focus-pane`
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppCommandlineArgs::_buildFocusPaneParser()
+{
+    _focusPaneCommand = _app.add_subcommand("focus-pane", RS_A(L"CmdFocusPaneDesc"));
+    _focusPaneShort = _app.add_subcommand("fp", RS_A(L"CmdFPDesc"));
+
+    auto setupSubcommand = [this](auto* subcommand) {
+        auto* targetOpt = subcommand->add_option("-t,--target",
+                                                 _focusPaneTarget,
+                                                 RS_A(L"CmdFocusPaneTargetArgDesc"));
+        targetOpt->required();
+        targetOpt->check(CLI::NonNegativeNumber);
+        // When ParseCommand is called, if this subcommand was provided, this
+        // callback function will be triggered on the same thread. We can be sure
+        // that `this` will still be safe - this function just lets us know this
+        // command was parsed.
+        subcommand->callback([&, this]() {
+            // Build the action from the values we've parsed on the commandline.
+            if (_focusPaneTarget >= 0)
+            {
+                ActionAndArgs focusPaneAction{};
+                focusPaneAction.Action(ShortcutAction::FocusPane);
+                FocusPaneArgs args{ static_cast<uint32_t>(_focusPaneTarget) };
+                focusPaneAction.Args(args);
+                _startupActions.push_back(focusPaneAction);
+            }
+        });
+    };
+
+    setupSubcommand(_focusPaneCommand);
+    setupSubcommand(_focusPaneShort);
+}
+
+// Method Description:
 // - Add the `NewTerminalArgs` parameters to the given subcommand. This enables
 //   that subcommand to support all the properties in a NewTerminalArgs.
 // Arguments:
@@ -493,8 +531,18 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
 
     if (*subcommand.tabColorOption)
     {
-        const auto tabColor = Microsoft::Console::Utils::ColorFromHexString(_startingTabColor);
-        args.TabColor(static_cast<winrt::Windows::UI::Color>(tabColor));
+        try
+        {
+            // This is gonna throw whenever the string that's currently being parsed
+            // isn't a valid hex string. Let's just eat anything this throws because
+            // we should only lock in the TabColor arg when the user gives a valid hex
+            // str, and we shouldn't crash when the user gives us anything else.
+            const auto tabColor = Microsoft::Console::Utils::ColorFromHexString(_startingTabColor);
+            args.TabColor(static_cast<winrt::Windows::UI::Color>(tabColor));
+        }
+        catch (...)
+        {
+        }
     }
 
     if (*subcommand.suppressApplicationTitleOption)
@@ -526,6 +574,8 @@ bool AppCommandlineArgs::_noCommandsProvided()
              *_focusTabShort ||
              *_moveFocusCommand ||
              *_moveFocusShort ||
+             *_focusPaneCommand ||
+             *_focusPaneShort ||
              *_newPaneShort.subcommand ||
              *_newPaneCommand.subcommand);
 }
@@ -557,6 +607,9 @@ void AppCommandlineArgs::_resetStateToDefault()
     _focusPrevTab = false;
 
     _moveFocusDirection = FocusDirection::None;
+
+    _focusPaneTarget = -1;
+
     // DON'T clear _launchMode here! This will get called once for every
     // subcommand, so we don't want `wt -F new-tab ; split-pane` clearing out
     // the "global" fullscreen flag (-F).
@@ -617,7 +670,7 @@ std::vector<Commandline> AppCommandlineArgs::BuildCommands(const std::vector<con
     // Check the string for a delimiter.
     // * If there isn't a delimiter, add the arg to the current commandline.
     // * If there is a delimiter, split the string at that delimiter. Add the
-    //   first part of the string to the current command, ansd start a new
+    //   first part of the string to the current command, and start a new
     //   command with the second bit.
     for (const auto& arg : args)
     {

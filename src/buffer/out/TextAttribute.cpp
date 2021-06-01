@@ -5,6 +5,13 @@
 #include "TextAttribute.hpp"
 #include "../../inc/conattrs.hpp"
 
+// Keeping TextColor compact helps us keeping TextAttribute compact,
+// which in turn ensures that our buffer memory usage is low.
+static_assert(sizeof(TextAttribute) == 14);
+static_assert(alignof(TextAttribute) == 2);
+// Ensure that we can memcpy() and memmove() the struct for performance.
+static_assert(std::is_trivially_copyable_v<TextAttribute>);
+
 BYTE TextAttribute::s_legacyDefaultForeground = 7;
 BYTE TextAttribute::s_legacyDefaultBackground = 0;
 

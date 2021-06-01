@@ -37,6 +37,7 @@ public:
 
     RAW_READ_DATA(RAW_READ_DATA&&) = default;
 
+    void MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer) override;
     bool Notify(const WaitTerminationReason TerminationReason,
                 const bool fIsUnicode,
                 _Out_ NTSTATUS* const pReplyStatus,

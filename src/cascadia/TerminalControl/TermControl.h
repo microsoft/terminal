@@ -4,6 +4,7 @@
 #pragma once
 
 #include "TermControl.g.h"
+#include "XamlLights.h"
 #include "EventArgs.h"
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
@@ -66,7 +67,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ToggleShaderEffects();
 
         winrt::fire_and_forget RenderEngineSwapChainChanged(IInspectable sender, IInspectable args);
-        void _AttachDxgiSwapChainToXaml(IDXGISwapChain1* swapChain);
+        void _AttachDxgiSwapChainToXaml(HANDLE swapChainHandle);
         winrt::fire_and_forget _RendererEnteredErrorState(IInspectable sender, IInspectable args);
 
         void _RenderRetryButton_Click(IInspectable const& button, IInspectable const& args);
@@ -88,6 +89,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const Windows::UI::Xaml::Thickness GetPadding();
 
         IControlSettings Settings() const;
+        void Settings(IControlSettings newSettings);
 
         static Windows::Foundation::Size GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi);
         static Windows::Foundation::Size GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,
@@ -97,6 +99,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                                const ScrollbarState& scrollState,
                                                                const winrt::hstring& padding,
                                                                const uint32_t dpi);
+
+        void BellLightOn();
 
         bool ReadOnly() const noexcept;
         void ToggleReadOnly();
@@ -130,23 +134,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
 
-        winrt::com_ptr<ControlCore> _core;
-        winrt::com_ptr<ControlInteractivity> _interactivity;
-
-        bool _initializedTerminal;
-
-        winrt::com_ptr<SearchBoxControl> _searchBox;
-
+        // NOTE: _uiaEngine must be ordered before _core.
+        //
+        // ControlCore::AttachUiaEngine receives a IRenderEngine as a raw pointer, which we own.
+        // We must ensure that we first destroy the ControlCore before the UiaEngine instance
+        // in order to safely resolve this unsafe pointer dependency. Otherwise a deallocated
+        // IRenderEngine is accessed when ControlCore calls Renderer::TriggerTeardown.
+        // (C++ class members are destroyed in reverse order.)
+        // Further, the TermControlAutomationPeer must be destructed after _uiaEngine!
+        winrt::Windows::UI::Xaml::Automation::Peers::AutomationPeer _automationPeer{ nullptr };
         std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
 
+        winrt::com_ptr<ControlCore> _core;
+        winrt::com_ptr<ControlInteractivity> _interactivity;
+        winrt::com_ptr<SearchBoxControl> _searchBox;
+
         IControlSettings _settings;
-        bool _focused;
         std::atomic<bool> _closing;
+        bool _focused;
+        bool _initializedTerminal;
 
-        std::shared_ptr<ThrottledFunc<>> _tsfTryRedrawCanvas;
-        std::shared_ptr<ThrottledFunc<>> _updatePatternLocations;
-
-        std::shared_ptr<ThrottledFunc<>> _playWarningBell;
+        std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
+        std::shared_ptr<ThrottledFuncTrailing<>> _updatePatternLocations;
+        std::shared_ptr<ThrottledFuncLeading> _playWarningBell;
 
         struct ScrollBarUpdate
         {
@@ -155,7 +165,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             double newMinimum;
             double newViewportSize;
         };
-        std::shared_ptr<ThrottledFunc<ScrollBarUpdate>> _updateScrollBar;
+        std::shared_ptr<ThrottledFuncTrailing<ScrollBarUpdate>> _updateScrollBar;
         bool _isInternalScrollBarUpdate;
 
         // Auto scroll occurs when user, while selecting, drags cursor outside viewport. View is then scrolled to 'follow' the cursor.
@@ -164,8 +174,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::UI::Xaml::DispatcherTimer _autoScrollTimer;
         std::optional<std::chrono::high_resolution_clock::time_point> _lastAutoScrollUpdateTime;
 
+        winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellLightAnimation;
+
         std::optional<Windows::UI::Xaml::DispatcherTimer> _cursorTimer;
         std::optional<Windows::UI::Xaml::DispatcherTimer> _blinkTimer;
+        std::optional<Windows::UI::Xaml::DispatcherTimer> _bellLightTimer;
 
         event_token _coreOutputEventToken;
 
@@ -202,6 +215,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _CursorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _BlinkTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
+        void _BellLightOff(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
 
         void _SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition);
 

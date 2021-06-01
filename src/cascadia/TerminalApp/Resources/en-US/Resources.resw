@@ -292,6 +292,16 @@
     <value>An alias for the "new-tab" subcommand.</value>
     <comment>{Locked="\"new-tab\""}</comment>
   </data>
+  <data name="CmdFocusPaneDesc" xml:space="preserve">
+    <value>Move focus to another pane</value>
+  </data>
+  <data name="CmdFPDesc" xml:space="preserve">
+    <value>An alias for the "focus-pane" subcommand.</value>
+    <comment>{Locked="\"focus-pane\""}</comment>
+  </data>
+  <data name="CmdFocusPaneTargetArgDesc" xml:space="preserve">
+    <value>Focus the pane at the given index</value>
+  </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
     <value>Open with the given profile. Accepts either the name or GUID of a profile</value>
   </data>

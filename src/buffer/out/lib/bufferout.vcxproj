@@ -11,7 +11,6 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="..\AttrRow.cpp" />
-    <ClCompile Include="..\AttrRowIterator.cpp" />
     <ClCompile Include="..\cursor.cpp" />
     <ClCompile Include="..\OutputCell.cpp" />
     <ClCompile Include="..\OutputCellIterator.cpp" />
@@ -34,7 +33,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\AttrRow.hpp" />
-    <ClInclude Include="..\AttrRowIterator.hpp" />
     <ClInclude Include="..\cursor.h" />
     <ClInclude Include="..\DbcsAttribute.hpp" />
     <ClInclude Include="..\ICharRow.hpp" />
@@ -47,7 +45,6 @@
     <ClInclude Include="..\search.h" />
     <ClInclude Include="..\TextColor.h" />
     <ClInclude Include="..\TextAttribute.h" />
-    <ClInclude Include="..\TextAttributeRun.h" />
     <ClInclude Include="..\textBuffer.hpp" />
     <ClInclude Include="..\textBufferCellIterator.hpp" />
     <ClInclude Include="..\textBufferTextIterator.hpp" />

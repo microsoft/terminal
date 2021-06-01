@@ -29,7 +29,7 @@ private:
     winrt::Microsoft::Terminal::Remoting::WindowManager _windowManager{ nullptr };
 
     std::vector<winrt::Microsoft::Terminal::Control::KeyChord> _hotkeys{};
-    winrt::Windows::Foundation::Collections::IMap<winrt::Microsoft::Terminal::Control::KeyChord, winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _hotkeyActions{ nullptr };
+    winrt::Windows::Foundation::Collections::IMapView<winrt::Microsoft::Terminal::Control::KeyChord, winrt::Microsoft::Terminal::Settings::Model::Command> _hotkeyActions{ nullptr };
 
     winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
 
@@ -74,6 +74,7 @@ private:
 
     bool _LazyLoadDesktopManager();
 
+    void _listenForInboundConnections();
     winrt::fire_and_forget _setupGlobalHotkeys();
     winrt::fire_and_forget _createNewTerminalWindow(winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs args);
     void _HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& sender,
@@ -81,4 +82,7 @@ private:
 
     void _IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable& sender,
                                const winrt::Windows::Foundation::IInspectable& args);
+
+    void _SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                const winrt::Windows::Foundation::IInspectable& args);
 };
