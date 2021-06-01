@@ -111,6 +111,8 @@ protected:
     bool _isQuakeWindow{ false };
     void _enterQuakeMode();
 
+    void _summonWindowRoutineBody(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
+
 private:
     // This minimum width allows for width the tabs fit
     static constexpr long minimumWidth = 460L;
