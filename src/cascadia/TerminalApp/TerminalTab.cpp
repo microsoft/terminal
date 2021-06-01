@@ -497,6 +497,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    bool TerminalTab::FocusPane(const uint32_t id)
+    {
+        return _rootPane->FocusPane(id);
+    }
+
     // Method Description:
     // - Prepares this tab for being removed from the UI hierarchy by shutting down all active connections.
     void TerminalTab::Shutdown()
@@ -899,7 +904,13 @@ namespace winrt::TerminalApp::implementation
         contextMenuFlyout.Closed([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_RequestFocusActiveControlHandlers();
+                // GH#10112 - if we're opening the tab renamer, don't
+                // immediately toss focus to the control. We don't want to steal
+                // focus from the tab renamer.
+                if (!tab->_headerControl.InRename())
+                {
+                    tab->_RequestFocusActiveControlHandlers();
+                }
             }
         });
         _AppendCloseMenuItems(contextMenuFlyout);

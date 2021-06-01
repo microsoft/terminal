@@ -401,6 +401,10 @@
   <data name="QuakeModeCommandKey" xml:space="preserve">
     <value>Summon Quake window</value>
   </data>
+  <data name="FocusPaneCommandKey" xml:space="preserve">
+    <value>Focus pane {0}</value>
+    <comment>{0} will be replaced with a user-specified number</comment>
+  </data>
   <data name="InboxWindowsConsoleAuthor" xml:space="preserve">
     <value>Microsoft Corporation</value>
     <comment>Paired with `InboxWindowsConsoleName`, this is the application author... which is us: Microsoft.</comment>

@@ -1206,11 +1206,23 @@ namespace winrt::TerminalApp::implementation
             // in and be routed to an event with no handlers or a non-ready Page.
             if (_appArgs.IsHandoffListener())
             {
-                _root->SetInboundListener();
+                _root->SetInboundListener(true);
             }
         }
 
         return result;
+    }
+
+    // Method Description:
+    // - Triggers the setup of the listener for incoming console connections
+    //   from the operating system.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void AppLogic::SetInboundListener()
+    {
+        _root->SetInboundListener(false);
     }
 
     // Method Description:

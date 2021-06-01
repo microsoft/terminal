@@ -49,6 +49,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static std::vector<SettingsLoadWarnings> LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command>& commands,
                                                            const Json::Value& json);
+        Json::Value ToJson() const;
+
         bool HasNestedCommands() const;
         bool IsNestedCommand() const noexcept;
         Windows::Foundation::Collections::IMapView<winrt::hstring, Model::Command> NestedCommands() const;

@@ -24,6 +24,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean UseParentProcessDirectory;
         Boolean UseCustomStartingDirectory { get; };
         AppearanceViewModel DefaultAppearance { get; };
+        Guid OriginalProfileGuid { get; };
 
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Name);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, Guid);
@@ -81,14 +82,16 @@ namespace Microsoft.Terminal.Settings.Editor
         Profiles();
         ProfilePageNavigationState State { get; };
 
+        Boolean IsBellStyleFlagSet(UInt32 flag);
+        void SetBellStyleAudible(Windows.Foundation.IReference<Boolean> on);
+        void SetBellStyleWindow(Windows.Foundation.IReference<Boolean> on);
+        void SetBellStyleTaskbar(Windows.Foundation.IReference<Boolean> on);
+
         IInspectable CurrentAntiAliasingMode;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AntiAliasingModeList { get; };
 
         IInspectable CurrentCloseOnExitMode;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CloseOnExitModeList { get; };
-
-        IInspectable CurrentBellStyle;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BellStyleList { get; };
 
         IInspectable CurrentScrollState;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ScrollStateList { get; };

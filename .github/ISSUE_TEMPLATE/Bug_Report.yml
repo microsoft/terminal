@@ -4,7 +4,7 @@ body:
 - type: markdown
   attributes:
     value: |
-      Please make sure to [search for existing issues](https://github.com/microsoft/terminal/issues) before filing a new one!
+      Please make sure to [search for existing issues](https://github.com/microsoft/terminal/issues) and [check the FAQ](https://github.com/microsoft/terminal/wiki/Frequently-Asked-Questions-(FAQ)) before filing a new one!
 
       If this is an application crash, please also provide a [Feedback Hub](https://aka.ms/terminal-feedback-hub) submission link so we can find your diagnostic data on the backend. Use the category "Apps > Windows Terminal" and choose "Share My Feedback" after submission to get the link.
 

@@ -58,7 +58,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _lastAutoScrollUpdateTime{ std::nullopt },
         _cursorTimer{},
         _blinkTimer{},
-        _searchBox{ nullptr }
+        _searchBox{ nullptr },
+        _bellLightAnimation{ Window::Current().Compositor().CreateScalarKeyFrameAnimation() }
     {
         InitializeComponent();
 
@@ -110,37 +111,39 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Core eventually won't have access to. When we get to
         // https://github.com/microsoft/terminal/projects/5#card-50760282
         // then we'll move the applicable ones.
-        _tsfTryRedrawCanvas = std::make_shared<ThrottledFunc<>>(
+        _tsfTryRedrawCanvas = std::make_shared<ThrottledFuncTrailing<>>(
+            Dispatcher(),
+            TsfRedrawInterval,
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() })
                 {
                     control->TSFInputControl().TryRedrawCanvas();
                 }
-            },
-            TsfRedrawInterval,
-            Dispatcher());
+            });
 
-        _updatePatternLocations = std::make_shared<ThrottledFunc<>>(
+        _updatePatternLocations = std::make_shared<ThrottledFuncTrailing<>>(
+            Dispatcher(),
+            UpdatePatternLocationsInterval,
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() })
                 {
                     control->_core->UpdatePatternLocations();
                 }
-            },
-            UpdatePatternLocationsInterval,
-            Dispatcher());
+            });
 
-        _playWarningBell = std::make_shared<ThrottledFunc<>>(
+        _playWarningBell = std::make_shared<ThrottledFuncLeading>(
+            Dispatcher(),
+            TerminalWarningBellInterval,
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() })
                 {
                     control->_WarningBellHandlers(*control, nullptr);
                 }
-            },
-            TerminalWarningBellInterval,
-            Dispatcher());
+            });
 
-        _updateScrollBar = std::make_shared<ThrottledFunc<ScrollBarUpdate>>(
+        _updateScrollBar = std::make_shared<ThrottledFuncTrailing<ScrollBarUpdate>>(
+            Dispatcher(),
+            ScrollBarUpdateInterval,
             [weakThis = get_weak()](const auto& update) {
                 if (auto control{ weakThis.get() })
                 {
@@ -159,13 +162,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                     control->_isInternalScrollBarUpdate = false;
                 }
-            },
-            ScrollBarUpdateInterval,
-            Dispatcher());
+            });
 
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
+
+        // Add key frames and a duration to our bell light animation
+        _bellLightAnimation.InsertKeyFrame(0.0, 2.0);
+        _bellLightAnimation.InsertKeyFrame(1.0, 1.0);
+        _bellLightAnimation.Duration(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(TerminalWarningBellInterval)));
 
         _ApplyUISettings(_settings);
     }
@@ -535,7 +541,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
             _core->AttachUiaEngine(_uiaEngine.get());
-            return *autoPeer;
+            _automationPeer = *autoPeer;
+            return _automationPeer;
         }
         return nullptr;
     }
@@ -1663,7 +1670,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_CursorPositionChanged(const IInspectable& /*sender*/,
                                              const IInspectable& /*args*/)
     {
-        _tsfTryRedrawCanvas->Run();
+        if (_tsfTryRedrawCanvas)
+        {
+            _tsfTryRedrawCanvas->Run();
+        }
     }
 
     hstring TermControl::Title()
@@ -1718,6 +1728,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _core->ReceivedOutput(_coreOutputEventToken);
 
             _RestorePointerCursorHandlers(*this, nullptr);
+
+            // These four throttled functions are triggered by terminal output and interact with the UI.
+            // Since Close() is the point after which we are removed from the UI, but before the destructor
+            // has run, we should disconnect them *right now*. If we don't, they may fire between the
+            // throttle delay (from the final output) and the dtor.
+            _tsfTryRedrawCanvas.reset();
+            _updatePatternLocations.reset();
+            _updateScrollBar.reset();
+            _playWarningBell.reset();
 
             // Disconnect the TSF input control so it doesn't receive EditContext events.
             TSFInputControl().Close();
@@ -1826,9 +1845,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // will take up.
         // TODO: MSFT:21254947 - use a static function to do this instead of
         // instantiating a DxEngine
+        // GH#10211 - UNDER NO CIRCUMSTANCE should this fail. If it does, the
+        // whole app will crash instantaneously on launch, which is no good.
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-        THROW_IF_FAILED(dxEngine->UpdateDpi(dpi));
-        THROW_IF_FAILED(dxEngine->UpdateFont(desiredFont, actualFont));
+        LOG_IF_FAILED(dxEngine->UpdateDpi(dpi));
+        LOG_IF_FAILED(dxEngine->UpdateFont(desiredFont, actualFont));
 
         const auto scale = dxEngine->GetScaling();
         const auto fontSize = actualFont.GetSize();
@@ -2361,6 +2382,42 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     const size_t TermControl::TaskbarProgress() const noexcept
     {
         return _core->TaskbarProgress();
+    }
+
+    void TermControl::BellLightOn()
+    {
+        Windows::Foundation::Numerics::float2 zeroSize{ 0, 0 };
+        // If the grid has 0 size or if the bell timer is
+        // already active, do nothing
+        if (RootGrid().ActualSize() != zeroSize && !_bellLightTimer)
+        {
+            // Start the timer, when the timer ticks we switch off the light
+            DispatcherTimer invertTimer;
+            invertTimer.Interval(std::chrono::milliseconds(TerminalWarningBellInterval));
+            invertTimer.Tick({ get_weak(), &TermControl::_BellLightOff });
+            invertTimer.Start();
+            _bellLightTimer.emplace(std::move(invertTimer));
+
+            // Switch on the light and animate the intensity to fade out
+            VisualBellLight::SetIsTarget(RootGrid(), true);
+            BellLight().CompositionLight().StartAnimation(L"Intensity", _bellLightAnimation);
+        }
+    }
+
+    void TermControl::_BellLightOff(Windows::Foundation::IInspectable const& /* sender */,
+                                    Windows::Foundation::IInspectable const& /* e */)
+    {
+        if (_bellLightTimer)
+        {
+            // Stop the timer and switch off the light
+            _bellLightTimer->Stop();
+            _bellLightTimer.reset();
+
+            if (!_closing)
+            {
+                VisualBellLight::SetIsTarget(RootGrid(), false);
+            }
+        }
     }
 
     // Method Description:

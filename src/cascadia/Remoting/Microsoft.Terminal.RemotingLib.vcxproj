@@ -6,7 +6,6 @@
     <ProjectName>Microsoft.Terminal.Remoting.Lib</ProjectName>
     <RootNamespace>Microsoft.Terminal.Remoting</RootNamespace>
     <TargetName>Microsoft.Terminal.Remoting.Lib</TargetName>
-    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>

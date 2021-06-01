@@ -1,5 +1,6 @@
 ACCEPTFILES
 ACCESSDENIED
+alignas
 alignof
 bitfield
 bitfields
@@ -35,6 +36,7 @@ HIGHCONTRASTON
 HIGHCONTRASTW
 hotkeys
 href
+hrgn
 IActivation
 IApp
 IAppearance

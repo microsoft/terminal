@@ -13,6 +13,7 @@
 #include "til/point.h"
 #include "til/operators.h"
 #include "til/rectangle.h"
+#include "til/rle.h"
 #include "til/bitmap.h"
 #include "til/u8u16convert.h"
 #include "til/spsc.h"
@@ -43,7 +44,7 @@
 // See also https://osgwiki.com/wiki/TraceLogging#Semantics
 //
 // Note that Conhost had already defined some keywords
-// between bits 0..11 so be sure to not overlap those.
+// between bits 0..12 so be sure to not overlap those.
 // See `TraceKeywords`.
 // We will therefore try to reserve 32..42 for TIL
 // as common flags for the entire Terminal team projects.

@@ -266,6 +266,7 @@ void AppHost::Initialize()
     _logic.RenameWindowRequested({ this, &AppHost::_RenameWindowRequested });
     _logic.SettingsChanged({ this, &AppHost::_HandleSettingsChanged });
     _logic.IsQuakeWindowChanged({ this, &AppHost::_IsQuakeWindowChanged });
+    _logic.SummonWindowRequested({ this, &AppHost::_SummonWindowRequested });
 
     _window->UpdateTitle(_logic.Title());
 
@@ -586,12 +587,16 @@ bool AppHost::HasWindow()
 // - args: the bundle of a commandline and working directory to use for this invocation.
 // Return Value:
 // - <none>
-void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*sender*/,
+void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable sender,
                                    Remoting::CommandlineArgs args)
 {
+    const Remoting::SummonWindowBehavior summonArgs{};
+    summonArgs.MoveToCurrentDesktop(false);
+    summonArgs.DropdownDuration(0);
+    summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
     // Summon the window whenever we dispatch a commandline to it. This will
     // make it obvious when a new tab/pane is created in a window.
-    _window->SummonWindow(false);
+    _HandleSummon(sender, summonArgs);
     _logic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory());
 }
 
@@ -636,6 +641,14 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     _setupGlobalHotkeys();
+
+    // The monarch is just going to be THE listener for inbound connections.
+    _listenForInboundConnections();
+}
+
+void AppHost::_listenForInboundConnections()
+{
+    _logic.SetInboundListener();
 }
 
 winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
@@ -693,6 +706,20 @@ void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
             args.OnCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::OnCurrent);
             args.SummonBehavior().MoveToCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::ToCurrent);
             args.SummonBehavior().ToggleVisibility(summonArgs.ToggleVisibility());
+            args.SummonBehavior().DropdownDuration(summonArgs.DropdownDuration());
+
+            switch (summonArgs.Monitor())
+            {
+            case Settings::Model::MonitorBehavior::Any:
+                args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::InPlace);
+                break;
+            case Settings::Model::MonitorBehavior::ToCurrent:
+                args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToCurrent);
+                break;
+            case Settings::Model::MonitorBehavior::ToMouse:
+                args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToMouse);
+                break;
+            }
 
             _windowManager.SummonWindow(args);
             if (args.FoundMatch())
@@ -775,7 +802,7 @@ bool AppHost::_LazyLoadDesktopManager()
 void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                             const Remoting::SummonWindowBehavior& args)
 {
-    _window->SummonWindow(args.ToggleVisibility());
+    _window->SummonWindow(args);
 
     if (args != nullptr && args.MoveToCurrentDesktop())
     {
@@ -898,4 +925,15 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
                                     const winrt::Windows::Foundation::IInspectable&)
 {
     _window->IsQuakeWindow(_logic.IsQuakeWindow());
+}
+
+void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                     const winrt::Windows::Foundation::IInspectable&)
+
+{
+    const Remoting::SummonWindowBehavior summonArgs{};
+    summonArgs.MoveToCurrentDesktop(false);
+    summonArgs.DropdownDuration(0);
+    summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
+    _HandleSummon(sender, summonArgs);
 }
