@@ -30,7 +30,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, State().Globals, TabWidthMode);
 
     public:
+        // LanguageDisplayConverter maps the given BCP 47 tag to a localized string.
+        // For instance "en-US" produces "English (United States)", while "pt-BR" produces
+        // "Português (Brasil)". This works independently of the user's locale.
         static winrt::hstring LanguageDisplayConverter(const winrt::hstring& tag);
+
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> LanguageList();
         winrt::Windows::Foundation::IInspectable CurrentLanguage();
         void CurrentLanguage(const winrt::Windows::Foundation::IInspectable& tag);
@@ -38,6 +42,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         std::vector<winrt::hstring> _GetSupportedLanguageTags();
 
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> _languageList{ nullptr };
         winrt::hstring _currentLanguage;
     };
 }

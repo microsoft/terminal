@@ -22,16 +22,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     // For ComboBox an empty SelectedItem string denotes no selection.
     // What we want instead is for "Use system language" to be selected by default.
-    // --> "und" is synonyme for "Use system language".
+    // --> "und" is synonymous for "Use system language".
     constexpr std::wstring_view systemLanguageTag{ L"und" };
-
-    static bool starts_with(const std::wstring_view str, const std::wstring_view prefix)
-    {
-#ifdef __cpp_lib_starts_ends_with
-#error This code can be replaced in C++20, which natively supports .starts_with().
-#endif
-        return str.size() >= prefix.size() && std::wstring_view::traits_type::compare(str.data(), prefix.data(), prefix.size()) == 0;
-    };
 
     GlobalAppearance::GlobalAppearance()
     {
@@ -50,24 +42,31 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (tag == systemLanguageTag)
         {
-            return RS_(L"Globals_Language_Default");
+            return RS_(L"Globals_LanguageDefault");
         }
 
         winrt::Windows::Globalization::Language language(tag);
         return language.NativeName();
     }
 
-    // Returns an array of {"und", "en-US", "de-DE", "es-ES", ...}.
-    // "und" is short for "undefined" and is synonym for "Use system language" in this code.
+    // Returns the list of languages the user may override the application language with.
+    // The returned list are BCP 47 language tags like {"und", "en-US", "de-DE", "es-ES", ...}.
+    // "und" is short for "undefined" and is synonymous for "Use system language" in this code.
     winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> GlobalAppearance::LanguageList()
     {
-        // The following code achieves the following:
-        // [1] Get all possible languages we want to allow the user to choose
-        // [2] Sort languages by their ASCII tags, forcing the UI in a consistent/stable order
+        if (_languageList)
+        {
+            return _languageList;
+        }
+
+        // In order to return the language list this code does the following:
+        // [1] Get all possible languages we want to allow the user to choose.
+        //     We have to acquire languages from multiple sources, creating duplicates. See below at [1].
+        // [2] Sort languages by their ASCII tags, forcing the UI in a consistent/stable order.
         //     I wanted to sort the localized language names initially, but it turned out to be complex.
-        // [3] Remove duplicates between the array of tagSources from 1.
+        // [3] Remove potential duplicates in our language list from [1].
         //     We don't want to have en-US twice in the list, do we?
-        // [4] Optionally remove unwanted language tags.
+        // [4] Optionally remove unwanted language tags (like pseudo-localizations).
 
         std::vector<winrt::hstring> tags;
 
@@ -100,7 +99,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     return sum + v.Size();
                 }));
 
-            // The first item is always "Use system language"
+            // As per the function definition, the first item
+            // is always "Use system language" ("und").
             auto data = tags.data();
             *data++ = systemLanguageTag;
 
@@ -132,7 +132,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 // [4] part 1:
                 it = std::remove_if(it, tagsEnd, [](const winrt::hstring& tag) mutable -> bool {
-                    return starts_with(tag, L"qps-");
+                    return til::starts_with(tag, L"qps-");
                 });
             }
 
@@ -140,7 +140,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             tags.erase(it, tagsEnd);
         }
 
-        return winrt::single_threaded_observable_vector(std::move(tags));
+        _languageList = winrt::single_threaded_observable_vector(std::move(tags));
+        return _languageList;
     }
 
     winrt::Windows::Foundation::IInspectable GlobalAppearance::CurrentLanguage()

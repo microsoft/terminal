@@ -31,8 +31,7 @@
             <!--  Language  -->
             <local:SettingContainer x:Uid="Globals_Language"
                                     Margin="0">
-                <ComboBox x:Name="Language"
-                          ItemsSource="{x:Bind LanguageList}"
+                <ComboBox ItemsSource="{x:Bind LanguageList}"
                           SelectedItem="{x:Bind CurrentLanguage, Mode=TwoWay}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate x:DataType="x:String">
