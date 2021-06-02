@@ -2395,10 +2395,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Similar to the animation, only initialize the timer here
         if (!_bellLightTimer)
         {
-            DispatcherTimer invertTimer;
-            invertTimer.Interval(std::chrono::milliseconds(TerminalWarningBellInterval));
-            invertTimer.Tick({ get_weak(), &TermControl::_BellLightOff });
-            _bellLightTimer = invertTimer;
+            _bellLightTimer = {};
+            _bellLightTimer.Interval(std::chrono::milliseconds(TerminalWarningBellInterval));
+            _bellLightTimer.Tick({ get_weak(), &TermControl::_BellLightOff });
         }
 
         Windows::Foundation::Numerics::float2 zeroSize{ 0, 0 };
