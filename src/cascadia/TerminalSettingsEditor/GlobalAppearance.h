@@ -31,8 +31,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     public:
         // LanguageDisplayConverter maps the given BCP 47 tag to a localized string.
-        // For instance "en-US" produces "English (United States)", while "pt-BR" produces
-        // "Português (Brasil)". This works independently of the user's locale.
+        // For instance "en-US" produces "English (United States)", while "de-DE" produces
+        // "Deutsch (Deutschland)". This works independently of the user's locale.
         static winrt::hstring LanguageDisplayConverter(const winrt::hstring& tag);
 
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> LanguageList();
