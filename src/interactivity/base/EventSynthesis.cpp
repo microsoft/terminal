@@ -16,6 +16,44 @@
 static constexpr WORD altScanCode = 0x38;
 static constexpr WORD leftShiftScanCode = 0x2A;
 
+#ifdef __INSIDE_WINDOWS
+// To reduce the risk of compatibility issues inside Windows, we're going to continue using the old
+// version of GetQuickCharWidth to determine whether a character should be synthesized into numpad
+// events.
+static constexpr bool useNumpadEvents{ true };
+#else // !defined(__INSIDE_WINDOWS)
+// In Terminal, however, we will *always* use normal key events (!)
+static constexpr bool useNumpadEvents{ false };
+#endif // __INSIDE_WINDOWS
+
+// Routine Description:
+// - naively determines the width of a UCS2 encoded wchar (with caveats noted above)
+#pragma warning(suppress : 4505) // this function will be deleted if useNumpadEvents is false
+static CodepointWidth GetQuickCharWidthLegacyForNumpadEventSynthesis(const wchar_t wch) noexcept
+{
+    if ((0x1100 <= wch && wch <= 0x115f) // From Unicode 9.0, Hangul Choseong is wide
+        || (0x2e80 <= wch && wch <= 0x303e) // From Unicode 9.0, this range is wide (assorted languages)
+        || (0x3041 <= wch && wch <= 0x3094) // Hiragana
+        || (0x30a1 <= wch && wch <= 0x30f6) // Katakana
+        || (0x3105 <= wch && wch <= 0x312c) // Bopomofo
+        || (0x3131 <= wch && wch <= 0x318e) // Hangul Elements
+        || (0x3190 <= wch && wch <= 0x3247) // From Unicode 9.0, this range is wide
+        || (0x3251 <= wch && wch <= 0x4dbf) // Unicode 9.0 CJK Unified Ideographs, Yi, Reserved, Han Ideograph (hexagrams from 4DC0..4DFF are ignored
+        || (0x4e00 <= wch && wch <= 0xa4c6) // Unicode 9.0 CJK Unified Ideographs, Yi, Reserved, Han Ideograph (hexagrams from 4DC0..4DFF are ignored
+        || (0xa960 <= wch && wch <= 0xa97c) // Wide Hangul Choseong
+        || (0xac00 <= wch && wch <= 0xd7a3) // Korean Hangul Syllables
+        || (0xf900 <= wch && wch <= 0xfaff) // From Unicode 9.0, this range is wide [CJK Compatibility Ideographs, Includes Han Compatibility Ideographs]
+        || (0xfe10 <= wch && wch <= 0xfe1f) // From Unicode 9.0, this range is wide [Presentation forms]
+        || (0xfe30 <= wch && wch <= 0xfe6b) // From Unicode 9.0, this range is wide [Presentation forms]
+        || (0xff01 <= wch && wch <= 0xff5e) // Fullwidth ASCII variants
+        || (0xffe0 <= wch && wch <= 0xffe6)) // Fullwidth symbol variants
+    {
+        return CodepointWidth::Wide;
+    }
+
+    return CodepointWidth::Invalid;
+}
+
 std::deque<std::unique_ptr<KeyEvent>> Microsoft::Console::Interactivity::CharToKeyEvents(const wchar_t wch,
                                                                                          const unsigned int codepage)
 {
@@ -24,31 +62,26 @@ std::deque<std::unique_ptr<KeyEvent>> Microsoft::Console::Interactivity::CharToK
 
     if (keyState == invalidKey)
     {
-        // Determine DBCS character because these character does not know by VkKeyScan.
-        // GetStringTypeW(CT_CTYPE3) & C3_ALPHA can determine all linguistic characters. However, this is
-        // not include symbolic character for DBCS.
-        WORD CharType = 0;
-        GetStringTypeW(CT_CTYPE3, &wch, 1, &CharType);
-
-        if (WI_IsFlagSet(CharType, C3_ALPHA) || GetQuickCharWidth(wch) == CodepointWidth::Wide)
+        if constexpr (useNumpadEvents)
         {
-            keyState = 0;
+            // Determine DBCS character because these character does not know by VkKeyScan.
+            // GetStringTypeW(CT_CTYPE3) & C3_ALPHA can determine all linguistic characters. However, this is
+            // not include symbolic character for DBCS.
+            WORD CharType = 0;
+            GetStringTypeW(CT_CTYPE3, &wch, 1, &CharType);
+
+            if (!(WI_IsFlagSet(CharType, C3_ALPHA) || GetQuickCharWidthLegacyForNumpadEventSynthesis(wch) == CodepointWidth::Wide))
+            {
+                // It wasn't alphanumeric or determined to be wide by the old algorithm
+                // if VkKeyScanW fails (char is not in kbd layout), we must
+                // emulate the key being input through the numpad
+                return SynthesizeNumpadEvents(wch, codepage);
+            }
         }
+        keyState = 0; // SynthesizeKeyboardEvents would rather get 0 than -1
     }
 
-    std::deque<std::unique_ptr<KeyEvent>> convertedEvents;
-    if (keyState == invalidKey)
-    {
-        // if VkKeyScanW fails (char is not in kbd layout), we must
-        // emulate the key being input through the numpad
-        convertedEvents = SynthesizeNumpadEvents(wch, codepage);
-    }
-    else
-    {
-        convertedEvents = SynthesizeKeyboardEvents(wch, keyState);
-    }
-
-    return convertedEvents;
+    return SynthesizeKeyboardEvents(wch, keyState);
 }
 
 // Routine Description:

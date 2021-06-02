@@ -17,6 +17,7 @@
     <ClCompile Include="StaticMapTests.cpp" />
     <ClCompile Include="MathTests.cpp" />
     <ClCompile Include="RectangleTests.cpp" />
+    <ClCompile Include="RunLengthEncodingTests.cpp" />
     <ClCompile Include="SizeTests.cpp" />
     <ClCompile Include="ColorTests.cpp" />
     <ClCompile Include="CoalesceTests.cpp" />

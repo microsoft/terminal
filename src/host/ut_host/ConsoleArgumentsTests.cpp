@@ -77,6 +77,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     true, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -98,6 +99,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -119,6 +121,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     true, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -140,6 +143,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     true, // headless
                                     false, // createServerHandle
                                     0x4, // serverHandle
@@ -161,6 +165,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     true, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -182,6 +187,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -203,6 +209,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -224,6 +231,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -245,6 +253,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -271,6 +280,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -292,6 +302,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -313,6 +324,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -334,6 +346,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -355,6 +368,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -376,6 +390,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -397,6 +412,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -418,6 +434,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     true, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -439,6 +456,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -460,6 +478,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -486,6 +505,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     false, // createServerHandle
                                     4ul, // serverHandle
@@ -507,6 +527,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     false, // createServerHandle
                                     4ul, // serverHandle
@@ -528,6 +549,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     false, // createServerHandle
                                     4ul, // serverHandle
@@ -549,6 +571,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     false, // createServerHandle
                                     4ul, // serverHandle
@@ -570,6 +593,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     false, // createServerHandle
                                     4ul, // serverHandle
@@ -591,6 +615,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     false, // createServerHandle
                                     4ul, // serverHandle
@@ -612,6 +637,7 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     0, // width
                                     0, // height
                                     true, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     false, // createServerHandle
                                     4ul, // serverHandle
@@ -633,6 +659,51 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     0, // width
                                     0, // height
                                     true, // forceV1
+                                    false, // forceNoHandoff
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0, // serverHandle
+                                    0, // signalHandle
+                                    false, // inheritCursor
+                                    false), // runAsComServer
+                   true); // successful parse?
+
+    commandline = L"conhost.exe 0x4 -ForceNoHandoff";
+    ArgTestsRunner(L"#9 #7 Check that ConDrv handle + -ForceNoHandoff succeeds",
+                   commandline,
+                   INVALID_HANDLE_VALUE,
+                   INVALID_HANDLE_VALUE,
+                   ConsoleArguments(commandline,
+                                    L"", // clientCommandLine
+                                    INVALID_HANDLE_VALUE,
+                                    INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
+                                    0, // width
+                                    0, // height
+                                    false, // forceV1
+                                    true, // forceNoHandoff
+                                    false, // headless
+                                    false, // createServerHandle
+                                    4ul, // serverHandle
+                                    0, // signalHandle
+                                    false, // inheritCursor
+                                    false), // runAsComServer
+                   true); // successful parse?
+
+    commandline = L"conhost.exe -ForceNoHandoff";
+    ArgTestsRunner(L"#10 Check that -ForceNoHandoff parses on its own",
+                   commandline,
+                   INVALID_HANDLE_VALUE,
+                   INVALID_HANDLE_VALUE,
+                   ConsoleArguments(commandline,
+                                    L"", // clientCommandLine
+                                    INVALID_HANDLE_VALUE,
+                                    INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
+                                    0, // width
+                                    0, // height
+                                    false, // forceV1
+                                    true, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -683,6 +754,7 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0ul, // serverHandle
@@ -704,6 +776,7 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0ul, // serverHandle
@@ -740,6 +813,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     120, // width
                                     30, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0ul, // serverHandle
@@ -761,6 +835,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     120, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0ul, // serverHandle
@@ -782,6 +857,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     0, // width
                                     30, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0ul, // serverHandle
@@ -803,6 +879,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0ul, // serverHandle
@@ -824,6 +901,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     -1, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0ul, // serverHandle
@@ -845,6 +923,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0ul, // serverHandle
@@ -866,6 +945,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0ul, // serverHandle
@@ -887,6 +967,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0ul, // serverHandle
@@ -913,6 +994,7 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     true, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -934,6 +1016,7 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     true, // headless
                                     false, // createServerHandle
                                     4ul, // serverHandle
@@ -955,6 +1038,7 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     true, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -976,6 +1060,7 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -1006,6 +1091,7 @@ void ConsoleArgumentsTests::SignalHandleTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     false, // createServerHandle
                                     4ul, // serverHandle
@@ -1027,6 +1113,7 @@ void ConsoleArgumentsTests::SignalHandleTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     false, // createServerHandle
                                     4ul, // serverHandle
@@ -1048,6 +1135,7 @@ void ConsoleArgumentsTests::SignalHandleTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0ul, // serverHandle
@@ -1078,6 +1166,7 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -1098,6 +1187,7 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -1119,6 +1209,7 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -1140,6 +1231,7 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -1161,6 +1253,7 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle
@@ -1182,6 +1275,7 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     0, // width
                                     0, // height
                                     false, // forceV1
+                                    false, // forceNoHandoff
                                     false, // headless
                                     true, // createServerHandle
                                     0, // serverHandle

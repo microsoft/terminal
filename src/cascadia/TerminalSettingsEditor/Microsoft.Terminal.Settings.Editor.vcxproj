@@ -20,6 +20,7 @@
     <SubSystem>Console</SubSystem>
     <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <PgoTarget>true</PgoTarget>
     <!-- C++/WinRT sets the depth to 1 if there is a XAML file in the project
       Unfortunately for us, we need it to be 3. When the namespace merging
       depth is 1, Microsoft.Terminal.Control becomes "Microsoft",
@@ -37,6 +38,9 @@
   <ItemGroup>
     <ClInclude Include="Actions.h">
       <DependentUpon>Actions.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="AddProfile.h">
+      <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="ColorToBrushConverter.h">
       <DependentUpon>Converters.idl</DependentUpon>
@@ -99,10 +103,14 @@
       <DependentUpon>SettingContainer.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Utils.h" />
+    <ClInclude Include="PreviewConnection.h" />
   </ItemGroup>
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
     <Page Include="Actions.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="AddProfile.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="CommonResources.xaml">
@@ -137,6 +145,9 @@
   <ItemGroup>
     <ClCompile Include="Actions.cpp">
       <DependentUpon>Actions.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="AddProfile.cpp">
+      <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="ColorToBrushConverter.cpp">
       <DependentUpon>Converters.idl</DependentUpon>
@@ -199,11 +210,18 @@
       <DependentUpon>SettingContainer.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="PreviewConnection.cpp">
+      <DependentUpon>PreviewConnection.h</DependentUpon>
+    </ClCompile>
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
     <Midl Include="Actions.idl">
       <DependentUpon>Actions.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="AddProfile.idl">
+      <DependentUpon>AddProfile.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="Converters.idl" />
@@ -247,7 +265,6 @@
     <OCResourceDirectory Include="Resources" />
     <None Include="$(ProjectName).def" />
     <None Include="packages.config" />
-    <None Include="PropertySheet.props" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>

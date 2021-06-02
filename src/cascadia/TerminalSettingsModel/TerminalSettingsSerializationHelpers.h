@@ -50,10 +50,12 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollbarState)
 
 JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
 {
-    static constexpr std::array<pair_type, 4> mappings = {
+    static constexpr std::array<pair_type, 6> mappings = {
         pair_type{ "none", AllClear },
         pair_type{ "audible", ValueType::Audible },
-        pair_type{ "visual", ValueType::Visual },
+        pair_type{ "visual", ValueType::Window | ValueType::Taskbar },
+        pair_type{ "window", ValueType::Window },
+        pair_type{ "taskbar", ValueType::Taskbar },
         pair_type{ "all", AllSet },
     };
 
@@ -446,5 +448,23 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::WindowingMode)
         pair_type{ "useNew", ValueType::UseNew },
         pair_type{ "useAnyExisting", ValueType::UseAnyExisting },
         pair_type{ "useExisting", ValueType::UseExisting },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::DesktopBehavior)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "any", ValueType::Any },
+        pair_type{ "toCurrent", ValueType::ToCurrent },
+        pair_type{ "onCurrent", ValueType::OnCurrent },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MonitorBehavior)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "any", ValueType::Any },
+        pair_type{ "toCurrent", ValueType::ToCurrent },
+        pair_type{ "toMouse", ValueType::ToMouse },
     };
 };

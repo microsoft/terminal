@@ -9,7 +9,7 @@
               "-Command",
               "Import-Module ${workspaceFolder}\\tools\\OpenConsole.psm1;",
               "Set-MsBuildDevEnvironment;",
-              "$project = switch(\"${input:buildProjectChoice}\"){OpenConsole{\"Conhost\\Host_EXE\"} Terminal{\"Terminal\\CascadiaPackage\"}};",
+              "$project = switch(\"${input:buildProjectChoice}\"){OpenConsole{\"Conhost\\Host_EXE\"} Terminal{\"Terminal\\CascadiaPackage\"}  TermControl{\"Terminal\\TerminalControl\"}};",
               "$target = switch(\"${input:buildModeChoice}\"){Build{\"\"} Rebuild{\":Rebuild\"} Clean{\":Clean\"}};",
               "$target = $project + $target;",
               "msbuild",
@@ -111,7 +111,8 @@
             "description": "OpenConsole or Terminal?",
             "options":[
                 "OpenConsole",
-                "Terminal"
+                "Terminal",
+                "TermControl"
             ],
             "default": "Terminal"
         }

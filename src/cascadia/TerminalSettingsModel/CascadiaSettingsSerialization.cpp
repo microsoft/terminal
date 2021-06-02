@@ -248,57 +248,6 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
         // If this throws, the app will catch it and use the default settings
         resultPtr->_ValidateSettings();
 
-        // GH 3855 - Gathering Data on custom profiles to inform better defaults
-        // Do it after everything else so it won't happen unless validation passed.
-        // Also, avoid processing unless someone's listening for measures. The keybindings work, at least,
-        // is a lot of computation we can skip if no one cares.
-        if (TraceLoggingProviderEnabled(g_hSettingsModelProvider, 0, MICROSOFT_KEYWORD_MEASURES))
-        {
-            const auto guid = resultPtr->GlobalSettings().DefaultProfile();
-
-            // Compare to the defaults.json one that we set on install.
-            // If it's different, log what the user chose.
-            if (hardcodedDefaultGuid != guid)
-            {
-                TraceLoggingWrite(
-                    g_hSettingsModelProvider, // handle to TerminalApp tracelogging provider
-                    "CustomDefaultProfile",
-                    TraceLoggingDescription("Event emitted when user has chosen a different default profile than hardcoded one on load/reload"),
-                    TraceLoggingGuid(guid, "DefaultProfile", "ID of user-chosen default profile"),
-                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-            }
-
-            // If the user had keybinding settings preferences, we want to learn from them to make better defaults
-            auto userKeybindings = resultPtr->_userSettings[JsonKey(LegacyKeybindingsKey)];
-            if (!userKeybindings.empty())
-            {
-                // If there are custom key bindings, let's understand what they are because maybe the defaults aren't good enough
-
-                // Run it through the object so we can parse it apart and then only serialize the fields we're interested in
-                // and avoid extraneous data.
-                auto km = winrt::make_self<implementation::KeyMapping>();
-                km->LayerJson(userKeybindings);
-                auto value = km->ToJson();
-
-                // Reserialize the keybindings
-                Json::StreamWriterBuilder wbuilder;
-                // Use 4 spaces to indent instead of \t
-                wbuilder.settings_["indentation"] = "    ";
-                wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
-
-                const auto keybindingsString = Json::writeString(wbuilder, value);
-
-                TraceLoggingWrite(
-                    g_hSettingsModelProvider, // handle to TerminalApp tracelogging provider
-                    "CustomKeybindings",
-                    TraceLoggingDescription("Event emitted when custom keybindings are identified on load/reload"),
-                    TraceLoggingUtf8String(keybindingsString.c_str(), "Keybindings", "Keybindings as JSON"),
-                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-            }
-        }
-
         return *resultPtr;
     }
     catch (const SettingsException& ex)
@@ -846,6 +795,18 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
     return changedFile;
 }
 
+// Function Description:
+// - Given a json serialization of a profile, this function will determine
+//   whether it is "well-formed". We introduced a bug (GH#9962, fixed in GH#9964)
+//   that would result in one or more nameless, guid-less profiles being emitted
+//   into the user's settings file. Those profiles would show up in the list as
+//   "Default" later.
+static bool _IsValidProfileObject(const Json::Value& profileJson)
+{
+    return profileJson.isMember(&*NameKey.cbegin(), (&*NameKey.cbegin()) + NameKey.size()) || // has a name (can generate a guid)
+           profileJson.isMember(&*GuidKey.cbegin(), (&*GuidKey.cbegin()) + GuidKey.size()); // or has a guid
+}
+
 // Method Description:
 // - Create a new instance of this class from a serialized JsonObject.
 // Arguments:
@@ -888,7 +849,7 @@ void CascadiaSettings::LayerJson(const Json::Value& json)
 
     for (auto profileJson : _GetProfilesJsonObject(json))
     {
-        if (profileJson.isObject())
+        if (profileJson.isObject() && _IsValidProfileObject(profileJson))
         {
             _LayerOrCreateProfile(profileJson);
         }
@@ -1033,6 +994,7 @@ void CascadiaSettings::_ApplyDefaultsFromUserSettings()
 
     _userDefaultProfileSettings = winrt::make_self<Profile>();
     _userDefaultProfileSettings->LayerJson(defaultSettings);
+    _userDefaultProfileSettings->Origin(OriginTag::ProfilesDefaults);
 
     const auto numOfProfiles{ _allProfiles.Size() };
     for (uint32_t profileIndex = 0; profileIndex < numOfProfiles; ++profileIndex)
@@ -1323,6 +1285,7 @@ const Json::Value& CascadiaSettings::_GetDisabledProfileSourcesJsonObject(const 
 // Method Description:
 // - Write the current state of CascadiaSettings to our settings file
 // - Create a backup file with the current contents, if one does not exist
+// - Persists the default terminal handler choice to the registry
 // Arguments:
 // - <none>
 // Return Value:
@@ -1348,6 +1311,17 @@ void CascadiaSettings::WriteSettingsToDisk() const
 
     const auto styledString{ Json::writeString(wbuilder, ToJson()) };
     _WriteSettings(styledString, settingsPath);
+
+    // Persists the default terminal choice
+    //
+    // GH#10003 - Only do this if _currentDefaultTerminal was actually
+    // initialized. It's only initialized when Launch.cpp calls
+    // `CascadiaSettings::RefreshDefaultTerminals`. We really don't need it
+    // otherwise.
+    if (_currentDefaultTerminal)
+    {
+        Model::DefaultTerminal::Current(_currentDefaultTerminal);
+    }
 }
 
 // Method Description:
@@ -1390,16 +1364,6 @@ Json::Value CascadiaSettings::ToJson() const
         schemes.append(scheme->ToJson());
     }
     json[JsonKey(SchemesKey)] = schemes;
-
-    // "actions"/"keybindings" will be whatever blob we had in the file
-    if (_userSettings.isMember(JsonKey(LegacyKeybindingsKey)))
-    {
-        json[JsonKey(LegacyKeybindingsKey)] = _userSettings[JsonKey(LegacyKeybindingsKey)];
-    }
-    if (_userSettings.isMember(JsonKey(ActionsKey)))
-    {
-        json[JsonKey(ActionsKey)] = _userSettings[JsonKey(ActionsKey)];
-    }
 
     return json;
 }

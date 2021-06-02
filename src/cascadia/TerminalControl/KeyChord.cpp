@@ -22,6 +22,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
     }
 
+    KeyChord::KeyChord(bool ctrl, bool alt, bool shift, bool win, int32_t vkey) noexcept :
+        _modifiers{ (ctrl ? Control::KeyModifiers::Ctrl : Control::KeyModifiers::None) |
+                    (alt ? Control::KeyModifiers::Alt : Control::KeyModifiers::None) |
+                    (shift ? Control::KeyModifiers::Shift : Control::KeyModifiers::None) |
+                    (win ? Control::KeyModifiers::Windows : Control::KeyModifiers::None) },
+        _vkey{ vkey }
+    {
+    }
+
     KeyChord::KeyChord(Control::KeyModifiers const& modifiers, int32_t vkey) noexcept :
         _modifiers{ modifiers },
         _vkey{ vkey }

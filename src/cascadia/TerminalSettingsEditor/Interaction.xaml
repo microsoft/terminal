@@ -39,6 +39,11 @@
                                    SelectedItem="{x:Bind CurrentCopyFormat, Mode=TwoWay}" />
             </local:SettingContainer>
 
+            <!--  Trim Block Selection  -->
+            <local:SettingContainer x:Uid="Globals_TrimBlockSelection">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.TrimBlockSelection, Mode=TwoWay}" />
+            </local:SettingContainer>
+
             <!--  Word Delimiters  -->
             <local:SettingContainer x:Uid="Globals_WordDelimiters">
                 <TextBox Style="{StaticResource TextBoxSettingStyle}"
@@ -60,6 +65,11 @@
             <!--  Focus Follow Mouse Mode  -->
             <local:SettingContainer x:Uid="Globals_FocusFollowMouse">
                 <ToggleSwitch IsOn="{x:Bind State.Globals.FocusFollowMouse, Mode=TwoWay}" />
+            </local:SettingContainer>
+
+            <!--  Detect URLs  -->
+            <local:SettingContainer x:Uid="Globals_DetectURLs">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.DetectURLs, Mode=TwoWay}" />
             </local:SettingContainer>
         </StackPanel>
     </ScrollViewer>

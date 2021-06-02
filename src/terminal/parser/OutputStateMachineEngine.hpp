@@ -39,6 +39,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionCsiDispatch(const VTID id, const VTParameters parameters) override;
 
+        StringHandler ActionDcsDispatch(const VTID id, const VTParameters parameters) noexcept override;
+
         bool ActionClear() noexcept override;
 
         bool ActionIgnore() noexcept override;

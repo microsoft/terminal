@@ -18,8 +18,6 @@
     <ProjectName>LocalTests_TerminalApp</ProjectName>
     <TargetName>TerminalApp.LocalTests</TargetName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <WindowsTargetPlatformMinVersion>10.0.18362.0</WindowsTargetPlatformMinVersion>
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
     <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
   </PropertyGroup>
 

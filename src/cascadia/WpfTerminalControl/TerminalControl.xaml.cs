@@ -76,7 +76,8 @@ namespace Microsoft.Terminal.Wpf
         /// <param name="theme">The color theme to use in the terminal.</param>
         /// <param name="fontFamily">The font family to use in the terminal.</param>
         /// <param name="fontSize">The font size to use in the terminal.</param>
-        public void SetTheme(TerminalTheme theme, string fontFamily, short fontSize)
+        /// <param name="externalBackground">Color for the control background when the terminal window is smaller than the hosting WPF window.</param>
+        public void SetTheme(TerminalTheme theme, string fontFamily, short fontSize, Color externalBackground = default)
         {
             PresentationSource source = PresentationSource.FromVisual(this);
 
@@ -92,7 +93,12 @@ namespace Microsoft.Terminal.Wpf
             byte g = Convert.ToByte((theme.DefaultBackground >> 8) & 0xff);
             byte r = Convert.ToByte(theme.DefaultBackground & 0xff);
 
-            this.terminalGrid.Background = new SolidColorBrush(Color.FromRgb(r, g, b));
+            // Set the background color for the control only if one is provided.
+            // This is only shown when the terminal renderer is smaller than the enclosing WPF window.
+            if (externalBackground != default)
+            {
+                this.Background = new SolidColorBrush(externalBackground);
+            }
         }
 
         /// <summary>

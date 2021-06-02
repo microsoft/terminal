@@ -366,7 +366,7 @@ function Invoke-ClangFormat {
 #.SYNOPSIS
 # Check that xaml files are formatted correctly. This won't actually
 # format the files - it'll only ensure that they're formatted correctly.
-function Verify-XamlFormat() {
+function Test-XamlFormat() {
     $root = Find-OpenConsoleRoot
     & dotnet tool restore --add-source https://api.nuget.org/v3/index.json
 
@@ -430,4 +430,12 @@ function Invoke-CodeFormat() {
     }
 }
 
-Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat,Invoke-XamlFormat,Verify-XamlFormat
+#.SYNOPSIS
+# Download clang-format.exe required for code formatting
+function Get-Format()
+{
+    $root = Find-OpenConsoleRoot
+    & "$root\dep\nuget\nuget.exe" restore "$root\tools\packages.config"
+}
+
+Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat,Invoke-XamlFormat,Test-XamlFormat,Get-Format

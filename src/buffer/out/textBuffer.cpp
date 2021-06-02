@@ -850,7 +850,7 @@ bool TextBuffer::IsDoubleWidthLine(const size_t row) const
 SHORT TextBuffer::GetLineWidth(const size_t row) const
 {
     // Use shift right to quickly divide the width by 2 for double width lines.
-    const auto scale = IsDoubleWidthLine(row) ? 1 : 0;
+    const SHORT scale = IsDoubleWidthLine(row) ? 1 : 0;
     return GetSize().Width() >> scale;
 }
 
@@ -863,14 +863,14 @@ COORD TextBuffer::ClampPositionWithinLine(const COORD position) const
 COORD TextBuffer::ScreenToBufferPosition(const COORD position) const
 {
     // Use shift right to quickly divide the X pos by 2 for double width lines.
-    const auto scale = IsDoubleWidthLine(position.Y) ? 1 : 0;
+    const SHORT scale = IsDoubleWidthLine(position.Y) ? 1 : 0;
     return { position.X >> scale, position.Y };
 }
 
 COORD TextBuffer::BufferToScreenPosition(const COORD position) const
 {
     // Use shift left to quickly multiply the X pos by 2 for double width lines.
-    const auto scale = IsDoubleWidthLine(position.Y) ? 1 : 0;
+    const SHORT scale = IsDoubleWidthLine(position.Y) ? 1 : 0;
     return { position.X << scale, position.Y };
 }
 
@@ -2475,6 +2475,14 @@ const size_t TextBuffer::AddPatternRecognizer(const std::wstring_view regexStrin
     ++_currentPatternId;
     _idsAndPatterns.emplace(std::make_pair(_currentPatternId, regexString));
     return _currentPatternId;
+}
+
+// Method Description:
+// - Clears the patterns we know of and resets the pattern ID counter
+void TextBuffer::ClearPatternRecognizers() noexcept
+{
+    _idsAndPatterns.clear();
+    _currentPatternId = 0;
 }
 
 // Method Description:

@@ -98,7 +98,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(Closed, IPane, IPane);
         TYPED_EVENT(PaneTypeChanged, IPane, IPane);
 
-        WINRT_PROPERTY(uint16_t, Id);
+        WINRT_PROPERTY(uint32_t, Id);
         WINRT_PROPERTY(BordersEnum, Borders, BordersEnum::None);
 
     private:

@@ -14,18 +14,19 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
-    <ClInclude Include="inc\Utils.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="inc\ScopedResourceLoader.h" />
+    <ClInclude Include="ScopedResourceLoader.h" />
     <ClInclude Include="inc\LibraryResources.h" />
+    <ClInclude Include="inc\Utils.h" />
+    <ClInclude Include="inc\WtExeUtils.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="ScopedResourceLoader.cpp" />
     <ClCompile Include="LibraryResources.cpp" />
+    <ClCompile Include="ScopedResourceLoader.cpp" />
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>

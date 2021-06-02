@@ -18,7 +18,7 @@ namespace TerminalApp
     {
         LeafPane(Guid profile, Microsoft.Terminal.Control.TermControl con, Boolean active);
 
-        UInt16 Id;
+        UInt32 Id;
         BordersEnum Borders;
         Microsoft.Terminal.Control.TermControl TerminalControl { get; };
         Guid Profile { get; };

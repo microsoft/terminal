@@ -12,6 +12,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         KeyChord() noexcept;
         KeyChord(Control::KeyModifiers const& modifiers, int32_t vkey) noexcept;
         KeyChord(bool ctrl, bool alt, bool shift, int32_t vkey) noexcept;
+        KeyChord(bool ctrl, bool alt, bool shift, bool win, int32_t vkey) noexcept;
 
         Control::KeyModifiers Modifiers() noexcept;
         void Modifiers(Control::KeyModifiers const& value) noexcept;

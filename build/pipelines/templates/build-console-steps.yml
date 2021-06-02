@@ -22,7 +22,7 @@ steps:
     configPath: NuGet.config
     restoreSolution: OpenConsole.sln
     restoreDirectory: '$(Build.SourcesDirectory)\packages'
-    
+
 - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
   displayName: Restore NuGet packages for extraneous build actions
   inputs:
@@ -31,6 +31,29 @@ steps:
     configPath: NuGet.config
     restoreSolution: build/packages.config
     restoreDirectory: '$(Build.SourcesDirectory)\packages'
+
+# The environment variable VCToolsInstallDir isn't defined on lab machines, so we need to retrieve it ourselves.
+- script: |
+    "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -Latest -requires Microsoft.Component.MSBuild -property InstallationPath > %TEMP%\vsinstalldir.txt
+    set /p _VSINSTALLDIR15=<%TEMP%\vsinstalldir.txt
+    del %TEMP%\vsinstalldir.txt
+    call "%_VSINSTALLDIR15%\Common7\Tools\VsDevCmd.bat"
+    echo VCToolsInstallDir = %VCToolsInstallDir%
+    echo ##vso[task.setvariable variable=VCToolsInstallDir]%VCToolsInstallDir%
+  displayName: 'Retrieve VC tools directory'
+
+- task: CmdLine@1
+  displayName: 'Display build machine environment variables'
+  inputs:
+    filename: 'set'
+
+- task: powershell@2
+  displayName: 'Restore PGO database'
+  condition: eq(variables['PGOBuildMode'], 'Optimize')
+  inputs:
+    targetType: filePath
+    workingDirectory: $(Build.SourcesDirectory)\tools\PGODatabase
+    filePath: $(Build.SourcesDirectory)\tools\PGODatabase\restore-pgodb.ps1
 
 - task: VSBuild@1
   displayName: 'Build solution **\OpenConsole.sln'
@@ -45,6 +68,9 @@ steps:
 
 - task: PowerShell@2
   displayName: 'Check MSIX for common regressions'
+  # PGO runtime needs its own CRT and it's in the package for convenience.
+  # That will make this script mad so skip since we're not shipping the PGO Instrumentation one anyway.
+  condition: ne(variables['PGOBuildMode'], 'Instrument')
   inputs:
     targetType: inline
     script: |
@@ -53,6 +79,7 @@ steps:
 
 - task: powershell@2
   displayName: 'Source Index PDBs'
+  condition: ne(variables['PGOBuildMode'], 'Instrument')
   inputs:
     targetType: filePath
     filePath: build\scripts\Index-Pdbs.ps1
@@ -69,12 +96,24 @@ steps:
       Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
 
 - task: PowerShell@2
+  displayName: 'Validate binaries are optimized'
+  condition: eq(variables['pgoBuildMode'], 'Optimize')
+  inputs:
+    targetType: inline
+    script: |
+      $Binaries = 'OpenConsole.exe', 'WindowsTerminal.exe', 'TerminalApp.dll', 'TerminalConnection.dll', 'Microsoft.Terminal.Control.dll', 'Microsoft.Terminal.Remoting.dll', 'Microsoft.Terminal.Settings.Editor.dll', 'Microsoft.Terminal.Settings.Model.dll'
+      foreach ($BinFile in $Binaries)
+      {
+        & "$(Build.SourcesDirectory)\tools\PGODatabase\verify-pgo.ps1" "$(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/$BinFile"
+      }
+
+- task: PowerShell@2
   displayName: 'Run Unit Tests'
   inputs:
     targetType: filePath
     filePath: build\scripts\Run-Tests.ps1
     arguments: -MatchPattern '*unit.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}'
-  condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
+  condition: and(and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument')), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
 
 - task: PowerShell@2
   displayName: 'Run Feature Tests (x64 only)'
@@ -82,7 +121,7 @@ steps:
     targetType: filePath
     filePath: build\scripts\Run-Tests.ps1
     arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}'
-  condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
+  condition: and(and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument')), eq(variables['BuildPlatform'], 'x64'))
 
 - task: PowerShell@2
   displayName: 'Convert Test Logs from WTL to xUnit format'
@@ -90,13 +129,14 @@ steps:
     targetType: filePath
     filePath: build\Helix\ConvertWttLogToXUnit.ps1
     arguments: -WttInputPath '${{ parameters.testLogPath }}' -WttSingleRerunInputPath 'unused.wtl' -WttMultipleRerunInputPath 'unused2.wtl' -XUnitOutputPath 'onBuildMachineResults.xml' -TestNamePrefix '$(BuildConfiguration).$(BuildPlatform)'
-  condition: or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86'))
+  condition: and(ne(variables['PGOBuildMode'], 'Instrument'),or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
 
 - task: PublishTestResults@2
   displayName: 'Upload converted test logs'
+  condition: ne(variables['PGOBuildMode'], 'Instrument')
   inputs:
     testResultsFormat: 'xUnit' # Options: JUnit, NUnit, VSTest, xUnit, cTest
-    testResultsFiles: '**/onBuildMachineResults.xml' 
+    testResultsFiles: '**/onBuildMachineResults.xml'
     #searchFolder: '$(System.DefaultWorkingDirectory)' # Optional
     #mergeTestResults: false # Optional
     #failTaskOnFailedTests: false # Optional
@@ -127,24 +167,47 @@ steps:
     TargetFolder: '$(Build.ArtifactStagingDirectory)/appx'
     OverWrite: true
     flattenFolders: true
-  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+  condition: succeeded()
 
 - task: CopyFiles@2
   displayName: 'Copy outputs needed for test runs to Artifacts'
   inputs:
     Contents: |
-     $(Build.SourcesDirectory)/bin/$(BuildPlatform)/$(BuildConfiguration)/*.exe
-     $(Build.SourcesDirectory)/bin/$(BuildPlatform)/$(BuildConfiguration)/*.dll
-     $(Build.SourcesDirectory)/bin/$(BuildPlatform)/$(BuildConfiguration)/*.xml
+     $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.exe
+     $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.dll
+     $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.xml
      **/Microsoft.VCLibs.*.appx
-     **/TestHostApp/*
+     **/TestHostApp/*.exe
+     **/TestHostApp/*.dll
+     **/TestHostApp/*.xml
+     !**/*.pdb
+     !**/*.ipdb
+     !**/*.obj
+     !**/*.pch
     TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
     OverWrite: true
     flattenFolders: true
-  condition: and(and(succeeded(), eq(variables['BuildPlatform'], 'x64')), ne(variables['Build.Reason'], 'PullRequest'))
+  condition: succeeded()
 
 - task: PublishBuildArtifacts@1
   displayName: 'Publish All Build Artifacts'
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'drop'
+    ArtifactName: 'drop'  
+
+- task: CopyFiles@2
+  displayName: 'Copy PGO databases needed for PGO instrumentation run'
+  inputs:
+    Contents: |
+     **/*.pgd
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/PGO/$(BuildPlatform)'
+    OverWrite: true
+    flattenFolders: true
+  condition: and(succeeded(), eq(variables['PGOBuildMode'], 'Instrument'))
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish All PGO Artifacts'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/PGO'
+    ArtifactName: 'PGO'
+  condition: and(succeeded(), eq(variables['PGOBuildMode'], 'Instrument'))

@@ -9,6 +9,7 @@ jobs:
   variables:
     BuildConfiguration: ${{ parameters.configuration }}
     BuildPlatform: ${{ parameters.platform }}
+    PGOBuildMode: 'Optimize'
 
   pool:
     name: Package ES Lab E

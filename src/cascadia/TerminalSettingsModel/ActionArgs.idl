@@ -8,6 +8,7 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean Equals(IActionArgs other);
         String GenerateName();
         IActionArgs Copy();
+        UInt64 Hash();
     };
 
     interface IActionEventArgs
@@ -84,6 +85,20 @@ namespace Microsoft.Terminal.Settings.Model
         Disabled,
     };
 
+    enum DesktopBehavior
+    {
+        Any,
+        ToCurrent,
+        OnCurrent,
+    };
+
+    enum MonitorBehavior
+    {
+        Any,
+        ToCurrent,
+        ToMouse,
+    };
+
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
@@ -105,6 +120,7 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean Equals(NewTerminalArgs other);
         String GenerateName();
         String ToCommandline();
+        UInt64 Hash();
     };
 
     [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
@@ -173,6 +189,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SetColorSchemeArgs : IActionArgs
     {
+        SetColorSchemeArgs(String name);
         String SchemeName { get; };
     };
 
@@ -250,5 +267,20 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass RenameWindowArgs : IActionArgs
     {
         String Name { get; };
+    };
+
+    [default_interface] runtimeclass GlobalSummonArgs : IActionArgs
+    {
+        String Name { get; };
+        DesktopBehavior Desktop { get; };
+        MonitorBehavior Monitor { get; };
+        Boolean ToggleVisibility { get; };
+        UInt32 DropdownDuration { get; };
+    };
+
+    [default_interface] runtimeclass FocusPaneArgs : IActionArgs
+    {
+        FocusPaneArgs(UInt32 Id);
+        UInt32 Id { get; };
     };
 }

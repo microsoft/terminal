@@ -194,3 +194,22 @@ void _CONSOLE_API_MSG::SetReplyInformation(const ULONG_PTR pInformation)
 {
     Complete.IoStatus.Information = pInformation;
 }
+
+void _CONSOLE_API_MSG::UpdateUserBufferPointers()
+{
+    // There are some instances where an API message may get copied.
+    // Because it is infeasible to write a copy constructor for this class
+    // without rewriting large swaths of conhost (because of the unnamed union)
+    // we have chosen to introduce a "post-copy" step.
+    // This makes sure the buffers in State are in sync with the actual
+    // buffers in the object.
+    if (State.InputBuffer)
+    {
+        State.InputBuffer = _inputBuffer.data();
+    }
+
+    if (State.OutputBuffer)
+    {
+        State.OutputBuffer = _outputBuffer.data();
+    }
+}

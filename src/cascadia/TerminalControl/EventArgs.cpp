@@ -10,3 +10,4 @@
 #include "NoticeEventArgs.g.cpp"
 #include "ScrollPositionChangedArgs.g.cpp"
 #include "RendererWarningArgs.g.cpp"
+#include "TransparencyChangedEventArgs.g.cpp"

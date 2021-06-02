@@ -1,3 +1,5 @@
+![terminal-logos](https://user-images.githubusercontent.com/48369326/115790869-4c852b00-a37c-11eb-97f1-f61972c7800c.png)
+
 # Welcome to the Windows Terminal, Console and Command-Line repo
 
 This repository contains the source code for:
@@ -241,7 +243,7 @@ Visual Studio.
 
 ## Documentation
 
-All project documentation is located at aka.ms/terminal-docs. If you would like
+All project documentation is located at [aka.ms/terminal-docs](https://aka.ms/terminal-docs). If you would like
 to contribute to the documentation, please submit a pull request on the [Windows
 Terminal Documentation repo](https://github.com/MicrosoftDocs/terminal).
 
@@ -276,6 +278,7 @@ If you would like to ask a question that you feel doesn't warrant an issue
 * Carlos Zamora, Developer: [@cazamor_msft](https://twitter.com/cazamor_msft)
 * Leon Liang, Developer: [@leonmsft](https://twitter.com/leonmsft)
 * Pankaj Bhojwani, Developer
+* Leonard Hecker, Developer: [@LeonardHecker](https://twitter.com/LeonardHecker)
 
 ## Developer Guidance
 

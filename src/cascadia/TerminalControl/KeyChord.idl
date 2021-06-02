@@ -9,7 +9,8 @@ namespace Microsoft.Terminal.Control
         None = 0x0000,
         Alt = 0x0001,
         Ctrl = 0x0002,
-        Shift = 0x0004
+        Shift = 0x0004,
+        Windows = 0x0008
     };
 
     [default_interface]
@@ -18,6 +19,7 @@ namespace Microsoft.Terminal.Control
         KeyChord();
         KeyChord(KeyModifiers modifiers, Int32 vkey);
         KeyChord(Boolean ctrl, Boolean alt, Boolean shift, Int32 vkey);
+        KeyChord(Boolean ctrl, Boolean alt, Boolean shift, Boolean win, Int32 vkey);
 
         KeyModifiers Modifiers;
         Int32 Vkey;

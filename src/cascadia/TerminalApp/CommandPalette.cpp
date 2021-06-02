@@ -231,11 +231,18 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_selectedCommandChanged(const IInspectable& /*sender*/,
                                                  const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
+        const auto selectedCommand = _filteredActionsView().SelectedItem();
+        const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
         if (_currentMode == CommandPaletteMode::TabSwitchMode)
         {
-            const auto selectedCommand = _filteredActionsView().SelectedItem();
-            const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
             _switchToTab(filteredCommand);
+        }
+        else if (_currentMode == CommandPaletteMode::ActionMode && filteredCommand != nullptr)
+        {
+            if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            {
+                _PreviewActionHandlers(*this, actionPaletteItem.Command());
+            }
         }
     }
 
@@ -254,19 +261,18 @@ namespace winrt::TerminalApp::implementation
         // Only give anchored tab switcher the ability to cycle through tabs with the tab button.
         // For unanchored mode, accessibility becomes an issue when we try to hijack tab since it's
         // a really widely used keyboard navigation key.
-        if (_currentMode == CommandPaletteMode::TabSwitchMode && _keymap)
+        if (_currentMode == CommandPaletteMode::TabSwitchMode && _actionMap)
         {
             winrt::Microsoft::Terminal::Control::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
-            const auto action = _keymap.TryLookup(kc);
-            if (action)
+            if (const auto cmd{ _actionMap.GetActionByKeyChord(kc) })
             {
-                if (action.Action() == ShortcutAction::PrevTab)
+                if (cmd.ActionAndArgs().Action() == ShortcutAction::PrevTab)
                 {
                     SelectNextItem(false);
                     e.Handled(true);
                     return;
                 }
-                else if (action.Action() == ShortcutAction::NextTab)
+                else if (cmd.ActionAndArgs().Action() == ShortcutAction::NextTab)
                 {
                     SelectNextItem(true);
                     e.Handled(true);
@@ -857,9 +863,9 @@ namespace winrt::TerminalApp::implementation
         return _filteredActions;
     }
 
-    void CommandPalette::SetKeyMap(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap)
+    void CommandPalette::SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap)
     {
-        _keymap = keymap;
+        _actionMap = actionMap;
     }
 
     void CommandPalette::SetCommands(Collections::IVector<Command> const& actions)
@@ -927,6 +933,10 @@ namespace winrt::TerminalApp::implementation
         ParsedCommandLineText(L"");
         _searchBox().Text(L"");
         _searchBox().Select(_searchBox().Text().size(), 0);
+
+        _nestedActionStack.Clear();
+        ParentCommandName(L"");
+        _currentNestedCommands.Clear();
         // Leaving this block of code outside the above if-statement
         // guarantees that the correct text is shown for the mode
         // whenever _switchToMode is called.
@@ -1083,6 +1093,8 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_close()
     {
         Visibility(Visibility::Collapsed);
+
+        _PreviewActionHandlers(*this, nullptr);
 
         // Reset visibility in case anchor mode tab switcher just finished.
         _searchBox().Visibility(Visibility::Visible);

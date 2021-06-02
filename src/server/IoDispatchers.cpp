@@ -159,6 +159,22 @@ static bool _shouldAttemptHandoff(const Globals& globals,
 
 #else
 
+    // This console was started with a command line argument to
+    // specifically block handoff to another console. We presume
+    // this was for good reason (compatibility) and give up here.
+    if (globals.launchArgs.GetForceNoHandoff())
+    {
+        return false;
+    }
+
+    // Someone double clicked this console or explicitly tried
+    // to use it to launch a child process. Host it within this one
+    // and do not hand off.
+    if (globals.launchArgs.ShouldCreateServerHandle())
+    {
+        return false;
+    }
+
     // This console is already initialized. Do not
     // attempt handoff to another one.
     // Note you can have a non-attach secondary connect for a child process
