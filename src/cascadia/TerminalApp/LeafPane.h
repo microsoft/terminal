@@ -103,6 +103,7 @@ namespace winrt::TerminalApp::implementation
 
     private:
         winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
+        winrt::Microsoft::Terminal::TerminalConnection::ConnectionState _connectionState{ winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::NotConnected };
         GUID _profile;
         bool _lastActive{ false };
         bool _zoomed{ false };
