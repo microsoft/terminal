@@ -100,6 +100,6 @@
         "**/bin/**": true,
         "**/obj/**": true,
         "**/packages/**": true,
-        "**/generated files/**": true
+        "**/Generated Files/**": true
     }
 }

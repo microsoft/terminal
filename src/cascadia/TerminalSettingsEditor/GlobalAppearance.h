@@ -26,9 +26,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
         WINRT_PROPERTY(Editor::GlobalAppearancePageNavigationState, State, nullptr);
-
         GETSET_BINDABLE_ENUM_SETTING(Theme, winrt::Windows::UI::Xaml::ElementTheme, State().Globals, Theme);
         GETSET_BINDABLE_ENUM_SETTING(TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, State().Globals, TabWidthMode);
+
+    public:
+        static winrt::hstring LanguageDisplayConverter(const winrt::hstring& tag);
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> LanguageList();
+        winrt::Windows::Foundation::IInspectable CurrentLanguage();
+        void CurrentLanguage(const winrt::Windows::Foundation::IInspectable& tag);
+
+    private:
+        std::vector<winrt::hstring> _GetSupportedLanguageTags();
+
+        winrt::hstring _currentLanguage;
     };
 }
 
