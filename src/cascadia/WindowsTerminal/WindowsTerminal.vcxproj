@@ -147,10 +147,5 @@
     <!-- **END VC LIBS HACK** -->
   </Target>
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
-<<<<<<< HEAD
-  <Import Project="..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets" Condition="Exists('..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets')" />
-</Project>
-=======
   <Import Project="..\..\..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.3.210521003\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets" Condition="Exists('..\..\..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.3.210521003\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets')" />
 </Project>
->>>>>>> dev/lelian/notifyicon/proto
