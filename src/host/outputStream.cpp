@@ -435,48 +435,6 @@ bool ConhostInternalGetSet::PrivateUseMainScreenBuffer()
 }
 
 // Routine Description:
-// - Connects the PrivateEnableVT200MouseMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateEnableVT200MouseMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - enabled - set to true to enable vt200 mouse mode, false to disable
-// Return Value:
-// - true if successful (see DoSrvPrivateEnableVT200MouseMode). false otherwise.
-bool ConhostInternalGetSet::PrivateEnableVT200MouseMode(const bool enabled)
-{
-    DoSrvPrivateEnableVT200MouseMode(enabled);
-    return true;
-}
-
-// Routine Description:
-// - Connects the PrivateEnableButtonEventMouseMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateEnableButtonEventMouseMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - enabled - set to true to enable button-event mouse mode, false to disable
-// Return Value:
-// - true if successful (see DoSrvPrivateEnableButtonEventMouseMode). false otherwise.
-bool ConhostInternalGetSet::PrivateEnableButtonEventMouseMode(const bool enabled)
-{
-    DoSrvPrivateEnableButtonEventMouseMode(enabled);
-    return true;
-}
-
-// Routine Description:
-// - Connects the PrivateEnableAnyEventMouseMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateEnableAnyEventMouseMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - enabled - set to true to enable any-event mouse mode, false to disable
-// Return Value:
-// - true if successful (see DoSrvPrivateEnableAnyEventMouseMode). false otherwise.
-bool ConhostInternalGetSet::PrivateEnableAnyEventMouseMode(const bool enabled)
-{
-    DoSrvPrivateEnableAnyEventMouseMode(enabled);
-    return true;
-}
-
-// Routine Description:
 // - Connects the PrivateEnableAlternateScroll call directly into our Driver Message servicing call inside Conhost.exe
 //   PrivateEnableAlternateScroll is an internal-only "API" call that the vt commands can execute,
 //     but it is not represented as a function call on out public API surface.

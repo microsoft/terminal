@@ -298,7 +298,7 @@ public:
         s_pwszInputExpected = L"\x0";
         VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta, {}));
 
-        mouseInput->EnableDefaultTracking(true);
+        mouseInput->SetInputMode(TerminalInput::Mode::DefaultMouseTracking, true);
 
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
@@ -318,7 +318,7 @@ public:
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
 
-        mouseInput->EnableButtonEventTracking(true);
+        mouseInput->SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, true);
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
             COORD Coord = s_rgTestCoords[i];
@@ -337,7 +337,7 @@ public:
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
 
-        mouseInput->EnableAnyEventTracking(true);
+        mouseInput->SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, true);
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
             COORD Coord = s_rgTestCoords[i];
@@ -385,7 +385,7 @@ public:
 
         short MaxCoord = SHORT_MAX - 33;
 
-        mouseInput->EnableDefaultTracking(true);
+        mouseInput->SetInputMode(TerminalInput::Mode::DefaultMouseTracking, true);
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
             COORD Coord = s_rgTestCoords[i];
@@ -404,7 +404,7 @@ public:
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
 
-        mouseInput->EnableButtonEventTracking(true);
+        mouseInput->SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, true);
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
             COORD Coord = s_rgTestCoords[i];
@@ -423,7 +423,7 @@ public:
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
 
-        mouseInput->EnableAnyEventTracking(true);
+        mouseInput->SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, true);
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
             COORD Coord = s_rgTestCoords[i];
@@ -473,7 +473,7 @@ public:
         // However, mouse moves are only handled in Any Event mode
         fExpectedKeyHandled = uiButton != WM_MOUSEMOVE;
 
-        mouseInput->EnableDefaultTracking(true);
+        mouseInput->SetInputMode(TerminalInput::Mode::DefaultMouseTracking, true);
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
             COORD Coord = s_rgTestCoords[i];
@@ -487,7 +487,7 @@ public:
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
 
-        mouseInput->EnableButtonEventTracking(true);
+        mouseInput->SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, true);
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
             COORD Coord = s_rgTestCoords[i];
@@ -506,7 +506,7 @@ public:
         }
 
         fExpectedKeyHandled = true;
-        mouseInput->EnableAnyEventTracking(true);
+        mouseInput->SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, true);
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
             COORD Coord = s_rgTestCoords[i];
@@ -550,7 +550,7 @@ public:
         VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta, {}));
 
         // Default Tracking, Default Encoding
-        mouseInput->EnableDefaultTracking(true);
+        mouseInput->SetInputMode(TerminalInput::Mode::DefaultMouseTracking, true);
 
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {

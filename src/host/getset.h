@@ -31,9 +31,6 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
 [[nodiscard]] NTSTATUS DoSrvPrivateUseAlternateScreenBuffer(SCREEN_INFORMATION& screenInfo);
 void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo);
 
-void DoSrvPrivateEnableVT200MouseMode(const bool fEnable);
-void DoSrvPrivateEnableButtonEventMouseMode(const bool fEnable);
-void DoSrvPrivateEnableAnyEventMouseMode(const bool fEnable);
 void DoSrvPrivateEnableAlternateScroll(const bool fEnable);
 
 [[nodiscard]] HRESULT DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo);

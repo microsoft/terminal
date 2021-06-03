@@ -66,9 +66,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool PrivateUseAlternateScreenBuffer() = 0;
         virtual bool PrivateUseMainScreenBuffer() = 0;
 
-        virtual bool PrivateEnableVT200MouseMode(const bool enabled) = 0;
-        virtual bool PrivateEnableButtonEventMouseMode(const bool enabled) = 0;
-        virtual bool PrivateEnableAnyEventMouseMode(const bool enabled) = 0;
         virtual bool PrivateEnableAlternateScroll(const bool enabled) = 0;
         virtual bool PrivateEraseAll() = 0;
         virtual bool PrivateClearBuffer() = 0;

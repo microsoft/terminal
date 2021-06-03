@@ -513,7 +513,7 @@ CATCH_RETURN_FALSE()
 
 bool Terminal::EnableVT200MouseMode(const bool enabled) noexcept
 {
-    _terminalInput->EnableDefaultTracking(enabled);
+    _terminalInput->SetInputMode(TerminalInput::Mode::DefaultMouseTracking, enabled);
     return true;
 }
 
@@ -531,13 +531,13 @@ bool Terminal::EnableSGRExtendedMouseMode(const bool enabled) noexcept
 
 bool Terminal::EnableButtonEventMouseMode(const bool enabled) noexcept
 {
-    _terminalInput->EnableButtonEventTracking(enabled);
+    _terminalInput->SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, enabled);
     return true;
 }
 
 bool Terminal::EnableAnyEventMouseMode(const bool enabled) noexcept
 {
-    _terminalInput->EnableAnyEventTracking(enabled);
+    _terminalInput->SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, enabled);
     return true;
 }
 

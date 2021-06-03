@@ -95,9 +95,6 @@ public:
 
     bool PrivateUseMainScreenBuffer() override;
 
-    bool PrivateEnableVT200MouseMode(const bool enabled) override;
-    bool PrivateEnableButtonEventMouseMode(const bool enabled) override;
-    bool PrivateEnableAnyEventMouseMode(const bool enabled) override;
     bool PrivateEnableAlternateScroll(const bool enabled) override;
     bool PrivateEraseAll() override;
     bool PrivateClearBuffer() override;

@@ -1477,42 +1477,6 @@ void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo)
 }
 
 // Routine Description:
-// - A private API call for enabling VT200 style mouse mode.
-// Parameters:
-// - fEnable - true to enable default tracking mode, false to disable mouse mode.
-// Return value:
-// - None
-void DoSrvPrivateEnableVT200MouseMode(const bool fEnable)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.GetActiveInputBuffer()->GetTerminalInput().EnableDefaultTracking(fEnable);
-}
-
-// Routine Description:
-// - A private API call for enabling button-event mouse mode.
-// Parameters:
-// - fEnable - true to enable button-event mode, false to disable mouse mode.
-// Return value:
-// - None
-void DoSrvPrivateEnableButtonEventMouseMode(const bool fEnable)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.GetActiveInputBuffer()->GetTerminalInput().EnableButtonEventTracking(fEnable);
-}
-
-// Routine Description:
-// - A private API call for enabling any-event mouse mode.
-// Parameters:
-// - fEnable - true to enable any-event mode, false to disable mouse mode.
-// Return value:
-// - None
-void DoSrvPrivateEnableAnyEventMouseMode(const bool fEnable)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.GetActiveInputBuffer()->GetTerminalInput().EnableAnyEventTracking(fEnable);
-}
-
-// Routine Description:
 // - A private API call for enabling alternate scroll mode
 // Parameters:
 // - fEnable - true to enable alternate scroll mode, false to disable.

@@ -2072,15 +2072,7 @@ bool AdaptDispatch::EnableDECCOLMSupport(const bool enabled) noexcept
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableVT200MouseMode(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableVT200MouseMode(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::DefaultMouseTracking, enabled);
 }
 
 //Routine Description:
@@ -2115,15 +2107,7 @@ bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableButtonEventMouseMode(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, enabled);
 }
 
 //Routine Description:
@@ -2135,15 +2119,7 @@ bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableAnyEventMouseMode(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, enabled);
 }
 
 //Routine Description:

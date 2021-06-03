@@ -43,7 +43,11 @@ namespace Microsoft::Console::VirtualTerminal
             Win32,
 
             Utf8MouseEncoding,
-            SgrMouseEncoding
+            SgrMouseEncoding,
+
+            DefaultMouseTracking,
+            ButtonEventMouseTracking,
+            AnyEventMouseTracking
         };
 
         void SetInputMode(const Mode mode, const bool enabled);
@@ -71,10 +75,6 @@ namespace Microsoft::Console::VirtualTerminal
 
 #pragma region MouseInputState Management
         // These methods are defined in mouseInputState.cpp
-        void EnableDefaultTracking(const bool enable) noexcept;
-        void EnableButtonEventTracking(const bool enable) noexcept;
-        void EnableAnyEventTracking(const bool enable) noexcept;
-
         void EnableAlternateScroll(const bool enable) noexcept;
         void UseAlternateScreenBuffer() noexcept;
         void UseMainScreenBuffer() noexcept;
@@ -97,17 +97,8 @@ namespace Microsoft::Console::VirtualTerminal
 
 #pragma region MouseInputState Management
         // These methods are defined in mouseInputState.cpp
-        enum class TrackingMode : unsigned int
-        {
-            None,
-            Default,
-            ButtonEvent,
-            AnyEvent
-        };
-
         struct MouseInputState
         {
-            TrackingMode trackingMode{ TrackingMode::None };
             bool alternateScroll{ false };
             bool inAlternateBuffer{ false };
             COORD lastPos{ -1, -1 };

@@ -285,7 +285,7 @@ static constexpr short _encodeDefaultCoordinate(const short sCoordinateValue) no
 // - true, if we are tracking mouse input. False, otherwise
 bool TerminalInput::IsTrackingMouseInput() const noexcept
 {
-    return (_mouseInputState.trackingMode != TrackingMode::None);
+    return _inputMode.any(Mode::DefaultMouseTracking, Mode::ButtonEventMouseTracking, Mode::AnyEventMouseTracking);
 }
 
 // Routine Description:
@@ -339,7 +339,7 @@ bool TerminalInput::HandleMouse(const COORD position,
     }
     else
     {
-        success = (_mouseInputState.trackingMode != TrackingMode::None);
+        success = IsTrackingMouseInput();
         if (success)
         {
             // isHover is only true for WM_MOUSEMOVE events
@@ -363,9 +363,9 @@ bool TerminalInput::HandleMouse(const COORD position,
             // In AnyEvent, all coord change hovers are sent
             const bool physicalButtonPressed = realButton != WM_LBUTTONUP;
 
-            success = (isButton && _mouseInputState.trackingMode != TrackingMode::None) ||
-                      (isHover && _mouseInputState.trackingMode == TrackingMode::ButtonEvent && ((!sameCoord) && (physicalButtonPressed))) ||
-                      (isHover && _mouseInputState.trackingMode == TrackingMode::AnyEvent && !sameCoord);
+            success = (isButton && IsTrackingMouseInput()) ||
+                      (isHover && _inputMode.test(Mode::ButtonEventMouseTracking) && ((!sameCoord) && (physicalButtonPressed))) ||
+                      (isHover && _inputMode.test(Mode::AnyEventMouseTracking) && !sameCoord);
 
             if (success)
             {
@@ -406,7 +406,7 @@ bool TerminalInput::HandleMouse(const COORD position,
                     _SendInputSequence(sequence);
                     success = true;
                 }
-                if (_mouseInputState.trackingMode == TrackingMode::ButtonEvent || _mouseInputState.trackingMode == TrackingMode::AnyEvent)
+                if (_inputMode.any(Mode::ButtonEventMouseTracking, Mode::AnyEventMouseTracking))
                 {
                     _mouseInputState.lastPos.X = position.X;
                     _mouseInputState.lastPos.Y = position.Y;
