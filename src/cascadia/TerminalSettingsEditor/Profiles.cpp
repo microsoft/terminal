@@ -69,6 +69,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(profile.UnfocusedAppearance().try_as<AppearanceConfig>());
         }
+
+        _defaultAppearanceViewModel.IsDefault(true);
     }
 
     Model::TerminalSettings ProfileViewModel::TermSettings() const
@@ -267,8 +269,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _profile.DeleteUnfocusedAppearance();
 
         _unfocusedAppearanceViewModel = nullptr;
-
-        _NotifyChanges(L"UnfocusedAppearance"); // hm come back to whether this is necessary
     }
 
     Editor::AppearanceViewModel ProfileViewModel::UnfocusedAppearance()
