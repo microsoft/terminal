@@ -66,7 +66,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool PrivateUseAlternateScreenBuffer() = 0;
         virtual bool PrivateUseMainScreenBuffer() = 0;
 
-        virtual bool PrivateEnableAlternateScroll(const bool enabled) = 0;
         virtual bool PrivateEraseAll() = 0;
         virtual bool PrivateClearBuffer() = 0;
         virtual bool GetUserDefaultCursorStyle(CursorType& style) = 0;

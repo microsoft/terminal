@@ -47,7 +47,9 @@ namespace Microsoft::Console::VirtualTerminal
 
             DefaultMouseTracking,
             ButtonEventMouseTracking,
-            AnyEventMouseTracking
+            AnyEventMouseTracking,
+
+            AlternateScroll
         };
 
         void SetInputMode(const Mode mode, const bool enabled);
@@ -75,7 +77,6 @@ namespace Microsoft::Console::VirtualTerminal
 
 #pragma region MouseInputState Management
         // These methods are defined in mouseInputState.cpp
-        void EnableAlternateScroll(const bool enable) noexcept;
         void UseAlternateScreenBuffer() noexcept;
         void UseMainScreenBuffer() noexcept;
 #pragma endregion
@@ -99,7 +100,6 @@ namespace Microsoft::Console::VirtualTerminal
         // These methods are defined in mouseInputState.cpp
         struct MouseInputState
         {
-            bool alternateScroll{ false };
             bool inAlternateBuffer{ false };
             COORD lastPos{ -1, -1 };
             unsigned int lastButton{ 0 };
@@ -127,7 +127,7 @@ namespace Microsoft::Console::VirtualTerminal
                                                  const short modifierKeyState,
                                                  const short delta);
 
-        bool _ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept;
+        bool _ShouldSendAlternateScroll(const unsigned int button, const short delta) const;
         bool _SendAlternateScroll(const short delta) const;
 
         static constexpr unsigned int s_GetPressedButton(const MouseButtonState state) noexcept;

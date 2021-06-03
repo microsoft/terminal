@@ -334,16 +334,6 @@ public:
         return true;
     }
 
-    bool PrivateEnableAlternateScroll(const bool enabled) override
-    {
-        Log::Comment(L"PrivateEnableAlternateScroll MOCK called...");
-        if (_privateEnableAlternateScrollResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedAlternateScrollEnabled, enabled);
-        }
-        return _privateEnableAlternateScrollResult;
-    }
-
     bool PrivateEraseAll() override
     {
         Log::Comment(L"PrivateEraseAll MOCK called...");
@@ -734,8 +724,6 @@ public:
 
     bool _setConsoleTitleWResult = false;
     std::wstring_view _expectedWindowTitle{};
-    bool _expectedAlternateScrollEnabled = false;
-    bool _privateEnableAlternateScrollResult = false;
     bool _setCursorStyleResult = false;
     CursorType _expectedCursorStyle;
     bool _setCursorColorResult = false;
@@ -2285,10 +2273,11 @@ public:
         VERIFY_IS_TRUE(_pDispatch.get()->EnableAnyEventMouseMode(false));
 
         Log::Comment(L"Test 6: Test Alt Scroll Mouse Mode");
-        _testGetSet->_expectedAlternateScrollEnabled = true;
-        _testGetSet->_privateEnableAlternateScrollResult = TRUE;
+        _testGetSet->_expectedInputModeEnabled = true;
+        _testGetSet->_expectedInputMode = TerminalInput::Mode::AlternateScroll;
+        _testGetSet->_setInputModeResult = true;
         VERIFY_IS_TRUE(_pDispatch.get()->EnableAlternateScroll(true));
-        _testGetSet->_expectedAlternateScrollEnabled = false;
+        _testGetSet->_expectedInputModeEnabled = false;
         VERIFY_IS_TRUE(_pDispatch.get()->EnableAlternateScroll(false));
     }
 

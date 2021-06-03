@@ -1477,18 +1477,6 @@ void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo)
 }
 
 // Routine Description:
-// - A private API call for enabling alternate scroll mode
-// Parameters:
-// - fEnable - true to enable alternate scroll mode, false to disable.
-// Return value:
-// None
-void DoSrvPrivateEnableAlternateScroll(const bool fEnable)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.GetActiveInputBuffer()->GetTerminalInput().EnableAlternateScroll(fEnable);
-}
-
-// Routine Description:
 // - A private API call for performing a VT-style erase all operation on the buffer.
 //      See SCREEN_INFORMATION::VtEraseAll's description for details.
 // Parameters:

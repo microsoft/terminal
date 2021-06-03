@@ -31,8 +31,6 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
 [[nodiscard]] NTSTATUS DoSrvPrivateUseAlternateScreenBuffer(SCREEN_INFORMATION& screenInfo);
 void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo);
 
-void DoSrvPrivateEnableAlternateScroll(const bool fEnable);
-
 [[nodiscard]] HRESULT DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo);
 [[nodiscard]] HRESULT DoSrvPrivateClearBuffer(SCREEN_INFORMATION& screenInfo);
 

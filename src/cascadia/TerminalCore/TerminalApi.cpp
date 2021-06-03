@@ -543,7 +543,7 @@ bool Terminal::EnableAnyEventMouseMode(const bool enabled) noexcept
 
 bool Terminal::EnableAlternateScrollMode(const bool enabled) noexcept
 {
-    _terminalInput->EnableAlternateScroll(enabled);
+    _terminalInput->SetInputMode(TerminalInput::Mode::AlternateScroll, enabled);
     return true;
 }
 

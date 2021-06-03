@@ -95,7 +95,6 @@ public:
 
     bool PrivateUseMainScreenBuffer() override;
 
-    bool PrivateEnableAlternateScroll(const bool enabled) override;
     bool PrivateEraseAll() override;
     bool PrivateClearBuffer() override;
 
