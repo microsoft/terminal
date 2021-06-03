@@ -124,15 +124,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 viewModel.UnfocusedAppearance().Schemes(schemes);
                 viewModel.UnfocusedAppearance().WindowRoot(windowRoot);
             }
-
-            const auto revoker = viewModel.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
-                const auto settingName{ args.PropertyName() };
-                if (settingName == L"UnfocusedAppearance")
-                {
-                    viewModel.UnfocusedAppearance().Schemes(schemes);
-                    viewModel.UnfocusedAppearance().WindowRoot(windowRoot);
-                }
-            });
         }
 
         void DeleteProfile();
