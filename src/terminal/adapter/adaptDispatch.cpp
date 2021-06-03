@@ -2092,15 +2092,7 @@ bool AdaptDispatch::EnableVT200MouseMode(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableUTF8ExtendedMouseMode(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, enabled);
 }
 
 //Routine Description:
@@ -2112,15 +2104,7 @@ bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableSGRExtendedMouseMode(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::SgrMouseEncoding, enabled);
 }
 
 //Routine Description:

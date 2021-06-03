@@ -40,7 +40,10 @@ namespace Microsoft::Console::VirtualTerminal
             Ansi,
             Keypad,
             CursorKey,
-            Win32
+            Win32,
+
+            Utf8MouseEncoding,
+            SgrMouseEncoding
         };
 
         void SetInputMode(const Mode mode, const bool enabled);
@@ -68,9 +71,6 @@ namespace Microsoft::Console::VirtualTerminal
 
 #pragma region MouseInputState Management
         // These methods are defined in mouseInputState.cpp
-        void SetUtf8ExtendedMode(const bool enable) noexcept;
-        void SetSGRExtendedMode(const bool enable) noexcept;
-
         void EnableDefaultTracking(const bool enable) noexcept;
         void EnableButtonEventTracking(const bool enable) noexcept;
         void EnableAnyEventTracking(const bool enable) noexcept;
@@ -97,14 +97,6 @@ namespace Microsoft::Console::VirtualTerminal
 
 #pragma region MouseInputState Management
         // These methods are defined in mouseInputState.cpp
-        enum class ExtendedMode : unsigned int
-        {
-            None,
-            Utf8,
-            Sgr,
-            Urxvt
-        };
-
         enum class TrackingMode : unsigned int
         {
             None,
@@ -115,7 +107,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         struct MouseInputState
         {
-            ExtendedMode extendedMode{ ExtendedMode::None };
             TrackingMode trackingMode{ TrackingMode::None };
             bool alternateScroll{ false };
             bool inAlternateBuffer{ false };

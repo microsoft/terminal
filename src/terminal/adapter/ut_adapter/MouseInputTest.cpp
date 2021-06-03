@@ -381,7 +381,7 @@ public:
         s_pwszInputExpected = L"\x0";
         VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta, {}));
 
-        mouseInput->SetUtf8ExtendedMode(true);
+        mouseInput->SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, true);
 
         short MaxCoord = SHORT_MAX - 33;
 
@@ -467,7 +467,7 @@ public:
         s_pwszInputExpected = L"\x0";
         VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta, {}));
 
-        mouseInput->SetSGRExtendedMode(true);
+        mouseInput->SetInputMode(TerminalInput::Mode::SgrMouseEncoding, true);
 
         // SGR Mode should be able to handle any arbitrary coords.
         // However, mouse moves are only handled in Any Event mode
@@ -571,7 +571,7 @@ public:
         }
 
         // Default Tracking, UTF8 Encoding
-        mouseInput->SetUtf8ExtendedMode(true);
+        mouseInput->SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, true);
         short MaxCoord = SHORT_MAX - 33;
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
@@ -592,7 +592,7 @@ public:
         }
 
         // Default Tracking, SGR Encoding
-        mouseInput->SetSGRExtendedMode(true);
+        mouseInput->SetInputMode(TerminalInput::Mode::SgrMouseEncoding, true);
         fExpectedKeyHandled = true; // SGR Mode should be able to handle any arbitrary coords.
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {

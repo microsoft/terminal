@@ -1489,30 +1489,6 @@ void DoSrvPrivateEnableVT200MouseMode(const bool fEnable)
 }
 
 // Routine Description:
-// - A private API call for enabling utf8 style mouse mode.
-// Parameters:
-// - fEnable - true to enable, false to disable.
-// Return value:
-// - None
-void DoSrvPrivateEnableUTF8ExtendedMouseMode(const bool fEnable)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.GetActiveInputBuffer()->GetTerminalInput().SetUtf8ExtendedMode(fEnable);
-}
-
-// Routine Description:
-// - A private API call for enabling SGR style mouse mode.
-// Parameters:
-// - fEnable - true to enable, false to disable.
-// Return value:
-// - None
-void DoSrvPrivateEnableSGRExtendedMouseMode(const bool fEnable)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.GetActiveInputBuffer()->GetTerminalInput().SetSGRExtendedMode(fEnable);
-}
-
-// Routine Description:
 // - A private API call for enabling button-event mouse mode.
 // Parameters:
 // - fEnable - true to enable button-event mode, false to disable mouse mode.

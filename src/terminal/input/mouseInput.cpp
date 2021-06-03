@@ -291,7 +291,7 @@ bool TerminalInput::IsTrackingMouseInput() const noexcept
 // Routine Description:
 // - Attempt to handle the given mouse coordinates and windows button as a VT-style mouse event.
 //     If the event should be transmitted in the selected mouse mode, then we'll try and
-//     encode the event according to the rules of the selected ExtendedMode, and insert those characters into the input buffer.
+//     encode the event according to the rules of the encoding mode, and insert those characters into the input buffer.
 // Parameters:
 // - position - The windows coordinates (top,left = 0,0) of the mouse event
 // - button - the message to decode.
@@ -370,23 +370,16 @@ bool TerminalInput::HandleMouse(const COORD position,
             if (success)
             {
                 std::wstring sequence;
-                switch (_mouseInputState.extendedMode)
+                if (_inputMode.test(Mode::Utf8MouseEncoding))
                 {
-                case ExtendedMode::None:
-                    sequence = _GenerateDefaultSequence(position,
-                                                        realButton,
-                                                        isHover,
-                                                        modifierKeyState,
-                                                        delta);
-                    break;
-                case ExtendedMode::Utf8:
                     sequence = _GenerateUtf8Sequence(position,
                                                      realButton,
                                                      isHover,
                                                      modifierKeyState,
                                                      delta);
-                    break;
-                case ExtendedMode::Sgr:
+                }
+                else if (_inputMode.test(Mode::SgrMouseEncoding))
+                {
                     // For SGR encoding, if no physical buttons were pressed,
                     // then we want to handle hovers with WM_MOUSEMOVE.
                     // However, if we're dragging (WM_MOUSEMOVE with a button pressed),
@@ -397,13 +390,15 @@ bool TerminalInput::HandleMouse(const COORD position,
                                                     isHover,
                                                     modifierKeyState,
                                                     delta);
-                    break;
-                case ExtendedMode::Urxvt:
-                default:
-                    success = false;
-                    break;
                 }
-
+                else
+                {
+                    sequence = _GenerateDefaultSequence(position,
+                                                        realButton,
+                                                        isHover,
+                                                        modifierKeyState,
+                                                        delta);
+                }
                 success = !sequence.empty();
 
                 if (success)

@@ -344,26 +344,6 @@ public:
         return _privateEnableVT200MouseModeResult;
     }
 
-    bool PrivateEnableUTF8ExtendedMouseMode(const bool enabled) override
-    {
-        Log::Comment(L"PrivateEnableUTF8ExtendedMouseMode MOCK called...");
-        if (_privateEnableUTF8ExtendedMouseModeResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedMouseEnabled, enabled);
-        }
-        return _privateEnableUTF8ExtendedMouseModeResult;
-    }
-
-    bool PrivateEnableSGRExtendedMouseMode(const bool enabled) override
-    {
-        Log::Comment(L"PrivateEnableSGRExtendedMouseMode MOCK called...");
-        if (_privateEnableSGRExtendedMouseModeResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedMouseEnabled, enabled);
-        }
-        return _privateEnableSGRExtendedMouseModeResult;
-    }
-
     bool PrivateEnableButtonEventMouseMode(const bool enabled) override
     {
         Log::Comment(L"PrivateEnableButtonEventMouseMode MOCK called...");
@@ -787,8 +767,6 @@ public:
     bool _expectedMouseEnabled = false;
     bool _expectedAlternateScrollEnabled = false;
     bool _privateEnableVT200MouseModeResult = false;
-    bool _privateEnableUTF8ExtendedMouseModeResult = false;
-    bool _privateEnableSGRExtendedMouseModeResult = false;
     bool _privateEnableButtonEventMouseModeResult = false;
     bool _privateEnableAnyEventMouseModeResult = false;
     bool _privateEnableAlternateScrollResult = false;
@@ -2308,17 +2286,19 @@ public:
         VERIFY_IS_TRUE(_pDispatch.get()->EnableVT200MouseMode(false));
 
         Log::Comment(L"Test 2: Test UTF-8 Extended Mouse Mode");
-        _testGetSet->_expectedMouseEnabled = true;
-        _testGetSet->_privateEnableUTF8ExtendedMouseModeResult = TRUE;
+        _testGetSet->_expectedInputModeEnabled = true;
+        _testGetSet->_expectedInputMode = TerminalInput::Mode::Utf8MouseEncoding;
+        _testGetSet->_setInputModeResult = true;
         VERIFY_IS_TRUE(_pDispatch.get()->EnableUTF8ExtendedMouseMode(true));
-        _testGetSet->_expectedMouseEnabled = false;
+        _testGetSet->_expectedInputModeEnabled = false;
         VERIFY_IS_TRUE(_pDispatch.get()->EnableUTF8ExtendedMouseMode(false));
 
         Log::Comment(L"Test 3: Test SGR Extended Mouse Mode");
-        _testGetSet->_expectedMouseEnabled = true;
-        _testGetSet->_privateEnableSGRExtendedMouseModeResult = TRUE;
+        _testGetSet->_expectedInputModeEnabled = true;
+        _testGetSet->_expectedInputMode = TerminalInput::Mode::SgrMouseEncoding;
+        _testGetSet->_setInputModeResult = true;
         VERIFY_IS_TRUE(_pDispatch.get()->EnableSGRExtendedMouseMode(true));
-        _testGetSet->_expectedMouseEnabled = false;
+        _testGetSet->_expectedInputModeEnabled = false;
         VERIFY_IS_TRUE(_pDispatch.get()->EnableSGRExtendedMouseMode(false));
 
         Log::Comment(L"Test 4: Test Button-Event Mouse Mode");

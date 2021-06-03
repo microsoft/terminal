@@ -8,34 +8,6 @@
 using namespace Microsoft::Console::VirtualTerminal;
 
 // Routine Description:
-// - Either enables or disables UTF-8 extended mode encoding. This *should* cause
-//      the coordinates of a mouse event to be encoded as a UTF-8 byte stream, however, because windows' input is
-//      typically UTF-16 encoded, it emits a UTF-16 stream.
-//   Does NOT enable or disable mouse mode by itself. This matches the behavior I found in Ubuntu terminals.
-// Parameters:
-// - enable - either enable or disable.
-// Return value:
-// <none>
-void TerminalInput::SetUtf8ExtendedMode(const bool enable) noexcept
-{
-    _mouseInputState.extendedMode = enable ? ExtendedMode::Utf8 : ExtendedMode::None;
-}
-
-// Routine Description:
-// - Either enables or disables SGR extended mode encoding. This causes the
-//      coordinates of a mouse event to be emitted in a human readable format,
-//      eg, x,y=203,504 -> "^[[<B;203;504M". This way, applications don't need to worry about character encoding.
-//   Does NOT enable or disable mouse mode by itself. This matches the behavior I found in Ubuntu terminals.
-// Parameters:
-// - enable - either enable or disable.
-// Return value:
-// <none>
-void TerminalInput::SetSGRExtendedMode(const bool enable) noexcept
-{
-    _mouseInputState.extendedMode = enable ? ExtendedMode::Sgr : ExtendedMode::None;
-}
-
-// Routine Description:
 // - Either enables or disables mouse mode handling. Leaves the extended mode alone,
 //      so if we disable then re-enable mouse mode without toggling an extended mode, the mode will persist.
 // Parameters:

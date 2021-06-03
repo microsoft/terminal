@@ -519,13 +519,13 @@ bool Terminal::EnableVT200MouseMode(const bool enabled) noexcept
 
 bool Terminal::EnableUTF8ExtendedMouseMode(const bool enabled) noexcept
 {
-    _terminalInput->SetUtf8ExtendedMode(enabled);
+    _terminalInput->SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, enabled);
     return true;
 }
 
 bool Terminal::EnableSGRExtendedMouseMode(const bool enabled) noexcept
 {
-    _terminalInput->SetSGRExtendedMode(enabled);
+    _terminalInput->SetInputMode(TerminalInput::Mode::SgrMouseEncoding, enabled);
     return true;
 }
 

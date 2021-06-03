@@ -252,6 +252,10 @@ const wchar_t* const CTRL_ALT_QUESTIONMARK_SEQUENCE = L"\x1b\x7F";
 
 void TerminalInput::SetInputMode(const Mode mode, const bool enabled)
 {
+    if ((mode == Mode::Utf8MouseEncoding || mode == Mode::SgrMouseEncoding) && enabled)
+    {
+        _inputMode.reset_all(Mode::Utf8MouseEncoding, Mode::SgrMouseEncoding);
+    }
     _inputMode.set(mode, enabled);
 }
 

@@ -449,34 +449,6 @@ bool ConhostInternalGetSet::PrivateEnableVT200MouseMode(const bool enabled)
 }
 
 // Routine Description:
-// - Connects the PrivateEnableUTF8ExtendedMouseMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateEnableUTF8ExtendedMouseMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - enabled - set to true to enable utf8 extended mouse mode, false to disable
-// Return Value:
-// - true if successful (see DoSrvPrivateEnableUTF8ExtendedMouseMode). false otherwise.
-bool ConhostInternalGetSet::PrivateEnableUTF8ExtendedMouseMode(const bool enabled)
-{
-    DoSrvPrivateEnableUTF8ExtendedMouseMode(enabled);
-    return true;
-}
-
-// Routine Description:
-// - Connects the PrivateEnableSGRExtendedMouseMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateEnableSGRExtendedMouseMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - enabled - set to true to enable SGR extended mouse mode, false to disable
-// Return Value:
-// - true if successful (see DoSrvPrivateEnableSGRExtendedMouseMode). false otherwise.
-bool ConhostInternalGetSet::PrivateEnableSGRExtendedMouseMode(const bool enabled)
-{
-    DoSrvPrivateEnableSGRExtendedMouseMode(enabled);
-    return true;
-}
-
-// Routine Description:
 // - Connects the PrivateEnableButtonEventMouseMode call directly into our Driver Message servicing call inside Conhost.exe
 //   PrivateEnableButtonEventMouseMode is an internal-only "API" call that the vt commands can execute,
 //     but it is not represented as a function call on out public API surface.
