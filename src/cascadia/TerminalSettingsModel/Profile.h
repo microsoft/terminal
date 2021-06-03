@@ -78,6 +78,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Profile();
         Profile(guid guid);
 
+        void CreateUnfocusedAppearance();
+
         hstring ToString()
         {
             return Name();

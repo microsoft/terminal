@@ -36,7 +36,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::AppearanceViewModel DefaultAppearance();
         Editor::AppearanceViewModel UnfocusedAppearance();
         bool HasUnfocusedAppearance();
-        void CreateUnfocusedAppearance();
+        void CreateUnfocusedAppearance(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes,
+                                       const IHostedInWindow& windowRoot);
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
 
@@ -105,6 +106,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                    const Editor::ProfilePageNavigationState& lastState,
                                    const IHostedInWindow& windowRoot) :
             _Profile{ viewModel },
+            _Schemes{ schemes },
             _WindowRoot{ windowRoot }
         {
             // If there was a previous nav state copy the selected pivot from it.
@@ -132,11 +134,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         void DeleteProfile();
+        void CreateUnfocusedAppearance();
 
         TYPED_EVENT(DeleteProfile, Editor::ProfilePageNavigationState, Editor::DeleteProfileEventArgs);
         WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
         WINRT_PROPERTY(Editor::ProfilesPivots, LastActivePivot, Editor::ProfilesPivots::General);
         WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
+
+    private:
+        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
     };
 
     struct Profiles : ProfilesT<Profiles>

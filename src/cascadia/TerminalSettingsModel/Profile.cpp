@@ -60,6 +60,22 @@ Profile::Profile(guid guid) :
 {
 }
 
+void Profile::CreateUnfocusedAppearance()
+{
+    if (!_UnfocusedAppearance)
+    {
+        auto unfocusedAppearance{ winrt::make_self<implementation::AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
+
+        // If an unfocused appearance is defined in this profile, any undefined parameters are
+        // taken from this profile's default appearance, so add it as a parent
+        com_ptr<AppearanceConfig> parentCom;
+        parentCom.copy_from(winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance));
+        unfocusedAppearance->InsertParent(parentCom);
+
+        _UnfocusedAppearance = *unfocusedAppearance;
+    }
+}
+
 winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
 {
     auto profile{ winrt::make_self<Profile>() };

@@ -250,9 +250,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _profile.HasUnfocusedAppearance();
     }
 
-    void ProfileViewModel::CreateUnfocusedAppearance()
+    void ProfileViewModel::CreateUnfocusedAppearance(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes,
+                                                     const IHostedInWindow& windowRoot)
     {
-        _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(_profile.DefaultAppearance().try_as<AppearanceConfig>());
+        _profile.CreateUnfocusedAppearance();
+
+        _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(_profile.UnfocusedAppearance().try_as<AppearanceConfig>());
+        _unfocusedAppearanceViewModel.Schemes(schemes);
+        _unfocusedAppearanceViewModel.WindowRoot(windowRoot);
+
         _NotifyChanges(L"UnfocusedAppearance");
     }
 
@@ -311,6 +317,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto deleteProfileArgs{ winrt::make_self<DeleteProfileEventArgs>(_Profile.Guid()) };
         _DeleteProfileHandlers(*this, *deleteProfileArgs);
+    }
+
+    void ProfilePageNavigationState::CreateUnfocusedAppearance()
+    {
+        _Profile.CreateUnfocusedAppearance(_Schemes, _WindowRoot);
     }
 
     Profiles::Profiles() :
@@ -447,11 +458,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles::Expander_Expanded(IInspectable const& /*sender*/, winrt::Microsoft::UI::Xaml::Controls::ExpanderExpandingEventArgs const& /*e*/)
     {
-        if (!_State.Profile().HasUnfocusedAppearance())
-        {
-            // tell the PVM to create an unfocused appearance
-            _State.Profile().CreateUnfocusedAppearance();
-        }
+        _State.CreateUnfocusedAppearance();
     }
 
     void Profiles::Expander_Collapsed(IInspectable const& /*sender*/, winrt::Microsoft::UI::Xaml::Controls::ExpanderCollapsedEventArgs const& /*e*/)
