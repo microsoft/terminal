@@ -238,48 +238,28 @@ bool ConhostInternalGetSet::SetConsoleWindowInfo(const bool absolute, const SMAL
 }
 
 // Routine Description:
-// - Connects the PrivateSetCursorKeysMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateSetCursorKeysMode is an internal-only "API" call that the vt commands can execute,
+// - Sets the various terminal input modes.
+//   SetInputMode is an internal-only "API" call that the vt commands can execute,
 //     but it is not represented as a function call on out public API surface.
 // Arguments:
-// - fApplicationMode - set to true to enable Application Mode Input, false for Normal Mode.
+// - mode - the input mode to change.
+// - enabled - set to true to enable the mode, false to disable it.
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateSetCursorKeysMode(const bool fApplicationMode)
+bool ConhostInternalGetSet::SetInputMode(const TerminalInput::Mode mode, const bool enabled)
 {
     auto& terminalInput = _io.GetActiveInputBuffer()->GetTerminalInput();
-    terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, fApplicationMode);
-    return true;
-}
+    terminalInput.SetInputMode(mode, enabled);
 
-// Routine Description:
-// - Connects the PrivateSetKeypadMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateSetKeypadMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - fApplicationMode - set to true to enable Application Mode Input, false for Numeric Mode.
-// Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateSetKeypadMode(const bool fApplicationMode)
-{
-    auto& terminalInput = _io.GetActiveInputBuffer()->GetTerminalInput();
-    terminalInput.SetInputMode(TerminalInput::Mode::Keypad, fApplicationMode);
-    return true;
-}
-
-// Routine Description:
-// - Connects the PrivateEnableWin32InputMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateEnableWin32InputMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - win32InputMode - set to true to enable win32-input-mode, false to disable.
-// Return Value:
-// - true always
-bool ConhostInternalGetSet::PrivateEnableWin32InputMode(const bool win32InputMode)
-{
-    auto& terminalInput = _io.GetActiveInputBuffer()->GetTerminalInput();
-    terminalInput.SetInputMode(TerminalInput::Mode::Win32, win32InputMode);
-    return true;
+    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always pass input mode requests
+    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
+    // output, but not Input.
+    // The original comment said, "Once the conpty supports these types of input,
+    // this check can be removed. See GH#4911". Unfortunately, time has shown
+    // us that SSH 7.7 _also_ requests mouse input and that can have a user interface
+    // impact on the actual connected terminal. We can't remove this check,
+    // because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
+    return !(IsConsolePty() && PrivateIsVtInputEnabled());
 }
 
 // Routine Description:

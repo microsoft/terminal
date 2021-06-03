@@ -72,9 +72,7 @@ public:
     bool SetConsoleWindowInfo(bool const absolute,
                               const SMALL_RECT& window) override;
 
-    bool PrivateSetCursorKeysMode(const bool applicationMode) override;
-    bool PrivateSetKeypadMode(const bool applicationMode) override;
-    bool PrivateEnableWin32InputMode(const bool win32InputMode) override;
+    bool SetInputMode(const Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) override;
 
     bool PrivateSetAnsiMode(const bool ansiMode) override;
     bool PrivateSetScreenMode(const bool reverseMode) override;

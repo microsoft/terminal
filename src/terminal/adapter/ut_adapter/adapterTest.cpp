@@ -112,35 +112,17 @@ public:
         return _setConsoleWindowInfoResult;
     }
 
-    bool PrivateSetCursorKeysMode(const bool applicationMode) override
+    bool SetInputMode(const TerminalInput::Mode mode, const bool enabled) override
     {
-        Log::Comment(L"PrivateSetCursorKeysMode MOCK called...");
+        Log::Comment(L"SetInputMode MOCK called...");
 
-        if (_privateSetCursorKeysModeResult)
+        if (_setInputModeResult)
         {
-            VERIFY_ARE_EQUAL(_cursorKeysApplicationMode, applicationMode);
+            VERIFY_ARE_EQUAL(_expectedInputMode, mode);
+            VERIFY_ARE_EQUAL(_expectedInputModeEnabled, enabled);
         }
 
-        return _privateSetCursorKeysModeResult;
-    }
-
-    bool PrivateSetKeypadMode(const bool applicationMode) override
-    {
-        Log::Comment(L"PrivateSetKeypadMode MOCK called...");
-
-        if (_privateSetKeypadModeResult)
-        {
-            VERIFY_ARE_EQUAL(_keypadApplicationMode, applicationMode);
-        }
-
-        return _privateSetKeypadModeResult;
-    }
-
-    bool PrivateEnableWin32InputMode(const bool /*win32InputMode*/) override
-    {
-        Log::Comment(L"PrivateEnableWin32InputMode MOCK called...");
-
-        return true;
+        return _setInputModeResult;
     }
 
     bool PrivateSetAnsiMode(const bool ansiMode) override
@@ -787,10 +769,9 @@ public:
 
     COORD _expectedScreenBufferSize = { 0, 0 };
     SMALL_RECT _expectedScreenBufferViewport{ 0, 0, 0, 0 };
-    bool _privateSetCursorKeysModeResult = false;
-    bool _privateSetKeypadModeResult = false;
-    bool _cursorKeysApplicationMode = false;
-    bool _keypadApplicationMode = false;
+    bool _setInputModeResult = false;
+    TerminalInput::Mode _expectedInputMode;
+    bool _expectedInputModeEnabled = false;
     bool _privateSetAnsiModeResult = false;
     bool _expectedAnsiMode = false;
     bool _privateAllowCursorBlinkingResult = false;
@@ -2100,15 +2081,17 @@ public:
         // success cases
         // set numeric mode = true
         Log::Comment(L"Test 1: application mode = false");
-        _testGetSet->_privateSetCursorKeysModeResult = TRUE;
-        _testGetSet->_cursorKeysApplicationMode = false;
+        _testGetSet->_setInputModeResult = true;
+        _testGetSet->_expectedInputMode = TerminalInput::Mode::CursorKey;
+        _testGetSet->_expectedInputModeEnabled = false;
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetCursorKeysMode(false));
 
         // set numeric mode = false
         Log::Comment(L"Test 2: application mode = true");
-        _testGetSet->_privateSetCursorKeysModeResult = TRUE;
-        _testGetSet->_cursorKeysApplicationMode = true;
+        _testGetSet->_setInputModeResult = true;
+        _testGetSet->_expectedInputMode = TerminalInput::Mode::CursorKey;
+        _testGetSet->_expectedInputModeEnabled = true;
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetCursorKeysMode(true));
     }
@@ -2120,15 +2103,17 @@ public:
         // success cases
         // set numeric mode = true
         Log::Comment(L"Test 1: application mode = false");
-        _testGetSet->_privateSetKeypadModeResult = TRUE;
-        _testGetSet->_keypadApplicationMode = false;
+        _testGetSet->_setInputModeResult = true;
+        _testGetSet->_expectedInputMode = TerminalInput::Mode::Keypad;
+        _testGetSet->_expectedInputModeEnabled = false;
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetKeypadMode(false));
 
         // set numeric mode = false
         Log::Comment(L"Test 2: application mode = true");
-        _testGetSet->_privateSetKeypadModeResult = TRUE;
-        _testGetSet->_keypadApplicationMode = true;
+        _testGetSet->_setInputModeResult = true;
+        _testGetSet->_expectedInputMode = TerminalInput::Mode::Keypad;
+        _testGetSet->_expectedInputModeEnabled = true;
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetKeypadMode(true));
     }

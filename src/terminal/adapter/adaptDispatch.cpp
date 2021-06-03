@@ -1167,15 +1167,7 @@ bool AdaptDispatch::ResetMode(const DispatchTypes::ModeParams param)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 {
-    bool success = true;
-    success = _pConApi->PrivateSetKeypadMode(fApplicationMode);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::Keypad, fApplicationMode);
 }
 
 // Method Description:
@@ -1187,15 +1179,7 @@ bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableWin32InputMode(const bool win32InputMode)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableWin32InputMode(win32InputMode);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::Win32, win32InputMode);
 }
 
 // - DECCKM - Sets the cursor keys input mode to either Application mode or Normal mode (true, false respectively)
@@ -1205,15 +1189,7 @@ bool AdaptDispatch::EnableWin32InputMode(const bool win32InputMode)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetCursorKeysMode(const bool applicationMode)
 {
-    bool success = true;
-    success = _pConApi->PrivateSetCursorKeysMode(applicationMode);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::CursorKey, applicationMode);
 }
 
 // - att610 - Enables or disables the cursor blinking.
