@@ -1019,6 +1019,7 @@
           "type": "array"
         },
         "language": {
+          "default": "",
           "description": "Sets an override for the app's preferred language, expressed as a BCP-47 language tag like en-US.",
           "type": "string"
         },
