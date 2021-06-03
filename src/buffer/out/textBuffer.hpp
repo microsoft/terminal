@@ -81,6 +81,7 @@ public:
     TextBufferCellIterator GetCellDataAt(const COORD at) const;
     TextBufferCellIterator GetCellLineDataAt(const COORD at) const;
     TextBufferCellIterator GetCellDataAt(const COORD at, const Microsoft::Console::Types::Viewport limit) const;
+    TextBufferCellIterator GetCellDataAt(const COORD at, const Microsoft::Console::Types::Viewport limit, const COORD until) const;
     TextBufferTextIterator GetTextDataAt(const COORD at) const;
     TextBufferTextIterator GetTextLineDataAt(const COORD at) const;
     TextBufferTextIterator GetTextDataAt(const COORD at, const Microsoft::Console::Types::Viewport limit) const;

@@ -184,6 +184,20 @@ TextBufferCellIterator TextBuffer::GetCellDataAt(const COORD at, const Viewport 
     return TextBufferCellIterator(*this, at, limit);
 }
 
+// Routine Description:
+// - Retrieves read-only cell iterator at the given buffer location
+//   but restricted to operate only inside the given viewport.
+// Arguments:
+// - at - X,Y position in buffer for iterator start position
+// - limit - boundaries for the iterator to operate within
+// - until - X,Y position in buffer for last position for the iterator to read (inclusive)
+// Return Value:
+// - Read-only iterator of cell data.
+TextBufferCellIterator TextBuffer::GetCellDataAt(const COORD at, const Viewport limit, const COORD until) const
+{
+    return TextBufferCellIterator(*this, at, limit, until);
+}
+
 //Routine Description:
 // - Corrects and enforces consistent double byte character state (KAttrs line) within a row of the text buffer.
 // - This will take the given double byte information and check that it will be consistent when inserted into the buffer
