@@ -34,11 +34,17 @@ namespace Microsoft::Console::VirtualTerminal
         ~TerminalInput() = default;
 
         bool HandleKey(const IInputEvent* const pInEvent);
-        void ChangeAnsiMode(const bool ansiMode) noexcept;
-        void ChangeKeypadMode(const bool applicationMode) noexcept;
-        void ChangeCursorKeysMode(const bool applicationMode) noexcept;
 
-        void ChangeWin32InputMode(const bool win32InputMode) noexcept;
+        enum class Mode : size_t
+        {
+            Ansi,
+            Keypad,
+            CursorKey,
+            Win32
+        };
+
+        void SetInputMode(const Mode mode, const bool enabled);
+        bool GetInputMode(const Mode mode) const;
         void ForceDisableWin32InputMode(const bool win32InputMode) noexcept;
 
 #pragma region MouseInput
@@ -80,10 +86,7 @@ namespace Microsoft::Console::VirtualTerminal
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate;
 
-        bool _ansiMode{ true };
-        bool _keypadApplicationMode{ false };
-        bool _cursorApplicationMode{ false };
-        bool _win32InputMode{ false };
+        til::enumset<Mode> _inputMode{ Mode::Ansi };
         bool _forceDisableWin32InputMode{ false };
 
         void _SendChar(const wchar_t ch);
@@ -143,7 +146,7 @@ namespace Microsoft::Console::VirtualTerminal
                                                  const short delta);
 
         bool _ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept;
-        bool _SendAlternateScroll(const short delta) const noexcept;
+        bool _SendAlternateScroll(const short delta) const;
 
         static constexpr unsigned int s_GetPressedButton(const MouseButtonState state) noexcept;
 #pragma endregion

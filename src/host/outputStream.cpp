@@ -15,6 +15,7 @@
 
 using namespace Microsoft::Console;
 using Microsoft::Console::Interactivity::ServiceLocator;
+using Microsoft::Console::VirtualTerminal::TerminalInput;
 
 WriteBuffer::WriteBuffer(_In_ Microsoft::Console::IIoProvider& io) :
     _io{ io },
@@ -243,10 +244,12 @@ bool ConhostInternalGetSet::SetConsoleWindowInfo(const bool absolute, const SMAL
 // Arguments:
 // - fApplicationMode - set to true to enable Application Mode Input, false for Normal Mode.
 // Return Value:
-// - true if successful (see DoSrvPrivateSetCursorKeysMode). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::PrivateSetCursorKeysMode(const bool fApplicationMode)
 {
-    return NT_SUCCESS(DoSrvPrivateSetCursorKeysMode(fApplicationMode));
+    auto& terminalInput = _io.GetActiveInputBuffer()->GetTerminalInput();
+    terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, fApplicationMode);
+    return true;
 }
 
 // Routine Description:
@@ -256,10 +259,12 @@ bool ConhostInternalGetSet::PrivateSetCursorKeysMode(const bool fApplicationMode
 // Arguments:
 // - fApplicationMode - set to true to enable Application Mode Input, false for Numeric Mode.
 // Return Value:
-// - true if successful (see DoSrvPrivateSetKeypadMode). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::PrivateSetKeypadMode(const bool fApplicationMode)
 {
-    return NT_SUCCESS(DoSrvPrivateSetKeypadMode(fApplicationMode));
+    auto& terminalInput = _io.GetActiveInputBuffer()->GetTerminalInput();
+    terminalInput.SetInputMode(TerminalInput::Mode::Keypad, fApplicationMode);
+    return true;
 }
 
 // Routine Description:
@@ -272,7 +277,8 @@ bool ConhostInternalGetSet::PrivateSetKeypadMode(const bool fApplicationMode)
 // - true always
 bool ConhostInternalGetSet::PrivateEnableWin32InputMode(const bool win32InputMode)
 {
-    DoSrvPrivateEnableWin32InputMode(win32InputMode);
+    auto& terminalInput = _io.GetActiveInputBuffer()->GetTerminalInput();
+    terminalInput.SetInputMode(TerminalInput::Mode::Win32, win32InputMode);
     return true;
 }
 
@@ -289,7 +295,7 @@ bool ConhostInternalGetSet::PrivateSetAnsiMode(const bool ansiMode)
     auto& stateMachine = _io.GetActiveOutputBuffer().GetStateMachine();
     stateMachine.SetAnsiMode(ansiMode);
     auto& terminalInput = _io.GetActiveInputBuffer()->GetTerminalInput();
-    terminalInput.ChangeAnsiMode(ansiMode);
+    terminalInput.SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
     return true;
 }
 

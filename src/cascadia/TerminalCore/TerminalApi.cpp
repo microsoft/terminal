@@ -484,19 +484,19 @@ til::color Terminal::GetDefaultBackground() const noexcept
 
 bool Terminal::EnableWin32InputMode(const bool win32InputMode) noexcept
 {
-    _terminalInput->ChangeWin32InputMode(win32InputMode);
+    _terminalInput->SetInputMode(TerminalInput::Mode::Win32, win32InputMode);
     return true;
 }
 
 bool Terminal::SetCursorKeysMode(const bool applicationMode) noexcept
 {
-    _terminalInput->ChangeCursorKeysMode(applicationMode);
+    _terminalInput->SetInputMode(TerminalInput::Mode::CursorKey, applicationMode);
     return true;
 }
 
 bool Terminal::SetKeypadMode(const bool applicationMode) noexcept
 {
-    _terminalInput->ChangeKeypadMode(applicationMode);
+    _terminalInput->SetInputMode(TerminalInput::Mode::Keypad, applicationMode);
     return true;
 }
 

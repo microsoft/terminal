@@ -560,15 +560,15 @@ bool TerminalInput::_ShouldSendAlternateScroll(const unsigned int button, const 
 // - delta: The scroll wheel delta of the input event
 // Return value:
 // True iff the input sequence was sent successfully.
-bool TerminalInput::_SendAlternateScroll(const short delta) const noexcept
+bool TerminalInput::_SendAlternateScroll(const short delta) const
 {
     if (delta > 0)
     {
-        _SendInputSequence(_cursorApplicationMode ? ApplicationUpSequence : CursorUpSequence);
+        _SendInputSequence(_inputMode.test(Mode::CursorKey) ? ApplicationUpSequence : CursorUpSequence);
     }
     else
     {
-        _SendInputSequence(_cursorApplicationMode ? ApplicationDownSequence : CursorDownSequence);
+        _SendInputSequence(_inputMode.test(Mode::CursorKey) ? ApplicationDownSequence : CursorDownSequence);
     }
     return true;
 }

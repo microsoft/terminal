@@ -1249,55 +1249,6 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 }
 
 // Routine Description:
-// - A private API call for changing the cursor keys input mode between normal and application mode.
-//     The cursor keys are the arrows, plus Home and End.
-// Parameters:
-// - fApplicationMode - set to true to enable Application Mode Input, false for Numeric Mode Input.
-// Return value:
-// - True if handled successfully. False otherwise.
-[[nodiscard]] NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (gci.pInputBuffer == nullptr)
-    {
-        return STATUS_UNSUCCESSFUL;
-    }
-    gci.pInputBuffer->GetTerminalInput().ChangeCursorKeysMode(fApplicationMode);
-    return STATUS_SUCCESS;
-}
-
-// Routine Description:
-// - A private API call for changing the keypad input mode between numeric and application mode.
-//     This controls what the keys on the numpad translate to.
-// Parameters:
-// - fApplicationMode - set to true to enable Application Mode Input, false for Numeric Mode Input.
-// Return value:
-// - True if handled successfully. False otherwise.
-[[nodiscard]] NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (gci.pInputBuffer == nullptr)
-    {
-        return STATUS_UNSUCCESSFUL;
-    }
-    gci.pInputBuffer->GetTerminalInput().ChangeKeypadMode(fApplicationMode);
-    return STATUS_SUCCESS;
-}
-
-// Function Description:
-// - A private API call which enables/disables sending full input records
-//   encoded as a string of characters to the client application.
-// Parameters:
-// - win32InputMode - set to true to enable win32-input-mode, false to disable.
-// Return value:
-// - <none>
-void DoSrvPrivateEnableWin32InputMode(const bool win32InputMode)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.pInputBuffer->GetTerminalInput().ChangeWin32InputMode(win32InputMode);
-}
-
-// Routine Description:
 // - A private API call for changing the screen mode between normal and reverse.
 //    When in reverse screen mode, the background and foreground colors are switched.
 // Parameters:

@@ -631,7 +631,7 @@ public:
         VERIFY_IS_TRUE(mouseInput->HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, -WHEEL_DELTA, {}));
 
         Log::Comment(L"Enable cursor keys mode");
-        mouseInput->ChangeCursorKeysMode(true);
+        mouseInput->SetInputMode(TerminalInput::Mode::CursorKey, true);
 
         Log::Comment(L"Test mouse wheel scrolling up");
         s_pwszInputExpected = L"\x1BOA";
