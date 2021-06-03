@@ -76,6 +76,14 @@ void Profile::CreateUnfocusedAppearance()
     }
 }
 
+void Profile::DeleteUnfocusedAppearance()
+{
+    if (_UnfocusedAppearance)
+    {
+        _UnfocusedAppearance = std::nullopt;
+    }
+}
+
 winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
 {
     auto profile{ winrt::make_self<Profile>() };

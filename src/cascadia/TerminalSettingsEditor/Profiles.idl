@@ -27,7 +27,9 @@ namespace Microsoft.Terminal.Settings.Editor
         Guid OriginalProfileGuid { get; };
         Boolean HasUnfocusedAppearance { get; };
         AppearanceViewModel UnfocusedAppearance { get; };
+
         void CreateUnfocusedAppearance(Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes, IHostedInWindow WindowRoot);
+        void DeleteUnfocusedAppearance();
 
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Name);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, Guid);
@@ -76,7 +78,9 @@ namespace Microsoft.Terminal.Settings.Editor
 
         ProfileViewModel Profile;
         ProfilesPivots LastActivePivot;
+
         void CreateUnfocusedAppearance();
+        void DeleteUnfocusedAppearance();
 
         event Windows.Foundation.TypedEventHandler<ProfilePageNavigationState, DeleteProfileEventArgs> DeleteProfile;
     };

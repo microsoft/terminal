@@ -36,8 +36,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::AppearanceViewModel DefaultAppearance();
         Editor::AppearanceViewModel UnfocusedAppearance();
         bool HasUnfocusedAppearance();
+
         void CreateUnfocusedAppearance(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes,
                                        const IHostedInWindow& windowRoot);
+        void DeleteUnfocusedAppearance();
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
 
@@ -135,6 +137,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void DeleteProfile();
         void CreateUnfocusedAppearance();
+        void DeleteUnfocusedAppearance();
 
         TYPED_EVENT(DeleteProfile, Editor::ProfilePageNavigationState, Editor::DeleteProfileEventArgs);
         WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);

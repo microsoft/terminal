@@ -42,6 +42,7 @@ namespace Microsoft.Terminal.Settings.Model
         Profile(Guid guid);
 
         void CreateUnfocusedAppearance();
+        void DeleteUnfocusedAppearance();
 
         OriginTag Origin { get; };
 
