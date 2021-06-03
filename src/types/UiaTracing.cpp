@@ -126,6 +126,140 @@ inline std::wstring UiaTracing::_getValue(const TextUnit unit) noexcept
     }
 }
 
+std::wstring UiaTracing::convertAttributeId(const TEXTATTRIBUTEID attrId) noexcept
+{
+    // Source: https://docs.microsoft.com/en-us/windows/win32/winauto/uiauto-textattribute-ids
+    switch (attrId)
+    {
+    case UIA_AfterParagraphSpacingAttributeId:
+        return L"AfterParagraphSpacing";
+    case UIA_AnimationStyleAttributeId:
+        return L"AnimationStyle";
+    case UIA_AnnotationObjectsAttributeId:
+        return L"AnnotationObjects";
+    case UIA_AnnotationTypesAttributeId:
+        return L"AnnotationTypes";
+    case UIA_BackgroundColorAttributeId:
+        return L"BackgroundColor";
+    case UIA_BeforeParagraphSpacingAttributeId:
+        return L"BeforeParagraphSpacing";
+    case UIA_BulletStyleAttributeId:
+        return L"BulletStyle";
+    case UIA_CapStyleAttributeId:
+        return L"CapStyle";
+    case UIA_CaretBidiModeAttributeId:
+        return L"CaretBidiMode";
+    case UIA_CaretPositionAttributeId:
+        return L"CaretPosition";
+    case UIA_CultureAttributeId:
+        return L"Culture";
+    case UIA_FontNameAttributeId:
+        return L"FontName";
+    case UIA_FontSizeAttributeId:
+        return L"FontSize";
+    case UIA_FontWeightAttributeId:
+        return L"FontWeight";
+    case UIA_ForegroundColorAttributeId:
+        return L"ForegroundColor";
+    case UIA_HorizontalTextAlignmentAttributeId:
+        return L"HorizontalTextAlignment";
+    case UIA_IndentationFirstLineAttributeId:
+        return L"IndentationFirstLine";
+    case UIA_IndentationLeadingAttributeId:
+        return L"IndentationLeading";
+    case UIA_IndentationTrailingAttributeId:
+        return L"IndentationTrailing";
+    case UIA_IsActiveAttributeId:
+        return L"IsActive";
+    case UIA_IsHiddenAttributeId:
+        return L"IsHidden";
+    case UIA_IsItalicAttributeId:
+        return L"IsItalic";
+    case UIA_IsReadOnlyAttributeId:
+        return L"IsReadOnly";
+    case UIA_IsSubscriptAttributeId:
+        return L"IsSubscript";
+    case UIA_IsSuperscriptAttributeId:
+        return L"IsSuperscript";
+    case UIA_LineSpacingAttributeId:
+        return L"LineSpacing";
+    case UIA_LinkAttributeId:
+        return L"Link";
+    case UIA_MarginBottomAttributeId:
+        return L"MarginBottom";
+    case UIA_MarginLeadingAttributeId:
+        return L"MarginLeading";
+    case UIA_MarginTopAttributeId:
+        return L"MarginTop";
+    case UIA_MarginTrailingAttributeId:
+        return L"MarginTrailing";
+    case UIA_OutlineStylesAttributeId:
+        return L"OutlineStyles";
+    case UIA_OverlineColorAttributeId:
+        return L"OverlineColor";
+    case UIA_OverlineStyleAttributeId:
+        return L"OverlineStyle";
+    case UIA_SelectionActiveEndAttributeId:
+        return L"SelectionActiveEnd";
+    case UIA_StrikethroughColorAttributeId:
+        return L"StrikethroughColor";
+    case UIA_StrikethroughStyleAttributeId:
+        return L"StrikethroughStyle";
+    case UIA_StyleIdAttributeId:
+        return L"StyleId";
+    case UIA_StyleNameAttributeId:
+        return L"StyleName";
+    case UIA_TabsAttributeId:
+        return L"Tabs";
+    case UIA_TextFlowDirectionsAttributeId:
+        return L"TextFlowDirections";
+    case UIA_UnderlineColorAttributeId:
+        return L"UnderlineColor";
+    case UIA_UnderlineStyleAttributeId:
+        return L"UnderlineStyle";
+    default:
+        return L"Unknown attribute";
+    }
+}
+
+inline std::wstring UiaTracing::_getValue(const VARIANT val) noexcept
+{
+    // This is not a comprehensive conversion of VARIANT result to string
+    // We're only including the one's we need at this time.
+    switch (val.vt)
+    {
+    case VT_BSTR:
+        return val.bstrVal;
+    case VT_R8:
+        return std::to_wstring(val.dblVal);
+    case VT_BOOL:
+        return std::to_wstring(val.boolVal);
+    case VT_I4:
+        return std::to_wstring(val.iVal);
+    case VT_UNKNOWN:
+    default:
+    {
+        return L"unknown";
+    }
+    }
+}
+
+inline std::wstring UiaTracing::_getValue(const AttributeType attrType) noexcept
+{
+    switch (attrType)
+    {
+    case AttributeType::Mixed:
+        return L"Mixed";
+    case AttributeType::Unsupported:
+        return L"Unsupported";
+    case AttributeType::Error:
+        return L"Error";
+    case AttributeType::Standard:
+    default:
+        return L"Standard";
+    }
+}
+
 void UiaTracing::TextRange::Constructor(UiaTextRangeBase& result) noexcept
 {
     EnsureRegistration();
@@ -206,15 +340,20 @@ void UiaTracing::TextRange::ExpandToEnclosingUnit(TextUnit unit, const UiaTextRa
     }
 }
 
-void UiaTracing::TextRange::FindAttribute(const UiaTextRangeBase& utr) noexcept
+void UiaTracing::TextRange::FindAttribute(const UiaTextRangeBase& utr, TEXTATTRIBUTEID id, VARIANT val, BOOL searchBackwards, const UiaTextRangeBase& result, AttributeType attrType) noexcept
 {
     EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
     {
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
-            "UiaTextRange::FindAttribute (UNSUPPORTED)",
+            "UiaTextRange::FindAttribute",
             TraceLoggingValue(_getValue(utr).c_str(), "base"),
+            TraceLoggingValue(convertAttributeId(id).c_str(), "text attribute ID"),
+            TraceLoggingValue(_getValue(val).c_str(), "text attribute sub-data"),
+            TraceLoggingValue(searchBackwards ? L"true" : L"false", "search backwards"),
+            TraceLoggingValue(_getValue(attrType).c_str(), "attribute type"),
+            TraceLoggingValue(_getValue(result).c_str(), "result"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
@@ -238,7 +377,7 @@ void UiaTracing::TextRange::FindText(const UiaTextRangeBase& base, std::wstring 
     }
 }
 
-void UiaTracing::TextRange::GetAttributeValue(const UiaTextRangeBase& base, TEXTATTRIBUTEID id, VARIANT result) noexcept
+void UiaTracing::TextRange::GetAttributeValue(const UiaTextRangeBase& base, TEXTATTRIBUTEID id, VARIANT result, AttributeType attrType) noexcept
 {
     EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
@@ -247,8 +386,9 @@ void UiaTracing::TextRange::GetAttributeValue(const UiaTextRangeBase& base, TEXT
             g_UiaProviderTraceProvider,
             "UiaTextRange::GetAttributeValue",
             TraceLoggingValue(_getValue(base).c_str(), "base"),
-            TraceLoggingValue(id, "textAttributeId"),
-            TraceLoggingValue(result.vt, "result (type)"),
+            TraceLoggingValue(convertAttributeId(id).c_str(), "text attribute ID"),
+            TraceLoggingValue(_getValue(result).c_str(), "result"),
+            TraceLoggingValue(_getValue(attrType).c_str(), "attribute type"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }

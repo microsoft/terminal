@@ -51,6 +51,25 @@ TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, COORD p
 }
 
 // Routine Description:
+// - Creates a new read-only iterator to seek through cell data stored within a screen buffer
+// Arguments:
+// - buffer - Text buffer to seek through
+// - pos - Starting position to retrieve text data from (within screen buffer bounds)
+// - limits - Viewport limits to restrict the iterator within the buffer bounds (smaller than the buffer itself)
+// - endPosInclusive - last position to iterate through (inclusive)
+TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, COORD pos, const Viewport limits, const COORD endPosInclusive) :
+    TextBufferCellIterator(buffer, pos, limits)
+{
+    // Throw if the coordinate is not limited to the inside of the given buffer.
+    THROW_HR_IF(E_INVALIDARG, !_bounds.IsInBounds(endPosInclusive));
+
+    // Throw if pos is past endPos
+    THROW_HR_IF(E_INVALIDARG, _bounds.CompareInBounds(pos, endPosInclusive) > 0);
+
+    _endPosInclusive = endPosInclusive;
+}
+
+// Routine Description:
 // - Tells if the iterator is still valid (hasn't exceeded boundaries of underlying text buffer)
 // Return Value:
 // - True if this iterator can still be dereferenced for data. False if we've passed the end and are out of data.
@@ -72,7 +91,8 @@ bool TextBufferCellIterator::operator==(const TextBufferCellIterator& it) const 
            _exceeded == it._exceeded &&
            _bounds == it._bounds &&
            _pRow == it._pRow &&
-           _attrIter == it._attrIter;
+           _attrIter == it._attrIter &&
+           _endPosInclusive == _endPosInclusive;
 }
 
 // Routine Description:
@@ -98,12 +118,26 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
     auto newPos = _pos;
     while (move > 0 && !_exceeded)
     {
-        _exceeded = !_bounds.IncrementInBounds(newPos);
+        // If we have an endPos, check if we've exceeded it
+        if (_endPosInclusive.has_value())
+        {
+            _exceeded = _bounds.CompareInBounds(newPos, *_endPosInclusive) > 0;
+        }
+
+        // If we already exceeded from endPos, we'll short-circuit and _not_ increment
+        _exceeded |= !_bounds.IncrementInBounds(newPos);
         move--;
     }
     while (move < 0 && !_exceeded)
     {
-        _exceeded = !_bounds.DecrementInBounds(newPos);
+        // If we have an endPos, check if we've exceeded it
+        if (_endPosInclusive.has_value())
+        {
+            _exceeded = _bounds.CompareInBounds(newPos, *_endPosInclusive) < 0;
+        }
+
+        // If we already exceeded from endPos, we'll short-circuit and _not_ decrement
+        _exceeded |= !_bounds.DecrementInBounds(newPos);
         move++;
     }
     _SetPos(newPos);
@@ -264,4 +298,9 @@ const OutputCellView& TextBufferCellIterator::operator*() const noexcept
 const OutputCellView* TextBufferCellIterator::operator->() const noexcept
 {
     return &_view;
+}
+
+COORD TextBufferCellIterator::Pos() const noexcept
+{
+    return _pos;
 }

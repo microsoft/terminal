@@ -29,6 +29,16 @@ namespace Microsoft::Console::Types
     class UiaTracing final
     {
     public:
+        static std::wstring convertAttributeId(const TEXTATTRIBUTEID attrId) noexcept;
+
+        enum class AttributeType
+        {
+            Standard,
+            Mixed,
+            Unsupported,
+            Error
+        };
+
         class TextRange final
         {
         public:
@@ -37,9 +47,9 @@ namespace Microsoft::Console::Types
             static void Compare(const UiaTextRangeBase& base, const UiaTextRangeBase& other, bool result) noexcept;
             static void CompareEndpoints(const UiaTextRangeBase& base, const TextPatternRangeEndpoint endpoint, const UiaTextRangeBase& other, TextPatternRangeEndpoint otherEndpoint, int result) noexcept;
             static void ExpandToEnclosingUnit(TextUnit unit, const UiaTextRangeBase& result) noexcept;
-            static void FindAttribute(const UiaTextRangeBase& base) noexcept;
+            static void FindAttribute(const UiaTextRangeBase& base, TEXTATTRIBUTEID attributeId, VARIANT val, BOOL searchBackwards, const UiaTextRangeBase& result, AttributeType attrType = AttributeType::Standard) noexcept;
             static void FindText(const UiaTextRangeBase& base, std::wstring text, bool searchBackward, bool ignoreCase, const UiaTextRangeBase& result) noexcept;
-            static void GetAttributeValue(const UiaTextRangeBase& base, TEXTATTRIBUTEID id, VARIANT result) noexcept;
+            static void GetAttributeValue(const UiaTextRangeBase& base, TEXTATTRIBUTEID id, VARIANT result, AttributeType attrType = AttributeType::Standard) noexcept;
             static void GetBoundingRectangles(const UiaTextRangeBase& base) noexcept;
             static void GetEnclosingElement(const UiaTextRangeBase& base) noexcept;
             static void GetText(const UiaTextRangeBase& base, int maxLength, std::wstring result) noexcept;
@@ -100,6 +110,9 @@ namespace Microsoft::Console::Types
         static inline std::wstring _getValue(const UiaTextRangeBase& utr) noexcept;
         static inline std::wstring _getValue(const TextPatternRangeEndpoint endpoint) noexcept;
         static inline std::wstring _getValue(const TextUnit unit) noexcept;
+
+        static inline std::wstring _getValue(const AttributeType attrType) noexcept;
+        static inline std::wstring _getValue(const VARIANT val) noexcept;
 
         // these are used to assign IDs to new UiaTextRanges and ScreenInfoUiaProviders respectively
         static IdType _utrId;

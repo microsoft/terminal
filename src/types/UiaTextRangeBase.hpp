@@ -177,6 +177,11 @@ namespace Microsoft::Console::Types
                                     gsl::not_null<int*> const pAmountMoved,
                                     _In_ const bool preventBufferEnd = false) noexcept;
 
+        std::function<bool(const TextAttribute&)> _getAttrVerificationFn(TEXTATTRIBUTEID attributeId, VARIANT val) const;
+        std::function<bool(const TextAttribute&)> _getAttrVerificationFnForFirstAttr(TEXTATTRIBUTEID attributeId, VARIANT* pRetVal) const;
+
+        COORD _getInclusiveEnd();
+
 #ifdef UNIT_TESTING
         friend class ::UiaTextRangeTests;
 #endif

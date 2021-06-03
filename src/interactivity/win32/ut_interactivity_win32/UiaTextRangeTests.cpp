@@ -9,6 +9,7 @@
 #include "uiaTextRange.hpp"
 #include "../types/ScreenInfoUiaProviderBase.h"
 #include "../../../buffer/out/textBuffer.hpp"
+#include "../types/UiaTracing.h"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -130,6 +131,20 @@ class UiaTextRangeTests
     {
         std::wstring comment;
         short yPos;
+    };
+
+    enum SupportedTextAttributes
+    {
+        FontName = UIA_FontNameAttributeId, // special handling
+        FontSize = UIA_FontSizeAttributeId, // special handling
+        FontWeight = UIA_FontWeightAttributeId,
+        ForegroundColor = UIA_ForegroundColorAttributeId,
+        Italic = UIA_IsItalicAttributeId,
+        IsReadOnly = UIA_IsReadOnlyAttributeId, // special handling (always false)
+        StrikethroughColor = UIA_StrikethroughColorAttributeId,
+        StrikethroughStyle = UIA_StrikethroughStyleAttributeId,
+        UnderlineColor = UIA_UnderlineColorAttributeId,
+        UnderlineStyle = UIA_UnderlineStyleAttributeId
     };
 
     static constexpr wchar_t* toString(TextUnit unit) noexcept
@@ -1344,6 +1359,314 @@ class UiaTextRangeTests
             const til::point pos{ bufferSize.Left(), test.yPos };
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, pos, pos));
             VERIFY_SUCCEEDED(utr->ScrollIntoView(alignToTop));
+        }
+    }
+
+    TEST_METHOD(GetAttributeValue)
+    {
+        Log::Comment(L"Check supported attributes");
+        IUnknown* notSupportedVal;
+        UiaGetReservedNotSupportedValue(&notSupportedVal);
+        for (long uiaAttributeId = 40000; uiaAttributeId <= 40042; ++uiaAttributeId)
+        {
+            Microsoft::WRL::ComPtr<UiaTextRange> utr;
+            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider));
+
+            Log::Comment(UiaTracing::convertAttributeId(uiaAttributeId).c_str());
+            VARIANT result;
+            VERIFY_SUCCEEDED(utr->GetAttributeValue(uiaAttributeId, &result));
+
+            switch (uiaAttributeId)
+            {
+            case FontName:
+            {
+                VERIFY_ARE_EQUAL(VT_BSTR, result.vt);
+                break;
+            }
+            case FontSize:
+            {
+                VERIFY_ARE_EQUAL(VT_R8, result.vt);
+                break;
+            }
+            case FontWeight:
+            case ForegroundColor:
+            case StrikethroughColor:
+            case StrikethroughStyle:
+            case UnderlineColor:
+            case UnderlineStyle:
+            {
+                VERIFY_ARE_EQUAL(VT_I4, result.vt);
+                break;
+            }
+            case Italic:
+            case IsReadOnly:
+            {
+                VERIFY_ARE_EQUAL(VT_BOOL, result.vt);
+                break;
+            }
+            default:
+            {
+                // Expected: not supported
+                VERIFY_ARE_EQUAL(VT_UNKNOWN, result.vt);
+                VERIFY_ARE_EQUAL(notSupportedVal, result.punkVal);
+                break;
+            }
+            }
+        }
+
+        // This is the text attribute we'll use to update the text buffer.
+        // We'll modify it, then test if the UiaTextRange can extract/interpret the data properly.
+        // updateBuffer() will write that text attribute to the first cell in the buffer.
+        TextAttribute attr;
+        auto updateBuffer = [&](TextAttribute outputAttr) {
+            _pTextBuffer->Write({ outputAttr }, { 0, 0 });
+        };
+
+        Microsoft::WRL::ComPtr<UiaTextRange> utr;
+        THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider));
+        {
+            Log::Comment(L"Test Font Weight");
+            attr.SetBold(true);
+            updateBuffer(attr);
+            VARIANT result;
+            VERIFY_SUCCEEDED(utr->GetAttributeValue(FontWeight, &result));
+            VERIFY_ARE_EQUAL(FW_BOLD, result.iVal);
+
+            attr.SetBold(false);
+            updateBuffer(attr);
+            VERIFY_SUCCEEDED(utr->GetAttributeValue(FontWeight, &result));
+            VERIFY_ARE_EQUAL(FW_NORMAL, result.iVal);
+
+            attr.SetFaint(true);
+            updateBuffer(attr);
+            VERIFY_SUCCEEDED(utr->GetAttributeValue(FontWeight, &result));
+            VERIFY_ARE_EQUAL(FW_LIGHT, result.iVal);
+
+            attr.SetFaint(false);
+            updateBuffer(attr);
+            VERIFY_SUCCEEDED(utr->GetAttributeValue(FontWeight, &result));
+            VERIFY_ARE_EQUAL(FW_NORMAL, result.iVal);
+        }
+        {
+            Log::Comment(L"Test Foreground");
+            const auto foregroundColor{ RGB(255, 0, 0) };
+            attr.SetForeground(foregroundColor);
+            updateBuffer(attr);
+            VARIANT result;
+            VERIFY_SUCCEEDED(utr->GetAttributeValue(ForegroundColor, &result));
+            VERIFY_ARE_EQUAL(foregroundColor, static_cast<COLORREF>(result.iVal));
+        }
+        {
+            Log::Comment(L"Test Italic");
+            attr.SetItalic(true);
+            updateBuffer(attr);
+            VARIANT result;
+            VERIFY_SUCCEEDED(utr->GetAttributeValue(Italic, &result));
+            VERIFY_IS_TRUE(result.boolVal);
+
+            attr.SetItalic(false);
+            updateBuffer(attr);
+            VERIFY_SUCCEEDED(utr->GetAttributeValue(Italic, &result));
+            VERIFY_IS_FALSE(result.boolVal);
+        }
+        {
+            Log::Comment(L"Test Strikethrough");
+            const auto foregroundColor{ attr.GetForeground().GetRGB() };
+            attr.SetCrossedOut(true);
+            updateBuffer(attr);
+            VARIANT result;
+            VERIFY_SUCCEEDED(utr->GetAttributeValue(StrikethroughColor, &result));
+            VERIFY_ARE_EQUAL(foregroundColor, static_cast<COLORREF>(result.iVal));
+            VERIFY_SUCCEEDED(utr->GetAttributeValue(StrikethroughStyle, &result));
+            VERIFY_ARE_EQUAL(TextDecorationLineStyle_Single, result.iVal);
+
+            attr.SetCrossedOut(false);
+            updateBuffer(attr);
+            VERIFY_SUCCEEDED(utr->GetAttributeValue(StrikethroughColor, &result));
+            VERIFY_ARE_EQUAL(0, result.iVal);
+            VERIFY_SUCCEEDED(utr->GetAttributeValue(StrikethroughStyle, &result));
+            VERIFY_ARE_EQUAL(TextDecorationLineStyle_None, result.iVal);
+        }
+        {
+            Log::Comment(L"Test Underline");
+            const auto foregroundColor{ attr.GetForeground().GetRGB() };
+            attr.SetUnderlined(true);
+            updateBuffer(attr);
+            VARIANT result;
+            VERIFY_SUCCEEDED(utr->GetAttributeValue(UnderlineColor, &result));
+            VERIFY_ARE_EQUAL(foregroundColor, static_cast<COLORREF>(result.iVal));
+            VERIFY_SUCCEEDED(utr->GetAttributeValue(UnderlineStyle, &result));
+            VERIFY_ARE_EQUAL(TextDecorationLineStyle_Single, result.iVal);
+
+            attr.SetUnderlined(false);
+            updateBuffer(attr);
+            VERIFY_SUCCEEDED(utr->GetAttributeValue(UnderlineColor, &result));
+            VERIFY_ARE_EQUAL(0, result.iVal);
+            VERIFY_SUCCEEDED(utr->GetAttributeValue(UnderlineStyle, &result));
+            VERIFY_ARE_EQUAL(TextDecorationLineStyle_None, result.iVal);
+        }
+        {
+            Log::Comment(L"Test Font Name (special)");
+            VARIANT result;
+            VERIFY_SUCCEEDED(utr->GetAttributeValue(FontName, &result));
+            const std::wstring actualFontName{ result.bstrVal };
+            const auto expectedFontName{ _pUiaData->GetFontInfo().GetFaceName() };
+            VERIFY_ARE_EQUAL(expectedFontName, actualFontName);
+        }
+        {
+            Log::Comment(L"Test Font Size (special)");
+            VARIANT result;
+            VERIFY_SUCCEEDED(utr->GetAttributeValue(FontSize, &result));
+            const auto actualFontSize{ result.dblVal };
+            const auto expectedFontSize{ 0 }; //_pUiaData->GetFontInfo().GetUnscaledSize() };
+            VERIFY_ARE_EQUAL(expectedFontSize, actualFontSize);
+
+            // TODO CARLOS: Fix this test when we actually know how to convert the font size into points
+            VERIFY_IS_TRUE(false);
+        }
+        {
+            Log::Comment(L"Test Read Only (special)");
+            VARIANT result;
+            VERIFY_SUCCEEDED(utr->GetAttributeValue(IsReadOnly, &result));
+            VERIFY_IS_FALSE(result.boolVal);
+        }
+    }
+
+    TEST_METHOD(FindAttribute)
+    {
+        Microsoft::WRL::ComPtr<UiaTextRange> utr;
+        const COORD startPos{ 0, 0 };
+        const COORD endPos{ 0, 2 };
+        THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, startPos, endPos));
+        {
+            Log::Comment(L"Test Font Name (special)");
+
+            // Populate query with font name currently in use.
+            const auto fontName{ _pUiaData->GetFontInfo().GetFaceName() };
+            VARIANT var{};
+            var.vt = VT_BSTR;
+            var.bstrVal = SysAllocString(fontName.data());
+
+            Microsoft::WRL::ComPtr<ITextRangeProvider> result;
+            VERIFY_SUCCEEDED(utr->FindAttribute(FontName, var, false, result.GetAddressOf()));
+
+            // Expecting the same text range endpoints
+            BOOL isEqual;
+            THROW_IF_FAILED(utr->Compare(result.Get(), &isEqual));
+            VERIFY_IS_TRUE(isEqual);
+
+            // Now perform the same test, but searching backwards
+            Log::Comment(L"Test Font Name (special) - Backwards");
+            Microsoft::WRL::ComPtr<ITextRangeProvider> resultBackwards;
+            VERIFY_SUCCEEDED(utr->FindAttribute(FontName, var, true, resultBackwards.GetAddressOf()));
+
+            // Expecting the same text range endpoints
+            THROW_IF_FAILED(result->Compare(resultBackwards.Get(), &isEqual));
+            VERIFY_IS_TRUE(isEqual);
+        }
+        {
+            Log::Comment(L"Test Font Size (special)");
+
+            // Populate query with font size currently in use.
+            const auto fontSize{ 0.0 }; //{ _pUiaData->GetFontInfo().GetUnscaledSize() };
+            VARIANT var{};
+            var.vt = VT_R8;
+            var.dblVal = 0;
+
+            Microsoft::WRL::ComPtr<ITextRangeProvider> result;
+            VERIFY_SUCCEEDED(utr->FindAttribute(FontSize, var, false, result.GetAddressOf()));
+
+            // Expecting the same text range endpoints
+            BOOL isEqual;
+            THROW_IF_FAILED(utr->Compare(result.Get(), &isEqual));
+            VERIFY_IS_TRUE(isEqual);
+
+            // Now perform the same test, but searching backwards
+            Log::Comment(L"Test Font Size (special) - Backwards");
+            Microsoft::WRL::ComPtr<ITextRangeProvider> resultBackwards;
+            VERIFY_SUCCEEDED(utr->FindAttribute(FontSize, var, true, resultBackwards.GetAddressOf()));
+
+            // Expecting the same text range endpoints
+            THROW_IF_FAILED(result->Compare(resultBackwards.Get(), &isEqual));
+            VERIFY_IS_TRUE(isEqual);
+
+            // TODO CARLOS: Fix this test when we actually know how to convert the font size into points
+            VERIFY_IS_TRUE(false);
+        }
+        {
+            Log::Comment(L"Test Read Only (special)");
+
+            VARIANT var{};
+            var.vt = VT_BOOL;
+            var.boolVal = false;
+
+            Microsoft::WRL::ComPtr<ITextRangeProvider> result;
+            VERIFY_SUCCEEDED(utr->FindAttribute(IsReadOnly, var, false, result.GetAddressOf()));
+
+            // Expecting the same text range endpoints
+            BOOL isEqual;
+            THROW_IF_FAILED(utr->Compare(result.Get(), &isEqual));
+            VERIFY_IS_TRUE(isEqual);
+
+            // Now perform the same test, but searching backwards
+            Log::Comment(L"Test Read Only (special) - Backwards");
+            Microsoft::WRL::ComPtr<ITextRangeProvider> resultBackwards;
+            VERIFY_SUCCEEDED(utr->FindAttribute(IsReadOnly, var, true, resultBackwards.GetAddressOf()));
+
+            // Expecting the same text range endpoints
+            THROW_IF_FAILED(result->Compare(resultBackwards.Get(), &isEqual));
+            VERIFY_IS_TRUE(isEqual);
+        }
+        {
+            Log::Comment(L"Test IsItalic (standard attribute)");
+
+            // Since all of the other attributes operate very similarly,
+            //  we're just going to pick one of them and test that.
+            // The "GetAttribute" tests provide code coverage for
+            //  retrieving an attribute verification function.
+            // This test is intended to provide code coverage for
+            //  finding a text range with the desired attribute.
+
+            // Set up the buffer's attributes.
+            TextAttribute italicAttr;
+            italicAttr.SetItalic(true);
+            auto iter{ _pUiaData->GetTextBuffer().GetCellDataAt(startPos) };
+            for (auto i = 0; i < 5; ++i)
+            {
+                _pTextBuffer->Write({ italicAttr }, iter.Pos());
+                ++iter;
+            }
+
+            // set the expected end (exclusive)
+            auto expectedEndPos{ iter.Pos() };
+            _pUiaData->GetTextBuffer().GetSize().IncrementInBounds(expectedEndPos);
+
+            VARIANT var{};
+            var.vt = VT_BOOL;
+            var.boolVal = true;
+
+            Microsoft::WRL::ComPtr<ITextRangeProvider> result;
+            VERIFY_SUCCEEDED(utr->FindAttribute(Italic, var, false, result.GetAddressOf()));
+
+            // TODO CARLOS: The "end" verification is failing. Here's a trace of what's going on:
+            // - UiaTextRangeBase:
+            //   - checkIfAttrFound is properly set and used
+            //   - the search loop properly sets the "start"
+            //   - the search loop iterates through the entire utr because checkIfAttrFound
+            //      continues to return true for the whole range
+            // I have no clue why this is happening. A fresh pair of eyes would be appreciated here :)
+            VERIFY_ARE_EQUAL(startPos, utr->_start);
+            VERIFY_ARE_EQUAL(expectedEndPos, utr->_end);
+
+            // Now perform the same test, but searching backwards
+            Log::Comment(L"Test IsItalic (standard attribute) - Backwards");
+            Microsoft::WRL::ComPtr<ITextRangeProvider> resultBackwards;
+            VERIFY_SUCCEEDED(utr->FindAttribute(Italic, var, true, resultBackwards.GetAddressOf()));
+
+            // Expecting the same text range endpoints
+            BOOL isEqual;
+            THROW_IF_FAILED(result->Compare(resultBackwards.Get(), &isEqual));
+            VERIFY_IS_TRUE(isEqual);
         }
     }
 };
