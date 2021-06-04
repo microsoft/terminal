@@ -24,12 +24,12 @@ namespace winrt::TerminalApp::implementation
 
     private:
         bool _contentLoaded{ false };
-        std::shared_ptr<XamlMetaDataProvider> _appProvider;
-        std::shared_ptr<XamlMetaDataProvider> AppProvider()
+        std::shared_ptr<winrt::TerminalApp::XamlMetaDataProvider> _appProvider;
+        std::shared_ptr<winrt::TerminalApp::XamlMetaDataProvider> AppProvider()
         {
             if (!_appProvider)
             {
-                _appProvider = std::make_shared<XamlMetaDataProvider>();
+                _appProvider = std::make_shared<winrt::TerminalApp::XamlMetaDataProvider>();
             }
             return _appProvider;
         }
