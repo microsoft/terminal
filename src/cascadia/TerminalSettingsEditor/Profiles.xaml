@@ -33,6 +33,14 @@
                 <TextBlock FontFamily="{x:Bind Name}"
                            Text="{x:Bind LocalizedName}" />
             </DataTemplate>
+
+            <DataTemplate x:Key="UnfocusedAppearanceExpanderDataTemplate">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding}"
+                               FontSize="24"/>
+                </StackPanel>
+            </DataTemplate>
+
             <local:ColorToBrushConverter x:Key="ColorToBrushConverter" />
             <local:PercentageConverter x:Key="PercentageConverter" />
             <local:PercentageSignConverter x:Key="PercentageSignConverter" />
@@ -323,17 +331,21 @@
                                                    SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}" />
                             </local:SettingContainer>
                         </StackPanel>
-                        <muxc:Expander Width="400"
-                                       Header="Unfocused Appearance"
-                                       ExpandDirection="Down"
-                                       HorizontalAlignment="Left"
-                                       HorizontalContentAlignment="Left"
-                                       IsExpanded="{x:Bind State.Profile.HasUnfocusedAppearance, Mode=OneWay}"
-                                       Expanding="Expander_Expanded"
-                                       Collapsed="Expander_Collapsed">
-                            <local:Appearances Appearance="{x:Bind State.Profile.UnfocusedAppearance, Mode=OneWay}"
-                                               SourceProfile="{x:Bind State.Profile, Mode=OneWay}"/>
-                        </muxc:Expander>
+                        <StackPanel BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
+                                    BorderThickness="4">
+                            <muxc:Expander Margin="4"
+                                           ExpandDirection="Down"
+                                           HorizontalAlignment="Stretch"
+                                           HorizontalContentAlignment="Left"
+                                           IsExpanded="{x:Bind State.Profile.HasUnfocusedAppearance, Mode=OneWay}"
+                                           Expanding="Expander_Expanded"
+                                           Collapsed="Expander_Collapsed"
+                                           Header="Unfocused Appearance"
+                                           HeaderTemplate="{StaticResource UnfocusedAppearanceExpanderDataTemplate}">
+                                <local:Appearances Appearance="{x:Bind State.Profile.UnfocusedAppearance, Mode=OneWay}"
+                                                   SourceProfile="{x:Bind State.Profile, Mode=OneWay}"/>
+                            </muxc:Expander>
+                        </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
             </PivotItem>
