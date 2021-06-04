@@ -134,7 +134,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ProfilePageNavigationState : ProfilePageNavigationStateT<ProfilePageNavigationState>
     {
     public:
-
         ProfilePageNavigationState(const Editor::ProfileViewModel& viewModel,
                                    const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes,
                                    const Editor::ProfilePageNavigationState& lastState,
