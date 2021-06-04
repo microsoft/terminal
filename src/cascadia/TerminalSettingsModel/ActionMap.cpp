@@ -654,7 +654,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // Check our internal state.
-        const ActionAndArgs& actionAndArgs{ myAction, myArgs };
+        const auto actionAndArgs = winrt::make<ActionAndArgs>(myAction, myArgs);
         const auto hash{ Hash(actionAndArgs) };
         if (const auto& cmd{ _GetActionByID(hash) })
         {
