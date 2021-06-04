@@ -24,7 +24,7 @@ namespace winrt::TerminalApp::implementation
 
     private:
         bool _contentLoaded{ false };
-        winrt::TerminalApp::XamlMetaDataProvider _appProvider = winrt::TerminalApp::XamlMetaDataProvider();
+        winrt::TerminalApp::XamlMetaDataProvider _appProvider;
         winrt::TerminalApp::XamlMetaDataProvider AppProvider() { return _appProvider; };
     };
 
