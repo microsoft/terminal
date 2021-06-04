@@ -2,12 +2,19 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "AllShortcutActions.h"
 #include "ActionMap.h"
 
 #include "ActionMap.g.cpp"
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
+
+#define CHECK_IF_ACTION_WITH_ARG(myAction, actionWithArg, result) \
+    if (myAction == ShortcutAction::actionWithArg)                \
+    {                                                             \
+        result = winrt::make<actionWithArg##Args>();              \
+    }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -22,8 +29,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         else
         {
-            std::hash<IActionArgs> argsHash;
-            hashedArgs = argsHash(nullptr);
+            // Check if this action is supposed to have args.
+            Model::IActionArgs hiddenActionArgs{ nullptr };
+#define ON_ALL_ACTIONS_WITH_ARGS(action) CHECK_IF_ACTION_WITH_ARG(actionAndArgs.Action(), action, hiddenActionArgs)
+            ALL_SHORTCUT_ACTIONS_WITH_ARGS
+#undef ON_ALL_ACTIONS_WITH_ARGS
+
+            if (hiddenActionArgs)
+            {
+                hashedArgs = gsl::narrow_cast<size_t>(hiddenActionArgs.Hash());
+            }
+            else
+            {
+                std::hash<IActionArgs> argsHash;
+                hashedArgs = argsHash(hiddenActionArgs);
+            }
         }
         return hashedAction ^ hashedArgs;
     }
