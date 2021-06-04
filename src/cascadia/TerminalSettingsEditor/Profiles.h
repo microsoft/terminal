@@ -135,8 +135,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         ProfilePageNavigationState() :
-            _Profile {nullptr},
-            _Schemes {nullptr},
+            _Profile{ nullptr },
+            _Schemes{ nullptr },
             _WindowRoot{ nullptr } {}
 
         ProfilePageNavigationState(const Editor::ProfileViewModel& viewModel,
