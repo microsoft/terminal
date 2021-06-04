@@ -89,6 +89,7 @@ ntprivapi
 oaidl
 ocidl
 ODR
+offsetof
 osver
 OSVERSIONINFOEXW
 otms

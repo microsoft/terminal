@@ -8,18 +8,51 @@
 #include "ApiMessage.h"
 #include "DeviceComm.h"
 
-_CONSOLE_API_MSG::_CONSOLE_API_MSG() :
-    Complete{ 0 },
-    State{ 0 },
-    _pDeviceComm(nullptr),
-    _pApiRoutines(nullptr),
-    _inputBuffer{},
-    _outputBuffer{},
-    Descriptor{ 0 },
-    CreateObject{ 0 },
-    CreateScreenBuffer{ 0 },
-    msgHeader{ 0 }
+inline constexpr size_t structPacketDataSize = sizeof(_CONSOLE_API_MSG) - offsetof(_CONSOLE_API_MSG, Descriptor);
+
+_CONSOLE_API_MSG::_CONSOLE_API_MSG()
 {
+    // A union cannot have more than one initializer,
+    // but it isn't exactly clear which union case is the largest.
+    // --> Just memset() the entire thing.
+    memset(&Descriptor, 0, structPacketDataSize);
+}
+
+_CONSOLE_API_MSG::_CONSOLE_API_MSG(const _CONSOLE_API_MSG& other)
+{
+    *this = other;
+}
+
+_CONSOLE_API_MSG& _CONSOLE_API_MSG::operator=(const _CONSOLE_API_MSG& other)
+{
+    Complete = other.Complete;
+    State = other.State;
+    _pDeviceComm = other._pDeviceComm;
+    _pApiRoutines = other._pApiRoutines;
+    _inputBuffer = other._inputBuffer;
+    _outputBuffer = other._outputBuffer;
+
+    // Since this struct uses anonymous unions and thus cannot
+    // explicitly reference it, we have to a bit cheeky to copy it.
+    // --> Just memcpy() the entire thing.
+    memcpy(&Descriptor, &other.Descriptor, structPacketDataSize);
+
+    if (State.InputBuffer)
+    {
+        State.InputBuffer = _inputBuffer.data();
+    }
+
+    if (State.OutputBuffer)
+    {
+        State.OutputBuffer = _outputBuffer.data();
+    }
+
+    if (Complete.Write.Data)
+    {
+        Complete.Write.Data = &u;
+    }
+
+    return *this;
 }
 
 ConsoleProcessHandle* _CONSOLE_API_MSG::GetProcessHandle() const
@@ -193,23 +226,4 @@ void _CONSOLE_API_MSG::SetReplyStatus(const NTSTATUS Status)
 void _CONSOLE_API_MSG::SetReplyInformation(const ULONG_PTR pInformation)
 {
     Complete.IoStatus.Information = pInformation;
-}
-
-void _CONSOLE_API_MSG::UpdateUserBufferPointers()
-{
-    // There are some instances where an API message may get copied.
-    // Because it is infeasible to write a copy constructor for this class
-    // without rewriting large swaths of conhost (because of the unnamed union)
-    // we have chosen to introduce a "post-copy" step.
-    // This makes sure the buffers in State are in sync with the actual
-    // buffers in the object.
-    if (State.InputBuffer)
-    {
-        State.InputBuffer = _inputBuffer.data();
-    }
-
-    if (State.OutputBuffer)
-    {
-        State.OutputBuffer = _outputBuffer.data();
-    }
 }
