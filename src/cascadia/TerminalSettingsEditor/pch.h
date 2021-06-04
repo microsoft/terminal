@@ -20,10 +20,6 @@
 #undef GetCurrentTime
 #endif
 
-#include <unknwn.h>
-
-#include <hstring.h>
-
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Globalization.h>

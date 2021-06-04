@@ -2,14 +2,12 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "EnumEntry.h"
 #include "GlobalAppearance.h"
 #include "GlobalAppearance.g.cpp"
 #include "GlobalAppearancePageNavigationState.g.cpp"
 
 #include <LibraryResources.h>
-#include <numeric>
-
-#include "EnumEntry.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -45,7 +43,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return RS_(L"Globals_LanguageDefault");
         }
 
-        winrt::Windows::Globalization::Language language(tag);
+        winrt::Windows::Globalization::Language language{ tag };
         return language.NativeName();
     }
 
