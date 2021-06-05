@@ -112,16 +112,9 @@ public:
     bool SetDefaultForeground(const COLORREF color) noexcept override;
     bool SetDefaultBackground(const COLORREF color) noexcept override;
 
-    bool EnableWin32InputMode(const bool win32InputMode) noexcept override;
-    bool SetCursorKeysMode(const bool applicationMode) noexcept override;
-    bool SetKeypadMode(const bool applicationMode) noexcept override;
+    bool SetInputMode(const ::Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) noexcept override;
+
     bool SetScreenMode(const bool reverseMode) noexcept override;
-    bool EnableVT200MouseMode(const bool enabled) noexcept override;
-    bool EnableUTF8ExtendedMouseMode(const bool enabled) noexcept override;
-    bool EnableSGRExtendedMouseMode(const bool enabled) noexcept override;
-    bool EnableButtonEventMouseMode(const bool enabled) noexcept override;
-    bool EnableAnyEventMouseMode(const bool enabled) noexcept override;
-    bool EnableAlternateScrollMode(const bool enabled) noexcept override;
     bool EnableXtermBracketedPasteMode(const bool enabled) noexcept override;
     bool IsXtermBracketedPasteModeEnabled() const noexcept override;
 
