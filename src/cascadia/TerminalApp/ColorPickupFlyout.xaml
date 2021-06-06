@@ -11,6 +11,7 @@
             <Setter Property="MinWidth" Value="0" />
             <Setter Property="MaxWidth" Value="9999" />
             <Setter Property="Padding" Value="{StaticResource FlyoutContentPadding}" />
+            <Setter Property="Margin" Value="8,4,8,8" />
             <Setter Property="CornerRadius" Value="{ThemeResource OverlayCornerRadius}" />
         </Style>
     </Flyout.FlyoutPresenterStyle>
