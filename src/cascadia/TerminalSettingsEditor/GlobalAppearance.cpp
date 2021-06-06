@@ -129,7 +129,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (!_State.Globals().DebugFeaturesEnabled())
             {
                 // [4] part 1:
-                it = std::remove_if(it, tagsEnd, [](const winrt::hstring& tag) mutable -> bool {
+                it = std::remove_if(tagsBegin, it, [](const winrt::hstring& tag) -> bool {
                     return til::starts_with(tag, L"qps-");
                 });
             }
