@@ -51,6 +51,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void HandleActivatePeasant(const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args);
         void SummonWindow(const Remoting::SummonWindowSelectionArgs& args);
 
+        Windows::Foundation::Collections::IMap<uint64_t, winrt::hstring> GetPeasantNames();
+
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
 
     private:

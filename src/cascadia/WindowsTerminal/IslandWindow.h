@@ -55,6 +55,7 @@ public:
     WINRT_CALLBACK(HotkeyPressed, winrt::delegate<void(long)>);
     WINRT_CALLBACK(NotifyTrayIconPressed, winrt::delegate<void()>);
     WINRT_CALLBACK(NotifyShowTrayContextMenu, winrt::delegate<void(til::point)>);
+    WINRT_CALLBACK(NotifyTrayMenuItemSelected, winrt::delegate<void(UINT)>);
 
 protected:
     void ForceResize()

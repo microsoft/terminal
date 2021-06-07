@@ -40,6 +40,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         bool IsMonarch();
         void SummonWindow(const Remoting::SummonWindowSelectionArgs& args);
 
+        Windows::Foundation::Collections::IMap<uint64_t, winrt::hstring> GetPeasantNames();
+
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
         TYPED_EVENT(BecameMonarch, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 

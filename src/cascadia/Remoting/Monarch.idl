@@ -40,6 +40,8 @@ namespace Microsoft.Terminal.Remoting
         void HandleActivatePeasant(WindowActivatedArgs args);
         void SummonWindow(SummonWindowSelectionArgs args);
 
+        Windows.Foundation.Collections.IMap<UInt64, String> GetPeasantNames();
+
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
     };
 }

@@ -274,7 +274,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             p->AssignID(givenID.value());
         }
 
-        // If the name wasn't specified, this will be an empty string.
         p->WindowName(givenName);
         _peasant = *p;
 
@@ -507,6 +506,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // the monarch ever registers for the global hotkey. So the monarch is
         // the only window that will be calling this.
         _monarch.SummonWindow(args);
+    }
+
+    Windows::Foundation::Collections::IMap<uint64_t, winrt::hstring> WindowManager::GetPeasantNames()
+    {
+        assert(_monarch);
+        return _monarch.GetPeasantNames();
     }
 
 }

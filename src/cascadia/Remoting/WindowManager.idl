@@ -12,6 +12,7 @@ namespace Microsoft.Terminal.Remoting
         IPeasant CurrentWindow();
         Boolean IsMonarch { get; };
         void SummonWindow(SummonWindowSelectionArgs args);
+        Windows.Foundation.Collections.IMap<UInt64, String> GetPeasantNames();
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> BecameMonarch;
     };

@@ -815,4 +815,11 @@ namespace winrt::TerminalApp::implementation
             }
         }
     }
+
+    void TerminalPage::_HandleMinimizeToTray(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        _MinimizeToTrayRequestedHandlers(*this, nullptr);
+        args.Handled(true);
+    }
 }

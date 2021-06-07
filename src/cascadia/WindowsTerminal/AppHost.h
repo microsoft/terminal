@@ -86,9 +86,15 @@ private:
     void _SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::Foundation::IInspectable& args);
 
+    void _MinimizeToTrayRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                           const winrt::Windows::Foundation::IInspectable&);
+
     void _UpdateTrayIcon();
     void _HandleTrayIconPressed();
-    void _CreateTrayContextMenu(const til::point coord);
+    void _ShowTrayContextMenu(const til::point coord);
+    HMENU _CreateTrayContextMenu();
+    void _TrayMenuItemSelected(const UINT menuItemID);
 
     std::optional<NOTIFYICONDATA> _trayIconData;
+    std::optional<HMENU> _trayContextMenu;
 };

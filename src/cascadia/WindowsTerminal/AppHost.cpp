@@ -79,14 +79,10 @@ AppHost::AppHost() noexcept :
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
     _window->NotifyTrayIconPressed({ this, &AppHost::_HandleTrayIconPressed });
-    _window->NotifyShowTrayContextMenu({this, &AppHost::_CreateTrayContextMenu });
+    _window->NotifyShowTrayContextMenu({this, &AppHost::_ShowTrayContextMenu });
+    _window->NotifyTrayMenuItemSelected({this, &AppHost::_TrayMenuItemSelected });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
-
-    if (_window->IsQuakeWindow())
-    {
-        _UpdateTrayIcon();
-    }
 
     _windowManager.BecameMonarch({ this, &AppHost::_BecomeMonarch });
     if (_windowManager.IsMonarch())
@@ -275,6 +271,7 @@ void AppHost::Initialize()
     _logic.SettingsChanged({ this, &AppHost::_HandleSettingsChanged });
     _logic.IsQuakeWindowChanged({ this, &AppHost::_IsQuakeWindowChanged });
     _logic.SummonWindowRequested({ this, &AppHost::_SummonWindowRequested });
+    _logic.MinimizeToTrayRequested({ this, &AppHost::_MinimizeToTrayRequested });
 
     _window->UpdateTitle(_logic.Title());
 
@@ -649,6 +646,7 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     _UpdateTrayIcon();
+    _CreateTrayContextMenu();
     _setupGlobalHotkeys();
 
     // The monarch is just going to be THE listener for inbound connections.
@@ -946,6 +944,12 @@ void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspecta
     _HandleSummon(sender, summonArgs);
 }
 
+void AppHost::_MinimizeToTrayRequested(const winrt::Windows::Foundation::IInspectable&,
+                                       const winrt::Windows::Foundation::IInspectable&)
+{
+    ShowWindow(_window->GetHandle(), SW_HIDE);
+}
+
 void AppHost::_HandleTrayIconPressed()
 {
     // No name in the args means summon the mru window.
@@ -998,20 +1002,11 @@ void AppHost::_UpdateTrayIcon()
     }
 }
 
-void AppHost::_CreateTrayContextMenu(const til::point coord)
+void AppHost::_ShowTrayContextMenu(const til::point coord)
 {
-    auto hmenu = CreatePopupMenu();
-    if (hmenu)
+    _trayContextMenu = _CreateTrayContextMenu();
+    if (_trayContextMenu)
     {
-        // https://docs.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-menuinfo
-        MENUINFO mi{};
-        mi.fMask = MIM_APPLYTOSUBMENUS | MIM_STYLE;
-        mi.dwStyle = MNS_NOCHECK | MNS_NOTIFYBYPOS;
-        SetMenuInfo(hmenu, &mi);
-
-        // Just testing how to insert menu items
-        InsertMenu(hmenu, 0, MF_STRING, 0, L"Start");
-
         // We'll need to set our window to the foreground before calling
         // TrackPopupMenuEx or else the menu won't dismiss when clicking away.
         SetForegroundWindow(_window->GetHandle());
@@ -1026,7 +1021,36 @@ void AppHost::_CreateTrayContextMenu(const til::point coord)
             uFlags |= TPM_LEFTALIGN;
         }
 
-        TrackPopupMenuEx(hmenu, uFlags, (int)coord.x(), (int)coord.y(), _window->GetHandle(), NULL);
-        DestroyMenu(hmenu);
+        TrackPopupMenuEx(_trayContextMenu.value(), uFlags, (int)coord.x(), (int)coord.y(), _window->GetHandle(), NULL);
     }
+}
+
+HMENU AppHost::_CreateTrayContextMenu()
+{
+    auto hmenu = CreatePopupMenu();
+    if (hmenu)
+    {
+        MENUINFO mi{};
+        mi.fMask = MIM_STYLE;
+        mi.dwStyle = MNS_NOCHECK;
+        assert(SetMenuInfo(hmenu, &mi));
+
+        // Get all peasants' window names
+        for (auto [id, name] : _windowManager.GetPeasantNames())
+        {
+            AppendMenu(hmenu, MF_STRING, id, name.c_str());
+        }
+    }
+    return hmenu;
+}
+
+void AppHost::_TrayMenuItemSelected(const UINT menuItemID)
+{
+    // Grab the window name associated to the given context menu item ID.
+    WCHAR name[255];
+    GetMenuString(_trayContextMenu.value(), menuItemID, name, 255, MF_BYCOMMAND);
+
+    Remoting::SummonWindowSelectionArgs args{ name };
+    args.SummonBehavior().ToggleVisibility(false);
+    _windowManager.SummonWindow(args);
 }

@@ -527,6 +527,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     }
     case WM_COMMAND:
     {
+        _NotifyTrayMenuItemSelectedHandlers(static_cast<UINT>(wparam));
         return 0;
     }
     }
