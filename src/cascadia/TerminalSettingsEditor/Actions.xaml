@@ -206,7 +206,7 @@
                                   VerticalAlignment="Center"
                                   ItemsSource="{x:Bind AvailableActions, Mode=OneWay}"
                                   SelectedItem="{x:Bind ProposedAction, Mode=TwoWay}"
-                                  Visibility="{x:Bind IsInEditMode, Mode=OneWay}"/>
+                                  Visibility="{x:Bind IsInEditMode, Mode=OneWay}" />
 
                         <!--  Key Chord Text  -->
                         <Border Grid.Column="1"
