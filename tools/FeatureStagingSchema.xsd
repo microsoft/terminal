@@ -28,19 +28,19 @@
                             <xs:element name="alwaysDisabledBrandingTokens" type="til:brandingTokenListType" minOccurs="0" />
                         </xs:all>
                     </xs:complexType>
+
+					<xs:key name="featureBranchOverridesKey">
+						<xs:selector xpath="*/til:branchToken"/>
+						<xs:field xpath="."/>
+					</xs:key>
+
+					<xs:key name="featureBrandingOverridesKey">
+						<xs:selector xpath="*/til:brandingToken"/>
+						<xs:field xpath="."/>
+					</xs:key>
                 </xs:element>
             </xs:sequence>
         </xs:complexType>
-
-        <xs:key name="featureBranchOverridesKey">
-            <xs:selector xpath="til:feature/*/til:branchToken"/>
-            <xs:field xpath="."/>
-        </xs:key>
-
-        <xs:key name="featureBrandingOverridesKey">
-            <xs:selector xpath="til:feature/*/til:brandingToken"/>
-            <xs:field xpath="."/>
-        </xs:key>
     </xs:element>
 
     <!-- Definitions -->

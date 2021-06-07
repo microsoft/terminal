@@ -174,7 +174,7 @@ ForEach ($feature in $features) {
 
 AddOutput @"
 
-#if !defined(__midl)
+#if defined(__cplusplus)
 
 "@
 
