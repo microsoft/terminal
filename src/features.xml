@@ -9,4 +9,13 @@
             <brandingToken>WindowsInbox</brandingToken>
         </alwaysDisabledBrandingTokens>
     </feature>
+
+    <feature>
+        <name>Feature_AttemptHandoff</name>
+        <description>conhost should try to hand connections over to OpenConsole</description>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
 </featureStaging>
