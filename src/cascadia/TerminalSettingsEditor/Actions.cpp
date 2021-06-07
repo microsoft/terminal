@@ -103,6 +103,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Automation::Peers::AutomationPeer Actions::OnCreateAutomationPeer()
     {
+        _AutomationPeerAttached = true;
         for (const auto& kbdVM : _KeyBindingList)
         {
             // To create a more accessible experience, we want the "edit" buttons to _always_
@@ -135,7 +136,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _KeyBindingList = single_threaded_observable_vector(std::move(keyBindingList));
     }
 
-    void Actions::KeyChordEditor_PreviewKeyDown(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+    void Actions::KeyChordEditor_KeyDown(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
         const auto& senderTB{ sender.as<TextBox>() };
         const auto& kbdVM{ senderTB.DataContext().as<Editor::KeyBindingViewModel>() };
@@ -192,7 +193,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     }
                 }
 
-                const auto& containerBackground{ Resources().Lookup(box_value(L"EditModeContainerBackground")).as<Windows::UI::Xaml::Media::Brush>() };
+                const auto& containerBackground{ Resources().Lookup(box_value(L"ActionContainerBackgroundEditing")).as<Windows::UI::Xaml::Media::Brush>() };
                 get_self<KeyBindingViewModel>(senderVM)->ContainerBackground(containerBackground);
             }
             else
@@ -200,27 +201,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // Focus on the list view item
                 KeyBindingsListView().ContainerFromItem(senderVM).as<Controls::Control>().Focus(FocusState::Programmatic);
 
-                const auto& containerBackground{ Resources().Lookup(box_value(L"NonEditModeContainerBackground")).as<Windows::UI::Xaml::Media::Brush>() };
+                const auto& containerBackground{ Resources().Lookup(box_value(L"ActionContainerBackground")).as<Windows::UI::Xaml::Media::Brush>() };
                 get_self<KeyBindingViewModel>(senderVM)->ContainerBackground(containerBackground);
             }
         }
     }
 
-    void Actions::_ViewModelDeleteKeyBindingHandler(const Editor::KeyBindingViewModel& /*senderVM*/, const Control::KeyChord& keys)
+    void Actions::_ViewModelDeleteKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const Control::KeyChord& keys)
     {
         // Update the settings model
         _State.Settings().ActionMap().DeleteKeyBinding(keys);
 
         // Find the current container in our list and remove it.
         // This is much faster than rebuilding the entire ActionMap.
-        if (const auto index{ _GetContainerIndexByKeyChord(keys) })
+        uint32_t index;
+        if (_KeyBindingList.IndexOf(senderVM, index))
         {
-            _KeyBindingList.RemoveAt(*index);
+            _KeyBindingList.RemoveAt(index);
 
             // Focus the new item at this index
             if (_KeyBindingList.Size() != 0)
             {
-                const auto newFocusedIndex{ std::clamp(*index, 0u, _KeyBindingList.Size() - 1) };
+                const auto newFocusedIndex{ std::clamp(index, 0u, _KeyBindingList.Size() - 1) };
                 KeyBindingsListView().ContainerFromIndex(newFocusedIndex).as<Controls::Control>().Focus(FocusState::Programmatic);
             }
         }

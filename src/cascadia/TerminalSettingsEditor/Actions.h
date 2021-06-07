@@ -48,10 +48,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void EnterHoverMode() { IsHovered(true); };
         void ExitHoverMode() { IsHovered(false); };
-        void FocusContainer() { IsContainerFocused(true); };
-        void UnfocusContainer() { IsContainerFocused(false); };
-        void FocusEditButton() { IsEditButtonFocused(true); };
-        void UnfocusEditButton() { IsEditButtonFocused(false); };
+        void ActionGotFocus() { IsContainerFocused(true); };
+        void ActionLostFocus() { IsContainerFocused(false); };
+        void EditButtonGettingFocus() { IsEditButtonFocused(true); };
+        void EditButtonLosingFocus() { IsEditButtonFocused(false); };
         bool ShowEditButton() const noexcept;
         void ToggleEditMode();
         void DisableEditMode() { IsInEditMode(false); }
@@ -92,7 +92,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
-        void KeyChordEditor_PreviewKeyDown(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+        void KeyChordEditor_KeyDown(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_PROPERTY(Editor::ActionsPageNavigationState, State, nullptr);
