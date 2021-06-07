@@ -64,4 +64,21 @@
     <Touch Files="@(_PCHFileToCleanWithTimestamp)" Time="%(LastWriteTime)" AlwaysCreate="true" />
     <Message Text="PCH and Precomp object @(_PCHFileToCleanWithTimestamp) has been deleted for $(ProjectName)." />
   </Target>
+
+  <PropertyGroup>
+    <BuildDependsOn>
+      OCCallFeatureFlagGenerator;
+      $(BuildDependsOn)
+    </BuildDependsOn>
+  </PropertyGroup>
+
+  <Target Name="OCCallFeatureFlagGenerator">
+    <MSBuild Projects="$(SolutionDir)\build\rules\GenerateFeatureFlags.vcxproj" />
+  </Target>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SolutionDir)\bin\$(Configuration)\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
 </Project>

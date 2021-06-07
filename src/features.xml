@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<featureStaging xmlns="http://microsoft.com/TilFeatureStaging-Schema.xsd">
+    <feature>
+        <name>Feature_Foo</name>
+        <id>1234</id>
+        <description>Testing</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledReleaseTokens />
+    </feature>
+    <feature>
+        <name>Feature_Bar</name>
+        <id>5678</id>
+        <description>Testing</description>
+        <stage>AlwaysDisabled</stage>
+        <alwaysDisabledBranchTokens>
+            <branchToken>dev/*</branchToken>
+        </alwaysDisabledBranchTokens>
+        <alwaysEnabledBranchTokens>
+            <branchToken>dev/duhowett/*</branchToken>
+        </alwaysEnabledBranchTokens>
+    </feature>
+    <feature>
+        <name>Feature_Baz</name>
+        <id>9101</id>
+        <description>Testing</description>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+    <feature>
+        <name>Feature_ReceiveIncomingHandoff</name>
+        <description>conhost should be able to receive incoming connections</description>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+</featureStaging>

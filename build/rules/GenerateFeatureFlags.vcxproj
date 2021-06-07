@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Importantly: **THIS IS A VCXPROJ IN FILENAME ONLY**.
+    Visual Studio doesn't support many other project types that it is willing
+    to handle natively. If we don't do this, we can't have items that show up
+    in the VS UI.
+
+    THIS PROJECT DOES NOT IMPORT THE C++ BUILD RULES.
+    IT CANNOT BE USED TO BUILD C++ CODE.
+  -->
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|AnyCPU">
+      <Configuration>Release</Configuration>
+      <Platform>AnyCPU</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Fuzzing|AnyCPU">
+      <Configuration>Fuzzing</Configuration>
+      <Platform>AnyCPU</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="AuditMode|AnyCPU">
+      <Configuration>AuditMode</Configuration>
+      <Platform>AnyCPU</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|AnyCPU">
+      <Configuration>Debug</Configuration>
+      <Platform>AnyCPU</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>d97c3c61-53cd-4e72-919b-9a0940e038f9</ProjectGuid>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <OpenConsoleCommonOutDir>$(SolutionDir)bin\$(Configuration)\</OpenConsoleCommonOutDir>
+
+    <_WTBrandingName Condition="'$(WindowsTerminalBranding)'=='Preview'">Preview</_WTBrandingName>
+    <_WTBrandingName Condition="'$(WindowsTerminalBranding)'=='Release'">Release</_WTBrandingName>
+    <_WTBrandingName Condition="'$(_WTBrandingName)'==''">Dev</_WTBrandingName>
+  </PropertyGroup>
+
+  <Target Name="_RunFeatureFlagScript"
+    Inputs="@(FeatureFlagFile)"
+    Outputs="$(OpenConsoleCommonOutDir)\inc\TilFeatureStaging.h">
+    <MakeDir Directories="$(OpenConsoleCommonOutDir)\inc" />
+    <Exec Command="powershell -NoProfile -Command &quot;$(SolutionDir)\tools\Generate-FeatureStagingHeader.ps1&quot; -Path &quot;%(FeatureFlagFile.FullPath)&quot; -Branding $(_WTBrandingName) -OutputPath &quot;$(OpenConsoleCommonOutDir)\inc\TilFeatureStaging.h&quot;" />
+  </Target>
+
+  <Target Name="Build" DependsOnTargets="_RunFeatureFlagScript" />
+  <Target Name="Clean">
+    <Delete Files="$(OpenConsoleCommonOutDir)\inc\TilFeatureStaging.h" />
+  </Target>
+
+  <ItemGroup>
+    <FeatureFlagFile Include="$(SolutionDir)\src\features.xml" />
+  </ItemGroup>
+
+  <!-- Magic things to make Visual Studio accept us. -->
+  <ItemGroup>
+    <ProjectCapability Include="DeclaredSourceItems;UserSourceItems" />
+    <ProjectCapability Include="ProjectConfigurationsDeclaredAsItems" />
+    <ProjectCapability Include="ShowMissingItemTypes;" />
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml">
+      <Context>Project;File;BrowseObject</Context>
+    </PropertyPageSchema>
+  </ItemGroup>
+</Project>
