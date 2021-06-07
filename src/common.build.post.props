@@ -73,7 +73,7 @@
   </PropertyGroup>
 
   <Target Name="OCCallFeatureFlagGenerator">
-    <MSBuild Projects="$(SolutionDir)\build\rules\GenerateFeatureFlags.vcxproj" />
+    <MSBuild Projects="$(SolutionDir)\build\rules\GenerateFeatureFlags.proj" />
   </Target>
 
   <ItemDefinitionGroup>

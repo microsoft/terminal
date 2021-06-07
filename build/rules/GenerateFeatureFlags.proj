@@ -1,29 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <!-- Importantly: **THIS IS A VCXPROJ IN FILENAME ONLY**.
-    Visual Studio doesn't support many other project types that it is willing
-    to handle natively. If we don't do this, we can't have items that show up
-    in the VS UI.
-
-    THIS PROJECT DOES NOT IMPORT THE C++ BUILD RULES.
-    IT CANNOT BE USED TO BUILD C++ CODE.
-  -->
+<Project DefaultTargets="Build" ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- THIS PROJECT CANNOT BE LOADED INTO THE SOLUTION. -->
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
 
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Release|AnyCPU">
+    <ProjectConfiguration Include="Release|Any CPU">
       <Configuration>Release</Configuration>
       <Platform>AnyCPU</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Fuzzing|AnyCPU">
+    <ProjectConfiguration Include="Fuzzing|Any CPU">
       <Configuration>Fuzzing</Configuration>
       <Platform>AnyCPU</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="AuditMode|AnyCPU">
+    <ProjectConfiguration Include="AuditMode|Any CPU">
       <Configuration>AuditMode</Configuration>
       <Platform>AnyCPU</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Debug|AnyCPU">
+    <ProjectConfiguration Include="Debug|Any CPU">
       <Configuration>Debug</Configuration>
       <Platform>AnyCPU</Platform>
     </ProjectConfiguration>
@@ -55,15 +48,5 @@
 
   <ItemGroup>
     <FeatureFlagFile Include="$(SolutionDir)\src\features.xml" />
-  </ItemGroup>
-
-  <!-- Magic things to make Visual Studio accept us. -->
-  <ItemGroup>
-    <ProjectCapability Include="DeclaredSourceItems;UserSourceItems" />
-    <ProjectCapability Include="ProjectConfigurationsDeclaredAsItems" />
-    <ProjectCapability Include="ShowMissingItemTypes;" />
-    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml">
-      <Context>Project;File;BrowseObject</Context>
-    </PropertyPageSchema>
   </ItemGroup>
 </Project>
