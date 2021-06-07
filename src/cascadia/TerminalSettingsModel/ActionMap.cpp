@@ -10,12 +10,6 @@
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 
-#define CHECK_IF_ACTION_WITH_ARG(myAction, actionWithArg, result) \
-    if (myAction == ShortcutAction::actionWithArg)                \
-    {                                                             \
-        result = winrt::make<actionWithArg##Args>();              \
-    }
-
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     static InternalActionID Hash(const Model::ActionAndArgs& actionAndArgs)
@@ -25,24 +19,30 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         size_t hashedArgs{};
         if (const auto& args{ actionAndArgs.Args() })
         {
+            // Args are defined, so hash them
             hashedArgs = gsl::narrow_cast<size_t>(args.Hash());
         }
         else
         {
-            // Check if this action is supposed to have args.
-            Model::IActionArgs hiddenActionArgs{ nullptr };
-#define ON_ALL_ACTIONS_WITH_ARGS(action) CHECK_IF_ACTION_WITH_ARG(actionAndArgs.Action(), action, hiddenActionArgs)
-            ALL_SHORTCUT_ACTIONS_WITH_ARGS
+            // Args are not defined.
+            // Check if the ShortcutAction supports args.
+            switch (actionAndArgs.Action())
+            {
+#define ON_ALL_ACTIONS_WITH_ARGS(action)                                    \
+    case ShortcutAction::action:                                            \
+    {                                                                       \
+        /* If it does, hash the default values for the args.*/              \
+        hashedArgs = gsl::narrow_cast<size_t>(make<action##Args>().Hash()); \
+        break;                                                              \
+    }
+                ALL_SHORTCUT_ACTIONS_WITH_ARGS
 #undef ON_ALL_ACTIONS_WITH_ARGS
-
-            if (hiddenActionArgs)
+            default:
             {
-                hashedArgs = gsl::narrow_cast<size_t>(hiddenActionArgs.Hash());
-            }
-            else
-            {
+                // Otherwise, hash nullptr.
                 std::hash<IActionArgs> argsHash;
-                hashedArgs = argsHash(hiddenActionArgs);
+                hashedArgs = argsHash(nullptr);
+            }
             }
         }
         return hashedAction ^ hashedArgs;
