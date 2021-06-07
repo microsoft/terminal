@@ -94,6 +94,11 @@ AppHost::AppHost() noexcept :
 AppHost::~AppHost()
 {
     // destruction order is important for proper teardown here
+    if (_trayIconData)
+    {
+        Shell_NotifyIcon(NIM_DELETE, &_trayIconData.value());
+        _trayIconData.reset();
+    }
 
     _window = nullptr;
     _app.Close();
@@ -646,7 +651,6 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     _UpdateTrayIcon();
-    _CreateTrayContextMenu();
     _setupGlobalHotkeys();
 
     // The monarch is just going to be THE listener for inbound connections.
@@ -1027,6 +1031,7 @@ void AppHost::_ShowTrayContextMenu(const til::point coord)
 
 HMENU AppHost::_CreateTrayContextMenu()
 {
+    assert(_windowManager.IsMonarch());
     auto hmenu = CreatePopupMenu();
     if (hmenu)
     {

@@ -766,10 +766,28 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     Windows::Foundation::Collections::IMap<uint64_t, winrt::hstring> Monarch::GetPeasantNames()
     {
         auto names = winrt::single_threaded_map<uint64_t, winrt::hstring>();
-        for (auto [key, value] : _peasants)
+
+        std::vector<uint64_t> peasantsToErase{};
+        for (const auto& [id, p] : _peasants)
         {
-            names.Insert(key, value.WindowName());
+            try
+            {
+                names.Insert(id, p.WindowName());
+            }
+            catch (...)
+            {
+                LOG_CAUGHT_EXCEPTION();
+                peasantsToErase.push_back(id);
+            }
         }
+
+        // Remove the dead peasants we came across while iterating.
+        for (const auto& id : peasantsToErase)
+        {
+            _peasants.erase(id);
+            _clearOldMruEntries(id);
+        }
+
         return names;
     }
 }
