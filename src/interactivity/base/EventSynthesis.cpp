@@ -16,19 +16,9 @@
 static constexpr WORD altScanCode = 0x38;
 static constexpr WORD leftShiftScanCode = 0x2A;
 
-#ifdef __INSIDE_WINDOWS
-// To reduce the risk of compatibility issues inside Windows, we're going to continue using the old
-// version of GetQuickCharWidth to determine whether a character should be synthesized into numpad
-// events.
-static constexpr bool useNumpadEvents{ true };
-#else // !defined(__INSIDE_WINDOWS)
-// In Terminal, however, we will *always* use normal key events (!)
-static constexpr bool useNumpadEvents{ false };
-#endif // __INSIDE_WINDOWS
-
 // Routine Description:
 // - naively determines the width of a UCS2 encoded wchar (with caveats noted above)
-#pragma warning(suppress : 4505) // this function will be deleted if useNumpadEvents is false
+#pragma warning(suppress : 4505) // this function will be deleted if numpad events are disabled
 static CodepointWidth GetQuickCharWidthLegacyForNumpadEventSynthesis(const wchar_t wch) noexcept
 {
     if ((0x1100 <= wch && wch <= 0x115f) // From Unicode 9.0, Hangul Choseong is wide
@@ -62,7 +52,7 @@ std::deque<std::unique_ptr<KeyEvent>> Microsoft::Console::Interactivity::CharToK
 
     if (keyState == invalidKey)
     {
-        if constexpr (useNumpadEvents)
+        if constexpr (Feature_UseNumpadEventsForClipboardInput::IsEnabled())
         {
             // Determine DBCS character because these character does not know by VkKeyScan.
             // GetStringTypeW(CT_CTYPE3) & C3_ALPHA can determine all linguistic characters. However, this is

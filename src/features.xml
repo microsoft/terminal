@@ -35,4 +35,18 @@
             <brandingToken>WindowsInbox</brandingToken>
         </alwaysDisabledBrandingTokens>
     </feature>
+
+    <feature>
+        <name>Feature_UseNumpadEventsForClipboardInput</name>
+        <description>Controls whether the clipboard converter (and ConPTY InputStateMachine) uses Numpad events instead of UChar</description>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <!--
+                To reduce the risk of compatibility issues inside Windows, we're going to continue using the old
+                version of GetQuickCharWidth to determine whether a character should be synthesized into numpad
+                events.
+            -->
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
 </featureStaging>
