@@ -204,15 +204,9 @@
                         <!--  Edit Mode: Action Combo-box  -->
                         <ComboBox Grid.Column="0"
                                   VerticalAlignment="Center"
-                                  ItemsSource="{x:Bind AvailableActions}"
+                                  ItemsSource="{x:Bind AvailableActions, Mode=OneWay}"
                                   SelectedItem="{x:Bind ProposedAction, Mode=TwoWay}"
-                                  Visibility="{x:Bind IsInEditMode, Mode=OneWay}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate x:DataType="local:ActionAndArgsViewModel">
-                                    <TextBlock Text="{x:Bind Name}" />
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
+                                  Visibility="{x:Bind IsInEditMode, Mode=OneWay}"/>
 
                         <!--  Key Chord Text  -->
                         <Border Grid.Column="1"

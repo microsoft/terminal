@@ -4,7 +4,6 @@
 #pragma once
 
 #include "Actions.g.h"
-#include "ActionAndArgsViewModel.g.h"
 #include "KeyBindingViewModel.g.h"
 #include "ActionsPageNavigationState.g.h"
 #include "ModifyKeyBindingEventArgs.g.h"
@@ -21,50 +20,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     };
 
-    struct ActionAndArgsViewModelComparator
-    {
-        bool operator()(const Editor::ActionAndArgsViewModel& lhs, const Editor::ActionAndArgsViewModel& rhs) const
-        {
-            return lhs.Name() < rhs.Name();
-        }
-    };
-
     struct ModifyKeyBindingEventArgs : ModifyKeyBindingEventArgsT<ModifyKeyBindingEventArgs>
     {
     public:
-        ModifyKeyBindingEventArgs(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys, const Editor::ActionAndArgsViewModel& oldActionVM, const Editor::ActionAndArgsViewModel& newActionVM) :
+        ModifyKeyBindingEventArgs(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys, const hstring oldActionName, const hstring newActionName) :
             _OldKeys{ oldKeys },
             _NewKeys{ newKeys },
-            _OldActionVM{ oldActionVM },
-            _NewActionVM{ newActionVM } {}
+            _OldActionName{ oldActionName },
+            _NewActionName{ newActionName } {}
 
         WINRT_PROPERTY(Control::KeyChord, OldKeys, nullptr);
         WINRT_PROPERTY(Control::KeyChord, NewKeys, nullptr);
-        WINRT_PROPERTY(Editor::ActionAndArgsViewModel, OldActionVM, nullptr);
-        WINRT_PROPERTY(Editor::ActionAndArgsViewModel, NewActionVM, nullptr);
-    };
-
-    struct ActionAndArgsViewModel : ActionAndArgsViewModelT<ActionAndArgsViewModel>, ViewModelHelper<ActionAndArgsViewModel>
-    {
-    public:
-        ActionAndArgsViewModel(hstring name, const Model::ActionAndArgs& actionData) :
-            _Name{ name },
-            _ActionData{ actionData } {};
-
-        hstring Name() const noexcept { return _Name; }
-        Model::ActionAndArgs ActionData() const noexcept { return _ActionData.Copy(); }
-
-    private:
-        hstring _Name;
-        Model::ActionAndArgs _ActionData{ nullptr };
+        WINRT_PROPERTY(hstring, OldActionName);
+        WINRT_PROPERTY(hstring, NewActionName);
     };
 
     struct KeyBindingViewModel : KeyBindingViewModelT<KeyBindingViewModel>, ViewModelHelper<KeyBindingViewModel>
     {
     public:
-        KeyBindingViewModel(const Control::KeyChord& keys, const Editor::ActionAndArgsViewModel& actionViewModel, const Windows::Foundation::Collections::IObservableVector<Editor::ActionAndArgsViewModel>& availableActions);
+        KeyBindingViewModel(const Control::KeyChord& keys, const hstring name, const Windows::Foundation::Collections::IObservableVector<hstring>& availableActions);
 
-        hstring Name() const { return _CurrentAction.Name(); }
+        hstring Name() const { return _CurrentAction; }
         hstring KeyChordText() const { return _KeyChordText; }
 
         // UIA Text
@@ -89,9 +65,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // ProposedAction:   the entry selected by the combo box; may disagree with the settings model.
         // CurrentAction:    the combo box item that maps to the settings model value.
         // AvailableActions: the list of options in the combo box; both actions above must be in this list.
-        VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::ActionAndArgsViewModel, ProposedAction, nullptr);
-        VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::ActionAndArgsViewModel, CurrentAction, nullptr);
-        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ActionAndArgsViewModel>, AvailableActions, nullptr);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(IInspectable, ProposedAction);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, CurrentAction);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<hstring>, AvailableActions, nullptr);
 
         // ProposedKeys: the text shown in the text box; may disagree with the settings model.
         // Keys:         the key chord bound in the settings model.
@@ -133,7 +109,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_PROPERTY(Editor::ActionsPageNavigationState, State, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::KeyBindingViewModel>, KeyBindingList);
-        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ActionAndArgsViewModel>, AvailableActionAndArgs);
 
     private:
         void _ViewModelPropertyChangedHandler(const Windows::Foundation::IInspectable& senderVM, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
@@ -143,6 +118,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         std::optional<uint32_t> _GetContainerIndexByKeyChord(const Control::KeyChord& keys);
 
         bool _AutomationPeerAttached{ false };
+        Windows::Foundation::Collections::IObservableVector<hstring> _AvailableActionAndArgs;
+        Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionMap;
     };
 }
 

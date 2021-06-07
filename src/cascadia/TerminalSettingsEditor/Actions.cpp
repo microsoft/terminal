@@ -21,11 +21,11 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    KeyBindingViewModel::KeyBindingViewModel(const Control::KeyChord& keys, const Editor::ActionAndArgsViewModel& actionVM, const IObservableVector<Editor::ActionAndArgsViewModel>& availableActions) :
+    KeyBindingViewModel::KeyBindingViewModel(const Control::KeyChord& keys, const hstring actionName, const IObservableVector<hstring>& availableActions) :
         _Keys{ keys },
         _KeyChordText{ Model::KeyChordSerialization::ToString(keys) },
-        _CurrentAction{ actionVM },
-        _ProposedAction{ actionVM },
+        _CurrentAction{ actionName },
+        _ProposedAction{ box_value(actionName) },
         _AvailableActions{ availableActions }
     {
         // Add a property changed handler to our own property changed event.
@@ -73,7 +73,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // - pre-populate the text box with the current keys
             // - reset the combo box with the current action
             ProposedKeys(KeyChordText());
-            ProposedAction(CurrentAction());
+            ProposedAction(box_value(CurrentAction()));
         }
     }
 
@@ -84,7 +84,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void KeyBindingViewModel::AttemptAcceptChanges(hstring newKeyChordText)
     {
-        auto args{ make_self<ModifyKeyBindingEventArgs>(_Keys, _Keys, _CurrentAction, _ProposedAction) };
+        auto args{ make_self<ModifyKeyBindingEventArgs>(_Keys, _Keys, _CurrentAction, unbox_value<hstring>(_ProposedAction)) };
 
         // Key Chord Text
         try
@@ -131,15 +131,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _State = e.Parameter().as<Editor::ActionsPageNavigationState>();
 
         // Populate AvailableActionAndArgs
-        std::map<hstring, Editor::ActionAndArgsViewModel> availableActionVMMap;
-        std::vector<Editor::ActionAndArgsViewModel> availableActionAndArgs;
+        _AvailableActionMap = single_threaded_map<hstring, Model::ActionAndArgs>();
+        std::vector<hstring> availableActionAndArgs;
         for (const auto& [name, actionAndArgs] : _State.Settings().ActionMap().AvailableActions())
         {
-            const auto& actionVM{ make<ActionAndArgsViewModel>(name, actionAndArgs) };
-            availableActionAndArgs.push_back(actionVM);
-            availableActionVMMap.emplace(name, actionVM);
+            availableActionAndArgs.push_back(name);
+            _AvailableActionMap.Insert(name, actionAndArgs);
         }
-        std::sort(begin(availableActionAndArgs), end(availableActionAndArgs), ActionAndArgsViewModelComparator{});
+        std::sort(begin(availableActionAndArgs), end(availableActionAndArgs));
         _AvailableActionAndArgs = single_threaded_observable_vector(std::move(availableActionAndArgs));
 
         // Convert the key bindings from our settings into a view model representation
@@ -148,12 +147,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         keyBindingList.reserve(keyBindingMap.Size());
         for (const auto& [keys, cmd] : keyBindingMap)
         {
-            // convert the cmd into an ActionAndArgsViewModel
-            const auto actionVMIter{ availableActionVMMap.find(cmd.Name()) };
-            const auto& actionVM{ actionVMIter->second };
-
-            // convert the cmd into a KeyBindingViewModel (requires ActionAndArgsViewModel)
-            auto container{ make_self<KeyBindingViewModel>(keys, actionVM, _AvailableActionAndArgs) };
+            // convert the cmd into a KeyBindingViewModel
+            auto container{ make_self<KeyBindingViewModel>(keys, cmd.Name(), _AvailableActionAndArgs) };
             container->PropertyChanged({ this, &Actions::_ViewModelPropertyChangedHandler });
             container->DeleteKeyBindingRequested({ this, &Actions::_ViewModelDeleteKeyBindingHandler });
             container->ModifyKeyBindingRequested({ this, &Actions::_ViewModelModifyKeyBindingHandler });
@@ -276,14 +271,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // If the action was changed,
         // update the settings model and view model appropriately
         auto attemptSetAction = [=]() {
-            if (!args.OldActionVM().ActionData().Equals(args.NewActionVM().ActionData()))
+            if (args.OldActionName() != args.NewActionName())
             {
+                // convert the action's name into a view model.
+                const auto& newAction{ _AvailableActionMap.Lookup(args.NewActionName()) };
+
                 // update settings model
-                _State.Settings().ActionMap().RegisterKeyBinding(args.NewKeys(), args.NewActionVM().ActionData());
+                _State.Settings().ActionMap().RegisterKeyBinding(args.NewKeys(), newAction);
 
                 // update view model
                 auto senderVMImpl{ get_self<KeyBindingViewModel>(senderVM) };
-                senderVMImpl->CurrentAction(args.NewActionVM());
+                senderVMImpl->CurrentAction(args.NewActionName());
             }
         };
 
