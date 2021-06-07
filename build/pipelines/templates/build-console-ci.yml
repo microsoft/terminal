@@ -16,9 +16,9 @@ jobs:
   # pool: { vmImage: windows-2019 }
 
   steps:
-  - template: build-console-steps.yml
-    parameters:
-      additionalBuildArguments: ${{ parameters.additionalBuildArguments }}
+  # - template: build-console-steps.yml
+  #   parameters:
+  #     additionalBuildArguments: ${{ parameters.additionalBuildArguments }}
 
   # It appears that the Component Governance build task that gets automatically injected stopped working
   # when we renamed our main branch.
@@ -29,9 +29,10 @@ jobs:
 - template: helix-runtests-job.yml
   parameters:
     name: 'RunTestsInHelix'
-    dependsOn: Build${{ parameters.platform }}${{ parameters.configuration }}
+    # dependsOn: Build${{ parameters.platform }}${{ parameters.configuration }}
     condition: and(succeeded(), and(eq('${{ parameters.platform }}', 'x64'), not(eq(variables['Build.Reason'], 'PullRequest')))) 
     testSuite: 'DevTestSuite'
+    platform: ${{ parameters.platform }}
     rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
     
 - template: helix-processtestresults-job.yml
