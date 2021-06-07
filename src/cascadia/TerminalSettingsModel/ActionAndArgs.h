@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ActionAndArgs(ShortcutAction action, IActionArgs args) :
             _Action{ action },
             _Args{ args } {};
-        Model::ActionAndArgs Copy() const;
+        com_ptr<ActionAndArgs> Copy() const;
 
         hstring GenerateName() const;
 

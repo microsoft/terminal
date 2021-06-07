@@ -29,7 +29,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return hashedAction ^ hashedArgs;
     }
 
-
     ActionMap::ActionMap() :
         _NestedCommands{ single_threaded_map<hstring, Model::Command>() }
     {
@@ -132,7 +131,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     {
                         // Update AvailableActions.
                         const auto actionAndArgsImpl{ get_self<ActionAndArgs>(cmd.ActionAndArgs()) };
-                        availableActions.insert_or_assign(name, actionAndArgsImpl->Copy());
+                        availableActions.insert_or_assign(name, *actionAndArgsImpl->Copy());
                     }
 
                     // Record that we already handled adding this action to the NameMap.
