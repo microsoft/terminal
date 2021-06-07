@@ -24,9 +24,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _Args{ args } {};
         Model::ActionAndArgs Copy() const;
 
-        bool Equals(const Model::ActionAndArgs& otherAction);
-        size_t Hash();
-
         hstring GenerateName() const;
 
         WINRT_PROPERTY(ShortcutAction, Action, ShortcutAction::Invalid);

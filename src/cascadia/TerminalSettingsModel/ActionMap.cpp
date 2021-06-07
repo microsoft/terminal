@@ -12,6 +12,24 @@ using namespace winrt::Microsoft::Terminal::Control;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    static InternalActionID Hash(const Model::ActionAndArgs& actionAndArgs)
+    {
+        size_t hashedAction{ HashUtils::HashProperty(actionAndArgs.Action()) };
+
+        size_t hashedArgs{};
+        if (const auto& args{ actionAndArgs.Args() })
+        {
+            hashedArgs = gsl::narrow_cast<size_t>(args.Hash());
+        }
+        else
+        {
+            std::hash<IActionArgs> argsHash;
+            hashedArgs = argsHash(nullptr);
+        }
+        return hashedAction ^ hashedArgs;
+    }
+
+
     ActionMap::ActionMap() :
         _NestedCommands{ single_threaded_map<hstring, Model::Command>() }
     {
@@ -68,7 +86,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             /*We have a valid action.*/
             /*Check if the action was already added.*/
-            if (visited.find(actionAndArgs->Hash()) == visited.end())
+            if (visited.find(Hash(*actionAndArgs)) == visited.end())
             {
                 /*This is an action that wasn't added!*/
                 /*Let's add it.*/
@@ -195,7 +213,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (cmd.ActionAndArgs().Action() != ShortcutAction::Invalid)
             {
                 // Only populate NameMap with actions that haven't been visited already.
-                const auto actionID{ get_self<ActionAndArgs>(cmd.ActionAndArgs())->Hash() };
+                const auto actionID{ Hash(cmd.ActionAndArgs()) };
                 if (visitedActionIDs.find(actionID) == visitedActionIDs.end())
                 {
                     const auto& name{ cmd.Name() };
@@ -424,7 +442,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Example:
         //   { "command": "copy", "keys": "ctrl+c" }       --> add the action in for the first time
         //   { "command": "copy", "keys": "ctrl+shift+c" } --> update oldCmd
-        const auto actionID{ get_self<ActionAndArgs>(cmd.ActionAndArgs())->Hash() };
+        const auto actionID{ Hash(cmd.ActionAndArgs()) };
         const auto& actionPair{ _ActionMap.find(actionID) };
         if (actionPair == _ActionMap.end())
         {
@@ -571,7 +589,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             //   parent:  { "command": "copy",    "keys": "ctrl+c" } --> register "ctrl+c" (different branch)
             //   current: { "command": "paste",   "keys": "ctrl+c" } --> Collision with ancestor! (this branch, sub-branch 1)
             //            { "command": "unbound", "keys": "ctrl+c" } --> Collision with masking action! (this branch, sub-branch 2)
-            const auto conflictingActionID{ get_self<ActionAndArgs>(conflictingCmd.ActionAndArgs())->Hash() };
+            const auto conflictingActionID{ Hash(conflictingCmd.ActionAndArgs()) };
             const auto maskingCmdPair{ _MaskingActions.find(conflictingActionID) };
             if (maskingCmdPair == _MaskingActions.end())
             {
@@ -593,7 +611,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // Assign the new action in the _KeyMap.
-        const auto actionID{ get_self<ActionAndArgs>(cmd.ActionAndArgs())->Hash() };
+        const auto actionID{ Hash(cmd.ActionAndArgs()) };
         _KeyMap.insert_or_assign(keys, actionID);
 
         // Additive operation:

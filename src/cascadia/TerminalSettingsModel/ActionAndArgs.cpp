@@ -147,33 +147,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _Action = action;
     }
 
-    bool ActionAndArgs::Equals(const Model::ActionAndArgs& otherAction)
-    {
-        if (!otherAction)
-        {
-            return false;
-        }
-
-        return Hash() == get_self<ActionAndArgs>(otherAction)->Hash();
-    }
-
-    size_t ActionAndArgs::Hash()
-    {
-        size_t hashedAction{ HashUtils::HashProperty(_Action) };
-
-        size_t hashedArgs{};
-        if (const auto& args{ _Args })
-        {
-            hashedArgs = gsl::narrow_cast<size_t>(args.Hash());
-        }
-        else
-        {
-            std::hash<IActionArgs> argsHash;
-            hashedArgs = argsHash(nullptr);
-        }
-        return hashedAction ^ hashedArgs;
-    }
-
     // Function Description:
     // - Attempts to match a string to a ShortcutAction. If there's no match, then
     //   returns ShortcutAction::Invalid
