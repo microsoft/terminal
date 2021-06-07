@@ -53,30 +53,30 @@ jobs:
       nugetConfigPath: nuget.config
       restoreDirectory: packages
 
-  # - task: DownloadBuildArtifacts@0
-  #   condition:
-  #     and(succeeded(),eq(variables['useBuildOutputFromBuildId'],''))
-  #   inputs:
-  #     artifactName: ${{ parameters.artifactName }}
-  #     downloadPath: '$(artifactsDir)'
+  - task: DownloadBuildArtifacts@0
+    condition:
+      and(succeeded(),eq(variables['useBuildOutputFromBuildId'],''))
+    inputs:
+      artifactName: ${{ parameters.artifactName }}
+      downloadPath: '$(artifactsDir)'
 
-  # - task: DownloadBuildArtifacts@0
-  #   condition:
-  #     and(succeeded(),ne(variables['useBuildOutputFromBuildId'],''))
-  #   inputs:
-  #     buildType: specific
-  #     buildVersionToDownload: specific
-  #     project: $(System.TeamProjectId)
-  #     pipeline: ${{ parameters.useBuildOutputFromPipeline }}
-  #     buildId: $(useBuildOutputFromBuildId)
-  #     artifactName: ${{ parameters.artifactName }}
-  #     downloadPath: '$(artifactsDir)'
+  - task: DownloadBuildArtifacts@0
+    condition:
+      and(succeeded(),ne(variables['useBuildOutputFromBuildId'],''))
+    inputs:
+      buildType: specific
+      buildVersionToDownload: specific
+      project: $(System.TeamProjectId)
+      pipeline: ${{ parameters.useBuildOutputFromPipeline }}
+      buildId: $(useBuildOutputFromBuildId)
+      artifactName: ${{ parameters.artifactName }}
+      downloadPath: '$(artifactsDir)'
 
-  # - task: CmdLine@1
-  #   displayName: 'Display Artifact Directory payload contents'
-  #   inputs:
-  #     filename: 'dir'
-  #     arguments: '/s $(artifactsDir)'
+  - task: CmdLine@1
+    displayName: 'Display Artifact Directory payload contents'
+    inputs:
+      filename: 'dir'
+      arguments: '/s $(artifactsDir)'
 
   - task: powershell@2
     displayName: 'PrepareHelixPayload.ps1'
