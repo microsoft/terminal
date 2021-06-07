@@ -122,63 +122,77 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 {
     // First attempt to find exactly what the user asked for.
     _didFallback = false;
-    auto face = _FindFontFace(dwriteFactory, localeName);
+    Microsoft::WRL::ComPtr<IDWriteFontFace1> face{ nullptr };
 
+    // GH#10211 - wrap this all up in a try/catch. If the nearby fonts are
+    // corrupted, then we don't want to throw out of this top half of this
+    // method. We still want to fall back to a font that's reasonable, below.
+    try
+    {
+        face = _FindFontFace(dwriteFactory, localeName, true);
+
+        if (!face)
+        {
+            // If we missed, try looking a little more by trimming the last word off the requested family name a few times.
+            // Quite often, folks are specifying weights or something in the familyName and it causes failed resolution and
+            // an unexpected error dialog. We theoretically could detect the weight words and convert them, but this
+            // is the quick fix for the majority scenario.
+            // The long/full fix is backlogged to GH#9744
+            // Also this doesn't count as a fallback because we don't want to annoy folks with the warning dialog over
+            // this resolution.
+            while (!face && !_familyName.empty())
+            {
+                const auto lastSpace = _familyName.find_last_of(UNICODE_SPACE);
+
+                // value is unsigned and npos will be greater than size.
+                // if we didn't find anything to trim, leave.
+                if (lastSpace >= _familyName.size())
+                {
+                    break;
+                }
+
+                // trim string down to just before the found space
+                // (space found at 6... trim from 0 for 6 length will give us 0-5 as the new string)
+                _familyName = _familyName.substr(0, lastSpace);
+
+                // Try to find it with the shortened family name
+                face = _FindFontFace(dwriteFactory, localeName, true);
+            }
+        }
+    }
+    CATCH_LOG();
+
+    // Alright, if our quick shot at trimming didn't work either...
+    // move onto looking up a font from our hardcoded list of fonts
+    // that should really always be available.
     if (!face)
     {
-        // If we missed, try looking a little more by trimming the last word off the requested family name a few times.
-        // Quite often, folks are specifying weights or something in the familyName and it causes failed resolution and
-        // an unexpected error dialog. We theoretically could detect the weight words and convert them, but this
-        // is the quick fix for the majority scenario.
-        // The long/full fix is backlogged to GH#9744
-        // Also this doesn't count as a fallback because we don't want to annoy folks with the warning dialog over
-        // this resolution.
-        while (!face && !_familyName.empty())
+        for (const auto fallbackFace : FALLBACK_FONT_FACES)
         {
-            const auto lastSpace = _familyName.find_last_of(UNICODE_SPACE);
+            _familyName = fallbackFace;
+            // With these fonts, don't attempt the nearby lookup. We're looking
+            // for system fonts only. If one of the nearby fonts is causing us
+            // problems (like in GH#10211), then we don't want to go anywhere
 
-            // value is unsigned and npos will be greater than size.
-            // if we didn't find anything to trim, leave.
-            if (lastSpace >= _familyName.size())
+            // near it in this part.
+            face = _FindFontFace(dwriteFactory, localeName, false);
+
+            if (face)
             {
+                _didFallback = true;
                 break;
             }
 
-            // trim string down to just before the found space
-            // (space found at 6... trim from 0 for 6 length will give us 0-5 as the new string)
-            _familyName = _familyName.substr(0, lastSpace);
+            _familyName = fallbackFace;
+            _weight = DWRITE_FONT_WEIGHT_NORMAL;
+            _stretch = DWRITE_FONT_STRETCH_NORMAL;
+            _style = DWRITE_FONT_STYLE_NORMAL;
+            face = _FindFontFace(dwriteFactory, localeName, false);
 
-            // Try to find it with the shortened family name
-            face = _FindFontFace(dwriteFactory, localeName);
-        }
-
-        // Alright, if our quick shot at trimming didn't work either...
-        // move onto looking up a font from our hardcoded list of fonts
-        // that should really always be available.
-        if (!face)
-        {
-            for (const auto fallbackFace : FALLBACK_FONT_FACES)
+            if (face)
             {
-                _familyName = fallbackFace;
-                face = _FindFontFace(dwriteFactory, localeName);
-
-                if (face)
-                {
-                    _didFallback = true;
-                    break;
-                }
-
-                _familyName = fallbackFace;
-                _weight = DWRITE_FONT_WEIGHT_NORMAL;
-                _stretch = DWRITE_FONT_STRETCH_NORMAL;
-                _style = DWRITE_FONT_STYLE_NORMAL;
-                face = _FindFontFace(dwriteFactory, localeName);
-
-                if (face)
-                {
-                    _didFallback = true;
-                    break;
-                }
+                _didFallback = true;
+                break;
             }
         }
     }
@@ -195,7 +209,7 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 // - localeName - Locale to search for appropriate fonts
 // Return Value:
 // - Smart pointer holding interface reference for queryable font data.
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontInfo::_FindFontFace(gsl::not_null<IDWriteFactory1*> dwriteFactory, std::wstring& localeName)
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontInfo::_FindFontFace(gsl::not_null<IDWriteFactory1*> dwriteFactory, std::wstring& localeName, const bool withNearbyLookup)
 {
     Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace;
 
@@ -207,7 +221,7 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
     THROW_IF_FAILED(fontCollection->FindFamilyName(_familyName.data(), &familyIndex, &familyExists));
 
     // If the system collection missed, try the files sitting next to our binary.
-    if (!familyExists)
+    if (withNearbyLookup && !familyExists)
     {
         auto&& nearbyCollection = _NearbyCollection(dwriteFactory);
 
