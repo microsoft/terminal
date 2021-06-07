@@ -1126,6 +1126,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_renderEngine)
         {
+            auto lock = _terminal->LockForWriting();
             _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(opacity));
         }
     }
