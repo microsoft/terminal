@@ -27,11 +27,10 @@ stages:
 - stage: OneFuzz
   displayName: OneFuzz
   dependsOn: ['Build_Fuzz_Config']
-  jobs:
-    pool:
+  pool:
       vmImage: 'ubuntu-latest'
-    variables:
-    - group: onefuzz-config
+  jobs:
+  - job:
     steps:
     - bash: |
         set -ex
@@ -51,4 +50,5 @@ stages:
         onefuzz template libfuzzer basic OpenConsole OpenConsole $GITHUB_SHA --target_exe fuzz.exe
       displayName: Submit OneFuzz Job
       env:
+        client_id: client_id
         client_secret: client_secret
