@@ -36,36 +36,53 @@
   </PropertyGroup>
 
   <Target Name="_GenerateBranchAndBrandingCache">
-      <Exec Command="git.exe rev-parse --abbrev-ref HEAD"
-          CustomWarningRegularExpression="^fatal:.*"
-          ConsoleToMsBuild="true"
-          IgnoreExitCode="true">
-          <Output TaskParameter="ConsoleOutput" ItemName="_GitBranchLines" />
-      </Exec>
+    <Exec Command="git.exe rev-parse --abbrev-ref HEAD"
+      CustomWarningRegularExpression="^fatal:.*"
+      ConsoleToMsBuild="true"
+      IgnoreExitCode="true">
+      <Output TaskParameter="ConsoleOutput" ItemName="_GitBranchLines" />
+    </Exec>
 
-      <ItemGroup>
-          <_BrandingLines Include="$(_WTBrandingName)" />
-      </ItemGroup>
+    <ItemGroup>
+      <_BrandingLines Include="$(_WTBrandingName)" />
+    </ItemGroup>
 
-      <WriteLinesToFile File="$(IntermediateOutputPath)\branch_branding_cache.txt"
-          Lines="@(_GitBranchLines);@(_BrandingLines)"
-          Overwrite="true"
-          WriteOnlyWhenDifferent="true" />
+    <WriteLinesToFile File="$(IntermediateOutputPath)branch_branding_cache.txt"
+      Lines="@(_GitBranchLines);@(_BrandingLines)"
+      Overwrite="true"
+      WriteOnlyWhenDifferent="true" />
 
-      <ItemGroup>
-          <FileWrites Include="$(IntermediateOutputPath)\branch_branding_cache.txt" />
-          <_BranchBrandingCacheFiles Include="$(IntermediateOutputPath)\branch_branding_cache.txt" />
-      </ItemGroup>
+    <ItemGroup>
+      <FileWrites Include="$(IntermediateOutputPath)branch_branding_cache.txt" />
+      <_BranchBrandingCacheFiles Include="$(IntermediateOutputPath)branch_branding_cache.txt" />
+    </ItemGroup>
   </Target>
 
   <Target Name="_RunFeatureFlagScript"
-      Inputs="@(FeatureFlagFile);@(_BranchBrandingCacheFiles)"
-      Outputs="$(OpenConsoleCommonOutDir)\inc\TilFeatureStaging.h"
-      DependsOnTargets="_GenerateBranchAndBrandingCache">
+    Inputs="@(FeatureFlagFile);@(_BranchBrandingCacheFiles)"
+    Outputs="$(OpenConsoleCommonOutDir)\inc\TilFeatureStaging.h"
+    DependsOnTargets="_GenerateBranchAndBrandingCache">
     <MakeDir Directories="$(OpenConsoleCommonOutDir)\inc" />
-    <Exec Command="powershell -NoProfile -Command &quot;$(SolutionDir)\tools\Generate-FeatureStagingHeader.ps1&quot; -Path &quot;%(FeatureFlagFile.FullPath)&quot; -Branding $(_WTBrandingName) -OutputPath &quot;$(OpenConsoleCommonOutDir)\inc\TilFeatureStaging.h&quot;" />
+    <Exec
+      Command="powershell -NoProfile -Command &quot;$(SolutionDir)\tools\Generate-FeatureStagingHeader.ps1&quot; -Path &quot;%(FeatureFlagFile.FullPath)&quot; -Branding $(_WTBrandingName)"
+      ConsoleToMsBuild="true"
+      StandardOutputImportance="low">
+      <Output TaskParameter="ConsoleOutput" ItemName="_FeatureFlagFileLines" />
+    </Exec>
+
+    <!--
+      We gather the feature flag output in MSBuild and emit the file so that we can take advantage of
+      WriteOnlyWhenDifferent. Doing this ensures that we don't rebuild the world when the branch changes
+      (if it results in a new TilFeatureStaging.h that would have had the same content/features as the previous one)
+    -->
+
+    <WriteLinesToFile File="$(OpenConsoleCommonOutDir)\inc\TilFeatureStaging.h"
+      Lines="@(_FeatureFlagFileLines)"
+      Overwrite="true"
+      WriteOnlyWhenDifferent="true" />
+
     <ItemGroup>
-        <FileWrites Include="$(OpenConsoleCommonOutDir)\inc\TilFeatureStaging.h" />
+      <FileWrites Include="$(OpenConsoleCommonOutDir)\inc\TilFeatureStaging.h" />
     </ItemGroup>
   </Target>
 
