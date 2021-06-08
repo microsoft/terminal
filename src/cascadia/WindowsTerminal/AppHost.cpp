@@ -1043,13 +1043,11 @@ HMENU AppHost::_CreateTrayContextMenu()
 
         // TODO: Other useful options may include:
         // - Summon All
-        // - Summon MRU (though that's technically already available with a left click)
+        // - Summon MRU or Monarch
+        //   - Though that's technically already available with a left click
+        //     but may be a reasonable request to also put it explicitly in the
+        //     context menu
         // - Quit All
-
-        // Add the quit all option.
-        // TODO: Localize this string and slap it in a variable.
-        AppendMenu(hmenu, MF_STRING, 0, L"Summon All Windows");
-        AppendMenu(hmenu, MF_SEPARATOR, 0, L"");
 
         // Get all peasants' window names
         for (auto [id, name] : _windowManager.GetPeasantNames())
@@ -1068,11 +1066,6 @@ void AppHost::_TrayMenuItemSelected(const UINT menuItemIndex)
     // Grab the window name associated to the given context menu item position.
     WCHAR name[255];
     GetMenuString(_trayContextMenu.value(), menuItemIndex, name, 255, MF_BYPOSITION);
-
-    if (menuItemIndex == 0)
-    {
-
-    }
 
     Remoting::SummonWindowSelectionArgs args{ name };
     args.SummonBehavior().ToggleVisibility(false);
