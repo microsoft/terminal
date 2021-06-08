@@ -93,7 +93,7 @@ private:
     void _HandleTrayIconPressed();
     void _ShowTrayContextMenu(const til::point coord);
     HMENU _CreateTrayContextMenu();
-    void _TrayMenuItemSelected(const UINT menuItemID);
+    void _TrayMenuItemSelected(const UINT menuItemIndex);
 
     std::optional<NOTIFYICONDATA> _trayIconData;
     std::optional<HMENU> _trayContextMenu;

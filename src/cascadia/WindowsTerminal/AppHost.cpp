@@ -973,6 +973,7 @@ void AppHost::_UpdateTrayIcon()
     if (!_trayIconData && _window->GetHandle())
     {
         NOTIFYICONDATA nid{};
+        nid.cbSize = sizeof(NOTIFYICONDATA);
 
         // This HWND will receive the callbacks sent by the tray icon.
         nid.hWnd = _window->GetHandle();
@@ -1031,29 +1032,47 @@ void AppHost::_ShowTrayContextMenu(const til::point coord)
 
 HMENU AppHost::_CreateTrayContextMenu()
 {
-    assert(_windowManager.IsMonarch());
     auto hmenu = CreatePopupMenu();
     if (hmenu)
     {
         MENUINFO mi{};
+        mi.cbSize = sizeof(MENUINFO);
         mi.fMask = MIM_STYLE;
-        mi.dwStyle = MNS_NOCHECK;
-        assert(SetMenuInfo(hmenu, &mi));
+        mi.dwStyle = MNS_NOTIFYBYPOS;
+        SetMenuInfo(hmenu, &mi);
+
+        // TODO: Other useful options may include:
+        // - Summon All
+        // - Summon MRU (though that's technically already available with a left click)
+        // - Quit All
+
+        // Add the quit all option.
+        // TODO: Localize this string and slap it in a variable.
+        AppendMenu(hmenu, MF_STRING, 0, L"Summon All Windows");
+        AppendMenu(hmenu, MF_SEPARATOR, 0, L"");
 
         // Get all peasants' window names
         for (auto [id, name] : _windowManager.GetPeasantNames())
         {
+            // Technically, the id doesn't matter here since we'll
+            // be referring to this menu item through its position
+            // in the context menu.
             AppendMenu(hmenu, MF_STRING, id, name.c_str());
         }
     }
     return hmenu;
 }
 
-void AppHost::_TrayMenuItemSelected(const UINT menuItemID)
+void AppHost::_TrayMenuItemSelected(const UINT menuItemIndex)
 {
-    // Grab the window name associated to the given context menu item ID.
+    // Grab the window name associated to the given context menu item position.
     WCHAR name[255];
-    GetMenuString(_trayContextMenu.value(), menuItemID, name, 255, MF_BYCOMMAND);
+    GetMenuString(_trayContextMenu.value(), menuItemIndex, name, 255, MF_BYPOSITION);
+
+    if (menuItemIndex == 0)
+    {
+
+    }
 
     Remoting::SummonWindowSelectionArgs args{ name };
     args.SummonBehavior().ToggleVisibility(false);
