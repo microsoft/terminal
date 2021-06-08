@@ -27,6 +27,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <IntermediateOutputPath>$(SolutionDir)obj\$(Configuration)\GenerateFeatureFlags\</IntermediateOutputPath>
     <OpenConsoleCommonOutDir>$(SolutionDir)bin\$(Configuration)\</OpenConsoleCommonOutDir>
 
     <_WTBrandingName Condition="'$(WindowsTerminalBranding)'=='Preview'">Preview</_WTBrandingName>
@@ -34,11 +35,38 @@
     <_WTBrandingName Condition="'$(_WTBrandingName)'==''">Dev</_WTBrandingName>
   </PropertyGroup>
 
+  <Target Name="_GenerateBranchAndBrandingCache">
+      <Exec Command="git.exe rev-parse --abbrev-ref HEAD"
+          CustomWarningRegularExpression="^fatal:.*"
+          ConsoleToMsBuild="true"
+          IgnoreExitCode="true">
+          <Output TaskParameter="ConsoleOutput" ItemName="_GitBranchLines" />
+      </Exec>
+
+      <ItemGroup>
+          <_BrandingLines Include="$(_WTBrandingName)" />
+      </ItemGroup>
+
+      <WriteLinesToFile File="$(IntermediateOutputPath)\branch_branding_cache.txt"
+          Lines="@(_GitBranchLines);@(_BrandingLines)"
+          Overwrite="true"
+          WriteOnlyWhenDifferent="true" />
+
+      <ItemGroup>
+          <FileWrites Include="$(IntermediateOutputPath)\branch_branding_cache.txt" />
+          <_BranchBrandingCacheFiles Include="$(IntermediateOutputPath)\branch_branding_cache.txt" />
+      </ItemGroup>
+  </Target>
+
   <Target Name="_RunFeatureFlagScript"
-    Inputs="@(FeatureFlagFile)"
-    Outputs="$(OpenConsoleCommonOutDir)\inc\TilFeatureStaging.h">
+      Inputs="@(FeatureFlagFile);@(_BranchBrandingCacheFiles)"
+      Outputs="$(OpenConsoleCommonOutDir)\inc\TilFeatureStaging.h"
+      DependsOnTargets="_GenerateBranchAndBrandingCache">
     <MakeDir Directories="$(OpenConsoleCommonOutDir)\inc" />
     <Exec Command="powershell -NoProfile -Command &quot;$(SolutionDir)\tools\Generate-FeatureStagingHeader.ps1&quot; -Path &quot;%(FeatureFlagFile.FullPath)&quot; -Branding $(_WTBrandingName) -OutputPath &quot;$(OpenConsoleCommonOutDir)\inc\TilFeatureStaging.h&quot;" />
+    <ItemGroup>
+        <FileWrites Include="$(OpenConsoleCommonOutDir)\inc\TilFeatureStaging.h" />
+    </ItemGroup>
   </Target>
 
   <Target Name="Build" DependsOnTargets="_RunFeatureFlagScript" />
