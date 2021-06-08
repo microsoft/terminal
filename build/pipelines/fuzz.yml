@@ -23,7 +23,7 @@ stages:
   jobs:
   - template: ./templates/build-console-fuzzing.yml
     parameters:
-      platform: Fuzzing
+      platform: x64
 - stage: OneFuzz
   displayName: OneFuzz
   dependsOn: ['Build_Fuzz_Config']
