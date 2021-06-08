@@ -1,0 +1,21 @@
+parameters:
+  configuration: 'Fuzzing'
+  platform: ''
+  additionalBuildArguments: ''
+  minimumExpectedTestsExecutedCount: 1 # Sanity check for minimum expected tests to be reported
+  rerunPassesRequiredToAvoidFailure: 0
+
+jobs:
+- job: Build${{ parameters.platform }}${{ parameters.configuration }}
+  displayName: Build ${{ parameters.platform }} ${{ parameters.configuration }}
+  variables:
+    BuildConfiguration: ${{ parameters.configuration }}
+    BuildPlatform: ${{ parameters.platform }}
+  pool: "windevbuildagents"
+  # The public pool is also an option!
+  # pool: { vmImage: windows-2019 }
+
+  steps:
+  - template: build-console-steps.yml
+    parameters:
+      additionalBuildArguments: ${{ parameters.additionalBuildArguments }}

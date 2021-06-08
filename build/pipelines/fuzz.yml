@@ -1,0 +1,54 @@
+trigger: none
+#  batch: true
+#  branches:
+#    include:
+#      - main
+#  paths:
+#    exclude:
+#      - docs/*
+#      - samples/*
+#      - tools/*
+
+pr: none
+
+#     0.0.yyMM.dd##
+#     0.0.1904.0900
+name: 0.0.$(Date:yyMM).$(Date:dd)$(Rev:rr)
+
+stages:
+- stage: Build_Fuzz_Config
+  displayName: Build Project
+  dependsOn: []
+  condition: succeeded()
+  jobs:
+  - template: ./templates/build-console-fuzzing.yml
+    parameters:
+      platform: Fuzzing
+- stage: OneFuzz
+  displayName: OneFuzz
+  dependsOn: ['Build_Fuzz_Config']
+  jobs:
+    pool:
+      vmImage: 'ubuntu-latest'
+    variables:
+    - group: onefuzz-config
+    steps:
+    - bash: |
+        set -ex
+        cd examples/simple-libfuzzer
+        make
+      displayName: Build LibFuzzer
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.x'
+        addToPath: true
+        architecture: 'x64'
+      displayName: Setup Python Env
+    - bash: |
+        set -ex
+        pip -q install onefuzz
+        onefuzz config --endpoint $(endpoint) --client_id $(client_id) --client_secret $(client_secret)
+        onefuzz template libfuzzer basic OpenConsole OpenConsole $GITHUB_SHA --target_exe fuzz.exe
+      displayName: Submit OneFuzz Job
+      env:
+        client_secret: client_secret
