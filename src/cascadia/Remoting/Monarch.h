@@ -49,6 +49,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         winrt::Microsoft::Terminal::Remoting::ProposeCommandlineResult ProposeCommandline(const winrt::Microsoft::Terminal::Remoting::CommandlineArgs& args);
         void HandleActivatePeasant(const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args);
+        void SummonWindow(const Remoting::SummonWindowSelectionArgs& args);
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
 
@@ -66,7 +67,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         std::vector<Remoting::WindowActivatedArgs> _mruPeasants;
 
         winrt::Microsoft::Terminal::Remoting::IPeasant _getPeasant(uint64_t peasantID);
-        uint64_t _getMostRecentPeasantID(bool limitToCurrentDesktop);
+        uint64_t _getMostRecentPeasantID(bool limitToCurrentDesktop, const bool ignoreQuakeWindow);
         uint64_t _lookupPeasantIdForName(std::wstring_view name);
 
         void _peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& sender,

@@ -20,6 +20,8 @@ namespace Microsoft::Console::VirtualTerminal
     class IStateMachineEngine
     {
     public:
+        using StringHandler = std::function<bool(const wchar_t)>;
+
         virtual ~IStateMachineEngine() = 0;
         IStateMachineEngine(const IStateMachineEngine&) = default;
         IStateMachineEngine(IStateMachineEngine&&) = default;
@@ -36,6 +38,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool ActionEscDispatch(const VTID id) = 0;
         virtual bool ActionVt52EscDispatch(const VTID id, const VTParameters parameters) = 0;
         virtual bool ActionCsiDispatch(const VTID id, const VTParameters parameters) = 0;
+        virtual StringHandler ActionDcsDispatch(const VTID id, const VTParameters parameters) = 0;
 
         virtual bool ActionClear() = 0;
 

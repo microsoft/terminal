@@ -36,6 +36,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(LayerProfileProperties);
         TEST_METHOD(LayerProfileIcon);
         TEST_METHOD(LayerProfilesOnArray);
+        TEST_METHOD(DuplicateProfileTest);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -307,4 +308,22 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(L"profile4", settings->_allProfiles.GetAt(0).Name());
     }
 
+    void ProfileTests::DuplicateProfileTest()
+    {
+        const std::string profile0String{ R"({
+            "name" : "profile0",
+            "backgroundImage" : "some//path"
+        })" };
+
+        const auto profile0Json = VerifyParseSucceeded(profile0String);
+
+        auto settings = winrt::make_self<implementation::CascadiaSettings>();
+
+        settings->_LayerOrCreateProfile(profile0Json);
+        auto duplicatedProfile = settings->DuplicateProfile(*settings->_FindMatchingProfile(profile0Json));
+        duplicatedProfile.Name(L"profile0");
+
+        const auto duplicatedJson = winrt::get_self<implementation::Profile>(duplicatedProfile)->ToJson();
+        VERIFY_ARE_EQUAL(profile0Json, duplicatedJson);
+    }
 }

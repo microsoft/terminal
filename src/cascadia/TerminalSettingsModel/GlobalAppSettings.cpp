@@ -7,6 +7,7 @@
 #include "../../inc/DefaultSettings.h"
 #include "JsonUtils.h"
 #include "TerminalSettingsSerializationHelpers.h"
+#include "KeyChordSerialization.h"
 
 #include "GlobalAppSettings.g.cpp"
 
@@ -45,12 +46,14 @@ static constexpr std::string_view DisableAnimationsKey{ "disableAnimations" };
 static constexpr std::string_view StartupActionsKey{ "startupActions" };
 static constexpr std::string_view FocusFollowMouseKey{ "focusFollowMouse" };
 static constexpr std::string_view WindowingBehaviorKey{ "windowingBehavior" };
+static constexpr std::string_view TrimBlockSelectionKey{ "trimBlockSelection" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
 static constexpr std::string_view ForceFullRepaintRenderingKey{ "experimental.rendering.forceFullRepaint" };
 static constexpr std::string_view SoftwareRenderingKey{ "experimental.rendering.software" };
 static constexpr std::string_view ForceVTInputKey{ "experimental.input.forceVT" };
+static constexpr std::string_view DetectURLsKey{ "experimental.detectURLs" };
 
 #ifdef _DEBUG
 static constexpr bool debugFeaturesDefault{ true };
@@ -64,12 +67,11 @@ bool GlobalAppSettings::_getDefaultDebugFeaturesValue()
 }
 
 GlobalAppSettings::GlobalAppSettings() :
-    _keymap{ winrt::make_self<KeyMapping>() },
+    _actionMap{ winrt::make_self<implementation::ActionMap>() },
     _keybindingsWarnings{},
     _validDefaultProfile{ false },
     _defaultProfile{}
 {
-    _commands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
     _colorSchemes = winrt::single_threaded_map<winrt::hstring, Model::ColorScheme>();
 }
 
@@ -85,10 +87,9 @@ void GlobalAppSettings::_FinalizeInheritance()
     FAIL_FAST_IF(_parents.size() > 1);
     for (auto parent : _parents)
     {
-        _keymap = std::move(parent->_keymap);
+        _actionMap->InsertParent(parent->_actionMap);
         _keybindingsWarnings = std::move(parent->_keybindingsWarnings);
         _colorSchemes = std::move(parent->_colorSchemes);
-        _commands = std::move(parent->_commands);
     }
 }
 
@@ -124,14 +125,13 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_StartupActions = _StartupActions;
     globals->_FocusFollowMouse = _FocusFollowMouse;
     globals->_WindowingBehavior = _WindowingBehavior;
+    globals->_TrimBlockSelection = _TrimBlockSelection;
+    globals->_DetectURLs = _DetectURLs;
 
     globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
     globals->_validDefaultProfile = _validDefaultProfile;
     globals->_defaultProfile = _defaultProfile;
-    if (_keymap)
-    {
-        globals->_keymap = _keymap->Copy();
-    }
+    globals->_actionMap = _actionMap->Copy();
     std::copy(_keybindingsWarnings.begin(), _keybindingsWarnings.end(), std::back_inserter(globals->_keybindingsWarnings));
 
     if (_colorSchemes)
@@ -140,15 +140,6 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
         {
             const auto schemeImpl{ winrt::get_self<ColorScheme>(kv.Value()) };
             globals->_colorSchemes.Insert(kv.Key(), *schemeImpl->Copy());
-        }
-    }
-
-    if (_commands)
-    {
-        for (auto kv : _commands)
-        {
-            const auto commandImpl{ winrt::get_self<Command>(kv.Value()) };
-            globals->_commands.Insert(kv.Key(), *commandImpl->Copy());
         }
     }
 
@@ -232,9 +223,9 @@ std::optional<winrt::hstring> GlobalAppSettings::_getUnparsedDefaultProfileImpl(
 }
 #pragma endregion
 
-winrt::Microsoft::Terminal::Settings::Model::KeyMapping GlobalAppSettings::KeyMap() const noexcept
+winrt::Microsoft::Terminal::Settings::Model::ActionMap GlobalAppSettings::ActionMap() const noexcept
 {
-    return *_keymap;
+    return *_actionMap;
 }
 
 // Method Description:
@@ -320,13 +311,18 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, WindowingBehaviorKey, _WindowingBehavior);
 
+    JsonUtils::GetValueForKey(json, TrimBlockSelectionKey, _TrimBlockSelection);
+
+    JsonUtils::GetValueForKey(json, DetectURLsKey, _DetectURLs);
+
     // This is a helper lambda to get the keybindings and commands out of both
     // and array of objects. We'll use this twice, once on the legacy
     // `keybindings` key, and again on the newer `bindings` key.
     auto parseBindings = [this, &json](auto jsonKey) {
         if (auto bindings{ json[JsonKey(jsonKey)] })
         {
-            auto warnings = _keymap->LayerJson(bindings);
+            auto warnings = _actionMap->LayerJson(bindings);
+
             // It's possible that the user provided keybindings have some warnings
             // in them - problems that we should alert the user to, but we can
             // recover from. Most of these warnings cannot be detected later in the
@@ -334,16 +330,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
             // warnings generated from parsing these keybindings, add them to our
             // list of warnings.
             _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
-
-            // Now parse the array again, but this time as a list of commands.
-            warnings = implementation::Command::LayerJson(_commands, bindings);
-
-            // We cannot add all warnings, as some of them were already populated while parsing key mapping.
-            // Hence let's cherry-pick the ones relevant for command parsing.
-            if (std::count(warnings.begin(), warnings.end(), SettingsLoadWarnings::FailedToParseSubCommands))
-            {
-                _keybindingsWarnings.push_back(SettingsLoadWarnings::FailedToParseSubCommands);
-            }
         }
     };
     parseBindings(LegacyKeybindingsKey);
@@ -378,11 +364,6 @@ void GlobalAppSettings::RemoveColorScheme(hstring schemeName)
 std::vector<winrt::Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> GlobalAppSettings::KeybindingsWarnings() const
 {
     return _keybindingsWarnings;
-}
-
-winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::Command> GlobalAppSettings::Commands() noexcept
-{
-    return _commands.GetView();
 }
 
 // Method Description:
@@ -426,12 +407,10 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, StartupActionsKey,              _StartupActions);
     JsonUtils::SetValueForKey(json, FocusFollowMouseKey,            _FocusFollowMouse);
     JsonUtils::SetValueForKey(json, WindowingBehaviorKey,           _WindowingBehavior);
+    JsonUtils::SetValueForKey(json, TrimBlockSelectionKey,          _TrimBlockSelection);
+    JsonUtils::SetValueForKey(json, DetectURLsKey,                  _DetectURLs);
     // clang-format on
 
-    // TODO GH#8100: keymap needs to be serialized here
-    //   For deserialization, we iterate over each action in the Json and interpret it as a keybinding, then as a command.
-    //   Converting this back to JSON is a problem because we have no way to know if a Command and Keybinding come from
-    //     the same entry.
-
+    json[JsonKey(ActionsKey)] = _actionMap->ToJson();
     return json;
 }

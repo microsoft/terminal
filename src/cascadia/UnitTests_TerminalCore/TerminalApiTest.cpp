@@ -388,6 +388,30 @@ void TerminalCoreUnitTests::TerminalApiTest::SetTaskbarProgress()
     // Additional params should be ignored, state and progress still set normally
     VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(1));
     VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(80));
+
+    // Edge cases + trailing semicolon testing
+    stateMachine.ProcessString(L"\x1b]9;4;2;\x9c");
+    // String should be processed correctly despite the trailing semicolon,
+    // taskbar progress should remain unchanged from previous value
+    VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(2));
+    VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(80));
+
+    stateMachine.ProcessString(L"\x1b]9;4;3;75\x9c");
+    // Given progress value should be ignored because this is the indeterminate state,
+    // so the progress value should remain unchanged
+    VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(3));
+    VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(80));
+
+    stateMachine.ProcessString(L"\x1b]9;4;0;50\x9c");
+    // Taskbar progress should be 0 (the given value should be ignored)
+    VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(0));
+    VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(0));
+
+    stateMachine.ProcessString(L"\x1b]9;4;2;\x9c");
+    // String should be processed correctly despite the trailing semicolon,
+    // taskbar progress should be set to a 'minimum', non-zero value
+    VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(2));
+    VERIFY_IS_GREATER_THAN(term.GetTaskbarProgress(), gsl::narrow<size_t>(0));
 }
 
 void TerminalCoreUnitTests::TerminalApiTest::SetWorkingDirectory()

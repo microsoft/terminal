@@ -6,6 +6,7 @@
 #include "../../types/inc/colorTable.hpp"
 
 #include "TerminalSettings.g.cpp"
+#include "TerminalSettingsCreateResult.g.cpp"
 
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace Microsoft::Console::Utils;
@@ -231,6 +232,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         InsertParent(parentImpl);
     }
 
+    Model::TerminalSettings TerminalSettings::GetParent()
+    {
+        if (_parents.size() > 0)
+        {
+            return *_parents.at(0);
+        }
+        return nullptr;
+    }
+
     // Method Description:
     // - Apply Profile settings, as well as any colors from our color scheme, if we have one.
     // Arguments:
@@ -296,6 +306,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _ForceFullRepaintRendering = globalSettings.ForceFullRepaintRendering();
         _SoftwareRendering = globalSettings.SoftwareRendering();
         _ForceVTInput = globalSettings.ForceVTInput();
+        _TrimBlockSelection = globalSettings.TrimBlockSelection();
+        _DetectURLs = globalSettings.DetectURLs();
     }
 
     // Method Description:
@@ -307,15 +319,30 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - <none>
     void TerminalSettings::ApplyColorScheme(const Model::ColorScheme& scheme)
     {
-        _DefaultForeground = til::color{ scheme.Foreground() };
-        _DefaultBackground = til::color{ scheme.Background() };
-        _SelectionBackground = til::color{ scheme.SelectionBackground() };
-        _CursorColor = til::color{ scheme.CursorColor() };
+        // If the scheme was nullptr, then just clear out the current color
+        // settings.
+        if (scheme == nullptr)
+        {
+            ClearDefaultForeground();
+            ClearDefaultBackground();
+            ClearSelectionBackground();
+            ClearCursorColor();
+            _ColorTable = std::nullopt;
+        }
+        else
+        {
+            _DefaultForeground = til::color{ scheme.Foreground() };
+            _DefaultBackground = til::color{ scheme.Background() };
+            _SelectionBackground = til::color{ scheme.SelectionBackground() };
+            _CursorColor = til::color{ scheme.CursorColor() };
 
-        const auto table = scheme.Table();
-        std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> colorTable{};
-        std::copy(table.cbegin(), table.cend(), colorTable.begin());
-        ColorTable(colorTable);
+            const auto table = scheme.Table();
+            std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> colorTable{};
+            std::transform(table.cbegin(), table.cend(), colorTable.begin(), [](auto&& color) {
+                return static_cast<winrt::Microsoft::Terminal::Core::Color>(til::color{ color });
+            });
+            ColorTable(colorTable);
+        }
     }
 
     winrt::Microsoft::Terminal::Core::Color TerminalSettings::GetColorTableEntry(int32_t index) noexcept

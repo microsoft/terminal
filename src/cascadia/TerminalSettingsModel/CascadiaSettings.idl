@@ -4,6 +4,7 @@
 import "GlobalAppSettings.idl";
 import "Profile.idl";
 import "TerminalWarnings.idl";
+import "DefaultTerminal.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
@@ -30,7 +31,9 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.Collections.IObservableVector<Profile> AllProfiles { get; };
         Windows.Foundation.Collections.IObservableVector<Profile> ActiveProfiles { get; };
 
-        KeyMapping KeyMap { get; };
+        Profile DuplicateProfile(Profile sourceProfile);
+
+        ActionMap ActionMap { get; };
 
         Windows.Foundation.Collections.IVectorView<SettingsLoadWarnings> Warnings { get; };
         Windows.Foundation.IReference<SettingsLoadErrors> GetLoadingError { get; };
@@ -42,5 +45,10 @@ namespace Microsoft.Terminal.Settings.Model
         void UpdateColorSchemeReferences(String oldName, String newName);
 
         Guid GetProfileForArgs(NewTerminalArgs newTerminalArgs);
+
+        void RefreshDefaultTerminals();
+        static Boolean IsDefaultTerminalAvailable { get; };
+        Windows.Foundation.Collections.IObservableVector<DefaultTerminal> DefaultTerminals { get; };
+        DefaultTerminal CurrentDefaultTerminal;
     }
 }

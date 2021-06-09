@@ -37,6 +37,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _defaultSettings(defaultSettings),
             _unfocusedSettings(unfocusedSettings) {}
 
+        TerminalSettingsCreateResult(Model::TerminalSettings defaultSettings) :
+            _defaultSettings(defaultSettings),
+            _unfocusedSettings(nullptr) {}
+
         Model::TerminalSettings DefaultSettings() { return _defaultSettings; };
         Model::TerminalSettings UnfocusedSettings() { return _unfocusedSettings; };
 
@@ -58,6 +62,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                                              const Control::IKeyBindings& keybindings);
 
         static Model::TerminalSettingsCreateResult CreateWithParent(const Model::TerminalSettingsCreateResult& parent);
+
+        Model::TerminalSettings GetParent();
+
         void SetParent(const Model::TerminalSettings& parent);
 
         void ApplyColorScheme(const Model::ColorScheme& scheme);
@@ -87,6 +94,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, CopyOnSelect, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, InputServiceWarning, true);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, FocusFollowMouse, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, TrimBlockSelection, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, DetectURLs, true);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, TabColor, nullptr);
 
@@ -152,5 +161,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
+    BASIC_FACTORY(TerminalSettingsCreateResult);
     BASIC_FACTORY(TerminalSettings);
 }

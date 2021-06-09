@@ -70,7 +70,7 @@ namespace Microsoft::Console::Render
 
         void SetSoftwareRendering(bool enable) noexcept;
 
-        ::Microsoft::WRL::ComPtr<IDXGISwapChain1> GetSwapChain();
+        HANDLE GetSwapChainHandle();
 
         // IRenderEngine Members
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
@@ -182,6 +182,8 @@ namespace Microsoft::Console::Render
 
         static std::atomic<size_t> _tracelogCount;
 
+        wil::unique_handle _swapChainHandle;
+
         // Device-Independent Resources
         ::Microsoft::WRL::ComPtr<ID2D1Factory1> _d2dFactory;
 
@@ -210,6 +212,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushBackground;
 
         ::Microsoft::WRL::ComPtr<IDXGIFactory2> _dxgiFactory2;
+        ::Microsoft::WRL::ComPtr<IDXGIFactoryMedia> _dxgiFactoryMedia;
         ::Microsoft::WRL::ComPtr<IDXGIDevice> _dxgiDevice;
         ::Microsoft::WRL::ComPtr<IDXGISurface> _dxgiSurface;
 
@@ -268,6 +271,8 @@ namespace Microsoft::Console::Render
         } _pixelShaderSettings;
 
         [[nodiscard]] HRESULT _CreateDeviceResources(const bool createSwapChain) noexcept;
+        [[nodiscard]] HRESULT _CreateSurfaceHandle() noexcept;
+
         bool _HasTerminalEffects() const noexcept;
         std::string _LoadPixelShaderFile() const;
         HRESULT _SetupTerminalEffects();

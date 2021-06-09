@@ -285,12 +285,21 @@ namespace winrt::TerminalApp::implementation
             // launched _fullscreen_, toggle fullscreen mode. This will make sure
             // that the window size is _first_ set up as something sensible, so
             // leaving fullscreen returns to a reasonable size.
+            //
+            // We know at the start, that the root TerminalPage definitely isn't
+            // in focus nor fullscreen mode. So "Toggle" here will always work
+            // to "enable".
             const auto launchMode = this->GetLaunchMode();
-            if (launchMode == LaunchMode::FullscreenMode)
+            if (IsQuakeWindow())
+            {
+                _root->ToggleFocusMode();
+            }
+            else if (launchMode == LaunchMode::FullscreenMode)
             {
                 _root->ToggleFullscreen();
             }
-            else if (launchMode == LaunchMode::FocusMode || launchMode == LaunchMode::MaximizedFocusMode)
+            else if (launchMode == LaunchMode::FocusMode ||
+                     launchMode == LaunchMode::MaximizedFocusMode)
             {
                 _root->ToggleFocusMode();
             }
@@ -919,12 +928,32 @@ namespace winrt::TerminalApp::implementation
         _ApplyTheme(_settings.GlobalSettings().Theme());
     }
 
+    // Function Description:
+    // Returns the current app package or nullptr.
+    // TRANSITIONAL
+    // Exists to work around a compiler bug. This function encapsulates the
+    // exception handling that we used to keep around calls to Package::Current,
+    // so that when it's called inside a coroutine and fails it doesn't explode
+    // terribly.
+    static winrt::Windows::ApplicationModel::Package GetCurrentPackageNoThrow() noexcept
+    {
+        try
+        {
+            return winrt::Windows::ApplicationModel::Package::Current();
+        }
+        catch (...)
+        {
+            // discard any exception -- literally pretend we're not in a package
+        }
+        return nullptr;
+    }
+
     fire_and_forget AppLogic::_ApplyStartupTaskStateChange()
     try
     {
         // First, make sure we're running in a packaged context. This method
         // won't work, and will crash mysteriously if we're running unpackaged.
-        const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
+        const auto package{ GetCurrentPackageNoThrow() };
         if (package == nullptr)
         {
             return;
@@ -968,7 +997,7 @@ namespace winrt::TerminalApp::implementation
     CATCH_LOG();
 
     // Method Description:
-    // - Reloads the settings from the profile.json.
+    // - Reloads the settings from the settings.json file.
     void AppLogic::_ReloadSettings()
     {
         // Attempt to load our settings.
@@ -998,6 +1027,8 @@ namespace winrt::TerminalApp::implementation
         _ApplyStartupTaskStateChange();
 
         Jumplist::UpdateJumplist(_settings);
+
+        _SettingsChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -1175,11 +1206,23 @@ namespace winrt::TerminalApp::implementation
             // in and be routed to an event with no handlers or a non-ready Page.
             if (_appArgs.IsHandoffListener())
             {
-                _root->SetInboundListener();
+                _root->SetInboundListener(true);
             }
         }
 
         return result;
+    }
+
+    // Method Description:
+    // - Triggers the setup of the listener for incoming console connections
+    //   from the operating system.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void AppLogic::SetInboundListener()
+    {
+        _root->SetInboundListener(false);
     }
 
     // Method Description:
@@ -1380,6 +1423,11 @@ namespace winrt::TerminalApp::implementation
         return _root ? _root->AlwaysOnTop() : false;
     }
 
+    Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> AppLogic::GlobalHotkeys()
+    {
+        return _settings.GlobalSettings().ActionMap().GlobalHotkeys();
+    }
+
     void AppLogic::IdentifyWindow()
     {
         if (_root)
@@ -1417,6 +1465,11 @@ namespace winrt::TerminalApp::implementation
         {
             _root->RenameFailed();
         }
+    }
+
+    bool AppLogic::IsQuakeWindow() const noexcept
+    {
+        return _root->IsQuakeWindow();
     }
 
 }

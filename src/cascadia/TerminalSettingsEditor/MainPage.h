@@ -35,15 +35,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         std::optional<HWND> _hostingHwnd;
 
         void _InitializeProfilesList();
-        void _CreateAndNavigateToNewProfile(const uint32_t index);
+        void _CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile& profile);
         winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem _CreateProfileNavViewItem(const Editor::ProfileViewModel& profile);
         void _DeleteProfile(const Windows::Foundation::IInspectable sender, const Editor::DeleteProfileEventArgs& args);
+        void _AddProfileHandler(const winrt::guid profileGuid);
 
         void _Navigate(hstring clickedItemTag);
         void _Navigate(const Editor::ProfileViewModel& profile);
 
-        ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
-        ProfilePageNavigationState _lastProfilesNavState{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Editor::ProfilePageNavigationState _lastProfilesNavState{ nullptr };
     };
 }
 

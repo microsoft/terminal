@@ -8,6 +8,8 @@
 
 using namespace Microsoft::Console::Types;
 
+// NOTE: See `til.h` for which keyword flags are reserved
+// to ensure newly added ones do NOT overlap.
 enum TraceKeywords
 {
     //Font = 0x001, // _DBGFONTS

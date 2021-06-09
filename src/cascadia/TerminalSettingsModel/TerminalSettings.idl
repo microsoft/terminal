@@ -7,6 +7,7 @@ namespace Microsoft.Terminal.Settings.Model
 {
     runtimeclass TerminalSettingsCreateResult
     {
+        TerminalSettingsCreateResult(TerminalSettings defaultSettings);
         TerminalSettings DefaultSettings { get; };
         TerminalSettings UnfocusedSettings { get; };
     }
@@ -30,6 +31,7 @@ namespace Microsoft.Terminal.Settings.Model
         static TerminalSettingsCreateResult CreateWithParent(TerminalSettingsCreateResult parent);
 
         void SetParent(TerminalSettings parent);
+        TerminalSettings GetParent();
         void ApplyColorScheme(ColorScheme scheme);
     };
 }

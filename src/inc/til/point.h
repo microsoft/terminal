@@ -25,9 +25,22 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             point(static_cast<ptrdiff_t>(x), static_cast<ptrdiff_t>(y))
         {
         }
+        constexpr point(ptrdiff_t width, int height) noexcept :
+            point(width, static_cast<ptrdiff_t>(height))
+        {
+        }
+        constexpr point(int width, ptrdiff_t height) noexcept :
+            point(static_cast<ptrdiff_t>(width), height)
+        {
+        }
 #endif
 
         point(size_t x, size_t y)
+        {
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(x).AssignIfValid(&_x));
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(y).AssignIfValid(&_y));
+        }
+        point(long x, long y)
         {
             THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(x).AssignIfValid(&_x));
             THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(y).AssignIfValid(&_y));

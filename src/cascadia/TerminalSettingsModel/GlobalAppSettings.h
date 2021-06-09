@@ -18,7 +18,7 @@ Author(s):
 #include "GlobalAppSettings.g.h"
 #include "IInheritable.h"
 
-#include "KeyMapping.h"
+#include "ActionMap.h"
 #include "Command.h"
 #include "ColorScheme.h"
 
@@ -42,7 +42,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void AddColorScheme(const Model::ColorScheme& scheme);
         void RemoveColorScheme(hstring schemeName);
 
-        Model::KeyMapping KeyMap() const noexcept;
+        Model::ActionMap ActionMap() const noexcept;
 
         static com_ptr<GlobalAppSettings> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);
@@ -50,8 +50,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const;
 
         std::vector<SettingsLoadWarnings> KeybindingsWarnings() const;
-
-        Windows::Foundation::Collections::IMapView<hstring, Model::Command> Commands() noexcept;
 
         // These are implemented manually to handle the string/GUID exchange
         // by higher layers in the app.
@@ -91,17 +89,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, StartupActions, L"");
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, FocusFollowMouse, false);
         INHERITABLE_SETTING(Model::GlobalAppSettings, Model::WindowingMode, WindowingBehavior, Model::WindowingMode::UseNew);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, TrimBlockSelection, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, DetectURLs, true);
 
     private:
         guid _defaultProfile;
         std::optional<hstring> _UnparsedDefaultProfile{ std::nullopt };
         bool _validDefaultProfile;
 
-        com_ptr<KeyMapping> _keymap;
+        com_ptr<implementation::ActionMap> _actionMap;
         std::vector<SettingsLoadWarnings> _keybindingsWarnings;
 
         Windows::Foundation::Collections::IMap<hstring, Model::ColorScheme> _colorSchemes;
-        Windows::Foundation::Collections::IMap<hstring, Model::Command> _commands;
 
         std::optional<hstring> _getUnparsedDefaultProfileImpl() const;
         static bool _getDefaultDebugFeaturesValue();

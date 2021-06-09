@@ -1,0 +1,17 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ICoreState.idl";
+import "IControlSettings.idl";
+import "ControlCore.idl";
+import "EventArgs.idl";
+
+namespace Microsoft.Terminal.Control
+{
+
+    [default_interface] runtimeclass ControlInteractivity
+    {
+        ControlInteractivity(IControlSettings settings,
+                             Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+    };
+}

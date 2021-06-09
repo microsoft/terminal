@@ -1,6 +1,6 @@
 {
   "$id": "https://github.com/microsoft/terminal/blob/main/doc/cascadia/profiles.schema.json",
-  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema#",
   "title": "Microsoft's Windows Terminal Settings Profile Schema",
   "definitions": {
     "KeyChordSegment": {
@@ -37,7 +37,8 @@
             "type": "string",
             "enum": [
               "audible",
-              "visual"
+              "window",
+              "taskbar"
             ]
           }
         },
@@ -45,7 +46,8 @@
           "type": "string",
           "enum": [
             "audible",
-            "visual",
+            "taskbar",
+            "window",
             "all",
             "none"
           ]
@@ -188,6 +190,7 @@
         "duplicateTab",
         "find",
         "findMatch",
+        "focusPane",
         "identifyWindow",
         "identifyWindows",
         "moveFocus",
@@ -798,6 +801,22 @@
         }
       ]
     },
+    "FocusPaneAction": {
+      "description": "Arguments corresponding to a focusPane Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "focusPane" },
+            "id": {
+              "type": "string",
+              "default": "",
+              "description": "The ID of the pane to focus"
+            }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -828,6 +847,7 @@
               { "$ref": "#/definitions/PrevTabAction" },
               { "$ref": "#/definitions/RenameTabAction" },
               { "$ref": "#/definitions/RenameWindowAction" },
+              { "$ref": "#/definitions/FocusPaneAction" },
               { "type": "null" }
             ]
         },
@@ -899,6 +919,16 @@
           "default": true,
           "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied.",
           "$ref": "#/definitions/CopyFormat"
+        },
+        "trimBlockSelection": {
+          "default": false,
+          "description": "When set to true, trailing white-spaces will be removed from text in rectangular (block) selection while copied to your clipboard. When set to false, the white-spaces will be preserved.",
+          "type": "boolean"
+        },
+        "experimental.detectURLs": {
+          "default": true,
+          "description": "When set to true, URLs will be detected by the Terminal. This will cause URLs to underline on hover and be clickable by pressing Ctrl.",
+          "type": "boolean"
         },
         "disableAnimations": {
           "default": false,
@@ -1166,7 +1196,7 @@
         },
         "bellStyle": {
           "default": "audible",
-          "description": "Controls what happens when the application emits a BEL character. When set to \"all\", the Terminal will play a sound and flash the taskbar icon. An array of specific behaviors can also be used. Supported array values include `audible` and `visual`. When set to \"none\", nothing will happen.",
+          "description": "Controls what happens when the application emits a BEL character. When set to \"all\", the Terminal will play a sound, flash the taskbar icon (if the terminal window is not in focus) and flash the window. An array of specific behaviors can also be used. Supported array values include `audible`, `window` and `taskbar`. When set to \"none\", nothing will happen.",
           "$ref": "#/definitions/BellStyle"
         },
         "closeOnExit": {
@@ -1346,6 +1376,11 @@
           "description": "When set to true, tabTitle overrides the default title of the tab and any title change messages from the application will be suppressed. When set to false, tabTitle behaves as normal.",
           "type": "boolean",
           "default": false
+        },
+        "tabColor": {
+          "$ref": "#/definitions/Color",
+          "description": "Sets the color of the profile's tab. Using the tab color picker will override this color.",
+          "type": ["string", "null"]
         },
         "tabTitle": {
           "description": "If set, will replace the name as the title to pass to the shell on startup. Some shells (like bash) may choose to ignore this initial value, while others (cmd, powershell) may use this value over the lifetime of the application.",

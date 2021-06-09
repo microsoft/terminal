@@ -84,14 +84,16 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               "Monarch_AddPeasant",
                               TraceLoggingUInt64(providedID, "providedID", "the provided ID for the peasant"),
                               TraceLoggingUInt64(newPeasantsId, "peasantID", "the ID of the new peasant"),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
             return newPeasantsId;
         }
         catch (...)
         {
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_AddPeasant_Failed",
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
             // We can only get into this try/catch if the peasant died on us. So
             // the return value doesn't _really_ matter. They're not about to
@@ -234,7 +236,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         {
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_HandleActivatePeasant_Failed",
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
         }
     }
 
@@ -260,7 +263,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               "Monarch_RemovedPeasantFromDesktop",
                               TraceLoggingUInt64(peasantID, "peasantID", "The ID of the peasant"),
                               TraceLoggingGuid(result->DesktopID(), "desktopGuid", "The GUID of the previous desktop the window was on"),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
             _mruPeasants.erase(result);
         }
@@ -297,7 +301,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingUInt64(localArgs->PeasantID(), "peasantID", "the ID of the activated peasant"),
                           TraceLoggingGuid(desktopGuid, "desktopGuid", "The GUID of the desktop the window is on"),
                           TraceLoggingInt64(newLastActiveTime, "newLastActiveTime", "The provided localArgs->ActivatedTime()"),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
 
     // Method Description:
@@ -306,9 +311,14 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // Arguments:
     // - limitToCurrentDesktop: if true, only return the MRU peasant that's
     //   actually on the current desktop.
+    // - ignoreQuakeWindow: if true, then don't return the _quake window when we
+    //   find it. This allows us to change our behavior for glomming vs
+    //   summoning. When summoning the window, this parameter should be true.
+    //   When glomming, this should be false, as to prevent glomming to the
+    //   _quake window.
     // Return Value:
     // - the ID of the most recent peasant, otherwise 0 if we could not find one.
-    uint64_t Monarch::_getMostRecentPeasantID(const bool limitToCurrentDesktop)
+    uint64_t Monarch::_getMostRecentPeasantID(const bool limitToCurrentDesktop, const bool ignoreQuakeWindow)
     {
         if (_mruPeasants.empty())
         {
@@ -334,7 +344,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_getMostRecentPeasantID_NoPeasants",
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
             return 0;
         }
 
@@ -368,14 +379,21 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                                      "peasantID",
                                                      "We thought this peasant was the MRU one, but it was actually already dead."),
                                   TraceLoggingGuid(mruWindowArgs.DesktopID(), "desktopGuid", "The GUID of the desktop the window is on"),
-                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
                 // We'll go through the loop again. We removed the current one
                 // at positionInList, so the next one in positionInList will be
                 // a new, different peasant.
                 continue;
             }
 
-            if (limitToCurrentDesktop && _desktopManager)
+            if (ignoreQuakeWindow && peasant.WindowName() == QuakeWindowName)
+            {
+                // The _quake window should never be treated as the MRU window.
+                // Skip it if we see it. Users can still target it with `wt -w
+                // _quake`, which will hit `_lookupPeasantIdForName` instead.
+            }
+            else if (limitToCurrentDesktop && _desktopManager)
             {
                 // Check if this peasant is actually on this desktop. We can't
                 // simply get the GUID of the current desktop. We have to ask if
@@ -401,7 +419,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                       TraceLoggingBool(onCurrentDesktop,
                                                        "onCurrentDesktop",
                                                        "true if this window was in fact on the current desktop"),
-                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
                     return mruWindowArgs.PeasantID();
                 }
                 // If this window wasn't on the current desktop, another one
@@ -413,7 +432,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 TraceLoggingWrite(g_hRemotingProvider,
                                   "Monarch_getMostRecentPeasantID_Found",
                                   TraceLoggingUInt64(mruWindowArgs.PeasantID(), "peasantID", "The ID of the MRU peasant"),
-                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
                 return mruWindowArgs.PeasantID();
             }
@@ -425,7 +445,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // will use this to create a new window.
         TraceLoggingWrite(g_hRemotingProvider,
                           "Monarch_getMostRecentPeasantID_NotFound",
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
         return 0;
     }
@@ -460,7 +481,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TraceLoggingWrite(g_hRemotingProvider,
                           "Monarch_ProposeCommandline",
                           TraceLoggingInt64(targetWindow, "targetWindow", "The window ID the args specified"),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
         // If there's a valid ID returned, then let's try and find the peasant
         // that goes with it. Alternatively, if we were given a magic windowing
@@ -481,10 +503,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 // lookup to find the window that spawned this process (then
                 // fall back to sameDesktop if we can't find a match). For now,
                 // it's good enough to just try to find a match on this desktop.
-                windowID = _getMostRecentPeasantID(true);
+                //
+                // GH#projects/5#card-60325142 - Don't try to glom to the quake window.
+                windowID = _getMostRecentPeasantID(true, true);
                 break;
             case WindowingBehaviorUseAnyExisting:
-                windowID = _getMostRecentPeasantID(false);
+                windowID = _getMostRecentPeasantID(false, true);
                 break;
             case WindowingBehaviorUseName:
                 windowID = _lookupPeasantIdForName(targetWindowName);
@@ -499,7 +523,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               TraceLoggingInt64(windowID,
                                                 "windowID",
                                                 "The actual peasant ID we evaluated the window ID as"),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
             // If_getMostRecentPeasantID returns 0 above, then we couldn't find
             // a matching window for that style of windowing. _getPeasant will
@@ -538,7 +563,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                   TraceLoggingBoolean(!result->ShouldCreateWindow(),
                                                       "succeeded",
                                                       "true if we successfully dispatched the commandline to the peasant"),
-                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
                 return *result;
             }
             else if (windowID > 0)
@@ -553,7 +579,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                                      "peasantID",
                                                      "the ID of the peasant the commandline waws intended for"),
                                   TraceLoggingBoolean(false, "foundMatch", "true if we found a peasant with that ID"),
-                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
                 auto result{ winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(true) };
                 result->Id(windowID);
@@ -566,7 +593,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TraceLoggingWrite(g_hRemotingProvider,
                           "Monarch_ProposeCommandline_NewWindow",
                           TraceLoggingInt64(targetWindow, "targetWindow", "The provided ID"),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
         // In this case, no usable ID was provided. Return { true, nullopt }
         auto result = winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(true);
@@ -628,7 +656,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_identifyWindows_Failed",
                               TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not identify"),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
         };
         _forAllPeasantsIgnoringTheDead(callback, onError);
     }
@@ -668,7 +697,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               "Monarch_renameRequested",
                               TraceLoggingWideString(name.c_str(), "name", "The newly proposed name"),
                               TraceLoggingInt64(successfullyRenamed, "successfullyRenamed", "true if the peasant is allowed to rename themselves to that name."),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
         }
         catch (...)
         {
@@ -677,7 +707,59 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // they're the only one who cares about the result.
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_renameRequested_Failed",
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        }
+    }
+
+    // Method Description:
+    // - Attempt to summon a window. `args` contains information about which
+    //   window we should try to summon:
+    //   * if a WindowName is provided, we'll try to find a window with exactly
+    //     that name, and fail if there isn't one.
+    // - Calls Peasant::Summon on the matching peasant (which might be an RPC call)
+    // - This should only ever be called by the WindowManager in the monarch
+    //   process itself. The monarch is the one registering for global hotkeys,
+    //   so it's the one calling this method.
+    // Arguments:
+    // - args: contains information about the window that should be summoned.
+    // Return Value:
+    // - <none>
+    // - Sets args.FoundMatch when a window matching args is found successfully.
+    void Monarch::SummonWindow(const Remoting::SummonWindowSelectionArgs& args)
+    {
+        const auto searchedForName{ args.WindowName() };
+        try
+        {
+            args.FoundMatch(false);
+            uint64_t windowId = 0;
+            // If no name was provided, then just summon the MRU window.
+            if (searchedForName.empty())
+            {
+                // Use the value of the `desktop` arg to determine if we should
+                // limit to the current desktop (desktop:onCurrent) or not
+                // (desktop:any or desktop:toCurrent)
+                windowId = _getMostRecentPeasantID(args.OnCurrentDesktop(), false);
+            }
+            else
+            {
+                // Try to find a peasant that currently has this name
+                windowId = _lookupPeasantIdForName(searchedForName);
+            }
+            if (auto targetPeasant{ _getPeasant(windowId) })
+            {
+                targetPeasant.Summon(args.SummonBehavior());
+                args.FoundMatch(true);
+            }
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_SummonWindow_Failed",
+                              TraceLoggingWideString(searchedForName.c_str(), "searchedForName", "The name of the window we tried to summon"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
         }
     }
 }

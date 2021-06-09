@@ -6,7 +6,9 @@
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/utils.hpp"
 #include "../types/inc/User32Utils.hpp"
+#include "../WinRTUtils/inc/WtExeUtils.h"
 #include "resource.h"
+#include "VirtualDesktopUtils.h"
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
@@ -57,6 +59,9 @@ AppHost::AppHost() noexcept :
         _window = std::make_unique<IslandWindow>();
     }
 
+    // Update our own internal state tracking if we're in quake mode or not.
+    _IsQuakeWindowChanged(nullptr, nullptr);
+
     // Tell the window to callback to us when it's about to handle a WM_CREATE
     auto pfn = std::bind(&AppHost::_HandleCreateWindow,
                          this,
@@ -71,8 +76,15 @@ AppHost::AppHost() noexcept :
                                                 std::placeholders::_2));
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
+    _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
+
+    _windowManager.BecameMonarch({ this, &AppHost::_BecomeMonarch });
+    if (_windowManager.IsMonarch())
+    {
+        _BecomeMonarch(nullptr, nullptr);
+    }
 }
 
 AppHost::~AppHost()
@@ -194,6 +206,7 @@ void AppHost::_HandleCommandlineArgs()
         // commandline (in the future), it'll trigger this callback, that we'll
         // use to send the actions to the app.
         peasant.ExecuteCommandlineRequested({ this, &AppHost::_DispatchCommandline });
+        peasant.SummonRequested({ this, &AppHost::_HandleSummon });
 
         peasant.DisplayWindowIdRequested({ this, &AppHost::_DisplayWindowId });
 
@@ -251,6 +264,9 @@ void AppHost::Initialize()
     _logic.SetTaskbarProgress({ this, &AppHost::SetTaskbarProgress });
     _logic.IdentifyWindowsRequested({ this, &AppHost::_IdentifyWindowsRequested });
     _logic.RenameWindowRequested({ this, &AppHost::_RenameWindowRequested });
+    _logic.SettingsChanged({ this, &AppHost::_HandleSettingsChanged });
+    _logic.IsQuakeWindowChanged({ this, &AppHost::_IsQuakeWindowChanged });
+    _logic.SummonWindowRequested({ this, &AppHost::_SummonWindowRequested });
 
     _window->UpdateTitle(_logic.Title());
 
@@ -379,39 +395,58 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
 
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
-    const auto nonClientSize = _window->GetTotalNonClientExclusiveSize(dpix);
-    adjustedWidth = islandWidth + nonClientSize.cx;
-    adjustedHeight = islandHeight + nonClientSize.cy;
+    const til::size nonClientSize = _window->GetTotalNonClientExclusiveSize(dpix);
+    adjustedWidth = islandWidth + nonClientSize.width<long>();
+    adjustedHeight = islandHeight + nonClientSize.height<long>();
 
-    const COORD dimensions{ Utils::ClampToShortMax(adjustedWidth, 1),
-                            Utils::ClampToShortMax(adjustedHeight, 1) };
+    til::size dimensions{ Utils::ClampToShortMax(adjustedWidth, 1),
+                          Utils::ClampToShortMax(adjustedHeight, 1) };
 
-    if (centerOnLaunch)
-    {
-        // Find nearest monitor for the position that we've actually settled on
-        HMONITOR hMonNearest = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
-        MONITORINFO nearestMonitorInfo;
-        nearestMonitorInfo.cbSize = sizeof(MONITORINFO);
-        // Get monitor dimensions:
-        GetMonitorInfo(hMonNearest, &nearestMonitorInfo);
-        const COORD desktopDimensions{ gsl::narrow<short>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
+    // Find nearest monitor for the position that we've actually settled on
+    HMONITOR hMonNearest = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
+    MONITORINFO nearestMonitorInfo;
+    nearestMonitorInfo.cbSize = sizeof(MONITORINFO);
+    // Get monitor dimensions:
+    GetMonitorInfo(hMonNearest, &nearestMonitorInfo);
+    const til::size desktopDimensions{ gsl::narrow<short>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
                                        gsl::narrow<short>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
-        // Move our proposed location into the center of that specific monitor.
-        proposedRect.left = nearestMonitorInfo.rcWork.left +
-                            ((desktopDimensions.X / 2) - (dimensions.X / 2));
-        proposedRect.top = nearestMonitorInfo.rcWork.top +
-                           ((desktopDimensions.Y / 2) - (dimensions.Y / 2));
-    }
-    const COORD origin{ gsl::narrow<short>(proposedRect.left),
-                        gsl::narrow<short>(proposedRect.top) };
 
-    const auto newPos = Viewport::FromDimensions(origin, dimensions);
+    til::point origin{ (proposedRect.left),
+                       (proposedRect.top) };
+
+    if (_logic.IsQuakeWindow())
+    {
+        // If we just use rcWork by itself, we'll fail to account for the invisible
+        // space reserved for the resize handles. So retrieve that size here.
+        const til::size ncSize{ _window->GetTotalNonClientExclusiveSize(dpix) };
+        const til::size availableSpace = desktopDimensions + nonClientSize;
+
+        origin = til::point{
+            ::base::ClampSub<long>(nearestMonitorInfo.rcWork.left, (nonClientSize.width() / 2)),
+            (nearestMonitorInfo.rcWork.top)
+        };
+        dimensions = til::size{
+            availableSpace.width(),
+            availableSpace.height() / 2
+        };
+        launchMode = LaunchMode::FocusMode;
+    }
+    else if (centerOnLaunch)
+    {
+        // Move our proposed location into the center of that specific monitor.
+        origin = til::point{
+            (nearestMonitorInfo.rcWork.left + ((desktopDimensions.width() / 2) - (dimensions.width() / 2))),
+            (nearestMonitorInfo.rcWork.top + ((desktopDimensions.height() / 2) - (dimensions.height() / 2)))
+        };
+    }
+
+    const til::rectangle newRect{ origin, dimensions };
     bool succeeded = SetWindowPos(hwnd,
                                   nullptr,
-                                  newPos.Left(),
-                                  newPos.Top(),
-                                  newPos.Width(),
-                                  newPos.Height(),
+                                  newRect.left<int>(),
+                                  newRect.top<int>(),
+                                  newRect.width<int>(),
+                                  newRect.height<int>(),
                                   SWP_NOACTIVATE | SWP_NOZORDER);
 
     // Refresh the dpi of HWND because the dpi where the window will launch may be different
@@ -552,10 +587,16 @@ bool AppHost::HasWindow()
 // - args: the bundle of a commandline and working directory to use for this invocation.
 // Return Value:
 // - <none>
-void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*sender*/,
+void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable sender,
                                    Remoting::CommandlineArgs args)
 {
-    _window->SummonWindow();
+    const Remoting::SummonWindowBehavior summonArgs{};
+    summonArgs.MoveToCurrentDesktop(false);
+    summonArgs.DropdownDuration(0);
+    summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
+    // Summon the window whenever we dispatch a commandline to it. This will
+    // make it obvious when a new tab/pane is created in a window.
+    _HandleSummon(sender, summonArgs);
     _logic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory());
 }
 
@@ -596,18 +637,217 @@ winrt::fire_and_forget AppHost::_WindowActivated()
     }
 }
 
+void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                             const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    _setupGlobalHotkeys();
+
+    // The monarch is just going to be THE listener for inbound connections.
+    _listenForInboundConnections();
+}
+
+void AppHost::_listenForInboundConnections()
+{
+    _logic.SetInboundListener();
+}
+
+winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
+{
+    // The hotkey MUST be registered on the main thread. It will fail otherwise!
+    co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher(),
+                                      winrt::Windows::UI::Core::CoreDispatcherPriority::Normal);
+
+    // Remove all the already registered hotkeys before setting up the new ones.
+    _window->UnsetHotkeys(_hotkeys);
+
+    _hotkeyActions = _logic.GlobalHotkeys();
+    _hotkeys.clear();
+    for (const auto& [k, v] : _hotkeyActions)
+    {
+        if (k != nullptr)
+        {
+            _hotkeys.push_back(k);
+        }
+    }
+
+    _window->SetGlobalHotkeys(_hotkeys);
+}
+
+// Method Description:
+// - Called whenever a registered hotkey is pressed. We'll look up the
+//   GlobalSummonArgs for the specified hotkey, then dispatch a call to the
+//   Monarch with the selection information.
+// - If the monarch finds a match for the window name (or no name was provided),
+//   it'll set FoundMatch=true.
+// - If FoundMatch is false, and a name was provided, then we should create a
+//   new window with the given name.
+// Arguments:
+// - hotkeyIndex: the index of the entry in _hotkeys that was pressed.
+// Return Value:
+// - <none>
+void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
+{
+    if (hotkeyIndex < 0 || static_cast<size_t>(hotkeyIndex) > _hotkeys.size())
+    {
+        return;
+    }
+    // Lookup the matching keychord
+    Control::KeyChord kc = _hotkeys.at(hotkeyIndex);
+    // Get the stored Command for that chord
+    if (const auto& cmd{ _hotkeyActions.Lookup(kc) })
+    {
+        if (const auto& summonArgs{ cmd.ActionAndArgs().Args().try_as<Settings::Model::GlobalSummonArgs>() })
+        {
+            Remoting::SummonWindowSelectionArgs args{ summonArgs.Name() };
+
+            // desktop:any - MoveToCurrentDesktop=false, OnCurrentDesktop=false
+            // desktop:toCurrent - MoveToCurrentDesktop=true, OnCurrentDesktop=false
+            // desktop:onCurrent - MoveToCurrentDesktop=false, OnCurrentDesktop=true
+            args.OnCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::OnCurrent);
+            args.SummonBehavior().MoveToCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::ToCurrent);
+            args.SummonBehavior().ToggleVisibility(summonArgs.ToggleVisibility());
+            args.SummonBehavior().DropdownDuration(summonArgs.DropdownDuration());
+
+            switch (summonArgs.Monitor())
+            {
+            case Settings::Model::MonitorBehavior::Any:
+                args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::InPlace);
+                break;
+            case Settings::Model::MonitorBehavior::ToCurrent:
+                args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToCurrent);
+                break;
+            case Settings::Model::MonitorBehavior::ToMouse:
+                args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToMouse);
+                break;
+            }
+
+            _windowManager.SummonWindow(args);
+            if (args.FoundMatch())
+            {
+                // Excellent, the window was found. We have nothing else to do here.
+            }
+            else
+            {
+                // We should make the window ourselves.
+                _createNewTerminalWindow(summonArgs);
+            }
+        }
+    }
+}
+
+// Method Description:
+// - Called when the monarch failed to summon a window for a given set of
+//   SummonWindowSelectionArgs. In this case, we should create the specified
+//   window ourselves.
+// - This is to support the scenario like `globalSummon(Name="_quake")` being
+//   used to summon the window if it already exists, or create it if it doesn't.
+// Arguments:
+// - args: Contains information on how we should name the window
+// Return Value:
+// - <none>
+winrt::fire_and_forget AppHost::_createNewTerminalWindow(Settings::Model::GlobalSummonArgs args)
+{
+    // Hop to the BG thread
+    co_await winrt::resume_background();
+
+    // This will get us the correct exe for dev/preview/release. If you
+    // don't stick this in a local, it'll get mangled by ShellExecute. I
+    // have no idea why.
+    const auto exePath{ GetWtExePath() };
+
+    // If we weren't given a name, then just use new to force the window to be
+    // unnamed.
+    winrt::hstring cmdline{
+        fmt::format(L"-w {}",
+                    args.Name().empty() ? L"new" :
+                                          args.Name())
+    };
+
+    SHELLEXECUTEINFOW seInfo{ 0 };
+    seInfo.cbSize = sizeof(seInfo);
+    seInfo.fMask = SEE_MASK_NOASYNC;
+    seInfo.lpVerb = L"open";
+    seInfo.lpFile = exePath.c_str();
+    seInfo.lpParameters = cmdline.c_str();
+    seInfo.nShow = SW_SHOWNORMAL;
+    LOG_IF_WIN32_BOOL_FALSE(ShellExecuteExW(&seInfo));
+
+    co_return;
+}
+
+// Method Description:
+// - Helper to initialize our instance of IVirtualDesktopManager. If we already
+//   got one, then this will just return true. Otherwise, we'll try and init a
+//   new instance of one, and store that.
+// - This will return false if we weren't able to initialize one, which I'm not
+//   sure is actually possible.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff _desktopManager points to a non-null instance of IVirtualDesktopManager
+bool AppHost::_LazyLoadDesktopManager()
+{
+    if (_desktopManager == nullptr)
+    {
+        try
+        {
+            _desktopManager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
+        }
+        CATCH_LOG();
+    }
+
+    return _desktopManager != nullptr;
+}
+
+void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                            const Remoting::SummonWindowBehavior& args)
+{
+    _window->SummonWindow(args);
+
+    if (args != nullptr && args.MoveToCurrentDesktop())
+    {
+        if (_LazyLoadDesktopManager())
+        {
+            // First thing - make sure that we're not on the current desktop. If
+            // we are, then don't call MoveWindowToDesktop. This is to mitigate
+            // MSFT:33035972
+            BOOL onCurrentDesktop{ false };
+            if (SUCCEEDED(_desktopManager->IsWindowOnCurrentVirtualDesktop(_window->GetHandle(), &onCurrentDesktop)) && onCurrentDesktop)
+            {
+                // If we succeeded, and the window was on the current desktop, then do nothing.
+            }
+            else
+            {
+                // Here, we either failed to check if the window is on the
+                // current desktop, or it wasn't on that desktop. In both those
+                // cases, just move the window.
+
+                GUID currentlyActiveDesktop{ 0 };
+                if (VirtualDesktopUtils::GetCurrentVirtualDesktopId(&currentlyActiveDesktop))
+                {
+                    LOG_IF_FAILED(_desktopManager->MoveWindowToDesktop(_window->GetHandle(), currentlyActiveDesktop));
+                }
+                // If GetCurrentVirtualDesktopId failed, then just leave the window
+                // where it is. Nothing else to be done :/
+            }
+        }
+    }
+}
+
+// Method Description:
+// - This gets the GUID of the desktop our window is currently on. It does NOT
+//   get the GUID of the desktop that's currently active.
+// Arguments:
+// - <none>
+// Return Value:
+// - the GUID of the desktop our window is currently on
 GUID AppHost::_CurrentDesktopGuid()
 {
     GUID currentDesktopGuid{ 0 };
-    try
+    if (_LazyLoadDesktopManager())
     {
-        const auto manager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
-        if (manager)
-        {
-            LOG_IF_FAILED(manager->GetWindowDesktopId(_window->GetHandle(), &currentDesktopGuid));
-        }
+        LOG_IF_FAILED(_desktopManager->GetWindowDesktopId(_window->GetHandle(), &currentDesktopGuid));
     }
-    CATCH_LOG();
     return currentDesktopGuid;
 }
 
@@ -673,4 +913,27 @@ winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Fou
             _logic.RenameFailed();
         }
     }
+}
+
+void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                     const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    _setupGlobalHotkeys();
+}
+
+void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
+                                    const winrt::Windows::Foundation::IInspectable&)
+{
+    _window->IsQuakeWindow(_logic.IsQuakeWindow());
+}
+
+void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                     const winrt::Windows::Foundation::IInspectable&)
+
+{
+    const Remoting::SummonWindowBehavior summonArgs{};
+    summonArgs.MoveToCurrentDesktop(false);
+    summonArgs.DropdownDuration(0);
+    summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
+    _HandleSummon(sender, summonArgs);
 }

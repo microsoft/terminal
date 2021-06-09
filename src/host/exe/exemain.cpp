@@ -146,7 +146,11 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
     // because there's already a count of how many total processes were launched.
     // Total - legacy = new console.
     // We expect legacy launches to be infrequent enough to not cause an issue.
-    TraceLoggingWrite(g_ConhostLauncherProvider, "IsLegacyLoaded", TraceLoggingBool(true, "ConsoleLegacy"), TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY));
+    TraceLoggingWrite(g_ConhostLauncherProvider,
+                      "IsLegacyLoaded",
+                      TraceLoggingBool(true, "ConsoleLegacy"),
+                      TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY),
+                      TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
     const PCWSTR pszConhostDllName = L"ConhostV1.dll";
 
@@ -184,7 +188,7 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
 
 // Routine Description:
 // - Called back when COM says there is nothing left for our server to do and we can tear down.
-#pragma warning (suppress : 4505) // this is unused, and therefore discarded, when built inside windows
+#pragma warning(suppress : 4505) // this is unused, and therefore discarded, when built inside windows
 static void _releaseNotifier() noexcept
 {
     _comServerExitEvent.SetEvent();

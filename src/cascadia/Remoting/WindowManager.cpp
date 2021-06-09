@@ -40,7 +40,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 // stay in this jail until we do.
                 TraceLoggingWrite(g_hRemotingProvider,
                                   "WindowManager_ExceptionInCtor",
-                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
             }
         }
     }
@@ -99,7 +100,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                   TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
                                   TraceLoggingUInt64(givenID.value(), "Id", "The ID we should assign our peasant"),
                                   TraceLoggingWideString(givenName.c_str(), "Name", "The name we should assign this window"),
-                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
             }
             else
             {
@@ -108,7 +110,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                   TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
                                   TraceLoggingPointer(nullptr, "Id", "No ID provided"),
                                   TraceLoggingWideString(givenName.c_str(), "Name", "The name we should assign this window"),
-                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
             }
         }
         else
@@ -140,7 +143,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                   TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
                                   TraceLoggingUInt64(givenID.value(), "Id", "The ID we should assign our peasant"),
                                   TraceLoggingWideString(givenName.c_str(), "Name", "The name we should assign this window"),
-                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
             }
             else if (responseId == WindowingBehaviorUseName)
             {
@@ -151,7 +155,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                   TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
                                   TraceLoggingUInt64(0, "Id", "The ID we should assign our peasant"),
                                   TraceLoggingWideString(givenName.c_str(), "Name", "The name we should assign this window"),
-                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
             }
             else
             {
@@ -160,7 +165,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                   TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
                                   TraceLoggingUInt64(0, "Id", "The ID we should assign our peasant"),
                                   TraceLoggingWideString(L"", "Name", "The name we should assign this window"),
-                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
             }
         }
 
@@ -228,7 +234,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           "WindowManager_ConnectedToMonarch",
                           TraceLoggingUInt64(_monarch.GetPID(), "monarchPID", "The PID of the new Monarch"),
                           TraceLoggingBoolean(_isKing, "isKing", "true if we are the new monarch"),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
         if (_peasant)
         {
@@ -247,6 +254,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // window, and when the current monarch dies.
 
         _monarch.FindTargetWindowRequested({ this, &WindowManager::_raiseFindTargetWindowRequested });
+
+        _BecameMonarchHandlers(*this, nullptr);
     }
 
     bool WindowManager::_areWeTheKing()
@@ -294,7 +303,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TraceLoggingWrite(g_hRemotingProvider,
                           "WindowManager_CreateOurPeasant",
                           TraceLoggingUInt64(_peasant.GetID(), "peasantID", "The ID of our new peasant"),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
         return _peasant;
     }
@@ -369,7 +379,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                       "WindowManager_FailedToOpenMonarch",
                                       TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
                                       TraceLoggingUInt64(gle, "lastError", "The result of GetLastError"),
-                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
                     exitThreadRequested = _performElection();
                     continue;
@@ -385,7 +396,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                     TraceLoggingWrite(g_hRemotingProvider,
                                       "WindowManager_MonarchDied",
                                       TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
-                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
                     // Connect to the new monarch, which might be us!
                     // If we become the monarch, then we'll return true and exit this thread.
                     exitThreadRequested = _performElection();
@@ -396,7 +408,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                     TraceLoggingWrite(g_hRemotingProvider,
                                       "WindowManager_MonarchWaitInterrupted",
                                       TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
-                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
                     exitThreadRequested = true;
                     break;
 
@@ -405,7 +418,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                     TraceLoggingWrite(g_hRemotingProvider,
                                       "WindowManager_MonarchWaitTimeout",
                                       TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
-                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
                     exitThreadRequested = true;
                     break;
 
@@ -417,7 +431,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                       "WindowManager_WaitFailed",
                                       TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
                                       TraceLoggingUInt64(gle, "lastError", "The result of GetLastError"),
-                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
                     ExitProcess(0);
                 }
                 }
@@ -441,7 +456,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 TraceLoggingWrite(g_hRemotingProvider,
                                   "WindowManager_ExceptionInWaitThread",
                                   TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
-                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
                 bool foundNewMonarch = false;
                 while (!foundNewMonarch)
                 {
@@ -461,7 +477,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                         TraceLoggingWrite(g_hRemotingProvider,
                                           "WindowManager_ExceptionInNestedWaitThread",
                                           TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
-                                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
                     }
                 }
             }
@@ -478,4 +495,18 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         _FindTargetWindowRequestedHandlers(sender, args);
     }
+
+    bool WindowManager::IsMonarch()
+    {
+        return _isKing;
+    }
+
+    void WindowManager::SummonWindow(const Remoting::SummonWindowSelectionArgs& args)
+    {
+        // We should only ever get called when we are the monarch, because only
+        // the monarch ever registers for the global hotkey. So the monarch is
+        // the only window that will be calling this.
+        _monarch.SummonWindow(args);
+    }
+
 }

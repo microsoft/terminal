@@ -4,8 +4,7 @@
 #include "IInheritable.idl.h"
 
 import "ColorScheme.idl";
-import "KeyMapping.idl";
-import "Command.idl";
+import "ActionMap.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
@@ -68,13 +67,13 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(String, StartupActions);
         INHERITABLE_SETTING(Boolean, FocusFollowMouse);
         INHERITABLE_SETTING(WindowingMode, WindowingBehavior);
+        INHERITABLE_SETTING(Boolean, TrimBlockSelection);
+        INHERITABLE_SETTING(Boolean, DetectURLs);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);
         void RemoveColorScheme(String schemeName);
 
-        KeyMapping KeyMap();
-
-        Windows.Foundation.Collections.IMapView<String, Command> Commands();
+        ActionMap ActionMap { get; };
     }
 }

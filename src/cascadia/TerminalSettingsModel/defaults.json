@@ -11,6 +11,7 @@
     // Selection
     "copyOnSelect": false,
     "copyFormatting": true,
+    "trimBlockSelection": false,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
 
     // Tab UI
@@ -297,6 +298,7 @@
         { "command": "commandPalette", "keys":"ctrl+shift+p" },
         { "command": "identifyWindow" },
         { "command": "openWindowRenamer" },
+        { "command": "quakeMode", "keys":"win+`" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.

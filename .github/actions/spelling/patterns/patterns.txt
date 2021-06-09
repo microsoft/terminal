@@ -22,3 +22,4 @@ Base64::s_(?:En|De)code\(L"[^"]+"
 VERIFY_ARE_EQUAL\(L"[^"]+"
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\+/"
 std::memory_order_[\w]+
+D2DERR_SHADER_COMPILE_FAILED

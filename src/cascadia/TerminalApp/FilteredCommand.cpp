@@ -80,7 +80,7 @@ namespace winrt::TerminalApp::implementation
 
         for (const auto searchChar : _Filter)
         {
-            const auto lowerCaseSearchChar = std::towlower(searchChar);
+            const WCHAR searchCharAsString[] = { searchChar, L'\0' };
             while (true)
             {
                 if (currentOffset == commandName.size())
@@ -93,7 +93,10 @@ namespace winrt::TerminalApp::implementation
                     return winrt::make<HighlightedText>(segments);
                 }
 
-                auto isCurrentCharMatched = std::towlower(commandName[currentOffset]) == lowerCaseSearchChar;
+                // GH#9941: search should be locale-aware as well
+                // We use the same comparison method as upon sorting to guarantee consistent behavior
+                const WCHAR currentCharAsString[] = { commandName[currentOffset], L'\0' };
+                auto isCurrentCharMatched = lstrcmpi(searchCharAsString, currentCharAsString) == 0;
                 if (isProcessingMatchedSegment != isCurrentCharMatched)
                 {
                     // We reached the end of the region (matched character came after a series of unmatched or vice versa).
