@@ -873,11 +873,28 @@
             "string",
             "null"
           ]
+        },
+        "commands":{
+          "description": "list of commands to execute",
+          "items": {
+            "$ref": "#/definitions/Keybinding/properties/command"
+          },
+          "type": "array"
         }
       },
-      "required": [
-        "command",
-        "keys"
+      "allOf":[
+        {
+          "anyOf":[
+            {"required":["command"]},
+            {"required":["commands"]}
+          ]
+        },
+        {
+          "anyOf":[
+            {"required":["keys"]},
+            {"required":["name"]}
+          ]
+        }
       ],
       "type": "object"
     },
@@ -1011,8 +1028,16 @@
           "type": [ "integer", "string" ],
           "deprecated": true
         },
+		"actions": {
+			"description": "Properties are specific to each custom action.",
+			"items": {
+			  "$ref": "#/definitions/Keybinding"
+			},
+			"type": "array"
+		  },
         "keybindings": {
-          "description": "Properties are specific to each custom key binding.",
+          "description": "[deprecated] use actions instead",
+		  "deprecated": true,
           "items": {
             "$ref": "#/definitions/Keybinding"
           },
