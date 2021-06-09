@@ -27,11 +27,15 @@ static HRESULT _duplicateHandle(const HANDLE in, HANDLE& out)
 // - server - Console driver server handle
 // - inputEvent - Event already established that we signal when new input data is available in case the driver is waiting on us
 // - msg - Portable attach message containing just enough descriptor payload to get us started in servicing it
+// - process - Handle to our process for waiting for us to exit
 HRESULT CConsoleHandoff::EstablishHandoff(HANDLE server,
                                           HANDLE inputEvent,
-                                          PCCONSOLE_PORTABLE_ATTACH_MSG msg)
+                                          PCCONSOLE_PORTABLE_ATTACH_MSG msg,
+                                          HANDLE* process)
 try
 {
+    RETURN_HR_IF(E_INVALIDARG, !process);
+
     // Fill the descriptor portion of a fresh api message with the received data.
     // The descriptor portion is the "received" packet from the last ask of the driver.
     // The other portions are unnecessary as they track the other buffer state, error codes,
@@ -56,6 +60,17 @@ try
 
     // Now perform the handoff.
     RETURN_IF_FAILED(ConsoleEstablishHandoff(server, inputEvent, &apiMsg));
+
+    // Give back a copy of our own process handle to be tracked.
+    wil::unique_handle duplicatedHandle;
+    RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
+                                               GetCurrentProcess(),
+                                               GetCurrentProcess(),
+                                               &duplicatedHandle,
+                                               SYNCHRONIZE,
+                                               FALSE,
+                                               0));
+    *process = duplicatedHandle.release();
 
     return S_OK;
 }

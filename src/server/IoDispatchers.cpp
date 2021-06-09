@@ -296,19 +296,22 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
             HANDLE serverHandle;
             THROW_IF_FAILED(Globals.pDeviceComm->GetServerHandle(&serverHandle));
 
+            wil::unique_process_handle clientProcess;
+
             // Okay, moment of truth! If they say they successfully took it over, we're going to clean up.
             // If they fail, we'll throw here and it'll log and we'll just start normally.
             THROW_IF_FAILED(handoff->EstablishHandoff(serverHandle,
                                                       Globals.hInputEvent.get(),
-                                                      &msg));
+                                                      &msg,
+                                                      &clientProcess));
 
             // Unlock in case anything tries to spool down as we exit.
             UnlockConsole();
 
-            // TODO: This works TECHNICALLY but we should likely clean up more stuff.
-            Sleep(INFINITE);
+            // We've handed off responsibility. Wait for child process to exit so we can maintain PID continuity for some clients.
+            WaitForSingleObject(clientProcess.get(), INFINITE);
 
-            // We've handed off responsibility. Exit process to clean up any outstanding things we have open.
+            // Exit process to clean up any outstanding things we have open.
             ExitProcess(S_OK);
         }
         CATCH_LOG(); // Just log, don't do anything more. We'll move on to launching normally on failure.

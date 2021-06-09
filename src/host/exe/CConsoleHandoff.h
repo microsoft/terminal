@@ -34,7 +34,8 @@ struct __declspec(uuid(__CLSID_CConsoleHandoff))
 #pragma region IConsoleHandoff
     STDMETHODIMP EstablishHandoff(HANDLE server,
                                   HANDLE inputEvent,
-                                  PCCONSOLE_PORTABLE_ATTACH_MSG msg);
+                                  PCCONSOLE_PORTABLE_ATTACH_MSG msg,
+                                  HANDLE* process);
 
 #pragma endregion
 };
