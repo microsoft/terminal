@@ -19,7 +19,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return winrt::box_value(to_hstring((int)number) + L"%");
     }
 
-    Foundation::IInspectable PercentageSignConverter::ConvertBack(Foundation::IInspectable const& value,
+    Foundation::IInspectable PercentageSignConverter::ConvertBack(Foundation::IInspectable const& /*value*/,
                                                                   Windows::UI::Xaml::Interop::TypeName const& /* targetType */,
                                                                   Foundation::IInspectable const& /*parameter*/,
                                                                   hstring const& /* language */)
