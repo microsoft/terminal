@@ -282,13 +282,16 @@
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
       <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
     </ProjectReference>
+
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
       <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
       <Private>false</Private>
     </ProjectReference>
+
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj">
       <!-- Private:false and ReferenceOutputAssembly:false, in combination with
       the manual reference to TerminalControl.winmd below make sure that this
@@ -297,10 +300,12 @@
       <Private>true</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj">
       <Private>false</Private>
     </ProjectReference>
   </ItemGroup>
+
   <ItemGroup>
     <!-- Manually add a reference to TerminalControl here. We need this so
     MDMERGE will know where the TermControl types are defined. However, we need
