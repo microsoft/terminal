@@ -305,6 +305,9 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
             // Unlock in case anything tries to spool down as we exit.
             UnlockConsole();
 
+            // TODO: This works TECHNICALLY but we should likely clean up more stuff.
+            Sleep(INFINITE);
+
             // We've handed off responsibility. Exit process to clean up any outstanding things we have open.
             ExitProcess(S_OK);
         }
