@@ -879,6 +879,7 @@
           "items": {
             "$ref": "#/definitions/Keybinding/properties/command"
           },
+          "minItems": 1,
           "type": "array"
         }
       },
