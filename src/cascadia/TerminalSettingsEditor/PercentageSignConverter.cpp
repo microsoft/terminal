@@ -11,18 +11,18 @@ using namespace winrt::Windows::UI::Xaml;
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Foundation::IInspectable PercentageSignConverter::Convert(Foundation::IInspectable const& value,
-                                                          Windows::UI::Xaml::Interop::TypeName const& /* targetType */,
-                                                          Foundation::IInspectable const& /* parameter */,
-                                                          hstring const& /* language */)
+                                                              Windows::UI::Xaml::Interop::TypeName const& /* targetType */,
+                                                              Foundation::IInspectable const& /* parameter */,
+                                                              hstring const& /* language */)
     {
         const auto number{ winrt::unbox_value<double>(value) };
         return winrt::box_value(to_hstring((int)number) + L"%");
     }
 
     Foundation::IInspectable PercentageSignConverter::ConvertBack(Foundation::IInspectable const& value,
-                                                              Windows::UI::Xaml::Interop::TypeName const& /* targetType */,
-                                                              Foundation::IInspectable const& /*parameter*/,
-                                                              hstring const& /* language */)
+                                                                  Windows::UI::Xaml::Interop::TypeName const& /* targetType */,
+                                                                  Foundation::IInspectable const& /*parameter*/,
+                                                                  hstring const& /* language */)
     {
         return value;
     }
