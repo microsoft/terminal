@@ -23,3 +23,5 @@ VERIFY_ARE_EQUAL\(L"[^"]+"
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\+/"
 std::memory_order_[\w]+
 D2DERR_SHADER_COMPILE_FAILED
+TIL_FEATURE_[0-9A-Z_]+
+vcvars\w*
