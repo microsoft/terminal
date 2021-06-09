@@ -57,7 +57,7 @@ Users will be able to add font configurations to their profiles that will look s
 }
 ```
 
-In the settings UI, the current way font settings are presented to the user can be preseved, and additional dropdowns can be added for `boldFont` and `italicFont`. Each dropdown will contain options to configure `fontFace` and `fontWeight`.
+In the settings UI, the current way font settings are presented to the user can be preserved, and additional dropdowns can be added for `boldFont` and `italicFont`. Each dropdown will contain options to configure `fontFace` and `fontWeight`.
 
 ## Further implementation details
 
@@ -83,7 +83,7 @@ This feature changes the way we expect to parse font settings. However, we have 
 
 ### Performance, Power, and Efficiency
 
-Rendering several different font faces will probably have a performance impact. Again, this is an unavaoidable aspect of this feature.
+Rendering several different font faces will probably have a performance impact. Again, this is an unavoidable aspect of this feature.
 
 ## Potential Issues
 
