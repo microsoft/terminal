@@ -1038,7 +1038,7 @@
 		  },
         "keybindings": {
           "description": "[deprecated] use actions instead",
-		  "deprecated": true,
+          "deprecated": true,
           "items": {
             "$ref": "#/definitions/Keybinding"
           },
