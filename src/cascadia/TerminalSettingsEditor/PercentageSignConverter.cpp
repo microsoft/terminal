@@ -24,6 +24,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                                                   Foundation::IInspectable const& /*parameter*/,
                                                                   hstring const& /* language */)
     {
-        return value;
+        throw hresult_not_implemented();
     }
 }
