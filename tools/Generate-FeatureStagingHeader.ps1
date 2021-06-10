@@ -186,6 +186,7 @@ AddOutput @"
 
 ForEach ($feature in $features) {
     AddOutput @"
+__pragma(detect_mismatch("ODR_violation_$($feature.PreprocessorName())_mismatch", "$($feature.Stage)"))
 struct $($feature.Name)
 {
     static constexpr bool IsEnabled() { return $($feature.PreprocessorName()) == 1; }
