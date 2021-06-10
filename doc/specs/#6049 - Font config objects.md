@@ -37,23 +37,23 @@ This design is in line with the way we handle `defaultAppearance` and `unfocused
 
 ## UI/UX Design
 
-Users will be able to add font configurations to their profiles that will look something like this:
+Users will be able to specify font configurations in their profiles that will look something like this:
 
 ```
-"font": // this is the default
+"font":
 {
-    "fontFace": "Cascadia Mono",
-    "fontWeight": "Normal",
-    "fontSize": 12
-},
-"boldFont":
-{
-    "fontFace": "Consolas",
-    "fontWeight": "Extra-Bold"
-}
-"italicFont":
-{
-    "fontWeight": "Light"
+    "face": "Cascadia Mono",
+    "weight": "Normal",
+    "size": 12,
+    "variants": [
+        "bold": {
+            "face": "Consolas",
+            "weight": "Extra-Bold"
+        },
+        "italic": {
+            "weight": "Light"
+        }
+    ]
 }
 ```
 
@@ -62,6 +62,8 @@ In the settings UI, the current way font settings are presented to the user can 
 ## Further implementation details
 
 Currently, the `DxRenderer` is given a desired font and it creates a text layout for the default case and a separate text layout for the italic case. To support font configuration objects, the `DxRenderer` will need to be updated to be able to receive a collection of desired fonts, and it will create a separate text layout for each desired font. These text layouts will then be obtained by the renderer when needed, as it already does for the italic case.
+
+To have the renderer behave in the default manner (i.e. the manner it does currently) for a particular font type (bold/italic), a null font configuration object should be passed in.
 
 ## Capabilities
 
@@ -80,6 +82,8 @@ We have had several issues when parsing `fontFace` from settings in the past. Th
 ### Compatibility
 
 This feature changes the way we expect to parse font settings. However, we have to make sure we are still able to parse font settings the way they are currently, so as to not break functionality for legacy users.
+
+This might call for a 'settings rewriter', which takes a settings file and rewrites legacy configurations into the current format, which will be used before we do any settings parsing.
 
 ### Performance, Power, and Efficiency
 
