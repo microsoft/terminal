@@ -869,8 +869,14 @@
         "icon": { "$ref": "#/definitions/Icon" },
         "name": {
           "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.",
+          "properties":{
+            "key":{
+              "type":"string"
+            }
+          },
           "type": [
             "string",
+            "object",
             "null"
           ]
         },
