@@ -76,8 +76,10 @@ void WriteBuffer::_DefaultStringCase(const std::wstring_view string)
 {
     size_t dwNumBytes = string.size() * sizeof(wchar_t);
 
-    _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().SetIsOn(true);
+    Cursor& cursor = _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+    cursor.SetIsOn(true);
 
+    //cursor.StartDeferDrawing();
     _ntstatus = WriteCharsLegacy(_io.GetActiveOutputBuffer(),
                                  string.data(),
                                  string.data(),
@@ -87,6 +89,7 @@ void WriteBuffer::_DefaultStringCase(const std::wstring_view string)
                                  _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().X,
                                  WC_LIMIT_BACKSPACE | WC_DELAY_EOL_WRAP,
                                  nullptr);
+    //cursor.EndDeferDrawing();
 }
 
 ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
