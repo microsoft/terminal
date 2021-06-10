@@ -880,6 +880,14 @@
             "null"
           ]
         },
+        "iterateOn":{
+          "type":"string",
+          "description":"used to create iterable commands based on other object on your settings. possible values:\n- \"profiles\" \n- \"schemes\"",
+          "enum":[
+            "profiles",
+            "schemes"
+          ]
+        },
         "commands":{
           "description": "list of commands to execute",
           "items": {
