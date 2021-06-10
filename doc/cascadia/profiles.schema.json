@@ -820,7 +820,7 @@
       ]
     },
     "GlobalSummonAction": {
-      "description": "Arguments corresponding to a focusPane Action",
+      "description": "This is a special action that works globally in the OS, rather than only in the context of the terminal window. When pressed, this action will summon the terminal window.",
       "allOf": [
         { "$ref": "#/definitions/ShortcutAction" },
         {
@@ -866,7 +866,7 @@
       ]
     },
     "QuakeModeAction": {
-      "description": "This action is a special variation of the globalSummon action. It specifically summons the quake window,If you'd like to change the behavior of the quakeMode action, we recommended creating a new globalSummon entry",
+      "description": "This action is a special variation of the globalSummon action, It specifically summons a window called \"_quake\". If you'd like to change the behavior of the quakeMode action, we recommended creating a new globalSummon entry.",
       "allOf": [
         { "$ref": "#/definitions/ShortcutAction" },
         {
@@ -929,10 +929,7 @@
         },
         "icon": { "$ref": "#/definitions/Icon" },
         "name": {
-          "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.",
-          "properties":{
-            "key":{
-              "type":"string"
+          "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.\nif name is a string, it  will be the name of the command.\nif name is a object, the key property of the object will be used to lookup a localized string resource for the command",
             }
           },
           "type": [
@@ -941,10 +938,10 @@
             "null"
           ]
         },
-        "iterateOn":{
-          "type":"string",
-          "description":"used to create iterable commands based on other object on your settings. possible values:\n- \"profiles\" \n- \"schemes\"",
-          "enum":[
+        "iterateOn": {
+          "type": "string",
+          "description": "used to create iterable commands based on other object on your settings. possible values:\n- \"profiles\" \n- \"schemes\"",
+          "enum": [
             "profiles",
             "schemes"
           ]
