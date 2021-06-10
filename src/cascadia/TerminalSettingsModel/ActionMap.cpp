@@ -28,10 +28,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // Check if the ShortcutAction supports args.
             switch (actionAndArgs.Action())
             {
-#define ON_ALL_ACTIONS_WITH_ARGS(action)                                    \
-    case ShortcutAction::action:                                            \
-        /* If it does, hash the default values for the args.*/              \
-        hashedArgs = gsl::narrow_cast<size_t>(make<action##Args>().Hash()); \
+#define ON_ALL_ACTIONS_WITH_ARGS(action)                        \
+    case ShortcutAction::action:                                \
+        /* If it does, hash the default values for the args.*/  \
+        hashedArgs = EmptyHash<implementation::action##Args>(); \
         break;
                 ALL_SHORTCUT_ACTIONS_WITH_ARGS
 #undef ON_ALL_ACTIONS_WITH_ARGS

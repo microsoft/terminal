@@ -68,6 +68,19 @@ constexpr size_t Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(c
     return gsl::narrow_cast<size_t>(args.Hash());
 }
 
+// Retrieves the hash value for an empty-constructed object.
+template<typename T>
+static size_t EmptyHash()
+{
+    // cache the value of the empty hash
+    static size_t cachedHash{ 0 };
+    if (!cachedHash)
+    {
+        cachedHash = { winrt::make_self<T>()->Hash() };
+    }
+    return cachedHash;
+}
+
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     using namespace ::Microsoft::Terminal::Settings::Model;
