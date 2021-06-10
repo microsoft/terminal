@@ -97,7 +97,7 @@ namespace til
         throttled_func(filetime_duration delay, function func) :
             _delay{ -delay.count() },
             _func{ std::move(func) },
-            _timer{ winrt::check_pointer(CreateThreadpoolTimer(&_timer_callback, this, nullptr)) }
+            _timer{ _createTimer() }
         {
             if (_delay >= 0)
             {
@@ -172,6 +172,13 @@ namespace til
             {
                 _storage.apply(_func);
             }
+        }
+
+        wil::unique_threadpool_timer _createTimer()
+        {
+            wil::unique_threadpool_timer timer{ CreateThreadpoolTimer(&_timer_callback, this, nullptr) };
+            THROW_LAST_ERROR_IF(!timer);
+            return timer;
         }
 
         int64_t _delay;
