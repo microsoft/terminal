@@ -866,7 +866,7 @@
       ]
     },
     "QuakeModeAction": {
-      "description": "This action is a special variation of the globalSummon action. It specifically summons a window called \"_quake\". If you'd like to change the behavior of the quakeMode action, we recommended creating a new globalSummon entry.",
+      "description": "This action is a special variation of the globalSummon action. It specifically summons a window called \"_quake\". If you would like to change the behavior of the quakeMode action, we recommended creating a new globalSummon entry.",
       "allOf": [
         { "$ref": "#/definitions/ShortcutAction" },
         {
@@ -929,7 +929,7 @@
         },
         "icon": { "$ref": "#/definitions/Icon" },
         "name": {
-          "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.\nif name is a string, it  will be the name of the command.\nif name is a object, the key property of the object will be used to lookup a localized string resource for the command",
+          "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.\nIf name is a string, it will be the name of the command.\nIf name is a object, the key property of the object will be used to lookup a localized string resource for the command",
           "properties": {
             "key": {
               "type": "string"
@@ -943,14 +943,14 @@
         },
         "iterateOn": {
           "type": "string",
-          "description": "used to create iterable commands based on other object on your settings. possible values:\n- \"profiles\" \n- \"schemes\"",
+          "description": "Used to create iterable commands based on other objects in your settings. Possible values:\n- \"profiles\" \n- \"schemes\"",
           "enum": [
             "profiles",
             "schemes"
           ]
         },
         "commands": {
-          "description": "list of commands to execute",
+          "description": "List of commands to execute",
           "items": {
             "$ref": "#/definitions/Keybinding/properties/command"
           },
@@ -1102,7 +1102,7 @@
 			"type": "array"
 		  },
         "keybindings": {
-          "description": "[deprecated] use actions instead",
+          "description": "[deprecated] Use actions instead.",
           "deprecated": true,
           "items": {
             "$ref": "#/definitions/Keybinding"
