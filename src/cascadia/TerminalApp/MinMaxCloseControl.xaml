@@ -26,6 +26,8 @@
                                     ResourceKey="SystemControlBackgroundBaseMediumLowBrush" />
                     <StaticResource x:Key="CaptionButtonStroke"
                                     ResourceKey="SystemControlForegroundBaseHighBrush" />
+                    <StaticResource x:Key="CaptionButtonStrokeWindowUnfocused"
+                                    ResourceKey="SystemControlForegroundBaseLowBrush"/>
                     <StaticResource x:Key="CaptionButtonStrokeColor"
                                     ResourceKey="SystemBaseHighColor" />
                     <StaticResource x:Key="CaptionButtonStrokePointerOver"
@@ -55,6 +57,8 @@
                                     ResourceKey="SystemControlBackgroundBaseMediumLowBrush" />
                     <StaticResource x:Key="CaptionButtonStroke"
                                     ResourceKey="SystemControlForegroundBaseHighBrush" />
+                    <StaticResource x:Key="CaptionButtonStrokeWindowUnfocused"
+                                    ResourceKey="SystemControlForegroundBaseLowBrush"/>
                     <StaticResource x:Key="CaptionButtonStrokeColor"
                                     ResourceKey="SystemBaseHighColor" />
                     <StaticResource x:Key="CaptionButtonStrokePointerOver"
@@ -88,6 +92,8 @@
                                      Color="{ThemeResource SystemColorHighlightColor}" />
                     <SolidColorBrush x:Key="CaptionButtonStroke"
                                      Color="{ThemeResource SystemColorButtonTextColor}" />
+                    <StaticResource x:Key="CaptionButtonStrokeWindowUnfocused"
+                                    ResourceKey="SystemControlForegroundBaseLowBrush"/>
                     <StaticResource x:Key="CaptionButtonStrokeColor"
                                     ResourceKey="SystemColorButtonTextColor" />
                     <SolidColorBrush x:Key="CaptionButtonStrokePointerOver"
@@ -195,6 +201,16 @@
                                         </VisualState>
 
                                         <VisualState x:Name="Disabled" />
+                                    </VisualStateGroup>
+
+                                    <VisualStateGroup x:Name="FocusStates">
+                                        <VisualState x:Name="WindowStateFocused" />
+
+                                        <VisualState x:Name="WindowStateUnfocused">
+                                            <VisualState.Setters>
+                                                <Setter Target="Path.Stroke" Value="{ThemeResource CaptionButtonStrokeWindowUnfocused}" />
+                                            </VisualState.Setters>
+                                        </VisualState>
                                     </VisualStateGroup>
 
                                     <VisualStateGroup x:Name="MinMaxStates">

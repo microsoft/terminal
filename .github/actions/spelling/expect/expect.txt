@@ -1464,6 +1464,7 @@ namestream
 nano
 natvis
 nbsp
+NCACTIVATE
 NCCALCSIZE
 NCCREATE
 NCLBUTTONDOWN

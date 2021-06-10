@@ -517,6 +517,32 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 }
 
 // Method Description:
+// - Responds to the WM_NCACTIVATE message by changing the focus state of
+//   the window.
+[[nodiscard]] LRESULT NonClientIslandWindow::_OnFocusChanged(const WPARAM wParam, const LPARAM lParam) noexcept
+{
+    const auto windowStyle = GetWindowStyle(_window.get());
+    const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
+
+    if (isIconified)
+    {
+        return DefWindowProc(_window.get(), WM_NCACTIVATE, wParam, lParam);
+    }
+
+    if (_titlebar)
+    {
+        _isFocused = wParam;
+        try
+        {
+            _titlebar.Focused(_isFocused);
+        }
+        CATCH_LOG();
+    }
+
+    return TRUE;
+}
+
+// Method Description:
 // - Hit test the frame for resizing and moving.
 // Arguments:
 // - ptMouse: the mouse point being tested, in absolute (NOT WINDOW) coordinates.
@@ -708,6 +734,8 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         return 0;
     case WM_NCCALCSIZE:
         return _OnNcCalcSize(wParam, lParam);
+    case WM_NCACTIVATE:
+        return _OnFocusChanged(wParam, lParam);
     case WM_NCHITTEST:
         return _OnNcHitTest({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
     case WM_PAINT:
