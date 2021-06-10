@@ -1032,8 +1032,6 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
             
             Tracing::s_TraceCookedRead(_backupLimit);
 
-            Tracing::s_TraceCookedRead(_backupLimit);
-
             // check for alias
             ProcessAliases(LineCount);
         }
