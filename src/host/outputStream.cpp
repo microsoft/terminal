@@ -77,7 +77,10 @@ void WriteBuffer::_DefaultStringCase(const std::wstring_view string)
     size_t dwNumBytes = string.size() * sizeof(wchar_t);
 
     Cursor& cursor = _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    cursor.SetIsOn(true);
+    if (!cursor.IsOn())
+    {
+        cursor.SetIsOn(true);
+    }
 
     //cursor.StartDeferDrawing();
     _ntstatus = WriteCharsLegacy(_io.GetActiveOutputBuffer(),
