@@ -826,40 +826,40 @@
         {
           "properties": {
             "action": { "type": "string", "pattern": "globalSummon" },
-            "desktop":{
-              "type":"string",
-              "default":"toCurrent",
-              "description":"This controls how the terminal should interact with virtual desktops.\n- \"any\": Leave the window on whichever desktop it's already on - will switch to that desktop as the window is activated.\n- \"toCurrent\" (default): Move the window to the current virtual desktop.\n- \"onCurrent\": Only summon the window if it's already on the current virtual desktop. ",
-              "enum":[
+            "desktop": {
+              "type": "string",
+              "default": "toCurrent",
+              "description": "This controls how the terminal should interact with virtual desktops.\n- \"any\": Leave the window on whichever desktop it's already on - will switch to that desktop as the window is activated.\n- \"toCurrent\" (default): Move the window to the current virtual desktop.\n- \"onCurrent\": Only summon the window if it's already on the current virtual desktop. ",
+              "enum": [
                 "any",
                 "toCurrent",
                 "onCurrent"
               ]
             },
-            "monitor":{
-              "type":"string",
-              "default":"toMouse",
-              "description":"This controls the monitor that the window will be summoned from/to.\n- \"any\": Summon the most recently used window, regardless of which monitor it's currently on.\n- \"toCurrent\": Summon the most recently used window to the monitor with the current foreground window.\n- \"toMouse\" (default): Summon the most recently used window to the monitor where the mouse cursor is.",
-              "enum":[
+            "monitor": {
+              "type": "string",
+              "default": "toMouse",
+              "description": "This controls the monitor that the window will be summoned from/to.\n- \"any\": Summon the most recently used window, regardless of which monitor it's currently on.\n- \"toCurrent\": Summon the most recently used window to the monitor with the current foreground window.\n- \"toMouse\" (default): Summon the most recently used window to the monitor where the mouse cursor is.",
+              "enum": [
                 "any",
                 "toCurrent",
                 "toMouse"
               ]
             },
-            "name":{
-              "type":"string",
-              "description":"When provided, summon the window whose name or ID matches the given name value. If no such window exists, then create a new window with that name."
+            "name": {
+              "type": "string",
+              "description": "When provided, summon the window whose name or ID matches the given name value. If no such window exists, then create a new window with that name."
             },
-            "dropdownDuration":{
-              "type":"number",
+            "dropdownDuration": {
+              "type": "number",
               "minimum": 0,
-              "default":0,
-              "description":"When provided with a positive number, \"slide\" the window in from the top of the screen using an animation that lasts dropdownDuration milliseconds."
+              "default": 0,
+              "description": "When provided with a positive number, \"slide\" the window in from the top of the screen using an animation that lasts dropdownDuration milliseconds."
             },
-            "toggleVisibility":{
-              "type":"boolean",
-              "default":true,
-              "description":"When true, pressing the assigned keys for this action will dismiss (minimize) the window when the window is currently the foreground window."
+            "toggleVisibility": {
+              "type": "boolean",
+              "default": true,
+              "description": "When true, pressing the assigned keys for this action will dismiss (minimize) the window when the window is currently the foreground window."
             }
           }
         }
@@ -930,6 +930,9 @@
         "icon": { "$ref": "#/definitions/Icon" },
         "name": {
           "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.\nif name is a string, it  will be the name of the command.\nif name is a object, the key property of the object will be used to lookup a localized string resource for the command",
+          "properties": {
+            "key": {
+              "type": "string"
             }
           },
           "type": [
@@ -946,7 +949,7 @@
             "schemes"
           ]
         },
-        "commands":{
+        "commands": {
           "description": "list of commands to execute",
           "items": {
             "$ref": "#/definitions/Keybinding/properties/command"
@@ -955,9 +958,9 @@
           "type": "array"
         }
       },
-      "anyOf":[
-        {"required":["name","commands"]},
-        {"required":["command"]}
+      "anyOf": [
+        {"required": ["name","commands"]},
+        {"required": ["command"]}
       ],
       "type": "object"
     },
