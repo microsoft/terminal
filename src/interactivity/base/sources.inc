@@ -44,6 +44,7 @@ SOURCES = \
     ..\ServiceLocator.cpp \
     ..\VtApiRedirection.cpp \
     ..\EventSynthesis.cpp \
+    ..\RemoteConsoleControl.cpp \
 
 INCLUDES = \
     $(INCLUDES); \

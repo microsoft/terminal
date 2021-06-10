@@ -20,6 +20,7 @@
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../interactivity/base/ApiDetector.hpp"
+#include "../interactivity/base/RemoteConsoleControl.hpp"
 
 #include "renderData.hpp"
 #include "../renderer/base/renderer.hpp"
@@ -364,6 +365,7 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
 //   from the driver... or an S_OK success.
 [[nodiscard]] HRESULT ConsoleEstablishHandoff([[maybe_unused]] _In_ HANDLE Server,
                                               [[maybe_unused]] HANDLE driverInputEvent,
+                                              [[maybe_unused]] HANDLE hostSignalPipe,
                                               [[maybe_unused]] PCONSOLE_API_MSG connectMessage)
 try
 {
@@ -387,6 +389,9 @@ try
     {
         return E_NOT_SET;
     }
+
+    std::unique_ptr<IConsoleControl> remoteControl = std::make_unique<Microsoft::Console::Interactivity::RemoteConsoleControl>(hostSignalPipe);
+    RETURN_IF_NTSTATUS_FAILED(ServiceLocator::SetConsoleControlInstance(remoteControl));
 
     wil::unique_handle signalPipeTheirSide;
     wil::unique_handle signalPipeOurSide;

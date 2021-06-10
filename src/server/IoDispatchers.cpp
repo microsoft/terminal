@@ -13,6 +13,7 @@
 #include "../host/handle.h"
 #include "../host/srvinit.h"
 #include "../host/telemetry.hpp"
+#include "../host/HostSignalInputThread.hpp"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
@@ -296,6 +297,11 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
             HANDLE serverHandle;
             THROW_IF_FAILED(Globals.pDeviceComm->GetServerHandle(&serverHandle));
 
+            wil::unique_hfile signalPipeTheirSide;
+            wil::unique_hfile signalPipeOurSide;
+
+            THROW_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeOurSide.addressof(), signalPipeTheirSide.addressof(), nullptr, 0));
+
             wil::unique_process_handle clientProcess;
 
             // Okay, moment of truth! If they say they successfully took it over, we're going to clean up.
@@ -303,7 +309,15 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
             THROW_IF_FAILED(handoff->EstablishHandoff(serverHandle,
                                                       Globals.hInputEvent.get(),
                                                       &msg,
+                                                      signalPipeTheirSide.get(),
                                                       &clientProcess));
+
+            signalPipeTheirSide.release();
+
+            auto hostSignalThread = std::make_unique<Microsoft::Console::HostSignalInputThread>(std::move(signalPipeOurSide));
+
+            // Start it if it was successfully created.
+            THROW_IF_FAILED(hostSignalThread->Start());
 
             // Unlock in case anything tries to spool down as we exit.
             UnlockConsole();

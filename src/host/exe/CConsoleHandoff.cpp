@@ -31,6 +31,7 @@ static HRESULT _duplicateHandle(const HANDLE in, HANDLE& out)
 HRESULT CConsoleHandoff::EstablishHandoff(HANDLE server,
                                           HANDLE inputEvent,
                                           PCCONSOLE_PORTABLE_ATTACH_MSG msg,
+                                          HANDLE signalPipe,
                                           HANDLE* process)
 try
 {
@@ -57,9 +58,10 @@ try
     // Making our own duplicate copy ensures they hang around in our lifetime.
     RETURN_IF_FAILED(_duplicateHandle(server, server));
     RETURN_IF_FAILED(_duplicateHandle(inputEvent, inputEvent));
+    RETURN_IF_FAILED(_duplicateHandle(signalPipe, signalPipe));
 
     // Now perform the handoff.
-    RETURN_IF_FAILED(ConsoleEstablishHandoff(server, inputEvent, &apiMsg));
+    RETURN_IF_FAILED(ConsoleEstablishHandoff(server, inputEvent, signalPipe, &apiMsg));
 
     // Give back a copy of our own process handle to be tracked.
     wil::unique_handle duplicatedHandle;
