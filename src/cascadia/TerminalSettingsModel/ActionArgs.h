@@ -73,11 +73,7 @@ template<typename T>
 static size_t EmptyHash()
 {
     // cache the value of the empty hash
-    static size_t cachedHash{ 0 };
-    if (!cachedHash)
-    {
-        cachedHash = { winrt::make_self<T>()->Hash() };
-    }
+    static const size_t cachedHash = winrt::make_self<T>()->Hash();
     return cachedHash;
 }
 
