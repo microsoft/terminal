@@ -133,6 +133,7 @@ namespace winrt::TerminalApp::implementation
         bool _IsKeyboardServiceEnabled();
         void _ShowKeyboardServiceDisabledDialog();
 
+        void _ApplyLanguageSettingChange();
         fire_and_forget _LoadErrorsDialogRoutine();
         fire_and_forget _ShowLoadWarningsDialogRoutine();
         fire_and_forget _RefreshThemeRoutine();

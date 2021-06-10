@@ -306,6 +306,7 @@ namespace winrt::TerminalApp::implementation
         });
         _root->Create();
 
+        _ApplyLanguageSettingChange();
         _ApplyTheme(_settings.GlobalSettings().Theme());
         _ApplyStartupTaskStateChange();
 
@@ -904,6 +905,19 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void AppLogic::_ApplyLanguageSettingChange()
+    {
+        using ApplicationLanguages = winrt::Windows::Globalization::ApplicationLanguages;
+
+        const auto language = _settings.GlobalSettings().Language();
+        const auto primaryLanguageOverride = ApplicationLanguages::PrimaryLanguageOverride();
+
+        if (primaryLanguageOverride != language)
+        {
+            ApplicationLanguages::PrimaryLanguageOverride(language);
+        }
+    }
+
     fire_and_forget AppLogic::_LoadErrorsDialogRoutine()
     {
         co_await winrt::resume_foreground(_root->Dispatcher());
@@ -1023,6 +1037,7 @@ namespace winrt::TerminalApp::implementation
         // Update the settings in TerminalPage
         _root->SetSettings(_settings, true);
 
+        _ApplyLanguageSettingChange();
         _RefreshThemeRoutine();
         _ApplyStartupTaskStateChange();
 

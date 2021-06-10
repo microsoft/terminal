@@ -29,4 +29,23 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     {
         return visualize_control_codes(std::wstring{ str });
     }
+
+    template<typename T, typename Traits>
+    constexpr bool starts_with(const std::basic_string_view<T, Traits> str, const std::basic_string_view<T, Traits> prefix) noexcept
+    {
+#ifdef __cpp_lib_starts_ends_with
+#error This code can be replaced in C++20, which natively supports .starts_with().
+#endif
+        return str.size() >= prefix.size() && Traits::compare(str.data(), prefix.data(), prefix.size()) == 0;
+    };
+
+    constexpr bool starts_with(const std::string_view str, const std::string_view prefix) noexcept
+    {
+        return starts_with<>(str, prefix);
+    };
+
+    constexpr bool starts_with(const std::wstring_view str, const std::wstring_view prefix) noexcept
+    {
+        return starts_with<>(str, prefix);
+    };
 }

@@ -1109,6 +1109,11 @@
           },
           "type": "array"
         },
+        "language": {
+          "default": "",
+          "description": "Sets an override for the app's preferred language, expressed as a BCP-47 language tag like en-US.",
+          "type": "string"
+        },
         "theme": {
           "default": "system",
           "description": "Sets the theme of the application. The special value \"system\" refers to the active Windows system theme.",
