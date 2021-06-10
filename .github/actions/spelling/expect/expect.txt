@@ -182,6 +182,7 @@ BPBF
 bpp
 BPPF
 branchconfig
+brandings
 BRK
 Browsable
 bsearch
