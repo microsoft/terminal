@@ -26,14 +26,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                          const HANDLE hServerProcess,
                          const HANDLE hClientProcess);
 
-        ConptyConnection(
-            const hstring& cmdline,
-            const hstring& startingDirectory,
-            const hstring& startingTitle,
-            const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
-            const uint32_t rows,
-            const uint32_t cols,
-            const guid& guid);
+        ConptyConnection() = default;
+        void Initialize(const Windows::Foundation::Collections::ValueSet& settings);
+
         static winrt::fire_and_forget final_release(std::unique_ptr<ConptyConnection> connection);
 
         void Start();
@@ -49,6 +44,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         static winrt::event_token NewConnection(NewConnectionHandler const& handler);
         static void NewConnection(winrt::event_token const& token);
 
+        static Windows::Foundation::Collections::ValueSet CreateSettings(const winrt::hstring& cmdline,
+                                                                         const winrt::hstring& startingDirectory,
+                                                                         const winrt::hstring& startingTitle,
+                                                                         Windows::Foundation::Collections::IMapView<hstring, hstring> const& environment,
+                                                                         uint32_t rows,
+                                                                         uint32_t columns,
+                                                                         winrt::guid const& guid);
+
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
 
     private:
@@ -63,7 +66,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         hstring _commandline;
         hstring _startingDirectory;
         hstring _startingTitle;
-        Windows::Foundation::Collections::IMapView<hstring, hstring> _environment;
+        Windows::Foundation::Collections::ValueSet _environment;
         guid _guid{}; // A unique session identifier for connected client
         hstring _clientName{}; // The name of the process hosted by this ConPTY connection (as of launch).
 
