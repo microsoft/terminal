@@ -86,6 +86,7 @@ NOREPEAT
 ntprivapi
 oaidl
 ocidl
+ODR
 osver
 OSVERSIONINFOEXW
 otms
