@@ -121,7 +121,7 @@ namespace til
         {
             if (!_storage.emplace(std::forward<MakeArgs>(args)...))
             {
-                _fire();
+                _leading_edge();
             }
         }
 
@@ -141,18 +141,18 @@ namespace til
         void flush()
         {
             WaitForThreadpoolTimerCallbacks(_timer.get(), true);
-            _invoke();
+            _trailing_edge();
         }
 
     private:
         static void _timer_callback(PTP_CALLBACK_INSTANCE /*instance*/, PVOID context, PTP_TIMER /*timer*/) noexcept
         try
         {
-            static_cast<throttled_func*>(context)->_invoke();
+            static_cast<throttled_func*>(context)->_trailing_edge();
         }
         CATCH_LOG()
 
-        void _fire()
+        void _leading_edge()
         {
             if constexpr (leading)
             {
@@ -162,7 +162,7 @@ namespace til
             SetThreadpoolTimerEx(_timer.get(), reinterpret_cast<PFILETIME>(&_delay), 0, 0);
         }
 
-        void _invoke()
+        void _trailing_edge()
         {
             if constexpr (leading)
             {
