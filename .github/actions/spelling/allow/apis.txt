@@ -45,6 +45,7 @@ IBind
 IBox
 IClass
 IComparable
+IComparer
 IConnection
 ICustom
 IDialog
@@ -85,6 +86,7 @@ NOREPEAT
 ntprivapi
 oaidl
 ocidl
+ODR
 osver
 OSVERSIONINFOEXW
 otms
