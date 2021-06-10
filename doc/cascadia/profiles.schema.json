@@ -897,19 +897,9 @@
           "type": "array"
         }
       },
-      "allOf":[
-        {
           "anyOf":[
-            {"required":["command"]},
-            {"required":["commands"]}
-          ]
-        },
-        {
-          "anyOf":[
-            {"required":["keys"]},
-            {"required":["name"]}
-          ]
-        }
+        {"required":["name","commands"]},
+        {"required":["command"]}
       ],
       "type": "object"
     },
