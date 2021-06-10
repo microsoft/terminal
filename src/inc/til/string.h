@@ -55,7 +55,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #ifdef __cpp_lib_ends_ends_with
 #error This code can be replaced in C++20, which natively supports .ends_with().
 #endif
+#pragma warning(push)
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
         return str.size() >= prefix.size() && Traits::compare(str.data() + (str.size() - prefix.size()), prefix.data(), prefix.size()) == 0;
+#pragma warning(pop)
     };
 
     constexpr bool ends_with(const std::string_view str, const std::string_view prefix) noexcept
