@@ -60,6 +60,9 @@
     <ClInclude Include="InvertedBooleanToVisibilityConverter.h">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="PercentageSignConverter.h">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="StringIsEmptyConverter.h">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
@@ -165,6 +168,9 @@
       <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="InvertedBooleanToVisibilityConverter.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="PercentageSignConverter.cpp">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="StringIsEmptyConverter.cpp">
