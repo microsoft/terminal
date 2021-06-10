@@ -935,5 +935,6 @@ void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspecta
     summonArgs.MoveToCurrentDesktop(false);
     summonArgs.DropdownDuration(0);
     summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
+    summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
     _HandleSummon(sender, summonArgs);
 }
