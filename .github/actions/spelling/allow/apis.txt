@@ -45,6 +45,7 @@ IBind
 IBox
 IClass
 IComparable
+IComparer
 IConnection
 ICustom
 IDialog
