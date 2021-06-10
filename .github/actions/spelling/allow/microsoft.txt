@@ -32,6 +32,7 @@ msixbundle
 muxc
 netcore
 osgvsowi
+PFILETIME
 pgc
 pgo
 pgosweep
@@ -39,10 +40,12 @@ powerrename
 powershell
 propkey
 pscustomobject
+QWORD
 robocopy
 SACLs
 Shobjidl
 Skype
+SRW
 sxs
 Sysinternals
 sysnative
