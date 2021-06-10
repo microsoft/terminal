@@ -866,7 +866,7 @@
       ]
     },
     "QuakeModeAction": {
-      "description": "Arguments corresponding to a focusPane Action",
+      "description": "This action is a special variation of the globalSummon action. It specifically summons the quake window,If you'd like to change the behavior of the quakeMode action, we recommended creating a new globalSummon entry",
       "allOf": [
         { "$ref": "#/definitions/ShortcutAction" },
         {
