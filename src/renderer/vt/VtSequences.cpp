@@ -4,6 +4,7 @@
 #include "precomp.h"
 #include "vtrenderer.hpp"
 #include "../../inc/conattrs.hpp"
+#include "til/format.h"
 
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
@@ -234,7 +235,8 @@ using namespace Microsoft::Console::Render;
                         (WI_IsFlagSet(wAttr, FOREGROUND_GREEN) ? 2 : 0) +
                         (WI_IsFlagSet(wAttr, FOREGROUND_BLUE) ? 4 : 0);
 
-    return _WriteFormattedString(&fmt, vtIndex);
+    // An example string with max length would be "\x1b[100m", which has length = 5.
+    return _Write(til::format::format(6, "\x1b[{}m", vtIndex));
 }
 
 // Method Description:
@@ -248,11 +250,8 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_SetGraphicsRendition256Color(const WORD index,
                                                               const bool fIsForeground) noexcept
 {
-    const std::string fmt = fIsForeground ?
-                                "\x1b[38;5;%dm" :
-                                "\x1b[48;5;%dm";
-
-    return _WriteFormattedString(&fmt, ::Xterm256ToWindowsIndex(index));
+    // An example string with max length would be "\x1b[38;5;128m", which has length = 10.
+    return _Write(til::format::format(11, "\x1b[{};5;{}m", fIsForeground ? 38 : 48, ::Xterm256ToWindowsIndex(index)));
 }
 
 // Method Description:
@@ -266,15 +265,12 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_SetGraphicsRenditionRGBColor(const COLORREF color,
                                                               const bool fIsForeground) noexcept
 {
-    const std::string fmt = fIsForeground ?
-                                "\x1b[38;2;%d;%d;%dm" :
-                                "\x1b[48;2;%d;%d;%dm";
-
     DWORD const r = GetRValue(color);
     DWORD const g = GetGValue(color);
     DWORD const b = GetBValue(color);
 
-    return _WriteFormattedString(&fmt, r, g, b);
+    // An example string with max length would be "\x1b[38;2;128;128;128m", which has length = 18.
+    return _Write(til::format::format(19, "\x1b[{};2;{};{};{}m", fIsForeground ? 38 : 48, r, g, b));
 }
 
 // Method Description:
