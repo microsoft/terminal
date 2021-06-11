@@ -262,6 +262,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _unfocusedAppearanceViewModel.WindowRoot(windowRoot);
 
         _NotifyChanges(L"UnfocusedAppearance");
+        _NotifyChanges(L"HasUnfocusedAppearance");
     }
 
     void ProfileViewModel::DeleteUnfocusedAppearance()
@@ -269,6 +270,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _profile.DeleteUnfocusedAppearance();
 
         _unfocusedAppearanceViewModel = nullptr;
+
+        _NotifyChanges(L"HasUnfocusedAppearance");
     }
 
     Editor::AppearanceViewModel ProfileViewModel::UnfocusedAppearance()
@@ -470,12 +473,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         state->DeleteProfile();
     }
 
-    void Profiles::Expander_Expanded(IInspectable const& /*sender*/, winrt::Microsoft::UI::Xaml::Controls::ExpanderExpandingEventArgs const& /*e*/)
+    void Profiles::CreateUnfocusedAppearance_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
         _State.CreateUnfocusedAppearance();
     }
 
-    void Profiles::Expander_Collapsed(IInspectable const& /*sender*/, winrt::Microsoft::UI::Xaml::Controls::ExpanderCollapsedEventArgs const& /*e*/)
+    void Profiles::DeleteUnfocusedAppearance_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
         _State.DeleteUnfocusedAppearance();
     }
