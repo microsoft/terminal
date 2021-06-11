@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef __INSIDE_WINDOWS
+#if !TIL_FEATURE_DXENGINESHADERSUPPORT_ENABLED
 constexpr std::string_view retroPixelShaderString{ "" };
 #else
 constexpr std::string_view retroPixelShaderString{ R"(

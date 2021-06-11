@@ -594,6 +594,7 @@ void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable send
     summonArgs.MoveToCurrentDesktop(false);
     summonArgs.DropdownDuration(0);
     summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
+    summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
     // Summon the window whenever we dispatch a commandline to it. This will
     // make it obvious when a new tab/pane is created in a window.
     _HandleSummon(sender, summonArgs);
@@ -935,5 +936,6 @@ void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspecta
     summonArgs.MoveToCurrentDesktop(false);
     summonArgs.DropdownDuration(0);
     summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
+    summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
     _HandleSummon(sender, summonArgs);
 }

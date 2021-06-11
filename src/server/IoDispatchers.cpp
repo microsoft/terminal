@@ -146,7 +146,7 @@ static bool _shouldAttemptHandoff(const Globals& globals,
                                   const CONSOLE_INFORMATION& gci,
                                   CONSOLE_API_CONNECTINFO& cac)
 {
-#ifndef __INSIDE_WINDOWS
+#if !TIL_FEATURE_ATTEMPTHANDOFF_ENABLED
 
     UNREFERENCED_PARAMETER(globals);
     UNREFERENCED_PARAMETER(gci);

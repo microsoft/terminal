@@ -191,6 +191,7 @@
         "find",
         "findMatch",
         "focusPane",
+        "globalSummon",
         "identifyWindow",
         "identifyWindows",
         "moveFocus",
@@ -206,6 +207,7 @@
         "prevTab",
         "renameTab",
         "openTabRenamer",
+        "quakeMode",
         "resetFontSize",
         "resizePane",
         "renameWindow",
@@ -817,6 +819,63 @@
         }
       ]
     },
+    "GlobalSummonAction": {
+      "description": "This is a special action that works globally in the OS, rather than only in the context of the terminal window. When pressed, this action will summon the terminal window.",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "globalSummon" },
+            "desktop": {
+              "type": "string",
+              "default": "toCurrent",
+              "description": "This controls how the terminal should interact with virtual desktops.\n- \"any\": Leave the window on whichever desktop it's already on - will switch to that desktop as the window is activated.\n- \"toCurrent\" (default): Move the window to the current virtual desktop.\n- \"onCurrent\": Only summon the window if it's already on the current virtual desktop. ",
+              "enum": [
+                "any",
+                "toCurrent",
+                "onCurrent"
+              ]
+            },
+            "monitor": {
+              "type": "string",
+              "default": "toMouse",
+              "description": "This controls the monitor that the window will be summoned from/to.\n- \"any\": Summon the most recently used window, regardless of which monitor it's currently on.\n- \"toCurrent\": Summon the most recently used window to the monitor with the current foreground window.\n- \"toMouse\" (default): Summon the most recently used window to the monitor where the mouse cursor is.",
+              "enum": [
+                "any",
+                "toCurrent",
+                "toMouse"
+              ]
+            },
+            "name": {
+              "type": "string",
+              "description": "When provided, summon the window whose name or ID matches the given name value. If no such window exists, then create a new window with that name."
+            },
+            "dropdownDuration": {
+              "type": "number",
+              "minimum": 0,
+              "default": 0,
+              "description": "When provided with a positive number, \"slide\" the window in from the top of the screen using an animation that lasts dropdownDuration milliseconds."
+            },
+            "toggleVisibility": {
+              "type": "boolean",
+              "default": true,
+              "description": "When true, pressing the assigned keys for this action will dismiss (minimize) the window when the window is currently the foreground window."
+            }
+          }
+        }
+      ]
+    },
+    "QuakeModeAction": {
+      "description": "This action is a special variation of the globalSummon action. It specifically summons a window called \"_quake\". If you would like to change the behavior of the quakeMode action, we recommended creating a new globalSummon entry.",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "quakeMode" }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -848,6 +907,8 @@
               { "$ref": "#/definitions/RenameTabAction" },
               { "$ref": "#/definitions/RenameWindowAction" },
               { "$ref": "#/definitions/FocusPaneAction" },
+              { "$ref": "#/definitions/GlobalSummonAction" },
+              { "$ref": "#/definitions/QuakeModeAction" },
               { "type": "null" }
             ]
         },
@@ -868,16 +929,38 @@
         },
         "icon": { "$ref": "#/definitions/Icon" },
         "name": {
-          "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.",
+          "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.\nIf name is a string, it will be the name of the command.\nIf name is a object, the key property of the object will be used to lookup a localized string resource for the command",
+          "properties": {
+            "key": {
+              "type": "string"
+            }
+          },
           "type": [
             "string",
+            "object",
             "null"
           ]
+        },
+        "iterateOn": {
+          "type": "string",
+          "description": "Used to create iterable commands based on other objects in your settings. Possible values:\n- \"profiles\" \n- \"schemes\"",
+          "enum": [
+            "profiles",
+            "schemes"
+          ]
+        },
+        "commands": {
+          "description": "List of commands to execute",
+          "items": {
+            "$ref": "#/definitions/Keybinding/properties/command"
+          },
+          "minItems": 1,
+          "type": "array"
         }
       },
-      "required": [
-        "command",
-        "keys"
+      "anyOf": [
+        {"required": ["name","commands"]},
+        {"required": ["command"]}
       ],
       "type": "object"
     },
@@ -1011,12 +1094,25 @@
           "type": [ "integer", "string" ],
           "deprecated": true
         },
+		"actions": {
+			"description": "Properties are specific to each custom action.",
+			"items": {
+			  "$ref": "#/definitions/Keybinding"
+			},
+			"type": "array"
+		  },
         "keybindings": {
-          "description": "Properties are specific to each custom key binding.",
+          "description": "[deprecated] Use actions instead.",
+          "deprecated": true,
           "items": {
             "$ref": "#/definitions/Keybinding"
           },
           "type": "array"
+        },
+        "language": {
+          "default": "",
+          "description": "Sets an override for the app's preferred language, expressed as a BCP-47 language tag like en-US.",
+          "type": "string"
         },
         "theme": {
           "default": "system",
