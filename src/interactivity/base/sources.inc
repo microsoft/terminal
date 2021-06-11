@@ -45,6 +45,7 @@ SOURCES = \
     ..\VtApiRedirection.cpp \
     ..\EventSynthesis.cpp \
     ..\RemoteConsoleControl.cpp \
+    ..\HostSignalInputThread.cpp \
 
 INCLUDES = \
     $(INCLUDES); \

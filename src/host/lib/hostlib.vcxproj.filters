@@ -183,9 +183,6 @@
     <ClCompile Include="..\ScreenBufferRenderTarget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\HostSignalInputThread.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h">
@@ -357,9 +354,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\ScreenBufferRenderTarget.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\HostSignalInputThread.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

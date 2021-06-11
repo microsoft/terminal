@@ -59,7 +59,6 @@ SOURCES = \
     ..\VtIo.cpp   \
     ..\VtInputThread.cpp   \
     ..\PtySignalInputThread.cpp \
-    ..\HostSignalInputThread.cpp \
     ..\consoleInformation.cpp \
     ..\directio.cpp  \
     ..\getset.cpp    \
