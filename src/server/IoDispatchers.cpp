@@ -13,8 +13,8 @@
 #include "../host/handle.h"
 #include "../host/srvinit.h"
 #include "../host/telemetry.hpp"
-#include "../host/HostSignalInputThread.hpp"
 
+#include "../interactivity/base/HostSignalInputThread.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 #include "../types/inc/utils.hpp"
