@@ -4,6 +4,8 @@ alignas
 alignof
 bitfield
 bitfields
+BUILDBRANCH
+BUILDMSG
 BUILDNUMBER
 charconv
 CLASSNOTAVAILABLE
@@ -126,6 +128,7 @@ tmp
 tolower
 TTask
 TVal
+UChar
 UPDATEINIFILE
 userenv
 wcsstr
@@ -148,6 +151,7 @@ xlocnum
 xloctime
 xmemory
 XParse
+xpath
 xstddef
 xstring
 xtree
