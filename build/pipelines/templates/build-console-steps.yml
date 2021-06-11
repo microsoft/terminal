@@ -70,17 +70,16 @@ steps:
   displayName: 'Check MSIX for common regressions'
   # PGO runtime needs its own CRT and it's in the package for convenience.
   # That will make this script mad so skip since we're not shipping the PGO Instrumentation one anyway.
-  condition: or(ne(variables['PGOBuildMode'], 'Instrument'), ne(variables['BuildConfiguration'], 'Fuzzing'))
+  condition: and(ne(variables['PGOBuildMode'], 'Instrument'), ne(variables['BuildPlatform'], 'Fuzzing'))
   inputs:
     targetType: inline
     script: |
-      Write-Host "build config: $(BuildConfiguration)"
       $Package = Get-ChildItem -Recurse -Filter "CascadiaPackage_*.msix"
       .\build\scripts\Test-WindowsTerminalPackage.ps1 -Verbose -Path $Package.FullName
 
 - task: powershell@2
   displayName: 'Source Index PDBs'
-  condition: or(ne(variables['PGOBuildMode'], 'Instrument'), ne(variables['BuildConfiguration'], 'Fuzzing'))
+  condition: and(ne(variables['PGOBuildMode'], 'Instrument'), ne(variables['BuildPlatform'], 'Fuzzing'))
   inputs:
     targetType: filePath
     filePath: build\scripts\Index-Pdbs.ps1
@@ -134,7 +133,7 @@ steps:
 
 - task: PublishTestResults@2
   displayName: 'Upload converted test logs'
-  condition: or(ne(variables['PGOBuildMode'], 'Instrument'), ne(variables['BuildConfiguration'], 'Fuzzing'))
+  condition: and(ne(variables['PGOBuildMode'], 'Instrument'), ne(variables['BuildPlatform'], 'Fuzzing'))
   inputs:
     testResultsFormat: 'xUnit' # Options: JUnit, NUnit, VSTest, xUnit, cTest
     testResultsFiles: '**/onBuildMachineResults.xml'
