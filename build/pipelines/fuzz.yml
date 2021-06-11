@@ -32,23 +32,18 @@ stages:
   jobs:
   - job:
     steps:
-    - bash: |
-        set -ex
-        cd examples/simple-libfuzzer
-        make
-      displayName: Build LibFuzzer
     - task: UsePythonVersion@0
+      displayName: Setup Python Env
       inputs:
         versionSpec: '3.x'
         addToPath: true
         architecture: 'x64'
-      displayName: Setup Python Env
-    - bash: |
+    - displayName: Submit OneFuzz Job
+      bash: |
         set -ex
         pip -q install onefuzz
         onefuzz config --endpoint $(endpoint) --client_id $(client_id) --client_secret $(client_secret)
-        onefuzz template libfuzzer basic OpenConsole OpenConsole $GITHUB_SHA --target_exe fuzz.exe
-      displayName: Submit OneFuzz Job
+        onefuzz template libfuzzer basic OpenConsole WriteCharsLegacy --target_exe bin\x64\Fuzzing\OpenConsoleFuzzer.exe
       env:
         client_id: client_id
         client_secret: client_secret
