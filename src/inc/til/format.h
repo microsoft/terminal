@@ -28,12 +28,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return ptr;
         }
 
-        std::string_view format(unsigned int maxLength, const char* pFormat, ...)
+        template<size_t N>
+        constexpr std::string_view format(const char* pFormat, ...)
         {
             va_list args;
             va_start(args, pFormat);
 
-            char* buf = new char[maxLength];
+            char buf[N];
             char* pDst = buf;
 
             const char* pSrc = pFormat;
