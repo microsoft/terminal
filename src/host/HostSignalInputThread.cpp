@@ -88,8 +88,8 @@ void HostSignalInputThread::ConnectConsole() noexcept
                 {
                     THROW_HR(E_ILLEGAL_METHOD_CALL);
                 }
-
-                LOG_NTSTATUS(ServiceLocator::LocateConsoleControl()->NotifyConsoleApplication(msg.dwProcessId));
+                
+                LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->NotifyConsoleApplication(msg.dwProcessId));
             }
             else
             {
@@ -112,7 +112,7 @@ void HostSignalInputThread::ConnectConsole() noexcept
                     THROW_HR(E_ILLEGAL_METHOD_CALL);
                 }
 
-                LOG_NTSTATUS(ServiceLocator::LocateConsoleControl()->SetForeground(ULongToHandle(msg.dwProcessId), msg.fForeground));
+                LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetForeground(ULongToHandle(msg.dwProcessId), msg.fForeground));
             }
             else
             {
@@ -134,7 +134,7 @@ void HostSignalInputThread::ConnectConsole() noexcept
                     THROW_HR(E_ILLEGAL_METHOD_CALL);
                 }
 
-                LOG_NTSTATUS(ServiceLocator::LocateConsoleControl()->EndTask(ULongToHandle(msg.dwProcessId), msg.dwEventType, msg.ulCtrlFlags));
+                LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->EndTask(ULongToHandle(msg.dwProcessId), msg.dwEventType, msg.ulCtrlFlags));
             }
             else
             {

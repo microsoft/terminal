@@ -312,8 +312,10 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
                                                       signalPipeTheirSide.get(),
                                                       &clientProcess));
 
+            // Detach the end of the pipe we gave them.
             signalPipeTheirSide.release();
 
+            // Start a thread to listen for signals from their side that we must relay to the OS.
             auto hostSignalThread = std::make_unique<Microsoft::Console::HostSignalInputThread>(std::move(signalPipeOurSide));
 
             // Start it if it was successfully created.
