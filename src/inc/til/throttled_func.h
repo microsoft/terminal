@@ -145,7 +145,7 @@ namespace til
         }
 
     private:
-        static void _timer_callback(PTP_CALLBACK_INSTANCE /*instance*/, PVOID context, PTP_TIMER /*timer*/) noexcept
+        static void __stdcall _timer_callback(PTP_CALLBACK_INSTANCE /*instance*/, PVOID context, PTP_TIMER /*timer*/) noexcept
         try
         {
             static_cast<throttled_func*>(context)->_trailing_edge();
