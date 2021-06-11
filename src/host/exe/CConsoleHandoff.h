@@ -36,6 +36,7 @@ struct __declspec(uuid(__CLSID_CConsoleHandoff))
                                   HANDLE inputEvent,
                                   PCCONSOLE_PORTABLE_ATTACH_MSG msg,
                                   HANDLE signalPipe,
+                                  HANDLE inboxProcess,
                                   HANDLE* process);
 
 #pragma endregion

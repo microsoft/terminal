@@ -302,6 +302,16 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 
             THROW_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeOurSide.addressof(), signalPipeTheirSide.addressof(), nullptr, 0));
 
+            // Give a copy of our own process handle to be tracked.
+            wil::unique_process_handle ourProcess;
+            THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
+                                                       GetCurrentProcess(),
+                                                       GetCurrentProcess(),
+                                                       &ourProcess,
+                                                       SYNCHRONIZE,
+                                                       FALSE,
+                                                       0));
+
             wil::unique_process_handle clientProcess;
 
             // Okay, moment of truth! If they say they successfully took it over, we're going to clean up.
@@ -310,10 +320,13 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
                                                       Globals.hInputEvent.get(),
                                                       &msg,
                                                       signalPipeTheirSide.get(),
+                                                      ourProcess.get(),
                                                       &clientProcess));
 
-            // Detach the end of the pipe we gave them.
-            signalPipeTheirSide.release();
+            // Close handles for the things we gave to them
+            signalPipeTheirSide.reset();
+            ourProcess.reset();
+            Globals.hInputEvent.reset();
 
             // Start a thread to listen for signals from their side that we must relay to the OS.
             auto hostSignalThread = std::make_unique<Microsoft::Console::HostSignalInputThread>(std::move(signalPipeOurSide));
