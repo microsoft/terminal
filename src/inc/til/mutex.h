@@ -1,47 +1,44 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#pragma once
-
 namespace til
 {
-    // shared_mutex is a std::shared_mutex which also contains the data it's protecting.
-    // It only allows access to the underlying data by locking the mutex and thus
-    // ensures you don't forget to do so, unlike with std::mutex/std::shared_mutex.
-    template<typename T>
-    class shared_mutex
+    namespace details
     {
-    public:
-        // An exclusive, read/write reference to a til::shared_mutex's underlying data.
-        // If you drop the guard the mutex is unlocked.
-        class guard
+        template<typename T, typename Lock>
+        class shared_mutex_guard
         {
-            friend class shared_mutex;
-
-            guard(T& data, std::shared_mutex& mutex) :
-                _data(data),
-                _mutex(mutex)
-            {
-                _mutex.lock();
-            }
-
         public:
-            ~guard() noexcept
+            shared_mutex_guard(T& data, std::shared_mutex& mutex) :
+                _data{ data },
+                _lock{ mutex }
             {
-                _mutex.unlock();
             }
 
-            guard(const guard&) = delete;
-            guard& operator=(const guard&) = delete;
+            shared_mutex_guard(const shared_mutex_guard&) = delete;
+            shared_mutex_guard& operator=(const shared_mutex_guard&) = delete;
 
-            T* operator->() noexcept
+            shared_mutex_guard(shared_mutex_guard&&) = default;
+            shared_mutex_guard& operator=(shared_mutex_guard&&) = default;
+
+            [[nodiscard]] constexpr T* operator->() const
             {
                 return &_data;
             }
 
+            [[nodiscard]] constexpr T& operator*() const&
+            {
+                return _data;
+            }
+
+            [[nodiscard]] constexpr T&& operator*() const&&
+            {
+                return std::move(_data);
+            }
+
         private:
             // We could reduce this to a single pointer member,
-            // by storing a reference to the outer mutex& class instead
+            // by storing a reference to the til::shared_mutex& class
             // and accessing its private members as a friend class.
             // The reason we don't do that is because C++ compilers usually
             // don't "cache" dereferenced pointers between mutations.
@@ -62,45 +59,29 @@ namespace til
             //   mov rax, QWORD PTR [rcx]
             //   mov DWORD PTR [rax+4], 456
             T& _data;
-            std::shared_mutex& _mutex;
+            Lock _lock;
         };
+    } // namespace details
+
+    // shared_mutex is a std::shared_mutex which also contains the data it's protecting.
+    // It only allows access to the underlying data by locking the mutex and thus
+    // ensures you don't forget to do so, unlike with std::mutex/std::shared_mutex.
+    template<typename T>
+    class shared_mutex
+    {
+    public:
+        // An exclusive, read/write reference to a til::shared_mutex's underlying data.
+        // If you drop the guard the mutex is unlocked.
+        using guard = details::shared_mutex_guard<T, std::unique_lock<std::shared_mutex>>;
 
         // A shared, read-only reference to a til::shared_mutex's underlying data.
         // If you drop the shared_guard the mutex is unlocked.
-        class shared_guard
-        {
-            friend class shared_mutex;
-
-            shared_guard(const T& data, std::shared_mutex& mutex) :
-                _data(data),
-                _mutex(mutex)
-            {
-                _mutex.lock_shared();
-            }
-
-        public:
-            ~shared_guard() noexcept
-            {
-                _mutex.unlock_shared();
-            }
-
-            shared_guard(const guard&) = delete;
-            shared_guard& operator=(const shared_guard&) = delete;
-
-            const T* operator->() const noexcept
-            {
-                return &_data;
-            }
-
-        private:
-            const T& _data;
-            std::shared_mutex& _mutex;
-        };
+        using shared_guard = details::shared_mutex_guard<const T, std::shared_lock<std::shared_mutex>>;
 
         shared_mutex() = default;
 
         template<typename... Args>
-        shared_mutex(Args&&... init) :
+        shared_mutex(Args&&... args) :
             _data{ std::forward<Args>(args)... }
         {
         }
@@ -108,7 +89,7 @@ namespace til
         // Acquire an exclusive, read/write reference to T.
         // For instance:
         //   .lock()->foo = bar;
-        guard lock() const noexcept
+        [[nodiscard]] guard lock() const noexcept
         {
             return { _data, _mutex };
         }
@@ -116,7 +97,7 @@ namespace til
         // Acquire a shared, read-only reference to T.
         // For instance:
         //   bar = .lock_shared()->foo;
-        shared_guard lock_shared() const noexcept
+        [[nodiscard]] shared_guard lock_shared() const noexcept
         {
             return { _data, _mutex };
         }

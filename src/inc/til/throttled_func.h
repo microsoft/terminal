@@ -32,7 +32,12 @@ namespace til
                 }
             }
 
-            void apply(const std::function<void(Args...)>& func)
+            inline void apply(const std::function<void(Args...)>& func)
+            {
+                apply_maybe(func);
+            }
+
+            void apply_maybe(const std::function<void(Args...)>& func)
             {
                 std::optional<std::tuple<Args...>> args;
                 {
@@ -57,18 +62,30 @@ namespace til
         class throttled_func_storage<>
         {
         public:
-            bool emplace()
+            inline bool emplace()
             {
                 return _isPending.exchange(true, std::memory_order_relaxed);
             }
 
-            void apply(const std::function<void()>& func)
+            inline void apply(const std::function<void()>& func)
             {
                 reset();
                 func();
             }
 
-            void reset()
+            inline void apply_maybe(const std::function<void()>& func)
+            {
+                // on x86-64 .exchange() is implemented using the xchg instruction.
+                // Its latency is vastly higher than the mov instruction used for a .store().
+                // --> For this reason we have both apply() and apply_maybe() to prevent
+                //     us from suffering xchg's latency if we know _isPending is true.
+                if (_isPending.exchange(false, std::memory_order_relaxed))
+                {
+                    func();
+                }
+            }
+
+            inline void reset()
             {
                 _isPending.store(false, std::memory_order_relaxed);
             }
@@ -90,7 +107,7 @@ namespace til
         // If this is a:
         // * leading_throttled_func: `func` will be invoked immediately and
         //   further invocations prevented until `delay` time has passed.
-        // * leading_throttled_func: On the first invocation a timer of `delay` time will
+        // * trailing_throttled_func: On the first invocation a timer of `delay` time will
         //   be started. After the timer has expired `func` will be invoked just once.
         //
         // After `func` was invoked the state is reset and this cycle is repeated again.
@@ -121,7 +138,7 @@ namespace til
         {
             if (!_storage.emplace(std::forward<MakeArgs>(args)...))
             {
-                _leading_edge();
+                _schedule_timer();
             }
         }
 
@@ -141,18 +158,43 @@ namespace til
         void flush()
         {
             WaitForThreadpoolTimerCallbacks(_timer.get(), true);
-            _trailing_edge();
+
+            // Since we potentially canceled the pending timer we have to call _func() now.
+            // --> We have to do the same thing _timer_callback does.
+            // 
+            // But since we don't know whether we canceled a timer,
+            // we have to use apply_maybe() instead of apply().
+            // (apply_maybe is slightly less efficient than apply.)
+            if constexpr (leading)
+            {
+                _storage.reset();
+            }
+            else
+            {
+                _storage.apply_maybe(_func);
+            }
         }
 
     private:
         static void __stdcall _timer_callback(PTP_CALLBACK_INSTANCE /*instance*/, PVOID context, PTP_TIMER /*timer*/) noexcept
         try
         {
-            static_cast<throttled_func*>(context)->_trailing_edge();
+            auto& self = *static_cast<throttled_func*>(context);
+
+            if constexpr (leading)
+            {
+                self._storage.reset();
+            }
+            else
+            {
+                // We know for sure that _storage._isPending is true.
+                // --> use .apply() to get a slight performance benefit over .apply_maybe().
+                self._storage.apply(self._func);
+            }
         }
         CATCH_LOG()
 
-        void _leading_edge()
+        void _schedule_timer()
         {
             if constexpr (leading)
             {
@@ -162,19 +204,7 @@ namespace til
             SetThreadpoolTimerEx(_timer.get(), reinterpret_cast<PFILETIME>(&_delay), 0, 0);
         }
 
-        void _trailing_edge()
-        {
-            if constexpr (leading)
-            {
-                _storage.reset();
-            }
-            else
-            {
-                _storage.apply(_func);
-            }
-        }
-
-        wil::unique_threadpool_timer _createTimer()
+        inline wil::unique_threadpool_timer _createTimer()
         {
             wil::unique_threadpool_timer timer{ CreateThreadpoolTimer(&_timer_callback, this, nullptr) };
             THROW_LAST_ERROR_IF(!timer);
