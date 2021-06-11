@@ -27,7 +27,7 @@
                     <StaticResource x:Key="CaptionButtonStroke"
                                     ResourceKey="SystemControlForegroundBaseHighBrush" />
                     <StaticResource x:Key="CaptionButtonStrokeWindowUnfocused"
-                                    ResourceKey="SystemControlForegroundBaseLowBrush"/>
+                                    ResourceKey="SystemControlForegroundBaseLowBrush" />
                     <StaticResource x:Key="CaptionButtonStrokeColor"
                                     ResourceKey="SystemBaseHighColor" />
                     <StaticResource x:Key="CaptionButtonStrokePointerOver"
@@ -58,7 +58,7 @@
                     <StaticResource x:Key="CaptionButtonStroke"
                                     ResourceKey="SystemControlForegroundBaseHighBrush" />
                     <StaticResource x:Key="CaptionButtonStrokeWindowUnfocused"
-                                    ResourceKey="SystemControlForegroundBaseLowBrush"/>
+                                    ResourceKey="SystemControlForegroundBaseLowBrush" />
                     <StaticResource x:Key="CaptionButtonStrokeColor"
                                     ResourceKey="SystemBaseHighColor" />
                     <StaticResource x:Key="CaptionButtonStrokePointerOver"
@@ -93,7 +93,7 @@
                     <SolidColorBrush x:Key="CaptionButtonStroke"
                                      Color="{ThemeResource SystemColorButtonTextColor}" />
                     <StaticResource x:Key="CaptionButtonStrokeWindowUnfocused"
-                                    ResourceKey="SystemControlForegroundBaseLowBrush"/>
+                                    ResourceKey="SystemControlForegroundBaseLowBrush" />
                     <StaticResource x:Key="CaptionButtonStrokeColor"
                                     ResourceKey="SystemColorButtonTextColor" />
                     <SolidColorBrush x:Key="CaptionButtonStrokePointerOver"
