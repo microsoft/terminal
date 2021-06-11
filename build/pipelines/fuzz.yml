@@ -15,38 +15,32 @@ pr: none
 #     0.0.1904.0900
 name: 0.0.$(Date:yyMM).$(Date:dd)$(Rev:rr)
 
-stages:
-- stage: Build_Fuzz_Config
-  displayName: Build Project
+jobs:
+- job: OneFuzz
+  displayName: OneFuzz
   dependsOn: []
   condition: succeeded()
-  jobs:
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
   - template: ./templates/build-console-fuzzing.yml
     parameters:
       platform: x64
-- stage: OneFuzz
-  displayName: OneFuzz
-  dependsOn: ['Build_Fuzz_Config']
-  pool:
-      vmImage: 'ubuntu-latest'
-  jobs:
-  - job:
-    steps:
-    - task: UsePythonVersion@0
-      displayName: Setup Python Env
-      inputs:
-        versionSpec: '3.x'
-        addToPath: true
-        architecture: 'x64'
-    - bash: |
-        set -ex
-        pip -q install onefuzz
-        onefuzz config --endpoint $(endpoint) --client_id $(client_id) --client_secret $(client_secret)
-        onefuzz template libfuzzer basic OpenConsole WriteCharsLegacy $GITHUB_SHA windows --target_exe bin\\x64\\Fuzzing\\OpenConsoleFuzzer.exe
-      displayName: Submit OneFuzz Job
-      env:
-        client_id: client_id
-        client_secret: client_secret
+  - task: UsePythonVersion@0
+    displayName: Setup Python Env
+    inputs:
+      versionSpec: '3.x'
+      addToPath: true
+      architecture: 'x64'
+  - bash: |
+      set -ex
+      pip -q install onefuzz
+      onefuzz config --endpoint $(endpoint) --client_id $(client_id) --client_secret $(client_secret)
+      onefuzz template libfuzzer basic OpenConsole WriteCharsLegacy $GITHUB_SHA windows --target_exe bin\\x64\\Fuzzing\\OpenConsoleFuzzer.exe
+    displayName: Submit OneFuzz Job
+    env:
+      client_id: client_id
+      client_secret: client_secret
 
 # How to use onefuzz cli:
 # command: onefuzz template libfuzzer basic <project> <name> <build> <pool> --target_exe <exe_path>
