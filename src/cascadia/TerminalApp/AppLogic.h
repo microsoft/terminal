@@ -124,19 +124,15 @@ namespace winrt::TerminalApp::implementation
 
         ::TerminalApp::AppCommandlineArgs _appArgs;
         ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
-        int _ParseArgs(winrt::array_view<const hstring>& args);
         static TerminalApp::FindTargetWindowResult _doFindTargetWindow(winrt::array_view<const hstring> args,
                                                                        const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior);
 
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);
         void _ShowLoadWarningsDialog();
         bool _IsKeyboardServiceEnabled();
-        void _ShowKeyboardServiceDisabledDialog();
 
         void _ApplyLanguageSettingChange();
-        fire_and_forget _LoadErrorsDialogRoutine();
-        fire_and_forget _ShowLoadWarningsDialogRoutine();
-        fire_and_forget _RefreshThemeRoutine();
+        void _RefreshThemeRoutine();
         fire_and_forget _ApplyStartupTaskStateChange();
 
         void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
