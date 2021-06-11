@@ -136,6 +136,7 @@ winmain
 wpc
 wsregex
 wwinmain
+xchg
 XDocument
 XElement
 xfacet
