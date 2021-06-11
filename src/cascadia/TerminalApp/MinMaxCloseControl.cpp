@@ -83,7 +83,6 @@ namespace winrt::TerminalApp::implementation
             MaximizeToolTip().Text(RS_(L"WindowRestoreDownButtonToolTip"));
             break;
 
-
         case WindowVisualState::WindowVisualStateUnfocused:
             VisualStateManager::GoToState(MaximizeButton(), L"WindowStateUnfocused", false);
             VisualStateManager::GoToState(MinimizeButton(), L"WindowStateUnfocused", false);
@@ -95,7 +94,6 @@ namespace winrt::TerminalApp::implementation
             VisualStateManager::GoToState(MinimizeButton(), L"WindowStateFocused", false);
             VisualStateManager::GoToState(CloseButton(), L"WindowStateFocused", false);
             break;
-
 
         case WindowVisualState::WindowVisualStateNormal:
         case WindowVisualState::WindowVisualStateIconified:
