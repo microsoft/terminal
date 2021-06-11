@@ -161,7 +161,7 @@ namespace til
 
             // Since we potentially canceled the pending timer we have to call _func() now.
             // --> We have to do the same thing _timer_callback does.
-            // 
+            //
             // But since we don't know whether we canceled a timer,
             // we have to use apply_maybe() instead of apply().
             // (apply_maybe is slightly less efficient than apply.)
