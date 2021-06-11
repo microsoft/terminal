@@ -38,12 +38,12 @@ stages:
         versionSpec: '3.x'
         addToPath: true
         architecture: 'x64'
-    - displayName: Submit OneFuzz Job
-      bash: |
+    - bash: |
         set -ex
         pip -q install onefuzz
         onefuzz config --endpoint $(endpoint) --client_id $(client_id) --client_secret $(client_secret)
         onefuzz template libfuzzer basic OpenConsole WriteCharsLegacy --target_exe bin\x64\Fuzzing\OpenConsoleFuzzer.exe
+      displayName: Submit OneFuzz Job
       env:
         client_id: client_id
         client_secret: client_secret
