@@ -12,7 +12,6 @@ using namespace Microsoft::Console::Interactivity;
 RemoteConsoleControl::RemoteConsoleControl(HANDLE signalPipe) :
     _pipe{ signalPipe }
 {
-
 }
 
 #pragma region IConsoleControl Members

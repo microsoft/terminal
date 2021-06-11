@@ -84,7 +84,7 @@ void HostSignalInputThread::ConnectConsole() noexcept
                 {
                     THROW_HR(E_ILLEGAL_METHOD_CALL);
                 }
-                
+
                 LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->NotifyConsoleApplication(msg.dwProcessId));
             }
             else
@@ -183,7 +183,7 @@ bool HostSignalInputThread::_AdvanceReader(const DWORD cbBytes)
 // Return Value:
 // - True if data was retrieved successfully. False otherwise.
 bool HostSignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer,
-                                    const DWORD cbBuffer)
+                                     const DWORD cbBuffer)
 {
     DWORD dwRead = 0;
     // If we failed to read because the terminal broke our pipe (usually due

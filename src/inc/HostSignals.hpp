@@ -19,7 +19,6 @@ struct HOST_SIGNAL_SET_FOREGROUND_DATA
 #define HOST_SIGNAL_END_TASK 7u
 struct HOST_SIGNAL_END_TASK_DATA
 {
-
     DWORD cbSize;
     ULONG dwProcessId;
     DWORD dwEventType;
