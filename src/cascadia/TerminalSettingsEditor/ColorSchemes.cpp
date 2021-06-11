@@ -17,6 +17,13 @@ using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Media;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
+using namespace winrt::Microsoft::UI::Xaml::Controls;
+
+namespace winrt
+{
+    namespace MUX = Microsoft::UI::Xaml;
+    namespace WUX = Windows::UI::Xaml;
+}
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -217,10 +224,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // Return Value:
     // - <none>
     void ColorSchemes::ColorPickerChanged(IInspectable const& sender,
-                                          ColorChangedEventArgs const& args)
+                                          MUX::Controls::ColorChangedEventArgs const& args)
     {
         const til::color newColor{ args.NewColor() };
-        if (const auto& picker{ sender.try_as<ColorPicker>() })
+        if (const auto& picker{ sender.try_as<MUX::Controls::ColorPicker>() })
         {
             if (const auto& tag{ picker.Tag() })
             {

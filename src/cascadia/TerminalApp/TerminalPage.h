@@ -54,7 +54,7 @@ namespace winrt::TerminalApp::implementation
         // put it in our inheritance graph. https://github.com/microsoft/microsoft-ui-xaml/issues/3331
         STDMETHODIMP Initialize(HWND hwnd);
 
-        winrt::fire_and_forget SetSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings, bool needRefreshUI);
+        void SetSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings, bool needRefreshUI);
 
         void Create();
 
@@ -66,8 +66,6 @@ namespace winrt::TerminalApp::implementation
 
         winrt::hstring ApplicationDisplayName();
         winrt::hstring ApplicationVersion();
-
-        winrt::hstring ThirdPartyNoticesLink();
 
         winrt::fire_and_forget CloseWindow();
 
@@ -196,7 +194,7 @@ namespace winrt::TerminalApp::implementation
 
         bool _displayingCloseDialog{ false };
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
-        void _FeedbackButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+        void _CommandPaletteButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _AboutButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _ThirdPartyNoticesOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
@@ -296,7 +294,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                                                                       const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
 
-        winrt::fire_and_forget _RefreshUIForSettingsReload();
+        void _RefreshUIForSettingsReload();
 
         void _SetNonClientAreaColors(const Windows::UI::Color& selectedTabColor);
         void _ClearNonClientAreaColors();
