@@ -74,6 +74,7 @@ steps:
   inputs:
     targetType: inline
     script: |
+      Write-Host "build config: $(BuildConfiguration)"
       $Package = Get-ChildItem -Recurse -Filter "CascadiaPackage_*.msix"
       .\build\scripts\Test-WindowsTerminalPackage.ps1 -Verbose -Path $Package.FullName
 
@@ -193,7 +194,7 @@ steps:
   displayName: 'Publish All Build Artifacts'
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'drop'  
+    ArtifactName: 'drop'
 
 - task: CopyFiles@2
   displayName: 'Copy PGO databases needed for PGO instrumentation run'
