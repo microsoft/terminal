@@ -101,14 +101,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                         {
                             if (tag.try_as<Editor::ProfileViewModel>())
                             {
-                                // don't add NavViewItem pointing to a Profile
+                                // remove NavViewItem pointing to a Profile
                                 return true;
                             }
                             if (const auto& stringTag{ tag.try_as<hstring>() })
                             {
                                 if (stringTag == addProfileTag)
                                 {
-                                    // don't add the "Add Profile" item
+                                    // remove the "Add Profile" item
                                     return true;
                                 }
                             }
