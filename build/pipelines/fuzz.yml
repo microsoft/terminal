@@ -42,8 +42,16 @@ stages:
         set -ex
         pip -q install onefuzz
         onefuzz config --endpoint $(endpoint) --client_id $(client_id) --client_secret $(client_secret)
-        onefuzz template libfuzzer basic OpenConsole WriteCharsLegacy --target_exe bin\\x64\\Fuzzing\\OpenConsoleFuzzer.exe
+        onefuzz template libfuzzer basic OpenConsole WriteCharsLegacy $GITHUB_SHA windows --target_exe bin\\x64\\Fuzzing\\OpenConsoleFuzzer.exe
       displayName: Submit OneFuzz Job
       env:
         client_id: client_id
         client_secret: client_secret
+
+# How to use onefuzz cli:
+# command: onefuzz template libfuzzer basic <project> <name> <build> <pool> --target_exe <exe_path>
+#   project: OpenConsole (doesn't really matter)
+#   name: The name of the session (doesn't really matter)
+#   build: commit SHA1 (some way to know what build this is from)
+#   pool: windows (or linux) (other pools can be used, but we don't need that right now)
+#   --target_exe: the generated exe that we want to run (built from fuzzer)
