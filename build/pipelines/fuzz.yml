@@ -16,19 +16,21 @@ pr: none
 name: 0.0.$(Date:yyMM).$(Date:dd)$(Rev:rr)
 
 stages:
-  - stage: OneFuzz_Stage
-    displayName: OneFuzz Stage
+  - stage: Build_Fuzz_x64
+    displayName: Build Fuzz x64
     dependsOn: []
     condition: succeeded()
     jobs:
-    - job: OneFuzz Job
-      displayName: OneFuzz Job
+    - template: ./templates/build-console-fuzzing.yml
+      parameters:
+        platform: x64
+    - job: OneFuzz
+      displayName: OneFuzz
+      dependsOn: ['Build_Fuzz_x64']
+      condition: succeeded()
       pool:
         vmImage: 'ubuntu-latest'
       steps:
-      - template: ./templates/build-console-fuzzing.yml
-        parameters:
-          platform: x64
       - task: UsePythonVersion@0
         displayName: Setup Python Env
         inputs:
