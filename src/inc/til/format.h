@@ -29,7 +29,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         template<size_t N>
-        constexpr std::string_view format(const char* pFormat, ...)
+        constexpr std::string format(const char* pFormat, ...)
         {
             va_list args;
             va_start(args, pFormat);
