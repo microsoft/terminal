@@ -16,8 +16,8 @@ pr: none
 name: 0.0.$(Date:yyMM).$(Date:dd)$(Rev:rr)
 
 stages:
-  - stage: Build_Fuzz_x64
-    displayName: Build Fuzz x64
+  - stage: Build_and_Fuzz_x64
+    displayName: Build and Fuzz x64
     dependsOn: []
     condition: succeeded()
     jobs:
@@ -26,8 +26,6 @@ stages:
         platform: x64
     - job: OneFuzz
       displayName: OneFuzz
-      dependsOn: ['Build_Fuzz_x64']
-      condition: succeeded()
       pool:
         vmImage: 'ubuntu-latest'
       steps:
