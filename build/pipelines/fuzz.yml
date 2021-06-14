@@ -30,9 +30,16 @@ stages:
     condition: succeeded()
     pool:
       vmImage: 'ubuntu-latest'
+    variables:
+      publishedArtifactsPath: drop
+      artifactsPath: $(Build.SourcesDirectory)\Artifacts
     jobs:
     - job:
       steps:
+      - task: DownloadBuildArtifacts@0
+        inputs:
+          artifactName: $(publishedArtifactsPath)
+          downloadPath: $(artifactsPath)
       - task: UsePythonVersion@0
         displayName: Setup Python Env
         inputs:
@@ -43,7 +50,7 @@ stages:
           set -ex
           pip -q install onefuzz
           onefuzz config --endpoint $(endpoint) --client_id $(client_id) --client_secret $(client_secret)
-          onefuzz template libfuzzer basic OpenConsole WriteCharsLegacy $GITHUB_SHA windows --target_exe Fuzzing\\x64\\test\\OpenConsoleFuzzer.exe
+          onefuzz template libfuzzer basic OpenConsole WriteCharsLegacy $GITHUB_SHA windows --target_exe $(artifactsPath)\\Fuzzing\\x64\\test\\OpenConsoleFuzzer.exe
         displayName: Submit OneFuzz Job
         env:
           client_id: client_id
