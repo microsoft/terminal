@@ -66,14 +66,15 @@ void HostSignalInputThread::ConnectConsole() noexcept
 // - A structure filled with the specified data off the byte stream
 // - EXCEPTIONS may be thrown if the packet size mismatches
 //     or if we fail to read for another reason.
-template <typename T> T HostSignalInputThread::_ReaderHelper()
+template<typename T>
+T HostSignalInputThread::_ReaderHelper()
 {
-    T msg = {0};
+    T msg = { 0 };
     THROW_HR_IF(E_ABORT, !_GetData(&msg, sizeof(msg)));
 
     // If the message size was stated to be larger, we
     // want to seek forward to the next message code.
-    // If it's equal, we'll seek forward by 0 and 
+    // If it's equal, we'll seek forward by 0 and
     // do nothing.
     if (msg.sizeInBytes >= sizeof(msg))
     {
@@ -106,7 +107,7 @@ template <typename T> T HostSignalInputThread::_ReaderHelper()
             auto msg = _ReaderHelper<HostSignalNotifyAppData>();
 
             LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->NotifyConsoleApplication(msg.processId));
-            
+
             break;
         }
         case HostSignals::SetForeground:
@@ -120,9 +121,9 @@ template <typename T> T HostSignalInputThread::_ReaderHelper()
         case HostSignals::EndTask:
         {
             HostSignalEndTaskData msg = { 0 };
-           
+
             LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->EndTask(ULongToHandle(msg.processId), msg.eventType, msg.ctrlFlags));
-           
+
             break;
         }
         default:
@@ -209,11 +210,11 @@ bool HostSignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pB
     _dwThreadId = 0;
 
     _hThread.reset(CreateThread(nullptr,
-                           0,
-                           HostSignalInputThread::StaticThreadProc,
-                           this,
-                           0,
-                           &_dwThreadId));
+                                0,
+                                HostSignalInputThread::StaticThreadProc,
+                                this,
+                                0,
+                                &_dwThreadId));
 
     RETURN_LAST_ERROR_IF_NULL(_hThread.get());
     LOG_IF_FAILED(SetThreadDescription(_hThread.get(), L"Host Signal Handler Thread"));

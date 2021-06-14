@@ -16,7 +16,8 @@ RemoteConsoleControl::RemoteConsoleControl(HANDLE signalPipe) :
 
 #pragma region IConsoleControl Members
 
-template<typename T> [[nodiscard]] NTSTATUS _PacketSender(HANDLE pipe, ::Microsoft::Console::HostSignals signalCode, T& payload)
+template<typename T>
+[[nodiscard]] NTSTATUS _PacketSender(HANDLE pipe, ::Microsoft::Console::HostSignals signalCode, T& payload)
 {
     struct HostSignalPacket
     {

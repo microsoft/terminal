@@ -35,7 +35,8 @@ namespace Microsoft::Console
         void ConnectConsole() noexcept;
 
     private:
-        template <typename T> T _ReaderHelper();
+        template<typename T>
+        T _ReaderHelper();
         [[nodiscard]] HRESULT _InputThread();
 
         bool _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, const DWORD cbBuffer);
