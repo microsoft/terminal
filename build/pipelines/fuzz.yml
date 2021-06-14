@@ -16,18 +16,22 @@ pr: none
 name: 0.0.$(Date:yyMM).$(Date:dd)$(Rev:rr)
 
 stages:
-  - stage: Build_and_Fuzz_x64
-    displayName: Build and Fuzz x64
+  - stage: Build_Fuzz_Config
+    displayName: Build Fuzzers
     dependsOn: []
     condition: succeeded()
     jobs:
     - template: ./templates/build-console-fuzzing.yml
       parameters:
         platform: x64
-    - job: OneFuzz
-      displayName: OneFuzz
-      pool:
-        vmImage: 'ubuntu-latest'
+  - stage: OneFuzz
+    displayName: OneFuzz
+    dependsOn: ['Build_Fuzz_Config']
+    condition: succeeded()
+    pool:
+      vmImage: 'ubuntu-latest'
+    jobs:
+    - job:
       steps:
       - task: UsePythonVersion@0
         displayName: Setup Python Env
@@ -39,7 +43,7 @@ stages:
           set -ex
           pip -q install onefuzz
           onefuzz config --endpoint $(endpoint) --client_id $(client_id) --client_secret $(client_secret)
-          onefuzz template libfuzzer basic OpenConsole WriteCharsLegacy $GITHUB_SHA windows --target_exe bin\\x64\\Fuzzing\\OpenConsoleFuzzer.exe
+          onefuzz template libfuzzer basic OpenConsole WriteCharsLegacy $GITHUB_SHA windows --target_exe Fuzzing\\x64\\test\\OpenConsoleFuzzer.exe
         displayName: Submit OneFuzz Job
         env:
           client_id: client_id
