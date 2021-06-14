@@ -8,7 +8,7 @@
 #include "ApiMessage.h"
 #include "DeviceComm.h"
 
-inline constexpr size_t structPacketDataSize = sizeof(_CONSOLE_API_MSG) - offsetof(_CONSOLE_API_MSG, Descriptor);
+constexpr size_t structPacketDataSize = sizeof(_CONSOLE_API_MSG) - offsetof(_CONSOLE_API_MSG, Descriptor);
 
 _CONSOLE_API_MSG::_CONSOLE_API_MSG()
 {
