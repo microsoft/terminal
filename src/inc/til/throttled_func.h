@@ -14,8 +14,7 @@ namespace til
             template<typename... MakeArgs>
             bool emplace(MakeArgs&&... args)
             {
-                std::scoped_lock guard{ _lock };
-
+                std::unique_lock guard{ _lock };
                 const bool hadValue = _pendingRunArgs.has_value();
                 _pendingRunArgs.emplace(std::forward<MakeArgs>(args)...);
                 return hadValue;
@@ -24,37 +23,31 @@ namespace til
             template<typename F>
             void modify_pending(F f)
             {
-                std::scoped_lock guard{ _lock };
-
+                std::unique_lock guard{ _lock };
                 if (_pendingRunArgs)
                 {
                     std::apply(f, *_pendingRunArgs);
                 }
             }
 
-            inline void apply(const std::function<void(Args...)>& func)
+            std::tuple<Args...> take()
             {
-                apply_maybe(func);
+                std::unique_lock guard{ _lock };
+                auto pendingRunArgs = std::move(*_pendingRunArgs);
+                _pendingRunArgs.reset();
+                return pendingRunArgs;
             }
 
-            void apply_maybe(const std::function<void(Args...)>& func)
+            explicit operator bool() const
             {
-                std::optional<std::tuple<Args...>> args;
-                {
-                    std::scoped_lock guard{ _lock };
-                    _pendingRunArgs.swap(args);
-                }
-
-                if (args)
-                {
-                    std::apply(func, *args);
-                }
+                std::shared_lock guard{ _lock };
+                return _pendingRunArgs.has_value();
             }
 
         private:
             // std::mutex uses imperfect Critical Sections on Windows.
             // --> std::shared_mutex uses SRW locks that are small and fast.
-            std::shared_mutex _lock;
+            mutable std::shared_mutex _lock;
             std::optional<std::tuple<Args...>> _pendingRunArgs;
         };
 
@@ -62,32 +55,25 @@ namespace til
         class throttled_func_storage<>
         {
         public:
-            inline bool emplace()
+            bool emplace()
             {
                 return _isPending.exchange(true, std::memory_order_relaxed);
             }
 
-            inline void apply(const std::function<void()>& func)
+            std::tuple<> take()
             {
                 reset();
-                func();
+                return {};
             }
 
-            inline void apply_maybe(const std::function<void()>& func)
-            {
-                // on x86-64 .exchange() is implemented using the xchg instruction.
-                // Its latency is vastly higher than the mov instruction used for a .store().
-                // --> For this reason we have both apply() and apply_maybe() to prevent
-                //     us from suffering xchg's latency if we know _isPending is true.
-                if (_isPending.exchange(false, std::memory_order_relaxed))
-                {
-                    func();
-                }
-            }
-
-            inline void reset()
+            void reset()
             {
                 _isPending.store(false, std::memory_order_relaxed);
+            }
+
+            explicit operator bool() const
+            {
+                return _isPending.load(std::memory_order_relaxed);
             }
 
         private:
@@ -105,21 +91,23 @@ namespace til
         // Throttles invocations to the given `func` to not occur more often than `delay`.
         //
         // If this is a:
-        // * leading_throttled_func: `func` will be invoked immediately and
+        // * throttled_func_leading: `func` will be invoked immediately and
         //   further invocations prevented until `delay` time has passed.
-        // * trailing_throttled_func: On the first invocation a timer of `delay` time will
+        // * throttled_func_trailing: On the first invocation a timer of `delay` time will
         //   be started. After the timer has expired `func` will be invoked just once.
         //
         // After `func` was invoked the state is reset and this cycle is repeated again.
         throttled_func(filetime_duration delay, function func) :
-            _delay{ -delay.count() },
             _func{ std::move(func) },
             _timer{ _createTimer() }
         {
-            if (_delay >= 0)
+            const auto d = -delay.count();
+            if (d >= 0)
             {
                 throw std::invalid_argument("non-positive delay specified");
             }
+
+            memcpy(&_delay, &d, sizeof(d));
         }
 
         // throttled_func uses its `this` pointer when creating _timer.
@@ -138,7 +126,7 @@ namespace til
         {
             if (!_storage.emplace(std::forward<MakeArgs>(args)...))
             {
-                _schedule_timer();
+                _leading_edge();
             }
         }
 
@@ -155,23 +143,18 @@ namespace til
 
         // Makes sure that the currently pending timer is executed
         // as soon as possible and in that case waits for its completion.
+        // You can use this function in your destructor to ensure that any
+        // pending callback invocation is completed as soon as possible.
+        //
+        // NOTE: Don't call this function if the operator()
+        //       could still be called concurrently.
+        template<typename = std::enable_if_t<!is_ret_awaitable>>
         void flush()
         {
             WaitForThreadpoolTimerCallbacks(_timer.get(), true);
-
-            // Since we potentially canceled the pending timer we have to call _func() now.
-            // --> We have to do the same thing _timer_callback does.
-            //
-            // But since we don't know whether we canceled a timer,
-            // we have to use apply_maybe() instead of apply().
-            // (apply_maybe is slightly less efficient than apply.)
-            if constexpr (leading)
+            if (_storage)
             {
-                _storage.reset();
-            }
-            else
-            {
-                _storage.apply_maybe(_func);
+                _trailing_edge();
             }
         }
 
@@ -179,29 +162,30 @@ namespace til
         static void __stdcall _timer_callback(PTP_CALLBACK_INSTANCE /*instance*/, PVOID context, PTP_TIMER /*timer*/) noexcept
         try
         {
-            auto& self = *static_cast<throttled_func*>(context);
-
-            if constexpr (leading)
-            {
-                self._storage.reset();
-            }
-            else
-            {
-                // We know for sure that _storage._isPending is true.
-                // --> use .apply() to get a slight performance benefit over .apply_maybe().
-                self._storage.apply(self._func);
-            }
+            static_cast<throttled_func*>(context)->_trailing_edge();
         }
         CATCH_LOG()
 
-        void _schedule_timer()
+        void _leading_edge()
         {
             if constexpr (leading)
             {
                 _func();
             }
 
-            SetThreadpoolTimerEx(_timer.get(), reinterpret_cast<PFILETIME>(&_delay), 0, 0);
+            SetThreadpoolTimerEx(_timer.get(), &_delay, 0, 0);
+        }
+
+        void _trailing_edge()
+        {
+            if constexpr (leading)
+            {
+                _storage.reset();
+            }
+            else
+            {
+                std::apply(_func, _storage.take());
+            }
         }
 
         inline wil::unique_threadpool_timer _createTimer()
@@ -211,10 +195,9 @@ namespace til
             return timer;
         }
 
-        int64_t _delay;
+        FILETIME _delay;
         function _func;
         wil::unique_threadpool_timer _timer;
-
         details::throttled_func_storage<Args...> _storage;
     };
 

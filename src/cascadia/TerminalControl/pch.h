@@ -58,6 +58,5 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalControlProvider);
 #include <telemetry/ProjectTelemetry.h>
 
 #include "til.h"
-#include "til/throttled_func.h"
 
 #include "ThrottledFunc.h"

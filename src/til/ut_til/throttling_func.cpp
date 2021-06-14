@@ -9,23 +9,6 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
-template<typename T>
-static void wait_until(std::atomic<T>& atomic, T goal, std::memory_order order = std::memory_order_seq_cst)
-{
-    static_assert(sizeof(atomic) == sizeof(goal));
-
-    while (true)
-    {
-        auto value = atomic.load(order);
-        if (value == goal)
-        {
-            break;
-        }
-
-        WaitOnAddress(&atomic, &value, sizeof(value), INFINITE);
-    }
-}
-
 class ThrottlingFuncTests
 {
     BEGIN_TEST_CLASS(ThrottlingFuncTests)
@@ -51,7 +34,17 @@ class ThrottlingFuncTests
         });
         tf->operator()(true);
 
-        wait_until(counter, 2, std::memory_order_relaxed);
+        while (true)
+        {
+            auto value = counter.load(std::memory_order_relaxed);
+            if (value == 2)
+            {
+                break;
+            }
+
+            WaitOnAddress(&counter, &value, sizeof(value), INFINITE);
+        }
+
         VERIFY_IS_TRUE(true);
     }
 };
