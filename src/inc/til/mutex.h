@@ -40,8 +40,7 @@ namespace til
             // We could reduce this to a single pointer member,
             // by storing a reference to the til::shared_mutex& class
             // and accessing its private members as a friend class.
-            // The reason we don't do that is because C++ compilers usually
-            // don't "cache" dereferenced pointers between mutations.
+            // But MSVC doesn't support strict aliasing. Nice!
             //
             // For instance if we had:
             //   struct foo { int a, b; };
