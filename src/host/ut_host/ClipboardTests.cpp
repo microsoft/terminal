@@ -308,26 +308,29 @@ class ClipboardTests
                                                                                                 wstr.size());
 
         std::deque<KeyEvent> expectedEvents;
-#ifdef __INSIDE_WINDOWS
-        // Inside Windows, where numpad events are enabled, this generated numpad events.
-        // should be converted to:
-        // 1. left alt keydown
-        // 2. 1st numpad keydown
-        // 3. 1st numpad keyup
-        // 4. 2nd numpad keydown
-        // 5. 2nd numpad keyup
-        // 6. left alt keyup
-        expectedEvents.push_back({ TRUE, 1, VK_MENU, altScanCode, L'\0', LEFT_ALT_PRESSED });
-        expectedEvents.push_back({ TRUE, 1, 0x66, 0x4D, L'\0', LEFT_ALT_PRESSED });
-        expectedEvents.push_back({ FALSE, 1, 0x66, 0x4D, L'\0', LEFT_ALT_PRESSED });
-        expectedEvents.push_back({ TRUE, 1, 0x63, 0x51, L'\0', LEFT_ALT_PRESSED });
-        expectedEvents.push_back({ FALSE, 1, 0x63, 0x51, L'\0', LEFT_ALT_PRESSED });
-        expectedEvents.push_back({ FALSE, 1, VK_MENU, altScanCode, wstr[0], 0 });
-#else
-        // Outside Windows, without numpad events, we just emit the key with a nonzero UnicodeChar
-        expectedEvents.push_back({ TRUE, 1, 0, 0, wstr[0], 0 });
-        expectedEvents.push_back({ FALSE, 1, 0, 0, wstr[0], 0 });
-#endif
+        if constexpr (Feature_UseNumpadEventsForClipboardInput::IsEnabled())
+        {
+            // Inside Windows, where numpad events are enabled, this generated numpad events.
+            // should be converted to:
+            // 1. left alt keydown
+            // 2. 1st numpad keydown
+            // 3. 1st numpad keyup
+            // 4. 2nd numpad keydown
+            // 5. 2nd numpad keyup
+            // 6. left alt keyup
+            expectedEvents.push_back({ TRUE, 1, VK_MENU, altScanCode, L'\0', LEFT_ALT_PRESSED });
+            expectedEvents.push_back({ TRUE, 1, 0x66, 0x4D, L'\0', LEFT_ALT_PRESSED });
+            expectedEvents.push_back({ FALSE, 1, 0x66, 0x4D, L'\0', LEFT_ALT_PRESSED });
+            expectedEvents.push_back({ TRUE, 1, 0x63, 0x51, L'\0', LEFT_ALT_PRESSED });
+            expectedEvents.push_back({ FALSE, 1, 0x63, 0x51, L'\0', LEFT_ALT_PRESSED });
+            expectedEvents.push_back({ FALSE, 1, VK_MENU, altScanCode, wstr[0], 0 });
+        }
+        else
+        {
+            // Outside Windows, without numpad events, we just emit the key with a nonzero UnicodeChar
+            expectedEvents.push_back({ TRUE, 1, 0, 0, wstr[0], 0 });
+            expectedEvents.push_back({ FALSE, 1, 0, 0, wstr[0], 0 });
+        }
 
         VERIFY_ARE_EQUAL(expectedEvents.size(), events.size());
 

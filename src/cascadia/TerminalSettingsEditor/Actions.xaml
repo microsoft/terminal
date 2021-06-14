@@ -240,16 +240,12 @@
                                 <ResourceDictionary>
                                     <ResourceDictionary.ThemeDictionaries>
                                         <ResourceDictionary x:Key="Light">
-                                            <SolidColorBrush x:Key="ButtonForeground"
-                                                             Color="White" />
                                             <SolidColorBrush x:Key="ButtonForegroundPointerOver"
                                                              Color="{StaticResource SystemAccentColor}" />
                                             <SolidColorBrush x:Key="ButtonForegroundPressed"
                                                              Color="{StaticResource SystemAccentColor}" />
                                         </ResourceDictionary>
                                         <ResourceDictionary x:Key="Dark">
-                                            <SolidColorBrush x:Key="ButtonForeground"
-                                                             Color="White" />
                                             <SolidColorBrush x:Key="ButtonForegroundPointerOver"
                                                              Color="{StaticResource SystemAccentColor}" />
                                             <SolidColorBrush x:Key="ButtonForegroundPressed"

@@ -28,9 +28,9 @@
 #include "../inc/conint.h"
 #include "../propslib/DelegationConfig.hpp"
 
-#ifndef __INSIDE_WINDOWS
+#if TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
 #include "ITerminalHandoff.h"
-#endif // __INSIDE_WINDOWS
+#endif // TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
 
 #pragma hdrstop
 
@@ -370,9 +370,9 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
                                               [[maybe_unused]] PCONSOLE_API_MSG connectMessage)
 try
 {
-#ifdef __INSIDE_WINDOWS
+#if !TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
     return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
-#else // !__INSIDE_WINDOWS
+#else // TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
     auto& g = ServiceLocator::LocateGlobals();
     g.handoffTarget = true;
 
@@ -454,7 +454,7 @@ try
     RETURN_IF_FAILED(consoleArgs.ParseCommandline());
 
     return ConsoleCreateIoThread(Server, &consoleArgs, driverInputEvent, connectMessage);
-#endif // __INSIDE_WINDOWS
+#endif // TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
 }
 CATCH_RETURN()
 
