@@ -29,6 +29,7 @@ mfcribbon
 microsoft
 microsoftonline
 msixbundle
+MSVC
 muxc
 netcore
 osgvsowi
