@@ -148,7 +148,6 @@ namespace til
         //
         // NOTE: Don't call this function if the operator()
         //       could still be called concurrently.
-        template<typename = std::enable_if_t<!is_ret_awaitable>>
         void flush()
         {
             WaitForThreadpoolTimerCallbacks(_timer.get(), true);
