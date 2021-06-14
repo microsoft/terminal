@@ -33,6 +33,7 @@ stages:
     variables:
       publishedArtifactsPath: drop
       artifactsPath: $(Build.SourcesDirectory)Artifacts
+      commitSHA1: 01234 # TODO CARLOS: yeah, how do I get the SHA1?
     jobs:
     - job:
       steps:
@@ -50,7 +51,7 @@ stages:
           set -ex
           pip -q install onefuzz
           onefuzz config --endpoint $(endpoint) --client_id $(client_id) --client_secret $(client_secret)
-          onefuzz template libfuzzer basic OpenConsole WriteCharsLegacy $GITHUB_SHA windows --target_exe $(artifactsPath)/$(publishedArtifactsPath)/Fuzzing/x64/test/OpenConsoleFuzzer.exe
+          onefuzz template libfuzzer basic OpenConsole WriteCharsLegacy $(commitSHA1) windows --target_exe $(artifactsPath)/$(publishedArtifactsPath)/Fuzzing/x64/test/OpenConsoleFuzzer.exe
         displayName: Submit OneFuzz Job
         env:
           client_id: client_id
