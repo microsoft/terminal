@@ -17,7 +17,7 @@ RemoteConsoleControl::RemoteConsoleControl(HANDLE signalPipe) :
 #pragma region IConsoleControl Members
 
 template<typename T>
-[[nodiscard]] NTSTATUS _PacketSender(HANDLE pipe, ::Microsoft::Console::HostSignals signalCode, T& payload)
+[[nodiscard]] NTSTATUS _SendTypedPacket(HANDLE pipe, ::Microsoft::Console::HostSignals signalCode, T& payload)
 {
     struct HostSignalPacket
     {
@@ -44,7 +44,7 @@ template<typename T>
     data.sizeInBytes = sizeof(data);
     data.processId = dwProcessId;
 
-    return _PacketSender(_pipe.get(), HostSignals::NotifyApp, data);
+    return _SendTypedPacket(_pipe.get(), HostSignals::NotifyApp, data);
 }
 
 [[nodiscard]] NTSTATUS RemoteConsoleControl::SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground)
@@ -54,7 +54,7 @@ template<typename T>
     data.processId = HandleToULong(hProcess);
     data.isForeground = fForeground;
 
-    return _PacketSender(_pipe.get(), HostSignals::SetForeground, data);
+    return _SendTypedPacket(_pipe.get(), HostSignals::SetForeground, data);
 }
 
 [[nodiscard]] NTSTATUS RemoteConsoleControl::EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags)
@@ -65,7 +65,7 @@ template<typename T>
     data.eventType = dwEventType;
     data.ctrlFlags = ulCtrlFlags;
 
-    return _PacketSender(_pipe.get(), HostSignals::EndTask, data);
+    return _SendTypedPacket(_pipe.get(), HostSignals::EndTask, data);
 }
 
 #pragma endregion

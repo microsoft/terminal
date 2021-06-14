@@ -67,7 +67,7 @@ void HostSignalInputThread::ConnectConsole() noexcept
 // - EXCEPTIONS may be thrown if the packet size mismatches
 //     or if we fail to read for another reason.
 template<typename T>
-T HostSignalInputThread::_ReaderHelper()
+T HostSignalInputThread::_ReceiveTypedPacket()
 {
     T msg = { 0 };
     THROW_HR_IF(E_ABORT, !_GetData(&msg, sizeof(msg)));
@@ -104,7 +104,7 @@ T HostSignalInputThread::_ReaderHelper()
         {
         case HostSignals::NotifyApp:
         {
-            auto msg = _ReaderHelper<HostSignalNotifyAppData>();
+            auto msg = _ReceiveTypedPacket<HostSignalNotifyAppData>();
 
             LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->NotifyConsoleApplication(msg.processId));
 
@@ -112,7 +112,7 @@ T HostSignalInputThread::_ReaderHelper()
         }
         case HostSignals::SetForeground:
         {
-            auto msg = _ReaderHelper<HostSignalSetForegroundData>();
+            auto msg = _ReceiveTypedPacket<HostSignalSetForegroundData>();
 
             LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetForeground(ULongToHandle(msg.processId), msg.isForeground));
 
@@ -120,7 +120,7 @@ T HostSignalInputThread::_ReaderHelper()
         }
         case HostSignals::EndTask:
         {
-            HostSignalEndTaskData msg = { 0 };
+            auto msg = _ReceiveTypedPacket<HostSignalEndTaskData>();
 
             LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->EndTask(ULongToHandle(msg.processId), msg.eventType, msg.ctrlFlags));
 

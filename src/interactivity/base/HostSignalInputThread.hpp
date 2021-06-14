@@ -36,7 +36,7 @@ namespace Microsoft::Console
 
     private:
         template<typename T>
-        T _ReaderHelper();
+        T _ReceiveTypedPacket();
         [[nodiscard]] HRESULT _InputThread();
 
         bool _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, const DWORD cbBuffer);
