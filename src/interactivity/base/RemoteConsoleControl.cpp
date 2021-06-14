@@ -19,11 +19,14 @@ RemoteConsoleControl::RemoteConsoleControl(HANDLE signalPipe) :
 template<typename T>
 [[nodiscard]] NTSTATUS _SendTypedPacket(HANDLE pipe, ::Microsoft::Console::HostSignals signalCode, T& payload)
 {
+    // To ensure it's a happy wire format, pack it tight at 1.
+#pragma pack(push, 1)
     struct HostSignalPacket
     {
         ::Microsoft::Console::HostSignals code;
         T data;
     };
+#pragma pack(pop)
 
     HostSignalPacket packet;
     packet.code = signalCode;
