@@ -22,7 +22,7 @@ namespace Microsoft::Console
     class HostSignalInputThread final
     {
     public:
-        HostSignalInputThread(_In_ wil::unique_hfile hPipe);
+        HostSignalInputThread(_In_ wil::unique_hfile&& hPipe);
         ~HostSignalInputThread();
 
         [[nodiscard]] HRESULT Start() noexcept;
@@ -35,6 +35,7 @@ namespace Microsoft::Console
         void ConnectConsole() noexcept;
 
     private:
+        template <typename T> T _ReaderHelper();
         [[nodiscard]] HRESULT _InputThread();
 
         bool _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, const DWORD cbBuffer);

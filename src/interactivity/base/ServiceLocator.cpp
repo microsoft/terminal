@@ -104,7 +104,7 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
 
 #pragma region Set Methods
 
-[[nodiscard]] NTSTATUS ServiceLocator::SetConsoleControlInstance(_In_ std::unique_ptr<IConsoleControl>& control)
+[[nodiscard]] NTSTATUS ServiceLocator::SetConsoleControlInstance(_In_ std::unique_ptr<IConsoleControl>&& control)
 {
     NTSTATUS status = STATUS_SUCCESS;
 
@@ -118,8 +118,7 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
     }
     else
     {
-        s_consoleControl.swap(control);
-        control.release();
+        s_consoleControl = std::move(control);
     }
 
     return status;

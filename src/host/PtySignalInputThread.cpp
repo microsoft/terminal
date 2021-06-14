@@ -76,7 +76,7 @@ void PtySignalInputThread::ConnectConsole() noexcept
 // - The ThreadProc for the PTY Signal Input Thread.
 // Return Value:
 // - S_OK if the thread runs to completion.
-// - Otherwise it may cause an application termination another route and never return.
+// - Otherwise it may cause an application termination and never return.
 [[nodiscard]] HRESULT PtySignalInputThread::_InputThread()
 {
     unsigned short signalId;

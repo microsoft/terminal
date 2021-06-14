@@ -1,26 +1,33 @@
+namespace Microsoft::Console
+{
 // These values match the enumeration values of `ControlType` for the `ConsoleControl` class
-// but are defined here similarly to not pollute other projects.zs
+// but are defined here similarly to not pollute other projects.
 // They don't *have* to be the same values, but matching them seemed to make sense.
-#define HOST_SIGNAL_NOTIFY_APP 1u
-struct HOST_SIGNAL_NOTIFY_APP_DATA
+enum class HostSignals : uint8_t
 {
-    DWORD cbSize;
-    DWORD dwProcessId;
+    NotifyApp = 1u,
+    SetForeground = 5u,
+    EndTask = 7u
 };
 
-#define HOST_SIGNAL_SET_FOREGROUND 5u
-struct HOST_SIGNAL_SET_FOREGROUND_DATA
+struct HostSignalNotifyAppData
 {
-    DWORD cbSize;
-    ULONG dwProcessId;
-    BOOL fForeground;
+    uint32_t sizeInBytes;
+    uint32_t processId;
 };
 
-#define HOST_SIGNAL_END_TASK 7u
-struct HOST_SIGNAL_END_TASK_DATA
+struct HostSignalSetForegroundData
 {
-    DWORD cbSize;
-    ULONG dwProcessId;
-    DWORD dwEventType;
-    ULONG ulCtrlFlags;
+    uint32_t sizeInBytes;
+    uint32_t processId;
+    bool isForeground;
+};
+
+struct HostSignalEndTaskData
+{
+    uint32_t sizeInBytes;
+    uint32_t processId;
+    uint32_t eventType;
+    uint32_t ctrlFlags;
+};
 };

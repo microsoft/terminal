@@ -15,7 +15,7 @@ using namespace Microsoft::Console::Interactivity;
 // - Creates the PTY Signal Input Thread.
 // Arguments:
 // - hPipe - a handle to the file representing the read end of the Host Signal pipe.
-HostSignalInputThread::HostSignalInputThread(_In_ wil::unique_hfile hPipe) :
+HostSignalInputThread::HostSignalInputThread(_In_ wil::unique_hfile&& hPipe) :
     _hFile{ std::move(hPipe) },
     _hThread{},
     _dwThreadId{ 0 },
@@ -60,82 +60,69 @@ void HostSignalInputThread::ConnectConsole() noexcept
 }
 
 // Method Description:
+// - Attempts to retrieve a given type T off of the internal
+//   pipe channel and return it.
+// Return Value:
+// - A structure filled with the specified data off the byte stream
+// - EXCEPTIONS may be thrown if the packet size mismatches
+//     or if we fail to read for another reason.
+template <typename T> T HostSignalInputThread::_ReaderHelper()
+{
+    T msg = {0};
+    THROW_HR_IF(E_ABORT, !_GetData(&msg, sizeof(msg)));
+
+    // If the message size was stated to be larger, we
+    // want to seek forward to the next message code.
+    // If it's equal, we'll seek forward by 0 and 
+    // do nothing.
+    if (msg.sizeInBytes >= sizeof(msg))
+    {
+        _AdvanceReader(msg.sizeInBytes - sizeof(msg));
+    }
+    // If the message is smaller than what we expected
+    // then it was malformed and we need to throw.
+    else
+    {
+        THROW_HR(E_ILLEGAL_METHOD_CALL);
+    }
+
+    return msg;
+}
+
+// Method Description:
 // - The ThreadProc for the Host Signal Input Thread.
 // Return Value:
 // - S_OK if the thread runs to completion.
-// - Otherwise it may cause an application termination another route and never return.
+// - Otherwise it may cause an application termination and never return.
 [[nodiscard]] HRESULT HostSignalInputThread::_InputThread()
 {
-    unsigned short signalId;
+    HostSignals signalId;
     while (_GetData(&signalId, sizeof(signalId)))
     {
         switch (signalId)
         {
-        case HOST_SIGNAL_NOTIFY_APP:
+        case HostSignals::NotifyApp:
         {
-            HOST_SIGNAL_NOTIFY_APP_DATA msg = { 0 };
-            if (_GetData(&msg, sizeof(msg)))
-            {
-                if (msg.cbSize >= sizeof(msg))
-                {
-                    _AdvanceReader(msg.cbSize - sizeof(msg));
-                }
-                else
-                {
-                    THROW_HR(E_ILLEGAL_METHOD_CALL);
-                }
+            auto msg = _ReaderHelper<HostSignalNotifyAppData>();
 
-                LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->NotifyConsoleApplication(msg.dwProcessId));
-            }
-            else
-            {
-                return E_ABORT;
-            }
+            LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->NotifyConsoleApplication(msg.processId));
+            
+            break;
+        }
+        case HostSignals::SetForeground:
+        {
+            auto msg = _ReaderHelper<HostSignalSetForegroundData>();
+
+            LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetForeground(ULongToHandle(msg.processId), msg.isForeground));
 
             break;
         }
-        case HOST_SIGNAL_SET_FOREGROUND:
+        case HostSignals::EndTask:
         {
-            HOST_SIGNAL_SET_FOREGROUND_DATA msg = { 0 };
-            if (_GetData(&msg, sizeof(msg)))
-            {
-                if (msg.cbSize >= sizeof(msg))
-                {
-                    _AdvanceReader(msg.cbSize - sizeof(msg));
-                }
-                else
-                {
-                    THROW_HR(E_ILLEGAL_METHOD_CALL);
-                }
-
-                LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetForeground(ULongToHandle(msg.dwProcessId), msg.fForeground));
-            }
-            else
-            {
-                return E_ABORT;
-            }
-            break;
-        }
-        case HOST_SIGNAL_END_TASK:
-        {
-            HOST_SIGNAL_END_TASK_DATA msg = { 0 };
-            if (_GetData(&msg, sizeof(msg)))
-            {
-                if (msg.cbSize >= sizeof(msg))
-                {
-                    _AdvanceReader(msg.cbSize - sizeof(msg));
-                }
-                else
-                {
-                    THROW_HR(E_ILLEGAL_METHOD_CALL);
-                }
-
-                LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->EndTask(ULongToHandle(msg.dwProcessId), msg.dwEventType, msg.ulCtrlFlags));
-            }
-            else
-            {
-                return E_ABORT;
-            }
+            HostSignalEndTaskData msg = { 0 };
+           
+            LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->EndTask(ULongToHandle(msg.processId), msg.eventType, msg.ctrlFlags));
+           
             break;
         }
         default:
@@ -149,7 +136,7 @@ void HostSignalInputThread::ConnectConsole() noexcept
 }
 
 // Method Description:
-// - Skips the file stream forward by the specified number of bytes.zs
+// - Skips the file stream forward by the specified number of bytes.
 // Arguments:
 // - cbBytes - Count of bytes to skip forward
 // Return Value:
@@ -218,21 +205,18 @@ bool HostSignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pB
 {
     RETURN_LAST_ERROR_IF(!_hFile);
 
-    HANDLE hThread = nullptr;
-    // 0 is the right value, https://blogs.msdn.microsoft.com/oldnewthing/20040223-00/?p=40503
-    DWORD dwThreadId = 0;
+    // 0 is the right value, https://devblogs.microsoft.com/oldnewthing/20040223-00/?p=40503
+    _dwThreadId = 0;
 
-    hThread = CreateThread(nullptr,
+    _hThread.reset(CreateThread(nullptr,
                            0,
                            HostSignalInputThread::StaticThreadProc,
                            this,
                            0,
-                           &dwThreadId);
+                           &_dwThreadId));
 
-    RETURN_LAST_ERROR_IF_NULL(hThread);
-    _hThread.reset(hThread);
-    _dwThreadId = dwThreadId;
-    LOG_IF_FAILED(SetThreadDescription(hThread, L"Host Signal Handler Thread"));
+    RETURN_LAST_ERROR_IF_NULL(_hThread.get());
+    LOG_IF_FAILED(SetThreadDescription(_hThread.get(), L"Host Signal Handler Thread"));
 
     return S_OK;
 }

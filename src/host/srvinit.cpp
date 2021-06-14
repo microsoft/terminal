@@ -405,7 +405,7 @@ try
     SetThreadpoolWait(g.handoffInboxConsoleExitWait.get(), g.handoffInboxConsoleHandle.get(), nullptr);
 
     std::unique_ptr<IConsoleControl> remoteControl = std::make_unique<Microsoft::Console::Interactivity::RemoteConsoleControl>(hostSignalPipe);
-    RETURN_IF_NTSTATUS_FAILED(ServiceLocator::SetConsoleControlInstance(remoteControl));
+    RETURN_IF_NTSTATUS_FAILED(ServiceLocator::SetConsoleControlInstance(std::move(remoteControl)));
 
     wil::unique_handle signalPipeTheirSide;
     wil::unique_handle signalPipeOurSide;
