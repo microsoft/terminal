@@ -32,7 +32,7 @@ stages:
       vmImage: 'ubuntu-latest'
     variables:
       publishedArtifactsPath: drop
-      artifactsPath: $(Build.SourcesDirectory)\Artifacts
+      artifactsPath: $(Build.SourcesDirectory)Artifacts
     jobs:
     - job:
       steps:
