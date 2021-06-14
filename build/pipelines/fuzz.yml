@@ -50,7 +50,7 @@ stages:
           set -ex
           pip -q install onefuzz
           onefuzz config --endpoint $(endpoint) --client_id $(client_id) --client_secret $(client_secret)
-          onefuzz template libfuzzer basic OpenConsole WriteCharsLegacy $GITHUB_SHA windows --target_exe $(artifactsPath)\\Fuzzing\\x64\\test\\OpenConsoleFuzzer.exe
+          onefuzz template libfuzzer basic OpenConsole WriteCharsLegacy $GITHUB_SHA windows --target_exe $(artifactsPath)$(publishedArtifactsPath)Fuzzing\\x64\\test\\OpenConsoleFuzzer.exe
         displayName: Submit OneFuzz Job
         env:
           client_id: client_id
