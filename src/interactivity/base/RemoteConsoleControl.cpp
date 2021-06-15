@@ -32,10 +32,15 @@ template<typename T>
     packet.code = signalCode;
     packet.data = payload;
 
-    DWORD dwWritten = 0;
-    if (!WriteFile(pipe, &packet, sizeof(packet), &dwWritten, nullptr))
+    DWORD bytesWritten = 0;
+    if (!WriteFile(pipe, &packet, sizeof(packet), &bytesWritten, nullptr))
     {
-        return NTSTATUS_FROM_WIN32(::GetLastError());
+        NT_RETURN_NTSTATUS(static_cast<NTSTATUS>(NTSTATUS_FROM_WIN32(::GetLastError())));
+    }
+
+    if (bytesWritten != sizeof(packet))
+    {
+        NT_RETURN_NTSTATUS(static_cast<NTSTATUS>(NTSTATUS_FROM_WIN32(E_UNEXPECTED)));
     }
 
     return STATUS_SUCCESS;
@@ -43,7 +48,7 @@ template<typename T>
 
 [[nodiscard]] NTSTATUS RemoteConsoleControl::NotifyConsoleApplication(_In_ DWORD dwProcessId)
 {
-    HostSignalNotifyAppData data = { 0 };
+    HostSignalNotifyAppData data{};
     data.sizeInBytes = sizeof(data);
     data.processId = dwProcessId;
 
@@ -52,7 +57,7 @@ template<typename T>
 
 [[nodiscard]] NTSTATUS RemoteConsoleControl::SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground)
 {
-    HostSignalSetForegroundData data = { 0 };
+    HostSignalSetForegroundData data{};
     data.sizeInBytes = sizeof(data);
     data.processId = HandleToULong(hProcess);
     data.isForeground = fForeground;
@@ -62,7 +67,7 @@ template<typename T>
 
 [[nodiscard]] NTSTATUS RemoteConsoleControl::EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags)
 {
-    HostSignalEndTaskData data = { 0 };
+    HostSignalEndTaskData data{};
     data.sizeInBytes = sizeof(data);
     data.processId = HandleToULong(hProcessId);
     data.eventType = dwEventType;

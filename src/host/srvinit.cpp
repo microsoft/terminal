@@ -401,6 +401,7 @@ try
         },
         nullptr,
         nullptr));
+    RETURN_LAST_ERROR_IF_NULL(g.handoffInboxConsoleExitWait.get());
 
     SetThreadpoolWait(g.handoffInboxConsoleExitWait.get(), g.handoffInboxConsoleHandle.get(), nullptr);
 

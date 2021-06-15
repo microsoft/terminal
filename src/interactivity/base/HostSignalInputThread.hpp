@@ -22,30 +22,27 @@ namespace Microsoft::Console
     class HostSignalInputThread final
     {
     public:
-        HostSignalInputThread(_In_ wil::unique_hfile&& hPipe);
+        HostSignalInputThread(wil::unique_hfile&& hPipe);
         ~HostSignalInputThread();
 
         [[nodiscard]] HRESULT Start() noexcept;
-        static DWORD WINAPI StaticThreadProc(_In_ LPVOID lpParameter);
+        static DWORD WINAPI StaticThreadProc(LPVOID lpParameter);
 
         // Prevent copying and assignment.
         HostSignalInputThread(const HostSignalInputThread&) = delete;
         HostSignalInputThread& operator=(const HostSignalInputThread&) = delete;
-
-        void ConnectConsole() noexcept;
 
     private:
         template<typename T>
         T _ReceiveTypedPacket();
         [[nodiscard]] HRESULT _InputThread();
 
-        bool _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, const DWORD cbBuffer);
-        bool _AdvanceReader(const DWORD cbBytes);
+        bool _GetData(gsl::span<std::byte> buffer);
+        bool _AdvanceReader(DWORD byteCount);
         void _Shutdown();
 
+        DWORD _dwThreadId;
         wil::unique_hfile _hFile;
         wil::unique_handle _hThread;
-        DWORD _dwThreadId;
-        bool _consoleConnected;
     };
 }

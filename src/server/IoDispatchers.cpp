@@ -307,7 +307,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
             THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
                                                       GetCurrentProcess(),
                                                       GetCurrentProcess(),
-                                                      &ourProcess,
+                                                      ourProcess.addressof(),
                                                       SYNCHRONIZE,
                                                       FALSE,
                                                       0));

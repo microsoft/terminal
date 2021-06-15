@@ -67,15 +67,13 @@ try
     RETURN_IF_FAILED(ConsoleEstablishHandoff(server, inputEvent, signalPipe, inboxProcess, &apiMsg));
 
     // Give back a copy of our own process handle to be tracked.
-    wil::unique_handle duplicatedHandle;
     RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
                                                GetCurrentProcess(),
                                                GetCurrentProcess(),
-                                               &duplicatedHandle,
+                                               process,
                                                SYNCHRONIZE,
                                                FALSE,
                                                0));
-    *process = duplicatedHandle.release();
 
     return S_OK;
 }

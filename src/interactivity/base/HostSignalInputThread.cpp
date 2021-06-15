@@ -15,13 +15,13 @@ using namespace Microsoft::Console::Interactivity;
 // - Creates the PTY Signal Input Thread.
 // Arguments:
 // - hPipe - a handle to the file representing the read end of the Host Signal pipe.
-HostSignalInputThread::HostSignalInputThread(_In_ wil::unique_hfile&& hPipe) :
+HostSignalInputThread::HostSignalInputThread(wil::unique_hfile&& hPipe) :
     _hFile{ std::move(hPipe) },
     _hThread{},
-    _dwThreadId{ 0 },
-    _consoleConnected{ false }
+    _dwThreadId{}
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
+    THROW_HR_IF(E_HANDLE, _hFile.get() == nullptr);
 }
 
 HostSignalInputThread::~HostSignalInputThread()
@@ -39,24 +39,10 @@ HostSignalInputThread::~HostSignalInputThread()
 // - lpParameter - A pointer to the HostSignalInputThread instance that should be called.
 // Return Value:
 // - The return value of the underlying instance's _InputThread
-DWORD WINAPI HostSignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
+DWORD WINAPI HostSignalInputThread::StaticThreadProc(LPVOID lpParameter)
 {
-    HostSignalInputThread* const pInstance = reinterpret_cast<HostSignalInputThread*>(lpParameter);
+    HostSignalInputThread* const pInstance = static_cast<HostSignalInputThread*>(lpParameter);
     return pInstance->_InputThread();
-}
-
-// Method Description:
-// - Tell us that there's a client attached to the console, so we can actually
-//      do something with the messages we receive now. Before this is set, there
-//      is no guarantee that a client has attached, so most parts of the console
-//      (in and screen buffers) haven't yet been initialized.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void HostSignalInputThread::ConnectConsole() noexcept
-{
-    _consoleConnected = true;
 }
 
 // Method Description:
@@ -70,22 +56,17 @@ template<typename T>
 T HostSignalInputThread::_ReceiveTypedPacket()
 {
     T msg = { 0 };
-    THROW_HR_IF(E_ABORT, !_GetData(&msg, sizeof(msg)));
+    THROW_HR_IF(E_ABORT, !_GetData(gsl::as_writable_bytes(gsl::span{ &msg, 1 })));
+
+    // If the message is smaller than what we expected
+    // then it was malformed and we need to throw.
+    THROW_HR_IF(E_ILLEGAL_METHOD_CALL, msg.sizeInBytes < sizeof(msg));
 
     // If the message size was stated to be larger, we
     // want to seek forward to the next message code.
     // If it's equal, we'll seek forward by 0 and
     // do nothing.
-    if (msg.sizeInBytes >= sizeof(msg))
-    {
-        _AdvanceReader(msg.sizeInBytes - sizeof(msg));
-    }
-    // If the message is smaller than what we expected
-    // then it was malformed and we need to throw.
-    else
-    {
-        THROW_HR(E_ILLEGAL_METHOD_CALL);
-    }
+    _AdvanceReader(msg.sizeInBytes - sizeof(msg));
 
     return msg;
 }
@@ -98,7 +79,8 @@ T HostSignalInputThread::_ReceiveTypedPacket()
 [[nodiscard]] HRESULT HostSignalInputThread::_InputThread()
 {
     HostSignals signalId;
-    while (_GetData(&signalId, sizeof(signalId)))
+    
+    while (_GetData(gsl::as_writable_bytes(gsl::span{ &signalId, 1 })))
     {
         switch (signalId)
         {
@@ -139,24 +121,23 @@ T HostSignalInputThread::_ReceiveTypedPacket()
 // Method Description:
 // - Skips the file stream forward by the specified number of bytes.
 // Arguments:
-// - cbBytes - Count of bytes to skip forward
+// - byteCount - Count of bytes to skip forward
 // Return Value:
 // - True if we could skip forward successfully. False otherwise.
-bool HostSignalInputThread::_AdvanceReader(const DWORD cbBytes)
+bool HostSignalInputThread::_AdvanceReader(DWORD byteCount)
 {
-    std::array<BYTE, 8> buffer;
-    auto bytesRemaining = cbBytes;
+    std::array<std::byte, 256> buffer;
 
-    while (bytesRemaining > 0)
+    while (byteCount > 0)
     {
-        const auto advance = std::min(bytesRemaining, gsl::narrow_cast<DWORD>(buffer.max_size()));
+        const auto advance = std::min(byteCount, gsl::narrow_cast<DWORD>(buffer.max_size()));
 
-        if (!_GetData(buffer.data(), advance))
+        if (!_GetData(buffer))
         {
             return false;
         }
 
-        bytesRemaining -= advance;
+        byteCount -= advance;
     }
 
     return true;
@@ -166,19 +147,17 @@ bool HostSignalInputThread::_AdvanceReader(const DWORD cbBytes)
 // - Retrieves bytes from the file stream and exits or throws errors should the pipe state
 //   be compromised.
 // Arguments:
-// - pBuffer - Buffer to fill with data.
-// - cbBuffer - Count of bytes in the given buffer.
+// - buffer - Buffer to fill with data.
 // Return Value:
 // - True if data was retrieved successfully. False otherwise.
-bool HostSignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer,
-                                     const DWORD cbBuffer)
+bool HostSignalInputThread::_GetData(gsl::span<std::byte> buffer)
 {
-    DWORD dwRead = 0;
+    DWORD bytesRead = 0;
     // If we failed to read because the terminal broke our pipe (usually due
     //      to dying itself), close gracefully with ERROR_BROKEN_PIPE.
     // Otherwise throw an exception. ERROR_BROKEN_PIPE is the only case that
     //       we want to gracefully close in.
-    if (FALSE == ReadFile(_hFile.get(), pBuffer, cbBuffer, &dwRead, nullptr))
+    if (FALSE == ReadFile(_hFile.get(), buffer.data(), gsl::narrow_cast<DWORD>(buffer.size()), &bytesRead, nullptr))
     {
         DWORD lastError = GetLastError();
         if (lastError == ERROR_BROKEN_PIPE)
@@ -186,12 +165,11 @@ bool HostSignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pB
             _Shutdown();
             return false;
         }
-        else
-        {
-            THROW_WIN32(lastError);
-        }
+
+        THROW_WIN32(lastError);
     }
-    else if (dwRead != cbBuffer)
+
+    if (bytesRead != buffer.size())
     {
         _Shutdown();
         return false;
@@ -204,8 +182,6 @@ bool HostSignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pB
 // - Starts the PTY Signal input thread.
 [[nodiscard]] HRESULT HostSignalInputThread::Start() noexcept
 {
-    RETURN_LAST_ERROR_IF(!_hFile);
-
     // 0 is the right value, https://devblogs.microsoft.com/oldnewthing/20040223-00/?p=40503
     _dwThreadId = 0;
 
