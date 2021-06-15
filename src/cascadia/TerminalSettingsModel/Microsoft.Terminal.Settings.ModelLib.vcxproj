@@ -59,6 +59,9 @@
     <ClInclude Include="AppearanceConfig.h">
       <DependentUpon>AppearanceConfig.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="FontConfig.h">
+      <DependentUpon>FontConfig.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="EnumMappings.h">
       <DependentUpon>EnumMappings.idl</DependentUpon>
     </ClInclude>
@@ -123,6 +126,9 @@
     <ClCompile Include="AppearanceConfig.cpp">
       <DependentUpon>AppearanceConfig.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="FontConfig.cpp">
+      <DependentUpon>FontConfig.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="TerminalSettings.cpp">
       <DependentUpon>TerminalSettings.idl</DependentUpon>
     </ClCompile>
@@ -154,6 +160,7 @@
     <Midl Include="KeyChordSerialization.idl" />
     <Midl Include="AppearanceConfig.idl" />
     <Midl Include="IAppearanceConfig.idl" />
+    <Midl Include="FontConfig.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>

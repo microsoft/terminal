@@ -1,0 +1,34 @@
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
+--*/
+
+#pragma once
+
+#include "pch.h"
+#include "FontConfig.g.h"
+#include "JsonUtils.h"
+#include "../inc/cppwinrt_utils.h"
+#include "IInheritable.h"
+#include <DefaultSettings.h>
+
+namespace winrt::Microsoft::Terminal::Settings::Model::implementation
+{
+    struct FontConfig : FontConfigT<FontConfig>, IInheritable<FontConfig>
+    {
+    public:
+        FontConfig(const winrt::weak_ref<Profile> sourceProfile);
+        static winrt::com_ptr<FontConfig> CopyFontInfo(const winrt::com_ptr<FontConfig> source, const winrt::weak_ref<Profile> sourceProfile);
+        Json::Value ToJson() const;
+        void LayerJson(const Json::Value& json);
+
+        Model::Profile SourceProfile();
+
+        INHERITABLE_SETTING(Model::FontConfig, hstring, FontFace, DEFAULT_FONT_FACE);
+        INHERITABLE_SETTING(Model::FontConfig, int32_t, FontSize, DEFAULT_FONT_SIZE);
+        INHERITABLE_SETTING(Model::FontConfig, Windows::UI::Text::FontWeight, FontWeight, DEFAULT_FONT_WEIGHT);
+
+    private:
+        winrt::weak_ref<Profile> _sourceProfile;
+    };
+}
