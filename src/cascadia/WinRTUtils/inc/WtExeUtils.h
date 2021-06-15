@@ -63,7 +63,7 @@ _TIL_INLINEPREFIX bool IsDevBuild()
 // - <none>
 // Return Value:
 // - the full path to the exe, one of `wt.exe`, `wtd.exe`, or `WindowsTerminal.exe`.
-_TIL_INLINEPREFIX std::wstring GetWtExePath()
+_TIL_INLINEPREFIX const std::wstring& GetWtExePath()
 {
     static const std::wstring exePath = []() -> std::wstring {
         // First, check a packaged location for the exe. If we've got a package
