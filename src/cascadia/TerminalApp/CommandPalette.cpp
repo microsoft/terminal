@@ -644,7 +644,13 @@ namespace winrt::TerminalApp::implementation
                     // palette like the Tab Switcher will be able to have the last laugh.
                     _close();
 
-                    _DispatchCommandRequestedHandlers(*this, actionPaletteItem.Command());
+                    // But make an exception for the Toggle Command Palette action: we don't want the dispatch
+                    // make the command palette - that was just closed - visible again.
+                    // All other actions can just be dispatched.
+                    if (actionPaletteItem.Command().ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
+                    {
+                        _DispatchCommandRequestedHandlers(*this, actionPaletteItem.Command());
+                    }
 
                     TraceLoggingWrite(
                         g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
