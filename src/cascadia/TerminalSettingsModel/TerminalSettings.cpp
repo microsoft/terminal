@@ -82,7 +82,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             childImpl->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes());
             child = *childImpl;
         }
-
+        const auto face = settings->FontFace();
         return winrt::make<TerminalSettingsCreateResult>(*settings, child);
     }
 

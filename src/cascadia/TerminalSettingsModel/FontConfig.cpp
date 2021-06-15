@@ -10,6 +10,7 @@
 using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
+static constexpr std::string_view FontInfoKey{ "font" };
 static constexpr std::string_view FontFaceKey{ "fontFace" };
 static constexpr std::string_view FontSizeKey{ "fontSize" };
 static constexpr std::string_view FontWeightKey{ "fontWeight" };
@@ -53,9 +54,23 @@ Json::Value FontConfig::ToJson() const
 // - json: an object which should be a partial serialization of a FontConfig object.
 void FontConfig::LayerJson(const Json::Value& json)
 {
-    JsonUtils::GetValueForKey(json, FontFaceKey, _FontFace);
-    JsonUtils::GetValueForKey(json, FontSizeKey, _FontSize);
-    JsonUtils::GetValueForKey(json, FontWeightKey, _FontWeight);
+    // Legacy users may not have a font object defined in their profile,
+    // so check for that before we decide how to parse this
+    if (json.isMember(JsonKey(FontInfoKey)))
+    {
+        // A font object is defined, use that
+        const auto fontInfoJson = json[JsonKey(FontInfoKey)];
+        JsonUtils::GetValueForKey(fontInfoJson, FontFaceKey, _FontFace);
+        JsonUtils::GetValueForKey(fontInfoJson, FontSizeKey, _FontSize);
+        JsonUtils::GetValueForKey(fontInfoJson, FontWeightKey, _FontWeight);
+    }
+    else
+    {
+        // No font object is defined
+        JsonUtils::GetValueForKey(json, FontFaceKey, _FontFace);
+        JsonUtils::GetValueForKey(json, FontSizeKey, _FontSize);
+        JsonUtils::GetValueForKey(json, FontWeightKey, _FontWeight);
+    }
 }
 
 winrt::Microsoft::Terminal::Settings::Model::Profile FontConfig::SourceProfile()
