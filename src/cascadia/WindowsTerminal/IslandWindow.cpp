@@ -564,6 +564,10 @@ void IslandWindow::OnResize(const UINT width, const UINT height)
 void IslandWindow::OnMinimize()
 {
     // TODO GH#1989 Stop rendering island content when the app is minimized.
+    if (_minimizeToTray)
+    {
+        HideWindow();
+    }
 }
 
 // Method Description:
@@ -1491,6 +1495,16 @@ void IslandWindow::_enterQuakeMode()
                  newRect.width<int>(),
                  newRect.height<int>(),
                  SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
+}
+
+void IslandWindow::HideWindow()
+{
+    ShowWindow(GetHandle(), SW_HIDE);
+}
+
+void IslandWindow::SetMinimizeToTrayBehavior(bool minimizeToTray) noexcept
+{
+    _minimizeToTray = minimizeToTray;
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

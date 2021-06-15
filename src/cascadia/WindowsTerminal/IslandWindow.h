@@ -48,6 +48,9 @@ public:
     bool IsQuakeWindow() const noexcept;
     void IsQuakeWindow(bool isQuakeWindow) noexcept;
 
+    void HideWindow();
+    void SetMinimizeToTrayBehavior(bool minimizeToTray) noexcept;
+
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
     DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
     WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
@@ -118,6 +121,8 @@ protected:
     void _enterQuakeMode();
 
     void _summonWindowRoutineBody(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
+
+    bool _minimizeToTray{ false };
 
 private:
     // This minimum width allows for width the tabs fit

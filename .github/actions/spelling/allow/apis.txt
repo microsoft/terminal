@@ -2,6 +2,7 @@ ACCEPTFILES
 ACCESSDENIED
 alignas
 alignof
+APPLYTOSUBMENUS
 bitfield
 bitfields
 BUILDNUMBER
@@ -129,6 +130,7 @@ Stubless
 Subheader
 Subpage
 syscall
+TASKBARCREATED
 TBPF
 THEMECHANGED
 tmp

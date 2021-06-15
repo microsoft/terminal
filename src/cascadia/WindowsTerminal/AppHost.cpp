@@ -79,9 +79,9 @@ AppHost::AppHost() noexcept :
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
     _window->NotifyTrayIconPressed({ this, &AppHost::_HandleTrayIconPressed });
-    _window->NotifyShowTrayContextMenu({this, &AppHost::_ShowTrayContextMenu });
-    _window->NotifyTrayMenuItemSelected({this, &AppHost::_TrayMenuItemSelected });
-    _window->NotifyCreateTrayIcon({ this, &AppHost::_CreateTrayIcon });
+    _window->NotifyShowTrayContextMenu({ this, &AppHost::_ShowTrayContextMenu });
+    _window->NotifyTrayMenuItemSelected({ this, &AppHost::_TrayMenuItemSelected });
+    _window->NotifyCreateTrayIcon({ this, &AppHost::_UpdateTrayIcon });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
 
@@ -95,12 +95,7 @@ AppHost::AppHost() noexcept :
 AppHost::~AppHost()
 {
     // destruction order is important for proper teardown here
-    if (_trayIconData)
-    {
-        Shell_NotifyIcon(NIM_DELETE, &_trayIconData.value());
-        _trayIconData.reset();
-    }
-
+    _DestroyTrayIcon();
     _window = nullptr;
     _app.Close();
     _app = nullptr;
@@ -651,11 +646,7 @@ winrt::fire_and_forget AppHost::_WindowActivated()
 void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
-    if (_logic.GetAlwaysShowTrayIcon() || _logic.GetMinimizeToTray())
-    {
-        _CreateTrayIcon();
-    }
-
+    _UpdateTrayIcon();
     _setupGlobalHotkeys();
 
     // The monarch is just going to be THE listener for inbound connections.
@@ -935,6 +926,13 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
                                      const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     _setupGlobalHotkeys();
+
+    if (_windowManager.IsMonarch())
+    {
+        _UpdateTrayIcon();
+    }
+
+    _window->SetMinimizeToTrayBehavior(_logic.GetMinimizeToTray());
 }
 
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
@@ -956,7 +954,7 @@ void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspecta
 void AppHost::_MinimizeToTrayRequested(const winrt::Windows::Foundation::IInspectable&,
                                        const winrt::Windows::Foundation::IInspectable&)
 {
-    ShowWindow(_window->GetHandle(), SW_HIDE);
+    _window->HideWindow();
 }
 
 void AppHost::_HandleTrayIconPressed()
@@ -973,35 +971,47 @@ void AppHost::_HandleTrayIconPressed()
 // - <unused>
 // Return Value:
 // - <none>
-void AppHost::_CreateTrayIcon()
+void AppHost::_UpdateTrayIcon()
 {
-    NOTIFYICONDATA nid{};
-    nid.cbSize = sizeof(NOTIFYICONDATA);
+    if (_logic.GetAlwaysShowTrayIcon() || _logic.GetMinimizeToTray())
+    {
+        if (!_trayIconData)
+        {
+            NOTIFYICONDATA nid{};
+            nid.cbSize = sizeof(NOTIFYICONDATA);
 
-    // This HWND will receive the callbacks sent by the tray icon.
-    nid.hWnd = _window->GetHandle();
+            // This HWND will receive the callbacks sent by the tray icon.
+            nid.hWnd = _window->GetHandle();
 
-    // App-defined identifier of the icon. The HWND and ID are used
-    // to identify which icon to operate on when calling Shell_NotifyIcon.
-    // Multiple icons can be associated with one HWND, but here we're only
-    // going to be showing one so the ID doesn't really matter.
-    nid.uID = 1;
+            // App-defined identifier of the icon. The HWND and ID are used
+            // to identify which icon to operate on when calling Shell_NotifyIcon.
+            // Multiple icons can be associated with one HWND, but here we're only
+            // going to be showing one so the ID doesn't really matter.
+            nid.uID = 1;
 
-    nid.uCallbackMessage = CM_NOTIFY_FROM_TRAY;
+            nid.uCallbackMessage = CM_NOTIFY_FROM_TRAY;
 
-    nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(ICON_SMALL));
-    StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), L"Windows Terminal");
-    nid.uFlags = NIF_MESSAGE | NIF_SHOWTIP | NIF_TIP | NIF_ICON;
-    Shell_NotifyIcon(NIM_ADD, &nid);
+            nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(ICON_SMALL));
+            StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), L"Windows Terminal");
+            nid.uFlags = NIF_MESSAGE | NIF_SHOWTIP | NIF_TIP | NIF_ICON;
+            Shell_NotifyIcon(NIM_ADD, &nid);
 
-    // For whatever reason, the NIM_ADD call doesn't seem to set the version
-    // properly, resulting in us being unable to receive the expected notification
-    // events. We actually have to make a separate NIM_SETVERSION call for it to
-    // work properly.
-    nid.uVersion = NOTIFYICON_VERSION_4;
-    Shell_NotifyIcon(NIM_SETVERSION, &nid);
+            // For whatever reason, the NIM_ADD call doesn't seem to set the version
+            // properly, resulting in us being unable to receive the expected notification
+            // events. We actually have to make a separate NIM_SETVERSION call for it to
+            // work properly.
+            nid.uVersion = NOTIFYICON_VERSION_4;
+            Shell_NotifyIcon(NIM_SETVERSION, &nid);
 
-    _trayIconData = nid;
+            _trayIconData = nid;
+        }
+    }
+    else if (_trayIconData)
+    {
+        // We have a tray icon existing, but the now the new settings
+        // are telling us we don't want you so poof.
+        _DestroyTrayIcon();
+    }
 }
 
 void AppHost::_ShowTrayContextMenu(const til::point coord)
@@ -1068,4 +1078,13 @@ void AppHost::_TrayMenuItemSelected(const HMENU menu, const UINT menuItemIndex)
     Remoting::SummonWindowSelectionArgs args{ name };
     args.SummonBehavior().ToggleVisibility(false);
     _windowManager.SummonWindow(args);
+}
+
+void AppHost::_DestroyTrayIcon()
+{
+    if (_trayIconData)
+    {
+        Shell_NotifyIcon(NIM_DELETE, &_trayIconData.value());
+        _trayIconData.reset();
+    }
 }
