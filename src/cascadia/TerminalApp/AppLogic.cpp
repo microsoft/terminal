@@ -9,6 +9,7 @@
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include <LibraryResources.h>
+#include <WtExeUtils.h>
 
 using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -913,18 +914,26 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void AppLogic::_ApplyLanguageSettingChange()
+    void AppLogic::_ApplyLanguageSettingChange() noexcept
+    try
     {
+        if (!IsPackaged())
+        {
+            return;
+        }
+
         using ApplicationLanguages = winrt::Windows::Globalization::ApplicationLanguages;
 
-        const auto language = _settings.GlobalSettings().Language();
+        // NOTE: PrimaryLanguageOverride throws if this instance is unpackaged.
         const auto primaryLanguageOverride = ApplicationLanguages::PrimaryLanguageOverride();
+        const auto language = _settings.GlobalSettings().Language();
 
         if (primaryLanguageOverride != language)
         {
             ApplicationLanguages::PrimaryLanguageOverride(language);
         }
     }
+    CATCH_LOG()
 
     void AppLogic::_RefreshThemeRoutine()
     {
