@@ -235,8 +235,10 @@ using namespace Microsoft::Console::Render;
                         (WI_IsFlagSet(wAttr, FOREGROUND_GREEN) ? 2 : 0) +
                         (WI_IsFlagSet(wAttr, FOREGROUND_BLUE) ? 4 : 0);
 
+    char buf[6];
+    char* end = til::format::format(buf, "\x1b[{}m", vtIndex);
     // An example string with max length would be "\x1b[100m", which has length = 6.
-    return _Write(til::format::format<7>("\x1b[{}m", vtIndex));
+    return _Write({ buf, static_cast<std::string_view::size_type>(end - buf) });
 }
 
 // Method Description:
@@ -250,8 +252,10 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_SetGraphicsRendition256Color(const WORD index,
                                                               const bool fIsForeground) noexcept
 {
+    char buf[11];
     // An example string with max length would be "\x1b[38;5;128m", which has length = 11.
-    return _Write(til::format::format<12>("\x1b[{};5;{}m", fIsForeground ? 38 : 48, ::Xterm256ToWindowsIndex(index)));
+    char* end = til::format::format(buf, "\x1b[{};5;{}m", fIsForeground ? 38 : 48, ::Xterm256ToWindowsIndex(index));
+    return _Write({buf, static_cast<std::string_view::size_type>(end - buf)});
 }
 
 // Method Description:
@@ -269,8 +273,11 @@ using namespace Microsoft::Console::Render;
     DWORD const g = GetGValue(color);
     DWORD const b = GetBValue(color);
 
+    char buf[19];
+    char* end = til::format::format(buf, "\x1b[{};2;{};{};{}m", fIsForeground ? 38 : 48, r, g, b);
+
     // An example string with max length would be "\x1b[38;2;128;128;128m", which has length = 19.
-    return _Write(til::format::format<20>("\x1b[{};2;{};{};{}m", fIsForeground ? 38 : 48, r, g, b));
+    return _Write({ buf, static_cast<std::string_view::size_type>(end - buf) });
 }
 
 // Method Description:

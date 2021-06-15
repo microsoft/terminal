@@ -28,14 +28,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return ptr;
         }
 
-        template<size_t N>
-        constexpr std::string format(const char* pFormat, ...)
+        inline char* format(char* pDst, const char* pFormat, ...)
         {
             va_list args;
             va_start(args, pFormat);
-
-            char buf[N];
-            char* pDst = buf;
 
             const char* pSrc = pFormat;
             while (*pSrc != '\0')
@@ -52,7 +48,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             va_end(args);
 
-            return { buf, static_cast<std::string::size_type>(pDst - buf) };
+            return pDst;
         }
     }
 }
