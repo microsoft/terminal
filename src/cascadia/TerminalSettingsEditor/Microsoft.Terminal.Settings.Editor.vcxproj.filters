@@ -10,10 +10,16 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="PercentageSignConverter.cpp">
+      <Filter>Converters</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="Utils.h" />
+    <ClInclude Include="PercentageSignConverter.h">
+      <Filter>Converters</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="EnumEntry.idl" />
