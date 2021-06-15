@@ -651,7 +651,11 @@ winrt::fire_and_forget AppHost::_WindowActivated()
 void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
-    _CreateTrayIcon();
+    if (_logic.GetAlwaysShowTrayIcon() || _logic.GetMinimizeToTray())
+    {
+        _CreateTrayIcon();
+    }
+
     _setupGlobalHotkeys();
 
     // The monarch is just going to be THE listener for inbound connections.

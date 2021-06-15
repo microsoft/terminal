@@ -29,6 +29,8 @@
     "disableAnimations": false,
     "startupActions": "",
     "focusFollowMouse": false,
+    "minimizeToTray": false,
+    "alwaysShowTrayIcon": false,
 
     "profiles":
     [
