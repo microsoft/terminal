@@ -79,7 +79,7 @@ T HostSignalInputThread::_ReceiveTypedPacket()
 [[nodiscard]] HRESULT HostSignalInputThread::_InputThread()
 {
     HostSignals signalId;
-    
+
     while (_GetData(gsl::as_writable_bytes(gsl::span{ &signalId, 1 })))
     {
         switch (signalId)
