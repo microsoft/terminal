@@ -41,7 +41,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void CurrentLanguage(const winrt::Windows::Foundation::IInspectable& tag);
 
     private:
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> _languageList{ nullptr };
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> _languageList;
         winrt::Windows::Foundation::IInspectable _currentLanguage;
     };
 }
