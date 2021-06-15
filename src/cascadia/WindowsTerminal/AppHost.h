@@ -89,12 +89,11 @@ private:
     void _MinimizeToTrayRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                            const winrt::Windows::Foundation::IInspectable&);
 
-    void _UpdateTrayIcon();
+    void _CreateTrayIcon();
     void _HandleTrayIconPressed();
     void _ShowTrayContextMenu(const til::point coord);
     HMENU _CreateTrayContextMenu();
-    void _TrayMenuItemSelected(const UINT menuItemIndex);
+    void _TrayMenuItemSelected(const HMENU menu, const UINT menuItemIndex);
 
     std::optional<NOTIFYICONDATA> _trayIconData;
-    std::optional<HMENU> _trayContextMenu;
 };

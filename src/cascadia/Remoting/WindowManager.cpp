@@ -274,6 +274,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             p->AssignID(givenID.value());
         }
 
+        // If the name wasn't specified, this will be an empty string.
         p->WindowName(givenName);
         _peasant = *p;
 
@@ -510,7 +511,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     Windows::Foundation::Collections::IMap<uint64_t, winrt::hstring> WindowManager::GetPeasantNames()
     {
-        assert(_monarch);
+        // We should only get called when we're the monarch since the monarch
+        // is the only one that knows about all peasants.
         return _monarch.GetPeasantNames();
     }
 

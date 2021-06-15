@@ -21,6 +21,8 @@ using namespace ::Microsoft::Console::Types;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 
+const UINT WM_TASKBARCREATED = RegisterWindowMessage(L"TaskbarCreated");
+
 IslandWindow::IslandWindow() noexcept :
     _interopWindowHandle{ nullptr },
     _rootGrid{ nullptr },
@@ -527,9 +529,17 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     }
     case WM_MENUCOMMAND:
     {
-        _NotifyTrayMenuItemSelectedHandlers(static_cast<UINT>(wparam));
+        _NotifyTrayMenuItemSelectedHandlers((HMENU)lparam, (UINT)wparam);
         return 0;
     }
+    }
+
+    // We'll want to receive this message when explorer.exe restarts
+    // so that we can re-add our icon to the tray.
+    if (message == WM_TASKBARCREATED)
+    {
+        _NotifyCreateTrayIconHandlers();
+        return 0;
     }
 
     // TODO: handle messages here...

@@ -81,6 +81,7 @@ AppHost::AppHost() noexcept :
     _window->NotifyTrayIconPressed({ this, &AppHost::_HandleTrayIconPressed });
     _window->NotifyShowTrayContextMenu({this, &AppHost::_ShowTrayContextMenu });
     _window->NotifyTrayMenuItemSelected({this, &AppHost::_TrayMenuItemSelected });
+    _window->NotifyCreateTrayIcon({ this, &AppHost::_CreateTrayIcon });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
 
@@ -650,7 +651,7 @@ winrt::fire_and_forget AppHost::_WindowActivated()
 void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
-    _UpdateTrayIcon();
+    _CreateTrayIcon();
     _setupGlobalHotkeys();
 
     // The monarch is just going to be THE listener for inbound connections.
@@ -968,49 +969,40 @@ void AppHost::_HandleTrayIconPressed()
 // - <unused>
 // Return Value:
 // - <none>
-void AppHost::_UpdateTrayIcon()
+void AppHost::_CreateTrayIcon()
 {
-    if (!_trayIconData && _window->GetHandle())
-    {
-        NOTIFYICONDATA nid{};
-        nid.cbSize = sizeof(NOTIFYICONDATA);
+    NOTIFYICONDATA nid{};
+    nid.cbSize = sizeof(NOTIFYICONDATA);
 
-        // This HWND will receive the callbacks sent by the tray icon.
-        nid.hWnd = _window->GetHandle();
+    // This HWND will receive the callbacks sent by the tray icon.
+    nid.hWnd = _window->GetHandle();
 
-        // App-defined identifier of the icon. The HWND and ID are used
-        // to identify which icon to operate on when calling Shell_NotifyIcon.
-        // Multiple icons can be associated with one HWND, but here we're only
-        // going to be showing one so the ID doesn't really matter.
-        nid.uID = 1;
+    // App-defined identifier of the icon. The HWND and ID are used
+    // to identify which icon to operate on when calling Shell_NotifyIcon.
+    // Multiple icons can be associated with one HWND, but here we're only
+    // going to be showing one so the ID doesn't really matter.
+    nid.uID = 1;
 
-        nid.uCallbackMessage = CM_NOTIFY_FROM_TRAY;
+    nid.uCallbackMessage = CM_NOTIFY_FROM_TRAY;
 
-        nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(ICON_SMALL));
-        StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), L"Windows Terminal");
-        nid.uFlags = NIF_MESSAGE | NIF_SHOWTIP | NIF_TIP | NIF_ICON;
-        Shell_NotifyIcon(NIM_ADD, &nid);
+    nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(ICON_SMALL));
+    StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), L"Windows Terminal");
+    nid.uFlags = NIF_MESSAGE | NIF_SHOWTIP | NIF_TIP | NIF_ICON;
+    Shell_NotifyIcon(NIM_ADD, &nid);
 
-        // For whatever reason, the NIM_ADD call doesn't seem to set the version
-        // properly, resulting in us being unable to receive the expected notification
-        // events. We actually have to make a separate NIM_SETVERSION call for it to
-        // work properly.
-        nid.uVersion = NOTIFYICON_VERSION_4;
-        Shell_NotifyIcon(NIM_SETVERSION, &nid);
+    // For whatever reason, the NIM_ADD call doesn't seem to set the version
+    // properly, resulting in us being unable to receive the expected notification
+    // events. We actually have to make a separate NIM_SETVERSION call for it to
+    // work properly.
+    nid.uVersion = NOTIFYICON_VERSION_4;
+    Shell_NotifyIcon(NIM_SETVERSION, &nid);
 
-        _trayIconData = nid;
-    }
-    else
-    {
-        _trayIconData.value().hWnd = _window->GetHandle();
-        Shell_NotifyIcon(NIM_MODIFY, &_trayIconData.value());
-    }
+    _trayIconData = nid;
 }
 
 void AppHost::_ShowTrayContextMenu(const til::point coord)
 {
-    _trayContextMenu = _CreateTrayContextMenu();
-    if (_trayContextMenu)
+    if (auto hmenu = _CreateTrayContextMenu())
     {
         // We'll need to set our window to the foreground before calling
         // TrackPopupMenuEx or else the menu won't dismiss when clicking away.
@@ -1026,7 +1018,7 @@ void AppHost::_ShowTrayContextMenu(const til::point coord)
             uFlags |= TPM_LEFTALIGN;
         }
 
-        TrackPopupMenuEx(_trayContextMenu.value(), uFlags, (int)coord.x(), (int)coord.y(), _window->GetHandle(), NULL);
+        TrackPopupMenuEx(hmenu, uFlags, (int)coord.x(), (int)coord.y(), _window->GetHandle(), NULL);
     }
 }
 
@@ -1037,7 +1029,7 @@ HMENU AppHost::_CreateTrayContextMenu()
     {
         MENUINFO mi{};
         mi.cbSize = sizeof(MENUINFO);
-        mi.fMask = MIM_STYLE;
+        mi.fMask = MIM_STYLE | MIM_APPLYTOSUBMENUS;
         mi.dwStyle = MNS_NOTIFYBYPOS;
         SetMenuInfo(hmenu, &mi);
 
@@ -1048,24 +1040,26 @@ HMENU AppHost::_CreateTrayContextMenu()
         //     but may be a reasonable request to also put it explicitly in the
         //     context menu
         // - Quit All
+        // It also might be nice to add options to changing the left click
+        // behavior (e.g. mru window or all windows or quake window)
 
         // Get all peasants' window names
-        for (auto [id, name] : _windowManager.GetPeasantNames())
+        for (const auto [id, name] : _windowManager.GetPeasantNames())
         {
             // Technically, the id doesn't matter here since we'll
             // be referring to this menu item through its position
             // in the context menu.
-            AppendMenu(hmenu, MF_STRING, id, name.c_str());
+            AppendMenu(hmenu, MF_STRING, (UINT_PTR)id, name.c_str());
         }
     }
     return hmenu;
 }
 
-void AppHost::_TrayMenuItemSelected(const UINT menuItemIndex)
+void AppHost::_TrayMenuItemSelected(const HMENU menu, const UINT menuItemIndex)
 {
     // Grab the window name associated to the given context menu item position.
     WCHAR name[255];
-    GetMenuString(_trayContextMenu.value(), menuItemIndex, name, 255, MF_BYPOSITION);
+    GetMenuString(menu, menuItemIndex, name, 255, MF_BYPOSITION);
 
     Remoting::SummonWindowSelectionArgs args{ name };
     args.SummonBehavior().ToggleVisibility(false);

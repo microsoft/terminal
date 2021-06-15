@@ -8,6 +8,8 @@
 #include "Peasant.g.cpp"
 #include "../../types/inc/utils.hpp"
 
+#include <LibraryResources.h>
+
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Windows::Foundation;
@@ -34,7 +36,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // Provide a default name if we're currently unnamed.
         if (_WindowName.empty())
         {
-            _WindowName = fmt::format(L"Window {}", _id);
+            _WindowName = fmt::format(L"{} {}", RS_(L"Window"), _id);
         }
     }
     uint64_t Peasant::GetID()

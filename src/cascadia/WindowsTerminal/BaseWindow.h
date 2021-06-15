@@ -8,6 +8,9 @@
 
 #include <wil/resource.h>
 
+#include <LibraryResources.h>
+UTILS_DEFINE_LIBRARY_RESOURCE_SCOPE(L"TerminalApp/Resources")
+
 template<typename T>
 class BaseWindow
 {
