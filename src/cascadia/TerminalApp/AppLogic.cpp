@@ -306,7 +306,8 @@ namespace winrt::TerminalApp::implementation
         });
         _root->Create();
 
-        _ApplyTheme(_settings.GlobalSettings().Theme());
+        _ApplyLanguageSettingChange();
+        _RefreshThemeRoutine();
         _ApplyStartupTaskStateChange();
 
         TraceLoggingWrite(
@@ -895,36 +896,38 @@ namespace winrt::TerminalApp::implementation
     //   this stops us from reloading too many times or too quickly.
     fire_and_forget AppLogic::_DispatchReloadSettings()
     {
-        static constexpr auto FileActivityQuiesceTime{ std::chrono::milliseconds(50) };
-        if (!_settingsReloadQueued.exchange(true))
+        if (_settingsReloadQueued.exchange(true))
         {
-            co_await winrt::resume_after(FileActivityQuiesceTime);
+            co_return;
+        }
+
+        auto weakSelf = get_weak();
+
+        co_await winrt::resume_after(std::chrono::milliseconds(100));
+        co_await winrt::resume_foreground(_root->Dispatcher());
+
+        if (auto self{ weakSelf.get() })
+        {
             _ReloadSettings();
             _settingsReloadQueued.store(false);
         }
     }
 
-    fire_and_forget AppLogic::_LoadErrorsDialogRoutine()
+    void AppLogic::_ApplyLanguageSettingChange()
     {
-        co_await winrt::resume_foreground(_root->Dispatcher());
+        using ApplicationLanguages = winrt::Windows::Globalization::ApplicationLanguages;
 
-        const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
-        const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
-        _ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
+        const auto language = _settings.GlobalSettings().Language();
+        const auto primaryLanguageOverride = ApplicationLanguages::PrimaryLanguageOverride();
+
+        if (primaryLanguageOverride != language)
+        {
+            ApplicationLanguages::PrimaryLanguageOverride(language);
+        }
     }
 
-    fire_and_forget AppLogic::_ShowLoadWarningsDialogRoutine()
+    void AppLogic::_RefreshThemeRoutine()
     {
-        co_await winrt::resume_foreground(_root->Dispatcher());
-
-        _ShowLoadWarningsDialog();
-    }
-
-    fire_and_forget AppLogic::_RefreshThemeRoutine()
-    {
-        co_await winrt::resume_foreground(_root->Dispatcher());
-
-        // Refresh the UI theme
         _ApplyTheme(_settings.GlobalSettings().Theme());
     }
 
@@ -959,39 +962,26 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        auto weakThis{ get_weak() };
-        co_await winrt::resume_foreground(_root->Dispatcher(), CoreDispatcherPriority::Normal);
-        if (auto page{ weakThis.get() })
-        {
-            StartupTaskState state;
-            bool tryEnableStartupTask = _settings.GlobalSettings().StartOnUserLogin();
-            StartupTask task = co_await StartupTask::GetAsync(StartupTaskName);
+        const auto tryEnableStartupTask = _settings.GlobalSettings().StartOnUserLogin();
+        const auto task = co_await StartupTask::GetAsync(StartupTaskName);
 
-            state = task.State();
-            switch (state)
+        switch (task.State())
+        {
+        case StartupTaskState::Disabled:
+            if (tryEnableStartupTask)
             {
-            case StartupTaskState::Disabled:
+                co_await task.RequestEnableAsync();
+            }
+            break;
+        case StartupTaskState::DisabledByUser:
+            // TODO: GH#6254: define UX for other StartupTaskStates
+            break;
+        case StartupTaskState::Enabled:
+            if (!tryEnableStartupTask)
             {
-                if (tryEnableStartupTask)
-                {
-                    co_await task.RequestEnableAsync();
-                }
-                break;
+                task.Disable();
             }
-            case StartupTaskState::DisabledByUser:
-            {
-                // TODO: GH#6254: define UX for other StartupTaskStates
-                break;
-            }
-            case StartupTaskState::Enabled:
-            {
-                if (!tryEnableStartupTask)
-                {
-                    task.Disable();
-                }
-                break;
-            }
-            }
+            break;
         }
     }
     CATCH_LOG();
@@ -1009,12 +999,15 @@ namespace winrt::TerminalApp::implementation
 
         if (FAILED(_settingsLoadedResult))
         {
-            _LoadErrorsDialogRoutine();
+            const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
+            const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
+            _ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
             return;
         }
-        else if (_settingsLoadedResult == S_FALSE)
+
+        if (_settingsLoadedResult == S_FALSE)
         {
-            _ShowLoadWarningsDialogRoutine();
+            _ShowLoadWarningsDialog();
         }
 
         // Here, we successfully reloaded the settings, and created a new
@@ -1023,6 +1016,7 @@ namespace winrt::TerminalApp::implementation
         // Update the settings in TerminalPage
         _root->SetSettings(_settings, true);
 
+        _ApplyLanguageSettingChange();
         _RefreshThemeRoutine();
         _ApplyStartupTaskStateChange();
 

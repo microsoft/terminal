@@ -16,7 +16,6 @@ Author(s):
 
 #pragma once
 
-#include "pch.h"
 #include "AppearanceConfig.g.h"
 #include "JsonUtils.h"
 #include "../inc/cppwinrt_utils.h"
