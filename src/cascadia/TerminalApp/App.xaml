@@ -47,6 +47,9 @@
                     <!--  Suppress top padding  -->
                     <Thickness x:Key="TabViewHeaderPadding">8,0,8,0</Thickness>
 
+                    <!--  Remove when implementing WinUI 2.6  -->
+                    <Thickness x:Key="FlyoutContentPadding">12</Thickness>
+
                     <ResourceDictionary.ThemeDictionaries>
                         <ResourceDictionary x:Key="Dark">
                             <!--  Define resources for Dark mode here  -->

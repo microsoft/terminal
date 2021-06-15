@@ -634,4 +634,7 @@
   <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
     <value>Restore Down</value>
   </data>
+  <data name="CommandPaletteMenuItem" xml:space="preserve">
+    <value>Command Palette</value>
+  </data>
 </root>

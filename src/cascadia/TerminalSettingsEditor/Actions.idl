@@ -30,10 +30,10 @@ namespace Microsoft.Terminal.Settings.Editor
 
         void EnterHoverMode();
         void ExitHoverMode();
-        void FocusContainer();
-        void UnfocusContainer();
-        void FocusEditButton();
-        void UnfocusEditButton();
+        void ActionGotFocus();
+        void ActionLostFocus();
+        void EditButtonGettingFocus();
+        void EditButtonLosingFocus();
         void ToggleEditMode();
         void AttemptAcceptChanges();
         void DeleteKeyBinding();

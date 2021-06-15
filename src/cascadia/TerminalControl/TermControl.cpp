@@ -58,8 +58,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _lastAutoScrollUpdateTime{ std::nullopt },
         _cursorTimer{},
         _blinkTimer{},
-        _searchBox{ nullptr },
-        _bellLightAnimation{ Window::Current().Compositor().CreateScalarKeyFrameAnimation() }
+        _searchBox{ nullptr }
     {
         InitializeComponent();
 
@@ -167,11 +166,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
-
-        // Add key frames and a duration to our bell light animation
-        _bellLightAnimation.InsertKeyFrame(0.0, 2.0);
-        _bellLightAnimation.InsertKeyFrame(1.0, 1.0);
-        _bellLightAnimation.Duration(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(TerminalWarningBellInterval)));
 
         _ApplyUISettings(_settings);
     }
@@ -2386,17 +2380,33 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::BellLightOn()
     {
+        // Initialize the animation if it does not exist
+        // We only initialize here instead of in the ctor because depending on the bell style setting,
+        // we may never need this animation
+        if (!_bellLightAnimation)
+        {
+            _bellLightAnimation = Window::Current().Compositor().CreateScalarKeyFrameAnimation();
+            // Add key frames and a duration to our bell light animation
+            _bellLightAnimation.InsertKeyFrame(0.0, 2.0);
+            _bellLightAnimation.InsertKeyFrame(1.0, 1.0);
+            _bellLightAnimation.Duration(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(TerminalWarningBellInterval)));
+        }
+
+        // Similar to the animation, only initialize the timer here
+        if (!_bellLightTimer)
+        {
+            _bellLightTimer = {};
+            _bellLightTimer.Interval(std::chrono::milliseconds(TerminalWarningBellInterval));
+            _bellLightTimer.Tick({ get_weak(), &TermControl::_BellLightOff });
+        }
+
         Windows::Foundation::Numerics::float2 zeroSize{ 0, 0 };
         // If the grid has 0 size or if the bell timer is
         // already active, do nothing
-        if (RootGrid().ActualSize() != zeroSize && !_bellLightTimer)
+        if (RootGrid().ActualSize() != zeroSize && !_bellLightTimer.IsEnabled())
         {
             // Start the timer, when the timer ticks we switch off the light
-            DispatcherTimer invertTimer;
-            invertTimer.Interval(std::chrono::milliseconds(TerminalWarningBellInterval));
-            invertTimer.Tick({ get_weak(), &TermControl::_BellLightOff });
-            invertTimer.Start();
-            _bellLightTimer.emplace(std::move(invertTimer));
+            _bellLightTimer.Start();
 
             // Switch on the light and animate the intensity to fade out
             VisualBellLight::SetIsTarget(RootGrid(), true);
@@ -2410,8 +2420,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_bellLightTimer)
         {
             // Stop the timer and switch off the light
-            _bellLightTimer->Stop();
-            _bellLightTimer.reset();
+            _bellLightTimer.Stop();
 
             if (!_closing)
             {
