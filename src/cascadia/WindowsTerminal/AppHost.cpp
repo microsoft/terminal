@@ -1064,12 +1064,12 @@ HMENU AppHost::_CreateTrayContextMenu()
         // Submenu for Windows
         if (auto windowSubmenu = _CreateWindowSubmenu())
         {
-            MENUINFO smi{};
-            smi.cbSize = sizeof(MENUINFO);
-            smi.fMask = MIM_MENUDATA;
-            smi.dwStyle = MNS_NOTIFYBYPOS;
-            smi.dwMenuData = (UINT)TrayMenuItemAction::SummonWindow;
-            SetMenuInfo(windowSubmenu, &smi);
+            MENUINFO submenuInfo{};
+            submenuInfo.cbSize = sizeof(MENUINFO);
+            submenuInfo.fMask = MIM_MENUDATA;
+            submenuInfo.dwStyle = MNS_NOTIFYBYPOS;
+            submenuInfo.dwMenuData = (UINT)TrayMenuItemAction::SummonWindow;
+            SetMenuInfo(windowSubmenu, &submenuInfo);
 
             AppendMenu(hmenu, MF_POPUP, (UINT_PTR)windowSubmenu, L"Windows");
         }
@@ -1098,7 +1098,7 @@ HMENU AppHost::_CreateWindowSubmenu()
 
 void AppHost::_TrayMenuItemSelected(const HMENU menu, const UINT menuItemIndex)
 {
-    // Let's find out which menu/submenu we're lookin at.
+    // Let's find out which menu/submenu we're looking at.
     MENUINFO mi{};
     mi.cbSize = sizeof(MENUINFO);
     mi.fMask = MIM_MENUDATA;
