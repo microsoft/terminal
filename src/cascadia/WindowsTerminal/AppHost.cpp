@@ -10,6 +10,9 @@
 #include "resource.h"
 #include "VirtualDesktopUtils.h"
 #include "icon.h"
+#include "TrayIconData.h"
+
+#include <LibraryResources.h>
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
@@ -62,6 +65,8 @@ AppHost::AppHost() noexcept :
 
     // Update our own internal state tracking if we're in quake mode or not.
     _IsQuakeWindowChanged(nullptr, nullptr);
+
+    _window->SetMinimizeToTrayBehavior(_logic.GetMinimizeToTray());
 
     // Tell the window to callback to us when it's about to handle a WM_CREATE
     auto pfn = std::bind(&AppHost::_HandleCreateWindow,
@@ -991,7 +996,7 @@ void AppHost::_UpdateTrayIcon()
 
             nid.uCallbackMessage = CM_NOTIFY_FROM_TRAY;
 
-            nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(ICON_SMALL));
+            nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(true));
             StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), L"Windows Terminal");
             nid.uFlags = NIF_MESSAGE | NIF_SHOWTIP | NIF_TIP | NIF_ICON;
             Shell_NotifyIcon(NIM_ADD, &nid);
@@ -1047,37 +1052,61 @@ HMENU AppHost::_CreateTrayContextMenu()
         mi.dwStyle = MNS_NOTIFYBYPOS;
         SetMenuInfo(hmenu, &mi);
 
-        // TODO: Other useful options may include:
-        // - Summon All
-        // - Summon MRU or Monarch
-        //   - Though that's technically already available with a left click
-        //     but may be a reasonable request to also put it explicitly in the
-        //     context menu
-        // - Quit All
-        // It also might be nice to add options to changing the left click
-        // behavior (e.g. mru window or all windows or quake window)
+        // Focus Current Terminal Window
+        AppendMenu(hmenu, MF_STRING, (UINT_PTR)TrayMenuItemAction::FocusTerminal, L"Focus Terminal");
+        AppendMenu(hmenu, MF_SEPARATOR, 0, L"");
 
-        // Get all peasants' window names
-        for (const auto [id, name] : _windowManager.GetPeasantNames())
+        // Submenu for Windows
+        if (auto windowSubmenu = _CreateWindowSubmenu())
         {
-            // Technically, the id doesn't matter here since we'll
-            // be referring to this menu item through its position
-            // in the context menu.
-            AppendMenu(hmenu, MF_STRING, (UINT_PTR)id, name.c_str());
+            AppendMenu(hmenu, MF_POPUP, (UINT_PTR)windowSubmenu, L"Windows");
+            AppendMenu(hmenu, MF_SEPARATOR, 0, L"");
         }
+
+        AppendMenu(hmenu, MF_STRING, (UINT_PTR)TrayMenuItemAction::QuitAll, L"Close All Windows");
     }
     return hmenu;
 }
 
+HMENU AppHost::_CreateWindowSubmenu()
+{
+    if (auto hmenu = CreatePopupMenu())
+    {
+        for (const auto [id, name] : _windowManager.GetPeasantNames())
+        {
+            AppendMenu(hmenu, MF_STRING, (UINT_PTR)TrayMenuItemAction::SummonWindow, name.c_str());
+        }
+        return hmenu;
+    }
+    return nullptr;
+}
+
 void AppHost::_TrayMenuItemSelected(const HMENU menu, const UINT menuItemIndex)
 {
-    // Grab the window name associated to the given context menu item position.
-    WCHAR name[255];
-    GetMenuString(menu, menuItemIndex, name, 255, MF_BYPOSITION);
+    auto action = (TrayMenuItemAction)GetMenuItemID(menu, menuItemIndex);
+    switch (action)
+    {
+    case TrayMenuItemAction::FocusTerminal:
+    {
+        _windowManager.SummonWindow({});
+        break;
+    }
+    case TrayMenuItemAction::SummonWindow:
+    {
+        WCHAR name[255];
+        GetMenuString(menu, menuItemIndex, name, 255, MF_BYPOSITION);
 
-    Remoting::SummonWindowSelectionArgs args{ name };
-    args.SummonBehavior().ToggleVisibility(false);
-    _windowManager.SummonWindow(args);
+        Remoting::SummonWindowSelectionArgs args{ name };
+        args.SummonBehavior().ToggleVisibility(false);
+        _windowManager.SummonWindow(args);
+        break;
+    }
+    case TrayMenuItemAction::QuitAll:
+    {
+        break;
+    }
+
+    }
 }
 
 void AppHost::_DestroyTrayIcon()

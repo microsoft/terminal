@@ -46,6 +46,7 @@
     <ClInclude Include="BaseWindow.h" />
     <ClInclude Include="IslandWindow.h" />
     <ClInclude Include="NonClientIslandWindow.h" />
+    <ClInclude Include="TrayIconData.h" />
     <ClInclude Include="VirtualDesktopUtils.h" />
   </ItemGroup>
   <ItemGroup>

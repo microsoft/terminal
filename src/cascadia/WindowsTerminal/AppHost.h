@@ -93,6 +93,7 @@ private:
     void _HandleTrayIconPressed();
     void _ShowTrayContextMenu(const til::point coord);
     HMENU _CreateTrayContextMenu();
+    HMENU _CreateWindowSubmenu();
     void _TrayMenuItemSelected(const HMENU menu, const UINT menuItemIndex);
     void _DestroyTrayIcon();
 
