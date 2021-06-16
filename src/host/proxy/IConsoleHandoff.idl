@@ -20,11 +20,14 @@ typedef const CONSOLE_PORTABLE_ATTACH_MSG* PCCONSOLE_PORTABLE_ATTACH_MSG;
 
 [
     object,
-    uuid(2B607BC1-43EB-40C3-95AE-2856ADDB7F23)
+    uuid(E686C757-9A35-4A1C-B3CE-0BCC8B5C69F4)
 ] interface IConsoleHandoff : IUnknown
 {
     HRESULT EstablishHandoff([in, system_handle(sh_file)] HANDLE server,
                              [in, system_handle(sh_event)] HANDLE inputEvent,
-                             [in, ref] PCCONSOLE_PORTABLE_ATTACH_MSG msg);
+                             [in, ref] PCCONSOLE_PORTABLE_ATTACH_MSG msg,
+                             [in, system_handle(sh_pipe)] HANDLE signalPipe,
+                             [in, system_handle(sh_process)] HANDLE inboxProcess,
+                             [out, system_handle(sh_process)] HANDLE* process);
 };
 
