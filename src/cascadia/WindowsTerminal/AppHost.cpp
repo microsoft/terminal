@@ -1091,7 +1091,7 @@ HMENU AppHost::_CreateWindowSubmenu()
                 displayText = fmt::format(L"{} {} - <{}>", locWindow, id, locUnnamed);
             }
 
-            AppendMenu(hmenu, MF_STRING, id, displayText.c_str());
+            AppendMenu(hmenu, MF_STRING, (UINT_PTR)id, displayText.c_str());
         }
         return hmenu;
     }
