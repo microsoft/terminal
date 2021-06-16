@@ -647,10 +647,12 @@ namespace SettingsModelLocalTests
         const std::string bindings0String{ R"([ { "command": "closeWindow", "keys": "ctrl+a" } ])" };
         const std::string bindings1String{ R"([ { "command": { "action": "copy", "singleLine": true }, "keys": "ctrl+b" } ])" };
         const std::string bindings2String{ R"([ { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+c" } ])" };
+        const std::string bindings3String{ R"([ { "command": "commandPalette", "keys": "ctrl+shift+p" } ])" };
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
         const auto bindings1Json = VerifyParseSucceeded(bindings1String);
         const auto bindings2Json = VerifyParseSucceeded(bindings2String);
+        const auto bindings3Json = VerifyParseSucceeded(bindings3String);
 
         auto VerifyKeyChordEquality = [](const KeyChord& expected, const KeyChord& actual) {
             if (expected)
@@ -698,6 +700,14 @@ namespace SettingsModelLocalTests
 
             const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::NewTab, *args) };
             VerifyKeyChordEquality({ KeyModifiers::Ctrl, static_cast<int32_t>('C') }, kbd);
+        }
+        {
+            Log::Comment(L"command with hidden args");
+            actionMap->LayerJson(bindings3Json);
+            VERIFY_ARE_EQUAL(4u, actionMap->_KeyMap.size());
+
+            const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::ToggleCommandPalette) };
+            VerifyKeyChordEquality({ KeyModifiers::Ctrl | KeyModifiers::Shift, static_cast<int32_t>('P') }, kbd);
         }
     }
 }
