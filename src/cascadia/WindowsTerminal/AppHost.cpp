@@ -1058,7 +1058,7 @@ HMENU AppHost::_CreateTrayContextMenu()
         SetMenuInfo(hmenu, &mi);
 
         // Focus Current Terminal Window
-        AppendMenu(hmenu, MF_STRING, (UINT)TrayMenuItemAction::FocusTerminal, L"Focus Terminal");
+        AppendMenu(hmenu, MF_STRING, (UINT_PTR)TrayMenuItemAction::FocusTerminal, L"Focus Terminal");
         AppendMenu(hmenu, MF_SEPARATOR, 0, L"");
 
         // Submenu for Windows
@@ -1068,7 +1068,7 @@ HMENU AppHost::_CreateTrayContextMenu()
             submenuInfo.cbSize = sizeof(MENUINFO);
             submenuInfo.fMask = MIM_MENUDATA;
             submenuInfo.dwStyle = MNS_NOTIFYBYPOS;
-            submenuInfo.dwMenuData = (UINT)TrayMenuItemAction::SummonWindow;
+            submenuInfo.dwMenuData = (UINT_PTR)TrayMenuItemAction::SummonWindow;
             SetMenuInfo(windowSubmenu, &submenuInfo);
 
             AppendMenu(hmenu, MF_POPUP, (UINT_PTR)windowSubmenu, L"Windows");
