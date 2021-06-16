@@ -41,6 +41,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     struct Monarch : public MonarchT<Monarch>
     {
         Monarch();
+        Monarch(const uint64_t testPID);
         ~Monarch();
 
         uint64_t GetPID();
@@ -56,7 +57,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
 
     private:
-        Monarch(const uint64_t testPID);
         uint64_t _ourPID;
 
         uint64_t _nextPeasantID{ 1 };

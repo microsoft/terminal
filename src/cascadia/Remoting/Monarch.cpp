@@ -733,19 +733,27 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         {
             args.FoundMatch(false);
             uint64_t windowId = 0;
-            // If no name was provided, then just summon the MRU window.
-            if (searchedForName.empty())
+            if (!args.WindowID())
             {
-                // Use the value of the `desktop` arg to determine if we should
-                // limit to the current desktop (desktop:onCurrent) or not
-                // (desktop:any or desktop:toCurrent)
-                windowId = _getMostRecentPeasantID(args.OnCurrentDesktop(), false);
+                // If no name was provided, then just summon the MRU window.
+                if (searchedForName.empty())
+                {
+                    // Use the value of the `desktop` arg to determine if we should
+                    // limit to the current desktop (desktop:onCurrent) or not
+                    // (desktop:any or desktop:toCurrent)
+                    windowId = _getMostRecentPeasantID(args.OnCurrentDesktop(), false);
+                }
+                else
+                {
+                    // Try to find a peasant that currently has this name
+                    windowId = _lookupPeasantIdForName(searchedForName);
+                }
             }
             else
             {
-                // Try to find a peasant that currently has this name
-                windowId = _lookupPeasantIdForName(searchedForName);
+                windowId = args.WindowID();
             }
+
             if (auto targetPeasant{ _getPeasant(windowId) })
             {
                 targetPeasant.Summon(args.SummonBehavior());

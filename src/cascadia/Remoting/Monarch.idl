@@ -28,6 +28,7 @@ namespace Microsoft.Terminal.Remoting
 
         Boolean FoundMatch;
         SummonWindowBehavior SummonBehavior;
+        UInt64 WindowID;
     }
 
 

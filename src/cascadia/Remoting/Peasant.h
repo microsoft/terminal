@@ -16,6 +16,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     struct Peasant : public PeasantT<Peasant>
     {
         Peasant();
+        Peasant(const uint64_t testPID);
 
         void AssignID(uint64_t id);
         uint64_t GetID();
@@ -42,7 +43,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TYPED_EVENT(SummonRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior);
 
     private:
-        Peasant(const uint64_t testPID);
         uint64_t _ourPID;
 
         uint64_t _id{ 0 };

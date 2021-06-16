@@ -32,13 +32,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     void Peasant::AssignID(uint64_t id)
     {
         _id = id;
-
-        // Provide a default name if we're currently unnamed.
-        if (_WindowName.empty())
-        {
-            _WindowName = fmt::format(L"{} {}", RS_(L"Window"), _id);
-        }
     }
+
     uint64_t Peasant::GetID()
     {
         return _id;

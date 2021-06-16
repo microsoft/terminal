@@ -1052,8 +1052,9 @@ HMENU AppHost::_CreateTrayContextMenu()
     {
         MENUINFO mi{};
         mi.cbSize = sizeof(MENUINFO);
-        mi.fMask = MIM_STYLE | MIM_APPLYTOSUBMENUS;
+        mi.fMask = MIM_STYLE | MIM_APPLYTOSUBMENUS | MIM_MENUDATA;
         mi.dwStyle = MNS_NOTIFYBYPOS;
+        mi.dwMenuData = NULL;
         SetMenuInfo(hmenu, &mi);
 
         // Focus Current Terminal Window
@@ -1063,6 +1064,13 @@ HMENU AppHost::_CreateTrayContextMenu()
         // Submenu for Windows
         if (auto windowSubmenu = _CreateWindowSubmenu())
         {
+            MENUINFO smi{};
+            smi.cbSize = sizeof(MENUINFO);
+            smi.fMask = MIM_MENUDATA;
+            smi.dwStyle = MNS_NOTIFYBYPOS;
+            smi.dwMenuData = (UINT_PTR)TrayMenuItemAction::SummonWindow;
+            SetMenuInfo(windowSubmenu, &smi);
+
             AppendMenu(hmenu, MF_POPUP, (UINT_PTR)windowSubmenu, L"Windows");
             AppendMenu(hmenu, MF_SEPARATOR, 0, L"");
         }
@@ -1078,7 +1086,13 @@ HMENU AppHost::_CreateWindowSubmenu()
     {
         for (const auto [id, name] : _windowManager.GetPeasantNames())
         {
-            AppendMenu(hmenu, MF_STRING, (UINT_PTR)TrayMenuItemAction::SummonWindow, name.c_str());
+            winrt::hstring displayText = name;
+            if (name.empty())
+            {
+                displayText = fmt::format(L"Window ID {} - <unnamed window>", id);
+            }
+
+            AppendMenu(hmenu, MF_STRING, id, displayText.c_str());
         }
         return hmenu;
     }
@@ -1087,6 +1101,23 @@ HMENU AppHost::_CreateWindowSubmenu()
 
 void AppHost::_TrayMenuItemSelected(const HMENU menu, const UINT menuItemIndex)
 {
+    // Let's find out which menu/submenu we're lookin at.
+    MENUINFO mi{};
+    mi.cbSize = sizeof(MENUINFO);
+    mi.fMask = MIM_MENUDATA;
+    GetMenuInfo(menu, &mi);
+
+    if (mi.dwMenuData)
+    {
+        if ((TrayMenuItemAction)mi.dwMenuData == TrayMenuItemAction::SummonWindow)
+        {
+            Remoting::SummonWindowSelectionArgs args{};
+            args.WindowID(GetMenuItemID(menu, menuItemIndex));
+            args.SummonBehavior().ToggleVisibility(false);
+            _windowManager.SummonWindow(args);
+        }
+    }
+
     auto action = (TrayMenuItemAction)GetMenuItemID(menu, menuItemIndex);
     switch (action)
     {
@@ -1094,23 +1125,9 @@ void AppHost::_TrayMenuItemSelected(const HMENU menu, const UINT menuItemIndex)
     {
         Remoting::SummonWindowSelectionArgs args{};
         args.SummonBehavior().ToggleVisibility(false);
-        break;
-    }
-    case TrayMenuItemAction::SummonWindow:
-    {
-        WCHAR name[255];
-        GetMenuString(menu, menuItemIndex, name, 255, MF_BYPOSITION);
-
-        Remoting::SummonWindowSelectionArgs args{ name };
-        args.SummonBehavior().ToggleVisibility(false);
         _windowManager.SummonWindow(args);
         break;
     }
-    case TrayMenuItemAction::QuitAll:
-    {
-        break;
-    }
-
     }
 }
 
