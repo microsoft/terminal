@@ -5,7 +5,7 @@ constexpr std::wstring_view LocalAppDataAppsPath{ L"%LOCALAPPDATA%\\Microsoft\\W
 
 _TIL_INLINEPREFIX bool IsPackaged()
 {
-    static bool isPackaged = []() -> bool {
+    static const bool isPackaged = []() -> bool {
         try
         {
             const auto package = winrt::Windows::ApplicationModel::Package::Current();
@@ -16,7 +16,6 @@ _TIL_INLINEPREFIX bool IsPackaged()
             return false;
         }
     }();
-
     return isPackaged;
 }
 
@@ -33,7 +32,7 @@ _TIL_INLINEPREFIX bool IsPackaged()
 _TIL_INLINEPREFIX bool IsDevBuild()
 {
     // use C++11 magic statics to make sure we only do this once.
-    static bool isDevBuild = []() -> bool {
+    static const bool isDevBuild = []() -> bool {
         if (IsPackaged())
         {
             try
@@ -48,7 +47,6 @@ _TIL_INLINEPREFIX bool IsDevBuild()
 
         return true;
     }();
-
     return isDevBuild;
 }
 
