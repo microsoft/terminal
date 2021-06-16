@@ -43,6 +43,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, AlwaysShowTabs);
         INHERITABLE_SETTING(Boolean, ShowTitleInTitlebar);
         INHERITABLE_SETTING(Boolean, ConfirmCloseAllTabs);
+        INHERITABLE_SETTING(String, Language);
         INHERITABLE_SETTING(Windows.UI.Xaml.ElementTheme, Theme);
         INHERITABLE_SETTING(Microsoft.UI.Xaml.Controls.TabViewWidthMode, TabWidthMode);
         INHERITABLE_SETTING(Boolean, ShowTabsInTitlebar);

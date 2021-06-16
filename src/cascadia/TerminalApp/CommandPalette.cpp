@@ -14,6 +14,7 @@ using namespace winrt;
 using namespace winrt::TerminalApp;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
@@ -317,6 +318,13 @@ namespace winrt::TerminalApp::implementation
         }
         else if (key == VirtualKey::Enter)
         {
+            if (const auto& button = e.OriginalSource().try_as<Button>())
+            {
+                // Let the button handle the Enter key so an eventually attached click handler will be called
+                e.Handled(false);
+                return;
+            }
+
             const auto selectedCommand = _filteredActionsView().SelectedItem();
             const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>();
             _dispatchCommand(filteredCommand);
@@ -509,6 +517,7 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_moveBackButtonClicked(Windows::Foundation::IInspectable const& /*sender*/,
                                                 Windows::UI::Xaml::RoutedEventArgs const&)
     {
+        _PreviewActionHandlers(*this, nullptr);
         _nestedActionStack.Clear();
         ParentCommandName(L"");
         _currentNestedCommands.Clear();
@@ -635,7 +644,13 @@ namespace winrt::TerminalApp::implementation
                     // palette like the Tab Switcher will be able to have the last laugh.
                     _close();
 
-                    _DispatchCommandRequestedHandlers(*this, actionPaletteItem.Command());
+                    // But make an exception for the Toggle Command Palette action: we don't want the dispatch
+                    // make the command palette - that was just closed - visible again.
+                    // All other actions can just be dispatched.
+                    if (actionPaletteItem.Command().ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
+                    {
+                        _DispatchCommandRequestedHandlers(*this, actionPaletteItem.Command());
+                    }
 
                     TraceLoggingWrite(
                         g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider

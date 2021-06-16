@@ -74,7 +74,8 @@ public:                                                   \
     _BASE_OBSERVABLE_PROJECTED_SETTING(target, name)
 
 // Defines a basic observable property that uses the _NotifyChanges
-// system from ViewModelHelper.
+// system from ViewModelHelper. This is very similar to WINRT_OBSERVABLE_PROPERTY
+// except it leverages _NotifyChanges.
 #define VIEW_MODEL_OBSERVABLE_PROPERTY(type, name, ...) \
 public:                                                 \
     type name() const noexcept { return _##name; };     \
