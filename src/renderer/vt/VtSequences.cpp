@@ -252,7 +252,7 @@ using namespace Microsoft::Console::Render;
     // An example string with max length would be "\x1b[38;5;128m", which has length = 11.
     char buf[11];
     char* end = fmt::format_to(std::begin(buf), FMT_COMPILE("\x1b[{};5;{}m"), fIsForeground ? 38 : 48, ::Xterm256ToWindowsIndex(index));
-    return _Write({buf, static_cast<std::string_view::size_type>(end - buf)});
+    return _Write({ buf, static_cast<std::string_view::size_type>(end - buf) });
 }
 
 // Method Description:
