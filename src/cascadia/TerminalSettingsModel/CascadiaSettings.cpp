@@ -2,21 +2,14 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include <argb.h>
-#include <conattrs.hpp>
-#include <io.h>
-#include <fcntl.h>
 #include "CascadiaSettings.h"
-#include "../../types/inc/utils.hpp"
-#include "../../inc/DefaultSettings.h"
-#include "Utils.h"
-#include "LibraryResources.h"
+#include "CascadiaSettings.g.cpp"
 
+#include <LibraryResources.h>
+
+#include "AzureCloudShellGenerator.h"
 #include "PowershellCoreProfileGenerator.h"
 #include "WslDistroGenerator.h"
-#include "AzureCloudShellGenerator.h"
-
-#include "CascadiaSettings.g.cpp"
 
 using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal;
