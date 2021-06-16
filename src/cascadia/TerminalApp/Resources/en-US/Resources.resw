@@ -637,4 +637,16 @@
   <data name="CommandPaletteMenuItem" xml:space="preserve">
     <value>Command Palette</value>
   </data>
+  <data name="AppName" xml:space="preserve">
+    <value>Windows Terminal</value>
+  </data>
+  <data name="TrayIconFocusTerminal" xml:space="preserve">
+    <value>Focus Terminal</value>
+  </data>
+  <data name="TrayIconUnnamedWindow" xml:space="preserve">
+    <value>unnamed window</value>
+  </data>
+  <data name="TrayIconWindowSubmenu" xml:space="preserve">
+    <value>Windows</value>
+  </data>
 </root>

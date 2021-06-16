@@ -1001,7 +1001,7 @@ void AppHost::_UpdateTrayIcon()
             nid.uCallbackMessage = CM_NOTIFY_FROM_TRAY;
 
             nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(true));
-            StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), L"Windows Terminal");
+            StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), RS_(L"AppName").c_str());
             nid.uFlags = NIF_MESSAGE | NIF_SHOWTIP | NIF_TIP | NIF_ICON;
             Shell_NotifyIcon(NIM_ADD, &nid);
 
@@ -1058,7 +1058,7 @@ HMENU AppHost::_CreateTrayContextMenu()
         SetMenuInfo(hmenu, &mi);
 
         // Focus Current Terminal Window
-        AppendMenu(hmenu, MF_STRING, (UINT_PTR)TrayMenuItemAction::FocusTerminal, L"Focus Terminal");
+        AppendMenu(hmenu, MF_STRING, (UINT_PTR)TrayMenuItemAction::FocusTerminal, RS_(L"TrayIconFocusTerminal").c_str());
         AppendMenu(hmenu, MF_SEPARATOR, 0, L"");
 
         // Submenu for Windows
@@ -1071,7 +1071,7 @@ HMENU AppHost::_CreateTrayContextMenu()
             submenuInfo.dwMenuData = (UINT_PTR)TrayMenuItemAction::SummonWindow;
             SetMenuInfo(windowSubmenu, &submenuInfo);
 
-            AppendMenu(hmenu, MF_POPUP, (UINT_PTR)windowSubmenu, L"Windows");
+            AppendMenu(hmenu, MF_POPUP, (UINT_PTR)windowSubmenu, RS_(L"TrayIconWindowSubmenu").c_str());
         }
     }
     return hmenu;
@@ -1081,12 +1081,14 @@ HMENU AppHost::_CreateWindowSubmenu()
 {
     if (auto hmenu = CreatePopupMenu())
     {
+        auto locWindow = RS_(L"WindowIdLabel");
+        auto locUnnamed = RS_(L"TrayIconUnnamedWindow");
         for (const auto [id, name] : _windowManager.GetPeasantNames())
         {
             winrt::hstring displayText = name;
             if (name.empty())
             {
-                displayText = fmt::format(L"Window ID {} - <unnamed window>", id);
+                displayText = fmt::format(L"{} {} - <{}>", locWindow, id, locUnnamed);
             }
 
             AppendMenu(hmenu, MF_STRING, id, displayText.c_str());
