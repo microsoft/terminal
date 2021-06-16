@@ -2227,7 +2227,7 @@ namespace RemotingUnitTests
         }
 
         Log::Comment(L"Create a mock IVirtualDesktopManager to handle checking if a window is on a given desktop");
-auto manager = winrt::make_self<MockDesktopManager>();
+        auto manager = winrt::make_self<MockDesktopManager>();
         m0->_desktopManager = manager.try_as<IVirtualDesktopManager>();
 
         auto firstCallback = [&](HWND h, BOOL* result) -> HRESULT {
