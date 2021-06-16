@@ -64,7 +64,7 @@
     DependsOnTargets="_GenerateBranchAndBrandingCache">
     <MakeDir Directories="$(OpenConsoleCommonOutDir)\inc" />
     <Exec
-      Command="powershell -NoProfile -Command &quot;$(SolutionDir)\tools\Generate-FeatureStagingHeader.ps1&quot; -Path &quot;%(FeatureFlagFile.FullPath)&quot; -Branding $(_WTBrandingName)"
+      Command="powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy ByPass -Command &quot;$(SolutionDir)\tools\Generate-FeatureStagingHeader.ps1&quot; -Path &quot;%(FeatureFlagFile.FullPath)&quot; -Branding $(_WTBrandingName)"
       ConsoleToMsBuild="true"
       StandardOutputImportance="low">
       <Output TaskParameter="ConsoleOutput" ItemName="_FeatureFlagFileLines" />
