@@ -1058,7 +1058,7 @@ HMENU AppHost::_CreateTrayContextMenu()
         SetMenuInfo(hmenu, &mi);
 
         // Focus Current Terminal Window
-        AppendMenu(hmenu, MF_STRING, (UINT_PTR)TrayMenuItemAction::FocusTerminal, L"Focus Terminal");
+        AppendMenu(hmenu, MF_STRING, (UINT)TrayMenuItemAction::FocusTerminal, L"Focus Terminal");
         AppendMenu(hmenu, MF_SEPARATOR, 0, L"");
 
         // Submenu for Windows
@@ -1068,14 +1068,11 @@ HMENU AppHost::_CreateTrayContextMenu()
             smi.cbSize = sizeof(MENUINFO);
             smi.fMask = MIM_MENUDATA;
             smi.dwStyle = MNS_NOTIFYBYPOS;
-            smi.dwMenuData = (UINT_PTR)TrayMenuItemAction::SummonWindow;
+            smi.dwMenuData = (UINT)TrayMenuItemAction::SummonWindow;
             SetMenuInfo(windowSubmenu, &smi);
 
             AppendMenu(hmenu, MF_POPUP, (UINT_PTR)windowSubmenu, L"Windows");
-            AppendMenu(hmenu, MF_SEPARATOR, 0, L"");
         }
-
-        AppendMenu(hmenu, MF_STRING, (UINT_PTR)TrayMenuItemAction::QuitAll, L"Close All Windows");
     }
     return hmenu;
 }

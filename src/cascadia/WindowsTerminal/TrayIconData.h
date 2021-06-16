@@ -5,6 +5,5 @@
 enum class TrayMenuItemAction
 {
     FocusTerminal,
-    SummonWindow,
-    QuitAll
+    SummonWindow
 };
