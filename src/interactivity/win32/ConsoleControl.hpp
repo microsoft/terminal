@@ -3,7 +3,7 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- userdpiapi.hpp
+- ConsoleControl.hpp
 
 Abstract:
 - This module is used for abstracting calls to private user32 DLL APIs to break the build system dependency.

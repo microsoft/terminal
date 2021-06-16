@@ -53,6 +53,7 @@
 // WIL
 #include <wil/Common.h>
 #include <wil/Result.h>
+#include <wil/nt_result_macros.h>
 #include <wil/resource.h>
 #include <wil/wistd_memory.h>
 #include <wil/stl.h>
