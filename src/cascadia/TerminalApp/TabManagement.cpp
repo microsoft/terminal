@@ -623,8 +623,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
-            auto tab{ _tabs.GetAt(*index) };
-            _HandleCloseTabRequested(tab);
+            _CloseTabAtIndex(*index);
         }
     }
 
@@ -672,6 +671,21 @@ namespace winrt::TerminalApp::implementation
             {
                 _HandleCloseTabRequested(tab);
             }
+        }
+    }
+
+    // Method Description:
+    // - Close the tab at the given index.
+    void TerminalPage::_CloseTabAtIndex(uint32_t index)
+    {
+        if (index >= _tabs.Size())
+        {
+            return;
+        }
+        auto tab{ _tabs.GetAt(index) };
+        if (tab)
+        {
+            _HandleCloseTabRequested(tab);
         }
     }
 

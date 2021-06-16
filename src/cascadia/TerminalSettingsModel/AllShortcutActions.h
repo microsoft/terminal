@@ -81,6 +81,7 @@
     ON_ALL_ACTIONS_WITH_ARGS(AdjustFontSize)       \
     ON_ALL_ACTIONS_WITH_ARGS(CloseOtherTabs)       \
     ON_ALL_ACTIONS_WITH_ARGS(CloseTabsAfter)       \
+    ON_ALL_ACTIONS_WITH_ARGS(CloseTab)             \
     ON_ALL_ACTIONS_WITH_ARGS(CopyText)             \
     ON_ALL_ACTIONS_WITH_ARGS(ExecuteCommandline)   \
     ON_ALL_ACTIONS_WITH_ARGS(FindMatch)            \
