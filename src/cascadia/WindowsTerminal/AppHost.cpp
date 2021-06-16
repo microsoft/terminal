@@ -965,7 +965,9 @@ void AppHost::_MinimizeToTrayRequested(const winrt::Windows::Foundation::IInspec
 void AppHost::_HandleTrayIconPressed()
 {
     // No name in the args means summon the mru window.
-    _windowManager.SummonWindow({});
+    Remoting::SummonWindowSelectionArgs args{};
+    args.SummonBehavior().ToggleVisibility(false);
+    _windowManager.SummonWindow(args);
 }
 
 // Method Description:
@@ -1088,7 +1090,8 @@ void AppHost::_TrayMenuItemSelected(const HMENU menu, const UINT menuItemIndex)
     {
     case TrayMenuItemAction::FocusTerminal:
     {
-        _windowManager.SummonWindow({});
+        Remoting::SummonWindowSelectionArgs args{};
+        args.SummonBehavior().ToggleVisibility(false);
         break;
     }
     case TrayMenuItemAction::SummonWindow:
