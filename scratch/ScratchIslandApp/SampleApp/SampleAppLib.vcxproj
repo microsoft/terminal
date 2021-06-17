@@ -177,5 +177,5 @@
     </ItemGroup>
   </Target>
 
-  <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
+  <Import Project="..\..\..\build\rules\CollectWildcardResources.targets" />
 </Project>

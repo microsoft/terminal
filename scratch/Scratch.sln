@@ -3,16 +3,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31205.134
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "Package", "scratch\ScratchIslandApp\Package\Package.wapproj", "{CF31505E-3BAE-4C0A-81D7-F1EB279F40BB}"
+Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "Package", "ScratchIslandApp\Package\Package.wapproj", "{CF31505E-3BAE-4C0A-81D7-F1EB279F40BB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SampleAppLib", "scratch\ScratchIslandApp\SampleApp\SampleAppLib.vcxproj", "{A4394404-37F7-41C1-802B-49788D3720E3}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SampleAppLib", "ScratchIslandApp\SampleApp\SampleAppLib.vcxproj", "{A4394404-37F7-41C1-802B-49788D3720E3}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SampleApp", "scratch\ScratchIslandApp\SampleApp\dll\SampleApp.vcxproj", "{26C51792-41A3-4FE0-AB5E-8B69D557BF91}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SampleApp", "ScratchIslandApp\SampleApp\dll\SampleApp.vcxproj", "{26C51792-41A3-4FE0-AB5E-8B69D557BF91}"
 	ProjectSection(ProjectDependencies) = postProject
 		{A4394404-37F7-41C1-802B-49788D3720E3} = {A4394404-37F7-41C1-802B-49788D3720E3}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WindowExe", "scratch\ScratchIslandApp\WindowExe\WindowExe.vcxproj", "{B4427499-9FDE-4208-B456-5BC580637633}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WindowExe", "ScratchIslandApp\WindowExe\WindowExe.vcxproj", "{B4427499-9FDE-4208-B456-5BC580637633}"
 	ProjectSection(ProjectDependencies) = postProject
 		{26C51792-41A3-4FE0-AB5E-8B69D557BF91} = {26C51792-41A3-4FE0-AB5E-8B69D557BF91}
 	EndProjectSection
@@ -29,9 +29,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common Props", "Common Prop
 		src\wap-common.build.pre.props = src\wap-common.build.pre.props
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fmt", "src\dep\fmt\fmt.vcxproj", "{6BAE5851-50D5-4934-8D5E-30361A8A40F3}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fmt", "..\src\dep\fmt\fmt.vcxproj", "{6BAE5851-50D5-4934-8D5E-30361A8A40F3}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Types", "src\types\lib\types.vcxproj", "{18D09A24-8240-42D6-8CB6-236EEE820263}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Types", "..\src\types\lib\types.vcxproj", "{18D09A24-8240-42D6-8CB6-236EEE820263}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dependencies", "dependencies", "{75AC9360-76FD-4ABC-AFEC-EF342BD2B3E9}"
 EndProject
