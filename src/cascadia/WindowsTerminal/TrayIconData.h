@@ -2,8 +2,10 @@
 
 #include "pch.h"
 
+// This enumerates all the possible actions
+// that our tray icon context menu could do.
 enum class TrayMenuItemAction
 {
-    FocusTerminal,
+    FocusTerminal, // Focus the MRU terminal.
     SummonWindow
 };

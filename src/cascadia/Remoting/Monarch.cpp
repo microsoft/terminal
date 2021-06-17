@@ -771,6 +771,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
     }
 
+    // Method Description:
+    // - This method creates a map of peasant IDs to peasant names
+    //   while removing dead peasants.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - A map of peasant IDs to their names.
     Windows::Foundation::Collections::IMap<uint64_t, winrt::hstring> Monarch::GetPeasantNames()
     {
         auto names = winrt::single_threaded_map<uint64_t, winrt::hstring>();

@@ -1023,6 +1023,13 @@ void AppHost::_UpdateTrayIcon()
     }
 }
 
+// Method Description:
+// - This creates our context menu and displays it at the given
+//   screen coordinates.
+// Arguments:
+// - The coordinates where we should be showing the context menu.
+// Return Value:
+// - <none>
 void AppHost::_ShowTrayContextMenu(const til::point coord)
 {
     if (auto hmenu = _CreateTrayContextMenu())
@@ -1031,7 +1038,11 @@ void AppHost::_ShowTrayContextMenu(const til::point coord)
         // TrackPopupMenuEx or else the menu won't dismiss when clicking away.
         SetForegroundWindow(_window->GetHandle());
 
+        // User can select menu items with the left and right buttons.
         UINT uFlags = TPM_RIGHTBUTTON;
+
+        // Nonzero if drop-down menus are right-aligned with the corresponding menu-bar item
+        // 0 if the menus are left-aligned.
         if (GetSystemMetrics(SM_MENUDROPALIGNMENT) != 0)
         {
             uFlags |= TPM_RIGHTALIGN;
@@ -1045,6 +1056,12 @@ void AppHost::_ShowTrayContextMenu(const til::point coord)
     }
 }
 
+// Method Description:
+// - This creates the context menu for our tray icon.
+// Arguments:
+// - <none>
+// Return Value:
+// - The handle to the newly created context menu.
 HMENU AppHost::_CreateTrayContextMenu()
 {
     auto hmenu = CreatePopupMenu();
@@ -1077,6 +1094,13 @@ HMENU AppHost::_CreateTrayContextMenu()
     return hmenu;
 }
 
+// Method Description:
+// - Create a menu with a menu item for each window available to summon.
+//   If a window is unnamed, we'll use its ID but still mention that it's unnamed.
+// Arguments:
+// - <none>
+// Return Value:
+// - The handle to the newly created window submenu.
 HMENU AppHost::_CreateWindowSubmenu()
 {
     if (auto hmenu = CreatePopupMenu())
@@ -1098,6 +1122,14 @@ HMENU AppHost::_CreateWindowSubmenu()
     return nullptr;
 }
 
+// Method Description:
+// - This is the handler for when one of the menu items are selected within
+//   the tray icon's context menu.
+// Arguments:
+// - menu: The handle to the menu that holds the menu item that was selected.
+// - menuItemIndex: The index of the menu item within the given menu.
+// Return Value:
+// - <none>
 void AppHost::_TrayMenuItemSelected(const HMENU menu, const UINT menuItemIndex)
 {
     // Let's find out which menu/submenu we're looking at.
@@ -1130,6 +1162,12 @@ void AppHost::_TrayMenuItemSelected(const HMENU menu, const UINT menuItemIndex)
     }
 }
 
+// Method Description:
+// - Deletes our tray icon if we have one.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void AppHost::_DestroyTrayIcon()
 {
     if (_trayIconData)
