@@ -3,8 +3,6 @@
 
 #include "precomp.h"
 
-#include <future>
-
 #include "PtySignalInputThread.hpp"
 
 #include "output.h"
