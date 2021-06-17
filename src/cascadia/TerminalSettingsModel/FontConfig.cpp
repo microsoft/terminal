@@ -11,9 +11,12 @@ using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
 static constexpr std::string_view FontInfoKey{ "font" };
-static constexpr std::string_view FontFaceKey{ "fontFace" };
-static constexpr std::string_view FontSizeKey{ "fontSize" };
-static constexpr std::string_view FontWeightKey{ "fontWeight" };
+static constexpr std::string_view FontFaceKey{ "face" };
+static constexpr std::string_view FontSizeKey{ "size" };
+static constexpr std::string_view FontWeightKey{ "weight" };
+static constexpr std::string_view LegacyFontFaceKey{ "fontFace" };
+static constexpr std::string_view LegacyFontSizeKey{ "fontSize" };
+static constexpr std::string_view LegacyFontWeightKey{ "fontWeight" };
 
 winrt::Microsoft::Terminal::Settings::Model::implementation::FontConfig::FontConfig(const winrt::weak_ref<Profile> sourceProfile) :
     _sourceProfile(sourceProfile)
@@ -67,9 +70,9 @@ void FontConfig::LayerJson(const Json::Value& json)
     else
     {
         // No font object is defined
-        JsonUtils::GetValueForKey(json, FontFaceKey, _FontFace);
-        JsonUtils::GetValueForKey(json, FontSizeKey, _FontSize);
-        JsonUtils::GetValueForKey(json, FontWeightKey, _FontWeight);
+        JsonUtils::GetValueForKey(json, LegacyFontFaceKey, _FontFace);
+        JsonUtils::GetValueForKey(json, LegacyFontSizeKey, _FontSize);
+        JsonUtils::GetValueForKey(json, LegacyFontWeightKey, _FontWeight);
     }
 }
 
