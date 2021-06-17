@@ -1106,7 +1106,7 @@ HMENU AppHost::_CreateWindowSubmenu()
     if (auto hmenu = CreatePopupMenu())
     {
         auto locWindow = RS_(L"WindowIdLabel");
-        auto locUnnamed = RS_(L"TrayIconUnnamedWindow");
+        auto locUnnamed = RS_(L"UnnamedWindowName");
         for (const auto [id, name] : _windowManager.GetPeasantNames())
         {
             winrt::hstring displayText = name;
