@@ -114,7 +114,7 @@ try
     std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
     modulePath.replace_filename(WindowsTerminalExe);
     // WindowsTerminal.exe,-101 will be the first icon group in WT
-    // We're using WindowsTerminal here explicitly, and not wt (from _getExePath), because
+    // We're using WindowsTerminal here explicitly, and not wt (from GetWtExePath), because
     // WindowsTerminal is the only one built with the right icons.
     const auto resource{ modulePath.wstring() + L",-101" };
     return SHStrDupW(resource.c_str(), ppszIcon);

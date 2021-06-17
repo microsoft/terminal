@@ -16,6 +16,7 @@ namespace Microsoft.Terminal.Settings.Editor
         GlobalAppearancePageNavigationState State { get; };
 
         static String LanguageDisplayConverter(String tag);
+        Boolean LanguageSelectorAvailable { get; };
         Windows.Foundation.Collections.IObservableVector<String> LanguageList { get; };
         IInspectable CurrentLanguage;
 
