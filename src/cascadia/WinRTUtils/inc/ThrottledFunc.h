@@ -109,23 +109,21 @@ private:
     try
     {
         auto weakSelf = this->weak_from_this();
+        co_await winrt::resume_foreground(_dispatcher);
 
         // If this function is the last holder of the shared_ptr<throttled_func>,
         // we'll deallocate it when exiting the function scope.
-        // When the _timer member then deallocates it'll call:
+        // When the _timer member deallocates it'll call:
         //   WaitForThreadpoolTimerCallbacks(_timer, true);
-        // 
+        //
         // Normally this ensures that the this pointer we use here,
         // remains valid as long as the throttled_func exists.
         // But in this case it'll lead to a deadlock, as WaitForThreadpoolTimerCallbacks,
         // waits for the completion of the callback we're currently in.
-        // 
+        //
         // --> DisassociateCurrentThreadFromCallback to the rescue.
         // NOTE: But only disassociate, after stopping all access to the raw this pointer.
-
         DisassociateCurrentThreadFromCallback(instance);
-
-        co_await winrt::resume_foreground(_dispatcher);
 
         if (auto self{ weakSelf.lock() })
         {
