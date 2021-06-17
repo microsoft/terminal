@@ -66,7 +66,7 @@ void PtySignalInputThread::ConnectConsole() noexcept
     _consoleConnected = true;
     if (_earlyResize)
     {
-        _DoResizeWindow(_earlyResize.value());
+        _DoResizeWindow(*_earlyResize);
     }
 }
 
