@@ -1,6 +1,17 @@
 /*++
 Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
+
+Module Name:
+- FontConfig
+
+Abstract:
+- The implementation of the FontConfig winrt class. Provides settings related
+  to the font settings of the terminal, for the terminal control.
+
+Author(s):
+- Pankaj Bhojwani - June 2021
+
 --*/
 
 #pragma once
