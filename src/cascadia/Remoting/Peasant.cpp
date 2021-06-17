@@ -8,8 +8,6 @@
 #include "Peasant.g.cpp"
 #include "../../types/inc/utils.hpp"
 
-#include <LibraryResources.h>
-
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Windows::Foundation;
