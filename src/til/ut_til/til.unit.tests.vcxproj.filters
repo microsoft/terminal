@@ -9,6 +9,7 @@
     <ClCompile Include="BitmapTests.cpp" />
     <ClCompile Include="CoalesceTests.cpp" />
     <ClCompile Include="ColorTests.cpp" />
+    <ClCompile Include="latch.cpp" />
     <ClCompile Include="MathTests.cpp" />
     <ClCompile Include="mutex.cpp" />
     <ClCompile Include="OperatorTests.cpp" />
@@ -21,7 +22,7 @@
     <ClCompile Include="SPSCTests.cpp" />
     <ClCompile Include="StaticMapTests.cpp" />
     <ClCompile Include="string.cpp" />
-    <ClCompile Include="throttling_func.cpp" />
+    <ClCompile Include="throttled_func.cpp" />
     <ClCompile Include="u8u16convertTests.cpp" />
   </ItemGroup>
   <ItemGroup>

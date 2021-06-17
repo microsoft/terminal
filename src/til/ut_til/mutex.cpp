@@ -23,7 +23,7 @@ class MutexTests
             int bar;
         };
 
-        til::shared_mutex<TestData> mutex{ TestData{ 1, 2 } };
+        const til::shared_mutex<TestData> mutex{ TestData{ 1, 2 } };
 
         {
             auto lock = mutex.lock();
