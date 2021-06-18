@@ -25,22 +25,21 @@
 
 #include <wil/cppwinrt.h>
 
-#include <unknwn.h>
-
-#include <hstring.h>
-
-#include <winrt/Windows.ApplicationModel.h>
 #include <winrt/Windows.ApplicationModel.AppExtensions.h>
-#include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.ApplicationModel.h>
 #include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Storage.h>
+#include <winrt/Windows.System.h>
 #include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.UI.Xaml.Media.h>
-#include <winrt/Windows.Storage.h>
-
-#include <winrt/Windows.System.h>
 
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
+
+#include <winrt/Microsoft.Terminal.Core.h>
+#include <winrt/Microsoft.Terminal.Control.h>
+#include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
 // Including TraceLogging essentials for the binary
 #include <TraceLoggingProvider.h>
@@ -51,12 +50,6 @@ TRACELOGGING_DECLARE_PROVIDER(g_hSettingsModelProvider);
 
 // JsonCpp
 #include <json.h>
-
-#include <shellapi.h>
-
-#include <winrt/Microsoft.Terminal.Core.h>
-#include <winrt/Microsoft.Terminal.Control.h>
-#include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"

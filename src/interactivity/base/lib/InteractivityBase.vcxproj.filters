@@ -30,6 +30,12 @@
     <ClCompile Include="..\EventSynthesis.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\RemoteConsoleControl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HostSignalInputThread.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\InteractivityFactory.hpp">
@@ -40,9 +46,6 @@
     </ClInclude>
     <ClInclude Include="..\..\inc\ServiceLocator.hpp">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ApiDetector.hpp">
-      <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\IAccessibilityNotifier.hpp">
       <Filter>Header Files</Filter>
@@ -78,6 +81,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\EventSynthesis.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RemoteConsoleControl.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ApiDetector.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HostSignalInputThread.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

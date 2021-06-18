@@ -104,6 +104,24 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
 
 #pragma region Set Methods
 
+[[nodiscard]] NTSTATUS ServiceLocator::SetConsoleControlInstance(_In_ std::unique_ptr<IConsoleControl>&& control)
+{
+    if (s_consoleControl)
+    {
+        NT_RETURN_NTSTATUS(STATUS_INVALID_HANDLE);
+    }
+    else if (!control)
+    {
+        NT_RETURN_NTSTATUS(STATUS_INVALID_PARAMETER);
+    }
+    else
+    {
+        s_consoleControl = std::move(control);
+    }
+
+    return STATUS_SUCCESS;
+}
+
 [[nodiscard]] NTSTATUS ServiceLocator::SetConsoleWindowInstance(_In_ IConsoleWindow* window)
 {
     NTSTATUS status = STATUS_SUCCESS;
