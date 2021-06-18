@@ -26,7 +26,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 // - Creates the PTY Signal Input Thread.
 // Arguments:
 // - hPipe - a handle to the file representing the read end of the VT pipe.
-PtySignalInputThread::PtySignalInputThread(_In_ wil::unique_hfile hPipe) :
+PtySignalInputThread::PtySignalInputThread(wil::unique_hfile hPipe) :
     _hFile{ std::move(hPipe) },
     _hThread{},
     _pConApi{ std::make_unique<ConhostInternalGetSet>(ServiceLocator::LocateGlobals().getConsoleInformation()) },
@@ -76,7 +76,7 @@ void PtySignalInputThread::ConnectConsole() noexcept
 // - The ThreadProc for the PTY Signal Input Thread.
 // Return Value:
 // - S_OK if the thread runs to completion.
-// - Otherwise it may cause an application termination another route and never return.
+// - Otherwise it may cause an application termination and never return.
 [[nodiscard]] HRESULT PtySignalInputThread::_InputThread()
 {
     unsigned short signalId;
