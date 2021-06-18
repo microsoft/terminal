@@ -52,7 +52,7 @@ namespace ControlUnitTests
         WINRT_PROPERTY(winrt::hstring, FontFace, L"Consolas");
         WINRT_PROPERTY(int32_t, FontSize, DEFAULT_FONT_SIZE);
 
-        WINRT_PROPERTY(winrt::Windows::UI::Text::FontWeight, FontWeight);
+        WINRT_PROPERTY(winrt::Windows::UI::Text::FontWeight, FontWeight, 400);
 
         WINRT_PROPERTY(winrt::hstring, BackgroundImage);
         WINRT_PROPERTY(double, BackgroundImageOpacity, 1.0);
