@@ -451,7 +451,10 @@ CATCH_RETURN()
 // - None
 void DxFontRenderData::_BuildFontRenderData(const FontInfoDesired& desired, FontInfo& actual, const int dpi)
 {
-    const auto face = DefaultFontFace();
+    std::wstring fontLocaleName = UserLocaleName();
+    // This is the first attempt to resolve font face after 'UpdateFont'.
+    // Note that the following line may cause changes of the font properties in _defaultFontInfo.
+    const Microsoft::WRL::ComPtr<IDWriteFontFace1> face = _defaultFontInfo.ResolveFontFaceWithFallback(_dwriteFactory.Get(), fontLocaleName);
 
     DWRITE_FONT_METRICS1 fontMetrics;
     face->GetMetrics(&fontMetrics);
