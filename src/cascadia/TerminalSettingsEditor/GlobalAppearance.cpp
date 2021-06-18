@@ -8,6 +8,7 @@
 #include "GlobalAppearancePageNavigationState.g.cpp"
 
 #include <LibraryResources.h>
+#include <WtExeUtils.h>
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -47,6 +48,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return language.NativeName();
     }
 
+    // Returns whether the language selector is available/shown.
+    //
+    // winrt::Windows::Globalization::ApplicationLanguages::PrimaryLanguageOverride()
+    // doesn't work for unpackaged applications. The corresponding code in TerminalApp is disabled.
+    // It would be confusing for our users if we presented a dysfunctional language selector.
+    bool GlobalAppearance::LanguageSelectorAvailable()
+    {
+        return IsPackaged();
+    }
+
     // Returns the list of languages the user may override the application language with.
     // The returned list are BCP 47 language tags like {"und", "en-US", "de-DE", "es-ES", ...}.
     // "und" is short for "undefined" and is synonymous for "Use system language" in this code.
@@ -54,6 +65,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (_languageList)
         {
+            return _languageList;
+        }
+
+        if (!LanguageSelectorAvailable())
+        {
+            _languageList = {};
             return _languageList;
         }
 
@@ -144,30 +161,41 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::Windows::Foundation::IInspectable GlobalAppearance::CurrentLanguage()
     {
-        if (_currentLanguage.empty())
+        if (_currentLanguage)
         {
-            _currentLanguage = winrt::Windows::Globalization::ApplicationLanguages::PrimaryLanguageOverride();
-            if (_currentLanguage.empty())
-            {
-                _currentLanguage = systemLanguageTag;
-            }
+            return _currentLanguage;
         }
 
-        return winrt::box_value(_currentLanguage);
+        if (!LanguageSelectorAvailable())
+        {
+            _currentLanguage = {};
+            return _currentLanguage;
+        }
+
+        // NOTE: PrimaryLanguageOverride throws if this instance is unpackaged.
+        auto currentLanguage = winrt::Windows::Globalization::ApplicationLanguages::PrimaryLanguageOverride();
+        if (currentLanguage.empty())
+        {
+            currentLanguage = systemLanguageTag;
+        }
+
+        _currentLanguage = winrt::box_value(currentLanguage);
+        return _currentLanguage;
     }
 
     void GlobalAppearance::CurrentLanguage(const winrt::Windows::Foundation::IInspectable& tag)
     {
-        _currentLanguage = winrt::unbox_value<winrt::hstring>(tag);
+        _currentLanguage = tag;
 
+        const auto currentLanguage = winrt::unbox_value<winrt::hstring>(_currentLanguage);
         const auto globals = _State.Globals();
-        if (_currentLanguage == systemLanguageTag)
+        if (currentLanguage == systemLanguageTag)
         {
             globals.ClearLanguage();
         }
         else
         {
-            globals.Language(_currentLanguage);
+            globals.Language(currentLanguage);
         }
     }
 }
