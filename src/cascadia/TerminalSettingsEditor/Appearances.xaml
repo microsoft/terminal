@@ -10,8 +10,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:model="using:Microsoft.Terminal.Settings.Model"
              xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-             mc:Ignorable="d"
-             IsTabStop="False">
+             IsTabStop="False"
+             mc:Ignorable="d">
 
     <UserControl.Resources>
         <ResourceDictionary>
