@@ -333,7 +333,7 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, AltGrAliasingKey, _AltGrAliasing);
     JsonUtils::GetValueForKey(json, TabTitleKey, _TabTitle);
 
-    // Control Settings    
+    // Control Settings
     JsonUtils::GetValueForKey(json, ConnectionTypeKey, _ConnectionType);
     JsonUtils::GetValueForKey(json, CommandlineKey, _Commandline);
     JsonUtils::GetValueForKey(json, AcrylicTransparencyKey, _AcrylicOpacity);
