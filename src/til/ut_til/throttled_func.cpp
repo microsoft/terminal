@@ -28,7 +28,7 @@ class ThrottledFuncTests
             latch.count_down();
 
             // This will ensure that the callback is called even if we
-            // invoke the throtted_func from itside the callback itself.
+            // invoke the throttled_func from inside the callback itself.
             if (reschedule)
             {
                 tf->operator()(false);
