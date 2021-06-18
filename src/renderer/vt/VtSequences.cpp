@@ -269,8 +269,8 @@ using namespace Microsoft::Console::Render;
     // Worst case scenario: "\x1b[38;2;128;128;128m", which has length = 19 + \0.
     // Use small_vector as MSVC's SSO only buffers up to 15 characters.
     boost::container::small_vector<char, 20u> buf;
-    const auto end = fmt::format_to(std::begin(buf), FMT_COMPILE("\x1b[{};2;{};{};{}m"), fIsForeground ? 38 : 48, r, g, b);
-    return _Write({ buf.data(), static_cast<size_t>(end - buf.begin()) });
+    const auto end = fmt::format_to(std::back_inserter(buf), FMT_COMPILE("\x1b[{};2;{};{};{}m"), fIsForeground ? 38 : 48, r, g, b);
+    return _Write({ buf.data(), buf.size() });
 }
 
 // Method Description:
