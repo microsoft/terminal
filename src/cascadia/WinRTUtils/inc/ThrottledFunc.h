@@ -29,7 +29,7 @@ public:
         function func) :
         _dispatcher{ std::move(dispatcher) },
         _func{ std::move(func) },
-        _timer{ _createTimer() }
+        _timer{ _create_timer() }
     {
         const auto d = -delay.count();
         if (d >= 0)
@@ -77,62 +77,51 @@ private:
         static_cast<ThrottledFunc*>(context)->_trailing_edge();
     }
 
-    template<typename = std::enable_if_t<leading>>
-    winrt::fire_and_forget _leading_edge()
-    try
-    {
-        auto weakSelf = this->weak_from_this();
-        co_await winrt::resume_foreground(_dispatcher);
-
-        if (auto self{ weakSelf.lock() })
-        {
-            self->_func();
-            SetThreadpoolTimerEx(self->_timer.get(), &self->_delay, 0, 0);
-        }
-    }
-    CATCH_FAIL_FAST()
-
-    template<typename = std::enable_if_t<!leading>>
     void _leading_edge()
     {
-        SetThreadpoolTimerEx(_timer.get(), &_delay, 0, 0);
-    }
-
-    template<typename = std::enable_if_t<leading>>
-    inline void _trailing_edge(PTP_CALLBACK_INSTANCE /*instance*/)
-    {
-        _storage.reset();
-    }
-
-    template<typename = std::enable_if_t<!leading>>
-    inline winrt::fire_and_forget _trailing_edge(PTP_CALLBACK_INSTANCE instance)
-    try
-    {
-        auto weakSelf = this->weak_from_this();
-        co_await winrt::resume_foreground(_dispatcher);
-
-        // If this function is the last holder of the shared_ptr<throttled_func>,
-        // we'll deallocate it when exiting the function scope.
-        // When the _timer member deallocates it'll call:
-        //   WaitForThreadpoolTimerCallbacks(_timer, true);
-        //
-        // Normally this ensures that the this pointer we use here,
-        // remains valid as long as the throttled_func exists.
-        // But in this case it'll lead to a deadlock, as WaitForThreadpoolTimerCallbacks,
-        // waits for the completion of the callback we're currently in.
-        //
-        // --> DisassociateCurrentThreadFromCallback to the rescue.
-        // NOTE: But only disassociate, after stopping all access to the raw this pointer.
-        DisassociateCurrentThreadFromCallback(instance);
-
-        if (auto self{ weakSelf.lock() })
+        if constexpr (leading)
         {
-            std::apply(self->_func, self->_storage.take());
+            _dispatcher.RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [weakSelf = this->weak_from_this()]() {
+                if (auto self{ weakSelf.lock() })
+                {
+                    try
+                    {
+                        self->_func();
+                    }
+                    CATCH_LOG();
+
+                    SetThreadpoolTimerEx(self->_timer.get(), &self->_delay, 0, 0);
+                }
+            });
+        }
+        else
+        {
+            SetThreadpoolTimerEx(_timer.get(), &_delay, 0, 0);
         }
     }
-    CATCH_FAIL_FAST()
 
-    inline wil::unique_threadpool_timer _createTimer()
+    void _trailing_edge()
+    {
+        if constexpr (leading)
+        {
+            _storage.reset();
+        }
+        else
+        {
+            _dispatcher.RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [weakSelf = this->weak_from_this()]() {
+                if (auto self{ weakSelf.lock() })
+                {
+                    try
+                    {
+                        std::apply(self->_func, self->_storage.take());
+                    }
+                    CATCH_LOG();
+                }
+            });
+        }
+    }
+
+    inline wil::unique_threadpool_timer _create_timer()
     {
         wil::unique_threadpool_timer timer{ CreateThreadpoolTimer(&_timer_callback, this, nullptr) };
         THROW_LAST_ERROR_IF(!timer);
@@ -142,6 +131,7 @@ private:
     FILETIME _delay;
     winrt::Windows::UI::Core::CoreDispatcher _dispatcher;
     function _func;
+
     wil::unique_threadpool_timer _timer;
     til::details::throttled_func_storage<Args...> _storage;
 };
