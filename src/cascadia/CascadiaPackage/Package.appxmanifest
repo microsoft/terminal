@@ -140,8 +140,10 @@
   <Extensions>
     <uap7:Extension Category="windows.sharedFonts">
       <uap7:SharedFonts>
-        <uap4:Font File="Cascadia.ttf" />
+        <uap4:Font File="CascadiaCode.ttf" />
+        <uap4:Font File="CascadiaCodeItalic.ttf" />
         <uap4:Font File="CascadiaMono.ttf" />
+        <uap4:Font File="CascadiaMonoItalic.ttf" />
       </uap7:SharedFonts>
     </uap7:Extension>
   </Extensions>
