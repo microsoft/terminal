@@ -160,10 +160,9 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _WriteFormatted(S&& format, Args&&... args)
         try
         {
-            //auto s = fmt::format(std::forward<S>(format), std::forward<Args>(args)...);
-            //return _Write(s);
-            fmt::format_to(std::back_inserter(_buffer), std::forward<S>(format), std::forward<Args>(args)...);
-            return S_OK;
+            fmt::basic_memory_buffer<char, 64> buf;
+            fmt::format_to(std::back_inserter(buf), std::forward<S>(format), std::forward<Args>(args)...);
+            return _Write({ buf.data(), buf.size() });
         }
         CATCH_RETURN()
 
