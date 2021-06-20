@@ -1577,11 +1577,11 @@ void VtRendererTest::FormattedString()
 
     Log::Comment(L"2.) Write the same thing again, should be fine.");
     qExpectedInput.push_back("\x1b[12m");
-    VERIFY_SUCCEEDED(engine->_WriteFormatted(&format, value));
+    VERIFY_SUCCEEDED(engine->_WriteFormatted(format, value));
 
     Log::Comment(L"3.) Now write something huge. Should resize itself and still be fine.");
     static const auto bigFormat = FMT_COMPILE("\x1b[28;3;{};{};{}m");
     const auto bigValue = 500;
     qExpectedInput.push_back("\x1b[28;3;500;500;500m");
-    VERIFY_SUCCEEDED(engine->_WriteFormatted(&bigFormat, bigValue, bigValue, bigValue));
+    VERIFY_SUCCEEDED(engine->_WriteFormatted(bigFormat, bigValue, bigValue, bigValue));
 }
