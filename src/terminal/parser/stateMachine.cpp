@@ -1818,6 +1818,7 @@ bool StateMachine::FlushToTerminal()
         //      that pwchCurr was processed.
         // However, if we're here, then the processing of pwchChar triggered the
         //      engine to request the entire sequence get passed through, including pwchCurr.
+        _ActuateCurrentRun();
         success = _engine->ActionPassThroughString(_run);
     }
 
@@ -1838,8 +1839,18 @@ void StateMachine::ProcessString(const std::wstring_view string)
     size_t start = 0;
     size_t current = start;
 
+    _currentString = string;
+    _runOffset = 0;
+    _runSize = 0;
+
     while (current < string.size())
     {
+        // The run will be everything from the start INCLUDING the current one
+        // in case we process the current character and it turns into a passthrough
+        // fallback that picks up this _run inside `FlushToTerminal` above.
+        _runOffset = start;
+        _runSize = current - start + 1;
+
         if (_processingIndividually)
         {
             // If we're processing characters individually, send it to the state machine.
@@ -1853,13 +1864,9 @@ void StateMachine::ProcessString(const std::wstring_view string)
         }
         else
         {
-            // The run will be everything from the start INCLUDING the current one
-            // in case we process the current character and it turns into a passthrough
-            // fallback that picks up this _run inside `FlushToTerminal` above.
-            _run = string.substr(start, current - start + 1);
-
             if (_isActionableFromGround(string.at(current))) // If the current char is the start of an escape sequence, or should be executed in ground state...
             {
+                _ActuateCurrentRun();
                 if (!_run.empty())
                 {
                     // Because the _run above is composed INCLUDING current, we must
