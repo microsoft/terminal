@@ -1840,11 +1840,6 @@ void StateMachine::ProcessString(const std::wstring_view string)
 
     while (current < string.size())
     {
-        // The run will be everything from the start INCLUDING the current one
-        // in case we process the current character and it turns into a passthrough
-        // fallback that picks up this _run inside `FlushToTerminal` above.
-        _run = string.substr(start, current - start + 1);
-
         if (_processingIndividually)
         {
             // If we're processing characters individually, send it to the state machine.
@@ -1858,6 +1853,11 @@ void StateMachine::ProcessString(const std::wstring_view string)
         }
         else
         {
+            // The run will be everything from the start INCLUDING the current one
+            // in case we process the current character and it turns into a passthrough
+            // fallback that picks up this _run inside `FlushToTerminal` above.
+            _run = string.substr(start, current - start + 1);
+
             if (_isActionableFromGround(string.at(current))) // If the current char is the start of an escape sequence, or should be executed in ground state...
             {
                 if (!_run.empty())
