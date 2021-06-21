@@ -4,6 +4,8 @@ alignas
 alignof
 bitfield
 bitfields
+BUILDBRANCH
+BUILDMSG
 BUILDNUMBER
 charconv
 CLASSNOTAVAILABLE
@@ -45,6 +47,7 @@ IBind
 IBox
 IClass
 IComparable
+IComparer
 IConnection
 ICustom
 IDialog
@@ -85,6 +88,8 @@ NOREPEAT
 ntprivapi
 oaidl
 ocidl
+ODR
+offsetof
 osver
 OSVERSIONINFOEXW
 otms
@@ -124,6 +129,7 @@ tmp
 tolower
 TTask
 TVal
+UChar
 UPDATEINIFILE
 userenv
 wcsstr
@@ -146,6 +152,7 @@ xlocnum
 xloctime
 xmemory
 XParse
+xpath
 xstddef
 xstring
 xtree

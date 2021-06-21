@@ -215,6 +215,18 @@
     <value>Yellow</value>
     <comment>This is the header for a control that lets the user select the yellow color for text displayed on the screen.</comment>
   </data>
+  <data name="Globals_Language.Header" xml:space="preserve">
+    <value>Language</value>
+    <comment>The header for a control allowing users to choose the app's language.</comment>
+  </data>
+  <data name="Globals_Language.HelpText" xml:space="preserve">
+    <value>Sets an override for the app's preferred language.</value>
+    <comment>A description explaining how this control changes the app's language.</comment>
+  </data>
+  <data name="Globals_LanguageDefault" xml:space="preserve">
+    <value>Use system default</value>
+    <comment>The app contains a control allowing users to choose the app's language. If this value is chosen, the language preference list of the system settings is used instead.</comment>
+  </data>
   <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
     <value>Always show tabs</value>
     <comment>Header for a control to toggle if the app should always show the tabs (similar to a website browser).</comment>

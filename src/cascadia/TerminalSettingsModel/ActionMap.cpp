@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "AllShortcutActions.h"
 #include "ActionMap.h"
 
 #include "ActionMap.g.cpp"
@@ -18,18 +19,36 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         size_t hashedArgs{};
         if (const auto& args{ actionAndArgs.Args() })
         {
+            // Args are defined, so hash them
             hashedArgs = gsl::narrow_cast<size_t>(args.Hash());
         }
         else
         {
-            std::hash<IActionArgs> argsHash;
-            hashedArgs = argsHash(nullptr);
+            // Args are not defined.
+            // Check if the ShortcutAction supports args.
+            switch (actionAndArgs.Action())
+            {
+#define ON_ALL_ACTIONS_WITH_ARGS(action)                        \
+    case ShortcutAction::action:                                \
+        /* If it does, hash the default values for the args.*/  \
+        hashedArgs = EmptyHash<implementation::action##Args>(); \
+        break;
+                ALL_SHORTCUT_ACTIONS_WITH_ARGS
+#undef ON_ALL_ACTIONS_WITH_ARGS
+            default:
+            {
+                // Otherwise, hash nullptr.
+                std::hash<IActionArgs> argsHash;
+                hashedArgs = argsHash(nullptr);
+            }
+            }
         }
         return hashedAction ^ hashedArgs;
     }
 
     ActionMap::ActionMap() :
-        _NestedCommands{ single_threaded_map<hstring, Model::Command>() }
+        _NestedCommands{ single_threaded_map<hstring, Model::Command>() },
+        _IterableCommands{ single_threaded_vector<Model::Command>() }
     {
     }
 
@@ -87,7 +106,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // populate _NameMapCache
             std::unordered_map<hstring, Model::Command> nameMap{};
-            _PopulateNameMapWithNestedCommands(nameMap);
+            _PopulateNameMapWithSpecialCommands(nameMap);
             _PopulateNameMapWithStandardCommands(nameMap);
 
             _NameMapCache = single_threaded_map<hstring, Model::Command>(std::move(nameMap));
@@ -96,18 +115,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
-    // - Populates the provided nameMap with all of our nested commands and our parents nested commands
-    // - Performs a top-down approach by going to the root first, then recursively adding the nested commands layer-by-layer
+    // - Populates the provided nameMap with all of our special commands and our parent's special commands.
+    // - Special commands include nested and iterable commands.
+    // - Performs a top-down approach by going to the root first, then recursively adding the nested commands layer-by-layer.
     // Arguments:
     // - nameMap: the nameMap we're populating. This maps the name (hstring) of a command to the command itself.
-    void ActionMap::_PopulateNameMapWithNestedCommands(std::unordered_map<hstring, Model::Command>& nameMap) const
+    void ActionMap::_PopulateNameMapWithSpecialCommands(std::unordered_map<hstring, Model::Command>& nameMap) const
     {
         // Update NameMap with our parents.
         // Starting with this means we're doing a top-down approach.
         FAIL_FAST_IF(_parents.size() > 1);
         for (const auto& parent : _parents)
         {
-            parent->_PopulateNameMapWithNestedCommands(nameMap);
+            parent->_PopulateNameMapWithSpecialCommands(nameMap);
         }
 
         // Add NestedCommands to NameMap _after_ we handle our parents.
@@ -124,6 +144,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // remove the invalid cmd
                 nameMap.erase(name);
             }
+        }
+
+        // Add IterableCommands to NameMap
+        for (const auto& cmd : _IterableCommands)
+        {
+            nameMap.insert_or_assign(cmd.Name(), cmd);
         }
     }
 
@@ -296,6 +322,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             actionMap->_NestedCommands.Insert(name, *(get_self<Command>(cmd)->Copy()));
         }
 
+        // copy _IterableCommands
+        for (const auto& cmd : _IterableCommands)
+        {
+            actionMap->_IterableCommands.Append(*(get_self<Command>(cmd)->Copy()));
+        }
+
         // repeat this for each of our parents
         FAIL_FAST_IF(_parents.size() > 1);
         for (const auto& parent : _parents)
@@ -333,6 +365,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 _NestedCommands.Insert(name, cmd);
             }
+            return;
+        }
+
+        // Handle iterable commands
+        if (cmdImpl->IterateOn() != ExpandCommandType::None)
+        {
+            _IterableCommands.Append(cmd);
             return;
         }
 

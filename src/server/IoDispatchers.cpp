@@ -14,6 +14,7 @@
 #include "../host/srvinit.h"
 #include "../host/telemetry.hpp"
 
+#include "../interactivity/base/HostSignalInputThread.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 #include "../types/inc/utils.hpp"
@@ -146,7 +147,7 @@ static bool _shouldAttemptHandoff(const Globals& globals,
                                   const CONSOLE_INFORMATION& gci,
                                   CONSOLE_API_CONNECTINFO& cac)
 {
-#ifndef __INSIDE_WINDOWS
+#if !TIL_FEATURE_ATTEMPTHANDOFF_ENABLED
 
     UNREFERENCED_PARAMETER(globals);
     UNREFERENCED_PARAMETER(gci);
@@ -296,16 +297,50 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
             HANDLE serverHandle;
             THROW_IF_FAILED(Globals.pDeviceComm->GetServerHandle(&serverHandle));
 
+            wil::unique_hfile signalPipeTheirSide;
+            wil::unique_hfile signalPipeOurSide;
+
+            THROW_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeOurSide.addressof(), signalPipeTheirSide.addressof(), nullptr, 0));
+
+            // Give a copy of our own process handle to be tracked.
+            wil::unique_process_handle ourProcess;
+            THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
+                                                      GetCurrentProcess(),
+                                                      GetCurrentProcess(),
+                                                      ourProcess.addressof(),
+                                                      SYNCHRONIZE,
+                                                      FALSE,
+                                                      0));
+
+            wil::unique_process_handle clientProcess;
+
             // Okay, moment of truth! If they say they successfully took it over, we're going to clean up.
             // If they fail, we'll throw here and it'll log and we'll just start normally.
             THROW_IF_FAILED(handoff->EstablishHandoff(serverHandle,
                                                       Globals.hInputEvent.get(),
-                                                      &msg));
+                                                      &msg,
+                                                      signalPipeTheirSide.get(),
+                                                      ourProcess.get(),
+                                                      &clientProcess));
+
+            // Close handles for the things we gave to them
+            signalPipeTheirSide.reset();
+            ourProcess.reset();
+            Globals.hInputEvent.reset();
+
+            // Start a thread to listen for signals from their side that we must relay to the OS.
+            auto hostSignalThread = std::make_unique<Microsoft::Console::HostSignalInputThread>(std::move(signalPipeOurSide));
+
+            // Start it if it was successfully created.
+            THROW_IF_FAILED(hostSignalThread->Start());
 
             // Unlock in case anything tries to spool down as we exit.
             UnlockConsole();
 
-            // We've handed off responsibility. Exit process to clean up any outstanding things we have open.
+            // We've handed off responsibility. Wait for child process to exit so we can maintain PID continuity for some clients.
+            WaitForSingleObject(clientProcess.get(), INFINITE);
+
+            // Exit process to clean up any outstanding things we have open.
             ExitProcess(S_OK);
         }
         CATCH_LOG(); // Just log, don't do anything more. We'll move on to launching normally on failure.

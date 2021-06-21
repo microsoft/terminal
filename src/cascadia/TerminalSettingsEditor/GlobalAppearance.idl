@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "EnumEntry.idl"; 
+import "EnumEntry.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
@@ -14,6 +14,11 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         GlobalAppearance();
         GlobalAppearancePageNavigationState State { get; };
+
+        static String LanguageDisplayConverter(String tag);
+        Boolean LanguageSelectorAvailable { get; };
+        Windows.Foundation.Collections.IObservableVector<String> LanguageList { get; };
+        IInspectable CurrentLanguage;
 
         IInspectable CurrentTheme;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ThemeList { get; };

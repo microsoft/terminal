@@ -229,10 +229,12 @@ namespace SettingsModelLocalTests
 
     void SerializationTests::Actions()
     {
+        // simple command
         const std::string actionsString1{ R"([
                                                 { "command": "paste" }
                                             ])" };
 
+        // complex command
         const std::string actionsString2A{ R"([
                                                 { "command": { "action": "setTabColor" } }
                                             ])" };
@@ -244,29 +246,35 @@ namespace SettingsModelLocalTests
                                                 { "command": { "action": "copy", "singleLine": true, "copyFormatting": "html" } }
                                             ])" };
 
+        // simple command with key chords
         const std::string actionsString3{ R"([
                                                 { "command": "toggleAlwaysOnTop", "keys": "ctrl+a" },
                                                 { "command": "toggleAlwaysOnTop", "keys": "ctrl+b" }
                                             ])" };
 
+        // complex command with key chords
         const std::string actionsString4{ R"([
                                                 { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+c" },
                                                 { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+d" }
                                             ])" };
 
+        // command with name and icon and multiple key chords
         const std::string actionsString5{ R"([
                                                 { "icon": "image.png", "name": "Scroll To Top Name", "command": "scrollToTop", "keys": "ctrl+e" },
                                                 { "command": "scrollToTop", "keys": "ctrl+f" }
                                             ])" };
 
+        // complex command with new terminal args
         const std::string actionsString6{ R"([
                                                 { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+g" },
                                             ])" };
 
+        // complex command with meaningful null arg
         const std::string actionsString7{ R"([
                                                 { "command": { "action": "renameWindow", "name": null }, "keys": "ctrl+h" }
                                             ])" };
 
+        // nested command
         const std::string actionsString8{ R"([
                                                 {
                                                     "name": "Change font size...",
@@ -278,6 +286,7 @@ namespace SettingsModelLocalTests
                                                 }
                                             ])" };
 
+        // iterable command
         const std::string actionsString9A{ R"([
                                                 {
                                                     "name": "New tab",
@@ -330,7 +339,20 @@ namespace SettingsModelLocalTests
                                                     "name": "Send Input (Evil) ..."
                                                 }
                                             ])"" };
+        const std::string actionsString9D{ R""([
+                                                {
+                                                    "command": 
+                                                    {
+                                                        "action": "newTab",
+                                                        "profile": "${profile.name}"
+                                                    },
+                                                    "icon": "${profile.icon}",
+                                                    "iterateOn": "profiles",
+                                                    "name": "${profile.name}: New tab"
+                                                }
+                                            ])"" };
 
+        // unbound command
         const std::string actionsString10{ R"([
                                                 { "command": "unbound", "keys": "ctrl+c" }
                                             ])" };
@@ -365,6 +387,7 @@ namespace SettingsModelLocalTests
         RoundtripTest<implementation::ActionMap>(actionsString9A);
         RoundtripTest<implementation::ActionMap>(actionsString9B);
         RoundtripTest<implementation::ActionMap>(actionsString9C);
+        RoundtripTest<implementation::ActionMap>(actionsString9D);
 
         Log::Comment(L"unbound command");
         RoundtripTest<implementation::ActionMap>(actionsString10);
