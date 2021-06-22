@@ -36,7 +36,7 @@ namespace til
             const auto old = counter.fetch_sub(n, std::memory_order_release);
             if (old == n)
             {
-                WakeByAddressAll((PVOID)&counter);
+                WakeByAddressAll(&counter);
                 return;
             }
 
@@ -59,7 +59,7 @@ namespace til
                 }
 
                 assert(current > 0);
-                WaitOnAddress((PVOID)&counter, &current, sizeof(counter), INFINITE);
+                WaitOnAddress(const_cast<decltype(counter)*>(&counter), &current, sizeof(counter), INFINITE);
             }
         }
 
@@ -70,12 +70,12 @@ namespace til
             auto old = counter.fetch_sub(n, std::memory_order_acq_rel);
             if (old == n)
             {
-                WakeByAddressAll((PVOID)&counter);
+                WakeByAddressAll(&counter);
                 return;
             }
 
             assert(old > n);
-            WaitOnAddress((PVOID)&counter, &old, sizeof(counter), INFINITE);
+            WaitOnAddress(&counter, &old, sizeof(counter), INFINITE);
             wait();
         }
 
