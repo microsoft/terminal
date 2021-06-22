@@ -798,7 +798,7 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
         }
     }
 
-    publicTerminal->_terminal->SetCursorStyle(theme.CursorStyle);
+    publicTerminal->_terminal->SetCursorStyle(static_cast<DispatchTypes::CursorStyle>(theme.CursorStyle));
 
     publicTerminal->_desiredFont = { fontFamily, 0, DEFAULT_FONT_WEIGHT, { 0, fontSize }, CP_UTF8 };
     publicTerminal->_UpdateFont(newDpi);
