@@ -26,8 +26,8 @@ class TextBufferCellIterator
 {
 public:
     TextBufferCellIterator(const TextBuffer& buffer, COORD pos);
-    TextBufferCellIterator(const TextBuffer& buffer, COORD pos, const Microsoft::Console::Types::Viewport limits);
-    TextBufferCellIterator(const TextBuffer& buffer, COORD pos, const Microsoft::Console::Types::Viewport limits, const COORD endPosInclusive);
+    TextBufferCellIterator(const TextBuffer& buffer, COORD pos, const Microsoft::Console::Types::Viewport bounds);
+    TextBufferCellIterator(const TextBuffer& buffer, COORD pos, const Microsoft::Console::Types::Viewport bounds, const COORD limit);
 
     operator bool() const noexcept;
 
@@ -63,7 +63,7 @@ protected:
     const Microsoft::Console::Types::Viewport _bounds;
     bool _exceeded;
     COORD _pos;
-    std::optional<COORD> _endPosInclusive;
+    std::optional<COORD> _limit;
 
 #if UNIT_TESTING
     friend class TextBufferIteratorTests;

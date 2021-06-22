@@ -29,21 +29,21 @@ TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, COORD p
 // Arguments:
 // - buffer - Pointer to screen buffer to seek through
 // - pos - Starting position to retrieve text data from (within screen buffer bounds)
-// - limits - Viewport limits to restrict the iterator within the buffer bounds (smaller than the buffer itself)
-TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, COORD pos, const Viewport limits) :
+// - bounds - Viewport boundaries to restrict the iterator within the buffer bounds (smaller than the buffer itself)
+TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, COORD pos, const Viewport bounds) :
     _buffer(buffer),
     _pos(pos),
     _pRow(s_GetRow(buffer, pos)),
-    _bounds(limits),
+    _bounds(bounds),
     _exceeded(false),
     _view({}, {}, {}, TextAttributeBehavior::Stored),
     _attrIter(s_GetRow(buffer, pos)->GetAttrRow().cbegin())
 {
     // Throw if the bounds rectangle is not limited to the inside of the given buffer.
-    THROW_HR_IF(E_INVALIDARG, !buffer.GetSize().IsInBounds(limits));
+    THROW_HR_IF(E_INVALIDARG, !buffer.GetSize().IsInBounds(bounds));
 
     // Throw if the coordinate is not limited to the inside of the given buffer.
-    THROW_HR_IF(E_INVALIDARG, !limits.IsInBounds(pos));
+    THROW_HR_IF(E_INVALIDARG, !bounds.IsInBounds(pos));
 
     _attrIter += pos.X;
 
@@ -55,18 +55,15 @@ TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, COORD p
 // Arguments:
 // - buffer - Text buffer to seek through
 // - pos - Starting position to retrieve text data from (within screen buffer bounds)
-// - limits - Viewport limits to restrict the iterator within the buffer bounds (smaller than the buffer itself)
-// - endPosInclusive - last position to iterate through (inclusive)
-TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, COORD pos, const Viewport limits, const COORD endPosInclusive) :
-    TextBufferCellIterator(buffer, pos, limits)
+// - bounds - Viewport boundaries to restrict the iterator within the buffer bounds (smaller than the buffer itself)
+// - limit - last position to iterate through (inclusive)
+TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, COORD pos, const Viewport bounds, const COORD limit) :
+    TextBufferCellIterator(buffer, pos, bounds)
 {
     // Throw if the coordinate is not limited to the inside of the given buffer.
-    THROW_HR_IF(E_INVALIDARG, !_bounds.IsInBounds(endPosInclusive));
+    THROW_HR_IF(E_INVALIDARG, !_bounds.IsInBounds(limit));
 
-    // Throw if pos is past endPos
-    THROW_HR_IF(E_INVALIDARG, _bounds.CompareInBounds(pos, endPosInclusive) > 0);
-
-    _endPosInclusive = endPosInclusive;
+    _limit = limit;
 }
 
 // Routine Description:
@@ -92,7 +89,7 @@ bool TextBufferCellIterator::operator==(const TextBufferCellIterator& it) const 
            _bounds == it._bounds &&
            _pRow == it._pRow &&
            _attrIter == it._attrIter &&
-           _endPosInclusive == _endPosInclusive;
+           _limit == _limit;
 }
 
 // Routine Description:
@@ -118,22 +115,22 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
     auto newPos = _pos;
     while (move > 0 && !_exceeded)
     {
-        // If we have an endPos, check if we've exceeded it
-        if (_endPosInclusive.has_value())
+        // If we have a limit, check if we've exceeded it
+        if (_limit.has_value())
         {
-            _exceeded = _bounds.CompareInBounds(newPos, *_endPosInclusive) > 0;
+            _exceeded |= (newPos == _limit);
         }
 
-        // If we already exceeded from endPos, we'll short-circuit and _not_ increment
+        // If we already exceeded limit, we'll short-circuit and _not_ increment
         _exceeded |= !_bounds.IncrementInBounds(newPos);
         move--;
     }
     while (move < 0 && !_exceeded)
     {
         // If we have an endPos, check if we've exceeded it
-        if (_endPosInclusive.has_value())
+        if (_limit.has_value())
         {
-            _exceeded = _bounds.CompareInBounds(newPos, *_endPosInclusive) < 0;
+            _exceeded |= (newPos == _limit);
         }
 
         // If we already exceeded from endPos, we'll short-circuit and _not_ decrement

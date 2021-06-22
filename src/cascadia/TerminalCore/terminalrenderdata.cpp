@@ -34,6 +34,11 @@ const TextBuffer& Terminal::GetTextBuffer() noexcept
 #pragma warning(disable : 26447)
 const FontInfo& Terminal::GetFontInfo() noexcept
 {
+    if (_fontInfo)
+    {
+        return *_fontInfo;
+    }
+
     // TODO: This font value is only used to check if the font is a raster font.
     // Otherwise, the font is changed with the renderer via TriggerFontChange.
     // The renderer never uses any of the other members from the value returned
@@ -44,6 +49,11 @@ const FontInfo& Terminal::GetFontInfo() noexcept
     return _fakeFontInfo;
 }
 #pragma warning(pop)
+
+void Terminal::SetFontInfo(const FontInfo& fontInfo)
+{
+    _fontInfo = fontInfo;
+}
 
 const TextAttribute Terminal::GetDefaultBrushColors() noexcept
 {

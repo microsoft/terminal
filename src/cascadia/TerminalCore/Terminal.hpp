@@ -68,6 +68,7 @@ public:
 
     void UpdateSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings);
     void UpdateAppearance(const winrt::Microsoft::Terminal::Core::ICoreAppearance& appearance);
+    void SetFontInfo(const FontInfo& fontInfo);
 
     // Write goes through the parser
     void Write(std::wstring_view stringView);
@@ -160,6 +161,7 @@ public:
     COORD GetTextBufferEndPosition() const noexcept override;
     const TextBuffer& GetTextBuffer() noexcept override;
     const FontInfo& GetFontInfo() noexcept override;
+    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
 
     void LockConsole() noexcept override;
     void UnlockConsole() noexcept override;
@@ -168,7 +170,6 @@ public:
 #pragma region IRenderData
     // These methods are defined in TerminalRenderData.cpp
     const TextAttribute GetDefaultBrushColors() noexcept override;
-    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
     COORD GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
     bool IsCursorOn() const noexcept override;
@@ -276,6 +277,7 @@ private:
     size_t _hyperlinkPatternId;
 
     std::wstring _workingDirectory;
+    std::optional<FontInfo> _fontInfo;
 #pragma region Text Selection
     // a selection is represented as a range between two COORDs (start and end)
     // the pivot is the COORD that remains selected when you extend a selection in any direction
