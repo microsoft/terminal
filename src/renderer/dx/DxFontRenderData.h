@@ -82,8 +82,8 @@ namespace Microsoft::Console::Render
 
         ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
 
-        std::unordered_map<DxFontInfo, ::Microsoft::WRL::ComPtr<IDWriteTextFormat>, DxFontInfoHash> _textFormatMap;
-        std::unordered_map<DxFontInfo, ::Microsoft::WRL::ComPtr<IDWriteFontFace1>, DxFontInfoHash> _fontFaceMap;
+        std::unordered_map<DxFontInfo, ::Microsoft::WRL::ComPtr<IDWriteTextFormat>> _textFormatMap;
+        std::unordered_map<DxFontInfo, ::Microsoft::WRL::ComPtr<IDWriteFontFace1>> _fontFaceMap;
 
         ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
 
