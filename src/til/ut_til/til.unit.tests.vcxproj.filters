@@ -9,7 +9,6 @@
     <ClCompile Include="BitmapTests.cpp" />
     <ClCompile Include="CoalesceTests.cpp" />
     <ClCompile Include="ColorTests.cpp" />
-    <ClCompile Include="latch.cpp" />
     <ClCompile Include="MathTests.cpp" />
     <ClCompile Include="mutex.cpp" />
     <ClCompile Include="OperatorTests.cpp" />
