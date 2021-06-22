@@ -52,7 +52,7 @@ namespace Microsoft::Console::Render
                                               const COORD coord,
                                               const bool trimLeft,
                                               const bool lineWrapped) noexcept override;
-        [[nodiscard]] HRESULT PaintBufferGridLines(const GridLines lines,
+        [[nodiscard]] HRESULT PaintBufferGridLines(const GridLineSet lines,
                                                    const COLORREF color,
                                                    const size_t cchLine,
                                                    const COORD coordTarget) noexcept override;
