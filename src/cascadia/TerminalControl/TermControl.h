@@ -13,7 +13,6 @@
 #include "../buffer/out/search.h"
 #include "cppwinrt_utils.h"
 #include "SearchBoxControl.h"
-#include "ThrottledFunc.h"
 
 #include "ControlInteractivity.h"
 
