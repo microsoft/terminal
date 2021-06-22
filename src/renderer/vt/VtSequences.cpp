@@ -168,7 +168,12 @@ using namespace Microsoft::Console::Render;
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT VtEngine::_CursorPosition(const COORD coord) noexcept
 {
-    return _WriteFormatted(FMT_COMPILE("\x1b[{};{}H"), coord.Y + 1, coord.X + 1);
+    // VT coords start at 1,1
+    COORD coordVt = coord;
+    coordVt.X++;
+    coordVt.Y++;
+
+    return _WriteFormatted(FMT_COMPILE("\x1b[{};{}H"), coordVt.Y, coordVt.X);
 }
 
 // Method Description:
