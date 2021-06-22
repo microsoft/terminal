@@ -551,7 +551,9 @@
               "enum": [
                 "settingsFile",
                 "defaultsFile",
-                "allFiles"
+                "allFiles",
+                "settingsUI"
+                
               ]
             }
           }
