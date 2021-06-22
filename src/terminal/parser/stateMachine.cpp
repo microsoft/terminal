@@ -1854,7 +1854,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
         if (_processingIndividually)
         {
             // If we're processing characters individually, send it to the state machine.
-            ProcessCharacter(string.at(current));
+            ProcessCharacter(til::at(string, current));
             ++current;
             if (_state == VTStates::Ground) // Then check if we're back at ground. If we are, the next character (pwchCurr)
             { //   is the start of the next run of characters that might be printable.
@@ -1864,7 +1864,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
         }
         else
         {
-            if (_isActionableFromGround(string.at(current))) // If the current char is the start of an escape sequence, or should be executed in ground state...
+            if (_isActionableFromGround(til::at(string, current))) // If the current char is the start of an escape sequence, or should be executed in ground state...
             {
                 _ActuateCurrentRun();
                 if (!_run.empty())
