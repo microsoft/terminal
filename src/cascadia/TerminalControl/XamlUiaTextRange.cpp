@@ -103,7 +103,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         case VT_I4:
         {
-            return box_value(result.iVal);
+            // Surprisingly, `long` is _not_ a WinRT type.
+            // So we have to use `int32_t` to make sure this is output properly.
+            // Otherwise, you'll get "Attribute does not exist" out the other end.
+            return box_value<int32_t>(result.lVal);
         }
         case VT_R8:
         {
@@ -122,17 +125,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             //  are supported at this time.
             // So we need to figure out what was actually intended to be returned.
 
-            IUnknown* notSupportedVal;
-            UiaGetReservedNotSupportedValue(&notSupportedVal);
-            if (result.punkVal == notSupportedVal)
-            {
-                // See below for why we need to throw this special value.
-                winrt::throw_hresult(XAML_E_NOT_SUPPORTED);
-            }
+            // use C++11 magic statics to make sure we only do this once.
+            static const auto mixedAttributeVal = []() {
+                IUnknown* resultRaw;
+                com_ptr<IUnknown> result;
+                UiaGetReservedMixedAttributeValue(&resultRaw);
+                result.attach(resultRaw);
+                return result;
+            }();
 
-            IUnknown* mixedAttributeVal;
-            UiaGetReservedMixedAttributeValue(&mixedAttributeVal);
-            if (result.punkVal == mixedAttributeVal)
+            if (result.punkVal == mixedAttributeVal.get())
             {
                 return Windows::UI::Xaml::DependencyProperty::UnsetValue();
             }

@@ -592,6 +592,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const int newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) *
                                             _compositionScale);
 
+        _terminal->SetFontInfo(_actualFont);
+
         // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
         //      actually fail. We need a way to gracefully fallback.
         _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);

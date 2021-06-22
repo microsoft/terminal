@@ -149,13 +149,13 @@ TextBufferTextIterator TextBuffer::GetTextLineDataAt(const COORD at) const
 // - Read-only iterator of cell data.
 TextBufferCellIterator TextBuffer::GetCellLineDataAt(const COORD at) const
 {
-    SMALL_RECT limit;
-    limit.Top = at.Y;
-    limit.Bottom = at.Y;
-    limit.Left = 0;
-    limit.Right = GetSize().RightInclusive();
+    SMALL_RECT bounds;
+    bounds.Top = at.Y;
+    bounds.Bottom = at.Y;
+    bounds.Left = 0;
+    bounds.Right = GetSize().RightInclusive();
 
-    return TextBufferCellIterator(*this, at, Viewport::FromInclusive(limit));
+    return TextBufferCellIterator(*this, at, Viewport::FromInclusive(bounds));
 }
 
 // Routine Description:
@@ -163,12 +163,12 @@ TextBufferCellIterator TextBuffer::GetCellLineDataAt(const COORD at) const
 //   but restricted to operate only inside the given viewport.
 // Arguments:
 // - at - X,Y position in buffer for iterator start position
-// - limit - boundaries for the iterator to operate within
+// - bounds - boundaries for the iterator to operate within
 // Return Value:
 // - Read-only iterator of text data only.
-TextBufferTextIterator TextBuffer::GetTextDataAt(const COORD at, const Viewport limit) const
+TextBufferTextIterator TextBuffer::GetTextDataAt(const COORD at, const Viewport bounds) const
 {
-    return TextBufferTextIterator(GetCellDataAt(at, limit));
+    return TextBufferTextIterator(GetCellDataAt(at, bounds));
 }
 
 // Routine Description:
@@ -176,12 +176,12 @@ TextBufferTextIterator TextBuffer::GetTextDataAt(const COORD at, const Viewport 
 //   but restricted to operate only inside the given viewport.
 // Arguments:
 // - at - X,Y position in buffer for iterator start position
-// - limit - boundaries for the iterator to operate within
+// - bounds - boundaries for the iterator to operate within
 // Return Value:
 // - Read-only iterator of cell data.
-TextBufferCellIterator TextBuffer::GetCellDataAt(const COORD at, const Viewport limit) const
+TextBufferCellIterator TextBuffer::GetCellDataAt(const COORD at, const Viewport bounds) const
 {
-    return TextBufferCellIterator(*this, at, limit);
+    return TextBufferCellIterator(*this, at, bounds);
 }
 
 // Routine Description:
@@ -189,13 +189,15 @@ TextBufferCellIterator TextBuffer::GetCellDataAt(const COORD at, const Viewport 
 //   but restricted to operate only inside the given viewport.
 // Arguments:
 // - at - X,Y position in buffer for iterator start position
-// - limit - boundaries for the iterator to operate within
-// - until - X,Y position in buffer for last position for the iterator to read (inclusive)
+// - bounds - viewport boundaries for the iterator to operate within.
+//            Allows for us to iterate over a sub-grid of the buffer.
+// - limit - X,Y position in buffer for the iterator end position (inclusive).
+//           Allows for us to iterate through "bounds" until we hit the end of "bounds" or the limit.
 // Return Value:
 // - Read-only iterator of cell data.
-TextBufferCellIterator TextBuffer::GetCellDataAt(const COORD at, const Viewport limit, const COORD until) const
+TextBufferCellIterator TextBuffer::GetCellDataAt(const COORD at, const Viewport bounds, const COORD limit) const
 {
-    return TextBufferCellIterator(*this, at, limit, until);
+    return TextBufferCellIterator(*this, at, bounds, limit);
 }
 
 //Routine Description:

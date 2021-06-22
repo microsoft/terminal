@@ -324,6 +324,17 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
     // has the desired attribute.
     switch (attributeId)
     {
+    case UIA_BackgroundColorAttributeId:
+    {
+        // Expected type: VT_I4
+        THROW_HR_IF(E_INVALIDARG, val.vt != VT_I4);
+
+        // The foreground color is stored as a COLORREF.
+        const auto queryBackgroundColor{ base::ClampedNumeric<COLORREF>(val.lVal) };
+        return [this, queryBackgroundColor](const TextAttribute& attr) {
+            return (_pData->GetAttributeColors(attr).second & 0x00ffffff) == queryBackgroundColor;
+        };
+    }
     case UIA_FontWeightAttributeId:
     {
         // Expected type: VT_I4
@@ -332,7 +343,7 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
         // The font weight can be any value from 0 to 900.
         // The text buffer doesn't store the actual value,
         // we just store "IsBold" and "IsFaint".
-        const auto queryFontWeight{ val.iVal };
+        const auto queryFontWeight{ val.lVal };
 
         if (queryFontWeight > FW_NORMAL)
         {
@@ -341,18 +352,11 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
                 return attr.IsBold();
             };
         }
-        else if (queryFontWeight < FW_NORMAL)
-        {
-            // we're looking for a faint font weight
-            return [](const TextAttribute& attr) {
-                return attr.IsFaint();
-            };
-        }
         else
         {
             // we're looking for "normal" font weight
             return [](const TextAttribute& attr) {
-                return !attr.IsBold() && !attr.IsFaint();
+                return !attr.IsBold();
             };
         }
     }
@@ -362,9 +366,9 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
         THROW_HR_IF(E_INVALIDARG, val.vt != VT_I4);
 
         // The foreground color is stored as a COLORREF.
-        const COLORREF queryForegroundColor{ base::ClampedNumeric<COLORREF>(val.iVal) };
-        return [queryForegroundColor](const TextAttribute& attr) {
-            return attr.GetForeground().GetRGB() == queryForegroundColor;
+        const auto queryForegroundColor{ base::ClampedNumeric<COLORREF>(val.lVal) };
+        return [this, queryForegroundColor](const TextAttribute& attr) {
+            return (_pData->GetAttributeColors(attr).first & 0x00ffffff) == queryForegroundColor;
         };
     }
     case UIA_IsItalicAttributeId:
@@ -387,30 +391,6 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
             };
         }
     }
-    case UIA_StrikethroughColorAttributeId:
-    {
-        // Expected type: VT_I4
-        THROW_HR_IF(E_INVALIDARG, val.vt != VT_I4);
-
-        // The strikethrough color is stored as a COLORREF.
-        // However, the text buffer doesn't actually store the color.
-        // Instead, we just store whether or not the text is crossed out.
-        // So we'll assume that _any_ query here (except 0) is interpreted as "is the
-        // text crossed out?"
-
-        if (val.iVal == 0)
-        {
-            return [](const TextAttribute& attr) {
-                return !attr.IsCrossedOut();
-            };
-        }
-        else
-        {
-            return [](const TextAttribute& attr) {
-                return attr.IsCrossedOut();
-            };
-        }
-    }
     case UIA_StrikethroughStyleAttributeId:
     {
         // Expected type: VT_I4
@@ -419,44 +399,18 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
         // The strikethrough style is stored as a TextDecorationLineStyle.
         // However, The text buffer doesn't have different styles for being crossed out.
         // Instead, we just store whether or not the text is crossed out.
-        // So we'll assume that _any_ query here is interpreted as "is the
-        // text crossed out?" UNLESS we are asked for TextDecorationLineStyle_None
-        const TextDecorationLineStyle queryStrikethroughStyle{ static_cast<TextDecorationLineStyle>(val.iVal) };
-        if (queryStrikethroughStyle == TextDecorationLineStyle_None)
+        switch (val.lVal)
         {
+        case TextDecorationLineStyle_None:
             return [](const TextAttribute& attr) {
                 return !attr.IsCrossedOut();
             };
-        }
-        else
-        {
+        case TextDecorationLineStyle_Single:
             return [](const TextAttribute& attr) {
                 return attr.IsCrossedOut();
             };
-        }
-    }
-    case UIA_UnderlineColorAttributeId:
-    {
-        // Expected type: VT_I4
-        THROW_HR_IF(E_INVALIDARG, val.vt != VT_I4);
-
-        // The underline color is stored as a COLORREF.
-        // However, the text buffer doesn't actually store the color.
-        // Instead, we just store whether or not the text is underlined.
-        // So we'll assume that _any_ query here (except 0) is interpreted as "is the
-        // text underlined?"
-
-        if (val.iVal == 0)
-        {
-            return [](const TextAttribute& attr) {
-                return !attr.IsUnderlined();
-            };
-        }
-        else
-        {
-            return [](const TextAttribute& attr) {
-                return attr.IsUnderlined();
-            };
+        default:
+            return nullptr;
         }
     }
     case UIA_UnderlineStyleAttributeId:
@@ -465,22 +419,24 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
         THROW_HR_IF(E_INVALIDARG, val.vt != VT_I4);
 
         // The underline style is stored as a TextDecorationLineStyle.
-        // However, The text buffer doesn't have different styles for being underlined.
-        // Instead, we just store whether or not the text is underlined.
-        // So we'll assume that _any_ query here is interpreted as "is the
-        // text underlined?" UNLESS we are asked for TextDecorationLineStyle_None
-        const TextDecorationLineStyle queryUnderlineStyle{ static_cast<TextDecorationLineStyle>(val.iVal) };
-        if (queryUnderlineStyle == TextDecorationLineStyle_None)
+        // However, The text buffer doesn't have that many different styles for being underlined.
+        // Instead, we only have single and double underlined.
+        switch (val.lVal)
         {
+        case TextDecorationLineStyle_None:
             return [](const TextAttribute& attr) {
-                return !attr.IsUnderlined();
+                return !attr.IsUnderlined() && !attr.IsDoublyUnderlined();
             };
-        }
-        else
-        {
+        case TextDecorationLineStyle_Double:
+            return [](const TextAttribute& attr) {
+                return attr.IsDoublyUnderlined();
+            };
+        case TextDecorationLineStyle_Single:
             return [](const TextAttribute& attr) {
                 return attr.IsUnderlined();
             };
+        default:
+            return nullptr;
         }
     }
     default:
@@ -504,19 +460,6 @@ IFACEMETHODIMP UiaTextRangeBase::FindAttribute(_In_ TEXTATTRIBUTEID attributeId,
         RETURN_HR_IF(E_INVALIDARG, val.vt != VT_BSTR);
         const std::wstring queryFontName{ val.bstrVal };
         if (queryFontName == _pData->GetFontInfo().GetFaceName())
-        {
-            Clone(ppRetVal);
-        }
-        UiaTracing::TextRange::FindAttribute(*this, attributeId, val, searchBackwards, static_cast<UiaTextRangeBase&>(**ppRetVal));
-        return S_OK;
-    }
-    case UIA_FontSizeAttributeId:
-    {
-        RETURN_HR_IF(E_INVALIDARG, val.vt != VT_R8);
-        const auto queryFontSize{ val.dblVal };
-
-        // TODO CARLOS: how do I get the font size in points?
-        if (queryFontSize == 0) //_pData->GetFontInfo().GetUnscaledSize())
         {
             Clone(ppRetVal);
         }
@@ -693,6 +636,12 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
     const auto attr{ _pData->GetTextBuffer().GetCellDataAt(_start)->TextAttr() };
     switch (attributeId)
     {
+    case UIA_BackgroundColorAttributeId:
+    {
+        pRetVal->vt = VT_I4;
+        pRetVal->lVal = base::ClampedNumeric<long>(_pData->GetAttributeColors(attr).second & 0x00ffffff);
+        return _getAttrVerificationFn(attributeId, *pRetVal);
+    }
     case UIA_FontWeightAttributeId:
     {
         // The font weight can be any value from 0 to 900.
@@ -702,56 +651,50 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
         pRetVal->vt = VT_I4;
         if (attr.IsBold())
         {
-            pRetVal->iVal = FW_BOLD;
-        }
-        else if (attr.IsFaint())
-        {
-            pRetVal->iVal = FW_LIGHT;
+            pRetVal->lVal = FW_BOLD;
         }
         else
         {
-            pRetVal->iVal = FW_NORMAL;
+            pRetVal->lVal = FW_NORMAL;
         }
         return _getAttrVerificationFn(attributeId, *pRetVal);
     }
     case UIA_ForegroundColorAttributeId:
     {
         pRetVal->vt = VT_I4;
-        pRetVal->iVal = base::ClampedNumeric<short>(attr.GetForeground().GetRGB());
+        const auto x{ _pData->GetAttributeColors(attr).first };
+        const auto y{ x & 0x00ffffff };
+        pRetVal->lVal = y;
+        //pRetVal->lVal = base::ClampedNumeric<long>(_pData->GetAttributeColors(attr).first & 0x00ffffff);
         return _getAttrVerificationFn(attributeId, *pRetVal);
     }
     case UIA_IsItalicAttributeId:
     {
         pRetVal->vt = VT_BOOL;
-        pRetVal->iVal = attr.IsItalic();
-        return _getAttrVerificationFn(attributeId, *pRetVal);
-    }
-    case UIA_StrikethroughColorAttributeId:
-    {
-        // Default Value: 0
-        // Source: https://docs.microsoft.com/en-us/windows/win32/winauto/uiauto-textattribute-ids
-        pRetVal->vt = VT_I4;
-        pRetVal->iVal = base::ClampedNumeric<short>(attr.IsCrossedOut() ? attr.GetForeground().GetRGB() : 0);
+        pRetVal->lVal = attr.IsItalic();
         return _getAttrVerificationFn(attributeId, *pRetVal);
     }
     case UIA_StrikethroughStyleAttributeId:
     {
         pRetVal->vt = VT_I4;
-        pRetVal->iVal = static_cast<short>(attr.IsCrossedOut() ? TextDecorationLineStyle_Single : TextDecorationLineStyle_None);
-        return _getAttrVerificationFn(attributeId, *pRetVal);
-    }
-    case UIA_UnderlineColorAttributeId:
-    {
-        // Default Value: 0
-        // Source: https://docs.microsoft.com/en-us/windows/win32/winauto/uiauto-textattribute-ids
-        pRetVal->vt = VT_I4;
-        pRetVal->iVal = attr.IsUnderlined() ? base::ClampedNumeric<short>(attr.GetForeground().GetRGB()) : 0;
+        pRetVal->lVal = static_cast<short>(attr.IsCrossedOut() ? TextDecorationLineStyle_Single : TextDecorationLineStyle_None);
         return _getAttrVerificationFn(attributeId, *pRetVal);
     }
     case UIA_UnderlineStyleAttributeId:
     {
         pRetVal->vt = VT_I4;
-        pRetVal->iVal = static_cast<short>(attr.IsUnderlined() ? TextDecorationLineStyle_Single : TextDecorationLineStyle_None);
+        if (attr.IsDoublyUnderlined())
+        {
+            pRetVal->lVal = static_cast<short>(TextDecorationLineStyle_Double);
+        }
+        else if (attr.IsUnderlined())
+        {
+            pRetVal->lVal = static_cast<short>(TextDecorationLineStyle_Single);
+        }
+        else
+        {
+            pRetVal->lVal = static_cast<short>(TextDecorationLineStyle_None);
+        }
         return _getAttrVerificationFn(attributeId, *pRetVal);
     }
     default:
@@ -766,6 +709,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetAttributeValue(_In_ TEXTATTRIBUTEID attribut
                                                    _Out_ VARIANT* pRetVal) noexcept
 {
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
+    VariantInit(pRetVal);
 
     // AttributeIDs that require special handling
     switch (attributeId)
@@ -774,14 +718,6 @@ IFACEMETHODIMP UiaTextRangeBase::GetAttributeValue(_In_ TEXTATTRIBUTEID attribut
     {
         pRetVal->vt = VT_BSTR;
         pRetVal->bstrVal = SysAllocString(_pData->GetFontInfo().GetFaceName().data());
-        UiaTracing::TextRange::GetAttributeValue(*this, attributeId, *pRetVal);
-        return S_OK;
-    }
-    case UIA_FontSizeAttributeId:
-    {
-        pRetVal->vt = VT_R8;
-        // TODO CARLOS: how do I get the font size in points?
-        pRetVal->dblVal = 0; //_pData->GetFontInfo().GetUnscaledSize())
         UiaTracing::TextRange::GetAttributeValue(*this, attributeId, *pRetVal);
         return S_OK;
     }
@@ -814,6 +750,17 @@ IFACEMETHODIMP UiaTextRangeBase::GetAttributeValue(_In_ TEXTATTRIBUTEID attribut
         LOG_HR(wil::ResultFromCaughtException());
         UiaTracing::TextRange::GetAttributeValue(*this, attributeId, *pRetVal, UiaTracing::AttributeType::Error);
         return E_INVALIDARG;
+    }
+
+    if (IsDegenerate())
+    {
+        // Unlike a normal text editor, which applies formatting at the caret,
+        // we don't know what attributes are written at a degenerate range.
+        // So let's return UiaGetReservedMixedAttributeValue.
+        // Source: https://docs.microsoft.com/en-us/windows/win32/api/uiautomationcore/nf-uiautomationcore-itextrangeprovider-getattributevalue
+        pRetVal->vt = VT_UNKNOWN;
+        UiaTracing::TextRange::GetAttributeValue(*this, attributeId, *pRetVal, UiaTracing::AttributeType::Mixed);
+        return UiaGetReservedMixedAttributeValue(&pRetVal->punkVal);
     }
 
     // Get some useful variables
