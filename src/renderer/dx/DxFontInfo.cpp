@@ -91,6 +91,16 @@ void DxFontInfo::SetStretch(const DWRITE_FONT_STRETCH stretch) noexcept
     _stretch = stretch;
 }
 
+std::unordered_map<DWRITE_FONT_FEATURE_TAG, uint32_t> DxFontInfo::GetFeatures() const noexcept
+{
+    return _features;
+}
+
+void DxFontInfo::SetFeatures(std::unordered_map<DWRITE_FONT_FEATURE_TAG, uint32_t> features) noexcept
+{
+    _features = features;
+}
+
 bool DxFontInfo::GetFallback() const noexcept
 {
     return _didFallback;

@@ -39,6 +39,9 @@ namespace Microsoft::Console::Render
         DWRITE_FONT_STRETCH GetStretch() const noexcept;
         void SetStretch(const DWRITE_FONT_STRETCH stretch) noexcept;
 
+        std::unordered_map<DWRITE_FONT_FEATURE_TAG, uint32_t> GetFeatures() const noexcept;
+        void SetFeatures(const std::unordered_map<DWRITE_FONT_FEATURE_TAG, uint32_t> features) noexcept;
+
         bool GetFallback() const noexcept;
 
         void SetFromEngine(const std::wstring_view familyName,
@@ -74,6 +77,9 @@ namespace Microsoft::Console::Render
 
         // The stretch of the font is the spacing between each letter
         DWRITE_FONT_STRETCH _stretch;
+
+        // The font features to apply to the text
+        std::unordered_map<DWRITE_FONT_FEATURE_TAG, uint32_t> _features;
 
         // Indicates whether we couldn't match the user request and had to choose from a hardcoded default list.
         bool _didFallback;

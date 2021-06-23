@@ -287,6 +287,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             const til::color colorRef{ profile.TabColor().Value() };
             _TabColor = static_cast<winrt::Microsoft::Terminal::Core::Color>(colorRef);
         }
+        std::unordered_map<hstring, uint32_t> featMap{ {L"ss04", 1} };
+        _FontFeatures = single_threaded_map<hstring, uint32_t>(std::move(featMap));
     }
 
     // Method Description:

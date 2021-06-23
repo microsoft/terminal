@@ -93,6 +93,11 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     return _defaultFontInfo.GetStretch();
 }
 
+[[nodiscard]] std::unordered_map<DWRITE_FONT_FEATURE_TAG, uint32_t> DxFontRenderData::DefaultFontFeatures() noexcept
+{
+    return _defaultFontInfo.GetFeatures();
+}
+
 [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::DefaultTextFormat()
 {
     return TextFormatWithAttribute(_defaultFontInfo.GetWeight(), _defaultFontInfo.GetStyle(), _defaultFontInfo.GetStretch());
