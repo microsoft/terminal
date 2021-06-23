@@ -25,6 +25,7 @@ hyperlinks
 img
 It'd
 kje
+libfuzzer
 lje
 maxed
 mru
@@ -32,6 +33,7 @@ nje
 ogonek
 ok'd
 overlined
+pipeline
 postmodern
 ptys
 qof

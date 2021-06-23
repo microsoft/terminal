@@ -14,3 +14,4 @@ appshellintegration
 cppreference
 gfycat
 Guake
+azurewebsites

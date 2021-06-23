@@ -8,8 +8,6 @@ To set up a fuzzer, you'll need an `LLVMFuzzerTestOneInput` function. This serve
 
 To build the fuzzer locally, build the OpenConsole solution in the `Fuzzing` configuration. This should output an executable that runs the fuzzer on the provided test case. In the case of PR \#9604, the desired executable is located at `bin\x64\Fuzzing\OpenConsoleFuzzer.exe`.
 
-**NOTE**: If you get an error like `cannot open input file libsancov.lib and clang-rt.fuzzer-x86_64.lib`, install the "C++ AddressSanitizer" via the Visual Studio Installer.
-
 ### Resources
 - [LibFuzzer Docs](https://www.llvm.org/docs/LibFuzzer.html)
 - [#9604](https://github.com/microsoft/terminal/pull/9604)
@@ -48,7 +46,7 @@ This should also output more information (i.e. job ID) about the newly created j
 
 **NOTE**: Our pipeline is already set up with this functionality. However, here is a quick guide on how to get it set up and modify it to our liking.
 
-OneFuzz supports multiple notification systems at once including MS Teams and Azure DevOps. See the resources below to learn more abotu setting these up.
+OneFuzz supports multiple notification systems at once including MS Teams and Azure DevOps. See the resources below to learn more about setting these up.
 
 ### Resources
 - [OneFuzz GitHub](https://github.com/microsoft/onefuzz)

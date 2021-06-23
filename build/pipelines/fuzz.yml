@@ -25,24 +25,21 @@ stages:
       parameters:
         platform: x64
   - stage: OneFuzz
-    displayName: OneFuzz
+    displayName: Submit OneFuzz Job
     dependsOn: ['Build_Fuzz_Config']
     condition: succeeded()
     pool:
       vmImage: 'ubuntu-latest'
     variables:
-      publishedArtifactsPath: drop
-      artifactsPath: $(Build.SourcesDirectory)Artifacts
-      commitSHA1: $(Build.SourceVersion)
+      artifactName: drop
     jobs:
     - job:
       steps:
       - task: DownloadBuildArtifacts@0
         inputs:
-          artifactName: $(publishedArtifactsPath)
-          downloadPath: $(artifactsPath)
+          artifactName: $(artifactName)
+          downloadPath: $(Build.ArtifactStagingDirectory)
       - task: UsePythonVersion@0
-        displayName: Setup Python Env
         inputs:
           versionSpec: '3.x'
           addToPath: true
@@ -51,8 +48,10 @@ stages:
           set -ex
           pip -q install onefuzz
           onefuzz config --endpoint $(endpoint) --client_id $(client_id) --client_secret $(client_secret)
-          onefuzz template libfuzzer basic OpenConsole WriteCharsLegacy $(commitSHA1) windows --target_exe $(artifactsPath)/$(publishedArtifactsPath)/Fuzzing/x64/test/OpenConsoleFuzzer.exe
+        displayName: Configure OneFuzz
+      - bash: |
+          onefuzz template libfuzzer basic OpenConsole $(test_name) $(Build.SourceVersion) windows --target_exe $(target_exe_path)
         displayName: Submit OneFuzz Job
         env:
-          client_id: client_id
-          client_secret: client_secret
+          target_exe_path: $(Build.ArtifactStagingDirectory)/$(artifactName)/Fuzzing/x64/test/OpenConsoleFuzzer.exe
+          test_name: WriteCharsLegacy

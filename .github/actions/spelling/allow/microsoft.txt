@@ -33,6 +33,7 @@ MSVC
 muxc
 netcore
 osgvsowi
+Onefuzz
 PFILETIME
 pgc
 pgo

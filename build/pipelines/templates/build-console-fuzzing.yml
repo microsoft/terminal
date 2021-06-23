@@ -2,8 +2,6 @@ parameters:
   configuration: 'Fuzzing'
   platform: ''
   additionalBuildArguments: ''
-  minimumExpectedTestsExecutedCount: 1 # Sanity check for minimum expected tests to be reported
-  rerunPassesRequiredToAvoidFailure: 0
 
 jobs:
 - job: Build${{ parameters.platform }}${{ parameters.configuration }}
@@ -16,6 +14,90 @@ jobs:
   # pool: { vmImage: windows-2019 }
 
   steps:
-  - template: build-console-steps.yml
-    parameters:
-      additionalBuildArguments: ${{ parameters.additionalBuildArguments }}
+  - task: PowerShell@2
+  displayName: 'Rationalize build platform'
+  inputs:
+    targetType: inline
+    script: |
+      $Arch = "$(BuildPlatform)"
+      If ($Arch -Eq "x86") { $Arch = "Win32" }
+      Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
+
+  - task: PowerShell@2
+    displayName: 'Validate binaries are optimized'
+    condition: eq(variables['pgoBuildMode'], 'Optimize')
+    inputs:
+      targetType: inline
+      script: |
+        $Binaries = 'OpenConsole.exe', 'WindowsTerminal.exe', 'TerminalApp.dll', 'TerminalConnection.dll', 'Microsoft.Terminal.Control.dll', 'Microsoft.Terminal.Remoting.dll', 'Microsoft.Terminal.Settings.Editor.dll', 'Microsoft.Terminal.Settings.Model.dll'
+        foreach ($BinFile in $Binaries)
+        {
+          & "$(Build.SourcesDirectory)\tools\PGODatabase\verify-pgo.ps1" "$(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/$BinFile"
+        }
+
+  - task: CopyFiles@2
+  displayName: 'Copy result logs to Artifacts'
+  inputs:
+    Contents: |
+     **/*.wtl
+     **/*onBuildMachineResults.xml
+     ${{ parameters.testLogPath }}
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
+    OverWrite: true
+    flattenFolders: true
+
+  - task: CopyFiles@2
+    displayName: 'Copy *.appx/*.msix to Artifacts (Non-PR builds only)'
+    inputs:
+      Contents: |
+       **/*.appx
+       **/*.msix
+       **/*.appxsym
+       !**/Microsoft.VCLibs*.appx
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/appx'
+      OverWrite: true
+      flattenFolders: true
+    condition: succeeded()
+
+  - task: CopyFiles@2
+  displayName: 'Copy outputs needed for test runs to Artifacts'
+  inputs:
+    Contents: |
+     $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.exe
+     $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.dll
+     $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.xml
+     **/Microsoft.VCLibs.*.appx
+     **/TestHostApp/*.exe
+     **/TestHostApp/*.dll
+     **/TestHostApp/*.xml
+     !**/*.pdb
+     !**/*.ipdb
+     !**/*.obj
+     !**/*.pch
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
+    OverWrite: true
+    flattenFolders: true
+  condition: succeeded()
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish All Build Artifacts'
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'drop'
+
+  - task: CopyFiles@2
+    displayName: 'Copy PGO databases needed for PGO instrumentation run'
+    inputs:
+      Contents: |
+       **/*.pgd
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/PGO/$(BuildPlatform)'
+      OverWrite: true
+      flattenFolders: true
+    condition: and(succeeded(), eq(variables['PGOBuildMode'], 'Instrument'))
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish All PGO Artifacts'
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/PGO'
+      ArtifactName: 'PGO'
+    condition: and(succeeded(), eq(variables['PGOBuildMode'], 'Instrument'))
