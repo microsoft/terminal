@@ -76,7 +76,7 @@ void FontConfig::LayerJson(const Json::Value& json)
     }
 }
 
-bool FontConfig::HasAnyOptionSet()
+bool FontConfig::HasAnyOptionSet() const
 {
     return HasFontFace() || HasFontSize() || HasFontWeight();
 }
