@@ -48,6 +48,7 @@ stages:
           set -ex
           pip -q install onefuzz
           onefuzz config --endpoint $(endpoint) --client_id $(client_id) --client_secret $(client_secret)
+          sed -i s/INSERT_PAT_HERE/${ado_pat}/ ../Fuzz/notifications-ado.json
         displayName: Configure OneFuzz
       - bash: |
           onefuzz template libfuzzer basic OpenConsole $(test_name) $(Build.SourceVersion) windows --target_exe $(target_exe_path)
