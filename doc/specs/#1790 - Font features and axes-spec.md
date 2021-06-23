@@ -1,7 +1,8 @@
 ---
 author: Pankaj Bhojwani, pabhojwa@microsoft.com
 created on: 2021-6-17
-last updated: 2021-6-17
+last updated: 2021-6-23
+issue id: #1790
 ---
 
 # Font features and axes of variation
@@ -77,6 +78,8 @@ Older versions of Windows may not have the DWrite updates that allow for definin
 
 ### Performance, Power, and Efficiency
 
+Should not affect power or efficiency. See the Potential Issues section for potential performance issues.
+
 ## Potential Issues
 
 We will need to monitor any potential performance issues caused by this feature. Since the extra work being done is only during initialization, the performance issues will probably be negligible if at all, but it will still be wise to check.
@@ -84,6 +87,8 @@ We will need to monitor any potential performance issues caused by this feature.
 ## Future considerations
 
 DWrite additionally offers the ability to vary the font features across runs of text. However, for our initial implementation of this feature, we will only apply font features to the entire buffer. If/when we decide to allow specifying font features for particular runs of text, we can lean into our existing mechanisms of splitting up runs of text to implement that.
+
+We will also need to consider how we want to represent this in the settings UI. This is slightly more complex than other settings since users should be allowed to manually input 4-character tags.
 
 ## Resources
 
