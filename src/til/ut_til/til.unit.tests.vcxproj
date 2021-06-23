@@ -10,24 +10,26 @@
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
-    <ClCompile Include="BaseTests.cpp" />
-    <ClCompile Include="BitmapTests.cpp" />
-    <ClCompile Include="OperatorTests.cpp" />
-    <ClCompile Include="PointTests.cpp" />
-    <ClCompile Include="StaticMapTests.cpp" />
-    <ClCompile Include="MathTests.cpp" />
-    <ClCompile Include="RectangleTests.cpp" />
-    <ClCompile Include="RunLengthEncodingTests.cpp" />
-    <ClCompile Include="SizeTests.cpp" />
-    <ClCompile Include="ColorTests.cpp" />
-    <ClCompile Include="CoalesceTests.cpp" />
-    <ClCompile Include="ReplaceTests.cpp" />
-    <ClCompile Include="SomeTests.cpp" />
-    <ClCompile Include="VisualizeControlCodesTests.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="BaseTests.cpp" />
+    <ClCompile Include="BitmapTests.cpp" />
+    <ClCompile Include="CoalesceTests.cpp" />
+    <ClCompile Include="ColorTests.cpp" />
+    <ClCompile Include="MathTests.cpp" />
+    <ClCompile Include="mutex.cpp" />
+    <ClCompile Include="OperatorTests.cpp" />
+    <ClCompile Include="PointTests.cpp" />
+    <ClCompile Include="RectangleTests.cpp" />
+    <ClCompile Include="ReplaceTests.cpp" />
+    <ClCompile Include="RunLengthEncodingTests.cpp" />
+    <ClCompile Include="SizeTests.cpp" />
+    <ClCompile Include="SomeTests.cpp" />
     <ClCompile Include="SPSCTests.cpp" />
+    <ClCompile Include="StaticMapTests.cpp" />
+    <ClCompile Include="string.cpp" />
+    <ClCompile Include="throttled_func.cpp" />
     <ClCompile Include="u8u16convertTests.cpp" />
   </ItemGroup>
   <ItemGroup>

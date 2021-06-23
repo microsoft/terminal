@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<featureStaging xmlns="http://microsoft.com/TilFeatureStaging-Schema.xsd">
+    <!-- See doc/feature_flags.md for more info.  -->
+    <feature>
+        <name>Feature_ReceiveIncomingHandoff</name>
+        <description>OpenConsole should be able to receive incoming connections</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysDisabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_AttemptHandoff</name>
+        <description>conhost should try to hand connections over to OpenConsole</description>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_ConhostDxEngine</name>
+        <description>Controls whether conhost supports the DX engine and the UseDx registry key</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysDisabledBrandingTokens>
+    </feature>
+    <feature>
+        <name>Feature_DxEngineShaderSupport</name>
+        <description>Controls whether the DX engine is built with shader support.</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysDisabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_UseNumpadEventsForClipboardInput</name>
+        <description>Controls whether the clipboard converter (and ConPTY InputStateMachine) uses Numpad events instead of UChar</description>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <!--
+                To reduce the risk of compatibility issues inside Windows, we're going to continue using the old
+                version of GetQuickCharWidth to determine whether a character should be synthesized into numpad
+                events.
+            -->
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+</featureStaging>

@@ -28,10 +28,9 @@ ConsoleWaitBlock::ConsoleWaitBlock(_In_ ConsoleWaitQueue* const pProcessQueue,
                                    _In_ IWaitRoutine* const pWaiter) :
     _pProcessQueue(THROW_HR_IF_NULL(E_INVALIDARG, pProcessQueue)),
     _pObjectQueue(THROW_HR_IF_NULL(E_INVALIDARG, pObjectQueue)),
+    _WaitReplyMessage(*pWaitReplyMessage),
     _pWaiter(THROW_HR_IF_NULL(E_INVALIDARG, pWaiter))
 {
-    _WaitReplyMessage = *pWaitReplyMessage;
-
     // MSFT-33127449, GH#9692
     // Until there's a "Wait", there's only one API message inflight at a time. In our
     // quest for performance, we put that single API message in charge of its own
@@ -51,14 +50,8 @@ ConsoleWaitBlock::ConsoleWaitBlock(_In_ ConsoleWaitQueue* const pProcessQueue,
     // waiting message or the "wait completer" has a bunch of dangling pointers in it.
     // Oops.
     //
-    // Here, we fix up the message's internal pointers (in lieu of giving it a proper
-    // copy constructor; see GH#10076) and then tell the wait completion routine (which
-    // is going to be a COOKED_READ, RAW_READ, DirectRead or WriteData) about the new
-    // buffer location.
-    //
-    // This is a scoped fix that should be replaced (TODO GH#10076) with a final one
-    // after Ask mode.
-    _WaitReplyMessage.UpdateUserBufferPointers();
+    // Here, we tell the wait completion routine (which is going to be a COOKED_READ,
+    // RAW_READ, DirectRead or WriteData) about the new buffer location.
 
     if (pWaitReplyMessage->State.InputBuffer)
     {
@@ -68,12 +61,6 @@ ConsoleWaitBlock::ConsoleWaitBlock(_In_ ConsoleWaitQueue* const pProcessQueue,
     if (pWaitReplyMessage->State.OutputBuffer)
     {
         _pWaiter->MigrateUserBuffersOnTransitionToBackgroundWait(pWaitReplyMessage->State.OutputBuffer, _WaitReplyMessage.State.OutputBuffer);
-    }
-
-    // We will write the original message back (with updated out parameters/payload) when the request is finally serviced.
-    if (pWaitReplyMessage->Complete.Write.Data != nullptr)
-    {
-        _WaitReplyMessage.Complete.Write.Data = &_WaitReplyMessage.u;
     }
 }
 
@@ -85,11 +72,7 @@ ConsoleWaitBlock::~ConsoleWaitBlock()
 {
     _pProcessQueue->_blocks.erase(_itProcessQueue);
     _pObjectQueue->_blocks.erase(_itObjectQueue);
-
-    if (_pWaiter != nullptr)
-    {
-        delete _pWaiter;
-    }
+    delete _pWaiter;
 }
 
 // Routine Description:

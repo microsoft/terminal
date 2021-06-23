@@ -7,6 +7,8 @@
 #include <ShObjIdl.h>
 #include <Propkey.h>
 
+#include <WtExeUtils.h>
+
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 //  This property key isn't already defined in propkey.h, but is used by UWP Jumplist to determine the icon of the jumplist item.
@@ -50,66 +52,6 @@ static std::wstring _normalizeIconPath(std::wstring_view path)
         return asPath.make_preferred().wstring();
     }
     return std::wstring{ fullPath };
-}
-
-// Function Description:
-// - Helper function for getting the path to the appropriate executable to use
-//   for this instance of the jumplist. For the dev build, it should be `wtd.exe`,
-//   but if we're preview or release, we want to make sure to get the correct
-//   `wt.exe` that corresponds to _us_.
-// - If we're unpackaged, this needs to get us `WindowsTerminal.exe`, because
-//   the `wt*exe` alias won't have been installed for this install.
-// Arguments:
-// - <none>
-// Return Value:
-// - the full path to the exe, one of `wt.exe`, `wtd.exe`, or `WindowsTerminal.exe`.
-static std::wstring_view _getExePath()
-{
-    static constexpr std::wstring_view WtExe{ L"wt.exe" };
-    static constexpr std::wstring_view WindowsTerminalExe{ L"WindowsTerminal.exe" };
-    static constexpr std::wstring_view WtdExe{ L"wtd.exe" };
-
-    static constexpr std::wstring_view LocalAppDataAppsPath{ L"%LOCALAPPDATA%\\Microsoft\\WindowsApps\\" };
-
-    // use C++11 magic statics to make sure we only do this once.
-    static const std::wstring exePath = []() -> std::wstring {
-        // First, check a packaged location for the exe. If we've got a package
-        // family name, that means we're one of the packaged Dev build, packaged
-        // Release build, or packaged Preview build.
-        //
-        // If we're the preview or release build, there's no way of knowing if the
-        // `wt.exe` on the %PATH% is us or not. Fortunately, _our_ execution alias
-        // is located in "%LOCALAPPDATA%\Microsoft\WindowsApps\<our package family
-        // name>", _always_, so we can use that to look up the exe easier.
-        try
-        {
-            const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
-            const auto id{ package.Id() };
-            const std::wstring pfn{ id.FamilyName() };
-            const auto isDevPackage{ pfn.rfind(L"WindowsTerminalDev") == 0 };
-            if (!pfn.empty())
-            {
-                const std::filesystem::path windowsAppsPath{ wil::ExpandEnvironmentStringsW<std::wstring>(LocalAppDataAppsPath.data()) };
-                const std::filesystem::path wtPath{ windowsAppsPath / pfn / (isDevPackage ? WtdExe : WtExe) };
-                return wtPath;
-            }
-        }
-        CATCH_LOG();
-
-        // If we're here, then we couldn't resolve our exe from the package. This
-        // means we're running unpackaged. We should just use the
-        // WindowsTerminal.exe that's sitting in the directory next to us.
-        try
-        {
-            std::filesystem::path module{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
-            module.replace_filename(WindowsTerminalExe);
-            return module;
-        }
-        CATCH_LOG();
-
-        return std::wstring{ WtExe };
-    }();
-    return exePath;
 }
 
 // Method Description:
@@ -187,7 +129,7 @@ winrt::fire_and_forget Jumplist::UpdateJumplist(const CascadiaSettings& settings
 // - Creates a ShellLink object. Each item in a jumplist is a ShellLink, which is sort of
 //   like a shortcut. It requires the path to the application (wt.exe), the arguments to pass,
 //   and the path to the icon for the jumplist item. The path to the application isn't passed
-//   into this function, as we'll determine it with _getExePath
+//   into this function, as we'll determine it with GetWtExePath
 // Arguments:
 // - name: The name of the item displayed in the jumplist.
 // - path: The path to the icon for the jumplist item.
@@ -204,7 +146,7 @@ winrt::fire_and_forget Jumplist::UpdateJumplist(const CascadiaSettings& settings
     {
         auto sh = winrt::create_instance<IShellLinkW>(CLSID_ShellLink, CLSCTX_ALL);
 
-        const auto module{ _getExePath() };
+        const auto module{ GetWtExePath() };
         RETURN_IF_FAILED(sh->SetPath(module.data()));
         RETURN_IF_FAILED(sh->SetArguments(args.data()));
 

@@ -147,7 +147,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::unordered_set<std::string> _AccumulateJsonFilesInDirectory(const std::wstring_view directory);
         void _ParseAndLayerFragmentFiles(const std::unordered_set<std::string> files, const winrt::hstring source);
 
-        static bool _IsPackaged();
         static void _WriteSettings(std::string_view content, const hstring filepath);
         static std::optional<std::string> _ReadUserSettings();
         static std::optional<std::string> _ReadFile(HANDLE hFile);

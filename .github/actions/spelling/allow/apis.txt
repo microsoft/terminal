@@ -4,6 +4,8 @@ alignas
 alignof
 bitfield
 bitfields
+BUILDBRANCH
+BUILDMSG
 BUILDNUMBER
 charconv
 CLASSNOTAVAILABLE
@@ -45,6 +47,7 @@ IBind
 IBox
 IClass
 IComparable
+IComparer
 IConnection
 ICustom
 IDialog
@@ -71,6 +74,7 @@ llu
 localtime
 lround
 LSHIFT
+mov
 msappx
 MULTIPLEUSE
 NCHITTEST
@@ -85,6 +89,8 @@ NOREPEAT
 ntprivapi
 oaidl
 ocidl
+ODR
+offsetof
 osver
 OSVERSIONINFOEXW
 otms
@@ -93,6 +99,7 @@ overridable
 PAGESCROLL
 PICKFOLDERS
 pmr
+rcx
 REGCLS
 RETURNCMD
 rfind
@@ -124,6 +131,7 @@ tmp
 tolower
 TTask
 TVal
+UChar
 UPDATEINIFILE
 userenv
 wcsstr
@@ -132,6 +140,7 @@ winmain
 wpc
 wsregex
 wwinmain
+xchg
 XDocument
 XElement
 xfacet
@@ -146,6 +155,7 @@ xlocnum
 xloctime
 xmemory
 XParse
+xpath
 xstddef
 xstring
 xtree

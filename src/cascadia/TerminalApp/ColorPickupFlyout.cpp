@@ -96,7 +96,7 @@ namespace winrt::TerminalApp::implementation
         Hide();
     }
 
-    void ColorPickupFlyout::ColorPicker_ColorChanged(const Windows::UI::Xaml::Controls::ColorPicker&, const Windows::UI::Xaml::Controls::ColorChangedEventArgs& args)
+    void ColorPickupFlyout::ColorPicker_ColorChanged(const Microsoft::UI::Xaml::Controls::ColorPicker&, const Microsoft::UI::Xaml::Controls::ColorChangedEventArgs& args)
     {
         _ColorSelectedHandlers(args.NewColor());
     }

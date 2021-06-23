@@ -39,6 +39,11 @@ namespace Microsoft.Terminal.Settings.Editor
         PercentageConverter();
     };
 
+    runtimeclass PercentageSignConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        PercentageSignConverter();
+    };
+
     runtimeclass StringIsEmptyConverter : [default] Windows.UI.Xaml.Data.IValueConverter
     {
         StringIsEmptyConverter();
