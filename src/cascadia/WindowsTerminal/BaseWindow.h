@@ -5,6 +5,7 @@
 
 // Custom window messages
 #define CM_UPDATE_TITLE (WM_USER)
+#define CM_NOTIFY_FROM_TRAY (WM_APP + 1)
 
 #include <wil/resource.h>
 

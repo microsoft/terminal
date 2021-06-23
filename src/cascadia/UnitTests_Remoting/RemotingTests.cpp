@@ -16,24 +16,6 @@ using namespace WEX::Common;
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
 
-// These are some gross macros that let us call a private ctor for
-// Monarch/Peasant. We can't just use make_self, because that doesn't let us
-// call a private ctor. We can use com_ptr::attach, but since we're allocating
-// the thing on the stack, we need to make sure to call detach before the object
-// is destructed.
-
-#define MAKE_MONARCH(name, pid)                               \
-    Remoting::implementation::Monarch _local_##name##{ pid }; \
-    com_ptr<Remoting::implementation::Monarch> name;          \
-    name.attach(&_local_##name##);                            \
-    auto cleanup_##name## = wil::scope_exit([&]() { name.detach(); });
-
-#define MAKE_PEASANT(name, pid)                               \
-    Remoting::implementation::Peasant _local_##name##{ pid }; \
-    com_ptr<Remoting::implementation::Peasant> name;          \
-    name.attach(&_local_##name##);                            \
-    auto cleanup_##name## = wil::scope_exit([&]() { name.detach(); });
-
 namespace RemotingUnitTests
 {
     struct MockDesktopManager : implements<MockDesktopManager, IVirtualDesktopManager>
@@ -215,7 +197,6 @@ namespace RemotingUnitTests
         Log::Comment(L"That's what we need for window process management, but for tests, it'll be more useful to fake the PIDs.");
 
         auto expectedFakePID = 1234u;
-        //MAKE_MONARCH(m2, expectedFakePID);
         auto m2 = winrt::make_self<Remoting::implementation::Monarch>(expectedFakePID);
 
         VERIFY_IS_NOT_NULL(m2);
@@ -235,7 +216,6 @@ namespace RemotingUnitTests
         Log::Comment(L"That's what we need for window process management, but for tests, it'll be more useful to fake the PIDs.");
 
         auto expectedFakePID = 2345u;
-        //MAKE_PEASANT(p2, expectedFakePID);
         auto p2 = winrt::make_self<Remoting::implementation::Peasant>(expectedFakePID);
 
         VERIFY_IS_NOT_NULL(p2);

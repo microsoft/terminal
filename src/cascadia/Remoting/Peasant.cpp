@@ -20,8 +20,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
     }
 
-    // This is a private constructor to be used in unit tests, where we don't
-    // want each Peasant to necessarily use the current PID.
+    // This constructor is intended to be used in unit tests,
+    // but we need to make it public in order to use make_self
+    // in the tests. It's not exposed through the idl though
+    // so it's not _truly_ fully public which should be acceptable.
     Peasant::Peasant(const uint64_t testPID) :
         _ourPID{ testPID }
     {

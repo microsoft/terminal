@@ -28,7 +28,7 @@ namespace Microsoft.Terminal.Remoting
 
         Boolean FoundMatch;
         SummonWindowBehavior SummonBehavior;
-        UInt64 WindowID;
+        Windows.Foundation.IReference<UInt64> WindowID;
     }
 
 
@@ -41,7 +41,8 @@ namespace Microsoft.Terminal.Remoting
         void HandleActivatePeasant(WindowActivatedArgs args);
         void SummonWindow(SummonWindowSelectionArgs args);
 
-        Windows.Foundation.Collections.IMap<UInt64, String> GetPeasantNames();
+        void SummonAllWindows();
+        Windows.Foundation.Collections.IMapView<UInt64, String> GetPeasantNames { get; };
 
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
     };

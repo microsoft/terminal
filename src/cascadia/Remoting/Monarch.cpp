@@ -28,8 +28,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         CATCH_LOG();
     }
 
-    // This is a private constructor to be used in unit tests, where we don't
-    // want each Monarch to necessarily use the current PID.
+    // This constructor is intended to be used in unit tests,
+    // but we need to make it public in order to use make_self
+    // in the tests. It's not exposed through the idl though
+    // so it's not _truly_ fully public which should be acceptable.
     Monarch::Monarch(const uint64_t testPID) :
         _ourPID{ testPID }
     {
@@ -732,8 +734,14 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         try
         {
             args.FoundMatch(false);
+
+            // If a WindowID is provided from the args, use that first.
             uint64_t windowId = 0;
-            if (!args.WindowID())
+            if (args.WindowID())
+            {
+                windowId = args.WindowID().Value();
+            }
+            else
             {
                 // If no name was provided, then just summon the MRU window.
                 if (searchedForName.empty())
@@ -748,10 +756,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                     // Try to find a peasant that currently has this name
                     windowId = _lookupPeasantIdForName(searchedForName);
                 }
-            }
-            else
-            {
-                windowId = args.WindowID();
             }
 
             if (auto targetPeasant{ _getPeasant(windowId) })
@@ -778,7 +782,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     // Return Value:
     // - A map of peasant IDs to their names.
-    Windows::Foundation::Collections::IMap<uint64_t, winrt::hstring> Monarch::GetPeasantNames()
+    Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> Monarch::GetPeasantNames()
     {
         auto names = winrt::single_threaded_map<uint64_t, winrt::hstring>();
 
@@ -803,6 +807,16 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             _clearOldMruEntries(id);
         }
 
-        return names;
+        return names.GetView();
+    }
+
+    void Monarch::SummonAllWindows()
+    {
+        for (const auto [id, peasant] : _peasants)
+        {
+            SummonWindowBehavior args{};
+            args.ToggleVisibility(false);
+            peasant.Summon(args);
+        }
     }
 }

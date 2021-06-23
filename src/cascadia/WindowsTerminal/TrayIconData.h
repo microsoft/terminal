@@ -1,5 +1,7 @@
-#pragma once
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
+#pragma once
 #include "pch.h"
 
 // This enumerates all the possible actions

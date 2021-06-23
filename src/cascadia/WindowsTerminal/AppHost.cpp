@@ -12,6 +12,7 @@
 #include "icon.h"
 #include "TrayIconData.h"
 
+#include <ScopedResourceLoader.h>
 #include <LibraryResources.h>
 
 using namespace winrt::Windows::UI;
@@ -86,7 +87,6 @@ AppHost::AppHost() noexcept :
     _window->NotifyTrayIconPressed({ this, &AppHost::_HandleTrayIconPressed });
     _window->NotifyShowTrayContextMenu({ this, &AppHost::_ShowTrayContextMenu });
     _window->NotifyTrayMenuItemSelected({ this, &AppHost::_TrayMenuItemSelected });
-    _window->NotifyCreateTrayIcon({ this, &AppHost::_UpdateTrayIcon });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
 
@@ -652,7 +652,9 @@ winrt::fire_and_forget AppHost::_WindowActivated()
 void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
+    _window->NotifyCreateTrayIcon({ this, &AppHost::_UpdateTrayIcon });
     _UpdateTrayIcon();
+
     _setupGlobalHotkeys();
 
     // The monarch is just going to be THE listener for inbound connections.
@@ -1017,8 +1019,15 @@ void AppHost::_UpdateTrayIcon()
     }
     else if (_trayIconData)
     {
-        // We have a tray icon existing, but the now the new settings
-        // are telling us we don't want you so poof.
+        // We currently have a tray icon, but after a settings change
+        // we shouldn't have one. In this case, we'll need to destroy our
+        // tray icon and show any hidden windows.
+        // For the sake of simplicity in this rare case, let's just summon
+        // all the windows.
+        if (_windowManager.IsMonarch())
+        {
+            _windowManager.SummonAllWindows();
+        }
         _DestroyTrayIcon();
     }
 }
@@ -1052,7 +1061,7 @@ void AppHost::_ShowTrayContextMenu(const til::point coord)
             uFlags |= TPM_LEFTALIGN;
         }
 
-        TrackPopupMenuEx(hmenu, uFlags, (int)coord.x(), (int)coord.y(), _window->GetHandle(), NULL);
+        TrackPopupMenuEx(hmenu, uFlags, gsl::narrow<int>(coord.x()), gsl::narrow<int>(coord.y()), _window->GetHandle(), NULL);
     }
 }
 
@@ -1075,7 +1084,7 @@ HMENU AppHost::_CreateTrayContextMenu()
         SetMenuInfo(hmenu, &mi);
 
         // Focus Current Terminal Window
-        AppendMenu(hmenu, MF_STRING, (UINT_PTR)TrayMenuItemAction::FocusTerminal, RS_(L"TrayIconFocusTerminal").c_str());
+        AppendMenu(hmenu, MF_STRING, gsl::narrow<UINT_PTR>(TrayMenuItemAction::FocusTerminal), RS_(L"TrayIconFocusTerminal").c_str());
         AppendMenu(hmenu, MF_SEPARATOR, 0, L"");
 
         // Submenu for Windows
@@ -1085,10 +1094,10 @@ HMENU AppHost::_CreateTrayContextMenu()
             submenuInfo.cbSize = sizeof(MENUINFO);
             submenuInfo.fMask = MIM_MENUDATA;
             submenuInfo.dwStyle = MNS_NOTIFYBYPOS;
-            submenuInfo.dwMenuData = (UINT_PTR)TrayMenuItemAction::SummonWindow;
+            submenuInfo.dwMenuData = gsl::narrow<UINT_PTR>(TrayMenuItemAction::SummonWindow);
             SetMenuInfo(windowSubmenu, &submenuInfo);
 
-            AppendMenu(hmenu, MF_POPUP, (UINT_PTR)windowSubmenu, RS_(L"TrayIconWindowSubmenu").c_str());
+            AppendMenu(hmenu, MF_POPUP, reinterpret_cast<UINT_PTR>(windowSubmenu), RS_(L"TrayIconWindowSubmenu").c_str());
         }
     }
     return hmenu;
@@ -1105,8 +1114,8 @@ HMENU AppHost::_CreateWindowSubmenu()
 {
     if (auto hmenu = CreatePopupMenu())
     {
-        auto locWindow = RS_(L"WindowIdLabel");
-        auto locUnnamed = RS_(L"UnnamedWindowName");
+        const auto locWindow = RS_(L"WindowIdLabel");
+        const auto locUnnamed = RS_(L"UnnamedWindowName");
         for (const auto [id, name] : _windowManager.GetPeasantNames())
         {
             winrt::hstring displayText = name;
@@ -1115,7 +1124,7 @@ HMENU AppHost::_CreateWindowSubmenu()
                 displayText = fmt::format(L"{} {} - <{}>", locWindow, id, locUnnamed);
             }
 
-            AppendMenu(hmenu, MF_STRING, (UINT_PTR)id, displayText.c_str());
+            AppendMenu(hmenu, MF_STRING, gsl::narrow<UINT_PTR>(id), displayText.c_str());
         }
         return hmenu;
     }
@@ -1132,15 +1141,14 @@ HMENU AppHost::_CreateWindowSubmenu()
 // - <none>
 void AppHost::_TrayMenuItemSelected(const HMENU menu, const UINT menuItemIndex)
 {
-    // Let's find out which menu/submenu we're looking at.
+    // Check the menu's data for a specific action.
     MENUINFO mi{};
     mi.cbSize = sizeof(MENUINFO);
     mi.fMask = MIM_MENUDATA;
     GetMenuInfo(menu, &mi);
-
     if (mi.dwMenuData)
     {
-        if ((TrayMenuItemAction)mi.dwMenuData == TrayMenuItemAction::SummonWindow)
+        if (gsl::narrow<TrayMenuItemAction>(mi.dwMenuData) == TrayMenuItemAction::SummonWindow)
         {
             Remoting::SummonWindowSelectionArgs args{};
             args.WindowID(GetMenuItemID(menu, menuItemIndex));
@@ -1149,7 +1157,8 @@ void AppHost::_TrayMenuItemSelected(const HMENU menu, const UINT menuItemIndex)
         }
     }
 
-    auto action = (TrayMenuItemAction)GetMenuItemID(menu, menuItemIndex);
+    // Now check the menu item itself for an action.
+    const auto action = gsl::narrow<TrayMenuItemAction>(GetMenuItemID(menu, menuItemIndex));
     switch (action)
     {
     case TrayMenuItemAction::FocusTerminal:
