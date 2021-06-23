@@ -549,7 +549,11 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, BellStyleKey, _BellStyle);
 
     // Font settings
-    json[JsonKey(FontInfoKey)] = winrt::get_self<FontConfig>(_FontInfo)->ToJson();
+    const auto fontInfoImpl = winrt::get_self<FontConfig>(_FontInfo);
+    if (fontInfoImpl->HasAnyOptionSet())
+    {
+        json[JsonKey(FontInfoKey)] = winrt::get_self<FontConfig>(_FontInfo)->ToJson();
+    }
 
     if (_UnfocusedAppearance)
     {

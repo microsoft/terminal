@@ -177,8 +177,7 @@ namespace SettingsModelLocalTests
 
         const std::string smallProfileString{ R"(
             {
-                "name": "Custom Profile",
-                "font": {}
+                "name": "Custom Profile"
             })" };
 
         // Setting "tabColor" to null tests two things:
@@ -191,7 +190,6 @@ namespace SettingsModelLocalTests
                 "hidden": false,
                 "tabColor": null,
                 "foreground": null,
-                "font": {},
                 "source": "local"
             })" };
 
@@ -419,12 +417,10 @@ namespace SettingsModelLocalTests
                                                         },
                                                         {
                                                             "hidden": true,
-                                                            "font": {},
                                                             "name": "BhojwaniShell"
                                                         },
                                                         {
                                                             "antialiasingMode": "aliased",
-                                                            "font": {},
                                                             "name": "NiksaShell"
                                                         }
                                                     ]
