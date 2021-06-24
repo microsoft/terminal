@@ -214,15 +214,5 @@ void TrayIcon::TrayIconPressed()
 // - <none>
 void TrayIcon::DestroyTrayIcon()
 {
-    // We currently have a tray icon, but after a settings change
-    // we shouldn't have one. In this case, we'll need to destroy our
-    // tray icon and show any hidden windows.
-    // For the sake of simplicity in this rare case, let's just summon
-    // all the windows.
-    // TODO: Put this section inside of AppHost.
-    //if (_windowManager.IsMonarch())
-    //{
-    //    _windowManager.SummonAllWindows();
-    //}
     Shell_NotifyIcon(NIM_DELETE, &_trayIconData);
 }

@@ -7,6 +7,10 @@
 #include "resource.h"
 #include "icon.h"
 
+#if TIL_FEATURE_TRAYICON_ENABLED
+#include "TrayIcon.h"
+#endif
+
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
 using namespace winrt::Windows::UI;
@@ -508,6 +512,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     case WM_THEMECHANGED:
         UpdateWindowIconForActiveMetrics(_window.get());
         return 0;
+#if TIL_FEATURE_TRAYICON_ENABLED
     case CM_NOTIFY_FROM_TRAY:
     {
         switch (LOWORD(lparam))
@@ -532,8 +537,10 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         _NotifyTrayMenuItemSelectedHandlers((HMENU)lparam, (UINT)wparam);
         return 0;
     }
+#endif
     }
 
+#if TIL_FEATURE_TRAYICON_ENABLED
     // We'll want to receive this message when explorer.exe restarts
     // so that we can re-add our icon to the tray.
     if (message == WM_TASKBARCREATED)
@@ -541,6 +548,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         _NotifyReAddTrayIconHandlers();
         return 0;
     }
+#endif
 
     // TODO: handle messages here...
     return base_type::MessageHandler(message, wparam, lparam);

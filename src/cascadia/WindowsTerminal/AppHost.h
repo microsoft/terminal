@@ -87,23 +87,16 @@ private:
     void _SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::Foundation::IInspectable& args);
 
+#if TIL_FEATURE_TRAYICON_ENABLED
     void _MinimizeToTrayRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                   const winrt::Windows::Foundation::IInspectable&);
 
-    void _UpdateTrayIcon();
-    void _HandleTrayIconPressed();
-    void _ShowTrayContextMenu(const til::point coord);
-    HMENU _CreateTrayContextMenu();
-    HMENU _CreateWindowSubmenu();
-    void _TrayMenuItemSelected(const HMENU menu, const UINT menuItemIndex);
-    void _DestroyTrayIcon();
-
-    std::optional<NOTIFYICONDATA> _trayIconData;
-
     void _CreateTrayIcon();
+    void _DestroyTrayIcon();
     std::unique_ptr<TrayIcon> _trayIcon;
     winrt::event_token _ReAddTrayIconToken;
     winrt::event_token _TrayIconPressedToken;
     winrt::event_token _ShowTrayContextMenuToken;
     winrt::event_token _TrayMenuItemSelectedToken;
+#endif
 };

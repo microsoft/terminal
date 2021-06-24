@@ -816,6 +816,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+#if TIL_FEATURE_TRAYICON_ENABLED
     void TerminalPage::_HandleMinimizeToTray(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {
@@ -826,4 +827,5 @@ namespace winrt::TerminalApp::implementation
 
         args.Handled(true);
     }
+#endif
 }

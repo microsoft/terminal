@@ -54,10 +54,13 @@ public:
     WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
     WINRT_CALLBACK(WindowActivated, winrt::delegate<void()>);
     WINRT_CALLBACK(HotkeyPressed, winrt::delegate<void(long)>);
+
+#if TIL_FEATURE_TRAYICON_ENABLED
     WINRT_CALLBACK(NotifyTrayIconPressed, winrt::delegate<void()>);
     WINRT_CALLBACK(NotifyShowTrayContextMenu, winrt::delegate<void(til::point)>);
     WINRT_CALLBACK(NotifyTrayMenuItemSelected, winrt::delegate<void(HMENU, UINT)>);
     WINRT_CALLBACK(NotifyReAddTrayIcon, winrt::delegate<void()>);
+#endif
 
 protected:
     void ForceResize()

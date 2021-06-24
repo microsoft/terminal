@@ -66,7 +66,9 @@ AppHost::AppHost() noexcept :
     // Update our own internal state tracking if we're in quake mode or not.
     _IsQuakeWindowChanged(nullptr, nullptr);
 
+#if TIL_FEATURE_TRAYICON_ENABLED
     _window->SetMinimizeToTrayBehavior(_logic.GetMinimizeToTray());
+#endif
 
     // Tell the window to callback to us when it's about to handle a WM_CREATE
     auto pfn = std::bind(&AppHost::_HandleCreateWindow,
@@ -95,11 +97,13 @@ AppHost::AppHost() noexcept :
 
 AppHost::~AppHost()
 {
+#if TIL_FEATURE_TRAYICON_ENABLED
     // destruction order is important for proper teardown here
     if (_windowManager.IsMonarch() && _trayIcon)
     {
         _DestroyTrayIcon();
     }
+#endif
 
     _window = nullptr;
     _app.Close();
@@ -277,7 +281,10 @@ void AppHost::Initialize()
     _logic.SettingsChanged({ this, &AppHost::_HandleSettingsChanged });
     _logic.IsQuakeWindowChanged({ this, &AppHost::_IsQuakeWindowChanged });
     _logic.SummonWindowRequested({ this, &AppHost::_SummonWindowRequested });
+
+#if TIL_FEATURE_TRAYICON_ENABLED
     _logic.MinimizeToTrayRequested({ this, &AppHost::_MinimizeToTrayRequested });
+#endif
 
     _window->UpdateTitle(_logic.Title());
 
@@ -652,7 +659,9 @@ winrt::fire_and_forget AppHost::_WindowActivated()
 void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
+#if TIL_FEATURE_TRAYICON_ENABLED
     _CreateTrayIcon();
+#endif
 
     _setupGlobalHotkeys();
 
@@ -934,6 +943,7 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
 {
     _setupGlobalHotkeys();
 
+#if TIL_FEATURE_TRAYICON_ENABLED
     // If we're monarch, we need to check two particular settings for
     // the tray icon - MinimizeToTray and AlwaysShowTrayIcon. If either
     // one of them are true, we want to make sure there's a tray icon.
@@ -954,6 +964,7 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
     }
 
     _window->SetMinimizeToTrayBehavior(_logic.GetMinimizeToTray());
+#endif
 }
 
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
@@ -973,6 +984,7 @@ void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspecta
     _HandleSummon(sender, summonArgs);
 }
 
+#if TIL_FEATURE_TRAYICON_ENABLED
 void AppHost::_MinimizeToTrayRequested(const winrt::Windows::Foundation::IInspectable&,
                                        const winrt::Windows::Foundation::IInspectable&)
 {
@@ -991,7 +1003,7 @@ void AppHost::_CreateTrayIcon()
 
     // Hookup the handlers, save the tokens for revoking if settings change.
     _ReAddTrayIconToken = _window->NotifyReAddTrayIcon({ this, &AppHost::_CreateTrayIcon });
-    _TrayIconPressedToken = _window->NotifyTrayIconPressed([this]() { _trayIcon->HandleTrayIconPressed(); });
+    _TrayIconPressedToken = _window->NotifyTrayIconPressed([this]() { _trayIcon->TrayIconPressed(); });
     _ShowTrayContextMenuToken = _window->NotifyShowTrayContextMenu([this](til::point coord) { _trayIcon->ShowTrayContextMenu(coord, _windowManager.GetPeasantNames()); });
     _TrayMenuItemSelectedToken = _window->NotifyTrayMenuItemSelected([this](HMENU menuHandle, UINT menuItemIndex) { _trayIcon->TrayMenuItemSelected(menuHandle, menuItemIndex); });
     _trayIcon->SummonWindowRequested([this](auto& args) { _windowManager.SummonWindow(args); });
@@ -1013,3 +1025,4 @@ void AppHost::_DestroyTrayIcon()
     _trayIcon->DestroyTrayIcon();
     _trayIcon = nullptr;
 }
+#endif

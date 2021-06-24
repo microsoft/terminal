@@ -1496,5 +1496,4 @@ namespace winrt::TerminalApp::implementation
 
         return _settings.GlobalSettings().AlwaysShowTrayIcon();
     }
-
 }

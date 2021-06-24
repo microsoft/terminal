@@ -49,4 +49,12 @@
             <brandingToken>WindowsInbox</brandingToken>
         </alwaysEnabledBrandingTokens>
     </feature>
+
+    <feature>
+        <name>Feature_TrayIcon</name>
+        <description>Controls whether the Tray Icon and related settings (aka. MinimizeToTray and AlwaysShowTrayIcon) are enabled</description>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+        </alwaysEnabledBrandingTokens>
+    </feature>
 </featureStaging>
