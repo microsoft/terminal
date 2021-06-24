@@ -4,6 +4,7 @@
 #include "pch.h"
 
 #include "NonClientIslandWindow.h"
+#include "TrayIcon.h"
 
 class AppHost
 {
@@ -98,4 +99,11 @@ private:
     void _DestroyTrayIcon();
 
     std::optional<NOTIFYICONDATA> _trayIconData;
+
+    void _CreateTrayIcon();
+    std::unique_ptr<TrayIcon> _trayIcon;
+    winrt::event_token _ReAddTrayIconToken;
+    winrt::event_token _TrayIconPressedToken;
+    winrt::event_token _ShowTrayContextMenuToken;
+    winrt::event_token _TrayMenuItemSelectedToken;
 };

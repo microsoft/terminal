@@ -538,7 +538,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     // so that we can re-add our icon to the tray.
     if (message == WM_TASKBARCREATED)
     {
-        _NotifyCreateTrayIconHandlers();
+        _NotifyReAddTrayIconHandlers();
         return 0;
     }
 
