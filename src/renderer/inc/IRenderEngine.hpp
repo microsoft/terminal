@@ -110,6 +110,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept = 0;
         [[nodiscard]] virtual HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateTitle(const std::wstring_view newTitle) noexcept = 0;
+        [[nodiscard]] virtual HRESULT UpdateFontFeatures(const std::unordered_map<std::wstring, uint32_t> features) noexcept = 0;
     };
 
     inline Microsoft::Console::Render::IRenderEngine::~IRenderEngine() {}

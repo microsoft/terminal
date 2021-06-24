@@ -122,6 +122,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] ::Microsoft::Console::Types::Viewport GetViewportInCharacters(const ::Microsoft::Console::Types::Viewport& viewInPixels) noexcept;
         [[nodiscard]] ::Microsoft::Console::Types::Viewport GetViewportInPixels(const ::Microsoft::Console::Types::Viewport& viewInCharacters) noexcept;
 
+        [[nodiscard]] HRESULT UpdateFontFeatures(const std::unordered_map<std::wstring, uint32_t> features) noexcept override;
+
         float GetScaling() const noexcept;
 
         void SetSelectionBackground(const COLORREF color, const float alpha = 0.5f) noexcept;

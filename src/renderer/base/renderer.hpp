@@ -82,6 +82,8 @@ namespace Microsoft::Console::Render
 
         void UpdateLastHoveredInterval(const std::optional<interval_tree::IntervalTree<til::point, size_t>::interval>& newInterval);
 
+        void AddFontFeatures(const std::unordered_map<std::wstring, uint32_t> features);
+
     private:
         std::deque<IRenderEngine*> _rgpEngines;
 

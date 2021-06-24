@@ -1975,6 +1975,11 @@ CATCH_RETURN()
     return S_OK;
 }
 
+[[nodiscard]] HRESULT DxEngine::UpdateFontFeatures(const std::unordered_map<std::wstring, uint32_t> features) noexcept
+{
+    return S_OK;
+}
+
 // Routine Description:
 // - Updates the font used for drawing
 // Arguments:

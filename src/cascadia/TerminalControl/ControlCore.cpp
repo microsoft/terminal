@@ -598,6 +598,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
         //      actually fail. We need a way to gracefully fallback.
+        _renderer->AddFontFeatures(_fontFeatures);
         _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
 
         // If the actual font isn't what was requested...
