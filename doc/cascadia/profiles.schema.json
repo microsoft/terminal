@@ -1404,6 +1404,47 @@
           "description": "Use to set a path to a pixel shader to use with the Terminal. Overrides `experimental.retroTerminalEffect`. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "string"
         },
+        "fontFace": {
+          "default": "Cascadia Mono",
+          "description": "[deprecated] Define 'face' within the 'font' object instead.",
+          "type": "string",
+          "deprecated": true
+        },
+        "fontSize": {
+          "default": 12,
+          "description": "[deprecated] Define 'size' within the 'font' object instead.",
+          "minimum": 1,
+          "type": "integer",
+          "deprecated": true
+        },
+        "fontWeight": {
+          "default": "normal",
+          "description": "[deprecated] Define 'weight' within the 'font' object instead.",
+          "oneOf": [
+            {
+              "enum": [
+                "thin",
+                "extra-light",
+                "light",
+                "semi-light",
+                "normal",
+                "medium",
+                "semi-bold",
+                "bold",
+                "extra-bold",
+                "black",
+                "extra-black"
+              ],
+              "type": "string"
+            },
+            {
+              "maximum": 990,
+              "minimum": 100,
+              "type": "integer"
+            }
+          ],
+          "deprecated": true
+        },
         "foreground": {
           "$ref": "#/definitions/Color",
           "default": "#cccccc",
