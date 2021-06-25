@@ -59,6 +59,7 @@ namespace Microsoft::Console::Types
         COORD Origin() const noexcept;
         COORD BottomRightExclusive() const noexcept;
         COORD EndExclusive() const noexcept;
+        COORD EndInclusive() const noexcept;
         COORD Dimensions() const noexcept;
 
         bool IsInBounds(const Viewport& other) const noexcept;

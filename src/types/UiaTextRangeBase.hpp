@@ -150,6 +150,7 @@ namespace Microsoft::Console::Types
 
         const unsigned int _getViewportHeight(const SMALL_RECT viewport) const noexcept;
         const Viewport _getBufferSize() const noexcept;
+        const til::point _getDocumentEnd() const noexcept;
 
         void _getBoundingRect(const til::rectangle textRect, _Inout_ std::vector<double>& coords) const;
 

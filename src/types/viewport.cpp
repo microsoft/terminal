@@ -161,6 +161,11 @@ COORD Viewport::EndExclusive() const noexcept
     return { Left(), BottomExclusive() };
 }
 
+COORD Viewport::EndInclusive() const noexcept
+{
+    return { RightInclusive(), BottomInclusive() };
+}
+
 // Method Description:
 // - Get a coord representing the dimensions of this viewport.
 // Arguments:
