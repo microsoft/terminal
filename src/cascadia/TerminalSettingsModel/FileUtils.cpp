@@ -43,7 +43,8 @@ namespace Microsoft::Terminal::Settings::Model
         // * ReadFile() always returns the requested amount of data (unless the file is smaller)
         // * It's unlikely that the file was changed between GetFileSize() and ReadFile()
         // -> Lets add a retry-loop just in case, to not fail if the file size changed.
-        for (int i = 0; i < 3; ++i) {
+        for (int i = 0; i < 3; ++i)
+        {
             wil::unique_hfile file{ CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr) };
             THROW_LAST_ERROR_IF(!file);
 
