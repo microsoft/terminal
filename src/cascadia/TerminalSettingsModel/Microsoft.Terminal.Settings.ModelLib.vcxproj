@@ -32,6 +32,9 @@
       <DependentUpon>ActionMap.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="AzureCloudShellGenerator.h" />
+    <ClInclude Include="ApplicationState.h">
+      <DependentUpon>ApplicationState.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="CascadiaSettings.h">
       <DependentUpon>CascadiaSettings.idl</DependentUpon>
     </ClInclude>
@@ -42,6 +45,7 @@
       <DependentUpon>Command.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="DefaultProfileUtils.h" />
+    <ClInclude Include="FileUtils.h" />
     <ClInclude Include="GlobalAppSettings.h">
       <DependentUpon>GlobalAppSettings.idl</DependentUpon>
     </ClInclude>
@@ -97,6 +101,9 @@
       <DependentUpon>ActionMap.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="AzureCloudShellGenerator.cpp" />
+    <ClCompile Include="ApplicationState.cpp">
+      <DependentUpon>ApplicationState.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="CascadiaSettings.cpp">
       <DependentUpon>CascadiaSettings.idl</DependentUpon>
     </ClCompile>
@@ -110,6 +117,7 @@
       <DependentUpon>Command.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="DefaultProfileUtils.cpp" />
+    <ClCompile Include="FileUtils.cpp" />
     <ClCompile Include="GlobalAppSettings.cpp">
       <DependentUpon>GlobalAppSettings.idl</DependentUpon>
     </ClCompile>
@@ -141,6 +149,7 @@
   <ItemGroup>
     <Midl Include="ActionArgs.idl" />
     <Midl Include="ActionMap.idl" />
+    <Midl Include="ApplicationState.idl" />
     <Midl Include="CascadiaSettings.idl" />
     <Midl Include="ColorScheme.idl" />
     <Midl Include="Command.idl" />
