@@ -55,6 +55,7 @@
         <description>Controls whether the Tray Icon and related settings (aka. MinimizeToTray and AlwaysShowTrayIcon) are enabled</description>
         <stage>AlwaysDisabled</stage>
         <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
         </alwaysEnabledBrandingTokens>
     </feature>
 </featureStaging>

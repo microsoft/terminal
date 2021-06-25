@@ -572,10 +572,12 @@ void IslandWindow::OnResize(const UINT width, const UINT height)
 void IslandWindow::OnMinimize()
 {
     // TODO GH#1989 Stop rendering island content when the app is minimized.
+#if TIL_FEATURE_TRAYICON_ENABLED
     if (_minimizeToTray)
     {
         HideWindow();
     }
+#endif
 }
 
 // Method Description:
@@ -1510,10 +1512,12 @@ void IslandWindow::HideWindow()
     ShowWindow(GetHandle(), SW_HIDE);
 }
 
+#if TIL_FEATURE_TRAYICON_ENABLED
 void IslandWindow::SetMinimizeToTrayBehavior(bool minimizeToTray) noexcept
 {
     _minimizeToTray = minimizeToTray;
 }
+#endif
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
 DEFINE_EVENT(IslandWindow, WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);

@@ -816,16 +816,16 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-#if TIL_FEATURE_TRAYICON_ENABLED
     void TerminalPage::_HandleMinimizeToTray(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {
+#if TIL_FEATURE_TRAYICON_ENABLED
         if (_settings.GlobalSettings().MinimizeToTray() || _settings.GlobalSettings().AlwaysShowTrayIcon())
         {
             _MinimizeToTrayRequestedHandlers(*this, nullptr);
         }
+#endif
 
         args.Handled(true);
     }
-#endif
 }

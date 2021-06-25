@@ -47,7 +47,10 @@ public:
     void IsQuakeWindow(bool isQuakeWindow) noexcept;
 
     void HideWindow();
+
+#if TIL_FEATURE_TRAYICON_ENABLED
     void SetMinimizeToTrayBehavior(bool minimizeToTray) noexcept;
+#endif
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
     DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
@@ -123,7 +126,9 @@ protected:
 
     void _summonWindowRoutineBody(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 
+#if TIL_FEATURE_TRAYICON_ENABLED
     bool _minimizeToTray{ false };
+#endif
 
 private:
     // This minimum width allows for width the tabs fit

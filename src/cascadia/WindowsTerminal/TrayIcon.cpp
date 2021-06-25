@@ -61,27 +61,15 @@ void TrayIcon::CreateTrayIcon()
 // - This creates our context menu and displays it at the given
 //   screen coordinates.
 // Arguments:
-// - The coordinates where we should be showing the context menu.
+// - coord: The coordinates where we should be showing the context menu.
+// - peasants: The map of all peasants that should be available in the context menu.
 // Return Value:
 // - <none>
 void TrayIcon::ShowTrayContextMenu(const til::point coord,
                                    IMapView<uint64_t, winrt::hstring> peasants)
 {
-    if (auto hmenu = _CreateTrayContextMenu())
+    if (auto hmenu = _CreateTrayContextMenu(peasants))
     {
-        // Submenu for Windows
-        if (auto windowSubmenu = _CreateWindowSubmenu(peasants))
-        {
-            MENUINFO submenuInfo{};
-            submenuInfo.cbSize = sizeof(MENUINFO);
-            submenuInfo.fMask = MIM_MENUDATA;
-            submenuInfo.dwStyle = MNS_NOTIFYBYPOS;
-            submenuInfo.dwMenuData = gsl::narrow<UINT_PTR>(TrayMenuItemAction::SummonWindow);
-            SetMenuInfo(windowSubmenu, &submenuInfo);
-
-            AppendMenu(hmenu, MF_POPUP, reinterpret_cast<UINT_PTR>(windowSubmenu), RS_(L"TrayIconWindowSubmenu").c_str());
-        }
-
         // We'll need to set our window to the foreground before calling
         // TrackPopupMenuEx or else the menu won't dismiss when clicking away.
         SetForegroundWindow(_owningHwnd);
@@ -107,10 +95,10 @@ void TrayIcon::ShowTrayContextMenu(const til::point coord,
 // Method Description:
 // - This creates the context menu for our tray icon.
 // Arguments:
-// - <none>
+// - peasants: A map of all peasants' ID to their window name.
 // Return Value:
 // - The handle to the newly created context menu.
-HMENU TrayIcon::_CreateTrayContextMenu()
+HMENU TrayIcon::_CreateTrayContextMenu(IMapView<uint64_t, winrt::hstring> peasants)
 {
     auto hmenu = CreatePopupMenu();
     if (hmenu)
@@ -125,36 +113,34 @@ HMENU TrayIcon::_CreateTrayContextMenu()
         // Focus Current Terminal Window
         AppendMenu(hmenu, MF_STRING, gsl::narrow<UINT_PTR>(TrayMenuItemAction::FocusTerminal), RS_(L"TrayIconFocusTerminal").c_str());
         AppendMenu(hmenu, MF_SEPARATOR, 0, L"");
-    }
-    return hmenu;
-}
 
-// Method Description:
-// - Create a menu with a menu item for each window available to summon.
-//   If a window is unnamed, we'll use its ID but still mention that it's unnamed.
-// Arguments:
-// - <none>
-// Return Value:
-// - The handle to the newly created window submenu.
-HMENU TrayIcon::_CreateWindowSubmenu(IMapView<uint64_t, winrt::hstring> peasants)
-{
-    if (auto hmenu = CreatePopupMenu())
-    {
-        const auto locWindow = RS_(L"WindowIdLabel");
-        const auto locUnnamed = RS_(L"UnnamedWindowName");
-        for (const auto [id, name] : peasants)
+        // Submenu for Windows
+        if (auto submenu = CreatePopupMenu())
         {
-            winrt::hstring displayText = name;
-            if (name.empty())
+            const auto locWindow = RS_(L"WindowIdLabel");
+            const auto locUnnamed = RS_(L"UnnamedWindowName");
+            for (const auto [id, name] : peasants)
             {
-                displayText = fmt::format(L"{} {} - <{}>", locWindow, id, locUnnamed);
+                winrt::hstring displayText = name;
+                if (name.empty())
+                {
+                    displayText = fmt::format(L"{} {} - <{}>", locWindow, id, locUnnamed);
+                }
+
+                AppendMenu(submenu, MF_STRING, gsl::narrow<UINT_PTR>(id), displayText.c_str());
             }
 
-            AppendMenu(hmenu, MF_STRING, gsl::narrow<UINT_PTR>(id), displayText.c_str());
+            MENUINFO submenuInfo{};
+            submenuInfo.cbSize = sizeof(MENUINFO);
+            submenuInfo.fMask = MIM_MENUDATA;
+            submenuInfo.dwStyle = MNS_NOTIFYBYPOS;
+            submenuInfo.dwMenuData = (UINT_PTR)TrayMenuItemAction::SummonWindow;
+            SetMenuInfo(submenu, &submenuInfo);
+
+            AppendMenu(hmenu, MF_POPUP, (UINT_PTR)submenu, RS_(L"TrayIconWindowSubmenu").c_str());
         }
-        return hmenu;
     }
-    return nullptr;
+    return hmenu;
 }
 
 // Method Description:
@@ -198,6 +184,12 @@ void TrayIcon::TrayMenuItemSelected(const HMENU menu, const UINT menuItemIndex)
     }
 }
 
+// Method Description:
+// - This is the handler for when the tray icon itself is left-clicked.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void TrayIcon::TrayIconPressed()
 {
     // No name in the args means summon the mru window.
@@ -207,7 +199,19 @@ void TrayIcon::TrayIconPressed()
 }
 
 // Method Description:
-// - Deletes our tray icon if we have one.
+// - Re-add a tray icon using our currently saved tray icon data.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void TrayIcon::ReAddTrayIcon()
+{
+    Shell_NotifyIcon(NIM_ADD, &_trayIconData);
+    Shell_NotifyIcon(NIM_SETVERSION, &_trayIconData);
+}
+
+// Method Description:
+// - Deletes our tray icon.
 // Arguments:
 // - <none>
 // Return Value:

@@ -22,16 +22,17 @@ public:
     ~TrayIcon();
 
     void CreateTrayIcon();
+    void DestroyTrayIcon();
+    void ReAddTrayIcon();
+
     void TrayIconPressed();
     void ShowTrayContextMenu(const til::point coord, winrt::Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> peasants);
     void TrayMenuItemSelected(const HMENU menu, const UINT menuItemIndex);
-    void DestroyTrayIcon();
 
     WINRT_CALLBACK(SummonWindowRequested, winrt::delegate<void(winrt::Microsoft::Terminal::Remoting::SummonWindowSelectionArgs)>);
 
 private:
-    HMENU _CreateTrayContextMenu();
-    HMENU _CreateWindowSubmenu(winrt::Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> peasants);
+    HMENU _CreateTrayContextMenu(winrt::Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> peasants);
 
     HWND _owningHwnd;
     NOTIFYICONDATA _trayIconData;

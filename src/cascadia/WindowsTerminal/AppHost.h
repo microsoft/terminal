@@ -4,7 +4,10 @@
 #include "pch.h"
 
 #include "NonClientIslandWindow.h"
+
+#if TIL_FEATURE_TRAYICON_ENABLED
 #include "TrayIcon.h"
+#endif
 
 class AppHost
 {
