@@ -46,7 +46,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseTab(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
-        if (const auto& realArgs = args.ActionArgs().try_as<CloseTabArgs>())
+        if (const auto realArgs = args.ActionArgs().try_as<CloseTabArgs>())
         {
             uint32_t index;
             if (realArgs.Index())
@@ -564,7 +564,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseTabsAfter(const IInspectable& /*sender*/,
                                              const ActionEventArgs& actionArgs)
     {
-        if (const auto realArgs = actionArgs.ActionArgs().try_as<CloseTabsAfterArgs>())
+        if (const auto& realArgs = actionArgs.ActionArgs().try_as<CloseTabsAfterArgs>())
         {
             uint32_t index;
             if (realArgs.Index())

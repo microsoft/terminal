@@ -618,16 +618,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Close the currently focused tab. Focus will move to the left, if possible.
-    void TerminalPage::_CloseFocusedTab()
-    {
-        if (auto index{ _GetFocusedTabIndex() })
-        {
-            _CloseTabAtIndex(*index);
-        }
-    }
-
-    // Method Description:
     // - Close the currently focused pane. If the pane is the last pane in the
     //   tab, the tab will also be closed. This will happen when we handle the
     //   tab's Closed event.
