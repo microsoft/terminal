@@ -256,52 +256,49 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
     try
     {
         const auto& buffer = _pData->GetTextBuffer();
-        const auto bufferSize = _getBufferSize();
-        const auto bufferEnd = bufferSize.EndExclusive();
+        const auto bufferSize{ buffer.GetSize() };
+        const auto documentEnd{ _getDocumentEnd() };
+
+        // if we're past document end,
+        // just set us to document end
+        if (bufferSize.CompareInBounds(_start, documentEnd, true) > 0)
+        {
+            _start = documentEnd;
+        }
 
         if (unit == TextUnit_Character)
         {
-            _start = buffer.GetGlyphStart(_start);
-            _end = buffer.GetGlyphEnd(_start);
+            _start = buffer.GetGlyphStart(_start, documentEnd);
+            _end = buffer.GetGlyphEnd(_start, documentEnd);
         }
         else if (unit <= TextUnit_Word)
         {
             // expand to word
-            _start = buffer.GetWordStart(_start, _wordDelimiters, true);
-            _end = buffer.GetWordEnd(_start, _wordDelimiters, true);
-
-            // GetWordEnd may return the actual end of the TextBuffer.
-            // If so, just set it to this value of bufferEnd
-            if (!bufferSize.IsInBounds(_end))
-            {
-                _end = bufferEnd;
-            }
+            _start = buffer.GetWordStart(_start, _wordDelimiters, true, documentEnd);
+            _end = buffer.GetWordEnd(_start, _wordDelimiters, true, documentEnd);
         }
         else if (unit <= TextUnit_Line)
         {
-            if (_start == bufferEnd)
+            // expand to line
+            _start.X = 0;
+            if (_start.Y == documentEnd.y())
             {
-                // Special case: if we are at the bufferEnd,
-                //   move _start back one, instead of _end forward
-                _start.X = 0;
-                _start.Y = base::ClampSub(_start.Y, 1);
-                _end = bufferEnd;
+                // we're on the last line
+                _end = documentEnd;
+                bufferSize.IncrementInBounds(_end, true);
             }
             else
             {
-                // expand to line
-                _start.X = 0;
                 _end.X = 0;
                 _end.Y = base::ClampAdd(_start.Y, 1);
             }
         }
         else
         {
-            // TODO GH#6986: properly handle "end of buffer" as last character
-            // instead of last cell
             // expand to document
             _start = bufferSize.Origin();
-            _end = bufferSize.EndExclusive();
+            _end = documentEnd;
+            bufferSize.IncrementInBounds(_end, true);
         }
 
         UiaTracing::TextRange::ExpandToEnclosingUnit(unit, *this);
@@ -515,9 +512,18 @@ IFACEMETHODIMP UiaTextRangeBase::FindAttribute(_In_ TEXTATTRIBUTEID attributeId,
     const auto searchStart{ searchBackwards ? inclusiveEnd : _start };
     const auto searchEnd{ searchBackwards ? _start : inclusiveEnd };
 
+    Viewport viewportRange{ bufferSize };
+    if (_blockRange)
+    {
+        const auto originX{ std::min(_start.X, inclusiveEnd.X) };
+        const auto originY{ std::min(_start.Y, inclusiveEnd.Y) };
+        const auto width{ gsl::narrow_cast<short>(std::abs(inclusiveEnd.X - _start.X + 1)) };
+        const auto height{ gsl::narrow_cast<short>(std::abs(inclusiveEnd.Y - _start.Y + 1)) };
+        viewportRange = Viewport::FromDimensions({ originX, originY }, width, height);
+    }
+
     // Iterate from searchStart to searchEnd in the buffer.
     // If we find the attribute we're looking for, we update resultFirstAnchor/SecondAnchor appropriately.
-    const Viewport viewportRange{ _blockRange ? Viewport::FromDimensions(_start, inclusiveEnd.X - _start.X + 1, inclusiveEnd.Y - _start.Y + 1) : bufferSize };
     auto iter{ buffer.GetCellDataAt(searchStart, viewportRange, searchEnd) };
     for (; iter; searchBackwards ? --iter : ++iter)
     {
@@ -769,7 +775,16 @@ IFACEMETHODIMP UiaTextRangeBase::GetAttributeValue(_In_ TEXTATTRIBUTEID attribut
     const auto inclusiveEnd{ _getInclusiveEnd() };
 
     // Check if the entire text range has that text attribute
-    const Viewport viewportRange{ _blockRange ? Viewport::FromDimensions(_start, inclusiveEnd.X - _start.X + 1, inclusiveEnd.Y - _start.Y + 1) : bufferSize };
+    Viewport viewportRange{ bufferSize };
+    if (_blockRange)
+    {
+        const auto originX{ std::min(_start.X, inclusiveEnd.X) };
+        const auto originY{ std::min(_start.Y, inclusiveEnd.Y) };
+        const auto width{ gsl::narrow_cast<short>(std::abs(inclusiveEnd.X - _start.X + 1)) };
+        const auto height{ gsl::narrow_cast<short>(std::abs(inclusiveEnd.Y - _start.Y + 1)) };
+        viewportRange = Viewport::FromDimensions({ originX, originY }, width, height);
+    }
+
     auto iter{ buffer.GetCellDataAt(_start, viewportRange, inclusiveEnd) };
     for (; iter; ++iter)
     {
@@ -1291,6 +1306,13 @@ const Viewport UiaTextRangeBase::_getBufferSize() const noexcept
     return Viewport::FromDimensions({ 0, 0 }, width, height);
 }
 
+const til::point UiaTextRangeBase::_getDocumentEnd() const noexcept
+{
+    const auto optBufferSize{ _getBufferSize() };
+    const auto& buffer{ _pData->GetTextBuffer() };
+    return buffer.GetLastNonSpaceCharacter(optBufferSize);
+}
+
 // Routine Description:
 // - adds the relevant coordinate points from the row to coords.
 // - it is assumed that startAnchor and endAnchor are within the same row
@@ -1361,19 +1383,20 @@ void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
 
     bool success = true;
     til::point target = GetEndpoint(endpoint);
+    const auto documentEnd{ _getDocumentEnd() };
     while (std::abs(*pAmountMoved) < std::abs(moveCount) && success)
     {
         switch (moveDirection)
         {
         case MovementDirection::Forward:
-            success = buffer.MoveToNextGlyph(target, allowBottomExclusive);
+            success = buffer.MoveToNextGlyph(target, allowBottomExclusive, documentEnd);
             if (success)
             {
                 (*pAmountMoved)++;
             }
             break;
         case MovementDirection::Backward:
-            success = buffer.MoveToPreviousGlyph(target);
+            success = buffer.MoveToPreviousGlyph(target, documentEnd);
             if (success)
             {
                 (*pAmountMoved)--;
@@ -1414,10 +1437,9 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
     const bool allowBottomExclusive = !preventBufferEnd;
     const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
     const auto& buffer = _pData->GetTextBuffer();
-    const auto bufferSize = _getBufferSize();
+    const auto bufferSize = buffer.GetSize();
     const auto bufferOrigin = bufferSize.Origin();
-    const auto bufferEnd = bufferSize.EndExclusive();
-    const auto lastCharPos = buffer.GetLastNonSpaceCharacter(bufferSize);
+    const auto documentEnd = _getDocumentEnd();
 
     auto resultPos = GetEndpoint(endpoint);
     auto nextPos = resultPos;
@@ -1430,18 +1452,18 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
         {
         case MovementDirection::Forward:
         {
-            if (nextPos == bufferEnd)
+            if (bufferSize.CompareInBounds(nextPos, documentEnd, true) > 0)
             {
                 success = false;
             }
-            else if (buffer.MoveToNextWord(nextPos, _wordDelimiters, lastCharPos))
+            else if (buffer.MoveToNextWord(nextPos, _wordDelimiters, documentEnd))
             {
                 resultPos = nextPos;
                 (*pAmountMoved)++;
             }
             else if (allowBottomExclusive)
             {
-                resultPos = bufferEnd;
+                resultPos = documentEnd;
                 (*pAmountMoved)++;
             }
             else
@@ -1504,9 +1526,21 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
     const bool allowBottomExclusive = !preventBufferEnd;
     const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
     const auto bufferSize = _getBufferSize();
+    const auto documentEnd{ _getDocumentEnd() };
 
     bool success = true;
     auto resultPos = GetEndpoint(endpoint);
+
+    // clamp pos to documentEnd
+    if (bufferSize.CompareInBounds(resultPos, documentEnd, allowBottomExclusive) > 0)
+    {
+        resultPos = documentEnd;
+        if (allowBottomExclusive)
+        {
+            bufferSize.IncrementInBounds(resultPos, allowBottomExclusive);
+        }
+    }
+
     while (std::abs(*pAmountMoved) < std::abs(moveCount) && success)
     {
         auto nextPos = resultPos;
@@ -1515,9 +1549,9 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
         case MovementDirection::Forward:
         {
             // can't move past end
-            if (nextPos.Y >= bufferSize.BottomInclusive())
+            if (nextPos.Y >= documentEnd.y())
             {
-                if (preventBufferEnd || nextPos == bufferSize.EndExclusive())
+                if (preventBufferEnd || bufferSize.CompareInBounds(nextPos, documentEnd, true) > 0)
                 {
                     success = false;
                     break;
@@ -1593,8 +1627,8 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
     {
     case MovementDirection::Forward:
     {
-        const auto documentEnd = bufferSize.EndExclusive();
-        if (preventBufferEnd || target == documentEnd)
+        const auto documentEnd{ _getDocumentEnd() };
+        if (preventBufferEnd || bufferSize.CompareInBounds(target, documentEnd, !preventBufferEnd) > 0)
         {
             return;
         }
