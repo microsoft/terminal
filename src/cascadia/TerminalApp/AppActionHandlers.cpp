@@ -564,7 +564,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseTabsAfter(const IInspectable& /*sender*/,
                                              const ActionEventArgs& actionArgs)
     {
-        if (const auto& realArgs = actionArgs.ActionArgs().try_as<CloseTabsAfterArgs>())
+        if (const auto realArgs = actionArgs.ActionArgs().try_as<CloseTabsAfterArgs>())
         {
             uint32_t index;
             if (realArgs.Index())

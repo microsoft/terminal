@@ -1000,7 +1000,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct CloseTabArgs : public CloseTabArgsT<CloseTabArgs>
     {
         CloseTabArgs() = default;
-        CloseTabArgs(uint32_t& tabIndex) :
+        CloseTabArgs(uint32_t tabIndex) :
             _Index{ tabIndex } {};
         ACTION_ARG(Windows::Foundation::IReference<uint32_t>, Index, nullptr);
 

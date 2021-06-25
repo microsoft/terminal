@@ -682,8 +682,7 @@ namespace winrt::TerminalApp::implementation
         {
             return;
         }
-        auto tab{ _tabs.GetAt(index) };
-        if (tab)
+        if (auto tab{ _tabs.GetAt(index) })
         {
             _HandleCloseTabRequested(tab);
         }
