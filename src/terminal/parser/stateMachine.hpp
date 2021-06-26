@@ -146,15 +146,13 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _isInAnsiMode;
 
-        std::wstring_view _run;
         std::wstring_view _currentString;
-
         size_t _runOffset;
         size_t _runSize;
 
-        void _ActuateCurrentRun()
+        std::wstring_view _CurrentRun() const
         {
-            _run = _currentString.substr(_runOffset, _runSize);
+            return _currentString.substr(_runOffset, _runSize);
         }
 
         VTIDBuilder _identifier;
