@@ -53,9 +53,7 @@
     <feature>
         <name>Feature_TrayIcon</name>
         <description>Controls whether the Tray Icon and related settings (aka. MinimizeToTray and AlwaysShowTrayIcon) are enabled</description>
-        <stage>AlwaysDisabled</stage>
-        <alwaysEnabledBrandingTokens>
-            <brandingToken>Dev</brandingToken>
-        </alwaysEnabledBrandingTokens>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledReleaseTokens/>
     </feature>
 </featureStaging>
