@@ -154,8 +154,17 @@ namespace Microsoft::Console::Render
         std::optional<TextColor> _newBottomLineBG{ std::nullopt };
 
         [[nodiscard]] HRESULT _Write(std::string_view const str) noexcept;
-        [[nodiscard]] HRESULT _WriteFormattedString(const std::string* const pFormat, ...) noexcept;
         [[nodiscard]] HRESULT _Flush() noexcept;
+
+        template<typename S, typename... Args>
+        [[nodiscard]] HRESULT _WriteFormatted(S&& format, Args&&... args)
+        try
+        {
+            fmt::basic_memory_buffer<char, 64> buf;
+            fmt::format_to(std::back_inserter(buf), std::forward<S>(format), std::forward<Args>(args)...);
+            return _Write({ buf.data(), buf.size() });
+        }
+        CATCH_RETURN()
 
         void _OrRect(_Inout_ SMALL_RECT* const pRectExisting, const SMALL_RECT* const pRectToOr) const;
         bool _AllIsInvalid() const;

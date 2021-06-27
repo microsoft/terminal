@@ -17,14 +17,22 @@ using namespace Microsoft::Console::Render;
 
 DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwriteFactory) noexcept :
     _dwriteFactory(dwriteFactory),
+    _fontSize{},
     _glyphCell{},
-    _lineMetrics({}),
-    _boxDrawingEffect{}
+    _lineMetrics{},
+    _lineSpacing{}
 {
 }
 
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> DxFontRenderData::Analyzer() noexcept
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> DxFontRenderData::Analyzer()
 {
+    if (!_dwriteTextAnalyzer)
+    {
+        Microsoft::WRL::ComPtr<IDWriteTextAnalyzer> analyzer;
+        THROW_IF_FAILED(_dwriteFactory->CreateTextAnalyzer(&analyzer));
+        THROW_IF_FAILED(analyzer.As(&_dwriteTextAnalyzer));
+    }
+
     return _dwriteTextAnalyzer;
 }
 
@@ -40,49 +48,24 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     return _systemFontFallback;
 }
 
-// Routine Description:
-// - Creates a DirectWrite font collection of font files that are sitting next to the running
-//   binary (in the same directory as the EXE).
-// Arguments:
-// - <none>
-// Return Value:
-// - DirectWrite font collection. May be null if one cannot be created.
-[[nodiscard]] const Microsoft::WRL::ComPtr<IDWriteFontCollection1>& DxFontRenderData::NearbyCollection() const
+[[nodiscard]] std::wstring DxFontRenderData::UserLocaleName()
 {
-    // Magic static so we only attempt to grovel the hard disk once no matter how many instances
-    // of the font collection itself we require.
-    static const auto knownPaths = s_GetNearbyFonts();
-
-    // The convenience interfaces for loading fonts from files
-    // are only available on Windows 10+.
-    // Don't try to look up if below that OS version.
-    static const bool s_isWindows10OrGreater = IsWindows10OrGreater();
-
-    if (s_isWindows10OrGreater && !_nearbyCollection)
+    if (_userLocaleName.empty())
     {
-        // Factory3 has a convenience to get us a font set builder.
-        ::Microsoft::WRL::ComPtr<IDWriteFactory3> factory3;
-        THROW_IF_FAILED(_dwriteFactory.As(&factory3));
+        std::array<wchar_t, LOCALE_NAME_MAX_LENGTH> localeName;
 
-        ::Microsoft::WRL::ComPtr<IDWriteFontSetBuilder> fontSetBuilder;
-        THROW_IF_FAILED(factory3->CreateFontSetBuilder(&fontSetBuilder));
-
-        // Builder2 has a convenience to just feed in paths to font files.
-        ::Microsoft::WRL::ComPtr<IDWriteFontSetBuilder2> fontSetBuilder2;
-        THROW_IF_FAILED(fontSetBuilder.As(&fontSetBuilder2));
-
-        for (auto& p : knownPaths)
+        const auto returnCode = GetUserDefaultLocaleName(localeName.data(), gsl::narrow<int>(localeName.size()));
+        if (returnCode)
         {
-            fontSetBuilder2->AddFontFile(p.c_str());
+            _userLocaleName = { localeName.data() };
         }
-
-        ::Microsoft::WRL::ComPtr<IDWriteFontSet> fontSet;
-        THROW_IF_FAILED(fontSetBuilder2->CreateFontSet(&fontSet));
-
-        THROW_IF_FAILED(factory3->CreateFontCollectionFromFontSet(fontSet.Get(), &_nearbyCollection));
+        else
+        {
+            _userLocaleName = { FALLBACK_LOCALE.data(), FALLBACK_LOCALE.size() };
+        }
     }
 
-    return _nearbyCollection;
+    return _userLocaleName;
 }
 
 [[nodiscard]] til::size DxFontRenderData::GlyphCell() noexcept
@@ -95,29 +78,96 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     return _lineMetrics;
 }
 
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::DefaultTextFormat() noexcept
+[[nodiscard]] DWRITE_FONT_WEIGHT DxFontRenderData::DefaultFontWeight() noexcept
 {
-    return _dwriteTextFormat;
+    return _defaultFontInfo.GetWeight();
 }
 
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontRenderData::DefaultFontFace() noexcept
+[[nodiscard]] DWRITE_FONT_STYLE DxFontRenderData::DefaultFontStyle() noexcept
 {
-    return _dwriteFontFace;
+    return _defaultFontInfo.GetStyle();
 }
 
-[[nodiscard]] Microsoft::WRL::ComPtr<IBoxDrawingEffect> DxFontRenderData::DefaultBoxDrawingEffect() noexcept
+[[nodiscard]] DWRITE_FONT_STRETCH DxFontRenderData::DefaultFontStretch() noexcept
 {
+    return _defaultFontInfo.GetStretch();
+}
+
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::DefaultTextFormat()
+{
+    return TextFormatWithAttribute(_defaultFontInfo.GetWeight(), _defaultFontInfo.GetStyle(), _defaultFontInfo.GetStretch());
+}
+
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontRenderData::DefaultFontFace()
+{
+    return FontFaceWithAttribute(_defaultFontInfo.GetWeight(), _defaultFontInfo.GetStyle(), _defaultFontInfo.GetStretch());
+}
+
+[[nodiscard]] Microsoft::WRL::ComPtr<IBoxDrawingEffect> DxFontRenderData::DefaultBoxDrawingEffect()
+{
+    if (!_boxDrawingEffect)
+    {
+        // Calculate and cache the box effect for the base font. Scale is 1.0f because the base font is exactly the scale we want already.
+        THROW_IF_FAILED(s_CalculateBoxEffect(DefaultTextFormat().Get(), _glyphCell.width(), DefaultFontFace().Get(), 1.0f, &_boxDrawingEffect));
+    }
+
     return _boxDrawingEffect;
 }
 
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::ItalicTextFormat() noexcept
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::TextFormatWithAttribute(DWRITE_FONT_WEIGHT weight,
+                                                                                                  DWRITE_FONT_STYLE style,
+                                                                                                  DWRITE_FONT_STRETCH stretch)
 {
-    return _dwriteTextFormatItalic;
+    DxFontInfo fontInfo = _defaultFontInfo;
+    fontInfo.SetWeight(weight);
+    fontInfo.SetStyle(style);
+    fontInfo.SetStretch(stretch);
+
+    const auto textFormatIt = _textFormatMap.find(fontInfo);
+    if (textFormatIt == _textFormatMap.end())
+    {
+        // Create the font with the fractional pixel height size.
+        // It should have an integer pixel width by our math.
+        // Then below, apply the line spacing to the format to position the floating point pixel height characters
+        // into a cell that has an integer pixel height leaving some padding above/below as necessary to round them out.
+        std::wstring localeName = UserLocaleName();
+        Microsoft::WRL::ComPtr<IDWriteTextFormat> textFormat;
+        THROW_IF_FAILED(_BuildTextFormat(fontInfo, localeName).As(&textFormat));
+        THROW_IF_FAILED(textFormat->SetLineSpacing(_lineSpacing.method, _lineSpacing.height, _lineSpacing.baseline));
+        THROW_IF_FAILED(textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR));
+        THROW_IF_FAILED(textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
+
+        _textFormatMap.insert({ fontInfo, textFormat });
+        return textFormat;
+    }
+    else
+    {
+        return (*textFormatIt).second;
+    }
 }
 
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontRenderData::ItalicFontFace() noexcept
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontRenderData::FontFaceWithAttribute(DWRITE_FONT_WEIGHT weight,
+                                                                                               DWRITE_FONT_STYLE style,
+                                                                                               DWRITE_FONT_STRETCH stretch)
 {
-    return _dwriteFontFaceItalic;
+    DxFontInfo fontInfo = _defaultFontInfo;
+    fontInfo.SetWeight(weight);
+    fontInfo.SetStyle(style);
+    fontInfo.SetStretch(stretch);
+
+    const auto fontFaceIt = _fontFaceMap.find(fontInfo);
+    if (fontFaceIt == _fontFaceMap.end())
+    {
+        std::wstring fontLocaleName = UserLocaleName();
+        Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace = fontInfo.ResolveFontFaceWithFallback(_dwriteFactory.Get(), fontLocaleName);
+
+        _fontFaceMap.insert({ fontInfo, fontFace });
+        return fontFace;
+    }
+    else
+    {
+        return (*fontFaceIt).second;
+    }
 }
 
 // Routine Description:
@@ -133,247 +183,17 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     try
     {
         _userLocaleName.clear();
+        _textFormatMap.clear();
+        _fontFaceMap.clear();
+        _boxDrawingEffect.Reset();
 
-        std::wstring fontName(desired.GetFaceName());
-        DWRITE_FONT_WEIGHT weight = static_cast<DWRITE_FONT_WEIGHT>(desired.GetWeight());
-        DWRITE_FONT_STYLE style = DWRITE_FONT_STYLE_NORMAL;
-        DWRITE_FONT_STRETCH stretch = DWRITE_FONT_STRETCH_NORMAL;
-        std::wstring localeName = _GetUserLocaleName();
+        // Initialize the default font info and build everything from here.
+        _defaultFontInfo = DxFontInfo(desired.GetFaceName(),
+                                      desired.GetWeight(),
+                                      DWRITE_FONT_STYLE_NORMAL,
+                                      DWRITE_FONT_STRETCH_NORMAL);
 
-        // _ResolveFontFaceWithFallback overrides the last argument with the locale name of the font,
-        // but we should use the system's locale to render the text.
-        std::wstring fontLocaleName = localeName;
-
-        bool didFallback = false;
-        const auto face = _ResolveFontFaceWithFallback(fontName, weight, stretch, style, fontLocaleName, didFallback);
-
-        DWRITE_FONT_METRICS1 fontMetrics;
-        face->GetMetrics(&fontMetrics);
-
-        const UINT32 spaceCodePoint = L'M';
-        UINT16 spaceGlyphIndex;
-        THROW_IF_FAILED(face->GetGlyphIndicesW(&spaceCodePoint, 1, &spaceGlyphIndex));
-
-        INT32 advanceInDesignUnits;
-        THROW_IF_FAILED(face->GetDesignGlyphAdvances(1, &spaceGlyphIndex, &advanceInDesignUnits));
-
-        DWRITE_GLYPH_METRICS spaceMetrics = { 0 };
-        THROW_IF_FAILED(face->GetDesignGlyphMetrics(&spaceGlyphIndex, 1, &spaceMetrics));
-
-        // The math here is actually:
-        // Requested Size in Points * DPI scaling factor * Points to Pixels scaling factor.
-        // - DPI = dots per inch
-        // - PPI = points per inch or "points" as usually seen when choosing a font size
-        // - The DPI scaling factor is the current monitor DPI divided by 96, the default DPI.
-        // - The Points to Pixels factor is based on the typography definition of 72 points per inch.
-        //    As such, converting requires taking the 96 pixel per inch default and dividing by the 72 points per inch
-        //    to get a factor of 1 and 1/3.
-        // This turns into something like:
-        // - 12 ppi font * (96 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 16 pixels tall font for 100% display (96 dpi is 100%)
-        // - 12 ppi font * (144 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 24 pixels tall font for 150% display (144 dpi is 150%)
-        // - 12 ppi font * (192 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 32 pixels tall font for 200% display (192 dpi is 200%)
-        float heightDesired = static_cast<float>(desired.GetEngineSize().Y) * static_cast<float>(USER_DEFAULT_SCREEN_DPI) / POINTS_PER_INCH;
-
-        // The advance is the number of pixels left-to-right (X dimension) for the given font.
-        // We're finding a proportional factor here with the design units in "ems", not an actual pixel measurement.
-
-        // Now we play trickery with the font size. Scale by the DPI to get the height we expect.
-        heightDesired *= (static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI));
-
-        const float widthAdvance = static_cast<float>(advanceInDesignUnits) / fontMetrics.designUnitsPerEm;
-
-        // Use the real pixel height desired by the "em" factor for the width to get the number of pixels
-        // we will need per character in width. This will almost certainly result in fractional X-dimension pixels.
-        const float widthApprox = heightDesired * widthAdvance;
-
-        // Since we can't deal with columns of the presentation grid being fractional pixels in width, round to the nearest whole pixel.
-        const float widthExact = round(widthApprox);
-
-        // Now reverse the "em" factor from above to turn the exact pixel width into a (probably) fractional
-        // height in pixels of each character. It's easier for us to pad out height and align vertically
-        // than it is horizontally.
-        const auto fontSize = widthExact / widthAdvance;
-
-        // Now figure out the basic properties of the character height which include ascent and descent
-        // for this specific font size.
-        const float ascent = (fontSize * fontMetrics.ascent) / fontMetrics.designUnitsPerEm;
-        const float descent = (fontSize * fontMetrics.descent) / fontMetrics.designUnitsPerEm;
-
-        // Get the gap.
-        const float gap = (fontSize * fontMetrics.lineGap) / fontMetrics.designUnitsPerEm;
-        const float halfGap = gap / 2;
-
-        // We're going to build a line spacing object here to track all of this data in our format.
-        DWRITE_LINE_SPACING lineSpacing = {};
-        lineSpacing.method = DWRITE_LINE_SPACING_METHOD_UNIFORM;
-
-        // We need to make sure the baseline falls on a round pixel (not a fractional pixel).
-        // If the baseline is fractional, the text appears blurry, especially at small scales.
-        // Since we also need to make sure the bounding box as a whole is round pixels
-        // (because the entire console system maths in full cell units),
-        // we're just going to ceiling up the ascent and descent to make a full pixel amount
-        // and set the baseline to the full round pixel ascent value.
-        //
-        // For reference, for the letters "ag":
-        // ...
-        //          gggggg      bottom of previous line
-        //
-        // -----------------    <===========================================|
-        //                         | topSideBearing       |  1/2 lineGap    |
-        // aaaaaa   ggggggg     <-------------------------|-------------|   |
-        //      a   g    g                                |             |   |
-        //  aaaaa   ggggg                                 |<-ascent     |   |
-        // a    a   g                                     |             |   |---- lineHeight
-        // aaaaa a  gggggg      <----baseline, verticalOriginY----------|---|
-        //          g     g                               |<-descent    |   |
-        //          gggggg      <-------------------------|-------------|   |
-        //                         | bottomSideBearing    | 1/2 lineGap     |
-        // -----------------    <===========================================|
-        //
-        // aaaaaa   ggggggg     top of next line
-        // ...
-        //
-        // Also note...
-        // We're going to add half the line gap to the ascent and half the line gap to the descent
-        // to ensure that the spacing is balanced vertically.
-        // Generally speaking, the line gap is added to the ascent by DirectWrite itself for
-        // horizontally drawn text which can place the baseline and glyphs "lower" in the drawing
-        // box than would be desired for proper alignment of things like line and box characters
-        // which will try to sit centered in the area and touch perfectly with their neighbors.
-
-        const auto fullPixelAscent = ceil(ascent + halfGap);
-        const auto fullPixelDescent = ceil(descent + halfGap);
-        lineSpacing.height = fullPixelAscent + fullPixelDescent;
-        lineSpacing.baseline = fullPixelAscent;
-
-        // According to MSDN (https://docs.microsoft.com/en-us/windows/win32/api/dwrite_3/ne-dwrite_3-dwrite_font_line_gap_usage)
-        // Setting "ENABLED" means we've included the line gapping in the spacing numbers given.
-        lineSpacing.fontLineGapUsage = DWRITE_FONT_LINE_GAP_USAGE_ENABLED;
-
-        // Create the font with the fractional pixel height size.
-        // It should have an integer pixel width by our math above.
-        // Then below, apply the line spacing to the format to position the floating point pixel height characters
-        // into a cell that has an integer pixel height leaving some padding above/below as necessary to round them out.
-        Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
-        THROW_IF_FAILED(_dwriteFactory->CreateTextFormat(fontName.data(),
-                                                         nullptr,
-                                                         weight,
-                                                         style,
-                                                         stretch,
-                                                         fontSize,
-                                                         localeName.data(),
-                                                         &format));
-
-        THROW_IF_FAILED(format.As(&_dwriteTextFormat));
-
-        // We also need to create an italic variant of the font face and text
-        // format, based on the same parameters, but using an italic style.
-        std::wstring fontNameItalic = fontName;
-        DWRITE_FONT_WEIGHT weightItalic = weight;
-        DWRITE_FONT_STYLE styleItalic = DWRITE_FONT_STYLE_ITALIC;
-        DWRITE_FONT_STRETCH stretchItalic = stretch;
-        bool didItalicFallback = false;
-
-        const auto faceItalic = _ResolveFontFaceWithFallback(fontNameItalic, weightItalic, stretchItalic, styleItalic, fontLocaleName, didItalicFallback);
-
-        Microsoft::WRL::ComPtr<IDWriteTextFormat> formatItalic;
-        THROW_IF_FAILED(_dwriteFactory->CreateTextFormat(fontNameItalic.data(),
-                                                         nullptr,
-                                                         weightItalic,
-                                                         styleItalic,
-                                                         stretchItalic,
-                                                         fontSize,
-                                                         localeName.data(),
-                                                         &formatItalic));
-
-        THROW_IF_FAILED(formatItalic.As(&_dwriteTextFormatItalic));
-
-        Microsoft::WRL::ComPtr<IDWriteTextAnalyzer> analyzer;
-        THROW_IF_FAILED(_dwriteFactory->CreateTextAnalyzer(&analyzer));
-        THROW_IF_FAILED(analyzer.As(&_dwriteTextAnalyzer));
-
-        _dwriteFontFace = face;
-        _dwriteFontFaceItalic = faceItalic;
-
-        THROW_IF_FAILED(_dwriteTextFormat->SetLineSpacing(lineSpacing.method, lineSpacing.height, lineSpacing.baseline));
-        THROW_IF_FAILED(_dwriteTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR));
-        THROW_IF_FAILED(_dwriteTextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
-
-        // The scaled size needs to represent the pixel box that each character will fit within for the purposes
-        // of hit testing math and other such multiplication/division.
-        COORD coordSize = { 0 };
-        coordSize.X = gsl::narrow<SHORT>(widthExact);
-        coordSize.Y = gsl::narrow_cast<SHORT>(lineSpacing.height);
-
-        // Unscaled is for the purposes of re-communicating this font back to the renderer again later.
-        // As such, we need to give the same original size parameter back here without padding
-        // or rounding or scaling manipulation.
-        const COORD unscaled = desired.GetEngineSize();
-
-        const COORD scaled = coordSize;
-
-        actual.SetFromEngine(fontName,
-                             desired.GetFamily(),
-                             _dwriteTextFormat->GetFontWeight(),
-                             false,
-                             scaled,
-                             unscaled);
-        actual.SetFallback(didFallback);
-
-        LineMetrics lineMetrics;
-        // There is no font metric for the grid line width, so we use a small
-        // multiple of the font size, which typically rounds to a pixel.
-        lineMetrics.gridlineWidth = std::round(fontSize * 0.025f);
-
-        // All other line metrics are in design units, so to get a pixel value,
-        // we scale by the font size divided by the design-units-per-em.
-        const auto scale = fontSize / fontMetrics.designUnitsPerEm;
-        lineMetrics.underlineOffset = std::round(fontMetrics.underlinePosition * scale);
-        lineMetrics.underlineWidth = std::round(fontMetrics.underlineThickness * scale);
-        lineMetrics.strikethroughOffset = std::round(fontMetrics.strikethroughPosition * scale);
-        lineMetrics.strikethroughWidth = std::round(fontMetrics.strikethroughThickness * scale);
-
-        // We always want the lines to be visible, so if a stroke width ends up
-        // at zero after rounding, we need to make it at least 1 pixel.
-        lineMetrics.gridlineWidth = std::max(lineMetrics.gridlineWidth, 1.0f);
-        lineMetrics.underlineWidth = std::max(lineMetrics.underlineWidth, 1.0f);
-        lineMetrics.strikethroughWidth = std::max(lineMetrics.strikethroughWidth, 1.0f);
-
-        // Offsets are relative to the base line of the font, so we subtract
-        // from the ascent to get an offset relative to the top of the cell.
-        lineMetrics.underlineOffset = fullPixelAscent - lineMetrics.underlineOffset;
-        lineMetrics.strikethroughOffset = fullPixelAscent - lineMetrics.strikethroughOffset;
-
-        // For double underlines we need a second offset, just below the first,
-        // but with a bit of a gap (about double the grid line width).
-        lineMetrics.underlineOffset2 = lineMetrics.underlineOffset +
-                                       lineMetrics.underlineWidth +
-                                       std::round(fontSize * 0.05f);
-
-        // However, we don't want the underline to extend past the bottom of the
-        // cell, so we clamp the offset to fit just inside.
-        const auto maxUnderlineOffset = lineSpacing.height - lineMetrics.underlineWidth;
-        lineMetrics.underlineOffset2 = std::min(lineMetrics.underlineOffset2, maxUnderlineOffset);
-
-        // But if the resulting gap isn't big enough even to register as a thicker
-        // line, it's better to place the second line slightly above the first.
-        if (lineMetrics.underlineOffset2 < lineMetrics.underlineOffset + lineMetrics.gridlineWidth)
-        {
-            lineMetrics.underlineOffset2 = lineMetrics.underlineOffset - lineMetrics.gridlineWidth;
-        }
-
-        // We also add half the stroke width to the offsets, since the line
-        // coordinates designate the center of the line.
-        lineMetrics.underlineOffset += lineMetrics.underlineWidth / 2.0f;
-        lineMetrics.underlineOffset2 += lineMetrics.underlineWidth / 2.0f;
-        lineMetrics.strikethroughOffset += lineMetrics.strikethroughWidth / 2.0f;
-
-        _lineMetrics = lineMetrics;
-
-        _glyphCell = actual.GetSize();
-
-        // Calculate and cache the box effect for the base font. Scale is 1.0f because the base font is exactly the scale we want already.
-        RETURN_IF_FAILED(s_CalculateBoxEffect(DefaultTextFormat().Get(), _glyphCell.width(), DefaultFontFace().Get(), 1.0f, &_boxDrawingEffect));
+        _BuildFontRenderData(desired, actual, dpi);
     }
     CATCH_RETURN();
 
@@ -622,288 +442,212 @@ try
 CATCH_RETURN()
 
 // Routine Description:
-// - Attempts to locate the font given, but then begins falling back if we cannot find it.
-// - We'll try to fall back to Consolas with the given weight/stretch/style first,
-//   then try Consolas again with normal weight/stretch/style,
-//   and if nothing works, then we'll throw an error.
+// - Build the needed data for rendering according to the font used
 // Arguments:
-// - familyName - The font name we should be looking for
-// - weight - The weight (bold, light, etc.)
-// - stretch - The stretch of the font is the spacing between each letter
-// - style - Normal, italic, etc.
-// - localeName - Locale to search for appropriate fonts
-// - didFallback - Indicates whether we couldn't match the user request and had to choose from a hardcoded default list.
+// - desired - Information specifying the font that is requested
+// - actual - Filled with the nearest font actually chosen for drawing
+// - dpi - The DPI of the screen
 // Return Value:
-// - Smart pointer holding interface reference for queryable font data.
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontRenderData::_ResolveFontFaceWithFallback(std::wstring& familyName,
-                                                                                                      DWRITE_FONT_WEIGHT& weight,
-                                                                                                      DWRITE_FONT_STRETCH& stretch,
-                                                                                                      DWRITE_FONT_STYLE& style,
-                                                                                                      std::wstring& localeName,
-                                                                                                      bool& didFallback) const
+// - None
+void DxFontRenderData::_BuildFontRenderData(const FontInfoDesired& desired, FontInfo& actual, const int dpi)
 {
-    // First attempt to find exactly what the user asked for.
-    didFallback = false;
-    Microsoft::WRL::ComPtr<IDWriteFontFace1> face{ nullptr };
+    std::wstring fontLocaleName = UserLocaleName();
+    // This is the first attempt to resolve font face after `UpdateFont`.
+    // Note that the following line may cause property changes _inside_ `_defaultFontInfo` because the desired font may not exist.
+    // See the implementation of `ResolveFontFaceWithFallback` for details.
+    const Microsoft::WRL::ComPtr<IDWriteFontFace1> face = _defaultFontInfo.ResolveFontFaceWithFallback(_dwriteFactory.Get(), fontLocaleName);
 
-    // GH#10211 - wrap this all up in a try/catch. If the nearby fonts are
-    // corrupted, then we don't want to throw out of this top half of this
-    // method. We still want to fall back to a font that's reasonable, below.
-    try
+    DWRITE_FONT_METRICS1 fontMetrics;
+    face->GetMetrics(&fontMetrics);
+
+    const UINT32 spaceCodePoint = L'M';
+    UINT16 spaceGlyphIndex;
+    THROW_IF_FAILED(face->GetGlyphIndicesW(&spaceCodePoint, 1, &spaceGlyphIndex));
+
+    INT32 advanceInDesignUnits;
+    THROW_IF_FAILED(face->GetDesignGlyphAdvances(1, &spaceGlyphIndex, &advanceInDesignUnits));
+
+    DWRITE_GLYPH_METRICS spaceMetrics = { 0 };
+    THROW_IF_FAILED(face->GetDesignGlyphMetrics(&spaceGlyphIndex, 1, &spaceMetrics));
+
+    // The math here is actually:
+    // Requested Size in Points * DPI scaling factor * Points to Pixels scaling factor.
+    // - DPI = dots per inch
+    // - PPI = points per inch or "points" as usually seen when choosing a font size
+    // - The DPI scaling factor is the current monitor DPI divided by 96, the default DPI.
+    // - The Points to Pixels factor is based on the typography definition of 72 points per inch.
+    //    As such, converting requires taking the 96 pixel per inch default and dividing by the 72 points per inch
+    //    to get a factor of 1 and 1/3.
+    // This turns into something like:
+    // - 12 ppi font * (96 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 16 pixels tall font for 100% display (96 dpi is 100%)
+    // - 12 ppi font * (144 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 24 pixels tall font for 150% display (144 dpi is 150%)
+    // - 12 ppi font * (192 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 32 pixels tall font for 200% display (192 dpi is 200%)
+    float heightDesired = static_cast<float>(desired.GetEngineSize().Y) * static_cast<float>(USER_DEFAULT_SCREEN_DPI) / POINTS_PER_INCH;
+
+    // The advance is the number of pixels left-to-right (X dimension) for the given font.
+    // We're finding a proportional factor here with the design units in "ems", not an actual pixel measurement.
+
+    // Now we play trickery with the font size. Scale by the DPI to get the height we expect.
+    heightDesired *= (static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI));
+
+    const float widthAdvance = static_cast<float>(advanceInDesignUnits) / fontMetrics.designUnitsPerEm;
+
+    // Use the real pixel height desired by the "em" factor for the width to get the number of pixels
+    // we will need per character in width. This will almost certainly result in fractional X-dimension pixels.
+    const float widthApprox = heightDesired * widthAdvance;
+
+    // Since we can't deal with columns of the presentation grid being fractional pixels in width, round to the nearest whole pixel.
+    const float widthExact = round(widthApprox);
+
+    // Now reverse the "em" factor from above to turn the exact pixel width into a (probably) fractional
+    // height in pixels of each character. It's easier for us to pad out height and align vertically
+    // than it is horizontally.
+    const auto fontSize = widthExact / widthAdvance;
+    _fontSize = fontSize;
+
+    // Now figure out the basic properties of the character height which include ascent and descent
+    // for this specific font size.
+    const float ascent = (fontSize * fontMetrics.ascent) / fontMetrics.designUnitsPerEm;
+    const float descent = (fontSize * fontMetrics.descent) / fontMetrics.designUnitsPerEm;
+
+    // Get the gap.
+    const float gap = (fontSize * fontMetrics.lineGap) / fontMetrics.designUnitsPerEm;
+    const float halfGap = gap / 2;
+
+    // We're going to build a line spacing object here to track all of this data in our format.
+    DWRITE_LINE_SPACING lineSpacing = {};
+    lineSpacing.method = DWRITE_LINE_SPACING_METHOD_UNIFORM;
+
+    // We need to make sure the baseline falls on a round pixel (not a fractional pixel).
+    // If the baseline is fractional, the text appears blurry, especially at small scales.
+    // Since we also need to make sure the bounding box as a whole is round pixels
+    // (because the entire console system maths in full cell units),
+    // we're just going to ceiling up the ascent and descent to make a full pixel amount
+    // and set the baseline to the full round pixel ascent value.
+    //
+    // For reference, for the letters "ag":
+    // ...
+    //          gggggg      bottom of previous line
+    //
+    // -----------------    <===========================================|
+    //                         | topSideBearing       |  1/2 lineGap    |
+    // aaaaaa   ggggggg     <-------------------------|-------------|   |
+    //      a   g    g                                |             |   |
+    //  aaaaa   ggggg                                 |<-ascent     |   |
+    // a    a   g                                     |             |   |---- lineHeight
+    // aaaaa a  gggggg      <----baseline, verticalOriginY----------|---|
+    //          g     g                               |<-descent    |   |
+    //          gggggg      <-------------------------|-------------|   |
+    //                         | bottomSideBearing    | 1/2 lineGap     |
+    // -----------------    <===========================================|
+    //
+    // aaaaaa   ggggggg     top of next line
+    // ...
+    //
+    // Also note...
+    // We're going to add half the line gap to the ascent and half the line gap to the descent
+    // to ensure that the spacing is balanced vertically.
+    // Generally speaking, the line gap is added to the ascent by DirectWrite itself for
+    // horizontally drawn text which can place the baseline and glyphs "lower" in the drawing
+    // box than would be desired for proper alignment of things like line and box characters
+    // which will try to sit centered in the area and touch perfectly with their neighbors.
+
+    const auto fullPixelAscent = ceil(ascent + halfGap);
+    const auto fullPixelDescent = ceil(descent + halfGap);
+    lineSpacing.height = fullPixelAscent + fullPixelDescent;
+    lineSpacing.baseline = fullPixelAscent;
+
+    // According to MSDN (https://docs.microsoft.com/en-us/windows/win32/api/dwrite_3/ne-dwrite_3-dwrite_font_line_gap_usage)
+    // Setting "ENABLED" means we've included the line gapping in the spacing numbers given.
+    lineSpacing.fontLineGapUsage = DWRITE_FONT_LINE_GAP_USAGE_ENABLED;
+
+    _lineSpacing = lineSpacing;
+
+    // The scaled size needs to represent the pixel box that each character will fit within for the purposes
+    // of hit testing math and other such multiplication/division.
+    COORD coordSize = { 0 };
+    coordSize.X = gsl::narrow<SHORT>(widthExact);
+    coordSize.Y = gsl::narrow_cast<SHORT>(lineSpacing.height);
+
+    // Unscaled is for the purposes of re-communicating this font back to the renderer again later.
+    // As such, we need to give the same original size parameter back here without padding
+    // or rounding or scaling manipulation.
+    const COORD unscaled = desired.GetEngineSize();
+
+    const COORD scaled = coordSize;
+
+    actual.SetFromEngine(_defaultFontInfo.GetFamilyName(),
+                         desired.GetFamily(),
+                         DefaultTextFormat()->GetFontWeight(),
+                         false,
+                         scaled,
+                         unscaled);
+
+    actual.SetFallback(_defaultFontInfo.GetFallback());
+
+    LineMetrics lineMetrics;
+    // There is no font metric for the grid line width, so we use a small
+    // multiple of the font size, which typically rounds to a pixel.
+    lineMetrics.gridlineWidth = std::round(fontSize * 0.025f);
+
+    // All other line metrics are in design units, so to get a pixel value,
+    // we scale by the font size divided by the design-units-per-em.
+    const auto scale = fontSize / fontMetrics.designUnitsPerEm;
+    lineMetrics.underlineOffset = std::round(fontMetrics.underlinePosition * scale);
+    lineMetrics.underlineWidth = std::round(fontMetrics.underlineThickness * scale);
+    lineMetrics.strikethroughOffset = std::round(fontMetrics.strikethroughPosition * scale);
+    lineMetrics.strikethroughWidth = std::round(fontMetrics.strikethroughThickness * scale);
+
+    // We always want the lines to be visible, so if a stroke width ends up
+    // at zero after rounding, we need to make it at least 1 pixel.
+    lineMetrics.gridlineWidth = std::max(lineMetrics.gridlineWidth, 1.0f);
+    lineMetrics.underlineWidth = std::max(lineMetrics.underlineWidth, 1.0f);
+    lineMetrics.strikethroughWidth = std::max(lineMetrics.strikethroughWidth, 1.0f);
+
+    // Offsets are relative to the base line of the font, so we subtract
+    // from the ascent to get an offset relative to the top of the cell.
+    lineMetrics.underlineOffset = fullPixelAscent - lineMetrics.underlineOffset;
+    lineMetrics.strikethroughOffset = fullPixelAscent - lineMetrics.strikethroughOffset;
+
+    // For double underlines we need a second offset, just below the first,
+    // but with a bit of a gap (about double the grid line width).
+    lineMetrics.underlineOffset2 = lineMetrics.underlineOffset +
+                                   lineMetrics.underlineWidth +
+                                   std::round(fontSize * 0.05f);
+
+    // However, we don't want the underline to extend past the bottom of the
+    // cell, so we clamp the offset to fit just inside.
+    const auto maxUnderlineOffset = lineSpacing.height - lineMetrics.underlineWidth;
+    lineMetrics.underlineOffset2 = std::min(lineMetrics.underlineOffset2, maxUnderlineOffset);
+
+    // But if the resulting gap isn't big enough even to register as a thicker
+    // line, it's better to place the second line slightly above the first.
+    if (lineMetrics.underlineOffset2 < lineMetrics.underlineOffset + lineMetrics.gridlineWidth)
     {
-        face = _FindFontFace(familyName, weight, stretch, style, localeName, true);
-
-        if (!face)
-        {
-            // If we missed, try looking a little more by trimming the last word off the requested family name a few times.
-            // Quite often, folks are specifying weights or something in the familyName and it causes failed resolution and
-            // an unexpected error dialog. We theoretically could detect the weight words and convert them, but this
-            // is the quick fix for the majority scenario.
-            // The long/full fix is backlogged to GH#9744
-            // Also this doesn't count as a fallback because we don't want to annoy folks with the warning dialog over
-            // this resolution.
-            while (!face && !familyName.empty())
-            {
-                const auto lastSpace = familyName.find_last_of(UNICODE_SPACE);
-
-                // value is unsigned and npos will be greater than size.
-                // if we didn't find anything to trim, leave.
-                if (lastSpace >= familyName.size())
-                {
-                    break;
-                }
-
-                // trim string down to just before the found space
-                // (space found at 6... trim from 0 for 6 length will give us 0-5 as the new string)
-                familyName = familyName.substr(0, lastSpace);
-
-                // Try to find it with the shortened family name
-                face = _FindFontFace(familyName, weight, stretch, style, localeName, true);
-            }
-        }
-    }
-    CATCH_LOG();
-
-    // Alright, if our quick shot at trimming didn't work either...
-    // move onto looking up a font from our hardcoded list of fonts
-    // that should really always be available.
-    if (!face)
-    {
-        for (const auto fallbackFace : FALLBACK_FONT_FACES)
-        {
-            familyName = fallbackFace;
-            // With these fonts, don't attempt the nearby lookup. We're looking
-            // for system fonts only. If one of the nearby fonts is causing us
-            // problems (like in GH#10211), then we don't want to go anywhere
-
-            // near it in this part.
-            face = _FindFontFace(familyName, weight, stretch, style, localeName, false);
-
-            if (face)
-            {
-                didFallback = true;
-                break;
-            }
-
-            familyName = fallbackFace;
-            weight = DWRITE_FONT_WEIGHT_NORMAL;
-            stretch = DWRITE_FONT_STRETCH_NORMAL;
-            style = DWRITE_FONT_STYLE_NORMAL;
-            face = _FindFontFace(familyName, weight, stretch, style, localeName, false);
-
-            if (face)
-            {
-                didFallback = true;
-                break;
-            }
-        }
+        lineMetrics.underlineOffset2 = lineMetrics.underlineOffset - lineMetrics.gridlineWidth;
     }
 
-    THROW_HR_IF_NULL(E_FAIL, face);
+    // We also add half the stroke width to the offsets, since the line
+    // coordinates designate the center of the line.
+    lineMetrics.underlineOffset += lineMetrics.underlineWidth / 2.0f;
+    lineMetrics.underlineOffset2 += lineMetrics.underlineWidth / 2.0f;
+    lineMetrics.strikethroughOffset += lineMetrics.strikethroughWidth / 2.0f;
 
-    return face;
+    _lineMetrics = lineMetrics;
+
+    _glyphCell = actual.GetSize();
 }
 
-// Routine Description:
-// - Locates a suitable font face from the given information
-// Arguments:
-// - familyName - The font name we should be looking for
-// - weight - The weight (bold, light, etc.)
-// - stretch - The stretch of the font is the spacing between each letter
-// - style - Normal, italic, etc.
-// Return Value:
-// - Smart pointer holding interface reference for queryable font data.
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontRenderData::_FindFontFace(std::wstring& familyName,
-                                                                                       DWRITE_FONT_WEIGHT& weight,
-                                                                                       DWRITE_FONT_STRETCH& stretch,
-                                                                                       DWRITE_FONT_STYLE& style,
-                                                                                       std::wstring& localeName,
-                                                                                       const bool withNearbyLookup) const
+Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(const DxFontInfo fontInfo, const std::wstring_view localeName)
 {
-    Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace;
-
-    Microsoft::WRL::ComPtr<IDWriteFontCollection> fontCollection;
-    THROW_IF_FAILED(_dwriteFactory->GetSystemFontCollection(&fontCollection, false));
-
-    UINT32 familyIndex;
-    BOOL familyExists;
-    THROW_IF_FAILED(fontCollection->FindFamilyName(familyName.data(), &familyIndex, &familyExists));
-
-    // If the system collection missed, try the files sitting next to our binary.
-    if (withNearbyLookup && !familyExists)
-    {
-        auto&& nearbyCollection = NearbyCollection();
-
-        // May be null on OS below Windows 10. If null, just skip the attempt.
-        if (nearbyCollection)
-        {
-            nearbyCollection.As(&fontCollection);
-            THROW_IF_FAILED(fontCollection->FindFamilyName(familyName.data(), &familyIndex, &familyExists));
-        }
-    }
-
-    if (familyExists)
-    {
-        Microsoft::WRL::ComPtr<IDWriteFontFamily> fontFamily;
-        THROW_IF_FAILED(fontCollection->GetFontFamily(familyIndex, &fontFamily));
-
-        Microsoft::WRL::ComPtr<IDWriteFont> font;
-        THROW_IF_FAILED(fontFamily->GetFirstMatchingFont(weight, stretch, style, &font));
-
-        Microsoft::WRL::ComPtr<IDWriteFontFace> fontFace0;
-        THROW_IF_FAILED(font->CreateFontFace(&fontFace0));
-
-        THROW_IF_FAILED(fontFace0.As(&fontFace));
-
-        // Retrieve metrics in case the font we created was different than what was requested.
-        weight = font->GetWeight();
-        stretch = font->GetStretch();
-        style = font->GetStyle();
-
-        // Dig the family name out at the end to return it.
-        familyName = _GetFontFamilyName(fontFamily.Get(), localeName);
-    }
-
-    return fontFace;
-}
-
-// Routine Description:
-// - Retrieves the font family name out of the given object in the given locale.
-// - If we can't find a valid name for the given locale, we'll fallback and report it back.
-// Arguments:
-// - fontFamily - DirectWrite font family object
-// - localeName - The locale in which the name should be retrieved.
-//              - If fallback occurred, this is updated to what we retrieved instead.
-// Return Value:
-// - Localized string name of the font family
-[[nodiscard]] std::wstring DxFontRenderData::_GetFontFamilyName(gsl::not_null<IDWriteFontFamily*> const fontFamily,
-                                                                std::wstring& localeName) const
-{
-    // See: https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritefontcollection
-    Microsoft::WRL::ComPtr<IDWriteLocalizedStrings> familyNames;
-    THROW_IF_FAILED(fontFamily->GetFamilyNames(&familyNames));
-
-    // First we have to find the right family name for the locale. We're going to bias toward what the caller
-    // requested, but fallback if we need to and reply with the locale we ended up choosing.
-    UINT32 index = 0;
-    BOOL exists = false;
-
-    // This returns S_OK whether or not it finds a locale name. Check exists field instead.
-    // If it returns an error, it's a real problem, not an absence of this locale name.
-    // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-findlocalename
-    THROW_IF_FAILED(familyNames->FindLocaleName(localeName.data(), &index, &exists));
-
-    // If we tried and it still doesn't exist, try with the fallback locale.
-    if (!exists)
-    {
-        localeName = FALLBACK_LOCALE;
-        THROW_IF_FAILED(familyNames->FindLocaleName(localeName.data(), &index, &exists));
-    }
-
-    // If it still doesn't exist, we're going to try index 0.
-    if (!exists)
-    {
-        index = 0;
-
-        // Get the locale name out so at least the caller knows what locale this name goes with.
-        UINT32 length = 0;
-        THROW_IF_FAILED(familyNames->GetLocaleNameLength(index, &length));
-        localeName.resize(length);
-
-        // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getlocalenamelength
-        // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getlocalename
-        // GetLocaleNameLength does not include space for null terminator, but GetLocaleName needs it so add one.
-        THROW_IF_FAILED(familyNames->GetLocaleName(index, localeName.data(), length + 1));
-    }
-
-    // OK, now that we've decided which family name and the locale that it's in... let's go get it.
-    UINT32 length = 0;
-    THROW_IF_FAILED(familyNames->GetStringLength(index, &length));
-
-    // Make our output buffer and resize it so it is allocated.
-    std::wstring retVal;
-    retVal.resize(length);
-
-    // FINALLY, go fetch the string name.
-    // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getstringlength
-    // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getstring
-    // Once again, GetStringLength is without the null, but GetString needs the null. So add one.
-    THROW_IF_FAILED(familyNames->GetString(index, retVal.data(), length + 1));
-
-    // and return it.
-    return retVal;
-}
-
-[[nodiscard]] std::wstring DxFontRenderData::_GetUserLocaleName()
-{
-    if (_userLocaleName.empty())
-    {
-        std::array<wchar_t, LOCALE_NAME_MAX_LENGTH> localeName;
-
-        const auto returnCode = GetUserDefaultLocaleName(localeName.data(), gsl::narrow<int>(localeName.size()));
-        if (returnCode)
-        {
-            _userLocaleName = { localeName.data() };
-        }
-        else
-        {
-            _userLocaleName = { FALLBACK_LOCALE.data(), FALLBACK_LOCALE.size() };
-        }
-    }
-
-    return _userLocaleName;
-}
-
-// Routine Description:
-// - Digs through the directory that the current executable is running within to find
-//   any TTF files sitting next to it.
-// Arguments:
-// - <none>
-// Return Value:
-// - Iterable collection of filesystem paths, one per font file that was found
-[[nodiscard]] std::vector<std::filesystem::path> DxFontRenderData::s_GetNearbyFonts()
-{
-    std::vector<std::filesystem::path> paths;
-
-    // Find the directory we're running from then enumerate all the TTF files
-    // sitting next to us.
-    const std::filesystem::path module{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
-    const auto folder{ module.parent_path() };
-
-    for (auto& p : std::filesystem::directory_iterator(folder))
-    {
-        if (p.is_regular_file())
-        {
-            auto extension = p.path().extension().wstring();
-            std::transform(extension.begin(), extension.end(), extension.begin(), std::towlower);
-
-            static constexpr std::wstring_view ttfExtension{ L".ttf" };
-            if (ttfExtension == extension)
-            {
-                paths.push_back(p);
-            }
-        }
-    }
-
-    return paths;
+    Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
+    THROW_IF_FAILED(_dwriteFactory->CreateTextFormat(fontInfo.GetFamilyName().data(),
+                                                     nullptr,
+                                                     fontInfo.GetWeight(),
+                                                     fontInfo.GetStyle(),
+                                                     fontInfo.GetStretch(),
+                                                     _fontSize,
+                                                     localeName.data(),
+                                                     &format));
+    return format;
 }

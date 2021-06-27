@@ -546,12 +546,14 @@
             "action": { "type": "string", "pattern": "openSettings" },
             "target": {
               "type": "string",
-              "default": "settingsFile",
-              "description": "The settings file to open.",
+              "default": "settingsUI",
+              "description": "Opens Settings UI or settings file.",
               "enum": [
                 "settingsFile",
                 "defaultsFile",
-                "allFiles"
+                "allFiles",
+                "settingsUI"
+                
               ]
             }
           }
