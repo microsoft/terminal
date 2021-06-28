@@ -13,7 +13,6 @@
 #include "../buffer/out/search.h"
 #include "cppwinrt_utils.h"
 #include "SearchBoxControl.h"
-#include "ThrottledFunc.h"
 
 #include "ControlInteractivity.h"
 
@@ -174,11 +173,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::UI::Xaml::DispatcherTimer _autoScrollTimer;
         std::optional<std::chrono::high_resolution_clock::time_point> _lastAutoScrollUpdateTime;
 
-        winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellLightAnimation;
+        winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellLightAnimation{ nullptr };
+        Windows::UI::Xaml::DispatcherTimer _bellLightTimer{ nullptr };
 
         std::optional<Windows::UI::Xaml::DispatcherTimer> _cursorTimer;
         std::optional<Windows::UI::Xaml::DispatcherTimer> _blinkTimer;
-        std::optional<Windows::UI::Xaml::DispatcherTimer> _bellLightTimer;
 
         event_token _coreOutputEventToken;
 

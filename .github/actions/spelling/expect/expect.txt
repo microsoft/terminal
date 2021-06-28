@@ -163,6 +163,7 @@ BPBF
 bpp
 BPPF
 branchconfig
+brandings
 BRK
 Browsable
 bsearch
@@ -1941,6 +1942,7 @@ REGSTR
 reingest
 Relayout
 RELBINPATH
+remoting
 Remoting
 renamer
 renderengine

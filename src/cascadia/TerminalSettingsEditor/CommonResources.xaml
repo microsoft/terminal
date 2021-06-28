@@ -49,7 +49,7 @@
     <Style x:Key="SettingsStackStyle"
            TargetType="StackPanel">
         <Setter Property="HorizontalAlignment" Value="Left" />
-        <Setter Property="Margin" Value="13,0,13,48" />
+        <Setter Property="Margin" Value="13,0,0,48" />
     </Style>
 
     <!--  Used to stack a group of settings inside a pivot  -->

@@ -74,6 +74,8 @@ public:
 
     std::optional<CLSID> handoffConsoleClsid;
     std::optional<CLSID> handoffTerminalClsid;
+    wil::unique_hfile handoffInboxConsoleHandle;
+    wil::unique_threadpool_wait handoffInboxConsoleExitWait;
 
 #ifdef UNIT_TESTING
     void EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine);

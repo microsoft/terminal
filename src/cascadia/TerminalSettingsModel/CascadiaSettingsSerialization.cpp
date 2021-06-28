@@ -2,15 +2,12 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include <argb.h>
 #include "CascadiaSettings.h"
-#include "../../types/inc/utils.hpp"
-#include "Utils.h"
-#include "JsonUtils.h"
-#include <appmodel.h>
-#include <shlobj.h>
+
 #include <fmt/chrono.h>
-#include "DefaultProfileUtils.h"
+#include <shlobj.h>
+
+#include <WtExeUtils.h>
 
 // defaults.h is a file containing the default json settings in a std::string_view
 #include "defaults.h"
@@ -1058,20 +1055,6 @@ winrt::com_ptr<ColorScheme> CascadiaSettings::_FindMatchingColorScheme(const Jso
     return nullptr;
 }
 
-// Function Description:
-// - Returns true if we're running in a packaged context.
-//   If we are, we want to change our settings path slightly.
-// Arguments:
-// - <none>
-// Return Value:
-// - true iff we're running in a packaged context.
-bool CascadiaSettings::_IsPackaged()
-{
-    UINT32 length = 0;
-    LONG rc = GetCurrentPackageFullName(&length, nullptr);
-    return rc != APPMODEL_ERROR_NO_PACKAGE;
-}
-
 // Method Description:
 // - Writes the given content in UTF-8 to a settings file using the Win32 APIS's.
 //   Will overwrite any existing content in the file.
@@ -1216,7 +1199,7 @@ winrt::hstring CascadiaSettings::SettingsPath()
 
     std::filesystem::path parentDirectoryForSettingsFile{ localAppDataFolder.get() };
 
-    if (!_IsPackaged())
+    if (!IsPackaged())
     {
         parentDirectoryForSettingsFile /= UnpackagedSettingsFolderName;
     }

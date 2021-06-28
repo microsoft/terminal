@@ -28,9 +28,22 @@
 
     <ScrollViewer>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
+            <!--  Language  -->
+            <local:SettingContainer x:Uid="Globals_Language"
+                                    Margin="0"
+                                    Visibility="{x:Bind LanguageSelectorAvailable}">
+                <ComboBox ItemsSource="{x:Bind LanguageList}"
+                          SelectedItem="{x:Bind CurrentLanguage, Mode=TwoWay}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <TextBlock Text="{x:Bind local:GlobalAppearance.LanguageDisplayConverter((x:String))}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </local:SettingContainer>
+
             <!--  Theme  -->
-            <local:SettingContainer x:Uid="Globals_Theme"
-                                    Margin="0">
+            <local:SettingContainer x:Uid="Globals_Theme">
                 <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                    ItemsSource="{x:Bind ThemeList, Mode=OneWay}"
                                    SelectedItem="{x:Bind CurrentTheme, Mode=TwoWay}" />

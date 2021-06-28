@@ -19,7 +19,7 @@
 #include "til/spsc.h"
 #include "til/coalesce.h"
 #include "til/replace.h"
-#include "til/visualize_control_codes.h"
+#include "til/string.h"
 #include "til/pmr.h"
 
 // Use keywords on TraceLogging providers to specify the category
