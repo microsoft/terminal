@@ -56,7 +56,6 @@ void TrayIcon::CreateTrayIcon()
     _trayIconData = nid;
 }
 
-
 // Method Description:
 // - This creates our context menu and displays it at the given
 //   screen coordinates.
