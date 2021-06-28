@@ -133,10 +133,21 @@ CATCH_RETURN()
                                                                _In_ IDWriteTextRenderer* renderer,
                                                                FLOAT originX,
                                                                FLOAT originY) noexcept
+try
 {
     const auto drawingContext = static_cast<const DrawingContext*>(clientDrawingContext);
-    _formatInUse = drawingContext->useItalicFont ? _fontRenderData->ItalicTextFormat().Get() : _fontRenderData->DefaultTextFormat().Get();
-    _fontInUse = drawingContext->useItalicFont ? _fontRenderData->ItalicFontFace().Get() : _fontRenderData->DefaultFontFace().Get();
+
+    const DWRITE_FONT_WEIGHT weight = _fontRenderData->DefaultFontWeight();
+    DWRITE_FONT_STYLE style = _fontRenderData->DefaultFontStyle();
+    const DWRITE_FONT_STRETCH stretch = _fontRenderData->DefaultFontStretch();
+
+    if (drawingContext->useItalicFont)
+    {
+        style = DWRITE_FONT_STYLE_ITALIC;
+    }
+
+    _formatInUse = _fontRenderData->TextFormatWithAttribute(weight, style, stretch).Get();
+    _fontInUse = _fontRenderData->FontFaceWithAttribute(weight, style, stretch).Get();
 
     RETURN_IF_FAILED(_AnalyzeTextComplexity());
     RETURN_IF_FAILED(_AnalyzeRuns());
@@ -151,6 +162,7 @@ CATCH_RETURN()
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Uses the internal text information and the analyzers/font information from construction

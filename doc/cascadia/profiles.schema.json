@@ -547,12 +547,14 @@
             "action": { "type": "string", "pattern": "openSettings" },
             "target": {
               "type": "string",
-              "default": "settingsFile",
-              "description": "The settings file to open.",
+              "default": "settingsUI",
+              "description": "Opens Settings UI or settings file.",
               "enum": [
                 "settingsFile",
                 "defaultsFile",
-                "allFiles"
+                "allFiles",
+                "settingsUI"
+                
               ]
             }
           }
@@ -642,6 +644,25 @@
               ],
               "default": null,
               "description": "Close the tabs following the tab at this index. If no index is provided, use the focused tab's index."
+            }
+          }
+        }
+      ]
+    },
+    "CloseTabAction": {
+      "description": "Arguments for a closeTab action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "closeTab" },
+            "index": {
+              "oneOf": [
+                { "type": "integer" },
+                { "type": "null" }
+              ],
+              "default": null,
+              "description": "Close the tab at this index. If no index is provided, use the focused tab's index."
             }
           }
         }
@@ -898,6 +919,7 @@
               { "$ref": "#/definitions/WtAction" },
               { "$ref": "#/definitions/CloseOtherTabsAction" },
               { "$ref": "#/definitions/CloseTabsAfterAction" },
+              { "$ref": "#/definitions/CloseTabAction" },
               { "$ref": "#/definitions/ScrollUpAction" },
               { "$ref": "#/definitions/ScrollDownAction" },
               { "$ref": "#/definitions/MoveTabAction" },

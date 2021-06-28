@@ -80,6 +80,7 @@ LSHIFT
 MENUCOMMAND
 MENUDATA
 MENUINFO
+mov
 msappx
 MULTIPLEUSE
 NCHITTEST
@@ -109,6 +110,7 @@ overridable
 PAGESCROLL
 PICKFOLDERS
 pmr
+rcx
 REGCLS
 RETURNCMD
 rfind
@@ -152,6 +154,7 @@ winmain
 wpc
 wsregex
 wwinmain
+xchg
 XDocument
 XElement
 xfacet

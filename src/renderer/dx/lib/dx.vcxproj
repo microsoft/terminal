@@ -21,6 +21,7 @@
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\DxFontInfo.cpp" />
     <ClCompile Include="..\DxFontRenderData.cpp" />
     <ClCompile Include="..\DxRenderer.cpp" />
   </ItemGroup>
@@ -30,6 +31,7 @@
     <ClInclude Include="..\CustomTextRenderer.h" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\DxRenderer.hpp" />
+    <ClInclude Include="..\DxFontInfo.h" />
     <ClInclude Include="..\DxFontRenderData.h" />
     <ClInclude Include="..\ScreenPixelShader.h" />
     <ClInclude Include="..\ScreenVertexShader.h" />
