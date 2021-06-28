@@ -11,6 +11,8 @@
 #include "VirtualDesktopUtils.h"
 #include "icon.h"
 
+#include <ScopedResourceLoader.h>
+
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
@@ -996,8 +998,10 @@ void AppHost::_UpdateTrayIcon()
 
         nid.uCallbackMessage = CM_NOTIFY_FROM_TRAY;
 
+        ScopedResourceLoader cascadiaLoader{ L"Resources" };
+
         nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(ICON_SMALL));
-        StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), L"Windows Terminal");
+        StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), cascadiaLoader.GetLocalizedString(L"AppName").c_str());
         nid.uFlags = NIF_MESSAGE | NIF_SHOWTIP | NIF_TIP | NIF_ICON;
         Shell_NotifyIcon(NIM_ADD, &nid);
 
