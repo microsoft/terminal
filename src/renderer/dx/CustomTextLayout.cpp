@@ -353,7 +353,7 @@ CATCH_RETURN()
             _glyphIndices.resize(totalGlyphsArrayCount);
         }
 
-        if (_isEntireTextSimple)
+        if (_isEntireTextSimple && !_fontRenderData->DidUserSetFeatures())
         {
             // When the entire text is simple, we can skip GetGlyphs and directly retrieve glyph indices and
             // advances(in font design unit). With the help of font metrics, we can calculate the actual glyph
@@ -392,6 +392,17 @@ CATCH_RETURN()
         std::vector<DWRITE_SHAPING_TEXT_PROPERTIES> textProps(textLength);
         std::vector<DWRITE_SHAPING_GLYPH_PROPERTIES> glyphProps(maxGlyphCount);
 
+        const auto features = _fontRenderData->DefaultFontFeatures();
+        std::vector<DWRITE_FONT_FEATURE> featureVector;
+        for (const auto& [tag, param] : features)
+        {
+            featureVector.push_back(DWRITE_FONT_FEATURE{ tag, param });
+        }
+        DWRITE_FONT_FEATURE* featureList = &featureVector[0];
+        DWRITE_TYPOGRAPHIC_FEATURES typographicFeatures = { &featureList[0], gsl::narrow<uint32_t>(featureVector.size()) };
+        DWRITE_TYPOGRAPHIC_FEATURES const* typographicFeaturesPointer = &typographicFeatures;
+        const uint32_t fontFeatureLengths[1] = { textLength };
+
         // Get the glyphs from the text, retrying if needed.
 
         int tries = 0;
@@ -408,9 +419,9 @@ CATCH_RETURN()
                 &run.script,
                 _localeName.data(),
                 (run.isNumberSubstituted) ? _numberSubstitution.Get() : nullptr,
-                nullptr, // features
-                nullptr, // featureLengths
-                0, // featureCount
+                &typographicFeaturesPointer, // features
+                fontFeatureLengths, // featureLengths
+                1, // featureCount
                 maxGlyphCount, // maxGlyphCount
                 &_glyphClusters.at(textStart),
                 &textProps.at(0),
@@ -458,9 +469,9 @@ CATCH_RETURN()
             (run.bidiLevel & 1), // isRightToLeft
             &run.script,
             _localeName.data(),
-            nullptr, // features
-            nullptr, // featureRangeLengths
-            0, // featureRanges
+            &typographicFeaturesPointer, // features
+            fontFeatureLengths, // featureLengths
+            1, // featureCount
             &_glyphAdvances.at(glyphStart),
             &_glyphOffsets.at(glyphStart));
 

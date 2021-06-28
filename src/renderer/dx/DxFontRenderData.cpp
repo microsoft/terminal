@@ -197,6 +197,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
                                       desired.GetWeight(),
                                       DWRITE_FONT_STYLE_NORMAL,
                                       DWRITE_FONT_STRETCH_NORMAL);
+        _defaultFontInfo.SetFeatures(_features);
 
         _BuildFontRenderData(desired, actual, dpi);
     }
@@ -445,6 +446,16 @@ try
     return S_OK;
 }
 CATCH_RETURN()
+
+bool DxFontRenderData::DidUserSetFeatures() const noexcept
+{
+    return _defaultFontInfo.DidUserSetFeatures();
+}
+
+void DxFontRenderData::SetFeatures(std::unordered_map<std::wstring_view, uint32_t> features)
+{
+    _features = features;
+}
 
 // Routine Description:
 // - Build the needed data for rendering according to the font used

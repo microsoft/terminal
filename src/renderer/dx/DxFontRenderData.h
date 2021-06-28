@@ -77,9 +77,14 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, float fontScale, IBoxDrawingEffect** effect) noexcept;
 
+        bool DidUserSetFeatures() const noexcept;
+        void SetFeatures(std::unordered_map<std::wstring_view, uint32_t> features);
+
     private:
         void _BuildFontRenderData(const FontInfoDesired& desired, FontInfo& actual, const int dpi);
         Microsoft::WRL::ComPtr<IDWriteTextFormat> _BuildTextFormat(const DxFontInfo fontInfo, const std::wstring_view localeName);
+
+        std::unordered_map<std::wstring_view, uint32_t> _features;
 
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
 

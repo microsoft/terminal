@@ -69,9 +69,3 @@ void RenderEngineBase::WaitUntilCanRender() noexcept
 {
     // do nothing by default
 }
-
-
-HRESULT RenderEngineBase::UpdateFontFeatures(const std::unordered_map<std::wstring, uint32_t> /*features*/) noexcept
-{
-    return S_FALSE;
-}

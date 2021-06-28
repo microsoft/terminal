@@ -47,8 +47,6 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual bool RequiresContinuousRedraw() noexcept override;
 
-        [[nodiscard]] HRESULT UpdateFontFeatures(const std::unordered_map<std::wstring, uint32_t> features) noexcept override;
-
         void WaitUntilCanRender() noexcept override;
 
     protected:

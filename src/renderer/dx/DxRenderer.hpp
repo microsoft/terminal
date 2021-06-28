@@ -72,6 +72,8 @@ namespace Microsoft::Console::Render
 
         HANDLE GetSwapChainHandle();
 
+        void UpdateFontFeatures(const std::unordered_map<std::wstring_view, uint32_t> features) noexcept;
+
         // IRenderEngine Members
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept override;
@@ -121,8 +123,6 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] ::Microsoft::Console::Types::Viewport GetViewportInCharacters(const ::Microsoft::Console::Types::Viewport& viewInPixels) noexcept;
         [[nodiscard]] ::Microsoft::Console::Types::Viewport GetViewportInPixels(const ::Microsoft::Console::Types::Viewport& viewInCharacters) noexcept;
-
-        [[nodiscard]] HRESULT UpdateFontFeatures(const std::unordered_map<std::wstring, uint32_t> features) noexcept override;
 
         float GetScaling() const noexcept;
 

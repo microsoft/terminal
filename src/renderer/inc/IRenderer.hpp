@@ -62,8 +62,6 @@ namespace Microsoft::Console::Render
 
         virtual void AddRenderEngine(_In_ IRenderEngine* const pEngine) = 0;
 
-        virtual void AddFontFeatures(const std::unordered_map<std::wstring, uint32_t> features) = 0;
-
     protected:
         IRenderer() = default;
     };

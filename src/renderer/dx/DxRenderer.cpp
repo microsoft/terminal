@@ -1975,9 +1975,9 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT DxEngine::UpdateFontFeatures(const std::unordered_map<std::wstring, uint32_t> features) noexcept
+void DxEngine::UpdateFontFeatures(const std::unordered_map<std::wstring_view, uint32_t> features) noexcept
 {
-    return S_OK;
+    _fontRenderData->SetFeatures(features);
 }
 
 // Routine Description:

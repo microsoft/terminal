@@ -91,14 +91,37 @@ void DxFontInfo::SetStretch(const DWRITE_FONT_STRETCH stretch) noexcept
     _stretch = stretch;
 }
 
-std::unordered_map<DWRITE_FONT_FEATURE_TAG, uint32_t> DxFontInfo::GetFeatures() const noexcept
+bool DxFontInfo::DidUserSetFeatures() const noexcept
 {
-    return _features;
+    return _didUserSetFeatures;
 }
 
-void DxFontInfo::SetFeatures(std::unordered_map<DWRITE_FONT_FEATURE_TAG, uint32_t> features) noexcept
+std::unordered_map<DWRITE_FONT_FEATURE_TAG, uint32_t> DxFontInfo::GetFeatures() const noexcept
 {
-    _features = features;
+    std::unordered_map<DWRITE_FONT_FEATURE_TAG, uint32_t> dwriteFeatures;
+    for (const auto& [tag, param] : _features)
+    {
+        if (tag.length() != 4)
+        {
+            // ignore badly formed tags
+            // maybe this shouldn't be here? maybe this check should be at settings model side to output a warning to user?
+            continue;
+        }
+        dwriteFeatures[DWRITE_MAKE_FONT_FEATURE_TAG(tag[0], tag[1], tag[2], tag[3])] = param;
+    }
+    return dwriteFeatures;
+}
+
+void DxFontInfo::SetFeatures(std::unordered_map<std::wstring_view, uint32_t> features) noexcept
+{
+    if (!features.empty())
+    {
+        for (const auto& [tag, param] : features)
+        {
+            _features[tag] = param;
+        }
+        _didUserSetFeatures = true;
+    }
 }
 
 bool DxFontInfo::GetFallback() const noexcept

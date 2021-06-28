@@ -508,14 +508,6 @@ HRESULT Renderer::_PaintTitle(IRenderEngine* const pEngine)
     return pEngine->UpdateTitle(newTitle);
 }
 
-void Renderer::AddFontFeatures(const std::unordered_map<std::wstring, uint32_t> features)
-{
-    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
-        LOG_IF_FAILED(pEngine->UpdateFontFeatures(features));
-    });
-}
-
-
 // Routine Description:
 // - Called when a change in font or DPI has been detected.
 // Arguments:
