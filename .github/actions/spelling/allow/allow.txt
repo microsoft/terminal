@@ -1,6 +1,9 @@
 Apc
 apc
+calt
+ccmp
 clickable
+clig
 copyable
 dalet
 Dcs
@@ -25,8 +28,11 @@ hyperlinks
 img
 It'd
 kje
+liga
 lje
+locl
 maxed
+mkmk
 mru
 nje
 ogonek
@@ -36,10 +42,12 @@ postmodern
 ptys
 qof
 qps
+rclt
 reimplementation
 reserialization
 reserialize
 reserializes
+rlig
 runtimes
 shcha
 Sos
