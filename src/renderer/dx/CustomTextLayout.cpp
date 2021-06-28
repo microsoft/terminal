@@ -32,8 +32,6 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<DxFontRenderData*> const fontRe
 {
     _localeName.resize(gsl::narrow_cast<size_t>(fontRenderData->DefaultTextFormat()->GetLocaleNameLength()) + 1); // +1 for null
     THROW_IF_FAILED(fontRenderData->DefaultTextFormat()->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
-
-    // TODO: construct the font feature vector
 }
 
 //Routine Description:

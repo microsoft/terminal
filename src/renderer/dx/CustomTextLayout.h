@@ -167,7 +167,6 @@ namespace Microsoft::Console::Render
         std::wstring _localeName;
         ::Microsoft::WRL::ComPtr<IDWriteNumberSubstitution> _numberSubstitution;
         DWRITE_READING_DIRECTION _readingDirection;
-        std::vector<DWRITE_FONT_FEATURE> _features;
 
         // Text analysis results
         std::vector<LinkedRun> _runs;
