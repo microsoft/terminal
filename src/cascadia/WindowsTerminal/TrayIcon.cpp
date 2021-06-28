@@ -2,6 +2,7 @@
 #include "icon.h"
 #include "TrayIcon.h"
 
+#include <ScopedResourceLoader.h>
 #include <LibraryResources.h>
 
 using namespace winrt::Windows::Foundation::Collections;
@@ -41,8 +42,12 @@ void TrayIcon::CreateTrayIcon()
 
     nid.uCallbackMessage = CM_NOTIFY_FROM_TRAY;
 
+    // AppName happens to be in CascadiaPackage's Resources.
+    ScopedResourceLoader srl{ L"Resources" };
+    auto appNameLoc = srl.GetLocalizedString(L"AppName");
+
     nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(true));
-    StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), RS_(L"AppName").c_str());
+    StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), appNameLoc.c_str());
     nid.uFlags = NIF_MESSAGE | NIF_SHOWTIP | NIF_TIP | NIF_ICON;
     Shell_NotifyIcon(NIM_ADD, &nid);
 
