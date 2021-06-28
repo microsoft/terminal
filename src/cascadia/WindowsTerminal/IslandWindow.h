@@ -6,8 +6,6 @@
 #include <winrt/TerminalApp.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
-#define CM_NOTIFY_FROM_TRAY (WM_APP + 1)
-
 class IslandWindow :
     public BaseWindow<IslandWindow>
 {

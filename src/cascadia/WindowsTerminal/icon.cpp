@@ -31,8 +31,8 @@ HANDLE GetActiveAppIconHandle(int size)
 {
     auto iconResource{ MAKEINTRESOURCEW(_GetActiveAppIconResource()) };
 
-    auto smXIcon = size == ICON_SMALL ? SM_CXSMICON : SM_CXICON;
-    auto smYIcon = size == ICON_SMALL ? SM_CYSMICON : SM_CYICON;
+    const auto smXIcon = size == ICON_SMALL ? SM_CXSMICON : SM_CXICON;
+    const auto smYIcon = size == ICON_SMALL ? SM_CYSMICON : SM_CYICON;
 
     // These handles are loaded with LR_SHARED, so they are safe to "leak".
     HANDLE hIcon{ LoadImageW(wil::GetModuleInstanceHandle(), iconResource, IMAGE_ICON, GetSystemMetrics(smXIcon), GetSystemMetrics(smYIcon), LR_SHARED) };
@@ -47,7 +47,7 @@ void UpdateWindowIconForActiveMetrics(HWND window)
     {
         SendMessageW(window, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(smallIcon));
     }
-    else if (auto largeIcon = GetActiveAppIconHandle(ICON_BIG))
+    if (auto largeIcon = GetActiveAppIconHandle(ICON_BIG))
     {
         SendMessageW(window, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(largeIcon));
     }

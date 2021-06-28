@@ -44,6 +44,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="AppHost.h" />
     <ClInclude Include="BaseWindow.h" />
+    <ClInclude Include="CustomWindowMessages.h" />
     <ClInclude Include="IslandWindow.h" />
     <ClInclude Include="NonClientIslandWindow.h" />
     <ClInclude Include="VirtualDesktopUtils.h" />
