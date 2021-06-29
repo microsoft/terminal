@@ -25,7 +25,7 @@ namespace Microsoft::Console::VirtualTerminal
         //   (_In_z_ const wchar_t* name)
         // as arguments instead of the more modern std::wstring_view
         // for performance reasons.
-        // 
+        //
         // Passing structures larger than the register size is very expensive
         // due to Microsoft's x64 calling convention. We could reduce the
         // overhead by passing the string-view by reference, but this forces us
