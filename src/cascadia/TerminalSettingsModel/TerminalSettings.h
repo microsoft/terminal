@@ -21,6 +21,7 @@ Author(s):
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
 
+using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, int64_t>;
 using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>;
 
 // fwdecl unittest classes
@@ -121,6 +122,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, int32_t, FontSize, DEFAULT_FONT_SIZE);
 
         INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Text::FontWeight, FontWeight);
+        INHERITABLE_SETTING(Model::TerminalSettings, IFontAxesMap, FontAxes);
         INHERITABLE_SETTING(Model::TerminalSettings, IFontFeatureMap, FontFeatures);
 
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, BackgroundImage);

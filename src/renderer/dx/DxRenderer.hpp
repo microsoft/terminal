@@ -73,6 +73,7 @@ namespace Microsoft::Console::Render
         HANDLE GetSwapChainHandle();
 
         void UpdateFontFeatures(const std::unordered_map<std::wstring_view, uint32_t> features) noexcept;
+        void UpdateFontAxes(const std::unordered_map<std::wstring_view, int64_t> axes) noexcept;
 
         // IRenderEngine Members
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;

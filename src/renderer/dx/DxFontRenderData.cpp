@@ -477,6 +477,15 @@ void DxFontRenderData::SetFeatures(std::unordered_map<std::wstring_view, uint32_
     }
 }
 
+void DxFontRenderData::SetAxes(std::unordered_map<std::wstring_view, int64_t> axes) noexcept
+{
+    // update our axis map
+    for (const auto& [axis, value] : axes)
+    {
+        _axesMap[axis] = value;
+    }
+}
+
 // Routine Description:
 // - Build the needed data for rendering according to the font used
 // Arguments:
@@ -685,5 +694,26 @@ Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(con
                                                      _fontSize,
                                                      localeName.data(),
                                                      &format));
+
+    // Set the font axes
+    ::Microsoft::WRL::ComPtr<IDWriteTextFormat3> format3;
+    if (!FAILED(format->QueryInterface(IID_PPV_ARGS(&format3))))
+    {
+        std::vector<DWRITE_FONT_AXIS_VALUE> axesVector;
+        for (const auto& [axis, value] : _axesMap)
+        {
+            if (axis.length() != 4)
+            {
+                // ignore badly formed tags
+                // maybe this shouldn't be here? maybe this check should be at settings model side to output a warning to user?
+                continue;
+            }
+            const auto dwriteTag = DWRITE_MAKE_FONT_AXIS_TAG(axis[0], axis[1], axis[2], axis[3]);
+            axesVector.push_back(DWRITE_FONT_AXIS_VALUE{ dwriteTag, gsl::narrow<float>(value) });
+        }
+        DWRITE_FONT_AXIS_VALUE* axesList = &axesVector[0];
+        format3->SetFontAxisValues(axesList, gsl::narrow<uint32_t>(axesVector.size()));
+    }
+
     return format;
 }

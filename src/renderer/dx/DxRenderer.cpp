@@ -1980,6 +1980,11 @@ void DxEngine::UpdateFontFeatures(const std::unordered_map<std::wstring_view, ui
     _fontRenderData->SetFeatures(features);
 }
 
+void DxEngine::UpdateFontAxes(const std::unordered_map<std::wstring_view, int64_t> axes) noexcept
+{
+    _fontRenderData->SetAxes(axes);
+}
+
 // Routine Description:
 // - Updates the font used for drawing
 // Arguments:

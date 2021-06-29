@@ -160,6 +160,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // We don't have to care about DPI. We'll get a change message immediately if it's not 96
             // and react accordingly.
             dxEngine->UpdateFontFeatures(_fontFeatures);
+            dxEngine->UpdateFontAxes(_fontAxes);
             _updateFont(true);
 
             const COORD windowSize{ static_cast<short>(windowWidth),
@@ -510,6 +511,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _fontFeatures[tag.data()] = param;
         }
+        for (const auto& [axis, value] : _settings.FontAxes())
+        {
+            _fontAxes[axis.data()] = value;
+        }
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up
         // The other params here also largely don't matter.
@@ -600,6 +605,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_renderEngine)
         {
             _renderEngine->UpdateFontFeatures(_fontFeatures);
+            _renderEngine->UpdateFontAxes(_fontAxes);
         }
 
         // TODO: MSFT:20895307 If the font doesn't exist, this doesn't

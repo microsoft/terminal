@@ -289,6 +289,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         std::unordered_map<hstring, uint32_t> featMap{ { L"subs", 1 } };
         _FontFeatures = single_threaded_map<hstring, uint32_t>(std::move(featMap));
+
+        std::unordered_map<hstring, int64_t> axesMap{ { L"wght", 900 }, { L"slnt", 70 } };
+        _FontAxes = single_threaded_map<hstring, int64_t>(std::move(axesMap));
     }
 
     // Method Description:
