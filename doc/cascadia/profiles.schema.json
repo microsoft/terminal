@@ -648,6 +648,25 @@
         }
       ]
     },
+    "CloseTabAction": {
+      "description": "Arguments for a closeTab action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "closeTab" },
+            "index": {
+              "oneOf": [
+                { "type": "integer" },
+                { "type": "null" }
+              ],
+              "default": null,
+              "description": "Close the tab at this index. If no index is provided, use the focused tab's index."
+            }
+          }
+        }
+      ]
+    },
     "ScrollUpAction": {
       "description": "Arguments for a scrollUp action",
       "allOf": [
@@ -899,6 +918,7 @@
               { "$ref": "#/definitions/WtAction" },
               { "$ref": "#/definitions/CloseOtherTabsAction" },
               { "$ref": "#/definitions/CloseTabsAfterAction" },
+              { "$ref": "#/definitions/CloseTabAction" },
               { "$ref": "#/definitions/ScrollUpAction" },
               { "$ref": "#/definitions/ScrollDownAction" },
               { "$ref": "#/definitions/MoveTabAction" },
