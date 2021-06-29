@@ -180,7 +180,7 @@ namespace Microsoft::Console::Types
         std::function<bool(const TextAttribute&)> _getAttrVerificationFn(TEXTATTRIBUTEID attributeId, VARIANT val) const;
         std::function<bool(const TextAttribute&)> _getAttrVerificationFnForFirstAttr(TEXTATTRIBUTEID attributeId, VARIANT* pRetVal) const;
 
-        COORD _getInclusiveEnd();
+        COORD _getInclusiveEnd() noexcept;
 
 #ifdef UNIT_TESTING
         friend class ::UiaTextRangeTests;

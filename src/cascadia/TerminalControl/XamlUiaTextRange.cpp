@@ -125,21 +125,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             //  are supported at this time.
             // So we need to figure out what was actually intended to be returned.
 
-            // use C++11 magic statics to make sure we only do this once.
-            static const auto mixedAttributeVal = []() {
-                IUnknown* resultRaw;
-                com_ptr<IUnknown> result;
-                UiaGetReservedMixedAttributeValue(&resultRaw);
-                result.attach(resultRaw);
-                return result;
-            }();
+            com_ptr<IUnknown> mixedAttributeVal;
+            UiaGetReservedMixedAttributeValue(mixedAttributeVal.put());
 
             if (result.punkVal == mixedAttributeVal.get())
             {
                 return Windows::UI::Xaml::DependencyProperty::UnsetValue();
             }
 
-            __fallthrough;
+            [[fallthrough]];
         }
         default:
         {

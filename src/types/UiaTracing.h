@@ -29,8 +29,6 @@ namespace Microsoft::Console::Types
     class UiaTracing final
     {
     public:
-        static std::wstring convertAttributeId(const TEXTATTRIBUTEID attrId) noexcept;
-
         enum class AttributeType
         {
             Standard,

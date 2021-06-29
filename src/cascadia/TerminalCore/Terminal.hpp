@@ -5,6 +5,7 @@
 
 #include <conattrs.hpp>
 
+#include "../../inc/DefaultSettings.h"
 #include "../../buffer/out/textBuffer.hpp"
 #include "../../types/inc/sgrStack.hpp"
 #include "../../renderer/inc/BlinkingState.hpp"
@@ -277,7 +278,10 @@ private:
     size_t _hyperlinkPatternId;
 
     std::wstring _workingDirectory;
-    std::optional<FontInfo> _fontInfo;
+
+    // This font value is only used to check if the font is a raster font.
+    // Otherwise, the font is changed with the renderer via TriggerFontChange.
+    FontInfo _fontInfo{ DEFAULT_FONT_FACE, TMPF_TRUETYPE, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false };
 #pragma region Text Selection
     // a selection is represented as a range between two COORDs (start and end)
     // the pivot is the COORD that remains selected when you extend a selection in any direction

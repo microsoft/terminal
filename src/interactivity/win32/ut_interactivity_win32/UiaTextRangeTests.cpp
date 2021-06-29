@@ -1357,13 +1357,13 @@ class UiaTextRangeTests
         // Iterate over UIA's Text Attribute Identifiers
         // Validate that we know which ones are (not) supported
         // source: https://docs.microsoft.com/en-us/windows/win32/winauto/uiauto-textattribute-ids
-        for (long uiaAttributeId = 40000; uiaAttributeId <= 40042; ++uiaAttributeId)
+        for (long uiaAttributeId = UIA_AnimationStyleAttributeId; uiaAttributeId <= UIA_AfterParagraphSpacingAttributeId; ++uiaAttributeId)
         {
             Microsoft::WRL::ComPtr<UiaTextRange> utr;
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider));
             THROW_IF_FAILED(utr->ExpandToEnclosingUnit(TextUnit_Character));
 
-            Log::Comment(UiaTracing::convertAttributeId(uiaAttributeId).c_str());
+            Log::Comment(NoThrowString().Format(L"Attribute ID: %d", uiaAttributeId));
             VARIANT result;
             VERIFY_SUCCEEDED(utr->GetAttributeValue(uiaAttributeId, &result));
 
@@ -1482,13 +1482,13 @@ class UiaTextRangeTests
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_UnderlineStyleAttributeId, &result));
             VERIFY_ARE_EQUAL(TextDecorationLineStyle_Single, result.lVal);
 
-            // Double underline
+            // Double underline (double supercedes single)
             attr.SetDoublyUnderlined(true);
             updateBuffer(attr);
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_UnderlineStyleAttributeId, &result));
             VERIFY_ARE_EQUAL(TextDecorationLineStyle_Double, result.lVal);
 
-            // Double underline
+            // Double underline (double on its own)
             attr.SetUnderlined(false);
             updateBuffer(attr);
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_UnderlineStyleAttributeId, &result));

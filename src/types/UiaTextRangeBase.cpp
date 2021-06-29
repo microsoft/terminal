@@ -9,6 +9,12 @@
 
 using namespace Microsoft::Console::Types;
 
+// Foreground/Background text color doesn't care about the alpha.
+static long _RemoveAlpha(COLORREF color)
+{
+    return color & 0x00ffffff;
+}
+
 // degenerate range constructor.
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
 HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ std::wstring_view wordDelimiters) noexcept
@@ -330,9 +336,9 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
         THROW_HR_IF(E_INVALIDARG, val.vt != VT_I4);
 
         // The foreground color is stored as a COLORREF.
-        const auto queryBackgroundColor{ base::ClampedNumeric<COLORREF>(val.lVal) };
-        return [this, queryBackgroundColor](const TextAttribute& attr) {
-            return (_pData->GetAttributeColors(attr).second & 0x00ffffff) == queryBackgroundColor;
+        const auto queryBackgroundColor{ val.lVal };
+        return [this, queryBackgroundColor](const TextAttribute& attr) noexcept {
+            return _RemoveAlpha(_pData->GetAttributeColors(attr).second) == queryBackgroundColor;
         };
     }
     case UIA_FontWeightAttributeId:
@@ -348,14 +354,14 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
         if (queryFontWeight > FW_NORMAL)
         {
             // we're looking for a bold font weight
-            return [](const TextAttribute& attr) {
+            return [](const TextAttribute& attr) noexcept {
                 return attr.IsBold();
             };
         }
         else
         {
             // we're looking for "normal" font weight
-            return [](const TextAttribute& attr) {
+            return [](const TextAttribute& attr) noexcept {
                 return !attr.IsBold();
             };
         }
@@ -367,8 +373,8 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
 
         // The foreground color is stored as a COLORREF.
         const auto queryForegroundColor{ base::ClampedNumeric<COLORREF>(val.lVal) };
-        return [this, queryForegroundColor](const TextAttribute& attr) {
-            return (_pData->GetAttributeColors(attr).first & 0x00ffffff) == queryForegroundColor;
+        return [this, queryForegroundColor](const TextAttribute& attr) noexcept {
+            return _RemoveAlpha(_pData->GetAttributeColors(attr).first) == queryForegroundColor;
         };
     }
     case UIA_IsItalicAttributeId:
@@ -380,13 +386,13 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
         const auto queryIsItalic{ val.boolVal };
         if (queryIsItalic)
         {
-            return [](const TextAttribute& attr) {
+            return [](const TextAttribute& attr) noexcept {
                 return attr.IsItalic();
             };
         }
         else
         {
-            return [](const TextAttribute& attr) {
+            return [](const TextAttribute& attr) noexcept {
                 return !attr.IsItalic();
             };
         }
@@ -402,11 +408,11 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
         switch (val.lVal)
         {
         case TextDecorationLineStyle_None:
-            return [](const TextAttribute& attr) {
+            return [](const TextAttribute& attr) noexcept {
                 return !attr.IsCrossedOut();
             };
         case TextDecorationLineStyle_Single:
-            return [](const TextAttribute& attr) {
+            return [](const TextAttribute& attr) noexcept {
                 return attr.IsCrossedOut();
             };
         default:
@@ -424,15 +430,15 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
         switch (val.lVal)
         {
         case TextDecorationLineStyle_None:
-            return [](const TextAttribute& attr) {
+            return [](const TextAttribute& attr) noexcept {
                 return !attr.IsUnderlined() && !attr.IsDoublyUnderlined();
             };
         case TextDecorationLineStyle_Double:
-            return [](const TextAttribute& attr) {
+            return [](const TextAttribute& attr) noexcept {
                 return attr.IsDoublyUnderlined();
             };
         case TextDecorationLineStyle_Single:
-            return [](const TextAttribute& attr) {
+            return [](const TextAttribute& attr) noexcept {
                 return attr.IsUnderlined();
             };
         default:
@@ -448,6 +454,7 @@ IFACEMETHODIMP UiaTextRangeBase::FindAttribute(_In_ TEXTATTRIBUTEID attributeId,
                                                _In_ VARIANT val,
                                                _In_ BOOL searchBackwards,
                                                _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) noexcept
+try
 {
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
@@ -477,7 +484,7 @@ IFACEMETHODIMP UiaTextRangeBase::FindAttribute(_In_ TEXTATTRIBUTEID attributeId,
         return S_OK;
     }
     default:
-        __fallthrough;
+        break;
     }
 
     // AttributeIDs that are exposed via TextAttribute
@@ -517,9 +524,18 @@ IFACEMETHODIMP UiaTextRangeBase::FindAttribute(_In_ TEXTATTRIBUTEID attributeId,
 
     // Iterate from searchStart to searchEnd in the buffer.
     // If we find the attribute we're looking for, we update resultFirstAnchor/SecondAnchor appropriately.
-    const Viewport viewportRange{ _blockRange ? Viewport::FromDimensions(_start, inclusiveEnd.X - _start.X + 1, inclusiveEnd.Y - _start.Y + 1) : bufferSize };
+    Viewport viewportRange{ bufferSize };
+    if (_blockRange)
+    {
+        const auto originX{ std::min(_start.X, inclusiveEnd.X) };
+        const auto originY{ std::min(_start.Y, inclusiveEnd.Y) };
+        const auto width{ gsl::narrow_cast<short>(std::abs(inclusiveEnd.X - _start.X + 1)) };
+        const auto height{ gsl::narrow_cast<short>(std::abs(inclusiveEnd.Y - _start.Y + 1)) };
+        viewportRange = Viewport::FromDimensions({ originX, originY }, width, height);
+    }
     auto iter{ buffer.GetCellDataAt(searchStart, viewportRange, searchEnd) };
-    for (; iter; searchBackwards ? --iter : ++iter)
+    const auto iterStep{ searchBackwards ? -1 : 1 };
+    for (; iter; iter += iterStep)
     {
         const auto& attr{ iter->TextAttr() };
         if (checkIfAttrFound(attr))
@@ -560,13 +576,14 @@ IFACEMETHODIMP UiaTextRangeBase::FindAttribute(_In_ TEXTATTRIBUTEID attributeId,
         // We need to make the end exclusive!
         // But be careful here, we might be a block range
         auto exclusiveIter{ buffer.GetCellDataAt(range._end, viewportRange) };
-        exclusiveIter++;
+        ++exclusiveIter;
         range._end = exclusiveIter.Pos();
     }
 
     UiaTracing::TextRange::FindAttribute(*this, attributeId, val, searchBackwards, static_cast<UiaTextRangeBase&>(**ppRetVal));
     return S_OK;
 }
+CATCH_RETURN();
 
 IFACEMETHODIMP UiaTextRangeBase::FindText(_In_ BSTR text,
                                           _In_ BOOL searchBackward,
@@ -639,7 +656,7 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
     case UIA_BackgroundColorAttributeId:
     {
         pRetVal->vt = VT_I4;
-        pRetVal->lVal = base::ClampedNumeric<long>(_pData->GetAttributeColors(attr).second & 0x00ffffff);
+        pRetVal->lVal = _RemoveAlpha(_pData->GetAttributeColors(attr).second);
         return _getAttrVerificationFn(attributeId, *pRetVal);
     }
     case UIA_FontWeightAttributeId:
@@ -649,23 +666,13 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
         // we just store "IsBold" and "IsFaint".
         // Source: https://docs.microsoft.com/en-us/windows/win32/winauto/uiauto-textattribute-ids
         pRetVal->vt = VT_I4;
-        if (attr.IsBold())
-        {
-            pRetVal->lVal = FW_BOLD;
-        }
-        else
-        {
-            pRetVal->lVal = FW_NORMAL;
-        }
+        pRetVal->lVal = attr.IsBold() ? FW_BOLD : FW_NORMAL;
         return _getAttrVerificationFn(attributeId, *pRetVal);
     }
     case UIA_ForegroundColorAttributeId:
     {
         pRetVal->vt = VT_I4;
-        const auto x{ _pData->GetAttributeColors(attr).first };
-        const auto y{ x & 0x00ffffff };
-        pRetVal->lVal = y;
-        //pRetVal->lVal = base::ClampedNumeric<long>(_pData->GetAttributeColors(attr).first & 0x00ffffff);
+        pRetVal->lVal = _RemoveAlpha(_pData->GetAttributeColors(attr).first);
         return _getAttrVerificationFn(attributeId, *pRetVal);
     }
     case UIA_IsItalicAttributeId:
@@ -677,7 +684,7 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
     case UIA_StrikethroughStyleAttributeId:
     {
         pRetVal->vt = VT_I4;
-        pRetVal->lVal = static_cast<short>(attr.IsCrossedOut() ? TextDecorationLineStyle_Single : TextDecorationLineStyle_None);
+        pRetVal->lVal = attr.IsCrossedOut() ? TextDecorationLineStyle_Single : TextDecorationLineStyle_None;
         return _getAttrVerificationFn(attributeId, *pRetVal);
     }
     case UIA_UnderlineStyleAttributeId:
@@ -685,15 +692,15 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
         pRetVal->vt = VT_I4;
         if (attr.IsDoublyUnderlined())
         {
-            pRetVal->lVal = static_cast<short>(TextDecorationLineStyle_Double);
+            pRetVal->lVal = TextDecorationLineStyle_Double;
         }
         else if (attr.IsUnderlined())
         {
-            pRetVal->lVal = static_cast<short>(TextDecorationLineStyle_Single);
+            pRetVal->lVal = TextDecorationLineStyle_Single;
         }
         else
         {
-            pRetVal->lVal = static_cast<short>(TextDecorationLineStyle_None);
+            pRetVal->lVal = TextDecorationLineStyle_None;
         }
         return _getAttrVerificationFn(attributeId, *pRetVal);
     }
@@ -707,6 +714,7 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
 
 IFACEMETHODIMP UiaTextRangeBase::GetAttributeValue(_In_ TEXTATTRIBUTEID attributeId,
                                                    _Out_ VARIANT* pRetVal) noexcept
+try
 {
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     VariantInit(pRetVal);
@@ -729,7 +737,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetAttributeValue(_In_ TEXTATTRIBUTEID attribut
         return S_OK;
     }
     default:
-        __fallthrough;
+        break;
     }
 
     // AttributeIDs that are exposed via TextAttribute
@@ -769,7 +777,15 @@ IFACEMETHODIMP UiaTextRangeBase::GetAttributeValue(_In_ TEXTATTRIBUTEID attribut
     const auto inclusiveEnd{ _getInclusiveEnd() };
 
     // Check if the entire text range has that text attribute
-    const Viewport viewportRange{ _blockRange ? Viewport::FromDimensions(_start, inclusiveEnd.X - _start.X + 1, inclusiveEnd.Y - _start.Y + 1) : bufferSize };
+    Viewport viewportRange{ bufferSize };
+    if (_blockRange)
+    {
+        const auto originX{ std::min(_start.X, inclusiveEnd.X) };
+        const auto originY{ std::min(_start.Y, inclusiveEnd.Y) };
+        const auto width{ gsl::narrow_cast<short>(std::abs(inclusiveEnd.X - _start.X + 1)) };
+        const auto height{ gsl::narrow_cast<short>(std::abs(inclusiveEnd.Y - _start.Y + 1)) };
+        viewportRange = Viewport::FromDimensions({ originX, originY }, width, height);
+    }
     auto iter{ buffer.GetCellDataAt(_start, viewportRange, inclusiveEnd) };
     for (; iter; ++iter)
     {
@@ -788,6 +804,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetAttributeValue(_In_ TEXTATTRIBUTEID attribut
     UiaTracing::TextRange::GetAttributeValue(*this, attributeId, *pRetVal);
     return S_OK;
 }
+CATCH_RETURN();
 
 IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) noexcept
 {
@@ -1643,7 +1660,7 @@ RECT UiaTextRangeBase::_getTerminalRect() const
     };
 }
 
-COORD UiaTextRangeBase::_getInclusiveEnd()
+COORD UiaTextRangeBase::_getInclusiveEnd() noexcept
 {
     auto result{ _end };
     _pData->GetTextBuffer().GetSize().DecrementInBounds(result, true);

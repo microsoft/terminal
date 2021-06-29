@@ -35,6 +35,7 @@ TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, COORD p
     _pos(pos),
     _pRow(s_GetRow(buffer, pos)),
     _bounds(bounds),
+    _limit(std::nullopt),
     _exceeded(false),
     _view({}, {}, {}, TextAttributeBehavior::Stored),
     _attrIter(s_GetRow(buffer, pos)->GetAttrRow().cbegin())
@@ -118,11 +119,11 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
         // If we have a limit, check if we've exceeded it
         if (_limit.has_value())
         {
-            _exceeded |= (newPos == _limit);
+            _exceeded |= (newPos == *_limit);
         }
 
         // If we already exceeded limit, we'll short-circuit and _not_ increment
-        _exceeded |= !_bounds.IncrementInBounds(newPos);
+        _exceeded = _exceeded || !_bounds.IncrementInBounds(newPos);
         move--;
     }
     while (move < 0 && !_exceeded)
