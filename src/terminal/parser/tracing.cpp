@@ -10,11 +10,6 @@ using namespace Microsoft::Console::VirtualTerminal;
 #pragma warning(disable : 26447) // The function is declared 'noexcept' but calls function '_tlgWrapBinary<wchar_t>()' which may throw exceptions
 #pragma warning(disable : 26477) // Use 'nullptr' rather than 0 or NULL
 
-ParserTracing::ParserTracing() noexcept
-{
-    ClearSequenceTrace();
-}
-
 void ParserTracing::TraceStateChange(_In_z_ const wchar_t* name) const noexcept
 {
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
