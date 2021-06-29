@@ -1060,31 +1060,7 @@ const std::filesystem::path& CascadiaSettings::_SettingsPath()
 //      from reading the file
 std::optional<std::string> CascadiaSettings::_ReadUserSettings()
 {
-    const auto pathToSettingsFile = _SettingsPath();
-    auto data = ReadUTF8FileIfExists(pathToSettingsFile);
-
-    if (!data)
-    {
-        // GH#5186 - We moved from profiles.json to settings.json; we want to
-        // migrate any file we find. We're using MoveFile in case their settings.json
-        // is a symbolic link.
-        auto pathToLegacySettingsFile = pathToSettingsFile;
-        pathToLegacySettingsFile.replace_filename(LegacySettingsFilename);
-
-        data = ReadUTF8FileIfExists(pathToLegacySettingsFile);
-
-        if (data)
-        {
-            // Note: We're unsure if this is unsafe. Theoretically it's possible
-            // that two instances of the app will try and move the settings file
-            // simultaneously. We don't know what might happen in that scenario,
-            // but we're also not sure how to safely lock the file to prevent
-            // that from occurring.
-            std::filesystem::rename(pathToLegacySettingsFile, pathToSettingsFile);
-        }
-    }
-
-    return data;
+    return ReadUTF8FileIfExists(_SettingsPath());
 }
 
 // function Description:

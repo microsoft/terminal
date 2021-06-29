@@ -9,6 +9,8 @@
 #include "JsonUtils.h"
 #include "FileUtils.h"
 
+constexpr std::wstring_view stateFileName{ L"state.json" };
+
 namespace Microsoft::Terminal::Settings::Model::JsonUtils
 {
     // This trait exists in order to serialize the std::unordered_set for GeneratedProfiles.
@@ -50,7 +52,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
         std::string TypeDescription() const
         {
-            return fmt::format("std::unordered_set<{}>", ConversionTrait<GUID>{}.TypeDescription());
+            return fmt::format("{}[]", ConversionTrait<GUID>{}.TypeDescription());
         }
     };
 }
@@ -62,7 +64,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Returns the application-global ApplicationState object.
     Microsoft::Terminal::Settings::Model::ApplicationState ApplicationState::SharedInstance()
     {
-        static auto state = winrt::make_self<ApplicationState>(GetBaseSettingsPath() / L"state.json");
+        static auto state = winrt::make_self<ApplicationState>(GetBaseSettingsPath() / stateFileName);
         return *state;
     }
 
@@ -77,7 +79,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     ApplicationState::~ApplicationState()
     {
         // This will ensure that we not just cancel the last outstanding timer,
-        // but instead force it run as soon as possible and wait for it to complete.
+        // but instead force it to run as soon as possible and wait for it to complete.
         _throttler.flush();
     }
 
@@ -115,9 +117,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #undef MTSM_APPLICATION_STATE_GEN
 
     // Deserializes the state.json at _path into this ApplicationState.
-    // * *ANY* errors during app state will result in the creation of a new empty state.
-    // * *ANY* errors during runtime will result in changes being partially ignored.
-    // * Doesn't acquire any locks - may only be called by ApplicationState's constructor.
+    // * ANY errors during app state will result in the creation of a new empty state.
+    // * ANY errors during runtime will result in changes being partially ignored.
     void ApplicationState::_read() const noexcept
     try
     {

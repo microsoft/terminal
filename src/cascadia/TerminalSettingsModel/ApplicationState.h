@@ -5,6 +5,10 @@ Licensed under the MIT license.
 Module Name:
 - ApplicationState.h
 
+Abstract:
+- If the CascadiaSettings class were AppData, then this class would be LocalAppData.
+  Put anything in here that you wouldn't want to be stored next to user-editable settings.
+- Modify ApplicationState.idl and MTSM_APPLICATION_STATE_FIELDS to add new fields.
 --*/
 #pragma once
 

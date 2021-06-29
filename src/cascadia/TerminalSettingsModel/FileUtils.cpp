@@ -13,6 +13,8 @@ static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Wi
 
 namespace Microsoft::Terminal::Settings::Model
 {
+    // Returns a path like C:\Users\<username>\AppData\Local\Packages\<packagename>\LocalState
+    // You can put your settings.json or state.json in this directory.
     std::filesystem::path GetBaseSettingsPath()
     {
         static std::filesystem::path baseSettingsPath = []() {
@@ -37,12 +39,14 @@ namespace Microsoft::Terminal::Settings::Model
         return baseSettingsPath;
     }
 
+    // Tries to read a file somewhat atomically without locking it.
+    // Strips the UTF8 BOM if it exists.
     std::string ReadUTF8File(const std::filesystem::path& path)
     {
         // From some casual observations we can determine that:
         // * ReadFile() always returns the requested amount of data (unless the file is smaller)
         // * It's unlikely that the file was changed between GetFileSize() and ReadFile()
-        // -> Lets add a retry-loop just in case, to not fail if the file size changed.
+        // -> Lets add a retry-loop just in case, to not fail if the file size changed while reading.
         for (int i = 0; i < 3; ++i)
         {
             wil::unique_hfile file{ CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr) };
@@ -55,12 +59,11 @@ namespace Microsoft::Terminal::Settings::Model
             // the file size changed and we've failed to read the full file.
             std::string buffer(static_cast<size_t>(fileSize) + 1, '\0');
             DWORD bytesRead = 0;
-            THROW_LAST_ERROR_IF(!ReadFile(file.get(), buffer.data(), gsl::narrow<DWORD>(buffer.size()), &bytesRead, nullptr));
+            THROW_IF_WIN32_BOOL_FALSE(ReadFile(file.get(), buffer.data(), gsl::narrow<DWORD>(buffer.size()), &bytesRead, nullptr));
 
-            // This implementation isn't atomic as it's not trivially possible to
-            // atomically read the entire file without breaking workflow of our users.
-            // For instance locking the file would conflict with users who have the file open in an editor.
-            // We'll just throw in case where the file size changed as that's likely an error.
+            // This implementation isn't atomic as we'd need to use an exclusive file lock.
+            // But this would be annoying for users as it forces them to close the file in their editor.
+            // The next best alternative is to at least try to detect file changes and retry the read.
             if (bytesRead != fileSize)
             {
                 // This continue is unlikely to be hit (see the prior for loop comment).
@@ -73,6 +76,9 @@ namespace Microsoft::Terminal::Settings::Model
 
             if (til::starts_with(buffer, Utf8Bom))
             {
+                // Yeah this memmove()s the entire content.
+                // But I don't really want to deal with UTF8 BOMs any more than necessary,
+                // as basically not a single editor writes a BOM for UTF8.
                 buffer.erase(0, Utf8Bom.size());
             }
 
@@ -82,8 +88,7 @@ namespace Microsoft::Terminal::Settings::Model
         THROW_WIN32_MSG(ERROR_READ_FAULT, "file size changed while reading");
     }
 
-    // Returns an empty optional (aka std::nullopt), if the file couldn't be opened.
-    // Use THROW_LAST_ERROR() if you want to fail in that case.
+    // Same as ReadUTF8File, but returns an empty optional, if the file couldn't be opened.
     std::optional<std::string> ReadUTF8FileIfExists(const std::filesystem::path& path)
     {
         try
@@ -108,7 +113,7 @@ namespace Microsoft::Terminal::Settings::Model
 
         const auto fileSize = gsl::narrow<DWORD>(content.size());
         DWORD bytesWritten = 0;
-        THROW_LAST_ERROR_IF(!WriteFile(file.get(), content.data(), fileSize, &bytesWritten, nullptr));
+        THROW_IF_WIN32_BOOL_FALSE(WriteFile(file.get(), content.data(), fileSize, &bytesWritten, nullptr));
 
         if (bytesWritten != fileSize)
         {
@@ -121,7 +126,12 @@ namespace Microsoft::Terminal::Settings::Model
         auto tmpPath = path;
         tmpPath += L".tmp";
 
+        // Writing to a file isn't atomic, but...
         WriteUTF8File(tmpPath, content);
+
+        // renaming one is (supposed to be) atomic.
+        // Wait... "supposed to be"!? Well it's technically not always atomic,
+        // but it's pretty darn close to it, so... better than nothing.
         std::filesystem::rename(tmpPath, path);
     }
 }
