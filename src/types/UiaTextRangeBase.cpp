@@ -678,7 +678,7 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
     case UIA_IsItalicAttributeId:
     {
         pRetVal->vt = VT_BOOL;
-        pRetVal->lVal = attr.IsItalic();
+        pRetVal->boolVal = attr.IsItalic();
         return _getAttrVerificationFn(attributeId, *pRetVal);
     }
     case UIA_StrikethroughStyleAttributeId:

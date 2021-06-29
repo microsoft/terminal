@@ -114,7 +114,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         case VT_BOOL:
         {
-            return box_value(result.boolVal);
+            return box_value<bool>(result.boolVal);
         }
         case VT_UNKNOWN:
         {
