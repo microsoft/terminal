@@ -150,6 +150,10 @@ namespace Microsoft::Console::VirtualTerminal
         size_t _runOffset;
         size_t _runSize;
 
+        // Construct current run.
+        //
+        // Note: We intentionally use this method to create the run lazily for better performance.
+        //       You may find the usage of offset & size unsafe, but under heavy load it shows noticeable performance benefit.
         std::wstring_view _CurrentRun() const
         {
             return _currentString.substr(_runOffset, _runSize);

@@ -1976,7 +1976,13 @@ void StateMachine::ProcessString(const std::wstring_view string)
             // If the engine doesn't require flushing at the end of the string, we
             // want to cache the partial sequence in case we have to flush the whole
             // thing to the terminal later.
-            _cachedSequence = _cachedSequence.value_or(std::wstring{}) + std::wstring{ run };
+            if (!_cachedSequence)
+            {
+                _cachedSequence.emplace(std::wstring{});
+            }
+
+            auto& cachedSequence = *_cachedSequence;
+            cachedSequence.append(run);
         }
     }
 }
