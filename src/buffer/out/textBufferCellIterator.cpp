@@ -29,42 +29,25 @@ TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, COORD p
 // Arguments:
 // - buffer - Pointer to screen buffer to seek through
 // - pos - Starting position to retrieve text data from (within screen buffer bounds)
-// - bounds - Viewport boundaries to restrict the iterator within the buffer bounds (smaller than the buffer itself)
-TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, COORD pos, const Viewport bounds) :
+// - limits - Viewport limits to restrict the iterator within the buffer bounds (smaller than the buffer itself)
+TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, COORD pos, const Viewport limits) :
     _buffer(buffer),
     _pos(pos),
     _pRow(s_GetRow(buffer, pos)),
-    _bounds(bounds),
-    _limit(std::nullopt),
+    _bounds(limits),
     _exceeded(false),
     _view({}, {}, {}, TextAttributeBehavior::Stored),
     _attrIter(s_GetRow(buffer, pos)->GetAttrRow().cbegin())
 {
     // Throw if the bounds rectangle is not limited to the inside of the given buffer.
-    THROW_HR_IF(E_INVALIDARG, !buffer.GetSize().IsInBounds(bounds));
+    THROW_HR_IF(E_INVALIDARG, !buffer.GetSize().IsInBounds(limits));
 
     // Throw if the coordinate is not limited to the inside of the given buffer.
-    THROW_HR_IF(E_INVALIDARG, !bounds.IsInBounds(pos));
+    THROW_HR_IF(E_INVALIDARG, !limits.IsInBounds(pos));
 
     _attrIter += pos.X;
 
     _GenerateView();
-}
-
-// Routine Description:
-// - Creates a new read-only iterator to seek through cell data stored within a screen buffer
-// Arguments:
-// - buffer - Text buffer to seek through
-// - pos - Starting position to retrieve text data from (within screen buffer bounds)
-// - bounds - Viewport boundaries to restrict the iterator within the buffer bounds (smaller than the buffer itself)
-// - limit - last position to iterate through (inclusive)
-TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, COORD pos, const Viewport bounds, const COORD limit) :
-    TextBufferCellIterator(buffer, pos, bounds)
-{
-    // Throw if the coordinate is not limited to the inside of the given buffer.
-    THROW_HR_IF(E_INVALIDARG, !_bounds.IsInBounds(limit));
-
-    _limit = limit;
 }
 
 // Routine Description:
@@ -89,8 +72,7 @@ bool TextBufferCellIterator::operator==(const TextBufferCellIterator& it) const 
            _exceeded == it._exceeded &&
            _bounds == it._bounds &&
            _pRow == it._pRow &&
-           _attrIter == it._attrIter &&
-           _limit == _limit;
+           _attrIter == it._attrIter;
 }
 
 // Routine Description:
@@ -116,26 +98,12 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
     auto newPos = _pos;
     while (move > 0 && !_exceeded)
     {
-        // If we have a limit, check if we've exceeded it
-        if (_limit.has_value())
-        {
-            _exceeded |= (newPos == *_limit);
-        }
-
-        // If we already exceeded limit, we'll short-circuit and _not_ increment
-        _exceeded = _exceeded || !_bounds.IncrementInBounds(newPos);
+        _exceeded = !_bounds.IncrementInBounds(newPos);
         move--;
     }
     while (move < 0 && !_exceeded)
     {
-        // If we have an endPos, check if we've exceeded it
-        if (_limit.has_value())
-        {
-            _exceeded |= (newPos == _limit);
-        }
-
-        // If we already exceeded from endPos, we'll short-circuit and _not_ decrement
-        _exceeded |= !_bounds.DecrementInBounds(newPos);
+        _exceeded = !_bounds.DecrementInBounds(newPos);
         move++;
     }
     _SetPos(newPos);

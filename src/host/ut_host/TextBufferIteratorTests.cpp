@@ -264,11 +264,8 @@ class TextBufferIteratorTests
     TEST_METHOD(DereferenceOperatorText);
     TEST_METHOD(DereferenceOperatorCell);
 
-    TEST_METHOD(ConstructedNoBounds);
-    TEST_METHOD(ConstructedBounds);
-    TEST_METHOD(ConstructedLimit);
-    TEST_METHOD(ConstructedLimitBackwards);
-    TEST_METHOD(ConstructedBoundsAndLimit);
+    TEST_METHOD(ConstructedNoLimit);
+    TEST_METHOD(ConstructedLimits);
 };
 
 template<typename T>
@@ -513,7 +510,7 @@ void TextBufferIteratorTests::DereferenceOperatorCell()
     VERIFY_ARE_EQUAL(attrExpected, attrActual);
 }
 
-void TextBufferIteratorTests::ConstructedNoBounds()
+void TextBufferIteratorTests::ConstructedNoLimit()
 {
     m_state->FillTextBuffer();
 
@@ -526,7 +523,6 @@ void TextBufferIteratorTests::ConstructedNoBounds()
 
     VERIFY_IS_TRUE(it, L"Iterator is valid.");
     VERIFY_ARE_EQUAL(bufferSize, it._bounds, L"Bounds match the bounds of the text buffer.");
-    VERIFY_IS_FALSE(it._limit.has_value(), L"Positional limit is not defined.");
 
     const auto totalBufferDistance = bufferSize.Width() * bufferSize.Height();
 
@@ -542,7 +538,7 @@ void TextBufferIteratorTests::ConstructedNoBounds()
     VERIFY_THROWS_SPECIFIC(TextBufferCellIterator(textBuffer, { -1, -1 }), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
 }
 
-void TextBufferIteratorTests::ConstructedBounds()
+void TextBufferIteratorTests::ConstructedLimits()
 {
     m_state->FillTextBuffer();
 
@@ -550,22 +546,21 @@ void TextBufferIteratorTests::ConstructedBounds()
     const auto& outputBuffer = gci.GetActiveOutputBuffer();
     const auto& textBuffer = outputBuffer.GetTextBuffer();
 
-    SMALL_RECT bounds;
-    bounds.Top = 1;
-    bounds.Bottom = 1;
-    bounds.Left = 3;
-    bounds.Right = 5;
-    const auto viewport = Microsoft::Console::Types::Viewport::FromInclusive(bounds);
+    SMALL_RECT limits;
+    limits.Top = 1;
+    limits.Bottom = 1;
+    limits.Left = 3;
+    limits.Right = 5;
+    const auto viewport = Microsoft::Console::Types::Viewport::FromInclusive(limits);
 
     COORD pos;
-    pos.X = bounds.Left;
-    pos.Y = bounds.Top;
+    pos.X = limits.Left;
+    pos.Y = limits.Top;
 
     TextBufferCellIterator it(textBuffer, pos, viewport);
 
     VERIFY_IS_TRUE(it, L"Iterator is valid.");
     VERIFY_ARE_EQUAL(viewport, it._bounds, L"Bounds match the bounds given.");
-    VERIFY_IS_FALSE(it._limit.has_value(), L"Positional limit is not defined.");
 
     const auto totalBufferDistance = viewport.Width() * viewport.Height();
 
@@ -584,118 +579,11 @@ void TextBufferIteratorTests::ConstructedBounds()
                            wil::ResultException,
                            [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
 
-    // Verify throws for bounds not inside buffer
+    // Verify throws for limit not inside buffer
     const auto bufferSize = textBuffer.GetSize();
     VERIFY_THROWS_SPECIFIC(TextBufferCellIterator(textBuffer,
                                                   pos,
                                                   Microsoft::Console::Types::Viewport::FromInclusive(bufferSize.ToExclusive())),
                            wil::ResultException,
                            [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
-}
-
-void TextBufferIteratorTests::ConstructedLimit()
-{
-    m_state->FillTextBuffer();
-
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& outputBuffer = gci.GetActiveOutputBuffer();
-    const auto& textBuffer = outputBuffer.GetTextBuffer();
-    const auto bufferSize = textBuffer.GetSize();
-
-    const COORD pos{ bufferSize.Origin() };
-    const COORD limitPos{ 5, 1 };
-
-    TextBufferCellIterator it(textBuffer, pos, bufferSize, limitPos);
-
-    VERIFY_IS_TRUE(it, L"Iterator is valid.");
-    VERIFY_ARE_EQUAL(bufferSize, it._bounds, L"Bounds match the bounds given.");
-    VERIFY_IS_TRUE(it._limit.has_value(), L"Positional limit is defined.");
-    VERIFY_ARE_EQUAL(limitPos, it._limit.value(), L"Positional limit matches the one given.");
-
-    const auto totalBufferDistance = bufferSize.Width() + 5;
-
-    // Advance buffer to one before the positional limit.
-    it += totalBufferDistance;
-    VERIFY_IS_TRUE(it, L"Iterator is still valid.");
-
-    // Advance over the positional limit.
-    it++;
-    VERIFY_IS_FALSE(it, L"Iterator invalid now.");
-
-    // Verify throws for positional limit not inside buffer
-    VERIFY_THROWS_SPECIFIC(TextBufferCellIterator(textBuffer,
-                                                  pos,
-                                                  bufferSize,
-                                                  bufferSize.BottomRightExclusive()),
-                           wil::ResultException,
-                           [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
-}
-
-void TextBufferIteratorTests::ConstructedLimitBackwards()
-{
-    m_state->FillTextBuffer();
-
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& outputBuffer = gci.GetActiveOutputBuffer();
-    const auto& textBuffer = outputBuffer.GetTextBuffer();
-    const auto bufferSize = textBuffer.GetSize();
-
-    const COORD pos{ 5, 1 };
-    const COORD limitPos{ 2, 0 };
-
-    TextBufferCellIterator it(textBuffer, pos, bufferSize, limitPos);
-
-    VERIFY_IS_TRUE(it, L"Iterator is valid.");
-    VERIFY_ARE_EQUAL(bufferSize, it._bounds, L"Bounds match the bounds given.");
-    VERIFY_IS_TRUE(it._limit.has_value(), L"Positional limit is defined.");
-    VERIFY_ARE_EQUAL(limitPos, it._limit.value(), L"Positional limit matches the one given.");
-
-    const auto totalBufferDistance = bufferSize.Width() + 5 - 2;
-
-    // Advance buffer to one before the positional limit.
-    it -= totalBufferDistance;
-    VERIFY_IS_TRUE(it, L"Iterator is still valid.");
-
-    // Advance over the positional limit.
-    it--;
-    VERIFY_IS_FALSE(it, L"Iterator invalid now.");
-}
-
-void TextBufferIteratorTests::ConstructedBoundsAndLimit()
-{
-    m_state->FillTextBuffer();
-
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& outputBuffer = gci.GetActiveOutputBuffer();
-    const auto& textBuffer = outputBuffer.GetTextBuffer();
-
-    SMALL_RECT bounds;
-    bounds.Top = 1;
-    bounds.Bottom = 2;
-    bounds.Left = 2;
-    bounds.Right = 5;
-    const auto viewport = Microsoft::Console::Types::Viewport::FromInclusive(bounds);
-
-    COORD pos;
-    pos.X = bounds.Left;
-    pos.Y = bounds.Top;
-
-    const COORD limitPos{ 4, 1 };
-
-    TextBufferCellIterator it(textBuffer, pos, viewport, limitPos);
-
-    VERIFY_IS_TRUE(it, L"Iterator is valid.");
-    VERIFY_ARE_EQUAL(viewport, it._bounds, L"Bounds match the bounds given.");
-    VERIFY_IS_TRUE(it._limit.has_value(), L"Positional limit is defined.");
-    VERIFY_ARE_EQUAL(limitPos, it._limit.value(), L"Positional limit matches the one given.");
-
-    const auto totalBufferDistance = 2;
-
-    // Advance buffer to one before the positional limit.
-    it += totalBufferDistance;
-    VERIFY_IS_TRUE(it, L"Iterator is still valid.");
-
-    // Advance over the positional limit.
-    it++;
-    VERIFY_IS_FALSE(it, L"Iterator invalid now.");
 }

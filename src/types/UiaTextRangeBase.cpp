@@ -533,9 +533,9 @@ try
         const auto height{ gsl::narrow_cast<short>(std::abs(inclusiveEnd.Y - _start.Y + 1)) };
         viewportRange = Viewport::FromDimensions({ originX, originY }, width, height);
     }
-    auto iter{ buffer.GetCellDataAt(searchStart, viewportRange, searchEnd) };
+    auto iter{ buffer.GetCellDataAt(searchStart, viewportRange) };
     const auto iterStep{ searchBackwards ? -1 : 1 };
-    for (; iter; iter += iterStep)
+    for (; iter && iter.Pos() != searchEnd; iter += iterStep)
     {
         const auto& attr{ iter->TextAttr() };
         if (checkIfAttrFound(attr))
@@ -786,8 +786,8 @@ try
         const auto height{ gsl::narrow_cast<short>(std::abs(inclusiveEnd.Y - _start.Y + 1)) };
         viewportRange = Viewport::FromDimensions({ originX, originY }, width, height);
     }
-    auto iter{ buffer.GetCellDataAt(_start, viewportRange, inclusiveEnd) };
-    for (; iter; ++iter)
+    auto iter{ buffer.GetCellDataAt(_start, viewportRange) };
+    for (; iter && iter.Pos() != inclusiveEnd; ++iter)
     {
         const auto& attr{ iter->TextAttr() };
         if (!checkIfAttrFound(attr))

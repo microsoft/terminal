@@ -80,11 +80,10 @@ public:
 
     TextBufferCellIterator GetCellDataAt(const COORD at) const;
     TextBufferCellIterator GetCellLineDataAt(const COORD at) const;
-    TextBufferCellIterator GetCellDataAt(const COORD at, const Microsoft::Console::Types::Viewport bounds) const;
-    TextBufferCellIterator GetCellDataAt(const COORD at, const Microsoft::Console::Types::Viewport bounds, const COORD limit) const;
+    TextBufferCellIterator GetCellDataAt(const COORD at, const Microsoft::Console::Types::Viewport limit) const;
     TextBufferTextIterator GetTextDataAt(const COORD at) const;
     TextBufferTextIterator GetTextLineDataAt(const COORD at) const;
-    TextBufferTextIterator GetTextDataAt(const COORD at, const Microsoft::Console::Types::Viewport bounds) const;
+    TextBufferTextIterator GetTextDataAt(const COORD at, const Microsoft::Console::Types::Viewport limit) const;
 
     // Text insertion functions
     OutputCellIterator Write(const OutputCellIterator givenIt);
