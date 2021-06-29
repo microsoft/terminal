@@ -390,14 +390,9 @@ CATCH_RETURN()
         std::vector<DWRITE_SHAPING_TEXT_PROPERTIES> textProps(textLength);
         std::vector<DWRITE_SHAPING_GLYPH_PROPERTIES> glyphProps(maxGlyphCount);
 
-        const auto features = _fontRenderData->DefaultFontFeatures();
-        std::vector<DWRITE_FONT_FEATURE> featureVector;
-        for (const auto& [tag, param] : features)
-        {
-            featureVector.push_back(DWRITE_FONT_FEATURE{ tag, param });
-        }
-        DWRITE_FONT_FEATURE* featureList = &featureVector[0];
-        DWRITE_TYPOGRAPHIC_FEATURES typographicFeatures = { &featureList[0], gsl::narrow<uint32_t>(featureVector.size()) };
+        auto features = _fontRenderData->DefaultFontFeatures();
+        DWRITE_FONT_FEATURE* featureList = &features[0];
+        DWRITE_TYPOGRAPHIC_FEATURES typographicFeatures = { &featureList[0], gsl::narrow<uint32_t>(features.size()) };
         DWRITE_TYPOGRAPHIC_FEATURES const* typographicFeaturesPointer = &typographicFeatures;
         const uint32_t fontFeatureLengths[1] = { textLength };
 

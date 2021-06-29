@@ -93,9 +93,9 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     return _defaultFontInfo.GetStretch();
 }
 
-[[nodiscard]] std::unordered_map<DWRITE_FONT_FEATURE_TAG, uint32_t> DxFontRenderData::DefaultFontFeatures() noexcept
+[[nodiscard]] std::vector<DWRITE_FONT_FEATURE> DxFontRenderData::DefaultFontFeatures() noexcept
 {
-    return _defaultFontInfo.GetFeatures();
+    return _featureVector;
 }
 
 [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::DefaultTextFormat()
@@ -197,7 +197,6 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
                                       desired.GetWeight(),
                                       DWRITE_FONT_STYLE_NORMAL,
                                       DWRITE_FONT_STRETCH_NORMAL);
-        _defaultFontInfo.SetFeatures(_features);
 
         _BuildFontRenderData(desired, actual, dpi);
     }
@@ -449,12 +448,33 @@ CATCH_RETURN()
 
 bool DxFontRenderData::DidUserSetFeatures() const noexcept
 {
-    return _defaultFontInfo.DidUserSetFeatures();
+    return _didUserSetFeatures;
 }
 
-void DxFontRenderData::SetFeatures(std::unordered_map<std::wstring_view, uint32_t> features)
+void DxFontRenderData::SetFeatures(std::unordered_map<std::wstring_view, uint32_t> features) noexcept
 {
-    _features = features;
+    // update our feature map
+    if (!features.empty())
+    {
+        for (const auto& [tag, param] : features)
+        {
+            _featureMap[tag] = param;
+        }
+        _didUserSetFeatures = true;
+    }
+
+    // convert the data to DWRITE_FONT_FEATURE and store it in a vector for CustomTextLayout
+    for (const auto& [tag, param] : _featureMap)
+    {
+        if (tag.length() != 4)
+        {
+            // ignore badly formed tags
+            // maybe this shouldn't be here? maybe this check should be at settings model side to output a warning to user?
+            continue;
+        }
+        const auto dwriteTag = DWRITE_MAKE_FONT_FEATURE_TAG(tag[0], tag[1], tag[2], tag[3]);
+        _featureVector.push_back(DWRITE_FONT_FEATURE{ dwriteTag, param });
+    }
 }
 
 // Routine Description:

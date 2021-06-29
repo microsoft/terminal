@@ -52,7 +52,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] DWRITE_FONT_STRETCH DefaultFontStretch() noexcept;
 
         // The font features of the default font
-        [[nodiscard]] std::unordered_map<DWRITE_FONT_FEATURE_TAG, uint32_t> DefaultFontFeatures() noexcept;
+        [[nodiscard]] std::vector<DWRITE_FONT_FEATURE> DefaultFontFeatures() noexcept;
 
         // The DirectWrite format object representing the size and other text properties to be applied (by default)
         [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextFormat> DefaultTextFormat();
@@ -78,13 +78,28 @@ namespace Microsoft::Console::Render
         [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, float fontScale, IBoxDrawingEffect** effect) noexcept;
 
         bool DidUserSetFeatures() const noexcept;
-        void SetFeatures(std::unordered_map<std::wstring_view, uint32_t> features);
+        void SetFeatures(std::unordered_map<std::wstring_view, uint32_t> features) noexcept;
 
     private:
         void _BuildFontRenderData(const FontInfoDesired& desired, FontInfo& actual, const int dpi);
         Microsoft::WRL::ComPtr<IDWriteTextFormat> _BuildTextFormat(const DxFontInfo fontInfo, const std::wstring_view localeName);
 
-        std::unordered_map<std::wstring_view, uint32_t> _features;
+        bool _didUserSetFeatures{ false };
+        // The font features to apply to the text
+        std::unordered_map<std::wstring_view, uint32_t> _featureMap{
+            { L"rlig", 1 },
+            { L"rclt", 1 },
+            { L"locl", 1 },
+            { L"ccmp", 1 },
+            { L"calt", 1 },
+            { L"liga", 1 },
+            { L"clig", 1 },
+            { L"kern", 1 },
+            { L"mark", 1 },
+            { L"mkmk", 1 },
+            { L"dist", 1 }
+        };
+        std::vector<DWRITE_FONT_FEATURE> _featureVector;
 
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
 
