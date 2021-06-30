@@ -99,6 +99,11 @@ AppHost::AppHost() noexcept :
 AppHost::~AppHost()
 {
     // destruction order is important for proper teardown here
+    if (_trayIconData)
+    {
+        Shell_NotifyIcon(NIM_DELETE, &_trayIconData.value());
+        _trayIconData.reset();
+    }
 
     _window = nullptr;
     _app.Close();
