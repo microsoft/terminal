@@ -21,19 +21,30 @@ namespace Microsoft::Console::VirtualTerminal
     class ParserTracing sealed
     {
     public:
-        ParserTracing() noexcept;
+        // NOTE: This code uses
+        //   (_In_z_ const wchar_t* name)
+        // as arguments instead of the more modern std::wstring_view
+        // for performance reasons.
+        //
+        // Passing structures larger than the register size is very expensive
+        // due to Microsoft's x64 calling convention. We could reduce the
+        // overhead by passing the string-view by reference, but this forces us
+        // to allocate the parameters as static string-views on the data
+        // segment of our binary. I've found that passing them as classic
+        // C-strings is more ergonomic instead and fits the need for
+        // high performance in this particular code.
 
-        void TraceStateChange(const std::wstring_view name) const noexcept;
-        void TraceOnAction(const std::wstring_view name) const noexcept;
+        void TraceStateChange(_In_z_ const wchar_t* name) const noexcept;
+        void TraceOnAction(_In_z_ const wchar_t* name) const noexcept;
         void TraceOnExecute(const wchar_t wch) const noexcept;
         void TraceOnExecuteFromEscape(const wchar_t wch) const noexcept;
-        void TraceOnEvent(const std::wstring_view name) const noexcept;
+        void TraceOnEvent(_In_z_ const wchar_t* name) const noexcept;
         void TraceCharInput(const wchar_t wch);
 
         void AddSequenceTrace(const wchar_t wch);
         void DispatchSequenceTrace(const bool fSuccess) noexcept;
         void ClearSequenceTrace() noexcept;
-        void DispatchPrintRunTrace(const std::wstring_view string) const;
+        void DispatchPrintRunTrace(const std::wstring_view& string) const;
 
     private:
         std::wstring _sequenceTrace;
