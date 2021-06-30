@@ -93,7 +93,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     return _defaultFontInfo.GetStretch();
 }
 
-[[nodiscard]] std::vector<DWRITE_FONT_FEATURE> DxFontRenderData::DefaultFontFeatures()
+[[nodiscard]] std::vector<DWRITE_FONT_FEATURE> DxFontRenderData::DefaultFontFeatures() noexcept
 {
     return _featureVector;
 }
@@ -451,7 +451,7 @@ bool DxFontRenderData::DidUserSetFeatures() const noexcept
     return _didUserSetFeatures;
 }
 
-void DxFontRenderData::SetFeatures(std::unordered_map<std::wstring_view, uint32_t> features) noexcept
+void DxFontRenderData::SetFeatures(std::unordered_map<std::wstring_view, uint32_t> features)
 {
     // update our feature map
     if (!features.empty())
@@ -477,7 +477,7 @@ void DxFontRenderData::SetFeatures(std::unordered_map<std::wstring_view, uint32_
     }
 }
 
-void DxFontRenderData::SetAxes(std::unordered_map<std::wstring_view, int64_t> axes) noexcept
+void DxFontRenderData::SetAxes(std::unordered_map<std::wstring_view, int64_t> axes)
 {
     // update our axis map
     for (const auto& [axis, value] : axes)
