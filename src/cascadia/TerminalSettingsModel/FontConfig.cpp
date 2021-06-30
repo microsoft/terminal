@@ -18,18 +18,17 @@ static constexpr std::string_view LegacyFontFaceKey{ "fontFace" };
 static constexpr std::string_view LegacyFontSizeKey{ "fontSize" };
 static constexpr std::string_view LegacyFontWeightKey{ "fontWeight" };
 
-winrt::Microsoft::Terminal::Settings::Model::implementation::FontConfig::FontConfig(const winrt::weak_ref<Profile> sourceProfile) :
-    _sourceProfile(sourceProfile)
+winrt::Microsoft::Terminal::Settings::Model::implementation::FontConfig::FontConfig(winrt::weak_ref<Profile> sourceProfile) :
+    _sourceProfile(std::move(sourceProfile))
 {
 }
 
-winrt::com_ptr<FontConfig> FontConfig::CopyFontInfo(const winrt::com_ptr<FontConfig> source, const winrt::weak_ref<Profile> sourceProfile)
+winrt::com_ptr<FontConfig> FontConfig::CopyFontInfo(const winrt::com_ptr<FontConfig> source, winrt::weak_ref<Profile> sourceProfile)
 {
-    auto fontInfo{ winrt::make_self<FontConfig>(sourceProfile) };
-    auto const sourceFontInfo = source.try_as<FontConfig>();
-    fontInfo->_FontFace = sourceFontInfo->_FontFace;
-    fontInfo->_FontSize = sourceFontInfo->_FontSize;
-    fontInfo->_FontWeight = sourceFontInfo->_FontWeight;
+    auto fontInfo{ winrt::make_self<FontConfig>(std::move(sourceProfile)) };
+    fontInfo->_FontFace = source->_FontFace;
+    fontInfo->_FontSize = source->_FontSize;
+    fontInfo->_FontWeight = source->_FontWeight;
     return fontInfo;
 }
 
