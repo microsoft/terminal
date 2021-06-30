@@ -103,11 +103,7 @@ namespace Microsoft::Console::Render
         std::vector<DWRITE_FONT_FEATURE> _featureVector;
 
         // The font axes to apply to the text
-        std::unordered_map<std::wstring_view, int64_t> _axesMap{
-            { L"wght", 400 },
-            { L"wdth", 100 },
-            { L"slnt", -20 }
-        };
+        std::unordered_map<std::wstring_view, int64_t> _axesMap;
 
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
 

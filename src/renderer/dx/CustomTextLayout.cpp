@@ -1264,29 +1264,65 @@ CATCH_RETURN();
             fallback = _fontRenderData->SystemFontFallback();
         }
 
-        // Walk through and analyze the entire string
-        while (textLength > 0)
+        ::Microsoft::WRL::ComPtr<IDWriteFontFallback1> fallback1;
+        ::Microsoft::WRL::ComPtr<IDWriteTextFormat3> format3;
+        if (!FAILED(_formatInUse->QueryInterface(IID_PPV_ARGS(&format3))) && !FAILED(fallback->QueryInterface(IID_PPV_ARGS(&fallback1))))
         {
-            UINT32 mappedLength = 0;
-            ::Microsoft::WRL::ComPtr<IDWriteFont> mappedFont;
-            FLOAT scale = 0.0f;
+            const auto axesCount = format3->GetFontAxisValueCount();
+            std::vector<DWRITE_FONT_AXIS_VALUE> axesVector;
+            axesVector.resize(axesCount);
+            const auto res = format3->GetFontAxisValues(axesVector.data(), axesCount);
 
-            fallback->MapCharacters(source,
-                                    textPosition,
-                                    textLength,
-                                    collection.Get(),
-                                    familyName.data(),
-                                    weight,
-                                    style,
-                                    stretch,
-                                    &mappedLength,
-                                    &mappedFont,
-                                    &scale);
+            // Walk through and analyze the entire string
+            while (textLength > 0)
+            {
+                UINT32 mappedLength = 0;
+                ::Microsoft::WRL::ComPtr<IDWriteFontFace5> mappedFont;
+                FLOAT scale = 0.0f;
 
-            RETURN_IF_FAILED(_SetMappedFont(textPosition, mappedLength, mappedFont.Get(), scale));
+                fallback1->MapCharacters(source,
+                                         textPosition,
+                                         textLength,
+                                         collection.Get(),
+                                         familyName.data(),
+                                         axesVector.data(),
+                                         axesCount,
+                                         &mappedLength,
+                                         &scale,
+                                         &mappedFont);
 
-            textPosition += mappedLength;
-            textLength -= mappedLength;
+                RETURN_IF_FAILED(_SetMappedFontFace(textPosition, mappedLength, mappedFont, scale));
+
+                textPosition += mappedLength;
+                textLength -= mappedLength;
+            }
+        }
+        else
+        {
+            // Walk through and analyze the entire string
+            while (textLength > 0)
+            {
+                UINT32 mappedLength = 0;
+                ::Microsoft::WRL::ComPtr<IDWriteFont> mappedFont;
+                FLOAT scale = 0.0f;
+
+                fallback->MapCharacters(source,
+                                        textPosition,
+                                        textLength,
+                                        collection.Get(),
+                                        familyName.data(),
+                                        weight,
+                                        style,
+                                        stretch,
+                                        &mappedLength,
+                                        &mappedFont,
+                                        &scale);
+
+                RETURN_IF_FAILED(_SetMappedFont(textPosition, mappedLength, mappedFont.Get(), scale));
+
+                textPosition += mappedLength;
+                textLength -= mappedLength;
+            }
         }
     }
     CATCH_RETURN();
@@ -1325,6 +1361,37 @@ CATCH_RETURN();
 
                 // QI for Face5 interface from base face interface, store into run
                 RETURN_IF_FAILED(face.As(&run.fontFace));
+            }
+            else
+            {
+                run.fontFace = _fontInUse;
+            }
+
+            // Store the font scale as well.
+            run.fontScale = scale;
+        }
+    }
+    CATCH_RETURN();
+
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFontFace(UINT32 textPosition,
+                                                                             UINT32 textLength,
+                                                                             ::Microsoft::WRL::ComPtr<IDWriteFontFace5> const fontFace,
+                                                                             FLOAT const scale)
+{
+    try
+    {
+        _SetCurrentRun(textPosition);
+        _SplitCurrentRun(textPosition);
+        while (textLength > 0)
+        {
+            auto& run = _FetchNextRun(textLength);
+
+            if (fontFace != nullptr)
+            {
+                RETURN_IF_FAILED(fontFace.As(&run.fontFace));
             }
             else
             {
