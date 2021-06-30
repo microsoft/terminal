@@ -390,6 +390,7 @@ CATCH_RETURN()
         std::vector<DWRITE_SHAPING_TEXT_PROPERTIES> textProps(textLength);
         std::vector<DWRITE_SHAPING_GLYPH_PROPERTIES> glyphProps(maxGlyphCount);
 
+        // Get the features to apply to the font
         auto features = _fontRenderData->DefaultFontFeatures();
         DWRITE_FONT_FEATURE* featureList = features.data();
         DWRITE_TYPOGRAPHIC_FEATURES typographicFeatures = { &featureList[0], gsl::narrow<uint32_t>(features.size()) };
@@ -1268,6 +1269,7 @@ CATCH_RETURN();
         ::Microsoft::WRL::ComPtr<IDWriteTextFormat3> format3;
         if (!FAILED(_formatInUse->QueryInterface(IID_PPV_ARGS(&format3))) && !FAILED(fallback->QueryInterface(IID_PPV_ARGS(&fallback1))))
         {
+            // If the OS supports IDWriteFontFallback1 and IDWriteTextFormat3, we can apply axes of variation to the font
             const auto axesCount = format3->GetFontAxisValueCount();
             std::vector<DWRITE_FONT_AXIS_VALUE> axesVector;
             axesVector.resize(axesCount);

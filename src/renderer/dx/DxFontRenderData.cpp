@@ -446,11 +446,17 @@ try
 }
 CATCH_RETURN()
 
+// Routine Description:
+// - Returns whether the user set or updated any of the font features to be applied
 bool DxFontRenderData::DidUserSetFeatures() const noexcept
 {
     return _didUserSetFeatures;
 }
 
+// Routine Description:
+// - Updates our internal map of font features with the given features
+// Arguments:
+// - features - the features to update our map with
 void DxFontRenderData::SetFeatures(std::unordered_map<std::wstring_view, uint32_t> features)
 {
     // update our feature map
@@ -477,6 +483,10 @@ void DxFontRenderData::SetFeatures(std::unordered_map<std::wstring_view, uint32_
     }
 }
 
+// Routine Description:
+// - Updates our internal map of font axes with the given axes
+// Arguments:
+// - axes - the axes to update our map with
 void DxFontRenderData::SetAxes(std::unordered_map<std::wstring_view, int64_t> axes)
 {
     // update our axis map
@@ -695,7 +705,7 @@ Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(con
                                                      localeName.data(),
                                                      &format));
 
-    // Set the font axes
+    // If the OS supports IDWriteTextFormat3, set the font axes
     ::Microsoft::WRL::ComPtr<IDWriteTextFormat3> format3;
     if (!FAILED(format->QueryInterface(IID_PPV_ARGS(&format3))) && !_axesMap.empty())
     {

@@ -604,6 +604,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_renderEngine)
         {
+            // Make sure to call these before we call TriggerFontChange
             _renderEngine->UpdateFontFeatures(_fontFeatures);
             _renderEngine->UpdateFontAxes(_fontAxes);
         }
