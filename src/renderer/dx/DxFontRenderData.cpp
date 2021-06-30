@@ -93,7 +93,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     return _defaultFontInfo.GetStretch();
 }
 
-[[nodiscard]] std::vector<DWRITE_FONT_FEATURE> DxFontRenderData::DefaultFontFeatures() noexcept
+[[nodiscard]] std::vector<DWRITE_FONT_FEATURE> DxFontRenderData::DefaultFontFeatures()
 {
     return _featureVector;
 }

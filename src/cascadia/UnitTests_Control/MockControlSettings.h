@@ -9,6 +9,7 @@ Licensed under the MIT license.
 #include <conattrs.hpp>
 
 using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>;
+using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, int64_t>;
 
 namespace ControlUnitTests
 {
@@ -83,6 +84,7 @@ namespace ControlUnitTests
         WINRT_PROPERTY(winrt::hstring, PixelShaderPath);
 
         WINRT_PROPERTY(IFontFeatureMap, FontFeatures);
+        WINRT_PROPERTY(IFontAxesMap, FontAxes);
 
     private:
         std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> _ColorTable;
