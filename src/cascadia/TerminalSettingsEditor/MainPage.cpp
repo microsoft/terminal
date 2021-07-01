@@ -468,4 +468,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         SettingsNav().SelectedItem(newSelectedItem);
         _Navigate(newSelectedItem.try_as<MUX::Controls::NavigationViewItem>().Tag().try_as<Editor::ProfileViewModel>());
     }
+
+    bool MainPage::ShowBaseLayerMenuItem() const noexcept
+    {
+        return Feature_ShowProfileDefaultsInSettings::IsEnabled();
+    }
 }

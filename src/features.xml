@@ -49,4 +49,12 @@
             <brandingToken>WindowsInbox</brandingToken>
         </alwaysEnabledBrandingTokens>
     </feature>
+
+    <feature>
+        <name>Feature_ShowProfileDefaultsInSettings</name>
+        <description>Whether to show the "base layer" ("defaults") page in the Terminal settings UI</description>
+        <stage>AlwaysEnabled</stage>
+        <!-- This feature will not ship to Stable until it is complete. -->
+        <alwaysDisabledReleaseTokens />
+    </feature>
 </featureStaging>

@@ -90,7 +90,8 @@
 
             <muxc:NavigationViewItem x:Name="BaseLayerMenuItem"
                                      x:Uid="Nav_ProfileDefaults"
-                                     Tag="GlobalProfile_Nav">
+                                     Tag="GlobalProfile_Nav"
+                                     Visibility="{x:Bind ShowBaseLayerMenuItem}">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE81E;" />
                 </muxc:NavigationViewItem.Icon>
