@@ -1443,6 +1443,7 @@ MSVCRTD
 MSVS
 msys
 msysgit
+MTSM
 mui
 Mul
 multiline
@@ -1942,6 +1943,7 @@ REGSTR
 reingest
 Relayout
 RELBINPATH
+remoting
 Remoting
 renamer
 renderengine
@@ -2415,7 +2417,6 @@ uapadmin
 UAX
 ubuntu
 ucd
-ucd
 ucdxml
 uch
 UCHAR
@@ -2778,7 +2779,6 @@ XMFLOAT
 xml
 xmlns
 xor
-xorg
 xorg
 Xpath
 XPosition

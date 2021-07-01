@@ -77,9 +77,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, UseAcrylic);
         OBSERVABLE_PROJECTED_SETTING(_profile, AcrylicOpacity);
         OBSERVABLE_PROJECTED_SETTING(_profile, ScrollState);
-        OBSERVABLE_PROJECTED_SETTING(_profile, FontFace);
-        OBSERVABLE_PROJECTED_SETTING(_profile, FontSize);
-        OBSERVABLE_PROJECTED_SETTING(_profile, FontWeight);
+        OBSERVABLE_PROJECTED_SETTING(_profile.FontInfo(), FontFace);
+        OBSERVABLE_PROJECTED_SETTING(_profile.FontInfo(), FontSize);
+        OBSERVABLE_PROJECTED_SETTING(_profile.FontInfo(), FontWeight);
         OBSERVABLE_PROJECTED_SETTING(_profile, Padding);
         OBSERVABLE_PROJECTED_SETTING(_profile, Commandline);
         OBSERVABLE_PROJECTED_SETTING(_profile, StartingDirectory);

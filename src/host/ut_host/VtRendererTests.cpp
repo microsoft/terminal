@@ -1562,7 +1562,7 @@ void VtRendererTest::FormattedString()
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
     END_TEST_METHOD_PROPERTIES();
 
-    static const std::string format("\x1b[%dm");
+    static const auto format = FMT_COMPILE("\x1b[{}m");
     const auto value = 12;
 
     Viewport view = SetUpViewport();
@@ -1573,15 +1573,15 @@ void VtRendererTest::FormattedString()
 
     Log::Comment(L"1.) Write it once. It should resize itself.");
     qExpectedInput.push_back("\x1b[12m");
-    VERIFY_SUCCEEDED(engine->_WriteFormattedString(&format, value));
+    VERIFY_SUCCEEDED(engine->_WriteFormatted(format, value));
 
     Log::Comment(L"2.) Write the same thing again, should be fine.");
     qExpectedInput.push_back("\x1b[12m");
-    VERIFY_SUCCEEDED(engine->_WriteFormattedString(&format, value));
+    VERIFY_SUCCEEDED(engine->_WriteFormatted(format, value));
 
     Log::Comment(L"3.) Now write something huge. Should resize itself and still be fine.");
-    static const std::string bigFormat("\x1b[28;3;%d;%d;%dm");
+    static const auto bigFormat = FMT_COMPILE("\x1b[28;3;{};{};{}m");
     const auto bigValue = 500;
     qExpectedInput.push_back("\x1b[28;3;500;500;500m");
-    VERIFY_SUCCEEDED(engine->_WriteFormattedString(&bigFormat, bigValue, bigValue, bigValue));
+    VERIFY_SUCCEEDED(engine->_WriteFormatted(bigFormat, bigValue, bigValue, bigValue));
 }

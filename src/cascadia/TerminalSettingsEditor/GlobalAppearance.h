@@ -35,15 +35,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // "Deutsch (Deutschland)". This works independently of the user's locale.
         static winrt::hstring LanguageDisplayConverter(const winrt::hstring& tag);
 
+        bool LanguageSelectorAvailable();
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> LanguageList();
         winrt::Windows::Foundation::IInspectable CurrentLanguage();
         void CurrentLanguage(const winrt::Windows::Foundation::IInspectable& tag);
 
     private:
-        std::vector<winrt::hstring> _GetSupportedLanguageTags();
-
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> _languageList{ nullptr };
-        winrt::hstring _currentLanguage;
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> _languageList;
+        winrt::Windows::Foundation::IInspectable _currentLanguage;
     };
 }
 

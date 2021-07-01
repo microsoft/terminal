@@ -20,6 +20,7 @@
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../interactivity/base/ApiDetector.hpp"
+#include "../interactivity/base/RemoteConsoleControl.hpp"
 
 #include "renderData.hpp"
 #include "../renderer/base/renderer.hpp"
@@ -364,6 +365,8 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
 //   from the driver... or an S_OK success.
 [[nodiscard]] HRESULT ConsoleEstablishHandoff([[maybe_unused]] _In_ HANDLE Server,
                                               [[maybe_unused]] HANDLE driverInputEvent,
+                                              [[maybe_unused]] HANDLE hostSignalPipe,
+                                              [[maybe_unused]] HANDLE hostProcessHandle,
                                               [[maybe_unused]] PCONSOLE_API_MSG connectMessage)
 try
 {
@@ -388,6 +391,23 @@ try
         return E_NOT_SET;
     }
 
+    // Capture handle to the inbox process into a unique handle holder.
+    g.handoffInboxConsoleHandle.reset(hostProcessHandle);
+
+    // Set up a threadpool waiter to shutdown everything if the inbox process disappears.
+    g.handoffInboxConsoleExitWait.reset(CreateThreadpoolWait(
+        [](PTP_CALLBACK_INSTANCE /*callbackInstance*/, PVOID /*context*/, PTP_WAIT /*wait*/, TP_WAIT_RESULT /*waitResult*/) noexcept {
+            ServiceLocator::RundownAndExit(E_APPLICATION_MANAGER_NOT_RUNNING);
+        },
+        nullptr,
+        nullptr));
+    RETURN_LAST_ERROR_IF_NULL(g.handoffInboxConsoleExitWait.get());
+
+    SetThreadpoolWait(g.handoffInboxConsoleExitWait.get(), g.handoffInboxConsoleHandle.get(), nullptr);
+
+    std::unique_ptr<IConsoleControl> remoteControl = std::make_unique<Microsoft::Console::Interactivity::RemoteConsoleControl>(hostSignalPipe);
+    RETURN_IF_NTSTATUS_FAILED(ServiceLocator::SetConsoleControlInstance(std::move(remoteControl)));
+
     wil::unique_handle signalPipeTheirSide;
     wil::unique_handle signalPipeOurSide;
 
@@ -397,20 +417,11 @@ try
     wil::unique_handle outPipeTheirSide;
     wil::unique_handle outPipeOurSide;
 
-    SECURITY_ATTRIBUTES sa;
-    sa.nLength = sizeof(sa);
-    // Mark inheritable for signal handle when creating. It'll have the same value on the other side.
-    sa.bInheritHandle = TRUE;
-    sa.lpSecurityDescriptor = nullptr;
-
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeOurSide.addressof(), signalPipeTheirSide.addressof(), nullptr, 0));
-    RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeTheirSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(inPipeOurSide.addressof(), inPipeTheirSide.addressof(), nullptr, 0));
-    RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(inPipeTheirSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(outPipeTheirSide.addressof(), outPipeOurSide.addressof(), nullptr, 0));
-    RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(outPipeTheirSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
     wil::unique_handle clientProcess{ OpenProcess(PROCESS_QUERY_INFORMATION | SYNCHRONIZE, TRUE, static_cast<DWORD>(connectMessage->Descriptor.Process)) };
     RETURN_LAST_ERROR_IF_NULL(clientProcess.get());
@@ -434,9 +445,9 @@ try
                                                   serverProcess,
                                                   clientProcess.get()));
 
-    inPipeTheirSide.release();
-    outPipeTheirSide.release();
-    signalPipeTheirSide.release();
+    inPipeTheirSide.reset();
+    outPipeTheirSide.reset();
+    signalPipeTheirSide.reset();
 
     const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --signal {:#x}"), (int64_t)signalPipeOurSide.release());
 
