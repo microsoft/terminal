@@ -189,9 +189,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     AppLogic::AppLogic() :
-        _dialogLock{},
-        _loadedInitialSettings{ false },
-        _settingsLoadedResult{ S_OK }
+        _reloadState{ std::chrono::milliseconds(100), []() { ApplicationState::SharedInstance().Reload(); } }
     {
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -204,6 +202,13 @@ namespace winrt::TerminalApp::implementation
         // SetTitleBarContent
         _isElevated = _isUserAdmin();
         _root = winrt::make_self<TerminalPage>();
+
+        _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(_root->Dispatcher(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
+            if (auto self{ weakSelf.get() })
+            {
+                self->_ReloadSettings();
+            }
+        });
     }
 
     // Method Description:
@@ -859,59 +864,29 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void AppLogic::_RegisterSettingsChange()
     {
-        // Get the containing folder.
         const std::filesystem::path settingsPath{ std::wstring_view{ CascadiaSettings::SettingsPath() } };
-        const auto folder = settingsPath.parent_path();
+        const std::filesystem::path statePath{ std::wstring_view{ ApplicationState::SharedInstance().FilePath() } };
 
-        _reader.create(folder.c_str(),
-                       false,
-                       wil::FolderChangeEvents::All,
-                       [this, settingsPath](wil::FolderChangeEvent event, PCWSTR fileModified) {
-                           // We want file modifications, AND when files are renamed to be
-                           // settings.json. This second case will oftentimes happen with text
-                           // editors, who will write a temp file, then rename it to be the
-                           // actual file you wrote. So listen for that too.
-                           if (!(event == wil::FolderChangeEvent::Modified ||
-                                 event == wil::FolderChangeEvent::RenameNewName ||
-                                 event == wil::FolderChangeEvent::Removed))
-                           {
-                               return;
-                           }
+        _reader.create(
+            settingsPath.parent_path().c_str(),
+            false,
+            // We want file modifications, AND when files are renamed to be
+            // settings.json. This second case will oftentimes happen with text
+            // editors, who will write a temp file, then rename it to be the
+            // actual file you wrote. So listen for that too.
+            wil::FolderChangeEvents::FileName | wil::FolderChangeEvents::LastWriteTime,
+            [this, settingsBasename = settingsPath.filename(), stateBasename = statePath.filename()](wil::FolderChangeEvent, PCWSTR fileModified) {
+                const auto modifiedBasename = std::filesystem::path{ fileModified }.filename();
 
-                           std::filesystem::path modifiedFilePath = fileModified;
-
-                           // Getting basename (filename.ext)
-                           const auto settingsBasename = settingsPath.filename();
-                           const auto modifiedBasename = modifiedFilePath.filename();
-
-                           if (settingsBasename == modifiedBasename)
-                           {
-                               this->_DispatchReloadSettings();
-                           }
-                       });
-    }
-
-    // Method Description:
-    // - Dispatches a settings reload with debounce.
-    //   Text editors implement Save in a bunch of different ways, so
-    //   this stops us from reloading too many times or too quickly.
-    fire_and_forget AppLogic::_DispatchReloadSettings()
-    {
-        if (_settingsReloadQueued.exchange(true))
-        {
-            co_return;
-        }
-
-        auto weakSelf = get_weak();
-
-        co_await winrt::resume_after(std::chrono::milliseconds(100));
-        co_await winrt::resume_foreground(_root->Dispatcher());
-
-        if (auto self{ weakSelf.get() })
-        {
-            _ReloadSettings();
-            _settingsReloadQueued.store(false);
-        }
+                if (modifiedBasename == settingsBasename)
+                {
+                    _reloadSettings->Run();
+                }
+                else if (modifiedBasename == stateBasename)
+                {
+                    _reloadState();
+                }
+            });
     }
 
     void AppLogic::_ApplyLanguageSettingChange() noexcept

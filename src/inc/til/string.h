@@ -48,4 +48,26 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     {
         return starts_with<>(str, prefix);
     };
+
+    template<typename T, typename Traits>
+    constexpr bool ends_with(const std::basic_string_view<T, Traits> str, const std::basic_string_view<T, Traits> prefix) noexcept
+    {
+#ifdef __cpp_lib_ends_ends_with
+#error This code can be replaced in C++20, which natively supports .ends_with().
+#endif
+#pragma warning(push)
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+        return str.size() >= prefix.size() && Traits::compare(str.data() + (str.size() - prefix.size()), prefix.data(), prefix.size()) == 0;
+#pragma warning(pop)
+    };
+
+    constexpr bool ends_with(const std::string_view str, const std::string_view prefix) noexcept
+    {
+        return ends_with<>(str, prefix);
+    };
+
+    constexpr bool ends_with(const std::wstring_view str, const std::wstring_view prefix) noexcept
+    {
+        return ends_with<>(str, prefix);
+    };
 }

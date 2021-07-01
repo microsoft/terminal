@@ -82,6 +82,7 @@
     <Midl Include="TerminalSettings.idl" />
     <Midl Include="AppearanceConfig.idl" />
     <Midl Include="IAppearanceConfig.idl" />
+    <Midl Include="FontConfig.idl" />
     <Midl Include="DefaultTerminal.idl" />
   </ItemGroup>
   <ItemGroup>

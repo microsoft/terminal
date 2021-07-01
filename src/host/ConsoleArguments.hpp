@@ -56,8 +56,6 @@ public:
     bool IsResizeQuirkEnabled() const;
     bool IsWin32InputModeEnabled() const;
 
-    void SetExpectedSize(COORD dimensions) noexcept;
-
 #ifdef UNIT_TESTING
     void EnableConptyModeForTests();
 #endif
@@ -113,9 +111,6 @@ private:
         _signalHandle(signalHandle),
         _inheritCursor(inheritCursor),
         _resizeQuirk(false),
-        _receivedEarlySizeChange{ false },
-        _originalWidth{ -1 },
-        _originalHeight{ -1 },
         _runAsComServer{ runAsComServer }
     {
     }
@@ -145,10 +140,6 @@ private:
     bool _inheritCursor;
     bool _resizeQuirk{ false };
     bool _win32InputMode{ false };
-
-    bool _receivedEarlySizeChange;
-    short _originalWidth;
-    short _originalHeight;
 
     [[nodiscard]] HRESULT _GetClientCommandline(_Inout_ std::vector<std::wstring>& args,
                                                 const size_t index,
