@@ -14,6 +14,7 @@ static constexpr std::string_view FontInfoKey{ "font" };
 static constexpr std::string_view FontFaceKey{ "face" };
 static constexpr std::string_view FontSizeKey{ "size" };
 static constexpr std::string_view FontWeightKey{ "weight" };
+static constexpr std::string_view FontFeaturesKey{ "features" };
 static constexpr std::string_view LegacyFontFaceKey{ "fontFace" };
 static constexpr std::string_view LegacyFontSizeKey{ "fontSize" };
 static constexpr std::string_view LegacyFontWeightKey{ "fontWeight" };
@@ -65,6 +66,13 @@ void FontConfig::LayerJson(const Json::Value& json)
         JsonUtils::GetValueForKey(fontInfoJson, FontFaceKey, _FontFace);
         JsonUtils::GetValueForKey(fontInfoJson, FontSizeKey, _FontSize);
         JsonUtils::GetValueForKey(fontInfoJson, FontWeightKey, _FontWeight);
+
+        if (fontInfoJson.isMember(JsonKey(FontFeaturesKey)))
+        {
+            const auto fontFeaturesJson = fontInfoJson[JsonKey(FontFeaturesKey)];
+            
+            const auto ay = 1;
+        }
     }
     else
     {
