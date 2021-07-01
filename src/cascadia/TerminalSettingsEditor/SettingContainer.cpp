@@ -57,9 +57,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _SettingOverrideSourceProperty =
                 DependencyProperty::Register(
                     L"SettingOverrideSource",
-                    xaml_typename<bool>(),
+                    xaml_typename<IInspectable>(),
                     xaml_typename<Editor::SettingContainer>(),
-                    PropertyMetadata{ nullptr });
+                    PropertyMetadata{ nullptr, PropertyChangedCallback{ &SettingContainer::_OnHasSettingValueChanged } });
         }
     }
 
@@ -152,17 +152,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     // We want to be smart about showing the override system.
                     // Don't just show it if the user explicitly set the setting.
                     // If the tooltip is empty, we'll hide the entire override system.
-                    hstring tooltip{};
 
                     const auto& settingSrc{ SettingOverrideSource() };
-                    if (const auto& profile{ settingSrc.try_as<Model::Profile>() })
-                    {
-                        tooltip = _GenerateOverrideMessage(profile);
-                    }
-                    else if (const auto& appearanceConfig{ settingSrc.try_as<Model::AppearanceConfig>() })
-                    {
-                        tooltip = _GenerateOverrideMessage(appearanceConfig.SourceProfile());
-                    }
+                    auto tooltip{ _GenerateOverrideMessage(settingSrc) };
 
                     Controls::ToolTipService::SetToolTip(button, box_value(tooltip));
                     button.Visibility(tooltip.empty() ? Visibility::Collapsed : Visibility::Visible);
@@ -182,23 +174,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - profile: the profile that defines the setting (aka SettingOverrideSource)
     // Return Value:
     // - text specifying where the setting was defined. If empty, we don't want to show the system.
-    hstring SettingContainer::_GenerateOverrideMessage(const Model::Profile& profile)
+    hstring SettingContainer::_GenerateOverrideMessage(const IInspectable& settingOrigin)
     {
-        const auto originTag{ profile.Origin() };
-        if (originTag == Model::OriginTag::InBox)
+        // We only get here if the user had an override in place.
+        Model::OriginTag originTag{ Model::OriginTag::None };
+        winrt::hstring source;
+
+        if (const auto& profile{ settingOrigin.try_as<Model::Profile>() })
         {
-            // in-box profile
-            return {};
+            source = profile.Source();
+            originTag = profile.Origin();
         }
-        else if (originTag == Model::OriginTag::Generated)
+        else if (const auto& appearanceConfig{ settingOrigin.try_as<Model::AppearanceConfig>() })
         {
-            // from a dynamic profile generator
-            return {};
+            auto profile = appearanceConfig.SourceProfile();
+            source = profile.Source();
+            originTag = profile.Origin();
         }
-        else if (originTag == Model::OriginTag::Fragment)
+
+        if (originTag == Model::OriginTag::Fragment || originTag == Model::OriginTag::Generated)
         {
             // from a fragment extension
-            return hstring{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideMessageFragmentExtension") }, profile.Source()) };
+            return hstring{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideMessageFragmentExtension") }, source) };
         }
         else
         {
