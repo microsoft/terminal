@@ -1346,4 +1346,27 @@ class UiaTextRangeTests
             VERIFY_SUCCEEDED(utr->ScrollIntoView(alignToTop));
         }
     }
+
+    TEST_METHOD(BlockRange)
+    {
+        // This test replicates GH#7960.
+        // It was caused by _blockRange being uninitialized, resulting in it occasionally being set to true.
+        // Additionally, all of the ctors _except_ the copy ctor initialized it. So this would be more apparent
+        // when calling Clone.
+        Microsoft::WRL::ComPtr<UiaTextRange> utr;
+        THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider));
+        VERIFY_IS_FALSE(utr->_blockRange);
+
+        Microsoft::WRL::ComPtr<ITextRangeProvider> clone1;
+        THROW_IF_FAILED(utr->Clone(&clone1));
+
+        UiaTextRange* cloneUtr1 = static_cast<UiaTextRange*>(clone1.Get());
+        VERIFY_IS_FALSE(cloneUtr1->_blockRange);
+        cloneUtr1->_blockRange = true;
+
+        Microsoft::WRL::ComPtr<ITextRangeProvider> clone2;
+        cloneUtr1->Clone(&clone2);
+        UiaTextRange* cloneUtr2 = static_cast<UiaTextRange*>(clone2.Get());
+        VERIFY_IS_TRUE(cloneUtr2->_blockRange);
+    }
 };

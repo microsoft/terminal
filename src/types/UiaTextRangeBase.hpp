@@ -125,7 +125,7 @@ namespace Microsoft::Console::Types
 
         IRawElementProviderSimple* _pProvider{ nullptr };
 
-        std::wstring _wordDelimiters{};
+        std::wstring _wordDelimiters{ L"" };
 
         virtual void _TranslatePointToScreen(LPPOINT clientPoint) const = 0;
         virtual void _TranslatePointFromScreen(LPPOINT screenPoint) const = 0;
@@ -135,9 +135,9 @@ namespace Microsoft::Console::Types
         // measure units in the form [_start, _end).
         // These are in the TextBuffer coordinate space.
         // NOTE: _start is inclusive, but _end is exclusive
-        COORD _start{};
-        COORD _end{};
-        bool _blockRange;
+        COORD _start{ 0, 0 };
+        COORD _end{ 0, 0 };
+        bool _blockRange{ false };
 
         // This is used by tracing to extract the text value
         // that the UiaTextRange currently encompasses.
