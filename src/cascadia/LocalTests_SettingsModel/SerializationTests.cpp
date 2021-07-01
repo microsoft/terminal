@@ -41,6 +41,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(ColorScheme);
         TEST_METHOD(Actions);
         TEST_METHOD(CascadiaSettings);
+        TEST_METHOD(LegacyFontSettings);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -138,9 +139,11 @@ namespace SettingsModelLocalTests
                 "tabTitle": "Cool Tab",
                 "suppressApplicationTitle": false,
 
-                "fontFace": "Cascadia Mono",
-                "fontSize": 12,
-                "fontWeight": "normal",
+                "font": {
+                    "face": "Cascadia Mono",
+                    "size": 12,
+                    "weight": "normal"
+                },
                 "padding": "8, 8, 8, 8",
                 "antialiasingMode": "grayscale",
 
@@ -402,11 +405,13 @@ namespace SettingsModelLocalTests
 
                                                 "profiles": {
                                                     "defaults": {
-                                                        "fontFace": "Zamora Code"
+                                                        "font": {
+                                                            "face": "Zamora Code"
+                                                        }
                                                     },
                                                     "list": [
                                                         {
-                                                            "fontFace": "Cascadia Code",
+                                                            "font": { "face": "Cascadia Code" },
                                                             "guid": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
                                                             "name": "HowettShell"
                                                         },
@@ -463,5 +468,36 @@ namespace SettingsModelLocalTests
 
         const auto result{ settings->ToJson() };
         VERIFY_ARE_EQUAL(toString(settings->_userSettings), toString(result));
+    }
+
+    void SerializationTests::LegacyFontSettings()
+    {
+        const std::string profileString{ R"(
+            {
+                "name": "Profile with legacy font settings",
+
+                "fontFace": "Cascadia Mono",
+                "fontSize": 12,
+                "fontWeight": "normal"
+            })" };
+
+        const std::string expectedOutput{ R"(
+            {
+                "name": "Profile with legacy font settings",
+
+                "font": {
+                    "face": "Cascadia Mono",
+                    "size": 12,
+                    "weight": "normal"
+                }
+            })" };
+
+        const auto json{ VerifyParseSucceeded(profileString) };
+        const auto settings{ implementation::Profile::FromJson(json) };
+        const auto result{ settings->ToJson() };
+
+        const auto jsonOutput{ VerifyParseSucceeded(expectedOutput) };
+
+        VERIFY_ARE_EQUAL(toString(jsonOutput), toString(result));
     }
 }

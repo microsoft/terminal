@@ -260,9 +260,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _UseAcrylic = profile.UseAcrylic();
         _TintOpacity = profile.AcrylicOpacity();
 
-        _FontFace = profile.FontFace();
-        _FontSize = profile.FontSize();
-        _FontWeight = profile.FontWeight();
+        _FontFace = profile.FontInfo().FontFace();
+        _FontSize = profile.FontInfo().FontSize();
+        _FontWeight = profile.FontInfo().FontWeight();
         _Padding = profile.Padding();
 
         _Commandline = profile.Commandline();
