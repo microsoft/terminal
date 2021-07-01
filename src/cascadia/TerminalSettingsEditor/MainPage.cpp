@@ -298,7 +298,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == globalProfileTag)
         {
-            auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults()) };
+            auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone) };
             profileVM.IsBaseLayer(true);
             _lastProfilesNavState = winrt::make<ProfilePageNavigationState>(profileVM,
                                                                             _settingsClone.GlobalSettings().ColorSchemes(),
