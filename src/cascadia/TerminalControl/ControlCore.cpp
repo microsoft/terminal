@@ -507,13 +507,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto fontFace = _settings.FontFace();
         const short fontHeight = ::base::saturated_cast<short>(_settings.FontSize());
         const auto fontWeight = _settings.FontWeight();
-        for (const auto& [tag, param] : _settings.FontFeatures())
+        const auto fontFeatures = _settings.FontFeatures();
+        const auto fontAxes = _settings.FontAxes();
+        _fontFeatures.clear();
+        if (fontFeatures)
         {
-            _fontFeatures[tag.data()] = param;
+            for (const auto& [tag, param] : _settings.FontFeatures())
+            {
+                _fontFeatures[tag.data()] = param;
+            }
         }
-        for (const auto& [axis, value] : _settings.FontAxes())
+        _fontAxes.clear();
+        if (fontAxes)
         {
-            _fontAxes[axis.data()] = value;
+            for (const auto& [axis, value] : _settings.FontAxes())
+            {
+                _fontAxes[axis.data()] = value;
+            }
         }
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up

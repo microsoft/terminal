@@ -454,12 +454,35 @@ bool DxFontRenderData::DidUserSetFeatures() const noexcept
 }
 
 // Routine Description:
+// - Clears our internal feature map and populates it with the list of standard features
+void DxFontRenderData::InitializeFeatureMap()
+{
+    _featureMap.clear();
+    _featureMap = {
+        { L"rlig", 1 },
+        { L"rclt", 1 },
+        { L"locl", 1 },
+        { L"ccmp", 1 },
+        { L"calt", 1 },
+        { L"liga", 1 },
+        { L"clig", 1 },
+        { L"kern", 1 },
+        { L"mark", 1 },
+        { L"mkmk", 1 },
+        { L"dist", 1 }
+    };
+}
+
+// Routine Description:
 // - Updates our internal map of font features with the given features
 // Arguments:
 // - features - the features to update our map with
 void DxFontRenderData::SetFeatures(std::unordered_map<std::wstring_view, uint32_t> features)
 {
-    // update our feature map
+    // Populate our feature map with the standard list
+    InitializeFeatureMap();
+
+    // Update our feature map with the provided features
     if (!features.empty())
     {
         for (const auto& [tag, param] : features)
@@ -469,15 +492,10 @@ void DxFontRenderData::SetFeatures(std::unordered_map<std::wstring_view, uint32_
         _didUserSetFeatures = true;
     }
 
-    // convert the data to DWRITE_FONT_FEATURE and store it in a vector for CustomTextLayout
+    // Convert the data to DWRITE_FONT_FEATURE and store it in a vector for CustomTextLayout
+    _featureVector.clear();
     for (const auto& [tag, param] : _featureMap)
     {
-        if (tag.length() != 4)
-        {
-            // ignore badly formed tags
-            // maybe this shouldn't be here? maybe this check should be at settings model side to output a warning to user?
-            continue;
-        }
         const auto dwriteTag = DWRITE_MAKE_FONT_FEATURE_TAG(tag[0], tag[1], tag[2], tag[3]);
         _featureVector.push_back(DWRITE_FONT_FEATURE{ dwriteTag, param });
     }
@@ -489,7 +507,9 @@ void DxFontRenderData::SetFeatures(std::unordered_map<std::wstring_view, uint32_
 // - axes - the axes to update our map with
 void DxFontRenderData::SetAxes(std::unordered_map<std::wstring_view, int64_t> axes)
 {
-    // update our axis map
+    _axesMap.clear();
+
+    // Update our axis map with the provided axes
     for (const auto& [axis, value] : axes)
     {
         _axesMap[axis] = value;

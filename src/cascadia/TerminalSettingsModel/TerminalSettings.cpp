@@ -263,6 +263,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _FontFace = profile.FontInfo().FontFace();
         _FontSize = profile.FontInfo().FontSize();
         _FontWeight = profile.FontInfo().FontWeight();
+        _FontFeatures = profile.FontInfo().FontFeatures();
+        _FontAxes = profile.FontInfo().FontAxes();
         _Padding = profile.Padding();
 
         _Commandline = profile.Commandline();
@@ -287,11 +289,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             const til::color colorRef{ profile.TabColor().Value() };
             _TabColor = static_cast<winrt::Microsoft::Terminal::Core::Color>(colorRef);
         }
-        std::unordered_map<hstring, uint32_t> featMap{ { L"subs", 1 } };
-        _FontFeatures = single_threaded_map<hstring, uint32_t>(std::move(featMap));
-
-        std::unordered_map<hstring, int64_t> axesMap{ { L"wght", 900 }, { L"slnt", 70 } };
-        _FontAxes = single_threaded_map<hstring, int64_t>(std::move(axesMap));
     }
 
     // Method Description:
