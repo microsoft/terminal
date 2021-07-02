@@ -559,7 +559,6 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             // Notify accessibility
             screenInfo.NotifyAccessibilityEventing(CursorPosition.X, CursorPosition.Y, CursorPosition.X + gsl::narrow<SHORT>(i - 1), CursorPosition.Y);
 
-
             // The number of "spaces" or "cells" we have consumed needs to be reported and stored for later
             // when/if we need to erase the command line.
             TempNumSpaces += itEnd.GetCellDistance(it);
