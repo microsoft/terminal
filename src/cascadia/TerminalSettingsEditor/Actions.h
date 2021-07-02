@@ -26,8 +26,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ModifyKeyBindingEventArgs(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys, const hstring oldActionName, const hstring newActionName) :
             _OldKeys{ oldKeys },
             _NewKeys{ newKeys },
-            _OldActionName{ oldActionName },
-            _NewActionName{ newActionName } {}
+            _OldActionName{ std::move(oldActionName) },
+            _NewActionName{ std::move(newActionName) } {}
 
         WINRT_PROPERTY(Control::KeyChord, OldKeys, nullptr);
         WINRT_PROPERTY(Control::KeyChord, NewKeys, nullptr);
@@ -38,7 +38,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct KeyBindingViewModel : KeyBindingViewModelT<KeyBindingViewModel>, ViewModelHelper<KeyBindingViewModel>
     {
     public:
-        KeyBindingViewModel(const Control::KeyChord& keys, const hstring name, const Windows::Foundation::Collections::IObservableVector<hstring>& availableActions);
+        KeyBindingViewModel(const Control::KeyChord& keys, const hstring& name, const Windows::Foundation::Collections::IObservableVector<hstring>& availableActions);
 
         hstring Name() const { return _CurrentAction; }
         hstring KeyChordText() const { return _KeyChordText; }

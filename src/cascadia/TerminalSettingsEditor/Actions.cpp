@@ -21,7 +21,7 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    KeyBindingViewModel::KeyBindingViewModel(const Control::KeyChord& keys, const hstring actionName, const IObservableVector<hstring>& availableActions) :
+    KeyBindingViewModel::KeyBindingViewModel(const Control::KeyChord& keys, const hstring& actionName, const IObservableVector<hstring>& availableActions) :
         _Keys{ keys },
         _KeyChordText{ Model::KeyChordSerialization::ToString(keys) },
         _CurrentAction{ actionName },

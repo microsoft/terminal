@@ -97,7 +97,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return std::nullopt;
     }
 
-    static void RegisterShortcutAction(ShortcutAction shortcutAction, std::unordered_map<hstring, Model::ActionAndArgs>& list, std::set<InternalActionID>& visited)
+    static void RegisterShortcutAction(ShortcutAction shortcutAction, std::unordered_map<hstring, Model::ActionAndArgs>& list, std::unordered_set<InternalActionID>& visited)
     {
         const auto actionAndArgs{ make_self<ActionAndArgs>(shortcutAction) };
         if (actionAndArgs->Action() != ShortcutAction::Invalid)
@@ -122,7 +122,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // populate _AvailableActionsCache
             std::unordered_map<hstring, Model::ActionAndArgs> availableActions;
-            std::set<InternalActionID> visitedActionIDs;
+            std::unordered_set<InternalActionID> visitedActionIDs;
             _PopulateAvailableActionsWithStandardCommands(availableActions, visitedActionIDs);
 
 // now add any ShortcutActions that we might have missed
@@ -135,7 +135,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _AvailableActionsCache.GetView();
     }
 
-    void ActionMap::_PopulateAvailableActionsWithStandardCommands(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::set<InternalActionID>& visitedActionIDs) const
+    void ActionMap::_PopulateAvailableActionsWithStandardCommands(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::unordered_set<InternalActionID>& visitedActionIDs) const
     {
         // Update AvailableActions and visitedActionIDs with our current layer
         for (const auto& [actionID, cmd] : _ActionMap)
