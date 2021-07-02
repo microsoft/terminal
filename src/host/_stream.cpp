@@ -556,11 +556,9 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             OutputCellIterator it(std::wstring_view(LocalBuffer, i), Attributes);
             const auto itEnd = screenInfo.Write(it);
 
-            // Notify accessibility if we're not in conpty mode.
-            if (!gci.IsInVtIoMode())
-            {
-                screenInfo.NotifyAccessibilityEventing(CursorPosition.X, CursorPosition.Y, CursorPosition.X + gsl::narrow<SHORT>(i - 1), CursorPosition.Y);
-            }
+            // Notify accessibility
+            screenInfo.NotifyAccessibilityEventing(CursorPosition.X, CursorPosition.Y, CursorPosition.X + gsl::narrow<SHORT>(i - 1), CursorPosition.Y);
+
 
             // The number of "spaces" or "cells" we have consumed needs to be reported and stored for later
             // when/if we need to erase the command line.
