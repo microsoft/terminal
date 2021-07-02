@@ -78,6 +78,7 @@ void FontConfig::LayerJson(const Json::Value& json)
             {
                 // Check that the feature is well-formed, i.e. that the length of the tag is exactly TagLength
                 // and the value is an UInt
+                // todo: ouput a warning if we find a badly formed feature?
                 if (featureName.length() == TagLength && fontFeaturesJson[JsonKey(featureName)].isUInt())
                 {
                     featureMap[winrt::to_hstring(featureName)] = fontFeaturesJson[JsonKey(featureName)].asUInt();
@@ -95,6 +96,7 @@ void FontConfig::LayerJson(const Json::Value& json)
             {
                 // Check that the axis is well-formed, i.e. that the length of the tag is exactly TagLength
                 // and the value is an Int64
+                // todo: ouput a warning if we find a badly formed axis?
                 if (fontAxesJson[JsonKey(axisName)].isInt64())
                 {
                     axesMap[winrt::to_hstring(axisName)] = fontAxesJson[JsonKey(axisName)].asInt64();

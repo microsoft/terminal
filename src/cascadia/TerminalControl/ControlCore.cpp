@@ -159,8 +159,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Initialize our font with the renderer
             // We don't have to care about DPI. We'll get a change message immediately if it's not 96
             // and react accordingly.
-            dxEngine->UpdateFontFeatures(_fontFeatures);
-            dxEngine->UpdateFontAxes(_fontAxes);
+            dxEngine->SetFontFeatures(_fontFeatures);
+            dxEngine->SetFontAxes(_fontAxes);
             _updateFont(true);
 
             const COORD windowSize{ static_cast<short>(windowWidth),
@@ -615,8 +615,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_renderEngine)
         {
             // Make sure to call these before we call TriggerFontChange
-            _renderEngine->UpdateFontFeatures(_fontFeatures);
-            _renderEngine->UpdateFontAxes(_fontAxes);
+            _renderEngine->SetFontFeatures(_fontFeatures);
+            _renderEngine->SetFontAxes(_fontAxes);
         }
 
         // TODO: MSFT:20895307 If the font doesn't exist, this doesn't

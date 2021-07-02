@@ -514,6 +514,8 @@ void DxFontRenderData::SetAxes(std::unordered_map<std::wstring_view, int64_t> ax
     {
         _axesMap[axis] = value;
     }
+
+    // todo: We probably want a 'complete missing axes values' here
 }
 
 // Routine Description:
@@ -732,12 +734,6 @@ Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(con
         std::vector<DWRITE_FONT_AXIS_VALUE> axesVector;
         for (const auto& [axis, value] : _axesMap)
         {
-            if (axis.length() != 4)
-            {
-                // ignore badly formed tags
-                // maybe this shouldn't be here? maybe this check should be at settings model side to output a warning to user?
-                continue;
-            }
             const auto dwriteTag = DWRITE_MAKE_FONT_AXIS_TAG(axis[0], axis[1], axis[2], axis[3]);
             axesVector.push_back(DWRITE_FONT_AXIS_VALUE{ dwriteTag, gsl::narrow<float>(value) });
         }

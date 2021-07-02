@@ -1979,7 +1979,7 @@ CATCH_RETURN()
 // - Updates the font render data's internal map of font features with the given features
 // Arguments:
 // - features - the features to update the map with
-void DxEngine::UpdateFontFeatures(const std::unordered_map<std::wstring_view, uint32_t> features) noexcept
+void DxEngine::SetFontFeatures(const std::unordered_map<std::wstring_view, uint32_t> features) noexcept
 {
     _fontRenderData->SetFeatures(features);
 }
@@ -1988,7 +1988,7 @@ void DxEngine::UpdateFontFeatures(const std::unordered_map<std::wstring_view, ui
 // - Updates the font render data's internal map of font axes with the given axes
 // Arguments:
 // - axes - the axes to update the map with
-void DxEngine::UpdateFontAxes(const std::unordered_map<std::wstring_view, int64_t> axes) noexcept
+void DxEngine::SetFontAxes(const std::unordered_map<std::wstring_view, int64_t> axes) noexcept
 {
     _fontRenderData->SetAxes(axes);
 }
