@@ -143,7 +143,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         IControlSettings _settings;
         bool _focused;
-        std::atomic<bool> _closing;
+        bool _closing;
 
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
@@ -204,6 +204,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _selectionNeedsToBeCopied;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
+
+        inline bool _IsClosing() const noexcept
+        {
+            // _closing isn't atomic and may only be accessed from the main thread.
+            assert(Dispatcher().HasThreadAccess());
+            return _closing;
+        }
 
         void _UpdateSettingsFromUIThreadUnderLock(IControlSettings newSettings);
         void _UpdateAppearanceFromUIThreadUnderLock(IControlAppearance newAppearance);
