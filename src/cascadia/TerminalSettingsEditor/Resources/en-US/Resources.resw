@@ -1154,4 +1154,8 @@
     <value>Edit</value>
     <comment>Text label for a button that can be used to begin making changes to a key binding entry.</comment>
   </data>
+  <data name="Actions_AddNewTextBlock.Text" xml:space="preserve">
+    <value>Add new</value>
+    <comment>Button label that creates a new action on the actions page.</comment>
+  </data>
 </root>

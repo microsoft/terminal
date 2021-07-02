@@ -286,7 +286,7 @@
                             <!--  Cancel editing the action  -->
                             <Button x:Uid="Actions_CancelButton"
                                     AutomationProperties.Name="{x:Bind CancelButtonName}"
-                                    Click="{x:Bind ToggleEditMode}"
+                                    Click="{x:Bind CancelChanges}"
                                     Style="{StaticResource EditButtonStyle}">
                                 <FontIcon FontSize="{StaticResource EditButtonIconSize}"
                                           Glyph="&#xE711;" />
@@ -307,7 +307,8 @@
                             <Button x:Uid="Actions_DeleteButton"
                                     Margin="8,0,0,0"
                                     AutomationProperties.Name="{x:Bind DeleteButtonName}"
-                                    Style="{StaticResource EditButtonStyle}">
+                                    Style="{StaticResource EditButtonStyle}"
+                                    Visibility="{x:Bind IsNewlyAdded, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
                                 <Button.Content>
                                     <FontIcon FontSize="{StaticResource EditButtonIconSize}"
                                               Glyph="&#xE74D;" />
@@ -381,7 +382,21 @@
 
     <ScrollViewer>
         <StackPanel MaxWidth="600"
+                    Spacing="8"
                     Style="{StaticResource SettingsStackStyle}">
+            <!--  Add New Button  -->
+            <Button x:Name="AddNewButton"
+                    Click="AddNew_Click">
+                <Button.Content>
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                  Glyph="&#xE710;" />
+                        <TextBlock x:Uid="Actions_AddNewTextBlock"
+                                   Style="{StaticResource IconButtonTextBlockStyle}" />
+                    </StackPanel>
+                </Button.Content>
+            </Button>
+
             <!--  Keybindings  -->
             <ListView x:Name="KeyBindingsListView"
                       ItemTemplate="{StaticResource KeyBindingTemplate}"
