@@ -5,6 +5,7 @@
 #include "ActionAndArgs.g.cpp"
 
 #include "JsonUtils.h"
+#include "HashUtils.h"
 
 #include <LibraryResources.h>
 
@@ -116,6 +117,35 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ALL_SHORTCUT_ACTIONS_WITH_ARGS
 #undef ON_ALL_ACTIONS_WITH_ARGS
     };
+
+    ActionAndArgs::ActionAndArgs(ShortcutAction action)
+    {
+        // Find the deserializer
+        const auto deserializersIter = argSerializerMap.find(action);
+        if (deserializersIter != argSerializerMap.end())
+        {
+            auto pfn = deserializersIter->second.first;
+            if (pfn)
+            {
+                // Call the deserializer on an empty JSON object.
+                // This ensures that we have a valid ActionArgs
+                std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> parseWarnings;
+                std::tie(_Args, parseWarnings) = pfn({});
+            }
+
+            // if an arg parser was registered, but failed,
+            // return the invalid ActionAndArgs we started with.
+            if (pfn && _Args == nullptr)
+            {
+                return;
+            }
+        }
+
+        // Either...
+        // (1) we don't have a deserializer, so it's ok for _Args to be null, or
+        // (2) we had one AND it worked, so _Args is set up properly
+        _Action = action;
+    }
 
     // Function Description:
     // - Attempts to match a string to a ShortcutAction. If there's no match, then
