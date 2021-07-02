@@ -183,7 +183,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
-        inline bool _IsClosing() const noexcept {
+        inline bool _IsClosing() const noexcept
+        {
             // _closing isn't atomic and may only be accessed from the main thread.
             assert(Dispatcher().HasThreadAccess());
             return _closing;

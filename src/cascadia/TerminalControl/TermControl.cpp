@@ -111,7 +111,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //
         // These four throttled functions are triggered by terminal output and interact with the UI.
         // Since Close() is the point after which we are removed from the UI, but before the
-        // destructor has run, we MUST check control->_IsClosing() before actually doing anything. 
+        // destructor has run, we MUST check control->_IsClosing() before actually doing anything.
         _tsfTryRedrawCanvas = std::make_shared<ThrottledFuncTrailing<>>(
             Dispatcher(),
             TsfRedrawInterval,
