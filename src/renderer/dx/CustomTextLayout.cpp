@@ -396,6 +396,7 @@ CATCH_RETURN()
         DWRITE_TYPOGRAPHIC_FEATURES typographicFeatures = { &featureList[0], gsl::narrow<uint32_t>(features.size()) };
         DWRITE_TYPOGRAPHIC_FEATURES const* typographicFeaturesPointer = &typographicFeatures;
         const uint32_t fontFeatureLengths[1] = { textLength };
+        const auto featureLengthsSpan = gsl::make_span(fontFeatureLengths);
 
         // Get the glyphs from the text, retrying if needed.
 
@@ -414,7 +415,7 @@ CATCH_RETURN()
                 _localeName.data(),
                 (run.isNumberSubstituted) ? _numberSubstitution.Get() : nullptr,
                 &typographicFeaturesPointer, // features
-                fontFeatureLengths, // featureLengths
+                featureLengthsSpan.data(), // featureLengths
                 1, // featureCount
                 maxGlyphCount, // maxGlyphCount
                 &_glyphClusters.at(textStart),
@@ -464,7 +465,7 @@ CATCH_RETURN()
             &run.script,
             _localeName.data(),
             &typographicFeaturesPointer, // features
-            fontFeatureLengths, // featureLengths
+            featureLengthsSpan.data(), // featureLengths
             1, // featureCount
             &_glyphAdvances.at(glyphStart),
             &_glyphOffsets.at(glyphStart));

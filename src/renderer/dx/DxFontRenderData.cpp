@@ -93,7 +93,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     return _defaultFontInfo.GetStretch();
 }
 
-[[nodiscard]] std::vector<DWRITE_FONT_FEATURE> DxFontRenderData::DefaultFontFeatures() noexcept
+[[nodiscard]] std::vector<DWRITE_FONT_FEATURE> DxFontRenderData::DefaultFontFeatures()
 {
     return _featureVector;
 }
@@ -485,7 +485,7 @@ void DxFontRenderData::SetFeatures(std::unordered_map<std::wstring_view, uint32_
     // Update our feature map with the provided features
     if (!features.empty())
     {
-        for (const auto& [tag, param] : features)
+        for (const auto [tag, param] : features)
         {
             _featureMap[tag] = param;
         }
@@ -494,9 +494,9 @@ void DxFontRenderData::SetFeatures(std::unordered_map<std::wstring_view, uint32_
 
     // Convert the data to DWRITE_FONT_FEATURE and store it in a vector for CustomTextLayout
     _featureVector.clear();
-    for (const auto& [tag, param] : _featureMap)
+    for (const auto [tag, param] : _featureMap)
     {
-        const auto dwriteTag = DWRITE_MAKE_FONT_FEATURE_TAG(tag[0], tag[1], tag[2], tag[3]);
+        const auto dwriteTag = DWRITE_MAKE_FONT_FEATURE_TAG(gsl::at(tag, 0), gsl::at(tag, 1), gsl::at(tag, 2), gsl::at(tag, 3));
         _featureVector.push_back(DWRITE_FONT_FEATURE{ dwriteTag, param });
     }
 }
@@ -510,7 +510,7 @@ void DxFontRenderData::SetAxes(std::unordered_map<std::wstring_view, int64_t> ax
     _axesMap.clear();
 
     // Update our axis map with the provided axes
-    for (const auto& [axis, value] : axes)
+    for (const auto [axis, value] : axes)
     {
         _axesMap[axis] = value;
     }
@@ -732,12 +732,12 @@ Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(con
     if (!FAILED(format->QueryInterface(IID_PPV_ARGS(&format3))) && !_axesMap.empty())
     {
         std::vector<DWRITE_FONT_AXIS_VALUE> axesVector;
-        for (const auto& [axis, value] : _axesMap)
+        for (const auto [axis, value] : _axesMap)
         {
-            const auto dwriteTag = DWRITE_MAKE_FONT_AXIS_TAG(axis[0], axis[1], axis[2], axis[3]);
+            const auto dwriteTag = DWRITE_MAKE_FONT_AXIS_TAG(gsl::at(axis, 0), gsl::at(axis, 1), gsl::at(axis, 2), gsl::at(axis, 3));
             axesVector.push_back(DWRITE_FONT_AXIS_VALUE{ dwriteTag, gsl::narrow<float>(value) });
         }
-        DWRITE_FONT_AXIS_VALUE* axesList = &axesVector[0];
+        DWRITE_FONT_AXIS_VALUE const* axesList = &axesVector[0];
         format3->SetFontAxisValues(axesList, gsl::narrow<uint32_t>(axesVector.size()));
     }
 
