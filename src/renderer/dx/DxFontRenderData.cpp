@@ -737,7 +737,7 @@ Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(con
             const auto dwriteTag = DWRITE_MAKE_FONT_AXIS_TAG(gsl::at(axis, 0), gsl::at(axis, 1), gsl::at(axis, 2), gsl::at(axis, 3));
             axesVector.push_back(DWRITE_FONT_AXIS_VALUE{ dwriteTag, gsl::narrow<float>(value) });
         }
-        DWRITE_FONT_AXIS_VALUE const* axesList = &axesVector[0];
+        DWRITE_FONT_AXIS_VALUE const* axesList = &gsl::at(axesVector, 0);
         format3->SetFontAxisValues(axesList, gsl::narrow<uint32_t>(axesVector.size()));
     }
 
