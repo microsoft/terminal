@@ -65,6 +65,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // ProposedAction:   the entry selected by the combo box; may disagree with the settings model.
         // CurrentAction:    the combo box item that maps to the settings model value.
         // AvailableActions: the list of options in the combo box; both actions above must be in this list.
+        // NOTE: ProposedAction and CurrentAction may disagree mainly due to the "edit mode" system in place.
+        //       Current Action serves as...
+        //       1 - a record of what to set ProposedAction to on a cancellation
+        //       2 - a form of translation between ProposedAction and the settings model
+        //       We would also need an ActionMap reference to remove this, but this is a better separation
+        //       of responsibilities.
         VIEW_MODEL_OBSERVABLE_PROPERTY(IInspectable, ProposedAction);
         VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, CurrentAction);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<hstring>, AvailableActions, nullptr);

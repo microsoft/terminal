@@ -254,9 +254,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Actions::_ViewModelModifyKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const Editor::ModifyKeyBindingEventArgs& args)
     {
-        // If the key chord was changed,
-        // update the settings model and view model appropriately
-        auto attemptRebindKeys = [=]() {
+        auto applyChangesToSettingsModel = [=]() {
+            // If the key chord was changed,
+            // update the settings model and view model appropriately
             if (args.OldKeys().Modifiers() != args.NewKeys().Modifiers() || args.OldKeys().Vkey() != args.NewKeys().Vkey())
             {
                 // update settings model
@@ -266,11 +266,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 auto senderVMImpl{ get_self<KeyBindingViewModel>(senderVM) };
                 senderVMImpl->Keys(args.NewKeys());
             }
-        };
 
-        // If the action was changed,
-        // update the settings model and view model appropriately
-        auto attemptSetAction = [=]() {
+            // If the action was changed,
+            // update the settings model and view model appropriately
             if (args.OldActionName() != args.NewActionName())
             {
                 // convert the action's name into a view model.
@@ -318,8 +316,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     senderVM.AcceptChangesFlyout(nullptr);
 
                     // update settings model and view model
-                    attemptRebindKeys();
-                    attemptSetAction();
+                    applyChangesToSettingsModel();
                     senderVM.ToggleEditMode();
                 });
 
@@ -337,8 +334,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         // update settings model and view model
-        attemptRebindKeys();
-        attemptSetAction();
+        applyChangesToSettingsModel();
 
         // We NEED to toggle the edit mode here,
         // so that if nothing changed, we still exit
