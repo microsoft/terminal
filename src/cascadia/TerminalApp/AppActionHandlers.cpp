@@ -46,8 +46,26 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseTab(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
-        _CloseFocusedTab();
-        args.Handled(true);
+        if (const auto realArgs = args.ActionArgs().try_as<CloseTabArgs>())
+        {
+            uint32_t index;
+            if (realArgs.Index())
+            {
+                index = realArgs.Index().Value();
+            }
+            else if (auto focusedTabIndex = _GetFocusedTabIndex())
+            {
+                index = *focusedTabIndex;
+            }
+            else
+            {
+                args.Handled(false);
+                return;
+            }
+
+            _CloseTabAtIndex(index);
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleClosePane(const IInspectable& /*sender*/,
