@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31425.354
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29001.49
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Terminal", "Terminal", "{59840756-302F-44DF-AA47-441A9D673202}"
 EndProject
@@ -3309,7 +3309,9 @@ Global
 		{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}.Debug|ARM64.ActiveCfg = Debug|ARM64
 		{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}.Debug|ARM64.Build.0 = Debug|ARM64
 		{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}.Debug|DotNet_x64Test.ActiveCfg = Debug|Win32
+		{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}.Debug|DotNet_x64Test.Build.0 = Debug|Win32
 		{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}.Debug|DotNet_x86Test.ActiveCfg = Debug|Win32
+		{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}.Debug|DotNet_x86Test.Build.0 = Debug|Win32
 		{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}.Debug|x64.ActiveCfg = Debug|x64
 		{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}.Debug|x64.Build.0 = Debug|x64
 		{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}.Debug|x86.ActiveCfg = Debug|Win32
@@ -3329,7 +3331,9 @@ Global
 		{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}.Release|ARM64.ActiveCfg = Release|ARM64
 		{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}.Release|ARM64.Build.0 = Release|ARM64
 		{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}.Release|DotNet_x64Test.ActiveCfg = Release|Win32
+		{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}.Release|DotNet_x64Test.Build.0 = Release|Win32
 		{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}.Release|DotNet_x86Test.ActiveCfg = Release|Win32
+		{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}.Release|DotNet_x86Test.Build.0 = Release|Win32
 		{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}.Release|x64.ActiveCfg = Release|x64
 		{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}.Release|x64.Build.0 = Release|x64
 		{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}.Release|x86.ActiveCfg = Release|Win32
