@@ -211,12 +211,11 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
         Json::Value ToJson(const std::unordered_map<std::string, T>& val)
         {
-            ConversionTrait<T> trait;
             Json::Value json{ Json::objectValue };
 
             for (const auto& [k, v] : val)
             {
-                json[JsonKey(k)] = trait.ToJson(v);
+                SetValueForKey(json, k, v);
             }
 
             return json;
@@ -262,12 +261,11 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
         Json::Value ToJson(const std::unordered_map<std::wstring, T>& val)
         {
-            ConversionTrait<T> trait;
             Json::Value json{ Json::objectValue };
 
             for (const auto& [k, v] : val)
             {
-                json[JsonKey(k)] = trait.ToJson(v);
+                SetValueForKey(json, til::u16u8(k), v);
             }
 
             return json;
@@ -343,12 +341,11 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
         Json::Value ToJson(const winrt::Windows::Foundation::Collections::IMap<winrt::hstring, T>& val)
         {
-            ConversionTrait<T> trait;
             Json::Value json{ Json::objectValue };
 
             for (const auto& [k, v] : val)
             {
-                json[JsonKey(k)] = trait.ToJson(v);
+                SetValueForKey(json, til::u16u8(k), v);
             }
 
             return json;

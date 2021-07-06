@@ -31,6 +31,8 @@ winrt::com_ptr<FontConfig> FontConfig::CopyFontInfo(const winrt::com_ptr<FontCon
     fontInfo->_FontFace = source->_FontFace;
     fontInfo->_FontSize = source->_FontSize;
     fontInfo->_FontWeight = source->_FontWeight;
+    fontInfo->_FontAxes = source->_FontAxes;
+    fontInfo->_FontFeatures = source->_FontFeatures;
     return fontInfo;
 }
 
@@ -41,6 +43,8 @@ Json::Value FontConfig::ToJson() const
     JsonUtils::SetValueForKey(json, FontFaceKey, _FontFace);
     JsonUtils::SetValueForKey(json, FontSizeKey, _FontSize);
     JsonUtils::SetValueForKey(json, FontWeightKey, _FontWeight);
+    JsonUtils::SetValueForKey(json, FontAxesKey, _FontAxes);
+    JsonUtils::SetValueForKey(json, FontFeaturesKey, _FontFeatures);
 
     return json;
 }

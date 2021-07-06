@@ -333,6 +333,8 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
     DUPLICATE_FONT_SETTING_MACRO(FontFace);
     DUPLICATE_FONT_SETTING_MACRO(FontSize);
     DUPLICATE_FONT_SETTING_MACRO(FontWeight);
+    DUPLICATE_FONT_SETTING_MACRO(FontFeatures);
+    DUPLICATE_FONT_SETTING_MACRO(FontAxes);
 
     DUPLICATE_APPEARANCE_SETTING_MACRO(ColorSchemeName);
     DUPLICATE_APPEARANCE_SETTING_MACRO(Foreground);
