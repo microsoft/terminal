@@ -48,9 +48,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     TermControl::TermControl(IControlSettings settings,
                              TerminalConnection::ITerminalConnection connection) :
-        _initializedTerminal{ false },
         _settings{ settings },
-        _closing{ false },
         _isInternalScrollBarUpdate{ false },
         _autoScrollVelocity{ 0 },
         _autoScrollingPointerPoint{ std::nullopt },
@@ -111,11 +109,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Core eventually won't have access to. When we get to
         // https://github.com/microsoft/terminal/projects/5#card-50760282
         // then we'll move the applicable ones.
+        //
+        // These four throttled functions are triggered by terminal output and interact with the UI.
+        // Since Close() is the point after which we are removed from the UI, but before the
+        // destructor has run, we MUST check control->_IsClosing() before actually doing anything.
         _tsfTryRedrawCanvas = std::make_shared<ThrottledFuncTrailing<>>(
             Dispatcher(),
             TsfRedrawInterval,
             [weakThis = get_weak()]() {
-                if (auto control{ weakThis.get() })
+                if (auto control{ weakThis.get() }; !control->_IsClosing())
                 {
                     control->TSFInputControl().TryRedrawCanvas();
                 }
@@ -125,7 +127,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Dispatcher(),
             UpdatePatternLocationsInterval,
             [weakThis = get_weak()]() {
-                if (auto control{ weakThis.get() })
+                if (auto control{ weakThis.get() }; !control->_IsClosing())
                 {
                     control->_core->UpdatePatternLocations();
                 }
@@ -135,7 +137,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Dispatcher(),
             TerminalWarningBellInterval,
             [weakThis = get_weak()]() {
-                if (auto control{ weakThis.get() })
+                if (auto control{ weakThis.get() }; !control->_IsClosing())
                 {
                     control->_WarningBellHandlers(*control, nullptr);
                 }
@@ -145,14 +147,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Dispatcher(),
             ScrollBarUpdateInterval,
             [weakThis = get_weak()](const auto& update) {
-                if (auto control{ weakThis.get() })
+                if (auto control{ weakThis.get() }; !control->_IsClosing())
                 {
                     control->_isInternalScrollBarUpdate = true;
 
                     auto scrollBar = control->ScrollBar();
-                    if (update.newValue.has_value())
+                    if (update.newValue)
                     {
-                        scrollBar.Value(update.newValue.value());
+                        scrollBar.Value(*update.newValue);
                     }
                     scrollBar.Maximum(update.newMaximum);
                     scrollBar.Minimum(update.newMinimum);
@@ -211,7 +213,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::SearchMatch(const bool goForward)
     {
-        if (_closing)
+        if (_IsClosing())
         {
             return;
         }
@@ -302,7 +304,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - newSettings: the new settings to set
     void TermControl::_UpdateSettingsFromUIThread(IControlSettings newSettings)
     {
-        if (_closing)
+        if (_IsClosing())
         {
             return;
         }
@@ -320,7 +322,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - newAppearance: the new appearance to set
     void TermControl::_UpdateAppearanceFromUIThread(IControlAppearance newAppearance)
     {
-        if (_closing)
+        if (_IsClosing())
         {
             return;
         }
@@ -533,7 +535,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Windows::UI::Xaml::Automation::Peers::AutomationPeer TermControl::OnCreateAutomationPeer()
     try
     {
-        if (_initializedTerminal && !_closing) // only set up the automation peer if we're ready to go live
+        if (_initializedTerminal && !_IsClosing()) // only set up the automation peer if we're ready to go live
         {
             // create a custom automation peer with this code pattern:
             // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
@@ -753,7 +755,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_CharacterHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                         Input::CharacterReceivedRoutedEventArgs const& e)
     {
-        if (_closing)
+        if (_IsClosing())
         {
             return;
         }
@@ -851,7 +853,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // win32-input-mode, then we'll send all these keystrokes to the
         // terminal - it's smart enough to ignore the keys it doesn't care
         // about.
-        if (_closing ||
+        if (_IsClosing() ||
             e.OriginalKey() == VirtualKey::LeftWindows ||
             e.OriginalKey() == VirtualKey::RightWindows)
 
@@ -1003,12 +1005,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                         keyDown) :
                                  true;
 
-        if (_cursorTimer.has_value())
+        if (_cursorTimer)
         {
             // Manually show the cursor when a key is pressed. Restarting
             // the timer prevents flickering.
             _core->CursorOn(true);
-            _cursorTimer.value().Start();
+            _cursorTimer->Start();
         }
 
         return handled;
@@ -1033,7 +1035,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_PointerPressedHandler(Windows::Foundation::IInspectable const& sender,
                                              Input::PointerRoutedEventArgs const& args)
     {
-        if (_closing)
+        if (_IsClosing())
         {
             return;
         }
@@ -1084,7 +1086,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_PointerMovedHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                            Input::PointerRoutedEventArgs const& args)
     {
-        if (_closing)
+        if (_IsClosing())
         {
             return;
         }
@@ -1157,7 +1159,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_PointerReleasedHandler(Windows::Foundation::IInspectable const& sender,
                                               Input::PointerRoutedEventArgs const& args)
     {
-        if (_closing)
+        if (_IsClosing())
         {
             return;
         }
@@ -1199,7 +1201,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_MouseWheelHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                          Input::PointerRoutedEventArgs const& args)
     {
-        if (_closing)
+        if (_IsClosing())
         {
             return;
         }
@@ -1301,7 +1303,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                               Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
     {
-        if (_isInternalScrollBarUpdate || _closing)
+        if (_isInternalScrollBarUpdate || _IsClosing())
         {
             // The update comes from ourselves, more specifically from the
             // terminal. So we don't have to update the terminal because it
@@ -1367,15 +1369,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_TryStartAutoScroll(Windows::UI::Input::PointerPoint const& pointerPoint, const double scrollVelocity)
     {
         // Allow only one pointer at the time
-        if (!_autoScrollingPointerPoint.has_value() ||
-            _autoScrollingPointerPoint.value().PointerId() == pointerPoint.PointerId())
+        if (!_autoScrollingPointerPoint ||
+            _autoScrollingPointerPoint->PointerId() == pointerPoint.PointerId())
         {
             _autoScrollingPointerPoint = pointerPoint;
             _autoScrollVelocity = scrollVelocity;
 
             // If this is first time the auto scroll update is about to be called,
             //      kick-start it by initializing its time delta as if it started now
-            if (!_lastAutoScrollUpdateTime.has_value())
+            if (!_lastAutoScrollUpdateTime)
             {
                 _lastAutoScrollUpdateTime = std::chrono::high_resolution_clock::now();
             }
@@ -1394,8 +1396,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - pointerId: id of pointer for which to stop auto scroll
     void TermControl::_TryStopAutoScroll(const uint32_t pointerId)
     {
-        if (_autoScrollingPointerPoint.has_value() &&
-            pointerId == _autoScrollingPointerPoint.value().PointerId())
+        if (_autoScrollingPointerPoint &&
+            pointerId == _autoScrollingPointerPoint->PointerId())
         {
             _autoScrollingPointerPoint = std::nullopt;
             _autoScrollVelocity = 0;
@@ -1421,15 +1423,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             const auto timeNow = std::chrono::high_resolution_clock::now();
 
-            if (_lastAutoScrollUpdateTime.has_value())
+            if (_lastAutoScrollUpdateTime)
             {
                 static constexpr double microSecPerSec = 1000000.0;
-                const double deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(timeNow - _lastAutoScrollUpdateTime.value()).count() / microSecPerSec;
+                const double deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(timeNow - *_lastAutoScrollUpdateTime).count() / microSecPerSec;
                 ScrollBar().Value(ScrollBar().Value() + _autoScrollVelocity * deltaTime);
 
-                if (_autoScrollingPointerPoint.has_value())
+                if (_autoScrollingPointerPoint)
                 {
-                    _SetEndSelectionPointAtCursor(_autoScrollingPointerPoint.value().Position());
+                    _SetEndSelectionPointAtCursor(_autoScrollingPointerPoint->Position());
                 }
             }
 
@@ -1445,7 +1447,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_GotFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                        RoutedEventArgs const& /* args */)
     {
-        if (_closing)
+        if (_IsClosing())
         {
             return;
         }
@@ -1474,16 +1476,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             TSFInputControl().NotifyFocusEnter();
         }
 
-        if (_cursorTimer.has_value())
+        if (_cursorTimer)
         {
             // When the terminal focuses, show the cursor immediately
             _core->CursorOn(true);
-            _cursorTimer.value().Start();
+            _cursorTimer->Start();
         }
 
-        if (_blinkTimer.has_value())
+        if (_blinkTimer)
         {
-            _blinkTimer.value().Start();
+            _blinkTimer->Start();
         }
 
         _interactivity->GainFocus();
@@ -1504,7 +1506,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_LostFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                         RoutedEventArgs const& /* args */)
     {
-        if (_closing)
+        if (_IsClosing())
         {
             return;
         }
@@ -1523,15 +1525,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             TSFInputControl().NotifyFocusLeave();
         }
 
-        if (_cursorTimer.has_value())
+        if (_cursorTimer)
         {
-            _cursorTimer.value().Stop();
+            _cursorTimer->Stop();
             _core->CursorOn(false);
         }
 
-        if (_blinkTimer.has_value())
+        if (_blinkTimer)
         {
-            _blinkTimer.value().Stop();
+            _blinkTimer->Stop();
         }
 
         // Check if there is an unfocused config we should set the appearance to
@@ -1550,7 +1552,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_SwapChainSizeChanged(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                             SizeChangedEventArgs const& e)
     {
-        if (!_initializedTerminal || _closing)
+        if (!_initializedTerminal || _IsClosing())
         {
             return;
         }
@@ -1602,7 +1604,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_CursorTimerTick(Windows::Foundation::IInspectable const& /* sender */,
                                        Windows::Foundation::IInspectable const& /* e */)
     {
-        if (!_closing)
+        if (!_IsClosing())
         {
             _core->BlinkCursor();
         }
@@ -1616,7 +1618,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_BlinkTimerTick(Windows::Foundation::IInspectable const& /* sender */,
                                       Windows::Foundation::IInspectable const& /* e */)
     {
-        if (!_closing)
+        if (!_IsClosing())
         {
             _core->BlinkAttributeTick();
         }
@@ -1644,13 +1646,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_ScrollPositionChanged(const IInspectable& /*sender*/,
                                              const Control::ScrollPositionChangedArgs& args)
     {
-        // Since this callback fires from non-UI thread, we might be already
-        // closed/closing.
-        if (_closing.load())
-        {
-            return;
-        }
-
         ScrollBarUpdate update;
         const auto hiddenContent = args.BufferSize() - args.ViewHeight();
         update.newMaximum = hiddenContent;
@@ -1670,10 +1665,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_CursorPositionChanged(const IInspectable& /*sender*/,
                                              const IInspectable& /*args*/)
     {
-        if (_tsfTryRedrawCanvas)
-        {
-            _tsfTryRedrawCanvas->Run();
-        }
+        _tsfTryRedrawCanvas->Run();
     }
 
     hstring TermControl::Title()
@@ -1706,7 +1698,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //             if we should defer which formats are copied to the global setting
     bool TermControl::CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
     {
-        if (_closing)
+        if (_IsClosing())
         {
             return false;
         }
@@ -1723,21 +1715,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::Close()
     {
-        if (!_closing.exchange(true))
+        if (!_IsClosing())
         {
+            _closing = true;
+
             _core->ReceivedOutput(_coreOutputEventToken);
-
             _RestorePointerCursorHandlers(*this, nullptr);
-
-            // These four throttled functions are triggered by terminal output and interact with the UI.
-            // Since Close() is the point after which we are removed from the UI, but before the destructor
-            // has run, we should disconnect them *right now*. If we don't, they may fire between the
-            // throttle delay (from the final output) and the dtor.
-            _tsfTryRedrawCanvas.reset();
-            _updatePatternLocations.reset();
-            _updateScrollBar.reset();
-            _playWarningBell.reset();
-
             // Disconnect the TSF input control so it doesn't receive EditContext events.
             TSFInputControl().Close();
             _autoScrollTimer.Stop();
@@ -2103,7 +2086,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::_CompositionCompleted(winrt::hstring text)
     {
-        if (_closing)
+        if (_IsClosing())
         {
             return;
         }
@@ -2180,7 +2163,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     winrt::fire_and_forget TermControl::_DragDropHandler(Windows::Foundation::IInspectable /*sender*/,
                                                          DragEventArgs e)
     {
-        if (_closing)
+        if (_IsClosing())
         {
             return;
         }
@@ -2267,7 +2250,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_DragOverHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                        DragEventArgs const& e)
     {
-        if (_closing)
+        if (_IsClosing())
         {
             return;
         }
@@ -2413,7 +2396,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _bellLightTimer->Stop();
             _bellLightTimer.reset();
 
-            if (!_closing)
+            if (!_IsClosing())
             {
                 VisualBellLight::SetIsTarget(RootGrid(), false);
             }
@@ -2456,7 +2439,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (auto self{ weakThis.get() })
         {
             auto lastHoveredCell = _core->GetHoveredCell();
-            if (lastHoveredCell.has_value())
+            if (lastHoveredCell)
             {
                 const auto uriText = _core->GetHoveredUriText();
                 if (!uriText.empty())
