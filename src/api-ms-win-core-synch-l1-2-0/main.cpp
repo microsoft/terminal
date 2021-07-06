@@ -28,7 +28,7 @@ namespace
     class [[nodiscard]] SRWLockGuard
     {
     public:
-        explicit SRWLockGuard(SRWLOCK & lock) noexcept :
+        explicit SRWLockGuard(SRWLOCK& lock) noexcept :
             lock(&lock)
         {
             AcquireSRWLockExclusive(&lock);
@@ -41,6 +41,9 @@ namespace
 
         SRWLockGuard(const SRWLockGuard&) = delete;
         SRWLockGuard& operator=(const SRWLockGuard&) = delete;
+
+        SRWLockGuard(SRWLockGuard&&) = delete;
+        SRWLockGuard& operator=(SRWLockGuard&&) = delete;
 
     private:
         SRWLOCK* lock;
@@ -73,6 +76,9 @@ namespace
 
         GuardedWaitContext(const GuardedWaitContext&) = delete;
         GuardedWaitContext& operator=(const GuardedWaitContext&) = delete;
+
+        GuardedWaitContext(GuardedWaitContext&&) = delete;
+        GuardedWaitContext& operator=(GuardedWaitContext&&) = delete;
     };
 
 #pragma warning(push)
@@ -91,9 +97,13 @@ namespace
         constexpr std::hash<uintptr_t> hasher;
 
         static WaitTableEntry table[size];
+#pragma warning(suppress : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator
+#pragma warning(suppress : 26482) // Only index into arrays using constant expressions
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast
         return table[hasher(reinterpret_cast<uintptr_t>(storage)) % size];
     }
 
+#pragma warning(suppress : 26429) // Symbol 'comparand' is never tested for nullness, it can be marked as not_null
     bool AreEqual(const volatile void* storage, const void* comparand, size_t size) noexcept
     {
         switch (size)
