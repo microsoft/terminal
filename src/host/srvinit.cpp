@@ -76,6 +76,15 @@ try
         }
     }
 
+    if (args->InConptyMode())
+    {
+        // If we're in ConPTY mode... set the no-op accessibility notifier
+        // to prevent sending expensive legacy MSAA events when we won't even be
+        // responsible for the terminal user interface.
+        std::unique_ptr<IAccessibilityNotifier> noOpNotifier = std::make_unique<Microsoft::Console::Interactivity::NoOpAccessibilityNotifier>();
+        RETURN_IF_NTSTATUS_FAILED(ServiceLocator::SetAccessibilityNotifier(std::move(noOpNotifier)));
+    }
+
     // Removed allocation of scroll buffer here.
     return S_OK;
 }

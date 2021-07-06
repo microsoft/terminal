@@ -104,6 +104,24 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
 
 #pragma region Set Methods
 
+[[nodiscard]] NTSTATUS ServiceLocator::SetAccessibilityNotifier(_In_ std::unique_ptr<IAccessibilityNotifier>&& notifier)
+{
+    if (s_accessibilityNotifier)
+    {
+        NT_RETURN_NTSTATUS(STATUS_INVALID_HANDLE);
+    }
+    else if (!notifier)
+    {
+        NT_RETURN_NTSTATUS(STATUS_INVALID_PARAMETER);
+    }
+    else
+    {
+        s_accessibilityNotifier = std::move(notifier);
+    }
+
+    return STATUS_SUCCESS;
+}
+
 [[nodiscard]] NTSTATUS ServiceLocator::SetConsoleControlInstance(_In_ std::unique_ptr<IConsoleControl>&& control)
 {
     if (s_consoleControl)
