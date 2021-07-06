@@ -20,7 +20,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib</AdditionalDependencies>
       <ModuleDefinitionFile>definitions.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
