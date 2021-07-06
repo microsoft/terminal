@@ -80,7 +80,7 @@ namespace Microsoft::Console::Render
         bool DidUserSetFeatures() const noexcept;
         void InitializeFeatureMap();
         void SetFeatures(std::unordered_map<std::wstring_view, uint32_t> features);
-        void SetAxes(std::unordered_map<std::wstring_view, int64_t> axes);
+        void SetAxes(std::unordered_map<std::wstring_view, int32_t> axes);
 
     private:
         void _BuildFontRenderData(const FontInfoDesired& desired, FontInfo& actual, const int dpi);
@@ -92,7 +92,7 @@ namespace Microsoft::Console::Render
         std::vector<DWRITE_FONT_FEATURE> _featureVector;
 
         // The font axes to apply to the text
-        std::unordered_map<std::wstring_view, int64_t> _axesMap;
+        std::unordered_map<std::wstring_view, int32_t> _axesMap;
 
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
 

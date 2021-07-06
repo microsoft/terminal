@@ -505,7 +505,7 @@ void DxFontRenderData::SetFeatures(std::unordered_map<std::wstring_view, uint32_
 // - Updates our internal map of font axes with the given axes
 // Arguments:
 // - axes - the axes to update our map with
-void DxFontRenderData::SetAxes(std::unordered_map<std::wstring_view, int64_t> axes)
+void DxFontRenderData::SetAxes(std::unordered_map<std::wstring_view, int32_t> axes)
 {
     _axesMap.clear();
 

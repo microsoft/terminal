@@ -184,7 +184,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
         std::unordered_map<std::wstring_view, uint32_t> _fontFeatures;
-        std::unordered_map<std::wstring_view, int64_t> _fontAxes;
+        std::unordered_map<std::wstring_view, int32_t> _fontAxes;
 
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate{ std::nullopt };

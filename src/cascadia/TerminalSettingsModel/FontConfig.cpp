@@ -68,42 +68,8 @@ void FontConfig::LayerJson(const Json::Value& json)
         JsonUtils::GetValueForKey(fontInfoJson, FontFaceKey, _FontFace);
         JsonUtils::GetValueForKey(fontInfoJson, FontSizeKey, _FontSize);
         JsonUtils::GetValueForKey(fontInfoJson, FontWeightKey, _FontWeight);
-
-        if (fontInfoJson.isMember(JsonKey(FontFeaturesKey)))
-        {
-            std::unordered_map<hstring, uint32_t> featureMap;
-            const auto fontFeaturesJson = fontInfoJson[JsonKey(FontFeaturesKey)];
-            const auto featureNames = fontFeaturesJson.getMemberNames();
-            for (const auto& featureName : featureNames)
-            {
-                // Check that the feature is well-formed, i.e. that the length of the tag is exactly TagLength
-                // and the value is an UInt
-                // todo: ouput a warning if we find a badly formed feature?
-                if (featureName.length() == TagLength && fontFeaturesJson[JsonKey(featureName)].isUInt())
-                {
-                    featureMap[winrt::to_hstring(featureName)] = fontFeaturesJson[JsonKey(featureName)].asUInt();
-                }
-            }
-            _FontFeatures = single_threaded_map<hstring, uint32_t>(std::move(featureMap));
-        }
-
-        if (fontInfoJson.isMember(JsonKey(FontAxesKey)))
-        {
-            std::unordered_map<hstring, int64_t> axesMap;
-            const auto fontAxesJson = fontInfoJson[JsonKey(FontAxesKey)];
-            const auto axesNames = fontAxesJson.getMemberNames();
-            for (const auto& axisName : axesNames)
-            {
-                // Check that the axis is well-formed, i.e. that the length of the tag is exactly TagLength
-                // and the value is an Int64
-                // todo: ouput a warning if we find a badly formed axis?
-                if (fontAxesJson[JsonKey(axisName)].isInt64())
-                {
-                    axesMap[winrt::to_hstring(axisName)] = fontAxesJson[JsonKey(axisName)].asInt64();
-                }
-            }
-            _FontAxes = single_threaded_map<hstring, int64_t>(std::move(axesMap));
-        }
+        JsonUtils::GetValueForKey(fontInfoJson, FontFeaturesKey, _FontFeatures);
+        JsonUtils::GetValueForKey(fontInfoJson, FontAxesKey, _FontAxes);
     }
     else
     {

@@ -1224,6 +1224,87 @@ CATCH_RETURN();
 #pragma endregion
 
 #pragma region internal methods for mimicking text analyzer pattern but for font fallback
+// Method Description:
+// - Fill any missing axis values that might be known but were unspecified, such as omitting
+//   the 'wght' axis tag but specifying the old DWRITE_FONT_WEIGHT enum
+// Arguments:
+// - todo: fill this out
+std::vector<DWRITE_FONT_AXIS_VALUE> CustomTextLayout::GetAxisVector(DWRITE_FONT_WEIGHT /*fontWeight*/,
+                                                                    DWRITE_FONT_STRETCH /*fontStretch*/,
+                                                                    DWRITE_FONT_STYLE /*fontStyle*/,
+                                                                    float /*fontSize*/,
+                                                                    ::Microsoft::WRL::ComPtr<IDWriteTextFormat3> format)
+{
+    // todo: complete this function
+    //enum AxisTagPresence
+    //{
+    //    AxisTagPresenceNone = 0,
+    //    AxisTagPresenceWeight = 1,
+    //    AxisTagPresenceWidth = 2,
+    //    AxisTagPresenceItalic = 4,
+    //    AxisTagPresenceSlant = 8,
+    //    AxisTagPresenceOpticalSize = 16,
+    //};
+    const auto axesCount = format->GetFontAxisValueCount();
+    std::vector<DWRITE_FONT_AXIS_VALUE> axesVector;
+    axesVector.resize(axesCount);
+    format->GetFontAxisValues(axesVector.data(), axesCount);
+
+    //uint32_t axisTagPresence = AxisTagPresenceNone;
+    //for (auto& fontAxisValue : axesVector)
+    //{
+    //    switch (fontAxisValue.axisTag)
+    //    {
+    //    case DWRITE_FONT_AXIS_TAG_WEIGHT:
+    //        axisTagPresence |= AxisTagPresenceWeight;
+    //        break;
+    //    case DWRITE_FONT_AXIS_TAG_WIDTH:
+    //        axisTagPresence |= AxisTagPresenceWidth;
+    //        break;
+    //    case DWRITE_FONT_AXIS_TAG_ITALIC:
+    //        axisTagPresence |= AxisTagPresenceItalic;
+    //        break;
+    //    case DWRITE_FONT_AXIS_TAG_SLANT:
+    //        axisTagPresence |= AxisTagPresenceSlant;
+    //        break;
+    //    case DWRITE_FONT_AXIS_TAG_OPTICAL_SIZE:
+    //        axisTagPresence |= AxisTagPresenceOpticalSize;
+    //        break;
+    //    }
+    //}
+
+    //if ((axisTagPresence & AxisTagPresenceWeight) == 0)
+    //{
+    //    axesVector.push_back({ DWRITE_FONT_AXIS_TAG_WEIGHT, float(fontWeight) });
+    //}
+    //if ((axisTagPresence & AxisTagPresenceWidth) == 0)
+    //{
+    //    auto ayy1 = 1;
+    //    //auto value = FontStretchToWidthAxisValue(fontStretch);
+    //    axesVector.push_back({ DWRITE_FONT_AXIS_TAG_WIDTH, gsl::narrow<float>(ayy1) });
+    //}
+    //if ((axisTagPresence & AxisTagPresenceItalic) == 0)
+    //{
+    //    auto ayy2 = 1;
+    //    //auto value = FontStyleToItalicFixedAxisValue(fontStyle);
+    //    axesVector.push_back({ DWRITE_FONT_AXIS_TAG_ITALIC, gsl::narrow<float>(ayy2) });
+    //}
+    //if ((axisTagPresence & AxisTagPresenceSlant) == 0)
+    //{
+    //    auto ayy3 = 1;
+    //    //auto value = FontStyleToSlantFixedAxisValue(fontStyle);
+    //    axesVector.push_back({ DWRITE_FONT_AXIS_TAG_SLANT, gsl::narrow<float>(ayy3) });
+    //}
+    //if ((axisTagPresence & AxisTagPresenceOpticalSize) == 0)
+    //{
+    //    auto pointSize = 1;
+    //    //const auto pointSize = DIPsToPoints(fontSize);
+    //    axesVector.push_back({ DWRITE_FONT_AXIS_TAG_OPTICAL_SIZE, gsl::narrow<float>(pointSize) });
+    //}
+
+    return axesVector;
+}
+
 // Routine Description:
 // - Mimics an IDWriteTextAnalyser but for font fallback calculations.
 // Arguments:
@@ -1271,11 +1352,7 @@ CATCH_RETURN();
         if (!FAILED(_formatInUse->QueryInterface(IID_PPV_ARGS(&format3))) && !FAILED(fallback->QueryInterface(IID_PPV_ARGS(&fallback1))))
         {
             // If the OS supports IDWriteFontFallback1 and IDWriteTextFormat3, we can apply axes of variation to the font
-            const auto axesCount = format3->GetFontAxisValueCount();
-            std::vector<DWRITE_FONT_AXIS_VALUE> axesVector;
-            axesVector.resize(axesCount);
-            const auto res = format3->GetFontAxisValues(axesVector.data(), axesCount);
-
+            const auto axesVector = GetAxisVector(weight, stretch, style, format1->GetFontSize(), format3);
             // Walk through and analyze the entire string
             while (textLength > 0)
             {
@@ -1289,7 +1366,7 @@ CATCH_RETURN();
                                          collection.Get(),
                                          familyName.data(),
                                          axesVector.data(),
-                                         axesCount,
+                                         gsl::narrow<uint32_t>(axesVector.size()),
                                          &mappedLength,
                                          &scale,
                                          &mappedFont);

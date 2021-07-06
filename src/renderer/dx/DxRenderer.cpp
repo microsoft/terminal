@@ -1988,7 +1988,7 @@ void DxEngine::SetFontFeatures(const std::unordered_map<std::wstring_view, uint3
 // - Updates the font render data's internal map of font axes with the given axes
 // Arguments:
 // - axes - the axes to update the map with
-void DxEngine::SetFontAxes(const std::unordered_map<std::wstring_view, int64_t> axes)
+void DxEngine::SetFontAxes(const std::unordered_map<std::wstring_view, int32_t> axes)
 {
     _fontRenderData->SetAxes(axes);
 }
