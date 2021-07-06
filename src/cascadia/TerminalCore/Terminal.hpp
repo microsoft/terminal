@@ -279,8 +279,8 @@ private:
 
     std::wstring _workingDirectory;
 
-    // This font value is only used to check if the font is a raster font.
-    // Otherwise, the font is changed with the renderer via TriggerFontChange.
+    // This default fake font value is only used to check if the font is a raster font.
+    // Otherwise, the font is changed to a real value with the renderer via TriggerFontChange.
     FontInfo _fontInfo{ DEFAULT_FONT_FACE, TMPF_TRUETYPE, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false };
 #pragma region Text Selection
     // a selection is represented as a range between two COORDs (start and end)

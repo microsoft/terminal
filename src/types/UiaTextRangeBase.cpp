@@ -317,13 +317,16 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
 }
 
 // Method Description:
-// - Generate an attribute verification function for that attributeId and sub-type
+// - Verify that the given attribute has the desired formatting saved in the attributeId and val
 // Arguments:
 // - attributeId - the UIA text attribute identifier we're looking for
 // - val - the attributeId's sub-type we're looking for
+// - attr - the text attribute we're checking
 // Return Value:
-// - a function that can be used to verify if a given TextAttribute meets the attributeId's sub-type
-std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerificationFn(TEXTATTRIBUTEID attributeId, VARIANT val) const
+// - true, if the given attribute has the desired formatting.
+// - false, if the given attribute does not have the desired formatting.
+// - nullopt, if checking for the desired formatting is not supported.
+std::optional<bool> UiaTextRangeBase::_verifyAttr(TEXTATTRIBUTEID attributeId, VARIANT val, const TextAttribute& attr) const
 {
     // Most of the attributes we're looking for just require us to check TextAttribute.
     // So if we support it, we'll return a function to verify if the TextAttribute
@@ -337,9 +340,7 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
 
         // The foreground color is stored as a COLORREF.
         const auto queryBackgroundColor{ val.lVal };
-        return [this, queryBackgroundColor](const TextAttribute& attr) noexcept {
-            return _RemoveAlpha(_pData->GetAttributeColors(attr).second) == queryBackgroundColor;
-        };
+        return _RemoveAlpha(_pData->GetAttributeColors(attr).second) == queryBackgroundColor;
     }
     case UIA_FontWeightAttributeId:
     {
@@ -354,16 +355,12 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
         if (queryFontWeight > FW_NORMAL)
         {
             // we're looking for a bold font weight
-            return [](const TextAttribute& attr) noexcept {
-                return attr.IsBold();
-            };
+            return attr.IsBold();
         }
         else
         {
             // we're looking for "normal" font weight
-            return [](const TextAttribute& attr) noexcept {
-                return !attr.IsBold();
-            };
+            return !attr.IsBold();
         }
     }
     case UIA_ForegroundColorAttributeId:
@@ -373,9 +370,7 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
 
         // The foreground color is stored as a COLORREF.
         const auto queryForegroundColor{ base::ClampedNumeric<COLORREF>(val.lVal) };
-        return [this, queryForegroundColor](const TextAttribute& attr) noexcept {
-            return _RemoveAlpha(_pData->GetAttributeColors(attr).first) == queryForegroundColor;
-        };
+        return _RemoveAlpha(_pData->GetAttributeColors(attr).first) == queryForegroundColor;
     }
     case UIA_IsItalicAttributeId:
     {
@@ -384,18 +379,7 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
 
         // The text is either italic or it isn't.
         const auto queryIsItalic{ val.boolVal };
-        if (queryIsItalic)
-        {
-            return [](const TextAttribute& attr) noexcept {
-                return attr.IsItalic();
-            };
-        }
-        else
-        {
-            return [](const TextAttribute& attr) noexcept {
-                return !attr.IsItalic();
-            };
-        }
+        return queryIsItalic ? attr.IsItalic() : !attr.IsItalic();
     }
     case UIA_StrikethroughStyleAttributeId:
     {
@@ -408,15 +392,11 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
         switch (val.lVal)
         {
         case TextDecorationLineStyle_None:
-            return [](const TextAttribute& attr) noexcept {
-                return !attr.IsCrossedOut();
-            };
+            return !attr.IsCrossedOut();
         case TextDecorationLineStyle_Single:
-            return [](const TextAttribute& attr) noexcept {
-                return attr.IsCrossedOut();
-            };
+            return attr.IsCrossedOut();
         default:
-            return nullptr;
+            return std::nullopt;
         }
     }
     case UIA_UnderlineStyleAttributeId:
@@ -430,23 +410,17 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
         switch (val.lVal)
         {
         case TextDecorationLineStyle_None:
-            return [](const TextAttribute& attr) noexcept {
-                return !attr.IsUnderlined() && !attr.IsDoublyUnderlined();
-            };
+            return !attr.IsUnderlined() && !attr.IsDoublyUnderlined();
         case TextDecorationLineStyle_Double:
-            return [](const TextAttribute& attr) noexcept {
-                return attr.IsDoublyUnderlined();
-            };
+            return attr.IsDoublyUnderlined();
         case TextDecorationLineStyle_Single:
-            return [](const TextAttribute& attr) noexcept {
-                return attr.IsUnderlined();
-            };
+            return attr.IsUnderlined();
         default:
-            return nullptr;
+            return std::nullopt;
         }
     }
     default:
-        return nullptr;
+        return std::nullopt;
     }
 }
 
@@ -465,6 +439,9 @@ try
     case UIA_FontNameAttributeId:
     {
         RETURN_HR_IF(E_INVALIDARG, val.vt != VT_BSTR);
+
+        // Technically, we'll truncate early if there's an embedded null in the BSTR.
+        // But we're probably fine in this curcumstance.
         const std::wstring queryFontName{ val.bstrVal };
         if (queryFontName == _pData->GetFontInfo().GetFaceName())
         {
@@ -488,11 +465,9 @@ try
     }
 
     // AttributeIDs that are exposed via TextAttribute
-    std::function<bool(const TextAttribute&)> checkIfAttrFound;
     try
     {
-        checkIfAttrFound = _getAttrVerificationFn(attributeId, val);
-        if (!checkIfAttrFound)
+        if (!_verifyAttr(attributeId, val, {}).has_value())
         {
             // The AttributeID is not supported.
             UiaTracing::TextRange::FindAttribute(*this, attributeId, val, searchBackwards, static_cast<UiaTextRangeBase&>(**ppRetVal), UiaTracing::AttributeType::Unsupported);
@@ -519,8 +494,19 @@ try
     std::optional<COORD> resultSecondAnchor;
 
     // Start/End for the direction to perform the search in
+    // We need searchEnd to be exclusive. This allows the for-loop below to
+    // iterate up until the exclusive searchEnd, and not attempt to read the
+    // data at that position.
     const auto searchStart{ searchBackwards ? inclusiveEnd : _start };
-    const auto searchEnd{ searchBackwards ? _start : inclusiveEnd };
+    auto searchEndExclusive{ searchBackwards ? _start : inclusiveEnd };
+    if (searchBackwards)
+    {
+        bufferSize.DecrementInBounds(searchEndExclusive, true);
+    }
+    else
+    {
+        bufferSize.IncrementInBounds(searchEndExclusive, true);
+    }
 
     // Iterate from searchStart to searchEnd in the buffer.
     // If we find the attribute we're looking for, we update resultFirstAnchor/SecondAnchor appropriately.
@@ -535,16 +521,16 @@ try
     }
     auto iter{ buffer.GetCellDataAt(searchStart, viewportRange) };
     const auto iterStep{ searchBackwards ? -1 : 1 };
-    for (; iter && iter.Pos() != searchEnd; iter += iterStep)
+    for (; iter && iter.Pos() != searchEndExclusive; iter += iterStep)
     {
-        const auto& attr{ iter->TextAttr() };
-        if (checkIfAttrFound(attr))
+        if (_verifyAttr(attributeId, val, iter->TextAttr()).value())
         {
             // populate the first anchor if it's not populated.
             // otherwise, populate the second anchor.
             if (!resultFirstAnchor.has_value())
             {
                 resultFirstAnchor = iter.Pos();
+                resultSecondAnchor = iter.Pos();
             }
             else
             {
@@ -558,6 +544,7 @@ try
             // - the anchors have been populated
             // This means that we've found a contiguous range where the text attribute was found.
             // No point in searching through the rest of the search space.
+            // TLDR: keep updating the second anchor and make the range wider until the attribute changes.
             break;
         }
     }
@@ -640,24 +627,24 @@ CATCH_RETURN();
 // Method Description:
 // - (1) Checks the current range for the attributeId's sub-type
 // - (2) Record the attributeId's sub-type
-// - (3) Generate an attribute verification function for that attributeId sub-type
 // Arguments:
 // - attributeId - the UIA text attribute identifier we're looking for
 // - pRetVal - the attributeId's sub-type for the first cell in the range (i.e. foreground color)
+// - attr - the text attribute we're checking
 // Return Value:
-// - a function that can be used to verify if a given TextAttribute meets the attributeId's sub-type
-std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerificationFnForFirstAttr(TEXTATTRIBUTEID attributeId, VARIANT* pRetVal) const
+// - true, if the attributeId is supported. false, otherwise.
+// - pRetVal is populated with the appropriate response relevant to the returned bool.
+bool UiaTextRangeBase::_initializeAttrQuery(TEXTATTRIBUTEID attributeId, VARIANT* pRetVal, const TextAttribute& attr) const
 {
     THROW_HR_IF(E_INVALIDARG, pRetVal == nullptr);
 
-    const auto attr{ _pData->GetTextBuffer().GetCellDataAt(_start)->TextAttr() };
     switch (attributeId)
     {
     case UIA_BackgroundColorAttributeId:
     {
         pRetVal->vt = VT_I4;
         pRetVal->lVal = _RemoveAlpha(_pData->GetAttributeColors(attr).second);
-        return _getAttrVerificationFn(attributeId, *pRetVal);
+        return true;
     }
     case UIA_FontWeightAttributeId:
     {
@@ -667,25 +654,25 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
         // Source: https://docs.microsoft.com/en-us/windows/win32/winauto/uiauto-textattribute-ids
         pRetVal->vt = VT_I4;
         pRetVal->lVal = attr.IsBold() ? FW_BOLD : FW_NORMAL;
-        return _getAttrVerificationFn(attributeId, *pRetVal);
+        return true;
     }
     case UIA_ForegroundColorAttributeId:
     {
         pRetVal->vt = VT_I4;
         pRetVal->lVal = _RemoveAlpha(_pData->GetAttributeColors(attr).first);
-        return _getAttrVerificationFn(attributeId, *pRetVal);
+        return true;
     }
     case UIA_IsItalicAttributeId:
     {
         pRetVal->vt = VT_BOOL;
         pRetVal->boolVal = attr.IsItalic();
-        return _getAttrVerificationFn(attributeId, *pRetVal);
+        return true;
     }
     case UIA_StrikethroughStyleAttributeId:
     {
         pRetVal->vt = VT_I4;
         pRetVal->lVal = attr.IsCrossedOut() ? TextDecorationLineStyle_Single : TextDecorationLineStyle_None;
-        return _getAttrVerificationFn(attributeId, *pRetVal);
+        return true;
     }
     case UIA_UnderlineStyleAttributeId:
     {
@@ -702,13 +689,13 @@ std::function<bool(const TextAttribute&)> UiaTextRangeBase::_getAttrVerification
         {
             pRetVal->lVal = TextDecorationLineStyle_None;
         }
-        return _getAttrVerificationFn(attributeId, *pRetVal);
+        return true;
     }
     default:
         // This attribute is not supported.
         pRetVal->vt = VT_UNKNOWN;
         UiaGetReservedNotSupportedValue(&pRetVal->punkVal);
-        return nullptr;
+        return false;
     }
 }
 
@@ -741,16 +728,26 @@ try
     }
 
     // AttributeIDs that are exposed via TextAttribute
-    std::function<bool(const TextAttribute&)> checkIfAttrFound;
     try
     {
-        checkIfAttrFound = _getAttrVerificationFnForFirstAttr(attributeId, pRetVal);
-        if (!checkIfAttrFound)
+        // Unlike a normal text editor, which applies formatting at the caret,
+        // we don't know what attributes are written at a degenerate range.
+        // So instead, we'll use GetCurrentAttributes to get an idea of the default
+        // text attributes used. And return a result based off of that.
+        const auto attr{ IsDegenerate() ? _pData->GetTextBuffer().GetCurrentAttributes() :
+                                          _pData->GetTextBuffer().GetCellDataAt(_start)->TextAttr() };
+        if (!_initializeAttrQuery(attributeId, pRetVal, attr))
         {
             // The AttributeID is not supported.
             pRetVal->vt = VT_UNKNOWN;
             UiaTracing::TextRange::GetAttributeValue(*this, attributeId, *pRetVal, UiaTracing::AttributeType::Unsupported);
             return UiaGetReservedNotSupportedValue(&pRetVal->punkVal);
+        }
+        else if (IsDegenerate())
+        {
+            // If we're a degenerate range, we have all the information we need.
+            UiaTracing::TextRange::GetAttributeValue(*this, attributeId, *pRetVal);
+            return S_OK;
         }
     }
     catch (...)
@@ -758,17 +755,6 @@ try
         LOG_HR(wil::ResultFromCaughtException());
         UiaTracing::TextRange::GetAttributeValue(*this, attributeId, *pRetVal, UiaTracing::AttributeType::Error);
         return E_INVALIDARG;
-    }
-
-    if (IsDegenerate())
-    {
-        // Unlike a normal text editor, which applies formatting at the caret,
-        // we don't know what attributes are written at a degenerate range.
-        // So let's return UiaGetReservedMixedAttributeValue.
-        // Source: https://docs.microsoft.com/en-us/windows/win32/api/uiautomationcore/nf-uiautomationcore-itextrangeprovider-getattributevalue
-        pRetVal->vt = VT_UNKNOWN;
-        UiaTracing::TextRange::GetAttributeValue(*this, attributeId, *pRetVal, UiaTracing::AttributeType::Mixed);
-        return UiaGetReservedMixedAttributeValue(&pRetVal->punkVal);
     }
 
     // Get some useful variables
@@ -789,8 +775,7 @@ try
     auto iter{ buffer.GetCellDataAt(_start, viewportRange) };
     for (; iter && iter.Pos() != inclusiveEnd; ++iter)
     {
-        const auto& attr{ iter->TextAttr() };
-        if (!checkIfAttrFound(attr))
+        if (!_verifyAttr(attributeId, *pRetVal, iter->TextAttr()).value())
         {
             // The value of the specified attribute varies over the text range
             // return UiaGetReservedMixedAttributeValue.
