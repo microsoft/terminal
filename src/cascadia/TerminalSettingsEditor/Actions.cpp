@@ -218,7 +218,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto& containerBackground{ Resources().Lookup(box_value(L"ActionContainerBackgroundEditing")).as<Windows::UI::Xaml::Media::Brush>() };
         kbdVM->ContainerBackground(containerBackground);
 
-        // IMPORTANT: do this _before_ adding the VM to the list. Otherwise, it'll get deleted immediately.
+        // IMPORTANT: do this _after_ setting IsInEditMode. Otherwise, it'll get deleted immediately
+        //              by the PropertyChangedHandler below (where we delete any IsNewlyAdded items)
         kbdVM->IsNewlyAdded(true);
         _KeyBindingList.InsertAt(0, *kbdVM);
     }
@@ -427,7 +428,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return std::nullopt;
     }
 
-    void Actions::_RegisterEvents(com_ptr<KeyBindingViewModel> kbdVM)
+    void Actions::_RegisterEvents(com_ptr<KeyBindingViewModel>& kbdVM)
     {
         kbdVM->PropertyChanged({ this, &Actions::_ViewModelPropertyChangedHandler });
         kbdVM->DeleteKeyBindingRequested({ this, &Actions::_ViewModelDeleteKeyBindingHandler });

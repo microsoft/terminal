@@ -134,7 +134,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _ViewModelDeleteNewlyAddedKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const IInspectable& args);
 
         std::optional<uint32_t> _GetContainerIndexByKeyChord(const Control::KeyChord& keys);
-        void _RegisterEvents(com_ptr<implementation::KeyBindingViewModel> kbdVM);
+        void _RegisterEvents(com_ptr<implementation::KeyBindingViewModel>& kbdVM);
 
         bool _AutomationPeerAttached{ false };
         Windows::Foundation::Collections::IObservableVector<hstring> _AvailableActionAndArgs;
