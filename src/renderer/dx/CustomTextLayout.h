@@ -129,7 +129,7 @@ namespace Microsoft::Console::Render
                                                           DWRITE_FONT_STRETCH fontStretch,
                                                           DWRITE_FONT_STYLE fontStyle,
                                                           float fontSize,
-                                                          ::Microsoft::WRL::ComPtr<IDWriteTextFormat3> format);
+                                                          ::Microsoft::WRL::ComPtr<IDWriteTextFormat3>& format);
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _AnalyzeFontFallback(IDWriteTextAnalysisSource* const source, UINT32 textPosition, UINT32 textLength);
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _SetMappedFont(UINT32 textPosition, UINT32 textLength, IDWriteFont* const font, FLOAT const scale);
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _SetMappedFontFace(UINT32 textPosition, UINT32 textLength, ::Microsoft::WRL::ComPtr<IDWriteFontFace5> const fontFace, FLOAT const scale);

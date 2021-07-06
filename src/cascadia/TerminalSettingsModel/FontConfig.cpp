@@ -10,7 +10,6 @@
 using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
-static constexpr size_t TagLength{ 4 };
 static constexpr std::string_view FontInfoKey{ "font" };
 static constexpr std::string_view FontFaceKey{ "face" };
 static constexpr std::string_view FontSizeKey{ "size" };

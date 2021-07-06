@@ -1233,7 +1233,7 @@ std::vector<DWRITE_FONT_AXIS_VALUE> CustomTextLayout::GetAxisVector(DWRITE_FONT_
                                                                     DWRITE_FONT_STRETCH /*fontStretch*/,
                                                                     DWRITE_FONT_STYLE /*fontStyle*/,
                                                                     float /*fontSize*/,
-                                                                    ::Microsoft::WRL::ComPtr<IDWriteTextFormat3> format)
+                                                                    ::Microsoft::WRL::ComPtr<IDWriteTextFormat3>& format)
 {
     // todo: complete this function
     //enum AxisTagPresence
