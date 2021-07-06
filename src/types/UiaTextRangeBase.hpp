@@ -137,7 +137,7 @@ namespace Microsoft::Console::Types
         // NOTE: _start is inclusive, but _end is exclusive
         COORD _start{};
         COORD _end{};
-        bool _blockRange;
+        bool _blockRange{};
 
         // This is used by tracing to extract the text value
         // that the UiaTextRange currently encompasses.
