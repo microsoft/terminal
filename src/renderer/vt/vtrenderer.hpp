@@ -222,7 +222,7 @@ namespace Microsoft::Console::Render
 
         // buffer space for these two functions to build their lines
         // so they don't have to alloc/free in a tight loop
-        std::wstring _bufferLine;
+        fmt::basic_memory_buffer<wchar_t, 120> _bufferLine;
         [[nodiscard]] HRESULT _PaintUtf8BufferLine(gsl::span<const Cluster> const clusters,
                                                    const COORD coord,
                                                    const bool lineWrapped) noexcept;

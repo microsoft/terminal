@@ -344,17 +344,24 @@ using namespace Microsoft::Console::Types;
     {
         RETURN_IF_FAILED(_MoveCursor(coord));
 
-        _bufferLine.clear();
         _bufferLine.reserve(clusters.size());
 
+        size_t totalLength = 0;
         short totalWidth = 0;
         for (const auto& cluster : clusters)
         {
-            _bufferLine.append(cluster.GetText());
+            const std::wstring_view& src = cluster.GetText();
+            auto dest = _bufferLine.begin() + totalLength;
+            const auto canSkipCopy = src.size() == 1 && til::at(src, 0) == *dest;
+            if (!canSkipCopy)
+            {
+                src.copy(dest, src.size());
+            }
+            totalLength += src.size();
             RETURN_IF_FAILED(ShortAdd(totalWidth, gsl::narrow<short>(cluster.GetColumns()), &totalWidth));
         }
 
-        RETURN_IF_FAILED(VtEngine::_WriteTerminalAscii(_bufferLine));
+        RETURN_IF_FAILED(VtEngine::_WriteTerminalAscii({ _bufferLine.data(), totalLength }));
 
         // Update our internal tracker of the cursor's position
         _lastText.X += totalWidth;
@@ -381,26 +388,40 @@ using namespace Microsoft::Console::Types;
         return S_OK;
     }
 
-    _bufferLine.clear();
     _bufferLine.reserve(clusters.size());
-    short totalWidth = 0;
-    for (const auto& cluster : clusters)
-    {
-        _bufferLine.append(cluster.GetText());
-        RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(cluster.GetColumns()), &totalWidth));
-    }
-    const size_t cchLine = _bufferLine.size();
+    size_t totalLength = 0;
+    size_t totalWidth = 0;
 
+    size_t iNonSpace = 0;
     bool foundNonspace = false;
     size_t lastNonSpace = 0;
-    for (size_t i = 0; i < cchLine; i++)
+
+    for (const auto& cluster : clusters)
     {
-        if (_bufferLine.at(i) != L'\x20')
+        const std::wstring_view& src = cluster.GetText();
+        auto dest = _bufferLine.begin() + totalLength;
+        const auto canSkipCopy = til::at(src, 0) == *dest && src.size() == 1;
+        if (!canSkipCopy)
         {
-            lastNonSpace = i;
-            foundNonspace = true;
+            src.copy(dest, src.size());
         }
+        totalLength += src.size();
+
+        for (size_t j = 0; j < src.size(); j++)
+        {
+            if (*(dest + j) != L'\x20')
+            {
+                lastNonSpace = iNonSpace;
+                foundNonspace = true;
+            }
+            iNonSpace++;
+        }
+
+        totalWidth += cluster.GetColumns();
     }
+
+    const size_t cchLine = totalLength;
+
     // Examples:
     // - "  ":
     //      cch = 2, lastNonSpace = 0, foundNonSpace = false
