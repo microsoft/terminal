@@ -75,26 +75,28 @@ namespace Microsoft::Console::Render
         [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, float fontScale, IBoxDrawingEffect** effect) noexcept;
 
     private:
+        enum class MapKey : uint32_t
+        {
+        };
+
+        static MapKey _ToMapKey(DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STYLE style, DWRITE_FONT_STRETCH stretch) noexcept;
+
         void _BuildFontRenderData(const FontInfoDesired& desired, FontInfo& actual, const int dpi);
         Microsoft::WRL::ComPtr<IDWriteTextFormat> _BuildTextFormat(const DxFontInfo fontInfo, const std::wstring_view localeName);
 
-        ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
-
-        ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
-
-        std::unordered_map<DxFontInfo, ::Microsoft::WRL::ComPtr<IDWriteTextFormat>> _textFormatMap;
-        std::unordered_map<DxFontInfo, ::Microsoft::WRL::ComPtr<IDWriteFontFace1>> _fontFaceMap;
+        std::unordered_map<MapKey, ::Microsoft::WRL::ComPtr<IDWriteTextFormat>> _textFormatMap;
+        std::unordered_map<MapKey, ::Microsoft::WRL::ComPtr<IDWriteFontFace1>> _fontFaceMap;
 
         ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
-
         ::Microsoft::WRL::ComPtr<IDWriteFontFallback> _systemFontFallback;
-        mutable ::Microsoft::WRL::ComPtr<IDWriteFontCollection1> _nearbyCollection;
+        ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
+        ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
+
         std::wstring _userLocaleName;
         DxFontInfo _defaultFontInfo;
-
-        float _fontSize;
         til::size _glyphCell;
         DWRITE_LINE_SPACING _lineSpacing;
         LineMetrics _lineMetrics;
+        float _fontSize;
     };
 }
