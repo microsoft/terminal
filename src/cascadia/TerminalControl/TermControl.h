@@ -149,9 +149,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::com_ptr<SearchBoxControl> _searchBox;
 
         IControlSettings _settings;
-        std::atomic<bool> _closing;
-        bool _focused;
-        bool _initializedTerminal;
+        bool _closing{ false };
+        bool _focused{ false };
+        bool _initializedTerminal{ false };
 
         std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
         std::shared_ptr<ThrottledFuncTrailing<>> _updatePatternLocations;
@@ -182,6 +182,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         event_token _coreOutputEventToken;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
+
+        inline bool _IsClosing() const noexcept
+        {
+            // _closing isn't atomic and may only be accessed from the main thread.
+            assert(Dispatcher().HasThreadAccess());
+            return _closing;
+        }
 
         void _UpdateSettingsFromUIThread(IControlSettings newSettings);
         void _UpdateAppearanceFromUIThread(IControlAppearance newAppearance);
