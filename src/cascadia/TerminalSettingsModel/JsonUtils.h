@@ -237,7 +237,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
             for (const auto& element : json.getMemberNames())
             {
-                GetValueForKey(json, element, val[til::u8u16(std::string_view{ element.c_str() })]);
+                GetValueForKey(json, element, val[til::u8u16(element)]);
             }
 
             return val;
