@@ -442,7 +442,8 @@ try
         RETURN_HR_IF(E_INVALIDARG, val.vt != VT_BSTR);
 
         // Technically, we'll truncate early if there's an embedded null in the BSTR.
-        // But we're probably fine in this curcumstance.
+        // But we're probably fine in this circumstance.
+
         const std::wstring queryFontName{ val.bstrVal };
         if (queryFontName == _pData->GetFontInfo().GetFaceName())
         {
