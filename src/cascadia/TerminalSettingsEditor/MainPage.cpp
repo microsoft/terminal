@@ -8,6 +8,7 @@
 #include "Interaction.h"
 #include "Rendering.h"
 #include "Actions.h"
+#include "ReadOnlyActions.h"
 #include "Profiles.h"
 #include "GlobalAppearance.h"
 #include "ColorSchemes.h"
@@ -293,7 +294,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == actionsTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsPageNavigationState>(_settingsClone));
+            if constexpr (Feature_EditableActionsPage::IsEnabled())
+            {
+                contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsPageNavigationState>(_settingsClone));
+            }
+            else
+            {
+                auto actionsState{ winrt::make<ReadOnlyActionsPageNavigationState>(_settingsClone) };
+                actionsState.OpenJson([weakThis = get_weak()](auto&&, auto&& arg) {
+                    if (auto self{ weakThis.get() })
+                    {
+                        self->_OpenJsonHandlers(nullptr, arg);
+                    }
+                });
+                contentFrame().Navigate(xaml_typename<Editor::ReadOnlyActions>(), actionsState);
+            }
         }
         else if (clickedItemTag == colorSchemesTag)
         {
