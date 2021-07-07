@@ -1617,6 +1617,8 @@ class UiaTextRangeTests
             THROW_IF_FAILED(result->Compare(resultBackwards.Get(), &isEqual));
             VERIFY_IS_TRUE(isEqual);
         }
+    }
+
     TEST_METHOD(BlockRange)
     {
         // This test replicates GH#7960.

@@ -10,7 +10,7 @@
 using namespace Microsoft::Console::Types;
 
 // Foreground/Background text color doesn't care about the alpha.
-static long _RemoveAlpha(COLORREF color)
+static constexpr long _RemoveAlpha(COLORREF color) noexcept
 {
     return color & 0x00ffffff;
 }
@@ -493,13 +493,32 @@ try
     //       We'll do some post-processing to fix this on the way out.
     std::optional<COORD> resultFirstAnchor;
     std::optional<COORD> resultSecondAnchor;
+    const auto attemptUpdateAnchors = [=, &resultFirstAnchor, &resultSecondAnchor](const TextBufferCellIterator iter) {
+        const auto attrFound{ _verifyAttr(attributeId, val, iter->TextAttr()).value() };
+        if (attrFound)
+        {
+            // populate the first anchor if it's not populated.
+            // otherwise, populate the second anchor.
+            if (!resultFirstAnchor.has_value())
+            {
+                resultFirstAnchor = iter.Pos();
+                resultSecondAnchor = iter.Pos();
+            }
+            else
+            {
+                resultSecondAnchor = iter.Pos();
+            }
+        }
+        return attrFound;
+    };
 
     // Start/End for the direction to perform the search in
     // We need searchEnd to be exclusive. This allows the for-loop below to
     // iterate up until the exclusive searchEnd, and not attempt to read the
     // data at that position.
     const auto searchStart{ searchBackwards ? inclusiveEnd : _start };
-    auto searchEndExclusive{ searchBackwards ? _start : inclusiveEnd };
+    const auto searchEndInclusive{ searchBackwards ? _start : inclusiveEnd };
+    auto searchEndExclusive{ searchEndInclusive };
     if (searchBackwards)
     {
         bufferSize.DecrementInBounds(searchEndExclusive, true);
@@ -524,21 +543,7 @@ try
     const auto iterStep{ searchBackwards ? -1 : 1 };
     for (; iter && iter.Pos() != searchEndExclusive; iter += iterStep)
     {
-        if (_verifyAttr(attributeId, val, iter->TextAttr()).value())
-        {
-            // populate the first anchor if it's not populated.
-            // otherwise, populate the second anchor.
-            if (!resultFirstAnchor.has_value())
-            {
-                resultFirstAnchor = iter.Pos();
-                resultSecondAnchor = iter.Pos();
-            }
-            else
-            {
-                resultSecondAnchor = iter.Pos();
-            }
-        }
-        else if (resultFirstAnchor.has_value() && resultSecondAnchor.has_value())
+        if (!attemptUpdateAnchors(iter) && resultFirstAnchor.has_value() && resultSecondAnchor.has_value())
         {
             // Exit the loop early if...
             // - the cell we're looking at doesn't have the attr we're looking for
@@ -548,6 +553,13 @@ try
             // TLDR: keep updating the second anchor and make the range wider until the attribute changes.
             break;
         }
+    }
+
+    // Corner case: we couldn't actually move the searchEnd to make it exclusive
+    // (i.e. DecrementInBounds on Origin doesn't move it)
+    if (searchEndInclusive == searchEndExclusive)
+    {
+        attemptUpdateAnchors(iter);
     }
 
     // If a result was found, populate ppRetVal with the UiaTextRange
