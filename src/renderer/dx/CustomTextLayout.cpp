@@ -1231,7 +1231,7 @@ CATCH_RETURN();
 // - fontStretch: the old DWRITE_FONT_STRETCH enum to be converted into an axis value
 // Return value:
 // - The float value corresponding to the passed in fontStretch
-float CustomTextLayout::_FontStretchToWidthAxisValue(const DWRITE_FONT_STRETCH fontStretch)
+float CustomTextLayout::_FontStretchToWidthAxisValue(const DWRITE_FONT_STRETCH fontStretch) noexcept
 {
     switch (fontStretch)
     {
@@ -1265,7 +1265,7 @@ float CustomTextLayout::_FontStretchToWidthAxisValue(const DWRITE_FONT_STRETCH f
 // - fontStyle: the old DWRITE_FONT_STYLE enum to be converted into an axis value
 // Return value:
 // - The float value corresponding to the passed in fontStyle
-float CustomTextLayout::_FontStyleToSlantFixedAxisValue(const DWRITE_FONT_STYLE fontStyle)
+float CustomTextLayout::_FontStyleToSlantFixedAxisValue(const DWRITE_FONT_STYLE fontStyle) noexcept
 {
     // Both DWRITE_FONT_STYLE_OBLIQUE and DWRITE_FONT_STYLE_ITALIC default to having slant.
     // Though an italic font technically need not have slant (there exist upright ones), the
@@ -1283,7 +1283,7 @@ float CustomTextLayout::_FontStyleToSlantFixedAxisValue(const DWRITE_FONT_STYLE 
 // - fontSize: the old float value to be converted into an axis value
 // Return value:
 // - The float value corresponding to the passed in fontSize
-float CustomTextLayout::_DIPsToPoints(const float fontSize)
+float CustomTextLayout::_DIPsToPoints(const float fontSize) noexcept
 {
     return fontSize * (72.0f / 96.0f);
 }
@@ -1440,6 +1440,10 @@ std::vector<DWRITE_FONT_AXIS_VALUE> CustomTextLayout::_GetAxisVector(const DWRIT
         }
         else
         {
+            // The chunk of code below is very similar to the one above, unfortunately this needs
+            // to stay for Win7 compatibility reasons. It is also not possible to combine the two
+            // because they call different versions of MapCharacters
+
             // Walk through and analyze the entire string
             while (textLength > 0)
             {

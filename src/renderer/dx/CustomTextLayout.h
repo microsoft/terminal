@@ -125,9 +125,9 @@ namespace Microsoft::Console::Render
         void _SplitCurrentRun(const UINT32 splitPosition);
         void _OrderRuns();
 
-        float _FontStretchToWidthAxisValue(const DWRITE_FONT_STRETCH fontStretch);
-        float _FontStyleToSlantFixedAxisValue(const DWRITE_FONT_STYLE fontStyle);
-        float _DIPsToPoints(const float fontSize);
+        float _FontStretchToWidthAxisValue(const DWRITE_FONT_STRETCH fontStretch) noexcept;
+        float _FontStyleToSlantFixedAxisValue(const DWRITE_FONT_STYLE fontStyle) noexcept;
+        float _DIPsToPoints(const float fontSize) noexcept;
         std::vector<DWRITE_FONT_AXIS_VALUE> _GetAxisVector(const DWRITE_FONT_WEIGHT fontWeight,
                                                            const DWRITE_FONT_STRETCH fontStretch,
                                                            const DWRITE_FONT_STYLE fontStyle,
