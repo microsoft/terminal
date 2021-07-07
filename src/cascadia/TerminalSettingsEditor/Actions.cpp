@@ -87,21 +87,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void KeyBindingViewModel::AttemptAcceptChanges(hstring newKeyChordText)
     {
-        // NewlyAdded: introduce a new key binding
-        // Otherwise:  include the old and new key binding data
-        auto args = _IsNewlyAdded ? make_self<ModifyKeyBindingEventArgs>(_Keys, unbox_value<hstring>(_ProposedAction)) :
-                                    make_self<ModifyKeyBindingEventArgs>(_Keys, _Keys, _CurrentAction, unbox_value<hstring>(_ProposedAction));
-
-        // Key Chord Text
         try
         {
-            // Attempt to convert the provided key chord text
-            const auto newKeyChord{ KeyChordSerialization::FromString(newKeyChordText) };
-            args->NewKeys(newKeyChord);
+            // empty string --> don't accept changes
+            if (newKeyChordText.empty())
+            {
+                return;
+            }
+
+            // ModifyKeyBindingEventArgs
+            const auto args{ make_self<ModifyKeyBindingEventArgs>(_Keys, // OldKeys
+                                                                  KeyChordSerialization::FromString(newKeyChordText), // NewKeys: Attempt to convert the provided key chord text
+                                                                  _IsNewlyAdded ? hstring{} : _CurrentAction, // OldAction
+                                                                  unbox_value<hstring>(_ProposedAction)) }; //
+            _ModifyKeyBindingRequestedHandlers(*this, *args);
         }
         catch (hresult_invalid_argument)
         {
-            // Converting the text into a key chord failed
+            // Converting the text into a key chord failed.
+            // Don't accept the changes.
             // TODO GH #6900:
             //  This is tricky. I still haven't found a way to reference the
             //  key chord text box. It's hidden behind the data template.
@@ -110,8 +114,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             //  Alternatively, we want a full key chord editor/listener.
             //  If we implement that, we won't need this validation or error message.
         }
-
-        _ModifyKeyBindingRequestedHandlers(*this, *args);
     }
 
     void KeyBindingViewModel::CancelChanges()
@@ -301,7 +303,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto applyChangesToSettingsModel = [=]() {
             // If the key chord was changed,
             // update the settings model and view model appropriately
-            if (!args.OldKeys() || args.OldKeys().Modifiers() != args.NewKeys().Modifiers() || args.OldKeys().Vkey() != args.NewKeys().Vkey())
+            // NOTE: we still need to update the view model if we're working with a newly added action
+            if (isNewAction || args.OldKeys().Modifiers() != args.NewKeys().Modifiers() || args.OldKeys().Vkey() != args.NewKeys().Vkey())
             {
                 if (!isNewAction)
                 {

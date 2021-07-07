@@ -23,12 +23,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ModifyKeyBindingEventArgs : ModifyKeyBindingEventArgsT<ModifyKeyBindingEventArgs>
     {
     public:
-        // used for new key bindings
-        ModifyKeyBindingEventArgs(const Control::KeyChord& keys, const hstring actionName) :
-            _NewKeys{ keys },
-            _NewActionName{ std::move(actionName) } {}
-
-        // used for modifying existing key bindings
         ModifyKeyBindingEventArgs(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys, const hstring oldActionName, const hstring newActionName) :
             _OldKeys{ oldKeys },
             _NewKeys{ newKeys },
