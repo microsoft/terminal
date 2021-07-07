@@ -118,7 +118,6 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
                                                                                                   DWRITE_FONT_STYLE style,
                                                                                                   DWRITE_FONT_STRETCH stretch)
 {
-
     const auto textFormatIt = _textFormatMap.find(_ToMapKey(weight, style, stretch));
     if (textFormatIt == _textFormatMap.end())
     {

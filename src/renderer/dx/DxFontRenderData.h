@@ -78,7 +78,8 @@ namespace Microsoft::Console::Render
         using FontAttributeMapKey = uint32_t;
 
         // We use this to identify font variants with different attributes.
-        static FontAttributeMapKey _ToMapKey(DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STYLE style, DWRITE_FONT_STRETCH stretch) noexcept {
+        static FontAttributeMapKey _ToMapKey(DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STYLE style, DWRITE_FONT_STRETCH stretch) noexcept
+        {
             return static_cast<FontAttributeMapKey>((weight << 16) | (style << 8) | stretch);
         };
 
