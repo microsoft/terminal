@@ -125,14 +125,17 @@ namespace Microsoft::Console::Render
         void _SplitCurrentRun(const UINT32 splitPosition);
         void _OrderRuns();
 
-        std::vector<DWRITE_FONT_AXIS_VALUE> GetAxisVector(DWRITE_FONT_WEIGHT fontWeight,
-                                                          DWRITE_FONT_STRETCH fontStretch,
-                                                          DWRITE_FONT_STYLE fontStyle,
-                                                          float fontSize,
-                                                          ::Microsoft::WRL::ComPtr<IDWriteTextFormat3>& format);
+        float _FontStretchToWidthAxisValue(const DWRITE_FONT_STRETCH fontStretch);
+        float _FontStyleToSlantFixedAxisValue(const DWRITE_FONT_STYLE fontStyle);
+        float _DIPsToPoints(const float fontSize);
+        std::vector<DWRITE_FONT_AXIS_VALUE> _GetAxisVector(const DWRITE_FONT_WEIGHT fontWeight,
+                                                           const DWRITE_FONT_STRETCH fontStretch,
+                                                           const DWRITE_FONT_STYLE fontStyle,
+                                                           const float fontSize,
+                                                           const ::Microsoft::WRL::ComPtr<IDWriteTextFormat3>& format);
+
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _AnalyzeFontFallback(IDWriteTextAnalysisSource* const source, UINT32 textPosition, UINT32 textLength);
-        [[nodiscard]] HRESULT STDMETHODCALLTYPE _SetMappedFont(UINT32 textPosition, UINT32 textLength, IDWriteFont* const font, FLOAT const scale);
-        [[nodiscard]] HRESULT STDMETHODCALLTYPE _SetMappedFontFace(UINT32 textPosition, UINT32 textLength, ::Microsoft::WRL::ComPtr<IDWriteFontFace5> const fontFace, FLOAT const scale);
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE _SetMappedFontFace(UINT32 textPosition, UINT32 textLength, ::Microsoft::WRL::ComPtr<IDWriteFontFace> const fontFace, FLOAT const scale);
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _AnalyzeBoxDrawing(gsl::not_null<IDWriteTextAnalysisSource*> const source, UINT32 textPosition, UINT32 textLength);
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _SetBoxEffect(UINT32 textPosition, UINT32 textLength);

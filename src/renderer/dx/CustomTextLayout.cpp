@@ -1225,82 +1225,143 @@ CATCH_RETURN();
 
 #pragma region internal methods for mimicking text analyzer pattern but for font fallback
 // Method Description:
+// - Converts a DWRITE_FONT_STRETCH enum into the corresponding float value to
+//   create a DWRITE_FONT_AXIS_VALUE with
+// Arguments:
+// - fontStretch: the old DWRITE_FONT_STRETCH enum to be converted into an axis value
+// Return value:
+// - The float value corresponding to the passed in fontStretch
+float CustomTextLayout::_FontStretchToWidthAxisValue(const DWRITE_FONT_STRETCH fontStretch)
+{
+    switch (fontStretch)
+    {
+    case DWRITE_FONT_STRETCH_ULTRA_CONDENSED:
+        return 50.0f;
+    case DWRITE_FONT_STRETCH_EXTRA_CONDENSED:
+        return 62.5f;
+    case DWRITE_FONT_STRETCH_CONDENSED:
+        return 75.0f;
+    case DWRITE_FONT_STRETCH_SEMI_CONDENSED:
+        return 87.5f;
+    case DWRITE_FONT_STRETCH_MEDIUM:
+        return 100.0f;
+    case DWRITE_FONT_STRETCH_SEMI_EXPANDED:
+        return 112.5f;
+    case DWRITE_FONT_STRETCH_EXPANDED:
+        return 125.0f;
+    case DWRITE_FONT_STRETCH_EXTRA_EXPANDED:
+        return 150.0f;
+    case DWRITE_FONT_STRETCH_ULTRA_EXPANDED:
+        return 200.0f;
+    default:
+        return 100.0f;
+    }
+}
+
+// Method Description:
+// - Converts a DWRITE_FONT_STYLE enum into the corresponding float value to
+//   create a DWRITE_FONT_AXIS_VALUE with
+// Arguments:
+// - fontStyle: the old DWRITE_FONT_STYLE enum to be converted into an axis value
+// Return value:
+// - The float value corresponding to the passed in fontStyle
+float CustomTextLayout::_FontStyleToSlantFixedAxisValue(const DWRITE_FONT_STYLE fontStyle)
+{
+    // Both DWRITE_FONT_STYLE_OBLIQUE and DWRITE_FONT_STYLE_ITALIC default to having slant.
+    // Though an italic font technically need not have slant (there exist upright ones), the
+    // vast majority of italic fonts are also slanted. Ideally the slant comes from the
+    // 'slnt' value in the STAT or fvar table, or the post table italic angle.
+
+    return (fontStyle == DWRITE_FONT_STYLE_ITALIC)  ? -12.0f :
+           (fontStyle == DWRITE_FONT_STYLE_OBLIQUE) ? -20.0f :
+          /*fontStyle == DWRITE_FONT_STYLE_NORMAL*/ 0.0f;
+}
+
+// Method Description:
+// - Converts a float fontSize into the corresponding float value to create a DWRITE_FONT_AXIS_VALUE with
+// Arguments:
+// - fontSize: the old float value to be converted into an axis value
+// Return value:
+// - The float value corresponding to the passed in fontSize
+float CustomTextLayout::_DIPsToPoints(const float fontSize)
+{
+    return fontSize * (72.0f / 96.0f);
+}
+
+// Method Description:
 // - Fill any missing axis values that might be known but were unspecified, such as omitting
 //   the 'wght' axis tag but specifying the old DWRITE_FONT_WEIGHT enum
 // Arguments:
-// - todo: fill this out
-std::vector<DWRITE_FONT_AXIS_VALUE> CustomTextLayout::GetAxisVector(DWRITE_FONT_WEIGHT /*fontWeight*/,
-                                                                    DWRITE_FONT_STRETCH /*fontStretch*/,
-                                                                    DWRITE_FONT_STYLE /*fontStyle*/,
-                                                                    float /*fontSize*/,
-                                                                    ::Microsoft::WRL::ComPtr<IDWriteTextFormat3>& format)
+// - fontWeight: the old DWRITE_FONT_WEIGHT enum to be converted into an axis value
+// - fontStretch: the old DWRITE_FONT_STRETCH enum to be converted into an axis value
+// - fontStyle: the old DWRITE_FONT_STYLE enum to be converted into an axis value
+// - fontSize: the number to convert into an axis value
+// - format: the IDWriteTextFormat3 to get the defined axes from
+// Return value:
+// - The fully formed axes vector
+std::vector<DWRITE_FONT_AXIS_VALUE> CustomTextLayout::_GetAxisVector(const DWRITE_FONT_WEIGHT fontWeight,
+                                                                     const DWRITE_FONT_STRETCH fontStretch,
+                                                                     const DWRITE_FONT_STYLE fontStyle,
+                                                                     const float fontSize,
+                                                                     const ::Microsoft::WRL::ComPtr<IDWriteTextFormat3>& format)
 {
-    // todo: complete this function
-    //enum AxisTagPresence
-    //{
-    //    AxisTagPresenceNone = 0,
-    //    AxisTagPresenceWeight = 1,
-    //    AxisTagPresenceWidth = 2,
-    //    AxisTagPresenceItalic = 4,
-    //    AxisTagPresenceSlant = 8,
-    //    AxisTagPresenceOpticalSize = 16,
-    //};
+    enum AxisTagPresence
+    {
+        AxisTagPresenceNone = 0,
+        AxisTagPresenceWeight = 1,
+        AxisTagPresenceWidth = 2,
+        AxisTagPresenceItalic = 4,
+        AxisTagPresenceSlant = 8,
+        AxisTagPresenceOpticalSize = 16,
+    };
     const auto axesCount = format->GetFontAxisValueCount();
     std::vector<DWRITE_FONT_AXIS_VALUE> axesVector;
     axesVector.resize(axesCount);
     format->GetFontAxisValues(axesVector.data(), axesCount);
 
-    //uint32_t axisTagPresence = AxisTagPresenceNone;
-    //for (auto& fontAxisValue : axesVector)
-    //{
-    //    switch (fontAxisValue.axisTag)
-    //    {
-    //    case DWRITE_FONT_AXIS_TAG_WEIGHT:
-    //        axisTagPresence |= AxisTagPresenceWeight;
-    //        break;
-    //    case DWRITE_FONT_AXIS_TAG_WIDTH:
-    //        axisTagPresence |= AxisTagPresenceWidth;
-    //        break;
-    //    case DWRITE_FONT_AXIS_TAG_ITALIC:
-    //        axisTagPresence |= AxisTagPresenceItalic;
-    //        break;
-    //    case DWRITE_FONT_AXIS_TAG_SLANT:
-    //        axisTagPresence |= AxisTagPresenceSlant;
-    //        break;
-    //    case DWRITE_FONT_AXIS_TAG_OPTICAL_SIZE:
-    //        axisTagPresence |= AxisTagPresenceOpticalSize;
-    //        break;
-    //    }
-    //}
+    uint32_t axisTagPresence = AxisTagPresenceNone;
+    for (auto& fontAxisValue : axesVector)
+    {
+        switch (fontAxisValue.axisTag)
+        {
+        case DWRITE_FONT_AXIS_TAG_WEIGHT:
+            axisTagPresence |= AxisTagPresenceWeight;
+            break;
+        case DWRITE_FONT_AXIS_TAG_WIDTH:
+            axisTagPresence |= AxisTagPresenceWidth;
+            break;
+        case DWRITE_FONT_AXIS_TAG_ITALIC:
+            axisTagPresence |= AxisTagPresenceItalic;
+            break;
+        case DWRITE_FONT_AXIS_TAG_SLANT:
+            axisTagPresence |= AxisTagPresenceSlant;
+            break;
+        case DWRITE_FONT_AXIS_TAG_OPTICAL_SIZE:
+            axisTagPresence |= AxisTagPresenceOpticalSize;
+            break;
+        }
+    }
 
-    //if ((axisTagPresence & AxisTagPresenceWeight) == 0)
-    //{
-    //    axesVector.push_back({ DWRITE_FONT_AXIS_TAG_WEIGHT, float(fontWeight) });
-    //}
-    //if ((axisTagPresence & AxisTagPresenceWidth) == 0)
-    //{
-    //    auto ayy1 = 1;
-    //    //auto value = FontStretchToWidthAxisValue(fontStretch);
-    //    axesVector.push_back({ DWRITE_FONT_AXIS_TAG_WIDTH, gsl::narrow<float>(ayy1) });
-    //}
-    //if ((axisTagPresence & AxisTagPresenceItalic) == 0)
-    //{
-    //    auto ayy2 = 1;
-    //    //auto value = FontStyleToItalicFixedAxisValue(fontStyle);
-    //    axesVector.push_back({ DWRITE_FONT_AXIS_TAG_ITALIC, gsl::narrow<float>(ayy2) });
-    //}
-    //if ((axisTagPresence & AxisTagPresenceSlant) == 0)
-    //{
-    //    auto ayy3 = 1;
-    //    //auto value = FontStyleToSlantFixedAxisValue(fontStyle);
-    //    axesVector.push_back({ DWRITE_FONT_AXIS_TAG_SLANT, gsl::narrow<float>(ayy3) });
-    //}
-    //if ((axisTagPresence & AxisTagPresenceOpticalSize) == 0)
-    //{
-    //    auto pointSize = 1;
-    //    //const auto pointSize = DIPsToPoints(fontSize);
-    //    axesVector.push_back({ DWRITE_FONT_AXIS_TAG_OPTICAL_SIZE, gsl::narrow<float>(pointSize) });
-    //}
+    if ((axisTagPresence & AxisTagPresenceWeight) == 0)
+    {
+        axesVector.push_back({ DWRITE_FONT_AXIS_TAG_WEIGHT, float(fontWeight) });
+    }
+    if ((axisTagPresence & AxisTagPresenceWidth) == 0)
+    {
+        axesVector.push_back({ DWRITE_FONT_AXIS_TAG_WIDTH, _FontStretchToWidthAxisValue(fontStretch) });
+    }
+    if ((axisTagPresence & AxisTagPresenceItalic) == 0)
+    {
+        axesVector.push_back({ DWRITE_FONT_AXIS_TAG_ITALIC, (fontStyle == DWRITE_FONT_STYLE_ITALIC ? 1.0f : 0.0f) });
+    }
+    if ((axisTagPresence & AxisTagPresenceSlant) == 0)
+    {
+        axesVector.push_back({ DWRITE_FONT_AXIS_TAG_SLANT, _FontStyleToSlantFixedAxisValue(fontStyle) });
+    }
+    if ((axisTagPresence & AxisTagPresenceOpticalSize) == 0)
+    {
+        axesVector.push_back({ DWRITE_FONT_AXIS_TAG_OPTICAL_SIZE, _DIPsToPoints(fontSize) });
+    }
 
     return axesVector;
 }
@@ -1352,7 +1413,7 @@ std::vector<DWRITE_FONT_AXIS_VALUE> CustomTextLayout::GetAxisVector(DWRITE_FONT_
         if (!FAILED(_formatInUse->QueryInterface(IID_PPV_ARGS(&format3))) && !FAILED(fallback->QueryInterface(IID_PPV_ARGS(&fallback1))))
         {
             // If the OS supports IDWriteFontFallback1 and IDWriteTextFormat3, we can apply axes of variation to the font
-            const auto axesVector = GetAxisVector(weight, stretch, style, format1->GetFontSize(), format3);
+            const auto axesVector = _GetAxisVector(weight, stretch, style, format1->GetFontSize(), format3);
             // Walk through and analyze the entire string
             while (textLength > 0)
             {
@@ -1398,7 +1459,9 @@ std::vector<DWRITE_FONT_AXIS_VALUE> CustomTextLayout::GetAxisVector(DWRITE_FONT_
                                         &mappedFont,
                                         &scale);
 
-                RETURN_IF_FAILED(_SetMappedFont(textPosition, mappedLength, mappedFont.Get(), scale));
+                ::Microsoft::WRL::ComPtr<IDWriteFontFace> face;
+                RETURN_IF_FAILED(mappedFont.Get()->CreateFontFace(&face));
+                RETURN_IF_FAILED(_SetMappedFontFace(textPosition, mappedLength, face, scale));
 
                 textPosition += mappedLength;
                 textLength -= mappedLength;
@@ -1416,50 +1479,14 @@ std::vector<DWRITE_FONT_AXIS_VALUE> CustomTextLayout::GetAxisVector(DWRITE_FONT_
 // Arguments:
 // - textPosition - the index to start the substring operation
 // - textLength - the length of the substring operation
-// - font - the font that applies to the substring range
+// - fontFace - the fontFace that applies to the substring range
 // - scale - the scale of the font to apply
 // Return Value:
 // - S_OK or appropriate STL/GSL failure code.
-[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFont(UINT32 textPosition,
-                                                                         UINT32 textLength,
-                                                                         _In_ IDWriteFont* const font,
-                                                                         FLOAT const scale)
-{
-    try
-    {
-        _SetCurrentRun(textPosition);
-        _SplitCurrentRun(textPosition);
-        while (textLength > 0)
-        {
-            auto& run = _FetchNextRun(textLength);
-
-            if (font != nullptr)
-            {
-                // Get font face from font metadata
-                ::Microsoft::WRL::ComPtr<IDWriteFontFace> face;
-                RETURN_IF_FAILED(font->CreateFontFace(&face));
-
-                // QI for Face5 interface from base face interface, store into run
-                RETURN_IF_FAILED(face.As(&run.fontFace));
-            }
-            else
-            {
-                run.fontFace = _fontInUse;
-            }
-
-            // Store the font scale as well.
-            run.fontScale = scale;
-        }
-    }
-    CATCH_RETURN();
-
-    return S_OK;
-}
-
 [[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFontFace(UINT32 textPosition,
-                                                                             UINT32 textLength,
-                                                                             ::Microsoft::WRL::ComPtr<IDWriteFontFace5> const fontFace,
-                                                                             FLOAT const scale)
+                                                                              UINT32 textLength,
+                                                                              ::Microsoft::WRL::ComPtr<IDWriteFontFace> const fontFace,
+                                                                              FLOAT const scale)
 {
     try
     {
