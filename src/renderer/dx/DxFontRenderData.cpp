@@ -442,11 +442,6 @@ try
 }
 CATCH_RETURN()
 
-DxFontRenderData::MapKey DxFontRenderData::_ToMapKey(DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STYLE style, DWRITE_FONT_STRETCH stretch) noexcept
-{
-    return static_cast<MapKey>((weight << 16) | (style << 8) | stretch);
-}
-
 // Routine Description:
 // - Build the needed data for rendering according to the font used
 // Arguments:
