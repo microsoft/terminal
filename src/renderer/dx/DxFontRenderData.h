@@ -80,7 +80,7 @@ namespace Microsoft::Console::Render
         // We use this to identify font variants with different attributes.
         static FontAttributeMapKey _ToMapKey(DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STYLE style, DWRITE_FONT_STRETCH stretch) noexcept
         {
-            return static_cast<FontAttributeMapKey>((weight << 16) | (style << 8) | stretch);
+            return (weight << 16) | (style << 8) | stretch;
         };
 
         void _BuildFontRenderData(const FontInfoDesired& desired, FontInfo& actual, const int dpi);
