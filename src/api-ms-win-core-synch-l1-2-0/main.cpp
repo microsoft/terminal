@@ -29,14 +29,14 @@ namespace
     {
     public:
         explicit SRWLockGuard(SRWLOCK & lock) noexcept :
-            lock(&lock)
+            _lock(&lock)
         {
-            AcquireSRWLockExclusive(&lock);
+            AcquireSRWLockExclusive(_lock);
         }
 
         ~SRWLockGuard()
         {
-            ReleaseSRWLockExclusive(lock);
+            ReleaseSRWLockExclusive(_lock);
         }
 
         SRWLockGuard(const SRWLockGuard&) = delete;
@@ -46,7 +46,7 @@ namespace
         SRWLockGuard& operator=(SRWLockGuard&&) = delete;
 
     private:
-        SRWLOCK* lock;
+        SRWLOCK* _lock;
     };
 
     struct WaitContext
@@ -139,11 +139,18 @@ extern "C" BOOL WINAPI WaitOnAddress(_In_reads_bytes_(AddressSize) volatile VOID
 
         if (!SleepConditionVariableSRW(&context.cv, &entry.lock, dwMilliseconds, 0))
         {
+#ifndef NDEBUG
+            if (GetLastError() != ERROR_TIMEOUT)
+            {
+                abort();
+            }
+#endif
             return FALSE;
         }
 
         if (dwMilliseconds != INFINITE)
         {
+            // spurious wake to recheck the clock
             return TRUE;
         }
     }
@@ -160,6 +167,7 @@ extern "C" VOID WINAPI WakeByAddressSingle(_In_ PVOID Address)
         {
             // Can't move wake outside SRWLOCKed section: SRWLOCK also protects the context itself
             WakeAllConditionVariable(&context->cv);
+            // This break; is the difference between WakeByAddressSingle and WakeByAddressAll
             break;
         }
     }
@@ -168,7 +176,7 @@ extern "C" VOID WINAPI WakeByAddressSingle(_In_ PVOID Address)
 extern "C" VOID WINAPI WakeByAddressAll(_In_ PVOID Address)
 {
     auto& entry = GetWaitTableEntry(Address);
-    SRWLockGuard _Guard(entry.lock);
+    SRWLockGuard guard(entry.lock);
 
     for (auto context = entry.head.next; context != &entry.head; context = context->next)
     {
