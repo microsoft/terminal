@@ -1272,9 +1272,9 @@ float CustomTextLayout::_FontStyleToSlantFixedAxisValue(const DWRITE_FONT_STYLE 
     // vast majority of italic fonts are also slanted. Ideally the slant comes from the
     // 'slnt' value in the STAT or fvar table, or the post table italic angle.
 
-    return (fontStyle == DWRITE_FONT_STYLE_ITALIC)  ? -12.0f :
-           (fontStyle == DWRITE_FONT_STYLE_OBLIQUE) ? -20.0f :
-          /*fontStyle == DWRITE_FONT_STYLE_NORMAL*/ 0.0f;
+    return (fontStyle == DWRITE_FONT_STYLE_ITALIC) ? -12.0f :
+                                                     (fontStyle == DWRITE_FONT_STYLE_OBLIQUE) ? -20.0f :
+                                                                                                /*fontStyle == DWRITE_FONT_STYLE_NORMAL*/ 0.0f;
 }
 
 // Method Description:
@@ -1484,9 +1484,9 @@ std::vector<DWRITE_FONT_AXIS_VALUE> CustomTextLayout::_GetAxisVector(const DWRIT
 // Return Value:
 // - S_OK or appropriate STL/GSL failure code.
 [[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFontFace(UINT32 textPosition,
-                                                                              UINT32 textLength,
-                                                                              ::Microsoft::WRL::ComPtr<IDWriteFontFace> const fontFace,
-                                                                              FLOAT const scale)
+                                                                             UINT32 textLength,
+                                                                             ::Microsoft::WRL::ComPtr<IDWriteFontFace> const fontFace,
+                                                                             FLOAT const scale)
 {
     try
     {
