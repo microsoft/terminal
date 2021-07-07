@@ -21,7 +21,7 @@ In a similar vein, many fonts allow for setting variations on the font along cer
 
 ## Solution Design
 
-### **Font features**
+### Font features
 
 It is already possible to pass in a list of [font feature structs](https://docs.microsoft.com/en-us/windows/win32/api/dwrite/ns-dwrite-dwrite_font_feature) to DWrite for it to handle. A font feature struct contains only 2 things: 
 
@@ -34,7 +34,7 @@ Currently, we pass in to DWrite a null value for the list of features to apply t
 
 We will do this by allowing users to define a dictionary in their settings.json file, where the keys are the 4-character feature tags and the values are the parameter values. This dictionary will then get applied to our internal dictionary (which will contain the standard list of 11 features with their parameter values), meaning that any new key-value pairs will get added to our dictionary and any existing key-value pairs will get updated. Finally, this 'merged' dictionary will be what we use to construct the list of features to pass into DWrite.
 
-### **Axes of variation**
+### Axes of variation
 
 Specifying axes of variation is done in an extremely similar manner to the way font features are specified - a 4-character tag is used to specify which font axis is being modified and a numerical value is provided to specify the value the axis should be set to. For example, {'slnt', 20} specifies that the 'slant' axis should be set to 20.
 
@@ -44,7 +44,7 @@ There is also a standard list of axes of variation, and each axis has its own de
 
 Users will be able to add a new setting to their font objects (added in [#10433](https://github.com/microsoft/terminal/pull/10433)). The resultant font object may look something like this
 
-```
+```json
 "font": {
     "face": "Cascadia Code",
     "size": 12,
@@ -57,6 +57,10 @@ Users will be able to add a new setting to their font objects (added in [#10433]
     }
 }
 ```
+One thing to note: if a user has the old "weight" setting defined _as well as_ a "wght" axis defined, we will only use the "wght" axis value. We prioritize that value for a few reasons:
+
+1. It is the more recent addition to our settings model. Thus, it is likely that a user that has defined both values probably just forgot to remove the old value.
+2. It is the more precise value, it is a specific float value whereas the the old "weight" setting is an enum (that eventually gets mapped to a float value).
 
 ## Capabilities
 
@@ -78,11 +82,15 @@ Older versions of Windows may not have the DWrite updates that allow for definin
 
 ### Performance, Power, and Efficiency
 
-Should not affect power or efficiency. See the Potential Issues section for potential performance issues.
+Currently when rendering a run of text, if we detect that the given run is simple we will use a shortcut to obtain the glyphs needed, skipping over an expensive `GetGlyphs` call to DWrite. However, when the default feature list is changed in any way (either by adding a new feature or removing one of the defaults), there is no way for us to detect beforehand how the font glyphs would change.
+
+This means that as long as the user requests a change to the default font feature list, we will _always_ skip the shortcut and call the expensive `GetGlyphs` function for every run of text.
+
+This will naturally cause a performance cost that we will have to bear for this feature. However, it is worth noting that there are a fair number of glyphs that will cause a run of text to be deemed "not simple" (and thus cause us to call `GetGlyphs` anyway), for example when using Cascadia Code, any run of text that has the letters 'i', 'j', 'l', 'n', 'w' or 'x' is not considered simple (because those glyphs have localized variants).
 
 ## Potential Issues
 
-We will need to monitor any potential performance issues caused by this feature. Since the extra work being done is only during initialization, the performance issues will probably be negligible if at all, but it will still be wise to check.
+See performance issues above.
 
 ## Future considerations
 
