@@ -344,7 +344,12 @@ bool ConhostInternalGetSet::PrivateShowCursor(const bool show) noexcept
 bool ConhostInternalGetSet::PrivateAllowCursorBlinking(const bool fEnable)
 {
     DoSrvPrivateAllowCursorBlinking(_io.GetActiveOutputBuffer(), fEnable);
-    return true;
+
+    bool isPty;
+    DoSrvIsConsolePty(isPty);
+    // If we are connected to a pty, return that we could not handle this
+    // so that the VT sequence gets flushed to terminal
+    return !isPty;
 }
 
 // Routine Description:
