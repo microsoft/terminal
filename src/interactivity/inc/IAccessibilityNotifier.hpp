@@ -46,19 +46,4 @@ namespace Microsoft::Console::Interactivity
     };
 
     inline IAccessibilityNotifier::~IAccessibilityNotifier() {}
-
-    class NoOpAccessibilityNotifier final : public IAccessibilityNotifier
-    {
-    public:
-        NoOpAccessibilityNotifier() = default;
-        ~NoOpAccessibilityNotifier() = default;
-        void NotifyConsoleCaretEvent(_In_ RECT /*rectangle*/) override{};
-        void NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags /*flags*/, _In_ LONG /*position*/) override{};
-        void NotifyConsoleUpdateScrollEvent(_In_ LONG /*x*/, _In_ LONG /*y*/) override{};
-        void NotifyConsoleUpdateSimpleEvent(_In_ LONG /*start*/, _In_ LONG /*charAndAttribute*/) override{};
-        void NotifyConsoleUpdateRegionEvent(_In_ LONG /*startXY*/, _In_ LONG /*endXY*/) override{};
-        void NotifyConsoleLayoutEvent() override{};
-        void NotifyConsoleStartApplicationEvent(_In_ DWORD /*processId*/) override{};
-        void NotifyConsoleEndApplicationEvent(_In_ DWORD /*processId*/) override{};
-    };
 }

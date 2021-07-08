@@ -76,14 +76,13 @@ try
         }
     }
 
-    if (args->InConptyMode())
-    {
-        // If we're in ConPTY mode... set the no-op accessibility notifier
-        // to prevent sending expensive legacy MSAA events when we won't even be
-        // responsible for the terminal user interface.
-        std::unique_ptr<IAccessibilityNotifier> noOpNotifier = std::make_unique<Microsoft::Console::Interactivity::NoOpAccessibilityNotifier>();
-        RETURN_IF_NTSTATUS_FAILED(ServiceLocator::SetAccessibilityNotifier(std::move(noOpNotifier)));
-    }
+    // Create the accessibility notifier early in the startup process.
+    // We pass along the PTY mode as it won't need to make a notifier then.
+    // The notifiers use expensive legacy MSAA events and the PTY isn't even responsible
+    // for the terminal user interface, so we should set ourselves up to skip all
+    // those notifications and the mathematical calculations required to send those events
+    // for performance reasons.
+    RETURN_IF_FAILED(ServiceLocator::CreateAccessibilityNotifier(args->InConptyMode()));
 
     // Removed allocation of scroll buffer here.
     return S_OK;
