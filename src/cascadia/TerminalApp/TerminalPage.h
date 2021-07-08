@@ -54,7 +54,7 @@ namespace winrt::TerminalApp::implementation
         // put it in our inheritance graph. https://github.com/microsoft/microsoft-ui-xaml/issues/3331
         STDMETHODIMP Initialize(HWND hwnd);
 
-        winrt::fire_and_forget SetSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings, bool needRefreshUI);
+        void SetSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings, bool needRefreshUI);
 
         void Create();
 
@@ -67,8 +67,6 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring ApplicationDisplayName();
         winrt::hstring ApplicationVersion();
 
-        winrt::hstring ThirdPartyNoticesLink();
-
         winrt::fire_and_forget CloseWindow();
 
         void ToggleFocusMode();
@@ -79,7 +77,7 @@ namespace winrt::TerminalApp::implementation
         bool AlwaysOnTop() const;
 
         void SetStartupActions(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
-        void SetInboundListener();
+        void SetInboundListener(bool isEmbedding);
         static std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> ConvertExecuteCommandlineToActions(const Microsoft::Terminal::Settings::Model::ExecuteCommandlineArgs& args);
 
         winrt::TerminalApp::IDialogPresenter DialogPresenter() const;
@@ -124,6 +122,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(IdentifyWindowsRequested, IInspectable, IInspectable);
         TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs);
         TYPED_EVENT(IsQuakeWindowChanged, IInspectable, IInspectable);
+        TYPED_EVENT(SummonWindowRequested, IInspectable, IInspectable);
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
@@ -174,6 +173,7 @@ namespace winrt::TerminalApp::implementation
 
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> _startupActions;
         bool _shouldStartInboundListener{ false };
+        bool _isEmbeddingInboundListener{ false };
 
         std::shared_ptr<Toast> _windowIdToast{ nullptr };
         std::shared_ptr<Toast> _windowRenameFailedToast{ nullptr };
@@ -194,7 +194,7 @@ namespace winrt::TerminalApp::implementation
 
         bool _displayingCloseDialog{ false };
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
-        void _FeedbackButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+        void _CommandPaletteButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _AboutButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _ThirdPartyNoticesOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
@@ -216,6 +216,7 @@ namespace winrt::TerminalApp::implementation
         void _DuplicateTab(const TerminalTab& tab);
 
         winrt::Windows::Foundation::IAsyncAction _HandleCloseTabRequested(winrt::TerminalApp::TabBase tab);
+        void _CloseTabAtIndex(uint32_t index);
         void _RemoveTab(const winrt::TerminalApp::TabBase& tab);
         winrt::fire_and_forget _RemoveTabs(const std::vector<winrt::TerminalApp::TabBase> tabs);
 
@@ -238,7 +239,6 @@ namespace winrt::TerminalApp::implementation
         TerminalApp::TabBase _GetTabByTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem) const noexcept;
 
         winrt::fire_and_forget _SetFocusedTab(const winrt::TerminalApp::TabBase tab);
-        void _CloseFocusedTab();
         winrt::fire_and_forget _CloseFocusedPane();
 
         winrt::fire_and_forget _RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page);
@@ -294,7 +294,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                                                                       const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
 
-        winrt::fire_and_forget _RefreshUIForSettingsReload();
+        void _RefreshUIForSettingsReload();
 
         void _SetNonClientAreaColors(const Windows::UI::Color& selectedTabColor);
         void _ClearNonClientAreaColors();

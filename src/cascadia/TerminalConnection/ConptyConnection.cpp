@@ -251,6 +251,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void ConptyConnection::Start()
     try
     {
+        _transitionToState(ConnectionState::Connecting);
+
         if (!_inPipe)
         {
             const COORD dimensions{ gsl::narrow_cast<SHORT>(_initialCols), gsl::narrow_cast<SHORT>(_initialRows) };

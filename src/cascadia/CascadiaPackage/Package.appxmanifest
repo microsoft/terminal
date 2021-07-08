@@ -99,7 +99,7 @@
         <com:Extension Category="windows.comInterface">
             <com:ComInterface>
                 <com:ProxyStub Id="3171DE52-6EFA-4AEF-8A9F-D02BD67E7A4F" DisplayName="OpenConsoleHandoffProxy" Path="OpenConsoleProxy.dll"/>
-                <com:Interface Id="2B607BC1-43EB-40C3-95AE-2856ADDB7F23" ProxyStubClsid="3171DE52-6EFA-4AEF-8A9F-D02BD67E7A4F"/>
+                <com:Interface Id="E686C757-9A35-4A1C-B3CE-0BCC8B5C69F4" ProxyStubClsid="3171DE52-6EFA-4AEF-8A9F-D02BD67E7A4F"/>
                 <com:Interface Id="59D55CCE-FC8A-48B4-ACE8-0A9286C6557F" ProxyStubClsid="3171DE52-6EFA-4AEF-8A9F-D02BD67E7A4F"/>
             </com:ComInterface>
         </com:Extension> -->
@@ -140,8 +140,10 @@
   <Extensions>
     <uap7:Extension Category="windows.sharedFonts">
       <uap7:SharedFonts>
-        <uap4:Font File="Cascadia.ttf" />
+        <uap4:Font File="CascadiaCode.ttf" />
+        <uap4:Font File="CascadiaCodeItalic.ttf" />
         <uap4:Font File="CascadiaMono.ttf" />
+        <uap4:Font File="CascadiaMonoItalic.ttf" />
       </uap7:SharedFonts>
     </uap7:Extension>
   </Extensions>

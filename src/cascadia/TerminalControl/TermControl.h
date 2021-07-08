@@ -13,7 +13,6 @@
 #include "../buffer/out/search.h"
 #include "cppwinrt_utils.h"
 #include "SearchBoxControl.h"
-#include "ThrottledFunc.h"
 
 #include "ControlInteractivity.h"
 
@@ -150,12 +149,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::com_ptr<SearchBoxControl> _searchBox;
 
         IControlSettings _settings;
-        std::atomic<bool> _closing;
-        bool _focused;
-        bool _initializedTerminal;
+        bool _closing{ false };
+        bool _focused{ false };
+        bool _initializedTerminal{ false };
 
-        std::shared_ptr<ThrottledFuncTrailing<winrt::Windows::UI::Core::CoreDispatcher>> _tsfTryRedrawCanvas;
-        std::shared_ptr<ThrottledFuncLeading<winrt::Windows::UI::Core::CoreDispatcher>> _playWarningBell;
+        std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
+        std::shared_ptr<ThrottledFuncLeading> _playWarningBell;
 
         struct ScrollBarUpdate
         {
@@ -165,7 +164,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             double newViewportSize;
         };
 
-        std::shared_ptr<ThrottledFuncTrailing<winrt::Windows::UI::Core::CoreDispatcher, ScrollBarUpdate>> _updateScrollBar;
+        std::shared_ptr<ThrottledFuncTrailing<ScrollBarUpdate>> _updateScrollBar;
 
         bool _isInternalScrollBarUpdate;
 
@@ -175,15 +174,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::UI::Xaml::DispatcherTimer _autoScrollTimer;
         std::optional<std::chrono::high_resolution_clock::time_point> _lastAutoScrollUpdateTime;
 
-        winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellLightAnimation;
+        winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellLightAnimation{ nullptr };
+        Windows::UI::Xaml::DispatcherTimer _bellLightTimer{ nullptr };
 
         std::optional<Windows::UI::Xaml::DispatcherTimer> _cursorTimer;
         std::optional<Windows::UI::Xaml::DispatcherTimer> _blinkTimer;
-        std::optional<Windows::UI::Xaml::DispatcherTimer> _bellLightTimer;
 
         event_token _coreOutputEventToken;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
+
+        inline bool _IsClosing() const noexcept
+        {
+            // _closing isn't atomic and may only be accessed from the main thread.
+            assert(Dispatcher().HasThreadAccess());
+            return _closing;
+        }
 
         void _UpdateSettingsFromUIThread(IControlSettings newSettings);
         void _UpdateAppearanceFromUIThread(IControlAppearance newAppearance);

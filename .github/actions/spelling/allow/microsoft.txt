@@ -7,6 +7,7 @@ appx
 appxbundle
 appxerror
 appxmanifest
+ATL
 backplating
 bitmaps
 BOMs
@@ -28,9 +29,11 @@ mfcribbon
 microsoft
 microsoftonline
 msixbundle
+MSVC
 muxc
 netcore
 osgvsowi
+PFILETIME
 pgc
 pgo
 pgosweep
@@ -38,10 +41,12 @@ powerrename
 powershell
 propkey
 pscustomobject
+QWORD
 robocopy
 SACLs
 Shobjidl
 Skype
+SRW
 sxs
 Sysinternals
 sysnative

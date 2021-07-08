@@ -13,7 +13,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         MainPage() = delete;
         MainPage(const Model::CascadiaSettings& settings);
 
-        fire_and_forget UpdateSettings(Model::CascadiaSettings settings);
+        void UpdateSettings(const Model::CascadiaSettings& settings);
 
         void OpenJsonKeyDown(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& args);
         void OpenJsonTapped(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& args);
@@ -43,8 +43,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _Navigate(hstring clickedItemTag);
         void _Navigate(const Editor::ProfileViewModel& profile);
 
-        ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
-        ProfilePageNavigationState _lastProfilesNavState{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Editor::ProfilePageNavigationState _lastProfilesNavState{ nullptr };
     };
 }
 

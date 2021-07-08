@@ -7,7 +7,9 @@
 #include "FindTargetWindowResult.g.h"
 #include "TerminalPage.h"
 #include "Jumplist.h"
-#include "../../cascadia/inc/cppwinrt_utils.h"
+
+#include <inc/cppwinrt_utils.h>
+#include <ThrottledFunc.h>
 
 #ifdef UNIT_TESTING
 // fwdecl unittest classes
@@ -111,31 +113,26 @@ namespace winrt::TerminalApp::implementation
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
-        HRESULT _settingsLoadedResult;
-        winrt::hstring _settingsLoadExceptionText{};
-
-        bool _loadedInitialSettings;
-
         wil::unique_folder_change_reader_nothrow _reader;
+        std::shared_ptr<ThrottledFuncTrailing<>> _reloadSettings;
+        til::throttled_func_trailing<> _reloadState;
+        winrt::hstring _settingsLoadExceptionText;
+        HRESULT _settingsLoadedResult = S_OK;
+        bool _loadedInitialSettings = false;
 
         std::shared_mutex _dialogLock;
 
-        std::atomic<bool> _settingsReloadQueued{ false };
-
         ::TerminalApp::AppCommandlineArgs _appArgs;
         ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
-        int _ParseArgs(winrt::array_view<const hstring>& args);
         static TerminalApp::FindTargetWindowResult _doFindTargetWindow(winrt::array_view<const hstring> args,
                                                                        const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior);
 
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);
         void _ShowLoadWarningsDialog();
         bool _IsKeyboardServiceEnabled();
-        void _ShowKeyboardServiceDisabledDialog();
 
-        fire_and_forget _LoadErrorsDialogRoutine();
-        fire_and_forget _ShowLoadWarningsDialogRoutine();
-        fire_and_forget _RefreshThemeRoutine();
+        void _ApplyLanguageSettingChange() noexcept;
+        void _RefreshThemeRoutine();
         fire_and_forget _ApplyStartupTaskStateChange();
 
         void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
@@ -165,6 +162,7 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(IdentifyWindowsRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, IdentifyWindowsRequested);
         FORWARDED_TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs, _root, RenameWindowRequested);
         FORWARDED_TYPED_EVENT(IsQuakeWindowChanged, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, IsQuakeWindowChanged);
+        FORWARDED_TYPED_EVENT(SummonWindowRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, SummonWindowRequested);
 
 #ifdef UNIT_TESTING
         friend class TerminalAppLocalTests::CommandlineTest;

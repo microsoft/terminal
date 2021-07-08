@@ -194,7 +194,7 @@ _CompileShader(
     std::string target,
     std::string entry = "main")
 {
-#ifdef __INSIDE_WINDOWS
+#if !TIL_FEATURE_DXENGINESHADERSUPPORT_ENABLED
     THROW_HR(E_UNEXPECTED);
     return 0;
 #else
@@ -1961,6 +1961,7 @@ CATCH_RETURN()
     if (_drawingContext)
     {
         _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
+        _drawingContext->useBoldFont = textAttributes.IsBold();
         _drawingContext->useItalicFont = textAttributes.IsItalic();
     }
 

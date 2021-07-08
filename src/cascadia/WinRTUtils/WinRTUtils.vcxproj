@@ -15,8 +15,9 @@
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="ScopedResourceLoader.h" />
+    <ClInclude Include="inc\ScopedResourceLoader.h" />
     <ClInclude Include="inc\LibraryResources.h" />
+    <ClInclude Include="inc\ThrottledFunc.h" />
     <ClInclude Include="inc\Utils.h" />
     <ClInclude Include="inc\WtExeUtils.h" />
   </ItemGroup>

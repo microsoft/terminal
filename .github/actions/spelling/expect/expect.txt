@@ -163,6 +163,7 @@ BPBF
 bpp
 BPPF
 branchconfig
+brandings
 BRK
 Browsable
 bsearch
@@ -183,7 +184,6 @@ bytebuffer
 cac
 cacafire
 callee
-cang
 capslock
 CARETBLINKINGENABLED
 CARRIAGERETURN
@@ -1368,7 +1368,6 @@ MEASUREITEM
 megamix
 memallocator
 memcmp
-memcopy
 memcpy
 memmove
 memset
@@ -1444,6 +1443,7 @@ MSVCRTD
 MSVS
 msys
 msysgit
+MTSM
 mui
 Mul
 multiline
@@ -1943,6 +1943,7 @@ REGSTR
 reingest
 Relayout
 RELBINPATH
+remoting
 Remoting
 renamer
 renderengine
@@ -1968,7 +1969,6 @@ rftp
 rgb
 rgba
 rgbi
-rgch
 rgci
 rgfae
 rgfte
@@ -2044,8 +2044,6 @@ scriptload
 Scrollable
 scrollback
 scrollbar
-Scrolldown
-Scrolldownpage
 Scroller
 SCROLLFORWARD
 SCROLLINFO
@@ -2053,8 +2051,6 @@ scrolllock
 scrolloffset
 SCROLLSCALE
 SCROLLSCREENBUFFER
-Scrollup
-Scrolluppage
 scursor
 sddl
 sdeleted
@@ -2069,7 +2065,6 @@ selectany
 SELECTEDFONT
 SELECTSTRING
 Selfhosters
-serializer
 serializers
 SERVERDLL
 SETACTIVE
@@ -2421,7 +2416,6 @@ uap
 uapadmin
 UAX
 ubuntu
-ucd
 ucd
 ucdxml
 uch
@@ -2779,13 +2773,13 @@ Xes
 xff
 XFile
 XFORM
+xIcon
 XManifest
 XMath
 XMFLOAT
 xml
 xmlns
 xor
-xorg
 xorg
 Xpath
 XPosition
@@ -2813,6 +2807,7 @@ YCast
 YCENTER
 YCount
 YDPI
+yIcon
 yml
 YOffset
 YPosition

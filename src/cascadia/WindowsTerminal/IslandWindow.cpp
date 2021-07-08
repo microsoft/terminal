@@ -452,6 +452,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     {
         if (wparam == SIZE_MINIMIZED && _isQuakeWindow)
         {
+            _NotifyWindowHiddenHandlers();
             ShowWindow(GetHandle(), SW_HIDE);
             return 0;
         }
@@ -506,6 +507,19 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     case WM_THEMECHANGED:
         UpdateWindowIconForActiveMetrics(_window.get());
         return 0;
+    case CM_NOTIFY_FROM_TRAY:
+    {
+        switch (LOWORD(lparam))
+        {
+        case NIN_SELECT:
+        case NIN_KEYSELECT:
+        {
+            _NotifyTrayIconPressedHandlers();
+            return 0;
+        }
+        }
+        break;
+    }
     }
 
     // TODO: handle messages here...
@@ -1023,7 +1037,15 @@ winrt::fire_and_forget IslandWindow::SummonWindow(Remoting::SummonWindowBehavior
 {
     // On the foreground thread:
     co_await winrt::resume_foreground(_rootGrid.Dispatcher());
+    _summonWindowRoutineBody(args);
+}
 
+// Method Description:
+// - As above.
+//   BODGY: ARM64 BUILD FAILED WITH fatal error C1001: Internal compiler error
+//   when this was part of the coroutine body.
+void IslandWindow::_summonWindowRoutineBody(Remoting::SummonWindowBehavior args)
+{
     uint32_t actualDropdownDuration = args.DropdownDuration();
     // If the user requested an animation, let's check if animations are enabled in the OS.
     if (args.DropdownDuration() > 0)

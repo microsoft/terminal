@@ -37,6 +37,8 @@ USER_C_FLAGS            = $(USER_C_FLAGS) /utf-8
 CONSOLE_SRC_PATH        = $(PROJECT_ROOT)\core\console\open\src
 CONSOLE_OBJ_PATH        = $(WINCORE_OBJ_PATH)\console\open\src
 
+USER_C_FLAGS            = $(USER_C_FLAGS) /FI$(CONSOLE_OBJ_PATH)\staging\$(O)\TilFeatureStaging.h
+
 INCLUDES= \
     $(INCLUDES); \
     $(CONSOLE_SRC_PATH)\inc; \

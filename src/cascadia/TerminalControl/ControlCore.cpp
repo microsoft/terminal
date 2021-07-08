@@ -129,7 +129,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //   need to hop across the process boundary every time text is output.
         //   We can throttle this to once every 8ms, which will get us out of
         //   the way of the main output & rendering threads.
-        _tsfTryRedrawCanvas = std::make_shared<ThrottledFuncTrailing<winrt::Windows::System::DispatcherQueue>>(
+        _tsfTryRedrawCanvas = std::make_shared<ThrottledFuncTrailing<>>(
             _dispatcher,
             TsfRedrawInterval,
             [weakThis = get_weak()]() {
@@ -139,7 +139,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             });
 
-        _updatePatternLocations = std::make_shared<ThrottledFuncTrailing<winrt::Windows::System::DispatcherQueue>>(
+        _updatePatternLocations = std::make_shared<ThrottledFuncTrailing<>>(
             _dispatcher,
             UpdatePatternLocationsInterval,
             [weakThis = get_weak()]() {
@@ -149,7 +149,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             });
 
-        _updateScrollBar = std::make_shared<ThrottledFuncTrailing<winrt::Windows::System::DispatcherQueue, Control::ScrollPositionChangedArgs>>(
+        _updateScrollBar = std::make_shared<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>>(
             _dispatcher,
             ScrollBarUpdateInterval,
             [weakThis = get_weak()](const auto& update) {
@@ -1232,6 +1232,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_renderEngine)
         {
+            auto lock = _terminal->LockForWriting();
             _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(opacity));
         }
     }

@@ -31,6 +31,26 @@
     </ProjectConfiguration>
   </ItemGroup>
 
+  <!--
+    VS 16.10 contains a regression, which causes our solution to fail loading.
+
+    In Visual Studio you'll see:
+      Visual Studio ran into an unexpected problem with one or more projects.
+      You may need to reload affected projects or the solution to prevent further problems.
+      [Open log file] [Reload faulted project(s)]
+
+    The log file points to the following error:
+      System.InvalidOperationException: There is no project properties provider for "Persistence = AssemblyReference".
+
+    This error is caused by the following lines in our Microsoft.UI.Xaml dependency:
+      https://github.com/microsoft/microsoft-ui-xaml/blob/v2.5.0/build/NuSpecs/MUXControls-Nuget-Native.targets#L9-L11
+
+    See _DevDiv_ work item MSFT:1328040.
+  -->
+  <ItemGroup>
+    <ProjectCapability Include="AssemblyReferences" />
+  </ItemGroup>
+
   <PropertyGroup>
     <WapProjPath Condition="'$(WapProjPath)'==''">$(MSBuildExtensionsPath)\Microsoft\DesktopBridge\</WapProjPath>
     <!-- Turn off the 6+MB Windows.winmd that's emitted into our package
