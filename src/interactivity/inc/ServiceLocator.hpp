@@ -39,6 +39,7 @@ namespace Microsoft::Console::Interactivity
 
         static IAccessibilityNotifier* LocateAccessibilityNotifier();
 
+        [[nodiscard]] static NTSTATUS SetConsoleControlInstance(_In_ std::unique_ptr<IConsoleControl>&& control);
         static IConsoleControl* LocateConsoleControl();
         template<typename T>
         static T* LocateConsoleControl()

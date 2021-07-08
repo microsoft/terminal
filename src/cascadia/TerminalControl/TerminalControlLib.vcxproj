@@ -43,6 +43,9 @@
     <ClInclude Include="SearchBoxControl.h">
       <DependentUpon>SearchBoxControl.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="XamlLights.h">
+      <DependentUpon>XamlLights.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="TermControl.h">
       <DependentUpon>TermControl.xaml</DependentUpon>
     </ClInclude>
@@ -52,7 +55,6 @@
     <ClInclude Include="InteractivityAutomationPeer.h">
       <DependentUpon>InteractivityAutomationPeer.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="ThrottledFunc.h" />
     <ClInclude Include="TSFInputControl.h">
       <DependentUpon>TSFInputControl.xaml</DependentUpon>
     </ClInclude>
@@ -78,6 +80,9 @@
     </ClCompile>
     <ClCompile Include="SearchBoxControl.cpp">
       <DependentUpon>SearchBoxControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="XamlLights.cpp">
+      <DependentUpon>XamlLights.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="TermControl.cpp">
       <DependentUpon>TermControl.xaml</DependentUpon>
@@ -108,6 +113,7 @@
     <Midl Include="SearchBoxControl.idl">
       <DependentUpon>SearchBoxControl.xaml</DependentUpon>
     </Midl>
+    <Midl Include="XamlLights.idl" />
     <Midl Include="TermControl.idl">
       <DependentUpon>TermControl.xaml</DependentUpon>
     </Midl>

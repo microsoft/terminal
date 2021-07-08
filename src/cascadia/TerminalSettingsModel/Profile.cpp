@@ -10,6 +10,7 @@
 #include "LegacyProfileGeneratorNamespaces.h"
 #include "TerminalSettingsSerializationHelpers.h"
 #include "AppearanceConfig.h"
+#include "FontConfig.h"
 
 #include "Profile.g.cpp"
 
@@ -34,9 +35,7 @@ static constexpr std::string_view AltGrAliasingKey{ "altGrAliasing" };
 
 static constexpr std::string_view ConnectionTypeKey{ "connectionType" };
 static constexpr std::string_view CommandlineKey{ "commandline" };
-static constexpr std::string_view FontFaceKey{ "fontFace" };
-static constexpr std::string_view FontSizeKey{ "fontSize" };
-static constexpr std::string_view FontWeightKey{ "fontWeight" };
+static constexpr std::string_view FontInfoKey{ "font" };
 static constexpr std::string_view AcrylicTransparencyKey{ "acrylicOpacity" };
 static constexpr std::string_view UseAcrylicKey{ "useAcrylic" };
 static constexpr std::string_view ScrollbarStateKey{ "scrollbarState" };
@@ -76,9 +75,6 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
     profile->_UseAcrylic = source->_UseAcrylic;
     profile->_AcrylicOpacity = source->_AcrylicOpacity;
     profile->_ScrollState = source->_ScrollState;
-    profile->_FontFace = source->_FontFace;
-    profile->_FontSize = source->_FontSize;
-    profile->_FontWeight = source->_FontWeight;
     profile->_Padding = source->_Padding;
     profile->_Commandline = source->_Commandline;
     profile->_StartingDirectory = source->_StartingDirectory;
@@ -92,8 +88,14 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
     profile->_ConnectionType = source->_ConnectionType;
     profile->_Origin = source->_Origin;
 
-    // Copy over the appearance
+    // Copy over the font info
     const auto weakRefToProfile = weak_ref<Model::Profile>(*profile);
+    winrt::com_ptr<FontConfig> sourceFontInfoImpl;
+    sourceFontInfoImpl.copy_from(winrt::get_self<FontConfig>(source->_FontInfo));
+    auto copiedFontInfo = FontConfig::CopyFontInfo(sourceFontInfoImpl, weakRefToProfile);
+    profile->_FontInfo = *copiedFontInfo;
+
+    // Copy over the appearance
     winrt::com_ptr<AppearanceConfig> sourceDefaultAppearanceImpl;
     sourceDefaultAppearanceImpl.copy_from(winrt::get_self<AppearanceConfig>(source->_DefaultAppearance));
     auto copiedDefaultAppearance = AppearanceConfig::CopyAppearance(sourceDefaultAppearanceImpl, weakRefToProfile);
@@ -315,6 +317,10 @@ void Profile::LayerJson(const Json::Value& json)
     auto defaultAppearanceImpl = winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance);
     defaultAppearanceImpl->LayerJson(json);
 
+    // Font Settings
+    auto fontInfoImpl = winrt::get_self<implementation::FontConfig>(_FontInfo);
+    fontInfoImpl->LayerJson(json);
+
     // Profile-specific Settings
     JsonUtils::GetValueForKey(json, NameKey, _Name);
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
@@ -328,11 +334,8 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, TabTitleKey, _TabTitle);
 
     // Control Settings
-    JsonUtils::GetValueForKey(json, FontWeightKey, _FontWeight);
     JsonUtils::GetValueForKey(json, ConnectionTypeKey, _ConnectionType);
     JsonUtils::GetValueForKey(json, CommandlineKey, _Commandline);
-    JsonUtils::GetValueForKey(json, FontFaceKey, _FontFace);
-    JsonUtils::GetValueForKey(json, FontSizeKey, _FontSize);
     JsonUtils::GetValueForKey(json, AcrylicTransparencyKey, _AcrylicOpacity);
     JsonUtils::GetValueForKey(json, UseAcrylicKey, _UseAcrylic);
     JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, _SuppressApplicationTitle);
@@ -392,11 +395,29 @@ void Profile::_FinalizeInheritance()
             }
         }
     }
+    if (auto fontInfoImpl = get_self<FontConfig>(_FontInfo))
+    {
+        // Clear any existing parents first, we don't want duplicates from any previous
+        // calls to this function
+        fontInfoImpl->ClearParents();
+        for (auto& parent : _parents)
+        {
+            if (auto parentFontInfoImpl = parent->_FontInfo.try_as<FontConfig>())
+            {
+                fontInfoImpl->InsertParent(parentFontInfoImpl);
+            }
+        }
+    }
 }
 
 winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig Profile::DefaultAppearance()
 {
     return _DefaultAppearance;
+}
+
+winrt::Microsoft::Terminal::Settings::Model::FontConfig Profile::FontInfo()
+{
+    return _FontInfo;
 }
 
 // Method Description:
@@ -413,21 +434,17 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
     std::unique_ptr<wchar_t[]> evaluatedPath = std::make_unique<wchar_t[]>(numCharsInput);
     THROW_LAST_ERROR_IF(0 == ExpandEnvironmentStrings(directory.c_str(), evaluatedPath.get(), numCharsInput));
 
-    // Validate that the resulting path is legitimate
-    const DWORD dwFileAttributes = GetFileAttributes(evaluatedPath.get());
-    if ((dwFileAttributes != INVALID_FILE_ATTRIBUTES) && (WI_IsFlagSet(dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY)))
-    {
-        return std::wstring(evaluatedPath.get(), numCharsInput);
-    }
-    else
-    {
-        // In the event where the user supplied a path that can't be resolved, use a reasonable default (in this case, %userprofile%)
-        const DWORD numCharsDefault = ExpandEnvironmentStrings(DEFAULT_STARTING_DIRECTORY.c_str(), nullptr, 0);
-        std::unique_ptr<wchar_t[]> defaultPath = std::make_unique<wchar_t[]>(numCharsDefault);
-        THROW_LAST_ERROR_IF(0 == ExpandEnvironmentStrings(DEFAULT_STARTING_DIRECTORY.c_str(), defaultPath.get(), numCharsDefault));
-
-        return std::wstring(defaultPath.get(), numCharsDefault);
-    }
+    // Prior to GH#9541, we'd validate that the user's startingDirectory existed
+    // here. If it was invalid, we'd gracefully fall back to %USERPROFILE%.
+    //
+    // However, that could cause hangs when combined with WSL. When the WSL
+    // filesystem is slow to respond, we'll end up waiting indefinitely for
+    // their filesystem driver to respond. This can result in the whole terminal
+    // becoming unresponsive.
+    //
+    // If the path is eventually invalid, we'll display warning in the
+    // ConptyConnection when the process fails to launch.
+    return std::wstring(evaluatedPath.get(), numCharsInput);
 }
 
 // Function Description:
@@ -514,11 +531,8 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, TabTitleKey, _TabTitle);
 
     // Control Settings
-    JsonUtils::SetValueForKey(json, FontWeightKey, _FontWeight);
     JsonUtils::SetValueForKey(json, ConnectionTypeKey, _ConnectionType);
     JsonUtils::SetValueForKey(json, CommandlineKey, _Commandline);
-    JsonUtils::SetValueForKey(json, FontFaceKey, _FontFace);
-    JsonUtils::SetValueForKey(json, FontSizeKey, _FontSize);
     JsonUtils::SetValueForKey(json, AcrylicTransparencyKey, _AcrylicOpacity);
     JsonUtils::SetValueForKey(json, UseAcrylicKey, _UseAcrylic);
     JsonUtils::SetValueForKey(json, SuppressApplicationTitleKey, _SuppressApplicationTitle);
@@ -533,6 +547,13 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
     JsonUtils::SetValueForKey(json, TabColorKey, _TabColor);
     JsonUtils::SetValueForKey(json, BellStyleKey, _BellStyle);
+
+    // Font settings
+    const auto fontInfoImpl = winrt::get_self<FontConfig>(_FontInfo);
+    if (fontInfoImpl->HasAnyOptionSet())
+    {
+        json[JsonKey(FontInfoKey)] = winrt::get_self<FontConfig>(_FontInfo)->ToJson();
+    }
 
     if (_UnfocusedAppearance)
     {

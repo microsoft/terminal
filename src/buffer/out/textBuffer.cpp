@@ -2478,6 +2478,14 @@ const size_t TextBuffer::AddPatternRecognizer(const std::wstring_view regexStrin
 }
 
 // Method Description:
+// - Clears the patterns we know of and resets the pattern ID counter
+void TextBuffer::ClearPatternRecognizers() noexcept
+{
+    _idsAndPatterns.clear();
+    _currentPatternId = 0;
+}
+
+// Method Description:
 // - Copies the patterns the other buffer knows about into this one
 // Arguments:
 // - The other buffer

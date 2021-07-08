@@ -42,7 +42,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         DelegationConfig::DelegationPackage _pkg;
         static Windows::Foundation::Collections::IVector<Model::DefaultTerminal> _available;
-        static std::optional<Model::DefaultTerminal> _current;
+        static Model::DefaultTerminal _current;
     };
 }
 

@@ -19,7 +19,7 @@ function Invoke-CheckBadCodeFormatting() {
     }
 
     # Manually check the formatting of our .xaml files, without touching them.
-    Verify-XamlFormat
+    Test-XamlFormat
 
 }
 

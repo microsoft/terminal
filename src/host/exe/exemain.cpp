@@ -9,7 +9,7 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../inc/conint.h"
 
-#ifndef __INSIDE_WINDOWS
+#if TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
 #include "CConsoleHandoff.h"
 #endif
 
@@ -146,7 +146,11 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
     // because there's already a count of how many total processes were launched.
     // Total - legacy = new console.
     // We expect legacy launches to be infrequent enough to not cause an issue.
-    TraceLoggingWrite(g_ConhostLauncherProvider, "IsLegacyLoaded", TraceLoggingBool(true, "ConsoleLegacy"), TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY));
+    TraceLoggingWrite(g_ConhostLauncherProvider,
+                      "IsLegacyLoaded",
+                      TraceLoggingBool(true, "ConsoleLegacy"),
+                      TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY),
+                      TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
     const PCWSTR pszConhostDllName = L"ConhostV1.dll";
 
@@ -243,7 +247,7 @@ int CALLBACK wWinMain(
     //    messages going forward.
     // 7. The out-of-box `OpenConsole.exe` can then attempt to lookup and invoke a `CTerminalHandoff` to ask a registered
     //    Terminal to become the UI. This OpenConsole.exe will put itself in PTY mode and let the Terminal handle user interaction.
-#ifndef __INSIDE_WINDOWS
+#if TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
     auto& module = OutOfProcModuleWithRegistrationFlag<REGCLS_SINGLEUSE>::Create(&_releaseNotifier);
 #endif
 
@@ -260,7 +264,7 @@ int CALLBACK wWinMain(
     if (SUCCEEDED(hr))
     {
         // Only try to register as a handoff target if we are NOT a part of Windows.
-#ifndef __INSIDE_WINDOWS
+#if TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
         bool defAppEnabled = false;
         if (args.ShouldRunAsComServer() && SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy(defAppEnabled)) && defAppEnabled)
         {

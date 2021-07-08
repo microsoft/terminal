@@ -194,7 +194,7 @@ _CompileShader(
     std::string target,
     std::string entry = "main")
 {
-#ifdef __INSIDE_WINDOWS
+#if !TIL_FEATURE_DXENGINESHADERSUPPORT_ENABLED
     THROW_HR(E_UNEXPECTED);
     return 0;
 #else
@@ -1276,7 +1276,7 @@ try
         _invalidMap.set_all();
     }
 
-    if (TraceLoggingProviderEnabled(g_hDxRenderProvider, WINEVENT_LEVEL_VERBOSE, 0))
+    if (TraceLoggingProviderEnabled(g_hDxRenderProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
     {
         const auto invalidatedStr = _invalidMap.to_string();
         const auto invalidated = invalidatedStr.c_str();
@@ -1285,7 +1285,8 @@ try
         TraceLoggingWrite(g_hDxRenderProvider,
                           "Invalid",
                           TraceLoggingWideString(invalidated),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
 
     if (_isEnabled)
@@ -1960,6 +1961,7 @@ CATCH_RETURN()
     if (_drawingContext)
     {
         _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
+        _drawingContext->useBoldFont = textAttributes.IsBold();
         _drawingContext->useItalicFont = textAttributes.IsItalic();
     }
 

@@ -53,8 +53,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ActionMap();
 
         // views
+        Windows::Foundation::Collections::IMapView<hstring, Model::ActionAndArgs> AvailableActions();
         Windows::Foundation::Collections::IMapView<hstring, Model::Command> NameMap();
         Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> GlobalHotkeys();
+        Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> KeyBindings();
         com_ptr<ActionMap> Copy() const;
 
         // queries
@@ -64,7 +66,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // population
         void AddAction(const Model::Command& cmd);
+
+        // JSON
+        static com_ptr<ActionMap> FromJson(const Json::Value& json);
         std::vector<SettingsLoadWarnings> LayerJson(const Json::Value& json);
+        Json::Value ToJson() const;
+
+        // modification
+        bool RebindKeys(Control::KeyChord const& oldKeys, Control::KeyChord const& newKeys);
+        void DeleteKeyBinding(Control::KeyChord const& keys);
+        void RegisterKeyBinding(Control::KeyChord keys, Model::ActionAndArgs action);
 
         static Windows::System::VirtualKeyModifiers ConvertVKModifiers(Control::KeyModifiers modifiers);
 
@@ -72,17 +83,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::optional<Model::Command> _GetActionByID(const InternalActionID actionID) const;
         std::optional<Model::Command> _GetActionByKeyChordInternal(Control::KeyChord const& keys) const;
 
-        void _PopulateNameMapWithNestedCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
+        void _PopulateAvailableActionsWithStandardCommands(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::unordered_set<InternalActionID>& visitedActionIDs) const;
+        void _PopulateNameMapWithSpecialCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
         void _PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
+        void _PopulateKeyBindingMapWithStandardCommands(std::unordered_map<Control::KeyChord, Model::Command, KeyChordHash, KeyChordEquality>& keyBindingsMap, std::unordered_set<Control::KeyChord, KeyChordHash, KeyChordEquality>& unboundKeys) const;
         std::vector<Model::Command> _GetCumulativeActions() const noexcept;
 
         void _TryUpdateActionMap(const Model::Command& cmd, Model::Command& oldCmd, Model::Command& consolidatedCmd);
         void _TryUpdateName(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
         void _TryUpdateKeyChord(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
 
+        Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionsCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _GlobalHotkeysCache{ nullptr };
+        Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _KeyBindingMapCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NestedCommands{ nullptr };
+        Windows::Foundation::Collections::IVector<Model::Command> _IterableCommands{ nullptr };
         std::unordered_map<Control::KeyChord, InternalActionID, KeyChordHash, KeyChordEquality> _KeyMap;
         std::unordered_map<InternalActionID, Model::Command> _ActionMap;
 

@@ -37,7 +37,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ProfileViewModel : ProfileViewModelT<ProfileViewModel>, ViewModelHelper<ProfileViewModel>
     {
     public:
-        ProfileViewModel(const Model::Profile& profile);
+        ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings);
+
+        Model::TerminalSettings TermSettings() const;
 
         // background image
         bool UseDesktopBGImage();
@@ -58,6 +60,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void ShowAllFonts(const bool& value);
 
         // general profile knowledge
+        winrt::guid OriginalProfileGuid() const noexcept;
         bool CanDeleteProfile() const;
         WINRT_PROPERTY(bool, IsBaseLayer, false);
 
@@ -74,9 +77,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, UseAcrylic);
         OBSERVABLE_PROJECTED_SETTING(_profile, AcrylicOpacity);
         OBSERVABLE_PROJECTED_SETTING(_profile, ScrollState);
-        OBSERVABLE_PROJECTED_SETTING(_profile, FontFace);
-        OBSERVABLE_PROJECTED_SETTING(_profile, FontSize);
-        OBSERVABLE_PROJECTED_SETTING(_profile, FontWeight);
+        OBSERVABLE_PROJECTED_SETTING(_profile.FontInfo(), FontFace);
+        OBSERVABLE_PROJECTED_SETTING(_profile.FontInfo(), FontSize);
+        OBSERVABLE_PROJECTED_SETTING(_profile.FontInfo(), FontWeight);
         OBSERVABLE_PROJECTED_SETTING(_profile, Padding);
         OBSERVABLE_PROJECTED_SETTING(_profile, Commandline);
         OBSERVABLE_PROJECTED_SETTING(_profile, StartingDirectory);
@@ -102,6 +105,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Model::Profile _profile;
+        winrt::guid _originalProfileGuid;
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
         bool _ShowAllFonts;
@@ -110,6 +114,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
 
         static Editor::Font _GetFont(com_ptr<IDWriteLocalizedStrings> localizedFamilyNames);
+
+        Model::CascadiaSettings _appSettings;
     };
 
     struct DeleteProfileEventArgs :
@@ -171,6 +177,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::ColorScheme CurrentColorScheme();
         void CurrentColorScheme(const Model::ColorScheme& val);
 
+        // bell style bits
+        bool IsBellStyleFlagSet(const uint32_t flag);
+        void SetBellStyleAudible(winrt::Windows::Foundation::IReference<bool> on);
+        void SetBellStyleWindow(winrt::Windows::Foundation::IReference<bool> on);
+        void SetBellStyleTaskbar(winrt::Windows::Foundation::IReference<bool> on);
+
         fire_and_forget BackgroundImage_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         fire_and_forget Commandline_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         fire_and_forget StartingDirectory_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
@@ -197,7 +209,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, State().Profile, BackgroundImageStretchMode);
         GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, State().Profile, AntialiasingMode);
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, State().Profile, CloseOnExit);
-        GETSET_BINDABLE_ENUM_SETTING(BellStyle, Microsoft::Terminal::Settings::Model::BellStyle, State().Profile, BellStyle);
         GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::Control::ScrollbarState, State().Profile, ScrollState);
 
     private:
@@ -207,6 +218,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::EnumEntry _CustomFontWeight{ nullptr };
         std::array<Windows::UI::Xaml::Controls::Primitives::ToggleButton, 9> _BIAlignmentButtons;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
+
+        Microsoft::Terminal::Control::TermControl _previewControl;
     };
 };
 

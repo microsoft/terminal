@@ -81,8 +81,7 @@ using namespace Microsoft::Console::Render;
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT VtEngine::_EraseCharacter(const short chars) noexcept
 {
-    static const std::string format = "\x1b[%dX";
-    return _WriteFormattedString(&format, chars);
+    return _WriteFormatted(FMT_COMPILE("\x1b[{}X"), chars);
 }
 
 // Method Description:
@@ -93,8 +92,7 @@ using namespace Microsoft::Console::Render;
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT VtEngine::_CursorForward(const short chars) noexcept
 {
-    static const std::string format = "\x1b[%dC";
-    return _WriteFormattedString(&format, chars);
+    return _WriteFormatted(FMT_COMPILE("\x1b[{}C"), chars);
 }
 
 // Method Description:
@@ -132,9 +130,8 @@ using namespace Microsoft::Console::Render;
     {
         return _Write(fInsertLine ? "\x1b[L" : "\x1b[M");
     }
-    const std::string format = fInsertLine ? "\x1b[%dL" : "\x1b[%dM";
 
-    return _WriteFormattedString(&format, sLines);
+    return _WriteFormatted(FMT_COMPILE("\x1b[{}{}"), sLines, fInsertLine ? 'L' : 'M');
 }
 
 // Method Description:
@@ -171,14 +168,12 @@ using namespace Microsoft::Console::Render;
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT VtEngine::_CursorPosition(const COORD coord) noexcept
 {
-    static const std::string cursorFormat = "\x1b[%d;%dH";
-
     // VT coords start at 1,1
     COORD coordVt = coord;
     coordVt.X++;
     coordVt.Y++;
 
-    return _WriteFormattedString(&cursorFormat, coordVt.Y, coordVt.X);
+    return _WriteFormatted(FMT_COMPILE("\x1b[{};{}H"), coordVt.Y, coordVt.X);
 }
 
 // Method Description:
@@ -213,8 +208,6 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_SetGraphicsRendition16Color(const WORD wAttr,
                                                              const bool fIsForeground) noexcept
 {
-    static const std::string fmt = "\x1b[%dm";
-
     // Always check using the foreground flags, because the bg flags constants
     //  are a higher byte
     // Foreground sequences are in [30,37] U [90,97]
@@ -234,7 +227,7 @@ using namespace Microsoft::Console::Render;
                         (WI_IsFlagSet(wAttr, FOREGROUND_GREEN) ? 2 : 0) +
                         (WI_IsFlagSet(wAttr, FOREGROUND_BLUE) ? 4 : 0);
 
-    return _WriteFormattedString(&fmt, vtIndex);
+    return _WriteFormatted(FMT_COMPILE("\x1b[{}m"), vtIndex);
 }
 
 // Method Description:
@@ -248,11 +241,7 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_SetGraphicsRendition256Color(const WORD index,
                                                               const bool fIsForeground) noexcept
 {
-    const std::string fmt = fIsForeground ?
-                                "\x1b[38;5;%dm" :
-                                "\x1b[48;5;%dm";
-
-    return _WriteFormattedString(&fmt, ::Xterm256ToWindowsIndex(index));
+    return _WriteFormatted(FMT_COMPILE("\x1b[{}8;5;{}m"), fIsForeground ? '3' : '4', ::Xterm256ToWindowsIndex(index));
 }
 
 // Method Description:
@@ -266,15 +255,10 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_SetGraphicsRenditionRGBColor(const COLORREF color,
                                                               const bool fIsForeground) noexcept
 {
-    const std::string fmt = fIsForeground ?
-                                "\x1b[38;2;%d;%d;%dm" :
-                                "\x1b[48;2;%d;%d;%dm";
-
-    DWORD const r = GetRValue(color);
-    DWORD const g = GetGValue(color);
-    DWORD const b = GetBValue(color);
-
-    return _WriteFormattedString(&fmt, r, g, b);
+    const uint8_t r = GetRValue(color);
+    const uint8_t g = GetGValue(color);
+    const uint8_t b = GetBValue(color);
+    return _WriteFormatted(FMT_COMPILE("\x1b[{}8;2;{};{};{}m"), fIsForeground ? '3' : '4', r, g, b);
 }
 
 // Method Description:
@@ -286,9 +270,7 @@ using namespace Microsoft::Console::Render;
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT VtEngine::_SetGraphicsRenditionDefaultColor(const bool fIsForeground) noexcept
 {
-    const std::string_view fmt = fIsForeground ? ("\x1b[39m") : ("\x1b[49m");
-
-    return _Write(fmt);
+    return _Write(fIsForeground ? ("\x1b[39m") : ("\x1b[49m"));
 }
 
 // Method Description:
@@ -300,13 +282,12 @@ using namespace Microsoft::Console::Render;
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT VtEngine::_ResizeWindow(const short sWidth, const short sHeight) noexcept
 {
-    static const std::string resizeFormat = "\x1b[8;%d;%dt";
     if (sWidth < 0 || sHeight < 0)
     {
         return E_INVALIDARG;
     }
 
-    return _WriteFormattedString(&resizeFormat, sHeight, sWidth);
+    return _WriteFormatted(FMT_COMPILE("\x1b[8;{};{}t"), sHeight, sWidth);
 }
 
 // Method Description:
@@ -329,8 +310,7 @@ using namespace Microsoft::Console::Render;
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT VtEngine::_ChangeTitle(_In_ const std::string& title) noexcept
 {
-    const std::string titleFormat = "\x1b]0;" + title + "\x7";
-    return _Write(titleFormat);
+    return _WriteFormatted(FMT_COMPILE("\x1b]0;{}\x7"), title);
 }
 
 // Method Description:
@@ -472,19 +452,17 @@ using namespace Microsoft::Console::Render;
         // send the auto-assigned ID, prefixed with the PID of this session
         // (we do this so different conpty sessions do not overwrite each other's hyperlinks)
         const auto sessionID = GetCurrentProcessId();
-        const std::string uri_str{ til::u16u8(uri) };
-        auto s = fmt::format(FMT_COMPILE("\x1b]8;id={}-{};{}\x1b\\"), sessionID, numberId, uri_str);
-        return _Write(s);
+        const auto uriStr = til::u16u8(uri);
+        return _WriteFormatted(FMT_COMPILE("\x1b]8;id={}-{};{}\x1b\\"), sessionID, numberId, uriStr);
     }
     else
     {
         // This is the case of user-defined IDs:
         // send the user-defined ID, prefixed with a "u"
         // (we do this so no application can accidentally override a user defined ID)
-        const std::string uri_str{ til::u16u8(uri) };
-        const std::string customId_str{ til::u16u8(customId) };
-        auto s = fmt::format(FMT_COMPILE("\x1b]8;id=u-{};{}\x1b\\"), customId_str, uri_str);
-        return _Write(s);
+        const auto uriStr = til::u16u8(uri);
+        const auto customIdStr = til::u16u8(customId);
+        return _WriteFormatted(FMT_COMPILE("\x1b]8;id=u-{};{}\x1b\\"), customIdStr, uriStr);
     }
 }
 

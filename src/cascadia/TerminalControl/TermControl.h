@@ -4,6 +4,7 @@
 #pragma once
 
 #include "TermControl.g.h"
+#include "XamlLights.h"
 #include "EventArgs.h"
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
@@ -12,7 +13,6 @@
 #include "../buffer/out/search.h"
 #include "cppwinrt_utils.h"
 #include "SearchBoxControl.h"
-#include "ThrottledFunc.h"
 
 #include "ControlInteractivity.h"
 
@@ -87,6 +87,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const Windows::UI::Xaml::Thickness GetPadding();
 
         IControlSettings Settings() const;
+        void Settings(IControlSettings newSettings);
 
         static Windows::Foundation::Size GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi);
         static Windows::Foundation::Size GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,
@@ -96,6 +97,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                                const ScrollbarState& scrollState,
                                                                const winrt::hstring& padding,
                                                                const uint32_t dpi);
+
+        void BellLightOn();
 
         bool ReadOnly() const noexcept;
         void ToggleReadOnly();
@@ -137,13 +140,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::com_ptr<SearchBoxControl> _searchBox;
 
         IControlSettings _settings;
-        std::atomic<bool> _closing;
-        bool _focused;
-        bool _initializedTerminal;
+        bool _closing{ false };
+        bool _focused{ false };
+        bool _initializedTerminal{ false };
 
-        std::shared_ptr<ThrottledFunc<>> _tsfTryRedrawCanvas;
-        std::shared_ptr<ThrottledFunc<>> _updatePatternLocations;
-        std::shared_ptr<ThrottledFunc<>> _playWarningBell;
+        std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
+        std::shared_ptr<ThrottledFuncTrailing<>> _updatePatternLocations;
+        std::shared_ptr<ThrottledFuncLeading> _playWarningBell;
 
         struct ScrollBarUpdate
         {
@@ -152,7 +155,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             double newMinimum;
             double newViewportSize;
         };
-        std::shared_ptr<ThrottledFunc<ScrollBarUpdate>> _updateScrollBar;
+        std::shared_ptr<ThrottledFuncTrailing<ScrollBarUpdate>> _updateScrollBar;
         bool _isInternalScrollBarUpdate;
 
         // Auto scroll occurs when user, while selecting, drags cursor outside viewport. View is then scrolled to 'follow' the cursor.
@@ -160,6 +163,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::optional<Windows::UI::Input::PointerPoint> _autoScrollingPointerPoint;
         Windows::UI::Xaml::DispatcherTimer _autoScrollTimer;
         std::optional<std::chrono::high_resolution_clock::time_point> _lastAutoScrollUpdateTime;
+
+        winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellLightAnimation{ nullptr };
+        Windows::UI::Xaml::DispatcherTimer _bellLightTimer{ nullptr };
 
         std::optional<Windows::UI::Xaml::DispatcherTimer> _cursorTimer;
         std::optional<Windows::UI::Xaml::DispatcherTimer> _blinkTimer;
@@ -169,6 +175,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
         winrt::weak_ref<Control::TermControlAutomationPeer> _automationPeer{ nullptr };
+
+        inline bool _IsClosing() const noexcept
+        {
+            // _closing isn't atomic and may only be accessed from the main thread.
+            assert(Dispatcher().HasThreadAccess());
+            return _closing;
+        }
 
         void _UpdateSettingsFromUIThread(IControlSettings newSettings);
         void _UpdateAppearanceFromUIThread(IControlAppearance newAppearance);
@@ -201,6 +214,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _CursorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _BlinkTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
+        void _BellLightOff(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
 
         void _SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition);
 

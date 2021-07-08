@@ -193,7 +193,7 @@ function Invoke-OpenConsoleTests()
         return
     }
     $OpenConsolePlatform = $Platform
-    $TestHostAppPath = "$root\$OpenConsolePlatform\$Configuration\TestHostApp"
+    $TestHostAppPath = "$root\bin\$OpenConsolePlatform\$Configuration\TestHostApp"
     if ($Platform -eq 'x86')
     {
         $OpenConsolePlatform = 'Win32'
@@ -240,8 +240,10 @@ function Invoke-OpenConsoleTests()
             {
                 & $TaefExePath "$TestHostAppPath\$($t.binary)" $TaefArgs
             }
-
-            & $TaefExePath "$BinDir\$($t.binary)" $TaefArgs
+            else
+            {
+                & $TaefExePath "$BinDir\$($t.binary)" $TaefArgs
+            }
         }
         elseif ($t.type -eq "ft")
         {
@@ -366,11 +368,11 @@ function Invoke-ClangFormat {
 #.SYNOPSIS
 # Check that xaml files are formatted correctly. This won't actually
 # format the files - it'll only ensure that they're formatted correctly.
-function Verify-XamlFormat() {
+function Test-XamlFormat() {
     $root = Find-OpenConsoleRoot
     & dotnet tool restore --add-source https://api.nuget.org/v3/index.json
 
-    $xamlsForStyler = (git ls-files **/*.xaml) -join ","
+    $xamlsForStyler = (git ls-files "$root/**/*.xaml") -join ","
     dotnet tool run xstyler -- -c "$root\XamlStyler.json" -f "$xamlsForStyler" --passive
 
     if ($lastExitCode -eq 1) {
@@ -389,13 +391,13 @@ function Invoke-XamlFormat() {
     # xstyler lets you pass multiple xaml files in the -f param if they're all
     # joined by commas. The `git ls-files` command will only get us the .xaml
     # files actually in the git repo, ignoring ones in "Generated Files/"
-    $xamlsForStyler = (git ls-files **/*.xaml) -join ","
+    $xamlsForStyler = (git ls-files "$root/**/*.xaml") -join ","
     dotnet tool run xstyler -- -c "$root\XamlStyler.json" -f "$xamlsForStyler"
 
     # Strip BOMs from all the .xaml files
-    $xamls = (git ls-files **/*.xaml)
-    foreach ($file in $xamls ) {
-        $content = Get-Content $file
+    $xamls = (git ls-files --full-name "$root/**/*.xaml")
+    foreach ($file in $xamls) {
+        $content = Get-Content "$root/$file"
         [IO.File]::WriteAllLines("$root/$file", $content)
     }
 }
@@ -438,4 +440,4 @@ function Get-Format()
     & "$root\dep\nuget\nuget.exe" restore "$root\tools\packages.config"
 }
 
-Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat,Invoke-XamlFormat,Verify-XamlFormat,Get-Format
+Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat,Invoke-XamlFormat,Test-XamlFormat,Get-Format

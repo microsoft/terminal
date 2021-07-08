@@ -33,9 +33,9 @@
                 <TextBlock FontFamily="{x:Bind Name}"
                            Text="{x:Bind LocalizedName}" />
             </DataTemplate>
-
             <local:ColorToBrushConverter x:Key="ColorToBrushConverter" />
             <local:PercentageConverter x:Key="PercentageConverter" />
+            <local:PercentageSignConverter x:Key="PercentageSignConverter" />
             <local:FontWeightConverter x:Key="FontWeightConverter" />
             <local:InvertedBooleanToVisibilityConverter x:Key="InvertedBooleanToVisibilityConverter" />
             <local:StringIsEmptyConverter x:Key="StringIsEmptyConverter" />
@@ -238,6 +238,13 @@
                 <ScrollViewer>
                     <StackPanel>
                         <StackPanel Style="{StaticResource PivotStackStyle}">
+                            <!--  Control Preview  -->
+                            <Border x:Name="ControlPreview"
+                                    Width="350"
+                                    Height="160"
+                                    BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
+                                    BorderThickness="1" />
+
                             <!--  Grouping: Text  -->
                             <TextBlock x:Uid="Profile_TextHeader"
                                        Style="{StaticResource SubtitleTextBlockStyle}" />
@@ -620,7 +627,7 @@
                                             Value="{x:Bind State.Profile.BackgroundImageOpacity, Converter={StaticResource PercentageConverter}, Mode=TwoWay}" />
                                     <TextBlock Grid.Column="1"
                                                Style="{StaticResource SliderValueLabelStyle}"
-                                               Text="{Binding ElementName=BIOpacitySlider, Path=Value, Mode=OneWay}" />
+                                               Text="{Binding ElementName=BIOpacitySlider, Path=Value, Mode=OneWay, Converter={StaticResource PercentageSignConverter}}" />
                                 </Grid>
                             </local:SettingContainer>
                         </StackPanel>
@@ -658,7 +665,7 @@
                                                 Value="{x:Bind State.Profile.AcrylicOpacity, Converter={StaticResource PercentageConverter}, Mode=TwoWay}" />
                                         <TextBlock Grid.Column="1"
                                                    Style="{StaticResource SliderValueLabelStyle}"
-                                                   Text="{Binding ElementName=AcrylicOpacitySlider, Path=Value, Mode=OneWay}" />
+                                                   Text="{Binding ElementName=AcrylicOpacitySlider, Path=Value, Mode=OneWay, Converter={StaticResource PercentageSignConverter}}" />
                                     </Grid>
                                 </StackPanel>
                             </local:SettingContainer>
@@ -769,9 +776,14 @@
                                                 ClearSettingValue="{x:Bind State.Profile.ClearBellStyle}"
                                                 HasSettingValue="{x:Bind State.Profile.HasBellStyle, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.BellStyleOverrideSource, Mode=OneWay}">
-                            <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                               ItemsSource="{x:Bind BellStyleList, Mode=OneWay}"
-                                               SelectedItem="{x:Bind CurrentBellStyle, Mode=TwoWay}" />
+                            <StackPanel>
+                                <CheckBox x:Uid="Profile_BellStyleAudible"
+                                          IsChecked="{x:Bind IsBellStyleFlagSet(1), BindBack=SetBellStyleAudible, Mode=TwoWay}" />
+                                <CheckBox x:Uid="Profile_BellStyleWindow"
+                                          IsChecked="{x:Bind IsBellStyleFlagSet(2), BindBack=SetBellStyleWindow, Mode=TwoWay}" />
+                                <CheckBox x:Uid="Profile_BellStyleTaskbar"
+                                          IsChecked="{x:Bind IsBellStyleFlagSet(4), BindBack=SetBellStyleTaskbar, Mode=TwoWay}" />
+                            </StackPanel>
                         </local:SettingContainer>
                     </StackPanel>
                 </ScrollViewer>

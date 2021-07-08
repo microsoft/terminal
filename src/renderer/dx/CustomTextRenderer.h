@@ -24,6 +24,7 @@ namespace Microsoft::Console::Render
             renderTarget(renderTarget),
             foregroundBrush(foregroundBrush),
             backgroundBrush(backgroundBrush),
+            useBoldFont(false),
             useItalicFont(false),
             forceGrayscaleAA(forceGrayscaleAA),
             dwriteFactory(dwriteFactory),
@@ -38,6 +39,7 @@ namespace Microsoft::Console::Render
         ID2D1RenderTarget* renderTarget;
         ID2D1SolidColorBrush* foregroundBrush;
         ID2D1SolidColorBrush* backgroundBrush;
+        bool useBoldFont;
         bool useItalicFont;
         bool forceGrayscaleAA;
         IDWriteFactory* dwriteFactory;

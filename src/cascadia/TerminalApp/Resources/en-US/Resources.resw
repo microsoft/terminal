@@ -292,6 +292,16 @@
     <value>An alias for the "new-tab" subcommand.</value>
     <comment>{Locked="\"new-tab\""}</comment>
   </data>
+  <data name="CmdFocusPaneDesc" xml:space="preserve">
+    <value>Move focus to another pane</value>
+  </data>
+  <data name="CmdFPDesc" xml:space="preserve">
+    <value>An alias for the "focus-pane" subcommand.</value>
+    <comment>{Locked="\"focus-pane\""}</comment>
+  </data>
+  <data name="CmdFocusPaneTargetArgDesc" xml:space="preserve">
+    <value>Focus the pane at the given index</value>
+  </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
     <value>Open with the given profile. Accepts either the name or GUID of a profile</value>
   </data>
@@ -623,5 +633,20 @@
   </data>
   <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
     <value>Restore Down</value>
+  </data>
+  <data name="CommandPaletteMenuItem" xml:space="preserve">
+    <value>Command Palette</value>
+  </data>
+  <data name="ShellExtension_OpenInTerminalMenuItem_Dev" xml:space="preserve">
+    <value>Open in Windows Terminal (Dev)</value>
+    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
+  </data>
+  <data name="ShellExtension_OpenInTerminalMenuItem_Preview" xml:space="preserve">
+    <value>Open in Windows Terminal Preview</value>
+    <comment>{Locked="Windows"} This is a menu item that will be displayed in the Windows File Explorer that launches the Preview version of Windows Terminal</comment>
+  </data>
+  <data name="ShellExtension_OpenInTerminalMenuItem" xml:space="preserve">
+    <value>Open in Windows Terminal</value>
+    <comment>{Locked="Windows"} This is a menu item that will be displayed in the Windows File Explorer that launches the non-preview version of Windows Terminal</comment>
   </data>
 </root>

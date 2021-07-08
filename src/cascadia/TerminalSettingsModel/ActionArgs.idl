@@ -92,6 +92,13 @@ namespace Microsoft.Terminal.Settings.Model
         OnCurrent,
     };
 
+    enum MonitorBehavior
+    {
+        Any,
+        ToCurrent,
+        ToMouse,
+    };
+
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
@@ -214,6 +221,12 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.IReference<UInt32> Index { get; };
     };
 
+    [default_interface] runtimeclass CloseTabArgs : IActionArgs
+    {
+        CloseTabArgs(UInt32 tabIndex);
+        Windows.Foundation.IReference<UInt32> Index { get; };
+    };
+
     [default_interface] runtimeclass MoveTabArgs : IActionArgs
     {
         MoveTabArgs(MoveTabDirection direction);
@@ -266,6 +279,14 @@ namespace Microsoft.Terminal.Settings.Model
     {
         String Name { get; };
         DesktopBehavior Desktop { get; };
+        MonitorBehavior Monitor { get; };
         Boolean ToggleVisibility { get; };
+        UInt32 DropdownDuration { get; };
+    };
+
+    [default_interface] runtimeclass FocusPaneArgs : IActionArgs
+    {
+        FocusPaneArgs(UInt32 Id);
+        UInt32 Id { get; };
     };
 }

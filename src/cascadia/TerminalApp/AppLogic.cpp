@@ -9,6 +9,7 @@
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include <LibraryResources.h>
+#include <WtExeUtils.h>
 
 using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -188,9 +189,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     AppLogic::AppLogic() :
-        _dialogLock{},
-        _loadedInitialSettings{ false },
-        _settingsLoadedResult{ S_OK }
+        _reloadState{ std::chrono::milliseconds(100), []() { ApplicationState::SharedInstance().Reload(); } }
     {
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -203,6 +202,13 @@ namespace winrt::TerminalApp::implementation
         // SetTitleBarContent
         _isElevated = _isUserAdmin();
         _root = winrt::make_self<TerminalPage>();
+
+        _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(_root->Dispatcher(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
+            if (auto self{ weakSelf.get() })
+            {
+                self->_ReloadSettings();
+            }
+        });
     }
 
     // Method Description:
@@ -306,7 +312,8 @@ namespace winrt::TerminalApp::implementation
         });
         _root->Create();
 
-        _ApplyTheme(_settings.GlobalSettings().Theme());
+        _ApplyLanguageSettingChange();
+        _RefreshThemeRoutine();
         _ApplyStartupTaskStateChange();
 
         TraceLoggingWrite(
@@ -857,74 +864,54 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void AppLogic::_RegisterSettingsChange()
     {
-        // Get the containing folder.
         const std::filesystem::path settingsPath{ std::wstring_view{ CascadiaSettings::SettingsPath() } };
-        const auto folder = settingsPath.parent_path();
+        const std::filesystem::path statePath{ std::wstring_view{ ApplicationState::SharedInstance().FilePath() } };
 
-        _reader.create(folder.c_str(),
-                       false,
-                       wil::FolderChangeEvents::All,
-                       [this, settingsPath](wil::FolderChangeEvent event, PCWSTR fileModified) {
-                           // We want file modifications, AND when files are renamed to be
-                           // settings.json. This second case will oftentimes happen with text
-                           // editors, who will write a temp file, then rename it to be the
-                           // actual file you wrote. So listen for that too.
-                           if (!(event == wil::FolderChangeEvent::Modified ||
-                                 event == wil::FolderChangeEvent::RenameNewName ||
-                                 event == wil::FolderChangeEvent::Removed))
-                           {
-                               return;
-                           }
+        _reader.create(
+            settingsPath.parent_path().c_str(),
+            false,
+            // We want file modifications, AND when files are renamed to be
+            // settings.json. This second case will oftentimes happen with text
+            // editors, who will write a temp file, then rename it to be the
+            // actual file you wrote. So listen for that too.
+            wil::FolderChangeEvents::FileName | wil::FolderChangeEvents::LastWriteTime,
+            [this, settingsBasename = settingsPath.filename(), stateBasename = statePath.filename()](wil::FolderChangeEvent, PCWSTR fileModified) {
+                const auto modifiedBasename = std::filesystem::path{ fileModified }.filename();
 
-                           std::filesystem::path modifiedFilePath = fileModified;
-
-                           // Getting basename (filename.ext)
-                           const auto settingsBasename = settingsPath.filename();
-                           const auto modifiedBasename = modifiedFilePath.filename();
-
-                           if (settingsBasename == modifiedBasename)
-                           {
-                               this->_DispatchReloadSettings();
-                           }
-                       });
+                if (modifiedBasename == settingsBasename)
+                {
+                    _reloadSettings->Run();
+                }
+                else if (modifiedBasename == stateBasename)
+                {
+                    _reloadState();
+                }
+            });
     }
 
-    // Method Description:
-    // - Dispatches a settings reload with debounce.
-    //   Text editors implement Save in a bunch of different ways, so
-    //   this stops us from reloading too many times or too quickly.
-    fire_and_forget AppLogic::_DispatchReloadSettings()
+    void AppLogic::_ApplyLanguageSettingChange() noexcept
+    try
     {
-        static constexpr auto FileActivityQuiesceTime{ std::chrono::milliseconds(50) };
-        if (!_settingsReloadQueued.exchange(true))
+        if (!IsPackaged())
         {
-            co_await winrt::resume_after(FileActivityQuiesceTime);
-            _ReloadSettings();
-            _settingsReloadQueued.store(false);
+            return;
+        }
+
+        using ApplicationLanguages = winrt::Windows::Globalization::ApplicationLanguages;
+
+        // NOTE: PrimaryLanguageOverride throws if this instance is unpackaged.
+        const auto primaryLanguageOverride = ApplicationLanguages::PrimaryLanguageOverride();
+        const auto language = _settings.GlobalSettings().Language();
+
+        if (primaryLanguageOverride != language)
+        {
+            ApplicationLanguages::PrimaryLanguageOverride(language);
         }
     }
+    CATCH_LOG()
 
-    fire_and_forget AppLogic::_LoadErrorsDialogRoutine()
+    void AppLogic::_RefreshThemeRoutine()
     {
-        co_await winrt::resume_foreground(_root->Dispatcher());
-
-        const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
-        const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
-        _ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
-    }
-
-    fire_and_forget AppLogic::_ShowLoadWarningsDialogRoutine()
-    {
-        co_await winrt::resume_foreground(_root->Dispatcher());
-
-        _ShowLoadWarningsDialog();
-    }
-
-    fire_and_forget AppLogic::_RefreshThemeRoutine()
-    {
-        co_await winrt::resume_foreground(_root->Dispatcher());
-
-        // Refresh the UI theme
         _ApplyTheme(_settings.GlobalSettings().Theme());
     }
 
@@ -959,39 +946,26 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        auto weakThis{ get_weak() };
-        co_await winrt::resume_foreground(_root->Dispatcher(), CoreDispatcherPriority::Normal);
-        if (auto page{ weakThis.get() })
-        {
-            StartupTaskState state;
-            bool tryEnableStartupTask = _settings.GlobalSettings().StartOnUserLogin();
-            StartupTask task = co_await StartupTask::GetAsync(StartupTaskName);
+        const auto tryEnableStartupTask = _settings.GlobalSettings().StartOnUserLogin();
+        const auto task = co_await StartupTask::GetAsync(StartupTaskName);
 
-            state = task.State();
-            switch (state)
+        switch (task.State())
+        {
+        case StartupTaskState::Disabled:
+            if (tryEnableStartupTask)
             {
-            case StartupTaskState::Disabled:
+                co_await task.RequestEnableAsync();
+            }
+            break;
+        case StartupTaskState::DisabledByUser:
+            // TODO: GH#6254: define UX for other StartupTaskStates
+            break;
+        case StartupTaskState::Enabled:
+            if (!tryEnableStartupTask)
             {
-                if (tryEnableStartupTask)
-                {
-                    co_await task.RequestEnableAsync();
-                }
-                break;
+                task.Disable();
             }
-            case StartupTaskState::DisabledByUser:
-            {
-                // TODO: GH#6254: define UX for other StartupTaskStates
-                break;
-            }
-            case StartupTaskState::Enabled:
-            {
-                if (!tryEnableStartupTask)
-                {
-                    task.Disable();
-                }
-                break;
-            }
-            }
+            break;
         }
     }
     CATCH_LOG();
@@ -1009,12 +983,15 @@ namespace winrt::TerminalApp::implementation
 
         if (FAILED(_settingsLoadedResult))
         {
-            _LoadErrorsDialogRoutine();
+            const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
+            const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
+            _ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
             return;
         }
-        else if (_settingsLoadedResult == S_FALSE)
+
+        if (_settingsLoadedResult == S_FALSE)
         {
-            _ShowLoadWarningsDialogRoutine();
+            _ShowLoadWarningsDialog();
         }
 
         // Here, we successfully reloaded the settings, and created a new
@@ -1023,6 +1000,7 @@ namespace winrt::TerminalApp::implementation
         // Update the settings in TerminalPage
         _root->SetSettings(_settings, true);
 
+        _ApplyLanguageSettingChange();
         _RefreshThemeRoutine();
         _ApplyStartupTaskStateChange();
 
@@ -1206,11 +1184,23 @@ namespace winrt::TerminalApp::implementation
             // in and be routed to an event with no handlers or a non-ready Page.
             if (_appArgs.IsHandoffListener())
             {
-                _root->SetInboundListener();
+                _root->SetInboundListener(true);
             }
         }
 
         return result;
+    }
+
+    // Method Description:
+    // - Triggers the setup of the listener for incoming console connections
+    //   from the operating system.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void AppLogic::SetInboundListener()
+    {
+        _root->SetInboundListener(false);
     }
 
     // Method Description:

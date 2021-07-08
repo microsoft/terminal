@@ -418,7 +418,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   region to change, such as when new text enters the buffer or the viewport is scrolled
     void ControlCore::UpdatePatternLocations()
     {
-        _terminal->UpdatePatterns();
+        auto lock = _terminal->LockForWriting();
+        _terminal->UpdatePatternsUnderLock();
     }
 
     // Method description:
@@ -1155,6 +1156,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_renderEngine)
         {
+            auto lock = _terminal->LockForWriting();
             _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(opacity));
         }
     }

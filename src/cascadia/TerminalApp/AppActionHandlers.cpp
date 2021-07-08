@@ -46,8 +46,26 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseTab(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
-        _CloseFocusedTab();
-        args.Handled(true);
+        if (const auto realArgs = args.ActionArgs().try_as<CloseTabArgs>())
+        {
+            uint32_t index;
+            if (realArgs.Index())
+            {
+                index = realArgs.Index().Value();
+            }
+            else if (auto focusedTabIndex = _GetFocusedTabIndex())
+            {
+                index = *focusedTabIndex;
+            }
+            else
+            {
+                args.Handled(false);
+                return;
+            }
+
+            _CloseTabAtIndex(index);
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleClosePane(const IInspectable& /*sender*/,
@@ -117,9 +135,11 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SendInputArgs>())
         {
-            const auto termControl = _GetActiveControl();
-            termControl.SendInput(realArgs.Input());
-            args.Handled(true);
+            if (const auto termControl{ _GetActiveControl() })
+            {
+                termControl.SendInput(realArgs.Input());
+                args.Handled(true);
+            }
         }
     }
 
@@ -308,9 +328,11 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<AdjustFontSizeArgs>())
         {
-            const auto termControl = _GetActiveControl();
-            termControl.AdjustFontSize(realArgs.Delta());
-            args.Handled(true);
+            if (const auto& termControl{ _GetActiveControl() })
+            {
+                termControl.AdjustFontSize(realArgs.Delta());
+                args.Handled(true);
+            }
         }
     }
 
@@ -324,17 +346,21 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleResetFontSize(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {
-        const auto termControl = _GetActiveControl();
-        termControl.ResetFontSize();
-        args.Handled(true);
+        if (const auto& termControl{ _GetActiveControl() })
+        {
+            termControl.ResetFontSize();
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleToggleShaderEffects(const IInspectable& /*sender*/,
                                                   const ActionEventArgs& args)
     {
-        const auto termControl = _GetActiveControl();
-        termControl.ToggleShaderEffects();
-        args.Handled(true);
+        if (const auto& termControl{ _GetActiveControl() })
+        {
+            termControl.ToggleShaderEffects();
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleToggleFocusMode(const IInspectable& /*sender*/,
@@ -789,5 +815,22 @@ namespace winrt::TerminalApp::implementation
         // false here will let the underlying terminal still process the key, as
         // if it wasn't bound at all.
         args.Handled(false);
+    }
+
+    void TerminalPage::_HandleFocusPane(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<FocusPaneArgs>())
+            {
+                const auto paneId = realArgs.Id();
+                if (const auto activeTab{ _GetFocusedTabImpl() })
+                {
+                    _UnZoomIfNeeded();
+                    args.Handled(activeTab->FocusPane(paneId));
+                }
+            }
+        }
     }
 }

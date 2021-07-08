@@ -76,9 +76,9 @@ public:
     void Maximize(std::shared_ptr<Pane> zoomedPane);
     void Restore(std::shared_ptr<Pane> zoomedPane);
 
-    std::optional<uint16_t> Id() noexcept;
-    void Id(uint16_t id) noexcept;
-    void FocusPane(const uint16_t id);
+    std::optional<uint32_t> Id() noexcept;
+    void Id(uint32_t id) noexcept;
+    bool FocusPane(const uint32_t id);
 
     bool ContainsReadOnly() const;
 
@@ -95,6 +95,7 @@ private:
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
     winrt::Windows::UI::Xaml::Controls::Border _border{};
     winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
+    winrt::Microsoft::Terminal::TerminalConnection::ConnectionState _connectionState{ winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::NotConnected };
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
 
@@ -103,7 +104,7 @@ private:
     winrt::Microsoft::Terminal::Settings::Model::SplitState _splitState{ winrt::Microsoft::Terminal::Settings::Model::SplitState::None };
     float _desiredSplitPosition;
 
-    std::optional<uint16_t> _id;
+    std::optional<uint32_t> _id;
 
     bool _lastActive{ false };
     std::optional<GUID> _profile{ std::nullopt };

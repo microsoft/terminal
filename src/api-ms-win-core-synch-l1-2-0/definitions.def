@@ -1,0 +1,19 @@
+LIBRARY
+EXPORTS
+	DeleteSynchronizationBarrier = kernel32.DeleteSynchronizationBarrier
+	EnterSynchronizationBarrier = kernel32.EnterSynchronizationBarrier
+	InitOnceBeginInitialize = kernel32.InitOnceBeginInitialize
+	InitOnceComplete = kernel32.InitOnceComplete
+	InitOnceExecuteOnce = kernel32.InitOnceExecuteOnce
+	InitOnceInitialize = kernel32.InitOnceInitialize
+	InitializeConditionVariable = kernel32.InitializeConditionVariable
+	InitializeSynchronizationBarrier = kernel32.InitializeSynchronizationBarrier
+	SignalObjectAndWait = kernel32.SignalObjectAndWait
+	Sleep = kernel32.Sleep
+	SleepConditionVariableCS = kernel32.SleepConditionVariableCS
+	SleepConditionVariableSRW = kernel32.SleepConditionVariableSRW
+	WaitOnAddress
+	WakeAllConditionVariable = kernel32.WakeAllConditionVariable
+	WakeByAddressAll
+	WakeByAddressSingle
+	WakeConditionVariable = kernel32.WakeConditionVariable

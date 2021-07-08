@@ -1,0 +1,62 @@
+# From our friends at MUX: https://github.com/microsoft/microsoft-ui-xaml/blob/main/build/AzurePipelinesTemplates/MUX-BuildAndPublishPGONuGet-Job.yml
+
+parameters:
+  dependsOn: ''
+  pgoArtifact: PGO
+
+jobs:
+- job: BuildAndPublishPGONuGet
+  dependsOn: ${{ parameters.dependsOn }}
+  pool:
+    vmImage: 'windows-2019'
+  variables:
+    artifactsPath: $(Build.SourcesDirectory)\Artifacts
+    pgoToolsPath: $(Build.SourcesDirectory)\tools\PGODatabase
+    nuspecPath: $(pgoToolsPath)\NuSpecs
+    nuspecFilename: PGO.nuspec
+
+  steps:
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      artifactName: ${{ parameters.pgoArtifact }}
+      downloadPath: $(artifactsPath)
+  
+  - task: NuGetToolInstaller@0
+    displayName: 'Use NuGet 5.2.0'
+    inputs:
+      versionSpec: 5.2.0
+
+  - task: CopyFiles@2
+    displayName: 'Copy pgd files to NuGet build directory'
+    inputs:
+      sourceFolder: $(artifactsPath)\${{ parameters.pgoArtifact }}
+      contents: '**\*.pgd'
+      targetFolder: $(nuspecPath)\tools
+
+  - task: powershell@2
+    displayName: 'Generate NuSpec file'
+    inputs:
+      targetType: filePath
+      filePath: $(pgoToolsPath)\generate-nuspec.ps1
+      workingDirectory: $(pgoToolsPath)
+      arguments: $(nuspecPath)\$(nuspecFilename).template $(nuspecPath)\$(nuspecFilename)
+
+  - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
+    displayName: 'NuGet pack'
+    inputs:
+      command: pack
+      packagesToPack: '$(nuspecPath)\$(nuspecFilename)'
+      basePath: '$(nuspecPath)'
+      packDestination: '$(Build.ArtifactStagingDirectory)'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: $(Build.ArtifactStagingDirectory)
+      artifactName: ${{ parameters.pgoArtifact }}
+
+  - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
+    displayName: 'NuGet push'
+    inputs:
+      command: push
+      publishVstsFeed: Terminal/TerminalDependencies
+      packagesToPush: $(Build.ArtifactStagingDirectory)/*.nupkg

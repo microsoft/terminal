@@ -20,38 +20,40 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cmath>
 #include <deque>
+#include <filesystem>
+#include <fstream>
+#include <functional>
+#include <iomanip>
+#include <iterator>
 #include <list>
-#include <memory>
-#include <memory_resource>
 #include <map>
+#include <memory_resource>
+#include <memory>
 #include <mutex>
-#include <shared_mutex>
 #include <new>
+#include <numeric>
 #include <optional>
 #include <queue>
+#include <regex>
+#include <set>
+#include <shared_mutex>
+#include <sstream>
 #include <stdexcept>
-#include <string>
 #include <string_view>
+#include <string>
 #include <thread>
 #include <tuple>
+#include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
-#include <unordered_map>
-#include <iterator>
-#include <cmath>
-#include <sstream>
-#include <fstream>
-#include <iomanip>
-#include <filesystem>
-#include <functional>
-#include <set>
-#include <unordered_set>
-#include <regex>
 
 // WIL
 #include <wil/Common.h>
 #include <wil/Result.h>
+#include <wil/nt_result_macros.h>
 #include <wil/resource.h>
 #include <wil/wistd_memory.h>
 #include <wil/stl.h>
@@ -103,7 +105,14 @@
 #include <sal.h>
 
 // WRL
+// Microsoft::WRL::Details::StaticStorage contains a programming error.
+// The author attempted to create a properly aligned backing storage for a type T,
+// but instead of giving the member the proper alignas, the struct got it.
+// The compiler doesn't like that. --> Suppress the warning.
+#pragma warning(push)
+#pragma warning(disable: 4324) // structure was padded due to alignment specifier
 #include <wrl.h>
+#pragma warning(pop)
 
 // WEX/TAEF testing
 // Include before TIL if we're unit testing so it can light up WEX/TAEF template extensions
