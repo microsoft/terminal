@@ -897,7 +897,7 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
         }
     }
 
-    if (_userDefaultProfileSettings)
+    if (profile && _userDefaultProfileSettings)
     {
         // If we've loaded defaults{} we're in the "user settings" phase for sure
         profile->Origin(OriginTag::User);
