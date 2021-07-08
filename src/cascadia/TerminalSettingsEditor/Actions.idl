@@ -22,6 +22,7 @@ namespace Microsoft.Terminal.Settings.Editor
         // UI side
         Boolean ShowEditButton { get; };
         Boolean IsInEditMode { get; };
+        Boolean IsNewlyAdded { get; };
         String ProposedKeys;
         Object ProposedAction;
         Windows.UI.Xaml.Controls.Flyout AcceptChangesFlyout;
@@ -40,6 +41,7 @@ namespace Microsoft.Terminal.Settings.Editor
         IObservableVector<String> AvailableActions { get; };
         void ToggleEditMode();
         void AttemptAcceptChanges();
+        void CancelChanges();
         void DeleteKeyBinding();
 
         event Windows.Foundation.TypedEventHandler<KeyBindingViewModel, ModifyKeyBindingEventArgs> ModifyKeyBindingRequested;
