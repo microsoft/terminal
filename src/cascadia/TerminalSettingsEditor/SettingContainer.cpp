@@ -208,7 +208,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // We will only display arrows and informative tooltips for Fragments
         if (originTag == Model::OriginTag::Fragment)
         {
-            // from a fragment extension or generated profile
+            // from a fragment extension
             return hstring{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideMessageFragmentExtension") }, source) };
         }
         return {}; // no tooltip
