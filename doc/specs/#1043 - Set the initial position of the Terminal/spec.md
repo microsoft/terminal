@@ -9,7 +9,7 @@ issue id: #1043
 
 ## Abstract
 
-This spec is for task #1043 ìBe able to set an initial position for the terminalî. It goes over the details of a new feature that allows users to set the initial position and size of the terminal. Expected behavior and design of this feature is included. Besides, future possible follow-up works are also addressed.
+This spec is for task #1043 ‚ÄúBe able to set an initial position for the terminal‚Äù. It goes over the details of a new feature that allows users to set the initial position and size of the terminal. Expected behavior and design of this feature is included. Besides, future possible follow-up works are also addressed.
 
 ## Inspiration
 
@@ -17,7 +17,7 @@ The idea is to allow users to set the initial position of the Terminal when they
 
 ## Solution Design
 
-For now, the Terminal window is put on a default initial position. The program uses CW_USEDEFAULT in the screen coordinates for top-left corner. We have two different types of window ñ client window and non-client window. However, code path for window creation (WM_CREATE message is shared by the two types of windows) are almost the same for the two types of windows, except that there are some differences in calculation of the width and height of the window.
+For now, the Terminal window is put on a default initial position. The program uses CW_USEDEFAULT in the screen coordinates for top-left corner. We have two different types of window ‚Äì client window and non-client window. However, code path for window creation (WM_CREATE message is shared by the two types of windows) are almost the same for the two types of windows, except that there are some differences in calculation of the width and height of the window.
 
 Two new properties should be added in the json settings file:
 
@@ -92,9 +92,9 @@ For now, this feature only allows the user to set initial position and choose wh
 
 3. We may also consider more launch modes. Like full screen mode and minimized mode. 
 
-Github issue for future follow-ups: https://github.com/microsoft/terminal/issues/766
+GitHub issue for future follow-ups: https://github.com/microsoft/terminal/issues/766
 
 ## Resources
 
-Github issue:
+GitHub issue:
 https://github.com/microsoft/terminal/issues/1043

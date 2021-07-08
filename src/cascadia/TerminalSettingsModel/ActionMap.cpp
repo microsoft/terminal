@@ -234,6 +234,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Update KeyBindingsMap with our current layer
         for (const auto& [keys, actionID] : _KeyMap)
         {
+            // Get the action our KeyMap maps to.
+            // This _cannot_ be nullopt because KeyMap can only map to
+            //   actions in this layer.
+            // This _can_ be nullptr because nullptr means it was
+            //   explicitly unbound ( "command": "unbound", "keys": "ctrl+c" ).
             const auto cmd{ _GetActionByID(actionID).value() };
             if (cmd)
             {
@@ -258,7 +263,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
-        // Update KeyBindingsMap and visitedKeyChords with our parents
+        // Update keyBindingsMap and unboundKeys with our parents
         FAIL_FAST_IF(_parents.size() > 1);
         for (const auto& parent : _parents)
         {
@@ -649,7 +654,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // Check our internal state.
-        const ActionAndArgs& actionAndArgs{ myAction, myArgs };
+        const auto actionAndArgs = winrt::make<ActionAndArgs>(myAction, myArgs);
         const auto hash{ Hash(actionAndArgs) };
         if (const auto& cmd{ _GetActionByID(hash) })
         {

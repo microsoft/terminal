@@ -370,7 +370,7 @@ function Test-XamlFormat() {
     $root = Find-OpenConsoleRoot
     & dotnet tool restore --add-source https://api.nuget.org/v3/index.json
 
-    $xamlsForStyler = (git ls-files **/*.xaml) -join ","
+    $xamlsForStyler = (git ls-files "$root/**/*.xaml") -join ","
     dotnet tool run xstyler -- -c "$root\XamlStyler.json" -f "$xamlsForStyler" --passive
 
     if ($lastExitCode -eq 1) {
@@ -389,14 +389,14 @@ function Invoke-XamlFormat() {
     # xstyler lets you pass multiple xaml files in the -f param if they're all
     # joined by commas. The `git ls-files` command will only get us the .xaml
     # files actually in the git repo, ignoring ones in "Generated Files/"
-    $xamlsForStyler = (git ls-files **/*.xaml) -join ","
+    $xamlsForStyler = (git ls-files "$root/**/*.xaml") -join ","
     dotnet tool run xstyler -- -c "$root\XamlStyler.json" -f "$xamlsForStyler"
 
     # Strip BOMs from all the .xaml files
-    $xamls = (git ls-files **/*.xaml)
+    $xamls = (git ls-files "$root/**/*.xaml")
     foreach ($file in $xamls ) {
         $content = Get-Content $file
-        [IO.File]::WriteAllLines("$root/$file", $content)
+        [IO.File]::WriteAllLines("$file", $content)
     }
 }
 
