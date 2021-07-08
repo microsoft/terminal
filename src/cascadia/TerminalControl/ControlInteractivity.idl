@@ -19,7 +19,7 @@ namespace Microsoft.Terminal.Control
         ControlCore Core { get; };
         void UpdateSettings();
         void Initialize();
-        void GainFocus();
+        void GotFocus();
         void LostFocus();
 
         InteractivityAutomationPeer OnCreateAutomationPeer();

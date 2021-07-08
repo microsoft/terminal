@@ -104,10 +104,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _multiClickCounter;
     }
 
-    void ControlInteractivity::GainFocus()
+    void ControlInteractivity::GotFocus()
     {
-        // GH#5421: Enable the UiaEngine before checking for the SearchBox
-        // That way, new selections are notified to automation clients.
         if (_uiaEngine.get())
         {
             THROW_IF_FAILED(_uiaEngine->Enable());

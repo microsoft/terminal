@@ -1105,7 +1105,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Windows::Foundation::Collections::IVector<winrt::hstring> ControlCore::SelectedText(bool trimTrailingWhitespace) const
     {
         // RetrieveSelectedTextFromBuffer will lock while it's reading
-        auto internalResult{ _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace).text };
+        const auto internalResult{ _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace).text };
 
         auto result = winrt::single_threaded_vector<winrt::hstring>();
 

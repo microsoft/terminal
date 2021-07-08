@@ -4,11 +4,11 @@
 #include "pch.h"
 #include "OpenTerminalHere.h"
 #include "../WinRTUtils/inc/WtExeUtils.h"
+#include "../WinRTUtils/inc/LibraryResources.h"
+
+#include <winrt/Windows.ApplicationModel.Resources.Core.h>
 #include <ShlObj.h>
 
-// TODO GH#6112: Localize these strings
-static constexpr std::wstring_view VerbDisplayName{ L"Open in Windows Terminal" };
-static constexpr std::wstring_view VerbDevBuildDisplayName{ L"Open in Windows Terminal (Dev Build)" };
 static constexpr std::wstring_view VerbName{ L"WindowsTerminalOpenHere" };
 
 // This code is aggressively copied from
@@ -87,8 +87,15 @@ HRESULT OpenTerminalHere::GetTitle(IShellItemArray* /*psiItemArray*/,
 {
     // Change the string we return depending on if we're running from the dev
     // build package or not.
-    const bool isDevBuild = IsDevBuild();
-    return SHStrDup(isDevBuild ? VerbDevBuildDisplayName.data() : VerbDisplayName.data(), ppszName);
+    const auto resource =
+#if defined(WT_BRANDING_RELEASE)
+        RS_(L"ShellExtension_OpenInTerminalMenuItem");
+#elif defined(WT_BRANDING_PREVIEW)
+        RS_(L"ShellExtension_OpenInTerminalMenuItem_Preview");
+#else
+        RS_(L"ShellExtension_OpenInTerminalMenuItem_Dev");
+#endif
+    return SHStrDup(resource.data(), ppszName);
 }
 
 HRESULT OpenTerminalHere::GetState(IShellItemArray* /*psiItemArray*/,
@@ -114,7 +121,7 @@ try
     std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
     modulePath.replace_filename(WindowsTerminalExe);
     // WindowsTerminal.exe,-101 will be the first icon group in WT
-    // We're using WindowsTerminal here explicitly, and not wt (from _getExePath), because
+    // We're using WindowsTerminal here explicitly, and not wt (from GetWtExePath), because
     // WindowsTerminal is the only one built with the right icons.
     const auto resource{ modulePath.wstring() + L",-101" };
     return SHStrDupW(resource.c_str(), ppszIcon);

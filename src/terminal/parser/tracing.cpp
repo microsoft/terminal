@@ -10,25 +10,20 @@ using namespace Microsoft::Console::VirtualTerminal;
 #pragma warning(disable : 26447) // The function is declared 'noexcept' but calls function '_tlgWrapBinary<wchar_t>()' which may throw exceptions
 #pragma warning(disable : 26477) // Use 'nullptr' rather than 0 or NULL
 
-ParserTracing::ParserTracing() noexcept
-{
-    ClearSequenceTrace();
-}
-
-void ParserTracing::TraceStateChange(const std::wstring_view name) const noexcept
+void ParserTracing::TraceStateChange(_In_z_ const wchar_t* name) const noexcept
 {
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_EnterState",
-                      TraceLoggingCountedWideString(name.data(), gsl::narrow_cast<ULONG>(name.size())),
+                      TraceLoggingWideString(name),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 }
 
-void ParserTracing::TraceOnAction(const std::wstring_view name) const noexcept
+void ParserTracing::TraceOnAction(_In_z_ const wchar_t* name) const noexcept
 {
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_Action",
-                      TraceLoggingCountedWideString(name.data(), gsl::narrow_cast<ULONG>(name.size())),
+                      TraceLoggingWideString(name),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 }
@@ -55,11 +50,11 @@ void ParserTracing::TraceOnExecuteFromEscape(const wchar_t wch) const noexcept
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 }
 
-void ParserTracing::TraceOnEvent(const std::wstring_view name) const noexcept
+void ParserTracing::TraceOnEvent(_In_z_ const wchar_t* name) const noexcept
 {
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_Event",
-                      TraceLoggingCountedWideString(name.data(), gsl::narrow_cast<ULONG>(name.size())),
+                      TraceLoggingWideString(name),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 }
@@ -67,12 +62,11 @@ void ParserTracing::TraceOnEvent(const std::wstring_view name) const noexcept
 void ParserTracing::TraceCharInput(const wchar_t wch)
 {
     AddSequenceTrace(wch);
-    const auto sch = gsl::narrow_cast<INT16>(wch);
 
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_NewChar",
                       TraceLoggingWChar(wch),
-                      TraceLoggingHexInt16(sch),
+                      TraceLoggingHexInt16(gsl::narrow_cast<INT16>(wch)),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 }
@@ -114,7 +108,7 @@ void ParserTracing::ClearSequenceTrace() noexcept
 }
 
 // NOTE: I'm expecting this to not be null terminated
-void ParserTracing::DispatchPrintRunTrace(const std::wstring_view string) const
+void ParserTracing::DispatchPrintRunTrace(const std::wstring_view& string) const
 {
     if (string.size() == 1)
     {

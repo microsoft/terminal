@@ -37,7 +37,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ControlInteractivity(IControlSettings settings,
                              TerminalConnection::ITerminalConnection connection);
 
-        void GainFocus();
+        void GotFocus();
         void LostFocus();
         void UpdateSettings();
         void Initialize();

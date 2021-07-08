@@ -2,21 +2,14 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include <argb.h>
-#include <conattrs.hpp>
-#include <io.h>
-#include <fcntl.h>
 #include "CascadiaSettings.h"
-#include "../../types/inc/utils.hpp"
-#include "../../inc/DefaultSettings.h"
-#include "Utils.h"
-#include "LibraryResources.h"
+#include "CascadiaSettings.g.cpp"
 
+#include <LibraryResources.h>
+
+#include "AzureCloudShellGenerator.h"
 #include "PowershellCoreProfileGenerator.h"
 #include "WslDistroGenerator.h"
-#include "AzureCloudShellGenerator.h"
-
-#include "CascadiaSettings.g.cpp"
 
 using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal;
@@ -303,6 +296,13 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
         duplicated->##settingName(source.##settingName());                                                                                     \
     }
 
+#define DUPLICATE_FONT_SETTING_MACRO(settingName)                                                                                                                                    \
+    if (source.FontInfo().Has##settingName() ||                                                                                                                                      \
+        (source.FontInfo().##settingName##OverrideSource() != nullptr && source.FontInfo().##settingName##OverrideSource().SourceProfile().Origin() != OriginTag::ProfilesDefaults)) \
+    {                                                                                                                                                                                \
+        duplicated->FontInfo().##settingName(source.FontInfo().##settingName());                                                                                                     \
+    }
+
 #define DUPLICATE_APPEARANCE_SETTING_MACRO(settingName)                                                                                                                                                \
     if (source.DefaultAppearance().Has##settingName() ||                                                                                                                                               \
         (source.DefaultAppearance().##settingName##OverrideSource() != nullptr && source.DefaultAppearance().##settingName##OverrideSource().SourceProfile().Origin() != OriginTag::ProfilesDefaults)) \
@@ -319,9 +319,6 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
     DUPLICATE_SETTING_MACRO(UseAcrylic);
     DUPLICATE_SETTING_MACRO(AcrylicOpacity);
     DUPLICATE_SETTING_MACRO(ScrollState);
-    DUPLICATE_SETTING_MACRO(FontFace);
-    DUPLICATE_SETTING_MACRO(FontSize);
-    DUPLICATE_SETTING_MACRO(FontWeight);
     DUPLICATE_SETTING_MACRO(Padding);
     DUPLICATE_SETTING_MACRO(Commandline);
     DUPLICATE_SETTING_MACRO(StartingDirectory);
@@ -332,6 +329,10 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
     DUPLICATE_SETTING_MACRO(SnapOnInput);
     DUPLICATE_SETTING_MACRO(AltGrAliasing);
     DUPLICATE_SETTING_MACRO(BellStyle);
+
+    DUPLICATE_FONT_SETTING_MACRO(FontFace);
+    DUPLICATE_FONT_SETTING_MACRO(FontSize);
+    DUPLICATE_FONT_SETTING_MACRO(FontWeight);
 
     DUPLICATE_APPEARANCE_SETTING_MACRO(ColorSchemeName);
     DUPLICATE_APPEARANCE_SETTING_MACRO(Foreground);
