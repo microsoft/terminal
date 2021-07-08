@@ -11,14 +11,15 @@ namespace Microsoft.Terminal.Control
     // This is a mirror of
     // ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState,
     // but projectable.
-    struct MouseButtonState
+    // !! LOAD BEARING !! If you make this a struct with Booleans (like they
+    // make the most sense as), then the app will crash trying to toss one of
+    // these across the process boundary. I haven't the damndest idea why.
+    [flags]
+    enum MouseButtonState
     {
-        // !! LOAD BEARING !! If you make these Booleans (like they should be),
-        // then the app will crash trying to toss one of these across the
-        // process boundary. I haven't the damndest idea why.
-        Int32 IsLeftButtonDown;
-        Int32 IsMiddleButtonDown;
-        Int32 IsRightButtonDown;
+        IsLeftButtonDown = 0x1,
+        IsMiddleButtonDown = 0x2,
+        IsRightButtonDown = 0x4
     };
 
     [default_interface] runtimeclass ControlCore : ICoreState
@@ -49,7 +50,8 @@ namespace Microsoft.Terminal.Control
         void SendInput(String text);
         void PasteText(String text);
 
-        void UpdateHoveredCell(Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> terminalPosition);
+        void SetHoveredCell(Microsoft.Terminal.Core.Point terminalPosition);
+        void ClearHoveredCell();
 
         void ResetFontSize();
         void AdjustFontSize(Int32 fontSizeDelta);

@@ -40,8 +40,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         float SnapDimensionToGrid(const bool widthOrHeight, const float dimension);
 
 #pragma region ICoreState
-        const size_t TaskbarState() const noexcept;
-        const size_t TaskbarProgress() const noexcept;
+        const uint64_t TaskbarState() const noexcept;
+        const uint64_t TaskbarProgress() const noexcept;
 
         hstring Title();
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
@@ -134,8 +134,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
 
-        Control::ControlCore _core{ nullptr };
+        // NOTE: _uiaEngine must be ordered before _core.
+        //
+        // ControlCore::AttachUiaEngine receives a IRenderEngine as a raw pointer, which we own.
+        // We must ensure that we first destroy the ControlCore before the UiaEngine instance
+        // in order to safely resolve this unsafe pointer dependency. Otherwise a deallocated
+        // IRenderEngine is accessed when ControlCore calls Renderer::TriggerTeardown.
+        // (C++ class members are destroyed in reverse order.)
+        // Further, the TermControlAutomationPeer must be destructed after _uiaEngine!
+        Control::TermControlAutomationPeer _automationPeer{ nullptr };
         Control::ControlInteractivity _interactivity{ nullptr };
+        Control::ControlCore _core{ nullptr };
 
         winrt::com_ptr<SearchBoxControl> _searchBox;
 
@@ -173,8 +182,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         event_token _coreOutputEventToken;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
-
-        winrt::weak_ref<Control::TermControlAutomationPeer> _automationPeer{ nullptr };
 
         inline bool _IsClosing() const noexcept
         {

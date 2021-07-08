@@ -43,6 +43,8 @@ constexpr const auto TerminalWarningBellInterval = std::chrono::milliseconds(100
 
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::CopyFormat);
 
+DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::MouseButtonState);
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     TermControl::TermControl(IControlSettings settings,
@@ -422,12 +424,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _interactivity.UpdateSettings();
-        if (auto ap{ _automationPeer.get() })
+        if (_automationPeer)
         {
-            ap.SetControlPadding(Core::Padding{ newMargin.Left,
-                                                newMargin.Top,
-                                                newMargin.Right,
-                                                newMargin.Bottom });
+            _automationPeer.SetControlPadding(Core::Padding{ newMargin.Left,
+                                                             newMargin.Top,
+                                                             newMargin.Right,
+                                                             newMargin.Bottom });
         }
     }
 
@@ -536,9 +538,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_initializedTerminal && !_IsClosing()) // only set up the automation peer if we're ready to go live
         {
-            const auto& interactivityAutoPeer = _interactivity.OnCreateAutomationPeer();
-            _automationPeer = winrt::make<implementation::TermControlAutomationPeer>(this, interactivityAutoPeer);
-            return _automationPeer.get();
+            // create a custom automation peer with this code pattern:
+            // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
+            if (const auto& interactivityAutoPeer = _interactivity.OnCreateAutomationPeer())
+            {
+                _automationPeer = winrt::make<implementation::TermControlAutomationPeer>(this, interactivityAutoPeer);
+                return _automationPeer;
+            }
         }
         return nullptr;
     }
@@ -1221,9 +1227,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                    const bool rightButtonDown)
     {
         const auto modifiers = _GetPressedModifierKeys();
-        Control::MouseButtonState state{ leftButtonDown,
-                                         midButtonDown,
-                                         rightButtonDown };
+
+        Control::MouseButtonState state{};
+        WI_SetFlagIf(state, Control::MouseButtonState::IsLeftButtonDown, leftButtonDown);
+        WI_SetFlagIf(state, Control::MouseButtonState::IsMiddleButtonDown, midButtonDown);
+        WI_SetFlagIf(state, Control::MouseButtonState::IsRightButtonDown, rightButtonDown);
+
         return _interactivity.MouseWheel(modifiers, delta, _toTerminalOrigin(location), state);
     }
 
@@ -1539,9 +1548,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto newSize = e.NewSize();
         _core.SizeChanged(newSize.Width, newSize.Height);
 
-        if (auto ap{ _automationPeer.get() })
+        if (_automationPeer)
         {
-            ap.UpdateControlBounds();
+            _automationPeer.UpdateControlBounds();
         }
     }
 
@@ -2340,7 +2349,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Gets the internal taskbar state value
     // Return Value:
     // - The taskbar state of this control
-    const size_t TermControl::TaskbarState() const noexcept
+    const uint64_t TermControl::TaskbarState() const noexcept
     {
         return _core.TaskbarState();
     }
@@ -2349,7 +2358,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Gets the internal taskbar progress value
     // Return Value:
     // - The taskbar progress of this control
-    const size_t TermControl::TaskbarProgress() const noexcept
+    const uint64_t TermControl::TaskbarProgress() const noexcept
     {
         return _core.TaskbarProgress();
     }
@@ -2431,7 +2440,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_PointerExitedHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                             Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
     {
-        _core.UpdateHoveredCell(nullptr);
+        _core.ClearHoveredCell();
     }
 
     winrt::fire_and_forget TermControl::_hoveredHyperlinkChanged(IInspectable sender,
@@ -2498,9 +2507,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     Control::MouseButtonState TermControl::GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point)
     {
-        return Control::MouseButtonState{ point.Properties().IsLeftButtonPressed(),
-                                          point.Properties().IsMiddleButtonPressed(),
-                                          point.Properties().IsRightButtonPressed() };
+        Control::MouseButtonState state{};
+        WI_SetFlagIf(state, Control::MouseButtonState::IsLeftButtonDown, point.Properties().IsLeftButtonPressed());
+        WI_SetFlagIf(state, Control::MouseButtonState::IsMiddleButtonDown, point.Properties().IsMiddleButtonPressed());
+        WI_SetFlagIf(state, Control::MouseButtonState::IsRightButtonDown, point.Properties().IsRightButtonPressed());
+        return state;
     }
 
     unsigned int TermControl::GetPointerUpdateKind(const winrt::Windows::UI::Input::PointerPoint point)

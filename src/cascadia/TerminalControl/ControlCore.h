@@ -71,7 +71,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ResumeRendering();
 
         void UpdatePatternLocations();
-        void UpdateHoveredCell(Windows::Foundation::IReference<Core::Point> terminalPosition);
+        void SetHoveredCell(Core::Point terminalPosition);
+        void ClearHoveredCell();
         winrt::hstring GetHyperlink(const til::point position) const;
         winrt::hstring HoveredUriText() const;
         Windows::Foundation::IReference<Core::Point> HoveredCell() const;
@@ -236,6 +237,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _raiseReadOnlyWarning();
         void _updateAntiAliasingMode(::Microsoft::Console::Render::DxEngine* const dxEngine);
         void _connectionOutputHandler(const hstring& hstr);
+        void _updateHoveredCell(const std::optional<til::point> terminalPosition);
 
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;

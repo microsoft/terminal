@@ -884,7 +884,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #endif
 
 #ifdef WINRT_Microsoft_Terminal_Core_H
-        operator winrt::Microsoft::Terminal::Core::Padding() const noexcept
+        operator winrt::Microsoft::Terminal::Core::Padding() const
         {
             winrt::Microsoft::Terminal::Core::Padding ret;
             THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(left()).AssignIfValid(&ret.Left));
