@@ -526,9 +526,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
             if (const auto& interactivityAutoPeer{ _interactivity.OnCreateAutomationPeer() })
             {
-                auto autoPeer = winrt::make_self<implementation::TermControlAutomationPeer>(this, interactivityAutoPeer);
-                _automationPeer = *autoPeer;
-                return *autoPeer;
+                _automationPeer = winrt::make<implementation::TermControlAutomationPeer>(this, interactivityAutoPeer);
+                return _automationPeer;
             }
         }
         return nullptr;
@@ -1417,7 +1416,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // GH#5421: Enable the UiaEngine before checking for the SearchBox
         // That way, new selections are notified to automation clients.
-        _interactivity.GainFocus();
+        // The _uiaEngine lives in _interactivity, so call into there to enable it.
+        _interactivity.GotFocus();
 
         // If the searchbox is focused, we don't want TSFInputControl to think
         // it has focus so it doesn't intercept IME input. We also don't want the
@@ -1469,6 +1469,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _focused = false;
 
+        // This will disable the accessibility notifications, because the
+        // UiaEngine lives in ControlInteractivity
         _interactivity.LostFocus();
 
         if (TSFInputControl() != nullptr)
@@ -1811,7 +1813,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         double height = rows * fontSize.Y;
-        auto thickness = ParseThicknessFromPadding(padding);
+        const auto thickness = ParseThicknessFromPadding(padding);
         // GH#2061 - make sure to account for the size the padding _will be_ scaled to
         width += scale * (thickness.Left + thickness.Right);
         height += scale * (thickness.Top + thickness.Bottom);
