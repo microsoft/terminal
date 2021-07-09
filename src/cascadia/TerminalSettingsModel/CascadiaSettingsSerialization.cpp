@@ -530,14 +530,20 @@ void CascadiaSettings::_ParseAndLayerFragmentFiles(const std::unordered_set<std:
                     auto matchingProfile = _FindMatchingProfile(profileStub);
                     if (matchingProfile)
                     {
-                        // We found a matching profile, create a child of it and put the modifications there
-                        // (we add a new inheritance layer)
-                        auto childImpl{ matchingProfile->CreateChild() };
-                        childImpl->LayerJson(profileStub);
-                        childImpl->Origin(OriginTag::Fragment);
+                        try
+                        {
+                            // We found a matching profile, create a child of it and put the modifications there
+                            // (we add a new inheritance layer)
+                            auto childImpl{ matchingProfile->CreateChild() };
+                            childImpl->LayerJson(profileStub);
+                            childImpl->Origin(OriginTag::Fragment);
 
-                        // replace parent in _profiles with child
-                        _allProfiles.SetAt(_FindMatchingProfileIndex(matchingProfile->ToJson()).value(), *childImpl);
+                            // replace parent in _profiles with child
+                            _allProfiles.SetAt(_FindMatchingProfileIndex(matchingProfile->ToJson()).value(), *childImpl);
+                        }
+                        catch (...)
+                        {
+                        }
                     }
                 }
                 else
@@ -546,13 +552,19 @@ void CascadiaSettings::_ParseAndLayerFragmentFiles(const std::unordered_set<std:
                     // (it must have at least a name)
                     if (profileStub.isMember(JsonKey(NameKey)))
                     {
-                        auto newProfile = Profile::FromJson(profileStub);
-                        // Make sure to give the new profile a source, then we add it to our list of profiles
-                        // We don't make modifications to the user's settings file yet, that will happen when
-                        // _AppendDynamicProfilesToUserSettings() is called later
-                        newProfile->Source(source);
-                        newProfile->Origin(OriginTag::Fragment);
-                        _allProfiles.Append(*newProfile);
+                        try
+                        {
+                            auto newProfile = Profile::FromJson(profileStub);
+                            // Make sure to give the new profile a source, then we add it to our list of profiles
+                            // We don't make modifications to the user's settings file yet, that will happen when
+                            // _AppendDynamicProfilesToUserSettings() is called later
+                            newProfile->Source(source);
+                            newProfile->Origin(OriginTag::Fragment);
+                            _allProfiles.Append(*newProfile);
+                        }
+                        catch (...)
+                        {
+                        }
                     }
                 }
             }
