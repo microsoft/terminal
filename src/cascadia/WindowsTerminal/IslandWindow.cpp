@@ -1009,10 +1009,10 @@ void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal
     {
         const auto modifiers = hotkey.Modifiers();
         const auto hotkeyFlags = MOD_NOREPEAT |
-                                 (WI_IsFlagSet(modifiers, KeyModifiers::Windows) ? MOD_WIN : 0) |
-                                 (WI_IsFlagSet(modifiers, KeyModifiers::Alt) ? MOD_ALT : 0) |
-                                 (WI_IsFlagSet(modifiers, KeyModifiers::Ctrl) ? MOD_CONTROL : 0) |
-                                 (WI_IsFlagSet(modifiers, KeyModifiers::Shift) ? MOD_SHIFT : 0);
+                                 (WI_IsFlagSet(modifiers, winrt::Windows::System::VirtualKeyModifiers::Windows) ? MOD_WIN : 0) |
+                                 (WI_IsFlagSet(modifiers, winrt::Windows::System::VirtualKeyModifiers::Menu) ? MOD_ALT : 0) |
+                                 (WI_IsFlagSet(modifiers, winrt::Windows::System::VirtualKeyModifiers::Control) ? MOD_CONTROL : 0) |
+                                 (WI_IsFlagSet(modifiers, winrt::Windows::System::VirtualKeyModifiers::Shift) ? MOD_SHIFT : 0);
 
         // TODO GH#8888: We should display a warning of some kind if this fails.
         // This can fail if something else already bound this hotkey.

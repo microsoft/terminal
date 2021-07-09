@@ -1970,9 +1970,9 @@ namespace SettingsModelLocalTests
         auto settings = implementation::CascadiaSettings::FromJson(settingsObject);
 
         VERIFY_ARE_EQUAL(3u, settings->_globals->_actionMap->_KeyMap.size());
-        VERIFY_IS_NULL(settings->_globals->_actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('a') }));
-        VERIFY_IS_NULL(settings->_globals->_actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('b') }));
-        VERIFY_IS_NULL(settings->_globals->_actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('c') }));
+        VERIFY_IS_NULL(settings->_globals->_actionMap->GetActionByKeyChord({ winrt::Windows::System::VirtualKeyModifiers::Control, static_cast<int32_t>('a') }));
+        VERIFY_IS_NULL(settings->_globals->_actionMap->GetActionByKeyChord({ winrt::Windows::System::VirtualKeyModifiers::Control, static_cast<int32_t>('b') }));
+        VERIFY_IS_NULL(settings->_globals->_actionMap->GetActionByKeyChord({ winrt::Windows::System::VirtualKeyModifiers::Control, static_cast<int32_t>('c') }));
 
         for (const auto& warning : settings->_globals->_keybindingsWarnings)
         {

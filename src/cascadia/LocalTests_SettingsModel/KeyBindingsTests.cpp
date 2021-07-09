@@ -141,7 +141,7 @@ namespace SettingsModelLocalTests
             L"Try unbinding a key using `\"unbound\"` to unbind the key"));
         actionMap->LayerJson(bindings2Json);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
-        VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('c') }));
+        VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ winrt::Windows::System::VirtualKeyModifiers::Control, static_cast<int32_t>('c') }));
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using `null` to unbind the key"));
@@ -151,7 +151,7 @@ namespace SettingsModelLocalTests
         // Then try layering in the bad setting
         actionMap->LayerJson(bindings3Json);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
-        VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('c') }));
+        VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ winrt::Windows::System::VirtualKeyModifiers::Control, static_cast<int32_t>('c') }));
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using an unrecognized command to unbind the key"));
@@ -161,7 +161,7 @@ namespace SettingsModelLocalTests
         // Then try layering in the bad setting
         actionMap->LayerJson(bindings4Json);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
-        VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('c') }));
+        VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ winrt::Windows::System::VirtualKeyModifiers::Control, static_cast<int32_t>('c') }));
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using a straight up invalid value to unbind the key"));
@@ -171,13 +171,13 @@ namespace SettingsModelLocalTests
         // Then try layering in the bad setting
         actionMap->LayerJson(bindings5Json);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
-        VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('c') }));
+        VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ winrt::Windows::System::VirtualKeyModifiers::Control, static_cast<int32_t>('c') }));
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key that wasn't bound at all"));
         actionMap->LayerJson(bindings2Json);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
-        VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('c') }));
+        VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ winrt::Windows::System::VirtualKeyModifiers::Control, static_cast<int32_t>('c') }));
     }
 
     void KeyBindingsTests::TestArbitraryArgs()
@@ -676,7 +676,7 @@ namespace SettingsModelLocalTests
             actionMap->LayerJson(bindings0Json);
             VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
             const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::CloseWindow) };
-            VerifyKeyChordEquality({ KeyModifiers::Ctrl, static_cast<int32_t>('A') }, kbd);
+            VerifyKeyChordEquality({ winrt::Windows::System::VirtualKeyModifiers::Control, static_cast<int32_t>('A') }, kbd);
         }
         {
             Log::Comment(L"command with args");
@@ -687,7 +687,7 @@ namespace SettingsModelLocalTests
             args->SingleLine(true);
 
             const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::CopyText, *args) };
-            VerifyKeyChordEquality({ KeyModifiers::Ctrl, static_cast<int32_t>('B') }, kbd);
+            VerifyKeyChordEquality({ winrt::Windows::System::VirtualKeyModifiers::Control, static_cast<int32_t>('B') }, kbd);
         }
         {
             Log::Comment(L"command with new terminal args");
@@ -699,7 +699,7 @@ namespace SettingsModelLocalTests
             auto args{ winrt::make_self<implementation::NewTabArgs>(*newTerminalArgs) };
 
             const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::NewTab, *args) };
-            VerifyKeyChordEquality({ KeyModifiers::Ctrl, static_cast<int32_t>('C') }, kbd);
+            VerifyKeyChordEquality({ winrt::Windows::System::VirtualKeyModifiers::Control, static_cast<int32_t>('C') }, kbd);
         }
         {
             Log::Comment(L"command with hidden args");
@@ -707,7 +707,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(4u, actionMap->_KeyMap.size());
 
             const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::ToggleCommandPalette) };
-            VerifyKeyChordEquality({ KeyModifiers::Ctrl | KeyModifiers::Shift, static_cast<int32_t>('P') }, kbd);
+            VerifyKeyChordEquality({ winrt::Windows::System::VirtualKeyModifiers::Control | winrt::Windows::System::VirtualKeyModifiers::Shift, static_cast<int32_t>('P') }, kbd);
         }
     }
 }

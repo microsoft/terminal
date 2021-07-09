@@ -1348,26 +1348,26 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - a string representation of the key modifiers for the shortcut
     //NOTE: This needs to be localized with https://github.com/microsoft/terminal/issues/794 if XAML framework issue not resolved before then
-    static std::wstring _FormatOverrideShortcutText(KeyModifiers modifiers)
+    static std::wstring _FormatOverrideShortcutText(winrt::Windows::System::VirtualKeyModifiers modifiers)
     {
         std::wstring buffer{ L"" };
 
-        if (WI_IsFlagSet(modifiers, KeyModifiers::Ctrl))
+        if (WI_IsFlagSet(modifiers, winrt::Windows::System::VirtualKeyModifiers::Control))
         {
             buffer += L"Ctrl+";
         }
 
-        if (WI_IsFlagSet(modifiers, KeyModifiers::Shift))
+        if (WI_IsFlagSet(modifiers, winrt::Windows::System::VirtualKeyModifiers::Shift))
         {
             buffer += L"Shift+";
         }
 
-        if (WI_IsFlagSet(modifiers, KeyModifiers::Alt))
+        if (WI_IsFlagSet(modifiers, winrt::Windows::System::VirtualKeyModifiers::Menu))
         {
             buffer += L"Alt+";
         }
 
-        if (WI_IsFlagSet(modifiers, KeyModifiers::Windows))
+        if (WI_IsFlagSet(modifiers, winrt::Windows::System::VirtualKeyModifiers::Windows))
         {
             buffer += L"Win+";
         }
@@ -1393,8 +1393,8 @@ namespace winrt::TerminalApp::implementation
             // TODO: Modify this when https://github.com/microsoft/terminal/issues/877 is resolved
             menuShortcut.Key(static_cast<Windows::System::VirtualKey>(keyChord.Vkey()));
 
-            // inspect the modifiers from the KeyChord and set the flags int he XAML value
-            auto modifiers = ActionMap::ConvertVKModifiers(keyChord.Modifiers());
+            // inspect the modifiers from the KeyChord and set the flags in the XAML value
+            auto modifiers = keyChord.Modifiers();
 
             // add the modifiers to the shortcut
             menuShortcut.Modifiers(modifiers);

@@ -27,15 +27,15 @@ public:
                                                                                              const winrt::Microsoft::Terminal::Control::KeyChord& kc)
     {
         std::wstring buffer{ L"" };
-        if (WI_IsFlagSet(kc.Modifiers(), winrt::Microsoft::Terminal::Control::KeyModifiers::Ctrl))
+        if (WI_IsFlagSet(kc.Modifiers(), winrt::Windows::System::VirtualKeyModifiers::Control))
         {
             buffer += L"Ctrl+";
         }
-        if (WI_IsFlagSet(kc.Modifiers(), winrt::Microsoft::Terminal::Control::KeyModifiers::Shift))
+        if (WI_IsFlagSet(kc.Modifiers(), winrt::Windows::System::VirtualKeyModifiers::Shift))
         {
             buffer += L"Shift+";
         }
-        if (WI_IsFlagSet(kc.Modifiers(), winrt::Microsoft::Terminal::Control::KeyModifiers::Alt))
+        if (WI_IsFlagSet(kc.Modifiers(), winrt::Windows::System::VirtualKeyModifiers::Menu))
         {
             buffer += L"Alt+";
         }
