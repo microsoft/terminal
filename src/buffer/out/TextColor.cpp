@@ -112,6 +112,8 @@ void TextColor::SetIndex(const BYTE index, const bool isIndex256) noexcept
 {
     _meta = isIndex256 ? ColorType::IsIndex256 : ColorType::IsIndex16;
     _index = index;
+    _green = 0;
+    _blue = 0;
 }
 
 // Method Description:
@@ -124,6 +126,9 @@ void TextColor::SetIndex(const BYTE index, const bool isIndex256) noexcept
 void TextColor::SetDefault() noexcept
 {
     _meta = ColorType::IsDefault;
+    _red = 0;
+    _green = 0;
+    _blue = 0;
 }
 
 // Method Description:

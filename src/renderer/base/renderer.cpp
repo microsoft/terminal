@@ -786,7 +786,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             {
                 COORD thisPoint{ screenPoint.X + gsl::narrow<SHORT>(cols), screenPoint.Y };
                 const auto thisPointPatterns = _pData->GetPatternId(thisPoint);
-                if (color != it->TextAttr() || (thisPointPatterns.size() > 0 && patternIds != thisPointPatterns))
+                if (color != it->TextAttr() || patternIds != thisPointPatterns)
                 {
                     auto newAttr{ it->TextAttr() };
                     // foreground doesn't matter for runs of spaces (!)
