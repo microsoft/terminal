@@ -144,10 +144,11 @@
     <Page Include="Profiles.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Appearances.xaml">
+    <Page Include="ReadOnlyActions.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="ReadOnlyActions.xaml">
+    <Page Include="Appearances.xaml">
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Rendering.xaml">
       <SubType>Designer</SubType>
