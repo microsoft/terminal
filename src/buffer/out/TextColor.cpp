@@ -50,6 +50,12 @@ constexpr std::array<BYTE, 256> Index256ToIndex16 = {
 
 // clang-format on
 
+// We should only need 4B for TextColor. Any more than that is just waste.
+static_assert(sizeof(TextColor) <= 4 * sizeof(BYTE), "We should only need 4B for an entire TextColor. Any more than that is just waste");
+
+// Assert that the use of memcmp() for comparisons is safe.
+static_assert(std::has_unique_object_representations_v<TextColor>);
+
 bool TextColor::CanBeBrightened() const noexcept
 {
     return IsIndex16() || IsDefault();
