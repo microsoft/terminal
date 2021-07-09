@@ -56,16 +56,17 @@ HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
         siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
 
         // Append a "\." to the given path, so that this will work in "C:\"
-        auto cmdline{ wil::str_printf<std::wstring>(LR"-("%s" -d "%s\.")-", GetWtExePath().c_str(), pszName.get()) };
+        auto path{ wil::str_printf<std::wstring>(LR"-(%s\.)-", pszName.get()) };
+        auto cmdline{ wil::str_printf<std::wstring>(LR"-("%s" -d "%s")-", GetWtExePath().c_str(), path.c_str()) };
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
-            nullptr,
+            nullptr, // lpApplicationName
             cmdline.data(),
             nullptr, // lpProcessAttributes
             nullptr, // lpThreadAttributes
             false, // bInheritHandles
             EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT, // dwCreationFlags
             nullptr, // lpEnvironment
-            nullptr,
+            path.data(),
             &siEx.StartupInfo, // lpStartupInfo
             &_piClient // lpProcessInformation
             ));
