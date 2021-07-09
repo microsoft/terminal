@@ -137,7 +137,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
         THROW_IF_FAILED(textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR));
         THROW_IF_FAILED(textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
 
-        _textFormatMap.emplace(_ToMapKey(weight, style, stretch), textFormat);
+        _textFormatMap.emplace(_ToMapKey(weight, style, stretch), std::move(textFormat));
         return textFormat;
     }
     else
@@ -161,7 +161,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
         std::wstring fontLocaleName = UserLocaleName();
         Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace = fontInfo.ResolveFontFaceWithFallback(_dwriteFactory.Get(), fontLocaleName);
 
-        _fontFaceMap.emplace(_ToMapKey(weight, style, stretch), fontFace);
+        _fontFaceMap.emplace(_ToMapKey(weight, style, stretch), std::move(fontFace));
         return fontFace;
     }
     else
