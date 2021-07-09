@@ -154,7 +154,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     // If the tooltip is empty, we'll hide the entire override system.
 
                     const auto& settingSrc{ SettingOverrideSource() };
-                    auto tooltip{ _GenerateOverrideMessage(settingSrc) };
+                    const auto tooltip{ _GenerateOverrideMessage(settingSrc) };
 
                     Controls::ToolTipService::SetToolTip(button, box_value(tooltip));
                     button.Visibility(tooltip.empty() ? Visibility::Collapsed : Visibility::Visible);
@@ -187,7 +187,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (const auto& appearanceConfig{ settingOrigin.try_as<Model::AppearanceConfig>() })
         {
-            auto profile = appearanceConfig.SourceProfile();
+            const auto profile = appearanceConfig.SourceProfile();
             source = profile.Source();
             originTag = profile.Origin();
         }
