@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "AllShortcutActions.h"
 #include "ActionMap.h"
+#include "AllShortcutActions.h"
 
 #include "ActionMap.g.cpp"
 
@@ -96,6 +97,75 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return std::nullopt;
     }
 
+    static void RegisterShortcutAction(ShortcutAction shortcutAction, std::unordered_map<hstring, Model::ActionAndArgs>& list, std::unordered_set<InternalActionID>& visited)
+    {
+        const auto actionAndArgs{ make_self<ActionAndArgs>(shortcutAction) };
+        if (actionAndArgs->Action() != ShortcutAction::Invalid)
+        {
+            /*We have a valid action.*/
+            /*Check if the action was already added.*/
+            if (visited.find(Hash(*actionAndArgs)) == visited.end())
+            {
+                /*This is an action that wasn't added!*/
+                /*Let's add it.*/
+                const auto name{ actionAndArgs->GenerateName() };
+                list.insert({ name, *actionAndArgs });
+            }
+        }
+    }
+
+    // Method Description:
+    // - Retrieves a map of actions that can be bound to a key
+    Windows::Foundation::Collections::IMapView<hstring, Model::ActionAndArgs> ActionMap::AvailableActions()
+    {
+        if (!_AvailableActionsCache)
+        {
+            // populate _AvailableActionsCache
+            std::unordered_map<hstring, Model::ActionAndArgs> availableActions;
+            std::unordered_set<InternalActionID> visitedActionIDs;
+            _PopulateAvailableActionsWithStandardCommands(availableActions, visitedActionIDs);
+
+// now add any ShortcutActions that we might have missed
+#define ON_ALL_ACTIONS(action) RegisterShortcutAction(ShortcutAction::action, availableActions, visitedActionIDs);
+            ALL_SHORTCUT_ACTIONS
+#undef ON_ALL_ACTIONS
+
+            _AvailableActionsCache = single_threaded_map<hstring, Model::ActionAndArgs>(std::move(availableActions));
+        }
+        return _AvailableActionsCache.GetView();
+    }
+
+    void ActionMap::_PopulateAvailableActionsWithStandardCommands(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::unordered_set<InternalActionID>& visitedActionIDs) const
+    {
+        // Update AvailableActions and visitedActionIDs with our current layer
+        for (const auto& [actionID, cmd] : _ActionMap)
+        {
+            if (cmd.ActionAndArgs().Action() != ShortcutAction::Invalid)
+            {
+                // Only populate AvailableActions with actions that haven't been visited already.
+                if (visitedActionIDs.find(actionID) == visitedActionIDs.end())
+                {
+                    const auto& name{ cmd.Name() };
+                    if (!name.empty())
+                    {
+                        // Update AvailableActions.
+                        const auto actionAndArgsImpl{ get_self<ActionAndArgs>(cmd.ActionAndArgs()) };
+                        availableActions.insert_or_assign(name, *actionAndArgsImpl->Copy());
+                    }
+
+                    // Record that we already handled adding this action to the NameMap.
+                    visitedActionIDs.insert(actionID);
+                }
+            }
+        }
+
+        // Update NameMap and visitedActionIDs with our parents
+        for (const auto& parent : _parents)
+        {
+            parent->_PopulateAvailableActionsWithStandardCommands(availableActions, visitedActionIDs);
+        }
+    }
+
     // Method Description:
     // - Retrieves a map of command names to the commands themselves
     // - These commands should not be modified directly because they may result in
@@ -164,25 +234,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::unordered_set<InternalActionID> visitedActionIDs;
         for (const auto& cmd : _GetCumulativeActions())
         {
-            // skip over all invalid actions
-            if (cmd.ActionAndArgs().Action() == ShortcutAction::Invalid)
+            // only populate with valid commands
+            if (cmd.ActionAndArgs().Action() != ShortcutAction::Invalid)
             {
-                continue;
-            }
-
-            // Only populate NameMap with actions that haven't been visited already.
-            const auto actionID{ Hash(cmd.ActionAndArgs()) };
-            if (visitedActionIDs.find(actionID) == visitedActionIDs.end())
-            {
-                const auto& name{ cmd.Name() };
-                if (!name.empty())
+                // Only populate NameMap with actions that haven't been visited already.
+                const auto actionID{ Hash(cmd.ActionAndArgs()) };
+                if (visitedActionIDs.find(actionID) == visitedActionIDs.end())
                 {
-                    // Update NameMap.
-                    nameMap.insert_or_assign(name, cmd);
-                }
+                    const auto& name{ cmd.Name() };
+                    if (!name.empty())
+                    {
+                        // Update NameMap.
+                        nameMap.insert_or_assign(name, cmd);
+                    }
 
-                // Record that we already handled adding this action to the NameMap.
-                visitedActionIDs.emplace(actionID);
+                    // Record that we already handled adding this action to the NameMap.
+                    visitedActionIDs.emplace(actionID);
+                }
             }
         }
     }
@@ -757,6 +825,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const auto cmd{ make_self<Command>() };
         cmd->ActionAndArgs(make<ActionAndArgs>());
         cmd->RegisterKey(keys);
+        AddAction(*cmd);
+    }
+
+    // Method Description:
+    // - Add a new key binding
+    // - If the key chord is already in use, the conflicting command is overwritten.
+    // Arguments:
+    // - keys: the key chord that is being bound
+    // - action: the action that the keys are being bound to
+    // Return Value:
+    // - <none>
+    void ActionMap::RegisterKeyBinding(Control::KeyChord keys, Model::ActionAndArgs action)
+    {
+        auto cmd{ make_self<Command>() };
+        cmd->RegisterKey(keys);
+        cmd->ActionAndArgs(action);
         AddAction(*cmd);
     }
 }

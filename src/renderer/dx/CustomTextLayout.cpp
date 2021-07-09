@@ -137,9 +137,15 @@ try
 {
     const auto drawingContext = static_cast<const DrawingContext*>(clientDrawingContext);
 
-    const DWRITE_FONT_WEIGHT weight = _fontRenderData->DefaultFontWeight();
+    DWRITE_FONT_WEIGHT weight = _fontRenderData->DefaultFontWeight();
     DWRITE_FONT_STYLE style = _fontRenderData->DefaultFontStyle();
     const DWRITE_FONT_STRETCH stretch = _fontRenderData->DefaultFontStretch();
+
+    if (drawingContext->useBoldFont)
+    {
+        // TODO: "relative" bold?
+        weight = DWRITE_FONT_WEIGHT_BOLD;
+    }
 
     if (drawingContext->useItalicFont)
     {
