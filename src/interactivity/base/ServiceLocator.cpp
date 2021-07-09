@@ -100,13 +100,8 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
     return status;
 }
 
-[[nodiscard]] HRESULT ServiceLocator::CreateAccessibilityNotifier(const bool isPty)
+[[nodiscard]] HRESULT ServiceLocator::CreateAccessibilityNotifier()
 {
-    if (isPty)
-    {
-        return S_FALSE;
-    }
-
     // Can't create if we've already created.
     if (s_accessibilityNotifier)
     {
