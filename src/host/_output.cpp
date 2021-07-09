@@ -224,10 +224,13 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 
         cellsModified = done.GetCellDistance(it);
 
-        // Notify accessibility
-        auto endingCoordinate = startingCoordinate;
-        bufferSize.MoveInBounds(cellsModified, endingCoordinate);
-        screenBuffer.NotifyAccessibilityEventing(startingCoordinate.X, startingCoordinate.Y, endingCoordinate.X, endingCoordinate.Y);
+        if (screenBuffer.HasAccessibilityEventing())
+        {
+            // Notify accessibility
+            auto endingCoordinate = startingCoordinate;
+            bufferSize.MoveInBounds(cellsModified, endingCoordinate);
+            screenBuffer.NotifyAccessibilityEventing(startingCoordinate.X, startingCoordinate.Y, endingCoordinate.X, endingCoordinate.Y);
+        }
     }
     CATCH_RETURN();
 
@@ -284,9 +287,12 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         cellsModified = done.GetInputDistance(it);
 
         // Notify accessibility
-        auto endingCoordinate = startingCoordinate;
-        bufferSize.MoveInBounds(cellsModified, endingCoordinate);
-        screenInfo.NotifyAccessibilityEventing(startingCoordinate.X, startingCoordinate.Y, endingCoordinate.X, endingCoordinate.Y);
+        if (screenInfo.HasAccessibilityEventing())
+        {
+            auto endingCoordinate = startingCoordinate;
+            bufferSize.MoveInBounds(cellsModified, endingCoordinate);
+            screenInfo.NotifyAccessibilityEventing(startingCoordinate.X, startingCoordinate.Y, endingCoordinate.X, endingCoordinate.Y);
+        }
 
         // GH#3126 - This is a shim for powershell's `Clear-Host` function. In
         // the vintage console, `Clear-Host` is supposed to clear the entire
