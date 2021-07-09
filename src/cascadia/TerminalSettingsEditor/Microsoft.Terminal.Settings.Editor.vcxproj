@@ -102,7 +102,7 @@
     <ClInclude Include="Appearances.h">
       <DependentUpon>Appearances.xaml</DependentUpon>
       <SubType>Code</SubType>
-    </ClCompile>
+    </ClInclude>
     <ClInclude Include="ReadOnlyActions.h">
       <DependentUpon>ReadOnlyActions.xaml</DependentUpon>
     </ClInclude>
