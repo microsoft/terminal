@@ -514,8 +514,6 @@ void DxFontRenderData::SetAxes(std::unordered_map<std::wstring_view, int32_t> ax
     {
         _axesMap[axis] = value;
     }
-
-    // todo: We probably want a 'complete missing axes values' here
 }
 
 // Routine Description:

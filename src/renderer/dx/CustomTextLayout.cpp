@@ -1303,7 +1303,7 @@ std::vector<DWRITE_FONT_AXIS_VALUE> CustomTextLayout::_GetAxisVector(const DWRIT
                                                                      const DWRITE_FONT_STRETCH fontStretch,
                                                                      const DWRITE_FONT_STYLE fontStyle,
                                                                      const float fontSize,
-                                                                     const ::Microsoft::WRL::ComPtr<IDWriteTextFormat3>& format)
+                                                                     IDWriteTextFormat3* format)
 {
     enum AxisTagPresence
     {
@@ -1320,45 +1320,45 @@ std::vector<DWRITE_FONT_AXIS_VALUE> CustomTextLayout::_GetAxisVector(const DWRIT
     format->GetFontAxisValues(axesVector.data(), axesCount);
 
     uint32_t axisTagPresence = AxisTagPresenceNone;
-    for (auto& fontAxisValue : axesVector)
+    for (const auto& fontAxisValue : axesVector)
     {
         switch (fontAxisValue.axisTag)
         {
         case DWRITE_FONT_AXIS_TAG_WEIGHT:
-            axisTagPresence |= AxisTagPresenceWeight;
+            WI_SetFlag(axisTagPresence, AxisTagPresence::AxisTagPresenceWeight);
             break;
         case DWRITE_FONT_AXIS_TAG_WIDTH:
-            axisTagPresence |= AxisTagPresenceWidth;
+            WI_SetFlag(axisTagPresence, AxisTagPresence::AxisTagPresenceWidth);
             break;
         case DWRITE_FONT_AXIS_TAG_ITALIC:
-            axisTagPresence |= AxisTagPresenceItalic;
+            WI_SetFlag(axisTagPresence, AxisTagPresence::AxisTagPresenceItalic);
             break;
         case DWRITE_FONT_AXIS_TAG_SLANT:
-            axisTagPresence |= AxisTagPresenceSlant;
+            WI_SetFlag(axisTagPresence, AxisTagPresence::AxisTagPresenceSlant);
             break;
         case DWRITE_FONT_AXIS_TAG_OPTICAL_SIZE:
-            axisTagPresence |= AxisTagPresenceOpticalSize;
+            WI_SetFlag(axisTagPresence, AxisTagPresence::AxisTagPresenceOpticalSize);
             break;
         }
     }
 
-    if ((axisTagPresence & AxisTagPresenceWeight) == 0)
+    if (!WI_IsFlagSet(axisTagPresence, AxisTagPresence::AxisTagPresenceWeight))
     {
         axesVector.push_back({ DWRITE_FONT_AXIS_TAG_WEIGHT, float(fontWeight) });
     }
-    if ((axisTagPresence & AxisTagPresenceWidth) == 0)
+    if (!WI_IsFlagSet(axisTagPresence, AxisTagPresence::AxisTagPresenceWidth))
     {
         axesVector.push_back({ DWRITE_FONT_AXIS_TAG_WIDTH, _FontStretchToWidthAxisValue(fontStretch) });
     }
-    if ((axisTagPresence & AxisTagPresenceItalic) == 0)
+    if (!WI_IsFlagSet(axisTagPresence, AxisTagPresence::AxisTagPresenceItalic))
     {
         axesVector.push_back({ DWRITE_FONT_AXIS_TAG_ITALIC, (fontStyle == DWRITE_FONT_STYLE_ITALIC ? 1.0f : 0.0f) });
     }
-    if ((axisTagPresence & AxisTagPresenceSlant) == 0)
+    if (!WI_IsFlagSet(axisTagPresence, AxisTagPresence::AxisTagPresenceSlant))
     {
         axesVector.push_back({ DWRITE_FONT_AXIS_TAG_SLANT, _FontStyleToSlantFixedAxisValue(fontStyle) });
     }
-    if ((axisTagPresence & AxisTagPresenceOpticalSize) == 0)
+    if (!WI_IsFlagSet(axisTagPresence, AxisTagPresence::AxisTagPresenceOpticalSize))
     {
         axesVector.push_back({ DWRITE_FONT_AXIS_TAG_OPTICAL_SIZE, _DIPsToPoints(fontSize) });
     }
@@ -1413,7 +1413,7 @@ std::vector<DWRITE_FONT_AXIS_VALUE> CustomTextLayout::_GetAxisVector(const DWRIT
         if (!FAILED(_formatInUse->QueryInterface(IID_PPV_ARGS(&format3))) && !FAILED(fallback->QueryInterface(IID_PPV_ARGS(&fallback1))))
         {
             // If the OS supports IDWriteFontFallback1 and IDWriteTextFormat3, we can apply axes of variation to the font
-            const auto axesVector = _GetAxisVector(weight, stretch, style, format1->GetFontSize(), format3);
+            const auto axesVector = _GetAxisVector(weight, stretch, style, format1->GetFontSize(), format3.Get());
             // Walk through and analyze the entire string
             while (textLength > 0)
             {

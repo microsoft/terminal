@@ -223,57 +223,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
         std::string TypeDescription() const
         {
-            return "map";
-        }
-    };
-
-    template<typename T>
-    struct ConversionTrait<std::unordered_map<std::wstring, T>>
-    {
-        std::unordered_map<std::wstring, T> FromJson(const Json::Value& json) const
-        {
-            std::unordered_map<std::wstring, T> val;
-
-            for (const auto& element : json.getMemberNames())
-            {
-                GetValueForKey(json, element, val[til::u8u16(element)]);
-            }
-
-            return val;
-        }
-
-        bool CanConvert(const Json::Value& json) const
-        {
-            if (!json.isObject())
-            {
-                return false;
-            }
-            ConversionTrait<T> trait;
-            for (const auto& element : json.getMemberNames())
-            {
-                if (!trait.CanConvert(json[JsonKey(element)]))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        Json::Value ToJson(const std::unordered_map<std::wstring, T>& val)
-        {
-            Json::Value json{ Json::objectValue };
-
-            for (const auto& [k, v] : val)
-            {
-                SetValueForKey(json, til::u16u8(k), v);
-            }
-
-            return json;
-        }
-
-        std::string TypeDescription() const
-        {
-            return "map";
+            return fmt::format("map (string, {})", ConversionTrait<T>{}.TypeDescription());
         }
     };
 
@@ -353,7 +303,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
         std::string TypeDescription() const
         {
-            return "map";
+            return fmt::format("map (string, {})", ConversionTrait<T>{}.TypeDescription());
         }
     };
 #endif
