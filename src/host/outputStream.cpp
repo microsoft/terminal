@@ -348,7 +348,11 @@ bool ConhostInternalGetSet::PrivateAllowCursorBlinking(const bool fEnable)
     bool isPty;
     DoSrvIsConsolePty(isPty);
     // If we are connected to a pty, return that we could not handle this
-    // so that the VT sequence gets flushed to terminal
+    // so that the VT sequence gets flushed to terminal.
+    // Note: we technically don't need to handle it ourselves at all if
+    // we are connected to a pty (i.e. we could have just returned false
+    // immediately without needing to call DoSrvPrivateAllowCursorBlinking),
+    // but we call it anyway for consistency, just in case.
     return !isPty;
 }
 
