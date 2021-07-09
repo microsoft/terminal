@@ -1514,6 +1514,28 @@ class UiaTextRangeTests
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_IsReadOnlyAttributeId, &result));
             VERIFY_IS_FALSE(result.boolVal);
         }
+        {
+            // "Mixed" is when the desired attribute value is inconsistent across the range.
+            // We'll make our life easier by setting an attribute on a character,
+            // but getting the attribute for the entire line.
+            Log::Comment(L"Test Mixed");
+            VARIANT result;
+            THROW_IF_FAILED(utr->ExpandToEnclosingUnit(TextUnit_Line));
+
+            // set first cell as underlined, but second cell as not underlined
+            attr.SetUnderlined(true);
+            _pTextBuffer->Write({ attr }, { 0, 0 });
+            attr.SetUnderlined(false);
+            _pTextBuffer->Write({ attr }, { 1, 0 });
+
+            VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_UnderlineStyleAttributeId, &result));
+
+            // Expected: mixed
+            Microsoft::WRL::ComPtr<IUnknown> mixedVal;
+            THROW_IF_FAILED(UiaGetReservedMixedAttributeValue(&mixedVal));
+            VERIFY_ARE_EQUAL(VT_UNKNOWN, result.vt);
+            VERIFY_ARE_EQUAL(mixedVal.Get(), result.punkVal);
+        }
     }
 
     TEST_METHOD(FindAttribute)

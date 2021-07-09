@@ -370,7 +370,7 @@ std::optional<bool> UiaTextRangeBase::_verifyAttr(TEXTATTRIBUTEID attributeId, V
         THROW_HR_IF(E_INVALIDARG, val.vt != VT_I4);
 
         // The foreground color is stored as a COLORREF.
-        const auto queryForegroundColor{ base::ClampedNumeric<COLORREF>(val.lVal) };
+        const auto queryForegroundColor{ val.lVal };
         return _RemoveAlpha(_pData->GetAttributeColors(attr).first) == queryForegroundColor;
     }
     case UIA_IsItalicAttributeId:
