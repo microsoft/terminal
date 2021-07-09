@@ -34,6 +34,7 @@ static const std::wstring_view launchTag{ L"Launch_Nav" };
 static const std::wstring_view interactionTag{ L"Interaction_Nav" };
 static const std::wstring_view renderingTag{ L"Rendering_Nav" };
 static const std::wstring_view actionsTag{ L"Actions_Nav" };
+static const std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
 static const std::wstring_view addProfileTag{ L"AddProfile" };
 static const std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
 static const std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
@@ -310,6 +311,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 contentFrame().Navigate(xaml_typename<Editor::ReadOnlyActions>(), actionsState);
             }
         }
+        else if (clickedItemTag == globalProfileTag)
+        {
+            auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone) };
+            profileVM.IsBaseLayer(true);
+            _lastProfilesNavState = winrt::make<ProfilePageNavigationState>(profileVM,
+                                                                            _settingsClone.GlobalSettings().ColorSchemes(),
+                                                                            _lastProfilesNavState,
+                                                                            *this);
+
+            contentFrame().Navigate(xaml_typename<Editor::Profiles>(), _lastProfilesNavState);
+        }
         else if (clickedItemTag == colorSchemesTag)
         {
             contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), _colorSchemesNavState);
@@ -470,5 +482,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto newSelectedItem{ menuItems.GetAt(index < menuItems.Size() - 1 ? index : index - 1) };
         SettingsNav().SelectedItem(newSelectedItem);
         _Navigate(newSelectedItem.try_as<MUX::Controls::NavigationViewItem>().Tag().try_as<Editor::ProfileViewModel>());
+    }
+
+    bool MainPage::ShowBaseLayerMenuItem() const noexcept
+    {
+        return Feature_ShowProfileDefaultsInSettings::IsEnabled();
     }
 }

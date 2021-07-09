@@ -67,7 +67,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Model::TerminalSettings ProfileViewModel::TermSettings() const
     {
-        return Model::TerminalSettings::CreateWithProfileByID(_appSettings, _profile.Guid(), nullptr).DefaultSettings();
+        return Model::TerminalSettings::CreateWithProfile(_appSettings, _profile, nullptr).DefaultSettings();
     }
 
     // Method Description:
