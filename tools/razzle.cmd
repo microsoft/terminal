@@ -21,7 +21,7 @@ rem Add nuget to PATH
 set PATH=%PATH%%OPENCON%\dep\nuget;
 
 rem Run nuget restore so you can use vswhere
-nuget restore %OPENCON% -Verbosity quiet
+nuget restore %OPENCON%\OpenConsole.sln -Verbosity quiet
 
 rem Find vswhere
 rem from https://github.com/microsoft/vs-setup-samples/blob/master/tools/vswhere.cmd
