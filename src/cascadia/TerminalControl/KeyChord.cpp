@@ -6,6 +6,8 @@
 
 #include "KeyChord.g.cpp"
 
+using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     KeyChord::KeyChord() noexcept :
@@ -15,34 +17,34 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     KeyChord::KeyChord(bool ctrl, bool alt, bool shift, int32_t vkey) noexcept :
-        _modifiers{ (ctrl ? winrt::Windows::System::VirtualKeyModifiers::Control : winrt::Windows::System::VirtualKeyModifiers::None) |
-                    (alt ? winrt::Windows::System::VirtualKeyModifiers::Menu : winrt::Windows::System::VirtualKeyModifiers::None) |
-                    (shift ? winrt::Windows::System::VirtualKeyModifiers::Shift : winrt::Windows::System::VirtualKeyModifiers::None) },
+        _modifiers{ (ctrl ? VirtualKeyModifiers::Control : VirtualKeyModifiers::None) |
+                    (alt ? VirtualKeyModifiers::Menu : VirtualKeyModifiers::None) |
+                    (shift ? VirtualKeyModifiers::Shift : VirtualKeyModifiers::None) },
         _vkey{ vkey }
     {
     }
 
     KeyChord::KeyChord(bool ctrl, bool alt, bool shift, bool win, int32_t vkey) noexcept :
-        _modifiers{ (ctrl ? winrt::Windows::System::VirtualKeyModifiers::Control : winrt::Windows::System::VirtualKeyModifiers::None) |
-                    (alt ? winrt::Windows::System::VirtualKeyModifiers::Menu : winrt::Windows::System::VirtualKeyModifiers::None) |
-                    (shift ? winrt::Windows::System::VirtualKeyModifiers::Shift : winrt::Windows::System::VirtualKeyModifiers::None) |
-                    (win ? winrt::Windows::System::VirtualKeyModifiers::Windows : winrt::Windows::System::VirtualKeyModifiers::None) },
+        _modifiers{ (ctrl ? VirtualKeyModifiers::Control : VirtualKeyModifiers::None) |
+                    (alt ? VirtualKeyModifiers::Menu : VirtualKeyModifiers::None) |
+                    (shift ? VirtualKeyModifiers::Shift : VirtualKeyModifiers::None) |
+                    (win ? VirtualKeyModifiers::Windows : VirtualKeyModifiers::None) },
         _vkey{ vkey }
     {
     }
 
-    KeyChord::KeyChord(winrt::Windows::System::VirtualKeyModifiers const& modifiers, int32_t vkey) noexcept :
+    KeyChord::KeyChord(VirtualKeyModifiers const& modifiers, int32_t vkey) noexcept :
         _modifiers{ modifiers },
         _vkey{ vkey }
     {
     }
 
-    winrt::Windows::System::VirtualKeyModifiers KeyChord::Modifiers() noexcept
+    VirtualKeyModifiers KeyChord::Modifiers() noexcept
     {
         return _modifiers;
     }
 
-    void KeyChord::Modifiers(winrt::Windows::System::VirtualKeyModifiers const& value) noexcept
+    void KeyChord::Modifiers(VirtualKeyModifiers const& value) noexcept
     {
         _modifiers = value;
     }
