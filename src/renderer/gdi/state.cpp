@@ -488,8 +488,6 @@ void GdiEngine::_PaintBufferLineHelper(const BufferLineRenderData& renderData)
 
     // Retrieve the first color.
     auto color = it->TextAttr();
-    // Retrieve the first pattern id
-    auto patternIds = pData->GetPatternId(renderData.screenPosition);
 
     // And hold the point where we should start drawing.
     auto screenPoint = renderData.screenPosition;
@@ -502,9 +500,6 @@ void GdiEngine::_PaintBufferLineHelper(const BufferLineRenderData& renderData)
         // when a run changes, but we will still need to know this color at the bottom
         // when we go to draw gridlines for the length of the run.
         const auto currentRunColor = color;
-
-        // Hold onto the current pattern id as well
-        const auto currentPatternId = patternIds;
 
         // Update the drawing brushes with our color.
         THROW_IF_FAILED(UpdateDrawingBrushes(currentRunColor, pData, false));
@@ -535,16 +530,14 @@ void GdiEngine::_PaintBufferLineHelper(const BufferLineRenderData& renderData)
         do
         {
             COORD thisPoint{ screenPoint.X + gsl::narrow<SHORT>(cols), screenPoint.Y };
-            const auto thisPointPatterns = pData->GetPatternId(thisPoint);
-            if (color != it->TextAttr() || patternIds != thisPointPatterns)
+            if (color != it->TextAttr())
             {
                 auto newAttr{ it->TextAttr() };
                 // foreground doesn't matter for runs of spaces (!)
                 // if we trick it . . . we call Paint far fewer times for cmatrix
-                if (!s_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, renderData.globalInvert) || patternIds != thisPointPatterns)
+                if (!s_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, renderData.globalInvert))
                 {
                     color = newAttr;
-                    patternIds = thisPointPatterns;
                     break; // vend this run
                 }
             }
