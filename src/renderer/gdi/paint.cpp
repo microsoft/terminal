@@ -57,6 +57,44 @@ using namespace Microsoft::Console::Render;
     return S_OK;
 }
 
+[[nodiscard]] HRESULT GdiEngine::PaintFrame(IRenderData* pData) noexcept
+{
+    // Prep Colors
+    RETURN_IF_FAILED(UpdateDrawingBrushes(pData->GetDefaultBrushColors(), pData, true));
+
+    // Perform Scroll Operations
+    RETURN_IF_FAILED(ScrollFrame());
+
+    // Paint Background
+    RETURN_IF_FAILED(PaintBackground());
+
+    // This is to make sure any transforms are reset when this paint is finished.
+    auto resetLineTransform = wil::scope_exit([&]() {
+        LOG_IF_FAILED(ResetLineTransform());
+    });
+
+    // Paint Rows of Text
+    _LoopDirtyLines(pData, std::bind(&GdiEngine::_PaintBufferLineHelper, this, std::placeholders::_1));
+
+    // Paint overlays that reside above the text buffer
+    _LoopOverlay(pData, std::bind(&GdiEngine::_PaintBufferLineHelper, this, std::placeholders::_1));
+
+    // Paint Selection
+    _LoopSelection(pData, std::bind(&GdiEngine::PaintSelection, this, std::placeholders::_1));
+
+    // Paint Cursor
+    const auto cursorInfo = _GetCursorInfo(pData);
+    if (cursorInfo.has_value())
+    {
+        LOG_IF_FAILED(PaintCursor(cursorInfo.value()));
+    }
+
+    // Paint window title
+    RETURN_IF_FAILED(_DoUpdateTitle());
+
+    return S_OK;
+}
+
 // Routine Description:
 // - Scrolls the existing data on the in-memory frame by the scroll region
 //      deltas we have collectively received through the Invalidate methods
@@ -664,6 +702,7 @@ using namespace Microsoft::Console::Render;
 
     // Prepare the appropriate line transform for the current row.
     LOG_IF_FAILED(PrepareLineTransform(options.lineRendition, 0, options.viewportLeft));
+
     auto resetLineTransform = wil::scope_exit([&]() {
         LOG_IF_FAILED(ResetLineTransform());
     });

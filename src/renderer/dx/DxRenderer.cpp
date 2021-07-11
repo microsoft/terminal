@@ -8,6 +8,7 @@
 
 #include "../../interactivity/win32/CustomWindowMessages.h"
 #include "../../types/inc/Viewport.hpp"
+#include "../../buffer/out/textBuffer.hpp"
 #include "../../inc/unicode.hpp"
 #include "../../inc/DefaultSettings.h"
 #include <VersionHelpers.h>
@@ -1352,7 +1353,40 @@ try
 }
 CATCH_RETURN()
 
-// Routine Description:
+// Routine description:
+// - Actual painting procedure
+// Arguments:
+// - <none>
+// Return Value:
+// - Any DirectX error, a memory error, etc.
+[[nodiscard]] HRESULT DxEngine::PaintFrame(IRenderData *pData) noexcept
+{
+    // Prep Colors
+    RETURN_IF_FAILED(UpdateDrawingBrushes(pData->GetDefaultBrushColors(), pData, true));
+
+    // Prepare the engine with additional information before we start drawing.
+    RenderFrameInfo info;
+    info.cursorInfo = _GetCursorInfo(pData);
+    RETURN_IF_FAILED(PrepareRenderInfo(info));
+
+    // Paint Background
+    RETURN_IF_FAILED(PaintBackground());
+
+    // Paint Rows of Text
+    _LoopDirtyLines(pData, std::bind(&DxEngine::_PaintBufferLineHelper, this, std::placeholders::_1));
+
+    // Paint overlays that reside above the text buffer
+    _LoopOverlay(pData, std::bind(&DxEngine::_PaintBufferLineHelper, this, std::placeholders::_1));
+
+    // Paint Selection
+    _LoopSelection(pData, std::bind(&DxEngine::PaintSelection, this, std::placeholders::_1));
+
+    // Paint window title
+    RETURN_IF_FAILED(_DoUpdateTitle());
+
+    return S_OK;
+}
+    // Routine Description:
 // - Ends batch drawing and captures any state necessary for presentation
 // Arguments:
 // - <none>
@@ -1602,17 +1636,6 @@ void DxEngine::WaitUntilCanRender() noexcept
 }
 
 // Routine Description:
-// - This is currently unused.
-// Arguments:
-// - <none>
-// Return Value:
-// - S_OK
-[[nodiscard]] HRESULT DxEngine::ScrollFrame() noexcept
-{
-    return S_OK;
-}
-
-// Routine Description:
 // - This paints in the back most layer of the frame with the background color.
 // Arguments:
 // - <none>
@@ -1832,18 +1855,6 @@ try
     return S_OK;
 }
 CATCH_RETURN()
-
-// Routine Description:
-// - Does nothing. Our cursor is drawn in CustomTextRenderer::DrawGlyphRun,
-//   either above or below the text.
-// Arguments:
-// - options - unused
-// Return Value:
-// - S_OK
-[[nodiscard]] HRESULT DxEngine::PaintCursor(const CursorOptions& /*options*/) noexcept
-{
-    return S_OK;
-}
 
 // Routine Description:
 // - Paint terminal effects.
@@ -2132,13 +2143,183 @@ CATCH_RETURN();
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::_DoUpdateTitle(_In_ const std::wstring_view /*newTitle*/) noexcept
+[[nodiscard]] HRESULT DxEngine::_DoUpdateTitle() noexcept
 {
     if (_hwndTarget != INVALID_HANDLE_VALUE)
     {
         return PostMessageW(_hwndTarget, CM_UPDATE_TITLE, 0, 0) ? S_OK : E_FAIL;
     }
     return S_FALSE;
+}
+
+void DxEngine::_PaintBufferLineHelper(const BufferLineRenderData& renderData)
+{
+    // Retrieve the cell information iterator limited to just this line we want to redraw.
+    auto it = renderData.buffer.GetCellDataAt(renderData.bufferLine.Origin(), renderData.bufferLine);
+    if (!it)
+    {
+        return;
+    }
+    auto pData = renderData.pData;
+
+    // If we have valid data, let's figure out how to draw it.
+
+    // TODO: MSFT: 20961091 -  This is a perf issue. Instead of rebuilding this and allocing memory to hold the reinterpretation,
+    // we should have an iterator/view adapter for the rendering.
+    // That would probably also eliminate the RenderData needing to give us the entire TextBuffer as well...
+    // Retrieve the iterator for one line of information.
+    size_t cols = 0;
+
+    // Retrieve the first color.
+    auto color = it->TextAttr();
+    // Retrieve the first pattern id
+    auto patternIds = pData->GetPatternId(renderData.screenPosition);
+
+    // And hold the point where we should start drawing.
+    auto screenPoint = renderData.screenPosition;
+
+    // This outer loop will continue until we reach the end of the text we are trying to draw.
+    while (it)
+    {
+        // Hold onto the current run color right here for the length of the outer loop.
+        // We'll be changing the persistent one as we run through the inner loops to detect
+        // when a run changes, but we will still need to know this color at the bottom
+        // when we go to draw gridlines for the length of the run.
+        const auto currentRunColor = color;
+
+        // Hold onto the current pattern id as well
+        const auto currentPatternId = patternIds;
+
+        // Update the drawing brushes with our color.
+        THROW_IF_FAILED(UpdateDrawingBrushes(currentRunColor, pData, false));
+
+        // Advance the point by however many columns we've just outputted and reset the accumulator.
+        screenPoint.X += gsl::narrow<SHORT>(cols);
+        cols = 0;
+
+        // Hold onto the start of this run iterator and the target location where we started
+        // in case we need to do some special work to paint the line drawing characters.
+        const auto currentRunItStart = it;
+        const auto currentRunTargetStart = screenPoint;
+
+        // Ensure that our cluster vector is clear.
+        _clusterBuffer.clear();
+
+        // Reset our flag to know when we're in the special circumstance
+        // of attempting to draw only the right-half of a two-column character
+        // as the first item in our run.
+        bool trimLeft = false;
+
+        // Run contains wide character (>1 columns)
+        bool containsWideCharacter = false;
+
+        // This inner loop will accumulate clusters until the color changes.
+        // When the color changes, it will save the new color off and break.
+        // We also accumulate clusters according to regex patterns
+        do
+        {
+            COORD thisPoint{ screenPoint.X + gsl::narrow<SHORT>(cols), screenPoint.Y };
+            const auto thisPointPatterns = pData->GetPatternId(thisPoint);
+            if (color != it->TextAttr() || patternIds != thisPointPatterns)
+            {
+                auto newAttr{ it->TextAttr() };
+                // foreground doesn't matter for runs of spaces (!)
+                // if we trick it . . . we call Paint far fewer times for cmatrix
+                if (!s_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, renderData.globalInvert) || patternIds != thisPointPatterns)
+                {
+                    color = newAttr;
+                    patternIds = thisPointPatterns;
+                    break; // vend this run
+                }
+            }
+
+            // Walk through the text data and turn it into rendering clusters.
+            // Keep the columnCount as we go to improve performance over digging it out of the vector at the end.
+            size_t columnCount = 0;
+
+            // If we're on the first cluster to be added and it's marked as "trailing"
+            // (a.k.a. the right half of a two column character), then we need some special handling.
+            if (_clusterBuffer.empty() && it->DbcsAttr().IsTrailing())
+            {
+                // Move left to the one so the whole character can be struck correctly.
+                --screenPoint.X;
+                // And tell the next function to trim off the left half of it.
+                trimLeft = true;
+                // And add one to the number of columns we expect it to take as we insert it.
+                columnCount = it->Columns() + 1;
+                _clusterBuffer.emplace_back(it->Chars(), columnCount);
+            }
+            // Otherwise if it's not a special case, just insert it as is.
+            else
+            {
+                columnCount = it->Columns();
+                _clusterBuffer.emplace_back(it->Chars(), columnCount);
+            }
+
+            if (columnCount > 1)
+            {
+                containsWideCharacter = true;
+            }
+
+            // Advance the cluster and column counts.
+            it += std::max<size_t>(it->Columns(), 1); // prevent infinite loop for no visible columns
+            cols += columnCount;
+
+        } while (it);
+
+        // Do the painting.
+        THROW_IF_FAILED(PaintBufferLine({ _clusterBuffer.data(), _clusterBuffer.size() }, screenPoint, trimLeft, renderData.lineWrapped));
+
+        // If we're allowed to do grid drawing, draw that now too (since it will be coupled with the color data)
+        // We're only allowed to draw the grid lines under certain circumstances.
+        if (renderData.gridLineDrawingAllowed)
+        {
+            // See GH: 803
+            // If we found a wide character while we looped above, it's possible we skipped over the right half
+            // attribute that could have contained different line information than the left half.
+            if (containsWideCharacter)
+            {
+                // Start from the original position in this run.
+                auto lineIt = currentRunItStart;
+                // Start from the original target in this run.
+                auto lineTarget = currentRunTargetStart;
+
+                // We need to go through the iterators again to ensure we get the lines associated with each
+                // exact column. The code above will condense two-column characters into one, but it is possible
+                // (like with the IME) that the line drawing characters will vary from the left to right half
+                // of a wider character.
+                // We could theoretically pre-pass for this in the loop above to be more efficient about walking
+                // the iterator, but I fear it would make the code even more confusing than it already is.
+                // Do that in the future if some WPR trace points you to this spot as super bad.
+                for (auto colsPainted = 0u; colsPainted < cols; ++colsPainted, ++lineIt, ++lineTarget.X)
+                {
+                    auto lines = lineIt->TextAttr();
+                    auto gridLines = _CalculateGridLines(pData, lines, lineTarget);
+                    // Return early if there are no lines to paint.
+                    if (gridLines != IRenderEngine::GridLines::None)
+                    {
+                        // Get the current foreground color to render the lines.
+                        const COLORREF rgb = pData->GetAttributeColors(lines).first;
+                        // Draw the lines
+                        LOG_IF_FAILED(PaintBufferGridLines(gridLines, rgb, 1, lineTarget));
+                    }
+                }
+            }
+            else
+            {
+                // If nothing exciting is going on, draw the lines in bulk.
+                auto gridLines = _CalculateGridLines(pData, currentRunColor, screenPoint);
+                // Return early if there are no lines to paint.
+                if (gridLines != IRenderEngine::GridLines::None)
+                {
+                    // Get the current foreground color to render the lines.
+                    const COLORREF rgb = pData->GetAttributeColors(currentRunColor).first;
+                    // Draw the lines
+                    LOG_IF_FAILED(PaintBufferGridLines(gridLines, rgb, cols, screenPoint));
+                }
+            }
+        }
+    }
 }
 
 // Routine Description:

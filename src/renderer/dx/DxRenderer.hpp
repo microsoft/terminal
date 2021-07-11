@@ -83,6 +83,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
 
         [[nodiscard]] HRESULT StartPaint() noexcept override;
+        [[nodiscard]] HRESULT PaintFrame(IRenderData* pdata) noexcept override;
         [[nodiscard]] HRESULT EndPaint() noexcept override;
 
         [[nodiscard]] bool RequiresContinuousRedraw() noexcept override;
@@ -90,24 +91,20 @@ namespace Microsoft::Console::Render
         void WaitUntilCanRender() noexcept override;
         [[nodiscard]] HRESULT Present() noexcept override;
 
-        [[nodiscard]] HRESULT ScrollFrame() noexcept override;
+        [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept;
 
-        [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
-
-        [[nodiscard]] HRESULT PaintBackground() noexcept override;
+        [[nodiscard]] HRESULT PaintBackground() noexcept;
         [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
                                               COORD const coord,
                                               bool const fTrimLeft,
-                                              const bool lineWrapped) noexcept override;
+                                              const bool lineWrapped) noexcept;
 
-        [[nodiscard]] HRESULT PaintBufferGridLines(GridLines const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget) noexcept override;
-        [[nodiscard]] HRESULT PaintSelection(const SMALL_RECT rect) noexcept override;
-
-        [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
+        [[nodiscard]] HRESULT PaintBufferGridLines(GridLines const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget) noexcept;
+        [[nodiscard]] HRESULT PaintSelection(const SMALL_RECT rect) noexcept;
 
         [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                    const gsl::not_null<IRenderData*> pData,
-                                                   const bool isSettingDefaultBrushes) noexcept override;
+                                                   const bool isSettingDefaultBrushes) noexcept;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(int const iDpi) noexcept override;
         [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
@@ -131,7 +128,8 @@ namespace Microsoft::Console::Render
         void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept;
 
     protected:
-        [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring_view newTitle) noexcept override;
+        [[nodiscard]] HRESULT _DoUpdateTitle() noexcept;
+        void _PaintBufferLineHelper(const BufferLineRenderData& renderData);
         [[nodiscard]] HRESULT _PaintTerminalEffects() noexcept;
         [[nodiscard]] bool _FullRepaintNeeded() const noexcept;
 

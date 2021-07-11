@@ -80,8 +80,6 @@ namespace Microsoft::Console::Render
         void SetRendererEnteredErrorStateCallback(std::function<void()> pfn);
         void ResetErrorStateAndResume();
 
-        void UpdateLastHoveredInterval(const std::optional<interval_tree::IntervalTree<til::point, size_t>::interval>& newInterval);
-
     private:
         std::deque<IRenderEngine*> _rgpEngines;
 
@@ -90,53 +88,21 @@ namespace Microsoft::Console::Render
         std::unique_ptr<IRenderThread> _pThread;
         bool _destructing = false;
 
-        std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _hoveredInterval;
-
         void _NotifyPaintFrame();
 
         [[nodiscard]] HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine) noexcept;
 
         bool _CheckViewportAndScroll();
 
-        [[nodiscard]] HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
-
-        void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
-
-        void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
-                                      TextBufferCellIterator it,
-                                      const COORD target,
-                                      const bool lineWrapped);
-
-        static IRenderEngine::GridLines s_GetGridlines(const TextAttribute& textAttribute) noexcept;
-
-        void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine,
-                                              const TextAttribute textAttribute,
-                                              const size_t cchLine,
-                                              const COORD coordTarget);
-
-        void _PaintSelection(_In_ IRenderEngine* const pEngine);
-        void _PaintCursor(_In_ IRenderEngine* const pEngine);
-
-        void _PaintOverlays(_In_ IRenderEngine* const pEngine);
-        void _PaintOverlay(IRenderEngine& engine, const RenderOverlay& overlay);
-
-        [[nodiscard]] HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool isSettingDefaultBrushes);
-
-        [[nodiscard]] HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
-
         Microsoft::Console::Types::Viewport _viewport;
 
         static constexpr float _shrinkThreshold = 0.8f;
         std::vector<Cluster> _clusterBuffer;
 
-        std::vector<SMALL_RECT> _GetSelectionRects() const;
         void _ScrollPreviousSelection(const til::point delta);
         std::vector<SMALL_RECT> _previousSelection;
 
-        [[nodiscard]] HRESULT _PaintTitle(IRenderEngine* const pEngine);
-
         [[nodiscard]] std::optional<CursorOptions> _GetCursorInfo();
-        [[nodiscard]] HRESULT _PrepareRenderInfo(_In_ IRenderEngine* const pEngine);
 
         // Helper functions to diagnose issues with painting and layout.
         // These are only actually effective/on in Debug builds when the flag is set using an attached debugger.

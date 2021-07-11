@@ -228,11 +228,6 @@ bool WddmConEngine::IsInitialized()
     return S_FALSE;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::ScrollFrame() noexcept
-{
-    return S_OK;
-}
-
 [[nodiscard]] HRESULT WddmConEngine::PaintBackground() noexcept
 {
     RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
@@ -285,24 +280,6 @@ bool WddmConEngine::IsInitialized()
         return WDDMConUpdateDisplay(_hWddmConCtx, _displayState[coord.Y], FALSE);
     }
     CATCH_RETURN();
-}
-
-[[nodiscard]] HRESULT WddmConEngine::PaintBufferGridLines(GridLines const /*lines*/,
-                                                          COLORREF const /*color*/,
-                                                          size_t const /*cchLine*/,
-                                                          COORD const /*coordTarget*/) noexcept
-{
-    return S_OK;
-}
-
-[[nodiscard]] HRESULT WddmConEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
-{
-    return S_OK;
-}
-
-[[nodiscard]] HRESULT WddmConEngine::PaintCursor(const CursorOptions& /*options*/) noexcept
-{
-    return S_OK;
 }
 
 [[nodiscard]] HRESULT WddmConEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
@@ -404,17 +381,5 @@ RECT WddmConEngine::GetDisplaySize()
 [[nodiscard]] HRESULT WddmConEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ bool* const pResult) noexcept
 {
     *pResult = false;
-    return S_OK;
-}
-
-// Method Description:
-// - Updates the window's title string.
-//      Does nothing for WddmCon.
-// Arguments:
-// - newTitle: the new string to use for the title of the window
-// Return Value:
-// - S_OK
-[[nodiscard]] HRESULT WddmConEngine::_DoUpdateTitle(_In_ const std::wstring_view /*newTitle*/) noexcept
-{
     return S_OK;
 }

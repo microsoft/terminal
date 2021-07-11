@@ -114,11 +114,6 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return S_FALSE;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::ScrollFrame() noexcept
-{
-    return S_OK;
-}
-
 [[nodiscard]] HRESULT BgfxEngine::PaintBackground() noexcept
 {
     PVOID OldRunBase;
@@ -164,19 +159,6 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
         return S_OK;
     }
     CATCH_RETURN();
-}
-
-[[nodiscard]] HRESULT BgfxEngine::PaintBufferGridLines(GridLines const /*lines*/,
-                                                       COLORREF const /*color*/,
-                                                       size_t const /*cchLine*/,
-                                                       COORD const /*coordTarget*/) noexcept
-{
-    return S_OK;
-}
-
-[[nodiscard]] HRESULT BgfxEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
-{
-    return S_OK;
 }
 
 [[nodiscard]] HRESULT BgfxEngine::PaintCursor(const CursorOptions& options) noexcept
@@ -255,17 +237,5 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 [[nodiscard]] HRESULT BgfxEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ bool* const pResult) noexcept
 {
     *pResult = false;
-    return S_OK;
-}
-
-// Method Description:
-// - Updates the window's title string.
-//      Does nothing for BGFX.
-// Arguments:
-// - newTitle: the new string to use for the title of the window
-// Return Value:
-// - S_OK
-[[nodiscard]] HRESULT BgfxEngine::_DoUpdateTitle(_In_ const std::wstring_view /*newTitle*/) noexcept
-{
     return S_OK;
 }

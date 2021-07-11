@@ -54,6 +54,8 @@ namespace Microsoft::Console::Render
 
     public:
         [[nodiscard]] virtual HRESULT StartPaint() noexcept = 0;
+        [[nodiscard]] virtual HRESULT PaintFrame(IRenderData *pData) noexcept = 0;
+
         [[nodiscard]] virtual HRESULT EndPaint() noexcept = 0;
 
         [[nodiscard]] virtual bool RequiresContinuousRedraw() noexcept = 0;
@@ -61,8 +63,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT Present() noexcept = 0;
 
         [[nodiscard]] virtual HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept = 0;
-
-        [[nodiscard]] virtual HRESULT ScrollFrame() noexcept = 0;
 
         [[nodiscard]] virtual HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept = 0;
@@ -74,29 +74,6 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT InvalidateTitle(const std::wstring_view proposedTitle) noexcept = 0;
 
-        [[nodiscard]] virtual HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept = 0;
-
-        [[nodiscard]] virtual HRESULT ResetLineTransform() noexcept = 0;
-        [[nodiscard]] virtual HRESULT PrepareLineTransform(const LineRendition lineRendition,
-                                                           const size_t targetRow,
-                                                           const size_t viewportLeft) noexcept = 0;
-
-        [[nodiscard]] virtual HRESULT PaintBackground() noexcept = 0;
-        [[nodiscard]] virtual HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
-                                                      const COORD coord,
-                                                      const bool fTrimLeft,
-                                                      const bool lineWrapped) noexcept = 0;
-        [[nodiscard]] virtual HRESULT PaintBufferGridLines(const GridLines lines,
-                                                           const COLORREF color,
-                                                           const size_t cchLine,
-                                                           const COORD coordTarget) noexcept = 0;
-        [[nodiscard]] virtual HRESULT PaintSelection(const SMALL_RECT rect) noexcept = 0;
-
-        [[nodiscard]] virtual HRESULT PaintCursor(const CursorOptions& options) noexcept = 0;
-
-        [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
-                                                           const gsl::not_null<IRenderData*> pData,
-                                                           const bool isSettingDefaultBrushes) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired,
                                                  _Out_ FontInfo& FontInfo) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateDpi(const int iDpi) noexcept = 0;
@@ -109,7 +86,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept = 0;
         [[nodiscard]] virtual HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept = 0;
         [[nodiscard]] virtual HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept = 0;
-        [[nodiscard]] virtual HRESULT UpdateTitle(const std::wstring_view newTitle) noexcept = 0;
     };
 
     inline Microsoft::Console::Render::IRenderEngine::~IRenderEngine() {}

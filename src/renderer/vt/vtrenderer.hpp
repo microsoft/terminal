@@ -55,23 +55,19 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
 
         [[nodiscard]] virtual HRESULT StartPaint() noexcept override;
+        [[nodiscard]] virtual HRESULT PaintFrame(IRenderData* pdata) noexcept override;
+
         [[nodiscard]] virtual HRESULT EndPaint() noexcept override;
         [[nodiscard]] virtual HRESULT Present() noexcept override;
 
         [[nodiscard]] virtual HRESULT ScrollFrame() noexcept = 0;
 
-        [[nodiscard]] HRESULT PaintBackground() noexcept override;
         [[nodiscard]] virtual HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
                                                       const COORD coord,
                                                       const bool trimLeft,
-                                                      const bool lineWrapped) noexcept override;
-        [[nodiscard]] HRESULT PaintBufferGridLines(const GridLines lines,
-                                                   const COLORREF color,
-                                                   const size_t cchLine,
-                                                   const COORD coordTarget) noexcept override;
-        [[nodiscard]] HRESULT PaintSelection(const SMALL_RECT rect) noexcept override;
+                                                      const bool lineWrapped) noexcept;
 
-        [[nodiscard]] virtual HRESULT PaintCursor(const CursorOptions& options) noexcept override;
+        [[nodiscard]] virtual HRESULT PaintCursor(const CursorOptions& options) noexcept;
 
         [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                            const gsl::not_null<IRenderData*> pData,
@@ -153,6 +149,8 @@ namespace Microsoft::Console::Render
         bool _resizeQuirk{ false };
         std::optional<TextColor> _newBottomLineBG{ std::nullopt };
 
+        void _PaintBufferLineHelper(const BufferLineRenderData& renderData);
+
         [[nodiscard]] HRESULT _Write(std::string_view const str) noexcept;
         [[nodiscard]] HRESULT _Flush() noexcept;
 
@@ -232,8 +230,6 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _WriteTerminalUtf8(const std::wstring_view str) noexcept;
         [[nodiscard]] HRESULT _WriteTerminalAscii(const std::wstring_view str) noexcept;
-
-        [[nodiscard]] virtual HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept override;
 
         /////////////////////////// Unit Testing Helpers ///////////////////////////
 #ifdef UNIT_TESTING

@@ -21,6 +21,19 @@ Author(s):
 #pragma once
 namespace Microsoft::Console::Render
 {
+    struct BufferLineRenderData
+    {
+        IRenderData* pData;
+        const TextBuffer& buffer;
+        Microsoft::Console::Types::Viewport bufferLine;
+        Microsoft::Console::Types::Viewport visible;
+        COORD screenPosition;
+        LineRendition lineRendention;
+        bool lineWrapped;
+        bool globalInvert;
+        bool gridLineDrawingAllowed;
+    };
+
     class RenderEngineBase : public IRenderEngine
     {
     public:
@@ -33,27 +46,48 @@ namespace Microsoft::Console::Render
         RenderEngineBase& operator=(const RenderEngineBase&) = default;
         RenderEngineBase& operator=(RenderEngineBase&&) = default;
 
+        [[nodiscard]] std::optional<CursorOptions> _GetCursorInfo(IRenderData* pData);
+        void _LoopDirtyLines(IRenderData* pData, std::function<void(BufferLineRenderData&)> action);
+        void _LoopOverlay(IRenderData* pData, std::function<void(BufferLineRenderData&)> action);
+        void _LoopSelection(IRenderData* pData, std::function<void(SMALL_RECT)> action);
+
+        BufferLineRenderData _CalculateRenderDataForDirtyLine(const TextBuffer& buffer,
+                                         Microsoft::Console::Types::Viewport visible,
+                                         Microsoft::Console::Types::Viewport redraw,
+                                         SHORT row) const;
+
+        GridLines _CalculateGridLines(IRenderData* pData,
+                                      const TextAttribute textAttribute,
+                                      const COORD coordTarget);
+
+        static GridLines s_GetGridlines(const TextAttribute& textAttribute) noexcept;
+
+        std::vector<SMALL_RECT> _GetSelectionRects(IRenderData* pData) const;
+
+        static bool s_IsAllSpaces(const std::wstring_view v)
+        {
+            // first non-space char is not found (is npos)
+            return v.find_first_not_of(L" ") == decltype(v)::npos;
+        }
+
     public:
         [[nodiscard]] HRESULT InvalidateTitle(const std::wstring_view proposedTitle) noexcept override;
-
-        [[nodiscard]] HRESULT UpdateTitle(const std::wstring_view newTitle) noexcept override;
-
-        [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
-
-        [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
-        [[nodiscard]] HRESULT PrepareLineTransform(const LineRendition lineRendition,
-                                                   const size_t targetRow,
-                                                   const size_t viewportLeft) noexcept override;
 
         [[nodiscard]] virtual bool RequiresContinuousRedraw() noexcept override;
 
         void WaitUntilCanRender() noexcept override;
 
-    protected:
-        [[nodiscard]] virtual HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept = 0;
+        void UpdateLastHoveredInterval(const std::optional<interval_tree::IntervalTree<til::point, size_t>::interval>& newInterval)
+        {
+            _hoveredInterval = newInterval;
+        }
 
+    protected:
         bool _titleChanged;
         std::wstring _lastFrameTitle;
+
+        std::vector<Cluster> _clusterBuffer;
+        std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _hoveredInterval;
     };
 
     inline Microsoft::Console::Render::RenderEngineBase::~RenderEngineBase() {}

@@ -6,6 +6,7 @@
 #include "vtrenderer.hpp"
 #include "../../inc/conattrs.hpp"
 #include "../../types/inc/convert.hpp"
+#include "../../buffer/out/textBuffer.hpp"
 
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
@@ -40,6 +41,27 @@ using namespace Microsoft::Console::Types;
                            _wrappedRow);
 
     return _quickReturn ? S_FALSE : S_OK;
+}
+
+[[nodiscard]] HRESULT VtEngine::PaintFrame(IRenderData* pData) noexcept
+{
+    // Prep Colors
+    RETURN_IF_FAILED(UpdateDrawingBrushes(pData->GetDefaultBrushColors(), pData, true));
+
+    // Perform Scroll Operations
+    RETURN_IF_FAILED(ScrollFrame());
+
+    // Paint Rows of Text
+    _LoopDirtyLines(pData, std::bind(&VtEngine::_PaintBufferLineHelper, this, std::placeholders::_1));
+
+    // Paint Cursor
+    const auto cursorInfo = _GetCursorInfo(pData);
+    if (cursorInfo.has_value())
+    {
+        LOG_IF_FAILED(PaintCursor(cursorInfo.value()));
+    }
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -101,17 +123,6 @@ using namespace Microsoft::Console::Types;
 }
 
 // Routine Description:
-// - Paints the background of the invalid area of the frame.
-// Arguments:
-// - <none>
-// Return Value:
-// - S_OK
-[[nodiscard]] HRESULT VtEngine::PaintBackground() noexcept
-{
-    return S_OK;
-}
-
-// Routine Description:
 // - Draws one line of the buffer to the screen. Writes the characters to the
 //      pipe. If the characters are outside the ASCII range (0-0x7f), then
 //      instead writes a '?'
@@ -133,23 +144,6 @@ using namespace Microsoft::Console::Types;
     return VtEngine::_PaintAsciiBufferLine(clusters, coord);
 }
 
-// Method Description:
-// - Draws up to one line worth of grid lines on top of characters.
-// Arguments:
-// - lines - Enum defining which edges of the rectangle to draw
-// - color - The color to use for drawing the edges.
-// - cchLine - How many characters we should draw the grid lines along (left to right in a row)
-// - coordTarget - The starting X/Y position of the first character to draw on.
-// Return Value:
-// - S_OK
-[[nodiscard]] HRESULT VtEngine::PaintBufferGridLines(const GridLines /*lines*/,
-                                                     const COLORREF /*color*/,
-                                                     const size_t /*cchLine*/,
-                                                     const COORD /*coordTarget*/) noexcept
-{
-    return S_OK;
-}
-
 // Routine Description:
 // - Draws the cursor on the screen
 // Arguments:
@@ -166,22 +160,113 @@ using namespace Microsoft::Console::Types;
     return S_OK;
 }
 
-// Routine Description:
-//  - Inverts the selected region on the current screen buffer.
-//  - Reads the selected area, selection mode, and active screen buffer
-//    from the global properties and dispatches a GDI invert on the selected text area.
-//  Because the selection is the responsibility of the terminal, and not the
-//      host, render nothing.
-// Arguments:
-//  - rect - Rectangle to invert or highlight to make the selection area
-// Return Value:
-// - S_OK
-[[nodiscard]] HRESULT VtEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
+void VtEngine::_PaintBufferLineHelper(const BufferLineRenderData& renderData)
 {
-    return S_OK;
-}
+    // Retrieve the cell information iterator limited to just this line we want to redraw.
+    auto it = renderData.buffer.GetCellDataAt(renderData.bufferLine.Origin(), renderData.bufferLine);
+    if (!it)
+    {
+        return;
+    }
 
-// Routine Description:
+    auto pData = renderData.pData;
+    size_t cols = 0;
+
+    // Retrieve the first color.
+    auto color = it->TextAttr();
+
+    // And hold the point where we should start drawing.
+    auto screenPoint = renderData.screenPosition;
+
+    // This outer loop will continue until we reach the end of the text we are trying to draw.
+    while (it)
+    {
+        // Hold onto the current run color right here for the length of the outer loop.
+        // We'll be changing the persistent one as we run through the inner loops to detect
+        // when a run changes, but we will still need to know this color at the bottom
+        // when we go to draw gridlines for the length of the run.
+        const auto currentRunColor = color;
+
+        // Update the drawing brushes with our color.
+        THROW_IF_FAILED(UpdateDrawingBrushes(currentRunColor, pData, false));
+
+        // Advance the point by however many columns we've just outputted and reset the accumulator.
+        screenPoint.X += gsl::narrow<SHORT>(cols);
+        cols = 0;
+
+        // Hold onto the start of this run iterator and the target location where we started
+        // in case we need to do some special work to paint the line drawing characters.
+        const auto currentRunItStart = it;
+        const auto currentRunTargetStart = screenPoint;
+
+        // Ensure that our cluster vector is clear.
+        _clusterBuffer.clear();
+
+        // Reset our flag to know when we're in the special circumstance
+        // of attempting to draw only the right-half of a two-column character
+        // as the first item in our run.
+        bool trimLeft = false;
+
+        // Run contains wide character (>1 columns)
+        bool containsWideCharacter = false;
+
+        // This inner loop will accumulate clusters until the color changes.
+        // When the color changes, it will save the new color off and break.
+        // We also accumulate clusters according to regex patterns
+        do
+        {
+            COORD thisPoint{ screenPoint.X + gsl::narrow<SHORT>(cols), screenPoint.Y };
+            if (color != it->TextAttr())
+            {
+                auto newAttr{ it->TextAttr() };
+                // foreground doesn't matter for runs of spaces (!)
+                // if we trick it . . . we call Paint far fewer times for cmatrix
+                if (!s_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, renderData.globalInvert))
+                {
+                    color = newAttr;
+                    break; // vend this run
+                }
+            }
+
+            // Walk through the text data and turn it into rendering clusters.
+            // Keep the columnCount as we go to improve performance over digging it out of the vector at the end.
+            size_t columnCount = 0;
+
+            // If we're on the first cluster to be added and it's marked as "trailing"
+            // (a.k.a. the right half of a two column character), then we need some special handling.
+            if (_clusterBuffer.empty() && it->DbcsAttr().IsTrailing())
+            {
+                // Move left to the one so the whole character can be struck correctly.
+                --screenPoint.X;
+                // And tell the next function to trim off the left half of it.
+                trimLeft = true;
+                // And add one to the number of columns we expect it to take as we insert it.
+                columnCount = it->Columns() + 1;
+                _clusterBuffer.emplace_back(it->Chars(), columnCount);
+            }
+            // Otherwise if it's not a special case, just insert it as is.
+            else
+            {
+                columnCount = it->Columns();
+                _clusterBuffer.emplace_back(it->Chars(), columnCount);
+            }
+
+            if (columnCount > 1)
+            {
+                containsWideCharacter = true;
+            }
+
+            // Advance the cluster and column counts.
+            it += std::max<size_t>(it->Columns(), 1); // prevent infinite loop for no visible columns
+            cols += columnCount;
+
+        } while (it);
+
+        // Do the painting.
+        THROW_IF_FAILED(PaintBufferLine({ _clusterBuffer.data(), _clusterBuffer.size() }, screenPoint, trimLeft, renderData.lineWrapped));
+    }
+}
+    // Routine Description:
 // - Write a VT sequence to change the current colors of text. Writes true RGB
 //      color sequences.
 // Arguments:
@@ -586,19 +671,5 @@ using namespace Microsoft::Console::Types;
         _newBottomLineBG = std::nullopt;
     }
 
-    return S_OK;
-}
-
-// Method Description:
-// - Updates the window's title string. Emits the VT sequence to SetWindowTitle.
-//      Because wintelnet does not understand these sequences by default, we
-//      don't do anything by default. Other modes can implement if they support
-//      the sequence.
-// Arguments:
-// - newTitle: the new string to use for the title of the window
-// Return Value:
-// - S_OK
-[[nodiscard]] HRESULT VtEngine::_DoUpdateTitle(const std::wstring_view /*newTitle*/) noexcept
-{
     return S_OK;
 }

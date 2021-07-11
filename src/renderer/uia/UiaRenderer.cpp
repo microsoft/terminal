@@ -216,6 +216,11 @@ CATCH_RETURN();
     return S_OK;
 }
 
+[[nodiscard]] HRESULT UiaEngine::PaintFrame(IRenderData* /*pData*/) noexcept
+{
+    return S_OK;
+}
+
 // Routine Description:
 // - Ends batch drawing and notifies automation clients of updated regions
 // Arguments:
@@ -270,106 +275,6 @@ CATCH_RETURN();
 // Return Value:
 // - S_FALSE since we do nothing.
 [[nodiscard]] HRESULT UiaEngine::Present() noexcept
-{
-    return S_FALSE;
-}
-
-// Routine Description:
-// - This is currently unused.
-// Arguments:
-// - <none>
-// Return Value:
-// - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::ScrollFrame() noexcept
-{
-    return S_FALSE;
-}
-
-// Routine Description:
-// - Paints the background of the invalid area of the frame.
-//  For UIA, this doesn't mean anything. So do nothing.
-// Arguments:
-// - <none>
-// Return Value:
-// - S_FALSE since we do nothing
-[[nodiscard]] HRESULT UiaEngine::PaintBackground() noexcept
-{
-    return S_FALSE;
-}
-
-// Routine Description:
-// - Places one line of text onto the screen at the given position
-//  For UIA, this doesn't mean anything. So do nothing.
-// Arguments:
-// - clusters - Iterable collection of cluster information (text and columns it should consume)
-// - coord - Character coordinate position in the cell grid
-// - fTrimLeft - Whether or not to trim off the left half of a double wide character
-// Return Value:
-// - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintBufferLine(gsl::span<const Cluster> const /*clusters*/,
-                                                 COORD const /*coord*/,
-                                                 const bool /*trimLeft*/,
-                                                 const bool /*lineWrapped*/) noexcept
-{
-    return S_FALSE;
-}
-
-// Routine Description:
-// - Paints lines around cells (draws in pieces of the grid)
-//  For UIA, this doesn't mean anything. So do nothing.
-// Arguments:
-// - lines - <unused>
-// - color - <unused>
-// - cchLine - <unused>
-// - coordTarget - <unused>
-// Return Value:
-// - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintBufferGridLines(GridLines const /*lines*/,
-                                                      COLORREF const /*color*/,
-                                                      size_t const /*cchLine*/,
-                                                      COORD const /*coordTarget*/) noexcept
-{
-    return S_FALSE;
-}
-
-// Routine Description:
-//  - Reads the selected area, selection mode, and active screen buffer
-//    from the global properties and dispatches a GDI invert on the selected text area.
-//  Because the selection is the responsibility of the terminal, and not the
-//      host, render nothing.
-// Arguments:
-//  - rect - Rectangle to invert or highlight to make the selection area
-// Return Value:
-// - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
-{
-    return S_FALSE;
-}
-
-// Routine Description:
-// - Draws the cursor on the screen
-//  For UIA, this doesn't mean anything. So do nothing.
-// Arguments:
-// - options - Packed options relevant to how to draw the cursor
-// Return Value:
-// - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintCursor(const CursorOptions& /*options*/) noexcept
-{
-    return S_FALSE;
-}
-
-// Routine Description:
-// - Updates the default brush colors used for drawing
-//  For UIA, this doesn't mean anything. So do nothing.
-// Arguments:
-// - textAttributes - <unused>
-// - pData - <unused>
-// - isSettingDefaultBrushes - <unused>
-// Return Value:
-// - S_FALSE since we do nothing
-[[nodiscard]] HRESULT UiaEngine::UpdateDrawingBrushes(const TextAttribute& /*textAttributes*/,
-                                                      const gsl::not_null<IRenderData*> /*pData*/,
-                                                      const bool /*isSettingDefaultBrushes*/) noexcept
 {
     return S_FALSE;
 }
@@ -459,18 +364,6 @@ CATCH_RETURN();
 // Return Value:
 // - S_OK or relevant DirectWrite error.
 [[nodiscard]] HRESULT UiaEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ bool* const /*pResult*/) noexcept
-{
-    return S_FALSE;
-}
-
-// Method Description:
-// - Updates the window's title string.
-// - Currently unused by this renderer.
-// Arguments:
-// - newTitle: the new string to use for the title of the window
-// Return Value:
-// - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::_DoUpdateTitle(_In_ const std::wstring_view /*newTitle*/) noexcept
 {
     return S_FALSE;
 }
