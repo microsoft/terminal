@@ -132,7 +132,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // refresh the current page using the SelectedItem data we collected before the refresh
         if (selectedItemTag)
         {
-            for (const auto& item : menuItemsSTL)
+            for (const auto& item : menuItems)
             {
                 if (const auto& menuItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
                 {
