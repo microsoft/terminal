@@ -163,9 +163,10 @@ void RenderEngineBase::_LoopDirtyLines(IRenderData* pData, std::function<void(Bu
                     buffer,
                     bufferLine.Origin(),
                     bufferLine,
-                    view,
                     screenPosition,
+                    view,
                     lineRendition,
+                    true,
                     lineWrapped,
                     globalInvert,
                     gridLineDrawingAllowed
@@ -225,9 +226,10 @@ void RenderEngineBase::_LoopOverlay(IRenderData* pData, std::function<void(Buffe
                         overlay.buffer,
                         source,
                         Viewport::FromInclusive(limit),
-                        viewConv,
                         target,
+                        viewConv,
                         LineRendition::SingleWidth,
+                        false,
                         false,
                         globalInvert,
                         gridLineDrawingAllowed

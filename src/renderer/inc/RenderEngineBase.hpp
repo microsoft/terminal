@@ -25,11 +25,18 @@ namespace Microsoft::Console::Render
     {
         IRenderData* pData;
         const TextBuffer& buffer;
+        // Text position in buffer
         COORD bufferPosition;
+        // Text bounds limit in buffer.
         Microsoft::Console::Types::Viewport bufferLimit;
-        Microsoft::Console::Types::Viewport visible;
+        // Target screen position for drawing.
         COORD screenPosition;
+        // Used by GDI Engine.
+        Microsoft::Console::Types::Viewport visible;
+        // Used by GDI Engine.
         LineRendition lineRendention;
+        // Used by GDI Engine.
+        bool needLineTransformation;
         bool lineWrapped;
         bool globalInvert;
         bool gridLineDrawingAllowed;
