@@ -471,7 +471,7 @@ void GdiEngine::_PaintBufferLineHelper(const BufferLineRenderData& renderData)
     LOG_IF_FAILED(PrepareLineTransform(renderData.lineRendention, renderData.screenPosition.Y, renderData.visible.Left()));
 
     // Retrieve the cell information iterator limited to just this line we want to redraw.
-    auto it = renderData.buffer.GetCellDataAt(renderData.bufferLine.Origin(), renderData.bufferLine);
+    auto it = renderData.buffer.GetCellDataAt(renderData.bufferPosition, renderData.bufferLimit);
     if (!it)
     {
         return;

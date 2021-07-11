@@ -184,13 +184,20 @@ void RenderEngineBase::_LoopOverlay(IRenderData* pData, std::function<void(Buffe
                     SMALL_RECT limit;
                     limit.Top = source.Y;
                     limit.Bottom = source.Y;
-                    limit.Left = source.X;
+                    limit.Left = 0;
                     limit.Right = overlay.buffer.GetSize().RightInclusive();
 
-                    Viewport bufferLine = Viewport::FromInclusive(limit);
-
                     BufferLineRenderData renderData{
-                        pData, overlay.buffer, bufferLine, viewConv, target, LineRendition::SingleWidth, false, false, false
+                        pData,
+                        overlay.buffer,
+                        source,
+                        Viewport::FromInclusive(limit),
+                        viewConv,
+                        target,
+                        LineRendition::SingleWidth,
+                        false,
+                        false,
+                        false
                     };
                     action(renderData);
                 }
@@ -250,7 +257,18 @@ BufferLineRenderData RenderEngineBase::_CalculateRenderDataForDirtyLine(const Te
     const auto lineWrapped = (buffer.GetRowByOffset(bufferLine.Origin().Y).WasWrapForced()) &&
                              (bufferLine.RightExclusive() == buffer.GetSize().Width());
 
-    return BufferLineRenderData{ nullptr, buffer, bufferLine, visible, screenPosition, lineRendition, lineWrapped, false, false };
+    return BufferLineRenderData{
+        nullptr,
+        buffer,
+        bufferLine.Origin(),
+        bufferLine,
+        visible,
+        screenPosition,
+        lineRendition,
+        lineWrapped,
+        false,
+        false
+    };
 }
 
 IRenderEngine::GridLines RenderEngineBase::_CalculateGridLines(IRenderData* pData,

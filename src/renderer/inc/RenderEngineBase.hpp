@@ -25,7 +25,8 @@ namespace Microsoft::Console::Render
     {
         IRenderData* pData;
         const TextBuffer& buffer;
-        Microsoft::Console::Types::Viewport bufferLine;
+        COORD bufferPosition;
+        Microsoft::Console::Types::Viewport bufferLimit;
         Microsoft::Console::Types::Viewport visible;
         COORD screenPosition;
         LineRendition lineRendention;

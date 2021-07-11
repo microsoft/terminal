@@ -163,7 +163,7 @@ using namespace Microsoft::Console::Types;
 void VtEngine::_PaintBufferLineHelper(const BufferLineRenderData& renderData)
 {
     // Retrieve the cell information iterator limited to just this line we want to redraw.
-    auto it = renderData.buffer.GetCellDataAt(renderData.bufferLine.Origin(), renderData.bufferLine);
+    auto it = renderData.buffer.GetCellDataAt(renderData.bufferPosition, renderData.bufferLimit);
     if (!it)
     {
         return;
