@@ -52,11 +52,6 @@ namespace Microsoft::Console::Render
         void _LoopOverlay(IRenderData* pData, std::function<void(BufferLineRenderData&)> action);
         void _LoopSelection(IRenderData* pData, std::function<void(SMALL_RECT)> action);
 
-        BufferLineRenderData _CalculateRenderDataForDirtyLine(const TextBuffer& buffer,
-                                         Microsoft::Console::Types::Viewport visible,
-                                         Microsoft::Console::Types::Viewport redraw,
-                                         SHORT row) const;
-
         GridLines _CalculateGridLines(IRenderData* pData,
                                       const TextAttribute textAttribute,
                                       const COORD coordTarget);

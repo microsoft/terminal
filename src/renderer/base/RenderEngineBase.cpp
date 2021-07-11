@@ -110,8 +110,8 @@ void RenderEngineBase::_LoopDirtyLines(IRenderData* pData, std::function<void(Bu
     LOG_IF_FAILED(GetDirtyArea(dirtyAreas));
 
     // Calling pData virtual functions is expensive. This won't change during painting.
-    auto globalInvert = pData->IsScreenReversed();
-    auto gridLineDrawingAllowed = pData->IsGridLineDrawingAllowed();
+    const auto globalInvert = pData->IsScreenReversed();
+    const auto gridLineDrawingAllowed = pData->IsGridLineDrawingAllowed();
 
     for (const auto& dirtyRect : dirtyAreas)
     {
@@ -135,10 +135,41 @@ void RenderEngineBase::_LoopDirtyLines(IRenderData* pData, std::function<void(Bu
             // Now walk through each row of text that we need to redraw.
             for (auto row = redraw.Top(); row < redraw.BottomExclusive(); row++)
             {
-                auto renderData = _CalculateRenderDataForDirtyLine(buffer, view, redraw, row);
-                renderData.pData = pData;
-                renderData.globalInvert = globalInvert;
-                renderData.gridLineDrawingAllowed = gridLineDrawingAllowed;
+                // Calculate the boundaries of a single line. This is from the left to right edge of the dirty
+                // area in width and exactly 1 tall.
+                const auto screenLine = SMALL_RECT{ redraw.Left(), row, redraw.RightInclusive(), row };
+
+                // Convert the screen coordinates of the line to an equivalent
+                // range of buffer cells, taking line rendition into account.
+                const auto lineRendition = buffer.GetLineRendition(row);
+                const auto bufferLine = Viewport::FromInclusive(ScreenToBufferLine(screenLine, lineRendition));
+
+                // Find where on the screen we should place this line information. This requires us to re-map
+                // the buffer-based origin of the line back onto the screen-based origin of the line.
+                // For example, the screen might say we need to paint line 1 because it is dirty but the viewport
+                // is actually looking at line 26 relative to the buffer. This means that we need line 27 out
+                // of the backing buffer to fill in line 1 of the screen.
+                const auto screenPosition = bufferLine.Origin() - COORD{ 0, view.Top() };
+
+                // Calculate if two things are true:
+                // 1. this row wrapped
+                // 2. We're painting the last col of the row.
+                // In that case, set lineWrapped=true for the _PaintBufferOutputHelper call.
+                const auto lineWrapped = (buffer.GetRowByOffset(bufferLine.Origin().Y).WasWrapForced()) &&
+                                         (bufferLine.RightExclusive() == buffer.GetSize().Width());
+
+                BufferLineRenderData renderData{
+                    pData,
+                    buffer,
+                    bufferLine.Origin(),
+                    bufferLine,
+                    view,
+                    screenPosition,
+                    lineRendition,
+                    lineWrapped,
+                    globalInvert,
+                    gridLineDrawingAllowed
+                };
                 action(renderData);
             }
         }
@@ -149,6 +180,8 @@ void RenderEngineBase::_LoopOverlay(IRenderData* pData, std::function<void(Buffe
 {
     // First get the screen buffer's viewport.
     Viewport view = pData->GetViewport();
+    const auto globalInvert = pData->IsScreenReversed();
+    const auto gridLineDrawingAllowed = pData->IsGridLineDrawingAllowed();
 
     // Now get the overlay's viewport and adjust it to where it is supposed to be relative to the window.
     const auto overlays = pData->GetOverlays();
@@ -196,8 +229,8 @@ void RenderEngineBase::_LoopOverlay(IRenderData* pData, std::function<void(Buffe
                         target,
                         LineRendition::SingleWidth,
                         false,
-                        false,
-                        false
+                        globalInvert,
+                        gridLineDrawingAllowed
                     };
                     action(renderData);
                 }
@@ -227,48 +260,6 @@ void RenderEngineBase::_LoopSelection(IRenderData* pData, std::function<void(SMA
             }
         }
     }
-}
-
-BufferLineRenderData RenderEngineBase::_CalculateRenderDataForDirtyLine(const TextBuffer& buffer,
-                                                                                                    Viewport visible,
-                                                                                                    Viewport redraw,
-                                                                                                   SHORT row) const
-{
-    // Calculate the boundaries of a single line. This is from the left to right edge of the dirty
-    // area in width and exactly 1 tall.
-    const auto screenLine = SMALL_RECT{ redraw.Left(), row, redraw.RightInclusive(), row };
-
-    // Convert the screen coordinates of the line to an equivalent
-    // range of buffer cells, taking line rendition into account.
-    const auto lineRendition = buffer.GetLineRendition(row);
-    const auto bufferLine = Viewport::FromInclusive(ScreenToBufferLine(screenLine, lineRendition));
-
-    // Find where on the screen we should place this line information. This requires us to re-map
-    // the buffer-based origin of the line back onto the screen-based origin of the line.
-    // For example, the screen might say we need to paint line 1 because it is dirty but the viewport
-    // is actually looking at line 26 relative to the buffer. This means that we need line 27 out
-    // of the backing buffer to fill in line 1 of the screen.
-    const auto screenPosition = bufferLine.Origin() - COORD{ 0, visible.Top() };
-
-    // Calculate if two things are true:
-    // 1. this row wrapped
-    // 2. We're painting the last col of the row.
-    // In that case, set lineWrapped=true for the _PaintBufferOutputHelper call.
-    const auto lineWrapped = (buffer.GetRowByOffset(bufferLine.Origin().Y).WasWrapForced()) &&
-                             (bufferLine.RightExclusive() == buffer.GetSize().Width());
-
-    return BufferLineRenderData{
-        nullptr,
-        buffer,
-        bufferLine.Origin(),
-        bufferLine,
-        visible,
-        screenPosition,
-        lineRendition,
-        lineWrapped,
-        false,
-        false
-    };
 }
 
 IRenderEngine::GridLines RenderEngineBase::_CalculateGridLines(IRenderData* pData,
